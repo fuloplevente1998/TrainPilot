@@ -199,6 +199,9 @@
     <string name="weight_empty">Noch keine Gewichtsmessungen.</string>
     <string name="weight_chart_empty">Für das Diagramm sind mindestens zwei Messungen erforderlich.</string>
     <string name="weight_read_failed">Das Gewichtsprotokoll konnte nicht geladen werden.</string>
+    <string name="weight_retry">Erneut versuchen</string>
+    <string name="weight_measurements_total">Gesamtes Protokoll: %1$d Messungen</string>
+    <string name="weight_chart_averages">Gruppierte Mittelwerte: %1$d Messungen, %2$d Tage pro Punkt.</string>
     <string name="weight_min_max">Minimum / Maximum: %1$s / %2$s kg</string>
     <string name="health_records_title">Einzelne Gesundheitsmessungen</string>
     <string name="health_records_close">Schließen</string>

@@ -33,6 +33,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.paging.LoadState
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemKey
 import com.repforge.app.R
 import com.repforge.app.data.db.BodyWeightEntryEntity
 import com.repforge.app.ui.text.nativeResources
@@ -44,6 +47,7 @@ import java.util.Locale
 @Composable
 fun WeightJournalScreen(viewModel: WeightJournalViewModel = viewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val entries = viewModel.entries.collectAsLazyPagingItems()
     val resources = nativeResources(LocalContext.current, state.language)
     val colors = LocalTrainPilotColors.current
     var adding by rememberSaveable { mutableStateOf(false) }
@@ -55,14 +59,16 @@ fun WeightJournalScreen(viewModel: WeightJournalViewModel = viewModel()) {
         item {
             WeightJournalOverview(state, viewModel::setRange, {
                 viewModel.clearWriteError(); adding = true
-            }, R.string.weight_add)
+            }, R.string.weight_add, viewModel::retryReads)
         }
-        if (state.readFailed) item { Text(resources.getString(R.string.weight_read_failed), color = colors.danger) }
+        if (entries.loadState.refresh is LoadState.Loading || entries.loadState.prepend is LoadState.Loading)
+            item { Text(resources.getString(R.string.weight_loading), color = colors.muted) }
         if (!adding && editing == null && deleting == null && state.writeFailed) item { WeightWriteError(state) }
-        if (!state.loading && state.entries.isEmpty()) item {
+        if (entries.loadState.refresh is LoadState.NotLoading && entries.itemCount == 0) item {
             Text(resources.getString(R.string.weight_empty), color = colors.muted)
         }
-        items(state.entries.asReversed(), key = { it.id }) { entry ->
+        items(count = entries.itemCount, key = entries.itemKey { it.id }) { index ->
+            val entry = entries[index] ?: return@items
             Card(Modifier.fillMaxWidth().testTag("weight_entry_${entry.id}"),
                 colors = CardDefaults.cardColors(containerColor = colors.card)) {
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -78,6 +84,17 @@ fun WeightJournalScreen(viewModel: WeightJournalViewModel = viewModel()) {
                             Text(resources.getString(R.string.weight_delete), color = colors.danger)
                         }
                     }
+                }
+            }
+        }
+        if (entries.loadState.append is LoadState.Loading)
+            item { Text(resources.getString(R.string.weight_loading), color = colors.muted) }
+        if (entries.loadState.refresh is LoadState.Error || entries.loadState.append is LoadState.Error ||
+            entries.loadState.prepend is LoadState.Error) item {
+            Column {
+                Text(resources.getString(R.string.weight_read_failed), color = colors.danger)
+                TextButton(onClick = { entries.retry() }, modifier = Modifier.testTag("weight_page_retry")) {
+                    Text(resources.getString(R.string.weight_retry))
                 }
             }
         }
@@ -116,10 +133,11 @@ fun WeightJournalScreen(viewModel: WeightJournalViewModel = viewModel()) {
 
 @Composable
 internal fun WeightJournalOverview(state: WeightJournalUiState, onRange: (String) -> Unit,
-    onAction: () -> Unit, actionLabel: Int) {
+    onAction: () -> Unit, actionLabel: Int, onRetry: () -> Unit) {
     val resources = nativeResources(LocalContext.current, state.language)
     val colors = LocalTrainPilotColors.current
-    val chart = remember(state.entries, state.range) { state.chartEntries() }
+    val overview = state.overview
+    val chart = overview?.chart.orEmpty()
     Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = colors.card)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(resources.getString(R.string.weight_title), color = colors.text, fontWeight = FontWeight.Bold)
@@ -130,22 +148,41 @@ internal fun WeightJournalOverview(state: WeightJournalUiState, onRange: (String
             if (start != null && current != null) {
                 Text(resources.getString(R.string.weight_start_change, weightNumber(start, state.language),
                     weightNumber(current - start, state.language)), color = colors.muted)
-                Text(resources.getString(R.string.weight_min_max,
-                    weightNumber(state.entries.minOf { it.kg }, state.language),
-                    weightNumber(state.entries.maxOf { it.kg }, state.language)), color = colors.muted)
+            }
+            val min = state.overview?.summary?.minimumKg
+            val max = state.overview?.summary?.maximumKg
+            if (min != null && max != null) Text(resources.getString(R.string.weight_min_max,
+                weightNumber(min, state.language), weightNumber(max, state.language)), color = colors.muted,
+                modifier = Modifier.testTag("weight_global_extrema"))
+            state.overview?.summary?.let { summary ->
+                Text(resources.getString(R.string.weight_measurements_total, summary.measurementCount),
+                    color = colors.muted, modifier = Modifier.testTag("weight_measurement_count"))
             }
             Button(onClick = onAction, enabled = !state.loading && !state.writing,
                 modifier = Modifier.testTag("weight_journal_action")) { Text(resources.getString(actionLabel)) }
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.testTag("weight_range_choices")) {
                 items(listOf("7", "30", "90", "365", "all")) { range ->
                     FilterChip(selected = state.range == range, enabled = !state.writing, onClick = { onRange(range) },
+                        modifier = Modifier.testTag("weight_range_$range"),
                         label = { Text(if (range == "all") resources.getString(R.string.weight_all)
                             else resources.getString(R.string.weight_days, range.toInt())) })
                 }
             }
             if (state.loading) Text(resources.getString(R.string.weight_loading), color = colors.muted)
+            else if (state.readFailed) Column {
+                Text(resources.getString(R.string.weight_read_failed), color = colors.danger)
+                TextButton(onClick = onRetry, modifier = Modifier.testTag("weight_read_retry")) {
+                    Text(resources.getString(R.string.weight_retry))
+                }
+            }
             else if (chart.size < 2) Text(resources.getString(R.string.weight_chart_empty), color = colors.muted)
-            else Column(Modifier.fillMaxWidth().height(110.dp)) { TrendCanvas(chart.map { it.kg }) }
+            else {
+                Column(Modifier.fillMaxWidth().height(110.dp).testTag("weight_chart")) { TrendCanvas(chart.map { it.averageKg }) }
+                overview?.let {
+                    Text(resources.getString(R.string.weight_chart_averages, it.chartMeasurementCount,
+                        it.daysPerBucket), color = colors.muted, modifier = Modifier.testTag("weight_chart_coverage"))
+                }
+            }
         }
     }
 }

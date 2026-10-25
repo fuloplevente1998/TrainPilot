@@ -199,6 +199,9 @@
     <string name="weight_empty">No weight measurements yet.</string>
     <string name="weight_chart_empty">At least two measurements are needed for the chart.</string>
     <string name="weight_read_failed">The weight journal could not be loaded.</string>
+    <string name="weight_retry">Retry</string>
+    <string name="weight_measurements_total">Full journal: %1$d measurements</string>
+    <string name="weight_chart_averages">Grouped averages: %1$d measurements, %2$d days per point.</string>
     <string name="weight_min_max">Minimum / maximum: %1$s / %2$s kg</string>
     <string name="health_records_title">Individual health measurements</string>
     <string name="health_records_close">Close</string>

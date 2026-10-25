@@ -177,7 +177,7 @@ fun ProgressScreen(
 
         item {
             WeightJournalOverview(weights, weightViewModel::setRange, onWeightJournal,
-                com.repforge.app.R.string.weight_open)
+                com.repforge.app.R.string.weight_open, weightViewModel::retryReads)
         }
         if (weights.writeFailed) item {
             Text(com.repforge.app.ui.text.nativeResources(androidx.compose.ui.platform.LocalContext.current, weights.language)

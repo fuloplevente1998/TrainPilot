@@ -249,6 +249,16 @@ data class BodyWeightEntryEntity(
     val rawJson: String
 )
 
+/** Scalar full-history statistics; never hydrated from the currently loaded UI page. */
+data class WeightJournalSummary(val measurementCount: Long, val firstKg: Double?, val currentKg: Double?,
+    val minimumKg: Double?, val maximumKg: Double?)
+
+data class WeightChartBounds(val firstDay: Double?, val lastDay: Double?, val measurementCount: Long)
+
+/** A time bucket is explicitly displayed as an average, not an invented individual measurement. */
+data class WeightChartPoint(val bucket: Int, val averageKg: Double, val minimumKg: Double,
+    val maximumKg: Double, val measurementCount: Long)
+
 @Entity(
     tableName = "calendar_entries",
     indices = [

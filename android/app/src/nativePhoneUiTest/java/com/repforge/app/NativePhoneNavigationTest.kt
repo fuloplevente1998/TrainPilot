@@ -341,6 +341,57 @@ class NativePhoneNavigationTest {
         compose.onNodeWithTag("health_weight_journal").assertExists()
     }
 
+    private fun seedLargeWeightJournal(count: Int) = runBlocking(Dispatchers.IO) {
+        val today = java.time.LocalDate.now()
+        TrainPilotDatabase.getInstance(context).bodyWeightDao().upsertWeights((0 until count).map { i ->
+            val id = "weight-%04d".format(i); val date = today.minusDays((count - 1 - i).toLong()).toString()
+            val kg = when (i) { 0 -> 140.0; count / 2 -> 35.0; count - 1 -> 80.0; else -> 70.0 + i % 100 / 10.0 }
+            com.repforge.app.data.db.BodyWeightEntryEntity(id, date, date, kg, i.toLong(),
+                JSONObject().put("id", id).put("date", date).put("kg", kg).toString())
+        })
+    }
+
+    @Test fun weightOverviewCoversFifteenHundredMeasurementsAcrossRangeChanges() {
+        seedLargeWeightJournal(1500)
+        launch(); tab("health")
+        compose.onNodeWithTag("health_weight_journal").performClick()
+        compose.waitUntil(15000) { compose.onAllNodes(hasTestTag("weight_measurement_count") and
+            hasText("1500 mérés", substring = true)).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("weight_global_extrema").assertTextContains("35 / 140 kg")
+        compose.onNodeWithTag("weight_range_choices").performScrollToNode(hasTestTag("weight_range_all"))
+        compose.onNodeWithTag("weight_range_all").performScrollTo().performClick()
+        compose.waitUntil(15000) { compose.onAllNodes(hasTestTag("weight_chart_coverage") and
+            hasText("1500 mérés", substring = true)).fetchSemanticsNodes().isNotEmpty() }
+        screenshot("weight_1500_full_coverage")
+        compose.onNodeWithTag("weight_range_choices").performScrollToNode(hasTestTag("weight_range_7"))
+        compose.onNodeWithTag("weight_range_7").performScrollTo().performClick()
+        compose.waitUntil(15000) { compose.onAllNodes(hasTestTag("weight_chart_coverage") and
+            hasText("8 mérés", substring = true)).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("weight_measurement_count").assertTextContains("1500 mérés")
+        compose.onNodeWithTag("weight_global_extrema").assertTextContains("35 / 140 kg")
+        screenshot("weight_1500_week_range")
+    }
+
+    @Test fun pagedWeightEditUpdatesOverviewWithoutChangingCountOrOlderMeasurements() {
+        seedLargeWeightJournal(200)
+        launch(); tab("health")
+        compose.onNodeWithTag("health_weight_journal").performClick()
+        compose.waitUntil(15000) { compose.onAllNodes(hasTestTag("weight_measurement_count") and
+            hasText("200 mérés", substring = true)).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("weight_journal_list").performScrollToNode(hasTestTag("weight_edit_weight-0199"))
+        compose.onNodeWithTag("weight_edit_weight-0199").performClick()
+        compose.onNodeWithTag("weight_input").performTextReplacement("81,5")
+        compose.onNodeWithTag("weight_save").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("weight_input").fetchSemanticsNodes().isEmpty() }
+        compose.onNodeWithTag("weight_journal_list").performScrollToIndex(0)
+        compose.waitUntil(15000) { compose.onAllNodesWithText("Aktuális: 81,5 kg").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("weight_measurement_count").assertTextContains("200 mérés")
+        compose.onNodeWithTag("weight_global_extrema").assertTextContains("35 / 140 kg")
+        val old = runBlocking(Dispatchers.IO) { TrainPilotDatabase.getInstance(context).bodyWeightDao().getWeightById("weight-0000")!! }
+        assertEquals(140.0, old.kg, .0001)
+        screenshot("weight_paged_edit_same_count")
+    }
+
     @Test fun failedWeightSaveKeepsTheDialogAndInputForExplicitRetry() {
         launch(); tab("health")
         compose.onNodeWithTag("health_weight_journal").performClick()

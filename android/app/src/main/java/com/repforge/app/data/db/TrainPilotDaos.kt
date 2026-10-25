@@ -323,8 +323,32 @@ interface WorkoutHistoryDao {
 
 @Dao
 interface BodyWeightDao {
-    @Query("SELECT * FROM body_weights ORDER BY date ASC, id ASC")
-    fun observeAllWeights(): Flow<List<BodyWeightEntryEntity>>
+    @Query("SELECT * FROM body_weights ORDER BY date DESC, id DESC")
+    fun weightJournalPages(): androidx.paging.PagingSource<Int, BodyWeightEntryEntity>
+
+    @Query("""
+        SELECT COUNT(*) AS measurementCount, MIN(kg) AS minimumKg, MAX(kg) AS maximumKg,
+          (SELECT kg FROM body_weights ORDER BY date ASC, id ASC LIMIT 1) AS firstKg,
+          (SELECT kg FROM body_weights ORDER BY date DESC, id DESC LIMIT 1) AS currentKg
+        FROM body_weights
+    """)
+    suspend fun getWeightJournalSummary(): WeightJournalSummary
+
+    @Query("""
+        SELECT MIN(julianday(dayKey)) AS firstDay, MAX(julianday(dayKey)) AS lastDay,
+          COUNT(*) AS measurementCount FROM body_weights
+        WHERE dayKey >= :fromDay AND julianday(dayKey) IS NOT NULL
+    """)
+    suspend fun getWeightChartBounds(fromDay: String): WeightChartBounds
+
+    @Query("""
+        SELECT CAST((julianday(dayKey) - :firstDay) / :daysPerBucket AS INTEGER) AS bucket,
+          AVG(kg) AS averageKg, MIN(kg) AS minimumKg, MAX(kg) AS maximumKg,
+          COUNT(*) AS measurementCount FROM body_weights
+        WHERE dayKey >= :fromDay AND julianday(dayKey) IS NOT NULL
+        GROUP BY bucket ORDER BY bucket ASC LIMIT 180
+    """)
+    suspend fun getWeightChart(fromDay: String, firstDay: Double, daysPerBucket: Int): List<WeightChartPoint>
 
     @Query("SELECT * FROM body_weights ORDER BY date ASC")
     suspend fun getAllWeights(): List<BodyWeightEntryEntity>

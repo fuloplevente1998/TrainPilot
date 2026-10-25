@@ -199,6 +199,9 @@
     <string name="weight_empty">Még nincs rögzített testsúly.</string>
     <string name="weight_chart_empty">A grafikonhoz legalább két mérés szükséges.</string>
     <string name="weight_read_failed">A testsúlynaplót nem sikerült betölteni.</string>
+    <string name="weight_retry">Újrapróbálás</string>
+    <string name="weight_measurements_total">Teljes napló: %1$d mérés</string>
+    <string name="weight_chart_averages">Csoportosított átlagok: %1$d mérés, %2$d nap/pont.</string>
     <string name="weight_min_max">Minimum / maximum: %1$s / %2$s kg</string>
     <string name="health_records_title">Egyedi egészségmérések</string>
     <string name="health_records_close">Bezárás</string>

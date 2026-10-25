@@ -199,6 +199,9 @@
     <string name="weight_empty">Nu există încă măsurări de greutate.</string>
     <string name="weight_chart_empty">Graficul necesită cel puțin două măsurări.</string>
     <string name="weight_read_failed">Jurnalul de greutate nu a putut fi încărcat.</string>
+    <string name="weight_retry">Reîncearcă</string>
+    <string name="weight_measurements_total">Jurnal complet: %1$d măsurători</string>
+    <string name="weight_chart_averages">Medii grupate: %1$d măsurători, %2$d zile pe punct.</string>
     <string name="weight_min_max">Minim / maxim: %1$s / %2$s kg</string>
     <string name="health_records_title">Măsurări individuale de sănătate</string>
     <string name="health_records_close">Închide</string>

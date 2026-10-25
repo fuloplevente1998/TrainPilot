@@ -119,6 +119,7 @@ dependencies {
     // Room Database
     implementation "androidx.room:room-runtime:${rootProject.ext.androidxRoomVersion}"
     implementation "androidx.room:room-ktx:${rootProject.ext.androidxRoomVersion}"
+    implementation "androidx.room:room-paging:${rootProject.ext.androidxRoomVersion}"
     kapt "androidx.room:room-compiler:${rootProject.ext.androidxRoomVersion}"
 
     // DataStore

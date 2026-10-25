@@ -114,12 +114,21 @@ class NativeWeightJournalRepositoryTest {
         repository.edit(old, 74.0)
         assertEquals(10001L, db.bodyWeightDao().getWeightById(old.id)!!.updatedAt)
     }
-    @Test fun chartRangeDoesNotRemoveOlderRowsFromTheEditableHistory() {
+    @Test fun chartRangeDoesNotRemoveOlderRowsFromTheEditableHistory() = runBlocking {
         val rows = listOf(row("old", "2025-01-01", 71.0), row("new", "2026-10-24", 72.0))
-        val state = WeightJournalUiState(entries = rows, range = "7")
-        assertEquals(listOf(rows.last()), state.chartEntries(LocalDate.parse("2026-10-24")))
-        assertEquals(rows, state.entries); assertEquals(71.0, state.startKg!!, .0001)
-        assertEquals(rows, state.copy(range = "all").chartEntries())
+        db.bodyWeightDao().upsertWeights(rows)
+        val selected = repository.overview("7", LocalDate.parse("2026-10-24"))
+        val state = WeightJournalUiState(overview = selected, range = "7")
+        assertEquals(1L, selected.chartMeasurementCount)
+        assertEquals(72.0, selected.chart.single().averageKg, .0001)
+        assertEquals(2L, selected.summary.measurementCount); assertEquals(71.0, state.startKg!!, .0001)
+        val source = db.bodyWeightDao().weightJournalPages()
+        try {
+            val result = source.load(androidx.paging.PagingSource.LoadParams.Refresh<Int>(null, 32, false))
+                as androidx.paging.PagingSource.LoadResult.Page<Int, BodyWeightEntryEntity>
+            assertEquals(rows.asReversed(), result.data)
+        } finally { source.invalidate() }
+        assertEquals(2L, repository.overview("all", LocalDate.parse("2026-10-24")).chartMeasurementCount)
     }
     @Test fun editedMeasurementRoundTripsThroughTheExistingBackupMapper() = runBlocking {
         val original = row(); db.bodyWeightDao().upsertWeight(original)
