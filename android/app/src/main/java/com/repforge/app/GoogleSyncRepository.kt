@@ -6,8 +6,6 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.SharedPreferences
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
-import com.google.android.gms.auth.api.identity.AuthorizationResult
-import com.google.android.gms.auth.api.identity.ClearTokenRequest
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.auth.api.identity.RevokeAccessRequest
 import com.google.android.gms.common.api.Scope
@@ -18,11 +16,14 @@ import com.repforge.app.data.migration.LegacyWebViewMigrator
 import com.repforge.app.data.store.TrainPilotSettingsStore
 import com.repforge.shared.GpsRoutePacket193
 import com.repforge.shared.LegacySyncIdentity18
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -64,9 +65,12 @@ sealed interface GoogleAuthOutcome {
  * Native replacement of GoogleSyncPlugin + #18 multi-device Drive merge engine.
  * Access tokens never leave this class (never written to prefs, backups, or logs).
  */
-class GoogleSyncRepository(context: Context) {
+class GoogleSyncRepository internal constructor(context: Context, private val operations: NativeGoogleOperationGate) {
+    constructor(context: Context) : this(context, processOperations)
+
     companion object {
         private const val PREFS_NAME = "repforge-google"
+        private val processOperations = NativeGoogleOperationGate()
         private const val LIMIT = 20 * 1024 * 1024
         private const val PHOTO_LIMIT = 6 * 1024 * 1024
         private const val MANAGED_CALENDAR_DESC = "RepForge managed workout calendar v1"
@@ -99,13 +103,14 @@ class GoogleSyncRepository(context: Context) {
     }
 
     fun refreshProfileState() {
-        val current = _uiState.value
         val loaded = loadInitialUiState()
-        _uiState.value = current.copy(
-            connectedEmail = loaded.connectedEmail,
-            connectedName = loaded.connectedName,
-            connectedSub = loaded.connectedSub
-        )
+        _uiState.update { current ->
+            if (current.connectedSub != loaded.connectedSub) loaded.copy(
+                isBusy = current.isBusy, activeOperation = current.activeOperation,
+                stageMessage = current.stageMessage, errorMessage = current.errorMessage)
+            else current.copy(connectedEmail = loaded.connectedEmail,
+                connectedName = loaded.connectedName, connectedSub = loaded.connectedSub)
+        }
     }
 
     private fun scopesForOperation(op: String): List<Scope> {
@@ -124,92 +129,89 @@ class GoogleSyncRepository(context: Context) {
         return scopes
     }
 
+    /** UI state is feedback only; atomic admission is shared by every repository instance. */
+    private suspend fun <T> runGoogleOperation(op: String, stage: String, operation: suspend () -> T): Result<T> {
+        return try {
+            operations.run {
+                refreshProfileState()
+                _uiState.update { it.copy(isBusy = true, activeOperation = op, stageMessage = stage, errorMessage = null) }
+                try {
+                    currentCoroutineContext().ensureActive()
+                    val value = operation()
+                    currentCoroutineContext().ensureActive()
+                    Result.success(value)
+                } catch (cancelled: CancellationException) { throw cancelled }
+                catch (e: Exception) {
+                    val message = formatError(e)
+                    _uiState.update { it.copy(errorMessage = message) }
+                    Result.failure(Exception(message, e))
+                } finally {
+                    _uiState.update { it.copy(isBusy = false, activeOperation = "", stageMessage = "") }
+                }
+            }
+        } catch (busy: NativeGoogleOperationGate.Busy) { Result.failure(busy) }
+    }
+
     suspend fun authorizeOperation(activity: Activity, op: String, silent: Boolean = false): GoogleAuthOutcome =
         withContext(Dispatchers.Main) {
-            val email = prefs().getString("email", "") ?: ""
-            if (op != "connect" && email.isEmpty()) {
-                return@withContext GoogleAuthOutcome.Failed("Előbb kapcsolódj a Google-fiókodhoz.")
-            }
-            val builder = AuthorizationRequest.builder().setRequestedScopes(scopesForOperation(op))
-            if (email.isNotEmpty()) {
-                builder.setAccount(Account(email, "com.google"))
-            }
-            try {
-                val result = Identity.getAuthorizationClient(activity).authorize(builder.build()).await()
-                if (result.hasResolution()) {
-                    if (silent) {
-                        GoogleAuthOutcome.Failed("Google-engedély szükséges. Indíts kézi szinkront.")
-                    } else {
-                        val pi = result.pendingIntent
-                        if (pi != null) GoogleAuthOutcome.NeedsResolution(pi)
-                        else GoogleAuthOutcome.Failed("Nem nyitható meg a Google-engedélykérés.")
-                    }
+            val result = runGoogleOperation<GoogleAuthOutcome>("authorize:$op", "Google-engedély ellenőrzése…") {
+                val email = prefs().getString("email", "").orEmpty()
+                if (op != "connect") NativeGoogleAccountPolicy.requireConnected(prefs().getString("sub", "").orEmpty(), email)
+                val builder = AuthorizationRequest.builder().setRequestedScopes(scopesForOperation(op))
+                if (email.isNotEmpty()) builder.setAccount(Account(email, "com.google"))
+                val authorization = Identity.getAuthorizationClient(activity).authorize(builder.build()).await()
+                if (authorization.hasResolution()) {
+                    if (silent) GoogleAuthOutcome.Failed("Google-engedély szükséges. Indíts kézi szinkront.")
+                    else authorization.pendingIntent?.let { GoogleAuthOutcome.NeedsResolution(it) }
+                        ?: GoogleAuthOutcome.Failed("Nem nyitható meg a Google-engedélykérés.")
                 } else {
-                    val token = result.accessToken
+                    val token = authorization.accessToken
                     if (token.isNullOrEmpty()) GoogleAuthOutcome.Failed("A Google nem adott hozzáférést.")
                     else GoogleAuthOutcome.Authorized(token)
                 }
-            } catch (_: Exception) {
-                GoogleAuthOutcome.Failed("A Google-kapcsolat nem sikerült. Ellenőrizd az internetet és a TrainPilot Google Cloud/OAuth beállítását.")
             }
+            result.getOrElse { GoogleAuthOutcome.Failed(it.message ?: "A Google-kapcsolat nem sikerült.") }
         }
 
     suspend fun completeConnectWithToken(accessToken: String): Result<JSONObject> = withContext(Dispatchers.IO) {
-        try {
-            val profile = verifyAndFetchProfile(accessToken)
-            val safe = JSONObject()
-                .put("sub", profile.getString("sub"))
-                .put("email", profile.getString("email"))
-                .put("name", profile.optString("name"))
-            prefs().edit()
-                .putString("profile", safe.toString())
-                .putString("email", profile.getString("email"))
-                .putString("sub", profile.getString("sub"))
-                .apply()
+        runGoogleOperation("connect", "Google-fiók ellenőrzése…") {
+            val profile = verifyAndFetchProfile(accessToken, connecting = true)
+            val safe = JSONObject().put("sub", profile.getString("sub"))
+                .put("email", profile.getString("email")).put("name", profile.optString("name"))
+            val editor = prefs().edit().putString("profile", safe.toString())
+                .putString("email", safe.getString("email")).putString("sub", safe.getString("sub"))
+            if (prefs().getString("sub", "") != safe.getString("sub")) editor.remove("calendar")
+            check(editor.commit()) { "A Google-fiók nem menthető." }
             refreshProfileState()
-            Result.success(safe)
-        } catch (e: Exception) {
-            Result.failure(Exception(formatError(e)))
+            safe
         }
     }
 
-    fun disconnect(): Result<Unit> {
-        if (_uiState.value.isBusy) {
-            return Result.failure(IllegalStateException("Várd meg a folyamatban lévő művelet végét."))
+    fun disconnect(): Result<Unit> = try {
+        operations.runNow {
+            check(prefs().edit().clear().commit()) { "A Google-fiók lekapcsolása nem menthető." }
+            _uiState.value = loadInitialUiState()
+            Result.success(Unit)
         }
-        prefs().edit().clear().apply()
-        refreshProfileState()
-        return Result.success(Unit)
-    }
+    } catch (e: Exception) { Result.failure(e) }
 
     suspend fun revokeAccess(activity: Activity): Result<Unit> = withContext(Dispatchers.Main) {
-        if (_uiState.value.isBusy) {
-            return@withContext Result.failure(IllegalStateException("Wait for the current Google operation to finish."))
-        }
-        val email = prefs().getString("email", "") ?: ""
-        if (email.isEmpty()) {
-            return@withContext Result.failure(IllegalStateException("Connect to Google first."))
-        }
-        val scopes = listOf(
-            Scope("openid"),
-            Scope("https://www.googleapis.com/auth/userinfo.email"),
-            Scope("https://www.googleapis.com/auth/userinfo.profile"),
-            Scope("https://www.googleapis.com/auth/drive.appdata"),
-            Scope("https://www.googleapis.com/auth/calendar.app.created"),
-            Scope("https://www.googleapis.com/auth/calendar.calendarlist.readonly")
-        )
-        try {
+        runGoogleOperation("revoke", "Google-engedély visszavonása…") {
+            val email = prefs().getString("email", "").orEmpty()
+            NativeGoogleAccountPolicy.requireConnected(prefs().getString("sub", "").orEmpty(), email)
+            val scopes = listOf(
+                Scope("openid"), Scope("https://www.googleapis.com/auth/userinfo.email"),
+                Scope("https://www.googleapis.com/auth/userinfo.profile"),
+                Scope("https://www.googleapis.com/auth/drive.appdata"),
+                Scope("https://www.googleapis.com/auth/calendar.app.created"),
+                Scope("https://www.googleapis.com/auth/calendar.calendarlist.readonly")
+            )
             Identity.getAuthorizationClient(activity).revokeAccess(
-                RevokeAccessRequest.builder()
-                    .setAccount(Account(email, "com.google"))
-                    .setScopes(scopes)
-                    .build()
+                RevokeAccessRequest.builder().setAccount(Account(email, "com.google")).setScopes(scopes).build()
             ).await()
-            prefs().edit().clear().apply()
+            currentCoroutineContext().ensureActive()
+            check(prefs().edit().clear().commit()) { "A Google-fiók lekapcsolása nem menthető." }
             refreshProfileState()
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(IOException("Google permission revocation failed. Retry online; access has not been reported as revoked.", e))
         }
     }
 
@@ -227,135 +229,123 @@ class GoogleSyncRepository(context: Context) {
         recoverEarlier: Boolean = false,
         preferPhoneOnConflict: Boolean = true
     ): Result<String> = withContext(Dispatchers.IO) {
-        if (_uiState.value.isBusy) {
-            return@withContext Result.failure(IllegalStateException("Már folyamatban van egy Google-művelet."))
-        }
-        if (ActiveWorkoutStore.current(appContext)?.optBoolean("active", false) == true) {
-            return@withContext Result.failure(IllegalStateException("Fejezd be az aktív edzést a felhőszinkron előtt."))
-        }
-        _uiState.value = _uiState.value.copy(isBusy = true, activeOperation = "drive", stageMessage = "Drive-fájlok lekérése…", errorMessage = null)
-        var photoStage: NativeCloudPhotoStage? = null
-        try {
-            val profile = verifyAndFetchProfile(accessToken)
-            val owner = profile.getString("sub")
-            val localData = migrator.exportBackupJson(includeHealthJournal = false)
-            val files = driveListInternal(accessToken)
-            val (currentFiles, archiveFiles) = selectSnapshots18(files)
-
-            val baseDoc = database.keyValueDocumentDao().getDocument("cloudBase:$owner")
-            val baseData = baseDoc?.json?.let { runCatching { JSONObject(it) }.getOrNull() }
-
-            val remotes = ArrayList<JSONObject>()
-            for (i in currentFiles.indices) {
-                _uiState.value = _uiState.value.copy(stageMessage = "Mentések olvasása (${i + 1}/${currentFiles.size})…")
-                val f = currentFiles[i]
-                val snap = driveReadInternal(accessToken, f.getString("id"), owner)
-                if (snap != null) remotes.add(snap)
+        runGoogleOperation("drive", "Drive-fájlok lekérése…") {
+            check(ActiveWorkoutStore.current(appContext)?.optBoolean("active", false) != true) {
+                "Fejezd be az aktív edzést a felhőszinkron előtt."
             }
+            var photoStage: NativeCloudPhotoStage? = null
+            try {
+                val profile = verifyAndFetchProfile(accessToken)
+                val owner = profile.getString("sub")
+                val localData = migrator.exportBackupJson(includeHealthJournal = false)
+                val files = driveListInternal(accessToken)
+                val (currentFiles, archiveFiles) = selectSnapshots18(files)
 
-            val archives = ArrayList<JSONObject>()
-            if (recoverEarlier && !silent) {
-                for (i in archiveFiles.indices) {
-                    _uiState.value = _uiState.value.copy(stageMessage = "Korábbi mentések vizsgálata (${i + 1}/${archiveFiles.size})…")
-                    val f = archiveFiles[i]
-                    val snap = runCatching { driveReadInternal(accessToken, f.getString("id"), owner) }.getOrNull()
-                    if (snap != null) archives.add(snap)
+                val baseDoc = database.keyValueDocumentDao().getDocument("cloudBase:$owner")
+                val baseData = baseDoc?.json?.let { runCatching { JSONObject(it) }.getOrNull() }
+
+                val remotes = ArrayList<JSONObject>()
+                for (i in currentFiles.indices) {
+                    _uiState.value = _uiState.value.copy(stageMessage = "Mentések olvasása (${i + 1}/${currentFiles.size})…")
+                    val f = currentFiles[i]
+                    val snap = driveReadInternal(accessToken, f.getString("id"), owner)
+                    if (snap != null) remotes.add(snap)
                 }
-            }
 
-            val tombstones = database.workoutHistoryDao().getAllTombstones()
-            val deletedIds = HashSet<String>()
-            val deletedKeys = HashSet<String>()
-            for (t in tombstones) {
-                if (t.workoutKey.isNotEmpty()) deletedKeys.add(t.workoutKey)
-                val arr = runCatching { JSONArray(t.idsJson) }.getOrNull()
-                if (arr != null) {
-                    for (j in 0 until arr.length()) deletedIds.add(arr.optString(j))
+                val archives = ArrayList<JSONObject>()
+                if (recoverEarlier && !silent) {
+                    for (i in archiveFiles.indices) {
+                        _uiState.value = _uiState.value.copy(stageMessage = "Korábbi mentések vizsgálata (${i + 1}/${archiveFiles.size})…")
+                        val f = archiveFiles[i]
+                        val snap = try { driveReadInternal(accessToken, f.getString("id"), owner) }
+                        catch (cancelled: CancellationException) { throw cancelled }
+                        catch (_: Exception) { null }
+                        if (snap != null) archives.add(snap)
+                    }
                 }
-            }
 
-            val merged = NativeBackupPrivacy.sanitize(mergeSync18(
-                local = localData,
-                remotes = remotes,
-                base = baseData,
-                archives = archives,
-                deletedHistoryIds = deletedIds,
-                deletedHistoryKeys = deletedKeys,
-                preferLocalOnConflict = preferPhoneOnConflict
-            ))
+                val tombstones = database.workoutHistoryDao().getAllTombstones()
+                val deletedIds = HashSet<String>()
+                val deletedKeys = HashSet<String>()
+                for (t in tombstones) {
+                    if (t.workoutKey.isNotEmpty()) deletedKeys.add(t.workoutKey)
+                    val arr = runCatching { JSONArray(t.idsJson) }.getOrNull()
+                    if (arr != null) {
+                        for (j in 0 until arr.length()) deletedIds.add(arr.optString(j))
+                    }
+                }
 
-            // Validate portable v144 favorites before any Drive upload or local replacement.
-            NativeExerciseFavorites.decode(merged.opt(NativeExerciseFavorites.KEY))
+                val merged = NativeBackupPrivacy.sanitize(mergeSync18(
+                    local = localData,
+                    remotes = remotes,
+                    base = baseData,
+                    archives = archives,
+                    deletedHistoryIds = deletedIds,
+                    deletedHistoryKeys = deletedKeys,
+                    preferLocalOnConflict = preferPhoneOnConflict
+                ))
 
-            // Network work may only touch private staged files; errors must not become a successful sync.
-            _uiState.value = _uiState.value.copy(stageMessage = "Edzésfotók szinkronizálása…")
-            val stagedPhotos = NativeCloudPhotoStage(appContext, merged).also { photoStage = it }
-            stagedPhotos.prepare(upload = { id, file -> writeDrivePhotoInternal(accessToken, id, file) },
-                download = { id, driveId, file -> readDrivePhotoInternal(accessToken, id, driveId, file) })
+                // Validate portable v144 favorites before any Drive upload or local replacement.
+                NativeExerciseFavorites.decode(merged.opt(NativeExerciseFavorites.KEY))
 
-            val deviceId = settingsStore.ensureCloudDeviceId()
-            val mergedCanonical = LegacySyncIdentity18.canonical(merged)
-            val baseCanonical = baseData?.let { LegacySyncIdentity18.canonical(it) }
+                // Network work may only touch private staged files; errors must not become a successful sync.
+                _uiState.value = _uiState.value.copy(stageMessage = "Edzésfotók szinkronizálása…")
+                val stagedPhotos = NativeCloudPhotoStage(appContext, merged).also { photoStage = it }
+                stagedPhotos.prepare(upload = { id, file -> writeDrivePhotoInternal(accessToken, id, file) },
+                    download = { id, driveId, file -> readDrivePhotoInternal(accessToken, id, driveId, file) })
 
-            if (baseCanonical == null || mergedCanonical != baseCanonical || files.length() == 0) {
-                _uiState.value = _uiState.value.copy(stageMessage = "Felhőmentés feltöltése és ellenőrzése…")
-                val envelope = JSONObject()
-                    .put("app", "RepForgeSync")
-                    .put("schema", 1)
-                    .put("owner", owner)
-                    .put("device", deviceId)
-                    .put("data", merged)
-                writeSnapshotInternal(accessToken, owner, deviceId, envelope)
-            }
+                val deviceId = settingsStore.ensureCloudDeviceId()
+                val mergedCanonical = LegacySyncIdentity18.canonical(merged)
+                val baseCanonical = baseData?.let { LegacySyncIdentity18.canonical(it) }
 
-            val nowIso = Instant.now().toString()
-            NativeDataReplacement.exclusively(appContext) {
-                // Network work intentionally occurs without holding the workout-start fence.
-                // Revalidate the actual local content; a count-only comparison misses edits/deletions.
-                NativeCloudMergeGuard.requireUnchanged(localData, migrator.exportBackupJson(includeHealthJournal = false))
-                BackupRestoreManager(appContext).installCloudMerge(merged, stagedPhotos)
-                database.keyValueDocumentDao().putDocument(
-                    KeyValueDocumentEntity("cloudBase:$owner", merged.toString(), System.currentTimeMillis()))
-            }
+                if (baseCanonical == null || mergedCanonical != baseCanonical || files.length() == 0) {
+                    _uiState.value = _uiState.value.copy(stageMessage = "Felhőmentés feltöltése és ellenőrzése…")
+                    val envelope = JSONObject()
+                        .put("app", "RepForgeSync")
+                        .put("schema", 1)
+                        .put("owner", owner)
+                        .put("device", deviceId)
+                        .put("data", merged)
+                    writeSnapshotInternal(accessToken, owner, deviceId, envelope)
+                }
 
-            // Deleted photo IDs remain in durable metadata if a network deletion fails; retry is idempotent.
-            stagedPhotos.finishRemoteDeletes { id, driveId -> deleteDrivePhotoInternal(accessToken, id, driveId) }
-            NativeDataReplacement.mutate(appContext) {
-                database.keyValueDocumentDao().putDocument(
-                    KeyValueDocumentEntity("cloudStatus", JSONObject().put("drive", nowIso).toString(), System.currentTimeMillis()))
-            }
+                val nowIso = Instant.now().toString()
+                NativeDataReplacement.exclusively(appContext) {
+                    // Network work intentionally occurs without holding the workout-start fence.
+                    // Revalidate the actual local content; a count-only comparison misses edits/deletions.
+                    NativeCloudMergeGuard.requireUnchanged(localData, migrator.exportBackupJson(includeHealthJournal = false))
+                    BackupRestoreManager(appContext).installCloudMerge(merged, stagedPhotos)
+                    database.keyValueDocumentDao().putDocument(
+                        KeyValueDocumentEntity("cloudBase:$owner", merged.toString(), System.currentTimeMillis()))
+                }
 
-            if (recoverEarlier) {
-                _uiState.value = _uiState.value.copy(stageMessage = "Régi mentések karbantartása…")
-                runCatching { pruneSnapshotsInternal(accessToken, owner, deviceId) }
-            }
+                // Deleted photo IDs remain in durable metadata if a network deletion fails; retry is idempotent.
+                stagedPhotos.finishRemoteDeletes { id, driveId -> deleteDrivePhotoInternal(accessToken, id, driveId) }
+                NativeDataReplacement.mutate(appContext) {
+                    database.keyValueDocumentDao().putDocument(
+                        KeyValueDocumentEntity("cloudStatus", JSONObject().put("drive", nowIso).toString(), System.currentTimeMillis()))
+                }
 
-            WearSyncRepository.publishWatchHomeSnapshot(appContext)
-            _uiState.value = _uiState.value.copy(
-                isBusy = false,
-                activeOperation = "",
-                stageMessage = "",
-                lastDriveSyncIso = nowIso,
-                errorMessage = null
-            )
-            Result.success(nowIso)
-        } catch (cancelled: kotlinx.coroutines.CancellationException) {
-            _uiState.value = _uiState.value.copy(isBusy = false, activeOperation = "", stageMessage = "")
-            throw cancelled
-        } catch (e: Exception) {
-            val msg = formatError(e)
-            _uiState.value = _uiState.value.copy(isBusy = false, activeOperation = "", stageMessage = "", errorMessage = msg)
-            Result.failure(Exception(msg, e))
-        } finally { photoStage?.close() }
+                if (recoverEarlier) {
+                    _uiState.value = _uiState.value.copy(stageMessage = "Régi mentések karbantartása…")
+                    try { pruneSnapshotsInternal(accessToken, owner, deviceId) }
+                    catch (cancelled: CancellationException) { throw cancelled }
+                    catch (_: Exception) { /* Optional retention; the verified snapshot stays authoritative. */ }
+                }
+
+                WearSyncRepository.publishWatchHomeSnapshot(appContext)
+                _uiState.value = _uiState.value.copy(
+                    lastDriveSyncIso = nowIso,
+                    errorMessage = null
+                )
+                nowIso
+            } finally { photoStage?.close() }
+        }
     }
 
     /** Syncs scheduled workouts with the TrainPilot-managed Google Calendar (`rf[0-9a-f]{64}` IDs). */
     suspend fun syncCalendarCloud(accessToken: String): Result<Int> = withContext(Dispatchers.IO) {
-        if (_uiState.value.isBusy) {
-            return@withContext Result.failure(IllegalStateException("Már folyamatban van egy Google-művelet."))
-        }
-        _uiState.value = _uiState.value.copy(isBusy = true, activeOperation = "calendar", stageMessage = "Naptár szinkronizálása…", errorMessage = null)
-        try {
+        runGoogleOperation("calendar", "Naptár szinkronizálása…") {
             verifyAndFetchProfile(accessToken)
             val calendarId = ensureManagedCalendar(accessToken)
             val entries = database.calendarScheduleDao().getAllEntries()
@@ -378,39 +368,31 @@ class GoogleSyncRepository(context: Context) {
             }
             val nowIso = Instant.now().toString()
             _uiState.value = _uiState.value.copy(
-                isBusy = false,
-                activeOperation = "",
-                stageMessage = "",
                 lastCalendarSyncIso = nowIso,
                 errorMessage = null
             )
-            Result.success(count)
-        } catch (e: Exception) {
-            val msg = formatError(e)
-            _uiState.value = _uiState.value.copy(isBusy = false, activeOperation = "", stageMessage = "", errorMessage = msg)
-            Result.failure(Exception(msg, e))
+            count
         }
     }
 
     suspend fun deleteAllDriveAppData(accessToken: String): Result<Int> = withContext(Dispatchers.IO) {
-        try {
+        runGoogleOperation("drive-delete", "Felhőadatok törlése…") {
             verifyAndFetchProfile(accessToken)
             val files = appFiles(accessToken, "name contains 'repforge-sync-' or name contains 'trainpilot-photo-'")
             var count = 0
             for (i in 0 until files.length()) {
+                currentCoroutineContext().ensureActive()
                 val f = files.getJSONObject(i)
                 if (!APP_FILE_REGEX.matches(f.optString("name"))) continue
                 request(accessToken, "DELETE", "https://www.googleapis.com/drive/v3/files/${enc(f.getString("id"))}", null)
                 count++
             }
-            Result.success(count)
-        } catch (e: Exception) {
-            Result.failure(Exception(formatError(e), e))
+            count
         }
     }
 
     suspend fun deleteManagedCalendars(accessToken: String): Result<Int> = withContext(Dispatchers.IO) {
-        try {
+        runGoogleOperation("calendar-delete", "Edzésnaptárak törlése…") {
             verifyAndFetchProfile(accessToken)
             var page = ""
             val ids = ArrayList<String>()
@@ -435,16 +417,15 @@ class GoogleSyncRepository(context: Context) {
             } while (page.isNotEmpty())
 
             for (id in ids) {
+                currentCoroutineContext().ensureActive()
                 try {
                     request(accessToken, "DELETE", "https://www.googleapis.com/calendar/v3/calendars/${enc(id)}", null)
                 } catch (e: ApiError) {
                     if (e.code != 404 && e.code != 410) throw e
                 }
             }
-            prefs().edit().remove("calendar").apply()
-            Result.success(ids.size)
-        } catch (e: Exception) {
-            Result.failure(Exception(formatError(e), e))
+            check(prefs().edit().remove("calendar").commit()) { "A Google-naptár törlése nem menthető." }
+            ids.size
         }
     }
 
@@ -786,15 +767,12 @@ class GoogleSyncRepository(context: Context) {
     // Low-Level HTTP & Drive / Calendar Transport
     // =========================================================================
 
-    private fun verifyAndFetchProfile(accessToken: String): JSONObject {
+    private fun verifyAndFetchProfile(accessToken: String, connecting: Boolean = false): JSONObject {
+        val sub = prefs().getString("sub", "").orEmpty()
+        val email = prefs().getString("email", "").orEmpty()
+        if (!connecting) NativeGoogleAccountPolicy.requireConnected(sub, email)
         val profile = request(accessToken, "GET", "https://www.googleapis.com/oauth2/v3/userinfo", null)
-        if (profile.optString("sub").isEmpty() || profile.optString("email").isEmpty()) {
-            throw IOException("Hiányos Google-profil.")
-        }
-        val owner = prefs().getString("sub", "") ?: ""
-        if (owner.isNotEmpty() && owner != profile.getString("sub")) {
-            throw IOException("Eltérő Google-fiók. Előbb jelentkezz ki.")
-        }
+        NativeGoogleAccountPolicy.requireMatchingProfile(sub, email, profile, connecting)
         return profile
     }
 
