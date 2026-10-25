@@ -51,8 +51,8 @@ internal fun NativeTrainingModePicker(
     val effective = remember(raw, scope, programId, activeProgramId) {
         NativeTrainingModes.resolveSavedJson(raw, if (scope == "global") activeProgramId else programId)
     }
-    var style by remember(raw, scope, programId) { mutableStateOf(effective.trainingStyle) }
-    var progression by remember(raw, scope, programId) { mutableStateOf(effective.progressionMode) }
+    var style by remember(raw, scope, programId, activeProgramId) { mutableStateOf(effective.trainingStyle) }
+    var progression by remember(raw, scope, programId, activeProgramId) { mutableStateOf(effective.progressionMode) }
     var pending by remember(raw, scope, programId, activeProgramId) {
         mutableStateOf<NativeTrainingModeChange.Preview?>(null)
     }
