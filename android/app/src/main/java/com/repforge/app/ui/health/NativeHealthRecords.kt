@@ -11,12 +11,28 @@ internal data class HealthRecordCursor(val id: Long, val time: Long) {
 }
 internal data class HealthRecordQuery(val day: LocalDate, val channel: String = "journal",
     val source: String = "", val type: String = "", val cursor: HealthRecordCursor? = null,
-    val generation: Long? = null) {
+    val generation: Long? = null,
+    // Appended to keep existing positional and named single-day callers source-compatible.
+    val endDay: LocalDate = day) {
+    val fromDay: LocalDate get() = day
+    val toDay: LocalDate get() = endDay
+
     init {
+        // Match HealthJournalStore.page's inclusive yyyy-MM-dd period contract.
+        require(HealthJournalStore.validDay(fromDay.toString()) && HealthJournalStore.validDay(toDay.toString()) &&
+            !toDay.isBefore(fromDay)) { "Invalid health period" }
         require(channel in setOf("journal", HealthJournalStore.HC, HealthJournalStore.SAMSUNG, HealthJournalStore.LEGACY, HealthJournalStore.BLE))
         require(source.length <= 255 && type.length <= 80)
         require(cursor == null || generation != null)
     }
+
+    /** Filter changes always start a new 25-row cursor/generation scope. */
+    fun withRange(from: LocalDate, to: LocalDate): HealthRecordQuery =
+        copy(day = from, endDay = to, cursor = null, generation = null)
+
+    fun withFilters(channel: String = this.channel, source: String = this.source,
+        type: String = this.type): HealthRecordQuery =
+        copy(channel = channel, source = source, type = type, cursor = null, generation = null)
 }
 internal data class HealthRecordRow(val id: String, val channel: String, val source: String,
     val type: String, val startMs: Long, val endMs: Long, val modifiedMs: Long, val data: String)
@@ -32,7 +48,7 @@ internal class NativeHealthRecords(private val store: HealthJournalStore) {
         val generation = store.generation()
         if (store.pendingRestore().isNotEmpty() || (query.generation != null && query.generation != generation))
             throw ReplacedJournal()
-        val result = store.page(query.day.toString(), query.day.toString(), query.channel, query.source,
+        val result = store.page(query.fromDay.toString(), query.toDay.toString(), query.channel, query.source,
             query.cursor?.id ?: 0L, query.cursor?.time ?: 0L, PAGE_SIZE, query.type, false)
         if (generation != store.generation() || store.pendingRestore().isNotEmpty()) throw ReplacedJournal()
         val records = result.getJSONArray("records")
