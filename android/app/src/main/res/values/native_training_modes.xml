@@ -47,4 +47,15 @@
     <string name="native_modes_reason_missing_load_step">Nem ismert biztonságos, elérhető súlylépcső.</string>
     <string name="native_modes_reason_invalid_mode">A kiválasztott mód nem támogatott.</string>
     <string name="native_modes_reason_hit">HIT-inspirált előnézet; kevesebb sorozat csak javaslat.</string>
+    <string name="native_modes_coach_open">Coach-javaslat megtekintése</string>
+    <string name="native_modes_coach_preview">Csak javaslat; még nem alkalmazva</string>
+    <string name="native_modes_coach_history">Megfelelő edzéselőzmények: %1$d</string>
+    <string name="native_modes_coach_weight">Korábbi súly: %1$s → javasolt: %2$s</string>
+    <string name="native_modes_coach_apply">Javasolt súly jóváhagyása</string>
+    <string name="native_modes_coach_confirm">Biztosan módosítod a még érintetlen sorozatok súlyát?</string>
+    <string name="native_modes_coach_blocked">A javaslat elavult, a cél szerkesztett/teljesített, vagy már nem a telefon vezérli. Nincs módosítás.</string>
+    <string name="native_modes_coach_done">Súly módosítva a natív szerkesztőben.</string>
+    <string name="native_modes_coach_no_action">Nincs biztonságosan alkalmazható súlyemelés.</string>
+    <string name="native_modes_coach_review">Súlyjavaslat ellenőrzése</string>
+    <string name="native_modes_coach_cancel">Mégse</string>
 </resources>
