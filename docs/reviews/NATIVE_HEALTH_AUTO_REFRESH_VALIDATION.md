@@ -48,3 +48,9 @@ The native compiler's subsequent detailed diagnostics located the real source-le
 ### Fourth native build result and UI test API repairs
 
 Existing native gate `40234213957` compiled the phone application and Wear debug sources, then failed at `:app:compileDebugAndroidTestKotlin`. Independent source errors: unsupported explicit `assertExists`/`assertDoesNotExist` top-level imports in two UI tests and a `ComposeContentTestRule`-vs-`ComposeTestRule` helper signature that disagreed with `createEmptyComposeRule()`. These were corrected in test sources only, preserving all scenarios. Fifth gate checks those fixes.
+
+### Fifth gate test-compilation result
+
+The fifth native gate `40234621721` successfully compiled **both debug phone/Wear app source and the Compose Android instrumentation APK**; it then failed in `:app:compileDebugUnitTestKotlin` because existing `NativeProfileHistory128Test.kt` referenced a removed `ProgramDayEntity.id` instead of `compositeId`, and a `this.id` inside `runBlocking` resolved to its coroutine scope rather than the test fixture. Fixed the two exact test references without weakening assertions. A new gate is needed for actual test execution.
+
+Additional consent lifecycle hardening keeps a manually requested Samsung permission flow alive across a transient external permission activity's STOP, while destination disposal always cancels it.
