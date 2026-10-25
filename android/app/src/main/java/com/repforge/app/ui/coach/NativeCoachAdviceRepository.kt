@@ -64,7 +64,10 @@ internal class NativeCoachAdviceRepository(private val db: TrainPilotDatabase) {
             CoachExerciseAdvice(id, name, NativeCoachExerciseAdvice.forCoach(recommendation, lastEffort, readiness),
                 load, preview, buildString {
                     append(raw.toString()); append("\\u001f")
+                    append(lib.toString()); append("\\u001f")
                     append(rx.toString()); append("\\u001f")
+                    append(step); append("\\u001f")
+                    append(settings.progressionSteps.toSortedMap().toString()); append("\\u001f")
                     rows.forEach { (workout, exercise) ->
                         append(workout.toString()); append("\\u001e"); append(exercise.toString()); append("\\u001f")
                     }
