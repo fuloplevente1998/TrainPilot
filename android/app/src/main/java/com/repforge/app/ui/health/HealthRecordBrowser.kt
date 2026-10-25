@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -23,6 +24,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -69,6 +71,10 @@ internal fun HealthRecordBrowser(day: String, channel: String, type: String, lan
     var reloadToken by remember(day, channel, type) { mutableStateOf(0) }
     var draftFrom by remember(day, channel, type) { mutableStateOf(LocalDate.parse(day)) }
     var draftTo by remember(day, channel, type) { mutableStateOf(LocalDate.parse(day)) }
+    var activePicker by remember { mutableStateOf<DatePickerDialog?>(null) }
+    DisposableEffect(context, language, day, channel, type) {
+        onDispose { activePicker?.dismiss(); activePicker = null }
+    }
     val validRange = !draftFrom.isAfter(draftTo) &&
         HealthJournalStore.validDay(draftFrom.toString()) && HealthJournalStore.validDay(draftTo.toString())
     val rangeChanged = draftFrom != query.fromDay || draftTo != query.toDay
@@ -119,10 +125,18 @@ internal fun HealthRecordBrowser(day: String, channel: String, type: String, lan
     }
 
     fun pickDate(selected: LocalDate, update: (LocalDate) -> Unit) {
-        DatePickerDialog(context, { _, year, month, pickedDay ->
+        activePicker?.dismiss()
+        // Keep the Activity window token/theme while using the app-selected language.
+        val pickerContext = android.view.ContextThemeWrapper(context, context.theme).apply {
+            applyOverrideConfiguration(resources.configuration)
+        }
+        val picker = DatePickerDialog(pickerContext, { _, year, month, pickedDay ->
             runCatching { LocalDate.of(year, month + 1, pickedDay) }
                 .getOrNull()?.takeIf { HealthJournalStore.validDay(it.toString()) }?.let(update)
-        }, selected.year, selected.monthValue - 1, selected.dayOfMonth).show()
+        }, selected.year, selected.monthValue - 1, selected.dayOfMonth)
+        picker.setOnDismissListener { if (activePicker === picker) activePicker = null }
+        activePicker = picker
+        picker.show()
     }
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Column(Modifier.fillMaxSize().background(colors.bg).padding(16.dp).testTag("health_record_browser")) {
@@ -144,22 +158,22 @@ internal fun HealthRecordBrowser(day: String, channel: String, type: String, lan
                 Column(Modifier.weight(1f)) {
                     Text(resources.getString(R.string.health_range_from), color = colors.muted)
                     OutlinedButton(onClick = { pickDate(draftFrom) { draftFrom = it } },
-                        modifier = Modifier.fillMaxWidth().testTag("health_range_from")) {
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("health_range_from")) {
                         Text(draftFrom.toString())
                     }
                 }
                 Column(Modifier.weight(1f)) {
                     Text(resources.getString(R.string.health_range_to), color = colors.muted)
                     OutlinedButton(onClick = { pickDate(draftTo) { draftTo = it } },
-                        modifier = Modifier.fillMaxWidth().testTag("health_range_to")) {
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("health_range_to")) {
                         Text(draftTo.toString())
                     }
                 }
             }
             if (!validRange) Text(resources.getString(R.string.health_range_invalid),
-                color = colors.danger, modifier = Modifier.testTag("health_range_error"))
+                color = colors.dangerText, modifier = Modifier.testTag("health_range_error"))
             TextButton(onClick = ::applyRange, enabled = validRange && rangeChanged,
-                modifier = Modifier.testTag("health_range_apply")) {
+                modifier = Modifier.heightIn(min = 48.dp).testTag("health_range_apply")) {
                 Text(resources.getString(R.string.health_range_apply))
             }
             if (loading) Text(resources.getString(R.string.health_history_loading), color = colors.muted)

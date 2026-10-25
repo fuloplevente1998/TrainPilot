@@ -51,6 +51,13 @@ class NativeHealthDateRangeUiTest {
         assertTrue(context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0)
         context.stopService(Intent(context, IntervalTimerService::class.java))
         context.stopService(Intent(context, DistanceTrackingService::class.java))
+        instrumentation.waitForIdleSync()
+        instrumentation.runOnMainSync {
+            val field = PhoneWorkoutExecution::class.java.getDeclaredField("store").apply { isAccessible = true }
+            (field.get(null) as? PhoneWorkoutExecutionStore)?.close(); field.set(null, null)
+            context.deleteDatabase(PhoneWorkoutExecutionStore.DATABASE)
+            ActiveWorkoutStore.clear(context)
+        }
         NativeReplacementJournal(context).clear()
         context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE).edit().clear().commit()
         runBlocking(Dispatchers.IO) {
@@ -117,6 +124,9 @@ class NativeHealthDateRangeUiTest {
         openBrowser()
         compose.onNodeWithText("From date").assertExists()
         compose.onNodeWithText("To date").assertExists()
+        compose.waitUntil(15000) {
+            compose.onAllNodesWithTag("health_record_today").fetchSemanticsNodes().isNotEmpty()
+        }
         compose.onNodeWithTag("health_record_today").assertExists()
         compose.onNodeWithTag("health_record_yesterday").assertDoesNotExist()
 
