@@ -1,0 +1,366 @@
+{
+  "source": {
+    "commit": "7473b30",
+    "appBlob": "b5567576bed9a8f93608a6bf1ed8db1dee4723f4",
+    "indexBlob": "a5d5011fc5c7d45815f7eb0ddf401a9e17fc9a5a"
+  },
+  "cases": [
+    {
+      "name": "main-plan-0",
+      "profile": {
+        "age": 30,
+        "height": 175,
+        "weight": 75,
+        "goal": "fitness",
+        "activity": "mixed",
+        "location": "home",
+        "cadence": "alternate",
+        "split": "auto",
+        "focus": "balanced",
+        "avoidAreas": [],
+        "minutes": 90,
+        "gear": [
+          "dumbbells",
+          "barbell",
+          "bench"
+        ],
+        "experience": "intermediate",
+        "excluded": [],
+        "templateId": "home-basic"
+      },
+      "days": [
+        {
+          "id": "A",
+          "exercises": [
+            "goblet-squat",
+            "db-floor-press",
+            "barbell-row",
+            "db-rdl",
+            "db-ohp",
+            "db-curl",
+            "side-plank"
+          ]
+        },
+        {
+          "id": "B",
+          "exercises": [
+            "bulgarian-split-squat",
+            "barbell-row",
+            "pushup",
+            "db-pullover",
+            "lateral-raise",
+            "oh-triceps",
+            "crunch"
+          ]
+        }
+      ],
+      "estimate": 33
+    },
+    {
+      "name": "main-plan-1",
+      "profile": {
+        "age": 30,
+        "height": 175,
+        "weight": 75,
+        "goal": "fitness",
+        "activity": "mixed",
+        "location": "home",
+        "cadence": "alternate",
+        "split": "auto",
+        "focus": "balanced",
+        "avoidAreas": [],
+        "minutes": 90,
+        "gear": [
+          "dumbbells",
+          "barbell",
+          "bench"
+        ],
+        "experience": "intermediate",
+        "excluded": [],
+        "templateId": "home-level2"
+      },
+      "days": [
+        {
+          "id": "A",
+          "exercises": [
+            "db-front-squat",
+            "db-floor-press",
+            "barbell-row",
+            "db-rdl",
+            "db-ohp",
+            "hammer-curl",
+            "side-plank"
+          ]
+        },
+        {
+          "id": "B",
+          "exercises": [
+            "bulgarian-split-squat",
+            "barbell-row",
+            "decline-pushup",
+            "db-pullover",
+            "lateral-raise",
+            "oh-triceps",
+            "crunch"
+          ]
+        }
+      ],
+      "estimate": 33
+    },
+    {
+      "name": "main-plan-2",
+      "profile": {
+        "age": 30,
+        "height": 175,
+        "weight": 75,
+        "goal": "fitness",
+        "activity": "mixed",
+        "location": "home",
+        "cadence": "alternate",
+        "split": "auto",
+        "focus": "balanced",
+        "avoidAreas": [],
+        "minutes": 90,
+        "gear": [
+          "dumbbells",
+          "barbell"
+        ],
+        "experience": "intermediate",
+        "excluded": [],
+        "templateId": "home-level2"
+      },
+      "days": [
+        {
+          "id": "A",
+          "exercises": [
+            "db-front-squat",
+            "db-floor-press",
+            "barbell-row",
+            "db-rdl",
+            "db-ohp",
+            "hammer-curl",
+            "side-plank"
+          ]
+        },
+        {
+          "id": "B",
+          "exercises": [
+            "lunge-jump",
+            "barbell-row",
+            "diamond-pushup",
+            "db-pullover",
+            "lateral-raise",
+            "oh-triceps",
+            "crunch"
+          ]
+        }
+      ],
+      "estimate": 33
+    },
+    {
+      "name": "main-plan-3",
+      "profile": {
+        "age": 30,
+        "height": 175,
+        "weight": 75,
+        "goal": "fitness",
+        "activity": "mixed",
+        "location": "home",
+        "cadence": "alternate",
+        "split": "auto",
+        "focus": "balanced",
+        "avoidAreas": [],
+        "minutes": 20,
+        "gear": [
+          "dumbbells",
+          "barbell"
+        ],
+        "experience": "beginner",
+        "excluded": [],
+        "templateId": "home-basic"
+      },
+      "days": [
+        {
+          "id": "A",
+          "exercises": [
+            "goblet-squat",
+            "db-floor-press",
+            "db-rdl"
+          ]
+        },
+        {
+          "id": "B",
+          "exercises": [
+            "bodyweight-squat",
+            "pushup",
+            "db-pullover"
+          ]
+        }
+      ],
+      "estimate": 17
+    },
+    {
+      "name": "main-plan-4",
+      "profile": {
+        "age": 30,
+        "height": 175,
+        "weight": 75,
+        "goal": "fitness",
+        "activity": "mixed",
+        "location": "home",
+        "cadence": "alternate",
+        "split": "auto",
+        "focus": "balanced",
+        "avoidAreas": [],
+        "minutes": 90,
+        "gear": [],
+        "experience": "beginner",
+        "excluded": [],
+        "templateId": "home-basic"
+      },
+      "days": [
+        {
+          "id": "A",
+          "exercises": [
+            "bodyweight-squat",
+            "incline-pushup",
+            "glute-bridge",
+            "side-plank"
+          ]
+        },
+        {
+          "id": "B",
+          "exercises": [
+            "bodyweight-squat",
+            "pushup",
+            "crunch"
+          ]
+        }
+      ],
+      "estimate": 21
+    },
+    {
+      "name": "main-plan-5",
+      "profile": {
+        "age": 30,
+        "height": 175,
+        "weight": 75,
+        "goal": "fitness",
+        "activity": "mixed",
+        "location": "home",
+        "cadence": "alternate",
+        "split": "auto",
+        "focus": "balanced",
+        "avoidAreas": [],
+        "minutes": 60,
+        "gear": [
+          "dumbbells",
+          "barbell"
+        ],
+        "experience": "intermediate",
+        "excluded": [
+          "barbell-row"
+        ],
+        "templateId": "home-basic"
+      },
+      "days": [
+        {
+          "id": "A",
+          "exercises": [
+            "goblet-squat",
+            "db-floor-press",
+            "db-rdl",
+            "db-ohp",
+            "db-pullover",
+            "db-curl"
+          ]
+        },
+        {
+          "id": "B",
+          "exercises": [
+            "lunge-jump",
+            "pushup",
+            "db-pullover",
+            "lateral-raise",
+            "oh-triceps",
+            "crunch"
+          ]
+        }
+      ],
+      "estimate": 29
+    },
+    {
+      "name": "main-plan-6",
+      "profile": {
+        "age": 30,
+        "height": 175,
+        "weight": 75,
+        "goal": "fitness",
+        "activity": "mixed",
+        "location": "home",
+        "cadence": "alternate",
+        "split": "auto",
+        "focus": "balanced",
+        "avoidAreas": [],
+        "minutes": 60,
+        "gear": [
+          "barbell"
+        ],
+        "experience": "intermediate",
+        "excluded": [],
+        "templateId": "home-level2"
+      },
+      "days": [
+        {
+          "id": "A",
+          "exercises": [
+            "lunge-jump",
+            "diamond-pushup",
+            "barbell-row",
+            "glute-bridge",
+            "pike-pushup",
+            "side-plank"
+          ]
+        },
+        {
+          "id": "B",
+          "exercises": [
+            "lunge-jump",
+            "barbell-row",
+            "diamond-pushup",
+            "pike-pushup",
+            "crunch"
+          ]
+        }
+      ],
+      "estimate": 30
+    },
+    {
+      "name": "main-plan-7",
+      "profile": {
+        "age": 30,
+        "height": 175,
+        "weight": 75,
+        "goal": "fitness",
+        "activity": "mixed",
+        "location": "home",
+        "cadence": "alternate",
+        "split": "auto",
+        "focus": "balanced",
+        "avoidAreas": [],
+        "minutes": 90,
+        "gear": [],
+        "experience": "beginner",
+        "excluded": [
+          "pushup",
+          "modified-pushup",
+          "incline-pushup",
+          "squat",
+          "air-squat"
+        ],
+        "templateId": "home-basic"
+      },
+      "rejected": true
+    }
+  ]
+}
