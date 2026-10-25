@@ -47,4 +47,15 @@
     <string name="native_modes_reason_missing_load_step">Nu există un pas de greutate disponibil și sigur.</string>
     <string name="native_modes_reason_invalid_mode">Modul selectat nu este acceptat.</string>
     <string name="native_modes_reason_hit">Previzualizare HIT; seriile reduse sunt doar o propunere.</string>
+    <string name="native_modes_coach_open">Vezi propunerea Coach</string>
+    <string name="native_modes_coach_preview">Doar propunere, neaplicată</string>
+    <string name="native_modes_coach_history">Antrenamente potrivite: %1$d</string>
+    <string name="native_modes_coach_weight">Greutate anterioară: %1$s → propusă: %2$s</string>
+    <string name="native_modes_coach_apply">Aprobă greutatea propusă</string>
+    <string name="native_modes_coach_confirm">Modifici doar greutatea seriilor neatinse?</string>
+    <string name="native_modes_coach_blocked">Propunerea este veche, seria modificată/încheiată sau ceasul controlează. Nicio modificare.</string>
+    <string name="native_modes_coach_done">Greutate actualizată prin editorul nativ.</string>
+    <string name="native_modes_coach_no_action">Nu există creștere sigură aplicabilă.</string>
+    <string name="native_modes_coach_review">Verifică propunerea</string>
+    <string name="native_modes_coach_cancel">Anulează</string>
 </resources>
