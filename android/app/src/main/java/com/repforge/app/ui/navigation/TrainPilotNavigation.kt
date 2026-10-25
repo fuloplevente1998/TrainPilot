@@ -292,7 +292,7 @@ fun TrainPilotAppScaffold(
                     CoachScreen(starting = starting,
                         onStart = { programId, dayId, scheduleId -> startWorkout(programId, dayId, scheduleId) },
                         onCalendar = { selectDestination("calendar") }, onHealth = { selectDestination("health") },
-                        onProgress = { selectDestination("progress") })
+                        onProgress = { selectDestination("progress") }, onPrograms = { selectDestination("programs") })
                 }
                 composable("calendar") {
                     CalendarScreen(starting = starting,

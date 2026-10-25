@@ -252,4 +252,10 @@
     <string name="health_background_bluetooth_permission">Bluetooth connection permission is required.</string>
     <string name="health_background_notification_permission">Notification permission is required for the BLE foreground service.</string>
     <string name="health_background_bluetooth_off">Turn on Bluetooth.</string>
+    <string name="coach_variation_preview">Preview variation</string>
+    <string name="coach_variation_save">Save as new program</string>
+    <string name="coach_variation_notice">Creates a separate program copy. The previous program and journal remain. Activate the new program separately in Programs.</string>
+    <string name="coach_variation_saved">New program copy saved.</string>
+    <string name="coach_variation_failed">The suggestion cannot be applied or data changed. Open a fresh preview.</string>
+    <string name="coach_variation_programs">Open programs</string>
 </resources>

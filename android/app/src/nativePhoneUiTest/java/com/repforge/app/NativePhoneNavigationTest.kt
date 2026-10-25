@@ -740,6 +740,46 @@ class NativePhoneNavigationTest {
         assertFalse(ActiveWorkoutStore.current(context)?.optBoolean("active") == true)
     }
 
+    @Test fun coachVariationPreviewCancelsWithoutWritingAndSavesOnlyAnExplicitCopy() {
+        val db = TrainPilotDatabase.getInstance(context)
+        val id = "coach-variation-fixture"
+        runBlocking(Dispatchers.IO) {
+            val raw = JSONObject().put("id", id).put("prescriptions", JSONObject().put("pushup",
+                JSONObject().put("sets", 2).put("reps", "8–15").put("loadType", "bodyweight")))
+            val base = db.programDao().getProgramWithDaysById("home-basic")!!.program
+            db.programDao().upsertProgram(base.copy(id = id, builtin = false, rawJson = raw.toString()))
+            db.programDao().upsertProgramDays(listOf(com.repforge.app.data.db.ProgramDayEntity("$id:A", id, "A", "A", "A", "A", "A", 0, "[\"pushup\"]")))
+            settings.setActiveProgramId(id)
+            settings.saveTrainingProfile(JSONObject().put("minutes", 60).put("gear", org.json.JSONArray().put("bench"))
+                .put("experience", "intermediate").put("goal", "fitness").put("activity", "office"))
+            val importer = com.repforge.app.data.migration.LegacyWebViewMigrator(context, db, settings)
+            for (i in 1..3) {
+                val end = java.time.Instant.now().minusSeconds(i * 86400L)
+                importer.saveWorkoutJsonToRoom(JSONObject().put("id", "variation-$i").put("programId", id).put("dayId", "A")
+                    .put("started", end.minusSeconds(60).toString()).put("finished", end.toString())
+                    .put("exercises", org.json.JSONArray().put(JSONObject().put("id", "pushup").put("loadType", "bodyweight")
+                        .put("repUnit", "ism.").put("effort", "good").put("sets", org.json.JSONArray((0..1).map { j ->
+                            JSONObject().put("setId", "s-$i-$j").put("done", true).put("weight", 0).put("reps", "15") })))))
+            }
+        }
+        fun programCount() = runBlocking(Dispatchers.IO) { db.programDao().getProgramIds().size }
+        val count = programCount()
+        launch(); compose.onNodeWithTag("shortcut_coach").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("coach_ready").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("coach_ready").performScrollToNode(hasTestTag("coach_variation_pushup"))
+        compose.onNodeWithTag("coach_variation_pushup").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("coach_variation_save").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("Mégse").performClick()
+        assertEquals(count, programCount())
+        compose.onNodeWithTag("coach_variation_pushup").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("coach_variation_save").fetchSemanticsNodes().isNotEmpty() }
+        screenshot("coach_variation_preview")
+        compose.onNodeWithTag("coach_variation_save").performClick()
+        compose.waitUntil(15000) { programCount() == count + 1 }
+        assertEquals(id, runBlocking { settings.current().activeProgramId })
+        assertNotNull(runBlocking(Dispatchers.IO) { db.workoutHistoryDao().getWorkoutWithDetails("variation-1") })
+    }
+
     @Test fun earlierHealthDayCanBeSelectedAndDisplaysItsStoredWeight() {
         val day = java.time.YearMonth.now().minusMonths(1).atDay(1).toString()
         val health = HealthJournalStore.get(context)

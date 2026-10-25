@@ -252,4 +252,10 @@
     <string name="health_background_bluetooth_permission">Bluetooth-csatlakozási engedély szükséges.</string>
     <string name="health_background_notification_permission">Értesítési engedély szükséges a BLE előtérszolgáltatáshoz.</string>
     <string name="health_background_bluetooth_off">Kapcsold be a Bluetooth-t.</string>
+    <string name="coach_variation_preview">Variáció előnézete</string>
+    <string name="coach_variation_save">Mentés új programként</string>
+    <string name="coach_variation_notice">Külön programmásolat készül. A korábbi program és napló megmarad. Az új programot a Programok oldalon külön aktiválhatod.</string>
+    <string name="coach_variation_saved">Az új programmásolat mentve.</string>
+    <string name="coach_variation_failed">A javaslat nem alkalmazható vagy az adatok megváltoztak. Készíts új előnézetet.</string>
+    <string name="coach_variation_programs">Programok megnyitása</string>
 </resources>

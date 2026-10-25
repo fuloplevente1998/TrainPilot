@@ -252,4 +252,10 @@
     <string name="health_background_bluetooth_permission">Este necesară permisiunea de conectare Bluetooth.</string>
     <string name="health_background_notification_permission">Este necesară permisiunea pentru notificări a serviciului BLE.</string>
     <string name="health_background_bluetooth_off">Activează Bluetooth.</string>
+    <string name="coach_variation_preview">Previzualizează variația</string>
+    <string name="coach_variation_save">Salvează ca program nou</string>
+    <string name="coach_variation_notice">Creează o copie separată a programului. Programul anterior și jurnalul rămân. Activează programul nou separat în Programe.</string>
+    <string name="coach_variation_saved">Copia nouă a programului a fost salvată.</string>
+    <string name="coach_variation_failed">Propunerea nu poate fi aplicată sau datele s-au schimbat. Deschide o previzualizare nouă.</string>
+    <string name="coach_variation_programs">Deschide programele</string>
 </resources>

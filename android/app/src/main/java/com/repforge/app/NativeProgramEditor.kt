@@ -104,7 +104,7 @@ internal object NativeProgramEditor {
     }
 
     suspend fun save(context: Context, db: TrainPilotDatabase, opened: ProgramWithDays?,
-        draft: Draft, language: String, personalMetadata: JSONObject? = null): String = NativeDataReplacement.mutate(context) {
+        draft: Draft, language: String, personalMetadata: JSONObject? = null, clone: Boolean = false): String = NativeDataReplacement.mutate(context) {
         require(language in langs)
         assertNoActiveWorkout(context)
         val d = checked(draft)
@@ -170,7 +170,7 @@ internal object NativeProgramEditor {
                 }
             }
             // Built-in templates must be cloned, never overwritten.
-            val fork = opened == null || opened.program.builtin
+            val fork = clone || opened == null || opened.program.builtin
             val id = if (fork) "custom-program-${UUID.randomUUID()}" else opened!!.program.id
             check(id !in db.programDao().getProgramIds() || !fork) { "Program ID collision" }
             val oldDays = if (fork) opened?.days.orEmpty() else original?.days.orEmpty()

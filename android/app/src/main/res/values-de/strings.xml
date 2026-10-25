@@ -252,4 +252,10 @@
     <string name="health_background_bluetooth_permission">Bluetooth-Verbindungsberechtigung erforderlich.</string>
     <string name="health_background_notification_permission">Für den BLE-Vordergrunddienst ist die Benachrichtigungsberechtigung erforderlich.</string>
     <string name="health_background_bluetooth_off">Aktiviere Bluetooth.</string>
+    <string name="coach_variation_preview">Variation ansehen</string>
+    <string name="coach_variation_save">Als neues Programm speichern</string>
+    <string name="coach_variation_notice">Erstellt eine eigene Programmkopie. Das bisherige Programm und Protokoll bleiben erhalten. Aktiviere das neue Programm separat unter Programme.</string>
+    <string name="coach_variation_saved">Neue Programmkopie gespeichert.</string>
+    <string name="coach_variation_failed">Der Vorschlag kann nicht übernommen werden oder Daten wurden geändert. Öffne eine neue Vorschau.</string>
+    <string name="coach_variation_programs">Programme öffnen</string>
 </resources>

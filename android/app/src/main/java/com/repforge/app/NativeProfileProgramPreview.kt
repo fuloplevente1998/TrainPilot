@@ -67,6 +67,14 @@ internal object NativeProfileProgramPreview {
         }
     }
 
+    internal fun variationRejection(ex: ExerciseLibraryEntity, profile: JSONObject): String = when {
+        ex.id in keys(profile, "excluded") -> "excluded"
+        ex.primaryMuscle in avoidedMuscles(keys(profile, "avoidAreas")) -> "avoid-area"
+        profile.optString("experience") == "beginner" && !JSONObject(ex.rawJson).optBoolean("beginnerSafe", true) -> "experience"
+        !available(ex, keys(profile, "gear")) -> "equipment"
+        else -> ""
+    }
+
     fun preview(source: ProgramWithDays, rawProfile: String,
         catalog: List<ExerciseLibraryEntity>, language: String): Preview {
         require(source.program.builtin && source.program.id in setOf("home-basic", "home-level2")) {

@@ -19,11 +19,28 @@ import java.util.Locale
 
 @Composable
 internal fun CoachScreen(starting: Boolean, onStart: (String, String, String?) -> Unit,
-    onCalendar: () -> Unit, onHealth: () -> Unit, onProgress: () -> Unit, model: CoachViewModel = viewModel()) {
+    onCalendar: () -> Unit, onHealth: () -> Unit, onProgress: () -> Unit, onPrograms: () -> Unit,
+    model: CoachViewModel = viewModel()) {
     val state by model.state.collectAsStateWithLifecycle()
     val context = androidx.compose.ui.platform.LocalContext.current
     val text = remember(context, state.language) { com.repforge.app.ui.text.nativeResources(context, state.language) }
     val colors = LocalTrainPilotColors.current
+    state.variationPreview?.let { preview ->
+        AlertDialog(onDismissRequest = model::closeVariation,
+            title = { Text(text.getString(com.repforge.app.R.string.coach_variation_preview)) },
+            text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(NativeCoachAdviceText.variation(text, preview.next))
+                Text(text.getString(com.repforge.app.R.string.coach_variation_notice))
+                val recipe = remember(preview) { org.json.JSONObject(preview.recipe) }
+                Text("${recipe.getInt("sets")} × ${recipe.getString("reps")}")
+                if (state.variationFailed) Text(text.getString(com.repforge.app.R.string.coach_variation_failed), color = colors.danger)
+            } },
+            confirmButton = { TextButton(onClick = model::saveVariation, enabled = !state.variationBusy,
+                modifier = Modifier.testTag("coach_variation_save")) { Text(text.getString(com.repforge.app.R.string.coach_variation_save)) } },
+            dismissButton = { TextButton(onClick = model::closeVariation, enabled = !state.variationBusy) {
+                Text(text.getString(com.repforge.app.R.string.weight_cancel))
+            } }, containerColor = colors.card)
+    }
     val words = coachWords(state.language)
     val number = remember(state.language) { NumberFormat.getNumberInstance(Locale.forLanguageTag(state.language)).apply { maximumFractionDigits = 1 } }
     fun value(n: Number?) = n?.let { number.format(it) } ?: "—"
@@ -98,9 +115,22 @@ internal fun CoachScreen(starting: Boolean, onStart: (String, String, String?) -
                         }, value(advice.weight)), color = colors.text)
                     if (advice.action == "reps" && advice.nextReps.isNotEmpty()) Text(text.getString(com.repforge.app.R.string.coach_advice_reps,
                         advice.nextReps.joinToString(" / ") { value(it) }), color = colors.text)
-                    if (advice.action == "variation") advice.variation?.let { Text(NativeCoachAdviceText.variation(text, it), color = colors.text) }
+                    if (advice.action == "variation") advice.variation?.let {
+                        Text(NativeCoachAdviceText.variation(text, it), color = colors.text)
+                        OutlinedButton(onClick = { model.previewVariation(row.id) }, enabled = !state.variationBusy && !starting,
+                            modifier = Modifier.testTag("coach_variation_${row.id}")) {
+                            Text(text.getString(com.repforge.app.R.string.coach_variation_preview))
+                        }
+                    }
                 }
             }
+        }
+        if (state.variationFailed && state.variationPreview == null) item {
+            Text(text.getString(com.repforge.app.R.string.coach_variation_failed), color = colors.danger)
+        }
+        if (state.variationSaved) item {
+            Text(text.getString(com.repforge.app.R.string.coach_variation_saved), color = colors.text)
+            OutlinedButton(onClick = onPrograms) { Text(text.getString(com.repforge.app.R.string.coach_variation_programs)) }
         }
         if (state.exercises.isNotEmpty()) item {
             Text(text.getString(com.repforge.app.R.string.coach_advice_read_only), color = colors.muted)
