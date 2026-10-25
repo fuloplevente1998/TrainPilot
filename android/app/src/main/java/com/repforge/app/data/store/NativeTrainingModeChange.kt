@@ -101,6 +101,6 @@ internal object NativeTrainingModeChange {
         val raw = current.trainingModes197Json
         val result = undoValue(raw, scope, programId) ?: return false
         return store.saveApprovedTrainingModes197(raw, result.previous,
-            if (scope == "program") current.activeProgramId else null)
+            if (scope == "program") current.activeProgramId else null, restoringUndo = true)
     }
 }
