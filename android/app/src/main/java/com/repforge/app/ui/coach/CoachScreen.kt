@@ -107,6 +107,22 @@ internal fun CoachScreen(starting: Boolean, onStart: (String, String, String?) -
                     Text(row.name, color = colors.text, style = MaterialTheme.typography.titleMedium)
                     Text(NativeCoachAdviceText.label(text, advice.action), color = if (advice.action == "pain") colors.dangerText else colors.accentText)
                     Text(NativeCoachAdviceText.reason(text, advice.reason), color = colors.muted)
+                    row.modePreview?.let { preview ->
+                        val chosenStyle = text.getString(if (preview.trainingStyle == "hit")
+                            com.repforge.app.R.string.native_modes_style_hit
+                            else com.repforge.app.R.string.native_modes_style_normal)
+                        val method = text.getString(when (preview.mode) {
+                            "linear" -> com.repforge.app.R.string.native_modes_progression_linear
+                            "rir" -> com.repforge.app.R.string.native_modes_progression_rir
+                            else -> com.repforge.app.R.string.native_modes_progression_double
+                        })
+                        Text("$chosenStyle / $method", color = colors.accentText,
+                            modifier = Modifier.testTag("coach_training_mode_${row.id}"))
+                        Text(text.getString(com.repforge.app.R.string.native_modes_coach_sets,
+                            preview.workingSets), color = colors.muted)
+                        Text(text.getString(com.repforge.app.R.string.native_modes_coach_preview),
+                            color = colors.muted)
+                    }
                     Text(text.getString(com.repforge.app.R.string.coach_advice_history, advice.historyCount), color = colors.muted)
                     if (advice.target.text.isNotBlank()) Text(text.getString(com.repforge.app.R.string.coach_advice_target, advice.target.text), color = colors.text)
                     if (advice.action in setOf("increase", "reduce", "start") && advice.weight > 0)
