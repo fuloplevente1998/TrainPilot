@@ -58,4 +58,5 @@
     <string name="native_modes_coach_no_action">Nu există creștere sigură aplicabilă.</string>
     <string name="native_modes_coach_review">Verifică propunerea</string>
     <string name="native_modes_coach_cancel">Anulează</string>
+    <string name="native_modes_coach_sets">Serii de lucru propuse: %1$d (doar previzualizare)</string>
 </resources>
