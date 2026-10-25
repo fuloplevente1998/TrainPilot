@@ -25,7 +25,8 @@ internal object NativeHealthForegroundAdmission {
                     frame.optBoolean("finalizationPending") || frame.optBoolean("discardPending")
             }
 
-    fun safe(context: Context): Boolean = try {
+    fun safe(context: Context): Boolean {
+        return try {
         if (NativeDataReplacement.blocked(context)) return false
         if (HealthJournalStore.get(context).pendingRestore().isNotEmpty()) return false
         val execution = PhoneWorkoutExecution.store(context)
@@ -42,5 +43,6 @@ internal object NativeHealthForegroundAdmission {
         )
     } catch (_: Exception) {
         false // ambiguous ownership or restore state must never trigger unattended reading
+        }
     }
 }
