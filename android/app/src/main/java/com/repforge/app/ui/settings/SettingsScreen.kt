@@ -64,6 +64,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.repforge.app.R
+import com.repforge.app.ui.text.nativeResources
 import com.repforge.app.PrivacyPolicy
 import com.repforge.app.data.store.TrainPilotSettingsStore
 import com.repforge.app.ui.theme.LocalTrainPilotColors
@@ -77,6 +79,7 @@ fun SettingsScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val colors = LocalTrainPilotColors.current
     val context = LocalContext.current
+    val strings = remember(context, state.settings.language) { nativeResources(context, state.settings.language) }
     val activity = context as? Activity
     var profileOpen by remember { mutableStateOf(false) }
     var openedProfileJson by remember { mutableStateOf("{}") }
@@ -110,12 +113,7 @@ fun SettingsScreen(
     ) {
         item { Spacer(Modifier.height(8.dp)) }
         if (!allowDataReplacement) item {
-            Text(when (state.settings.language) {
-                "en" -> "Your workout keeps running. Finish or discard it before restoring or deleting data."
-                "de" -> "Dein Training läuft weiter. Beende oder verwirf es vor dem Wiederherstellen oder Löschen von Daten."
-                "ro" -> "Antrenamentul continuă. Încheie-l sau renunță la el înainte de restaurarea ori ștergerea datelor."
-                else -> "Az edzés tovább fut. Adatok visszaállítása vagy törlése előtt fejezd be vagy vesd el."
-            }, color = colors.muted)
+            Text(strings.getString(R.string.native_settings_workout_running), color = colors.muted)
         }
 
         item { NativeThemePicker(state.settings, viewModel::setTheme) }
@@ -124,26 +122,15 @@ fun SettingsScreen(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = colors.card)) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(when (state.settings.language) {
-                        "en" -> "Training profile"; "de" -> "Trainingsprofil"
-                        "ro" -> "Profil de antrenament"; else -> "Edzésprofil"
-                    }, color = colors.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    Text(when (state.settings.language) {
-                        "en" -> "Your saved training preferences; no body measurements are inferred."
-                        "de" -> "Deine Trainingsvorlieben; keine Körperwerte werden geschätzt."
-                        "ro" -> "Preferințe salvate; nu sunt deduse măsurători corporale."
-                        else -> "Mentett edzésadatok és célok; nem feltételezünk testsúlyt vagy magasságot."
-                    }, color = colors.muted, fontSize = 12.sp)
+                    Text(strings.getString(R.string.native_settings_profile_title), color = colors.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(strings.getString(R.string.native_settings_profile_info), color = colors.muted, fontSize = 12.sp)
                     OutlinedButton(onClick = {
                         openedProfileJson = state.settings.profileJson
                         viewModel.clearProfileError()
                         profileOpen = true
                     }, modifier = Modifier.fillMaxWidth().testTag("training_profile_open"),
                         enabled = !state.profileSaving && !state.replacementBusy) {
-                        Text(when (state.settings.language) {
-                            "en" -> "Edit profile"; "de" -> "Profil bearbeiten"
-                            "ro" -> "Editează profilul"; else -> "Profil szerkesztése"
-                        })
+                        Text(strings.getString(R.string.native_settings_profile_edit))
                     }
                 }
             }
@@ -162,14 +149,14 @@ fun SettingsScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.CloudSync, contentDescription = null, tint = colors.accentText, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Google Cloud Szinkron (#18)", color = colors.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text(strings.getString(R.string.native_settings_cloud_title), color = colors.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
                     Spacer(Modifier.height(10.dp))
 
                     if (gs.connectedEmail.isNotEmpty()) {
-                        Text("Csatlakoztatva: ${gs.connectedEmail}", color = colors.text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        Text(strings.getString(R.string.native_settings_connected, gs.connectedEmail), color = colors.text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                         if (gs.lastDriveSyncIso.isNotEmpty()) {
-                            Text("Utolsó Drive mentés: ${gs.lastDriveSyncIso.take(19).replace('T', ' ')}", color = colors.muted, fontSize = 11.sp)
+                            Text(strings.getString(R.string.native_settings_last_drive, gs.lastDriveSyncIso.take(19).replace('T', ' ')), color = colors.muted, fontSize = 11.sp)
                         }
                         Spacer(Modifier.height(10.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -178,7 +165,7 @@ fun SettingsScreen(
                                 onCheckedChange = { viewModel.setRecoverEarlierBackups(it) },
                                 colors = CheckboxDefaults.colors(checkedColor = colors.accent)
                             )
-                            Text("Korábbi mentések vizsgálata és karbantartása", color = colors.muted, fontSize = 11.sp)
+                            Text(strings.getString(R.string.native_settings_older_backups), color = colors.muted, fontSize = 11.sp)
                         }
                         Spacer(Modifier.height(10.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -187,29 +174,29 @@ fun SettingsScreen(
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(containerColor = colors.accent)
                             ) {
-                                Text("Drive szinkron", color = colors.onAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Text(strings.getString(R.string.native_settings_drive_sync), color = colors.onAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
                             Button(
                                 onClick = { activity?.let { viewModel.syncCalendarCloud(it) } },
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(containerColor = colors.card2)
                             ) {
-                                Text("Naptár szinkron", color = colors.text, fontSize = 11.sp)
+                                Text(strings.getString(R.string.native_settings_calendar_sync), color = colors.text, fontSize = 11.sp)
                             }
                         }
                         Spacer(Modifier.height(8.dp))
                         TextButton(onClick = { viewModel.disconnectGoogle() }) {
-                            Text("Google-fiók lekapcsolása", color = colors.dangerText, fontSize = 11.sp)
+                            Text(strings.getString(R.string.native_settings_disconnect), color = colors.dangerText, fontSize = 11.sp)
                         }
                     } else {
-                        Text("Kapcsolódj Google-fiókodhoz a Drive-mentések és az edzésnaptár automatikus szinkronizálásához.", color = colors.muted, fontSize = 12.sp)
+                        Text(strings.getString(R.string.native_settings_google_help), color = colors.muted, fontSize = 12.sp)
                         Spacer(Modifier.height(12.dp))
                         Button(
                             onClick = { activity?.let { viewModel.syncDriveCloud(it) } },
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(containerColor = colors.accent)
                         ) {
-                            Text("Bejelentkezés Google-fiókkal", color = colors.onAccent, fontWeight = FontWeight.Bold)
+                            Text(strings.getString(R.string.native_settings_google_login), color = colors.onAccent, fontWeight = FontWeight.Bold)
                         }
                     }
                     if (gs.isBusy) {
@@ -229,20 +216,20 @@ fun SettingsScreen(
                 border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Helyi Mentés & Visszaállítás (SAF)", color = colors.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    Text("Eszközön tárolt biztonsági mentések kezelése fájlválasztóval", color = colors.muted, fontSize = 11.sp)
+                    Text(strings.getString(R.string.native_settings_local_backup), color = colors.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(strings.getString(R.string.native_settings_backup_help), color = colors.muted, fontSize = 11.sp)
                     Spacer(Modifier.height(12.dp))
 
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedButton(onClick = { exportJsonLauncher.launch("trainpilot-backup.json") }, modifier = Modifier.weight(1f)) {
                             Icon(Icons.Default.FileUpload, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text("JSON Mentés", fontSize = 10.sp)
+                            Text(strings.getString(R.string.native_settings_json_export), fontSize = 10.sp)
                         }
                         OutlinedButton(enabled = allowDataReplacement, onClick = { importJsonLauncher.launch(arrayOf("application/json", "*/*")) }, modifier = Modifier.weight(1f)) {
                             Icon(Icons.Default.FileDownload, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text("JSON Megnyitás", fontSize = 10.sp)
+                            Text(strings.getString(R.string.native_settings_json_import), fontSize = 10.sp)
                         }
                     }
                     Spacer(Modifier.height(8.dp))
@@ -252,7 +239,7 @@ fun SettingsScreen(
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(containerColor = colors.card2)
                         ) {
-                            Text("Teljes ZIP Mentés (Fotókkal)", color = colors.text, fontSize = 10.sp)
+                            Text(strings.getString(R.string.native_settings_zip_export), color = colors.text, fontSize = 10.sp)
                         }
                         Button(
                             enabled = allowDataReplacement,
@@ -260,7 +247,7 @@ fun SettingsScreen(
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(containerColor = colors.card2)
                         ) {
-                            Text("ZIP Visszaállítás", color = colors.text, fontSize = 10.sp)
+                            Text(strings.getString(R.string.native_settings_zip_import), color = colors.text, fontSize = 10.sp)
                         }
                     }
                 }
@@ -276,7 +263,7 @@ fun SettingsScreen(
                 border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Beállítások & Adatvédelem", color = colors.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(strings.getString(R.string.native_settings_privacy_section), color = colors.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
 
                     // #227 Haptikus sorozat visszajelzés
                     Row(
@@ -285,8 +272,8 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Sorozat rögzítési rezgés (#227)", color = colors.text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                            Text("40 ms diszkrét haptikus jelzés szett kipipálásakor", color = colors.muted, fontSize = 11.sp)
+                            Text(strings.getString(R.string.native_settings_haptic), color = colors.text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                            Text(strings.getString(R.string.native_settings_haptic_info), color = colors.muted, fontSize = 11.sp)
                         }
                         Switch(
                             checked = state.settings.hapticSetRecorded227,
@@ -302,8 +289,8 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Egészségnapló mentése", color = colors.text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                            Text("Health Connect / pulzus adatok belefoglalása a kézi mentésbe", color = colors.muted, fontSize = 11.sp)
+                            Text(strings.getString(R.string.native_settings_health_backup), color = colors.text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                            Text(strings.getString(R.string.native_settings_health_backup_info), color = colors.muted, fontSize = 11.sp)
                         }
                         Switch(
                             checked = state.settings.healthBackupConsent,
@@ -332,7 +319,7 @@ fun SettingsScreen(
                     ) {
                         Icon(Icons.Default.Security, contentDescription = null, tint = colors.accentText, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Adatkezelési tájékoztató megtekintése", color = colors.text, fontSize = 12.sp)
+                        Text(strings.getString(R.string.native_settings_privacy_open), color = colors.text, fontSize = 12.sp)
                     }
                     Spacer(Modifier.height(10.dp))
                     Button(
@@ -344,7 +331,7 @@ fun SettingsScreen(
                     ) {
                         Icon(Icons.Default.DeleteForever, contentDescription = null, tint = colors.dangerText, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Minden helyi adat törlése (Erase Local)", color = colors.dangerText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(strings.getString(R.string.native_settings_erase_open), color = colors.dangerText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -369,19 +356,19 @@ fun SettingsScreen(
     if (state.isEraseLocalDialogOpen) {
         AlertDialog(
             onDismissRequest = { viewModel.closeEraseLocalDialog() },
-            title = { Text("Minden helyi adat törlése", color = colors.text, fontWeight = FontWeight.Bold) },
-            text = { Text("Biztosan törölsz minden edzést, programot, testsúlyt, fotót és egészségügyi adatot erről a készülékről? A felhőben vagy exportált fájlokban lévő adatok megmaradnak.", color = colors.muted) },
+            title = { Text(strings.getString(R.string.native_settings_erase_title), color = colors.text, fontWeight = FontWeight.Bold) },
+            text = { Text(strings.getString(R.string.native_settings_erase_message), color = colors.muted) },
             confirmButton = {
                 Button(
                     onClick = { viewModel.confirmEraseLocalData() },
                     colors = ButtonDefaults.buttonColors(containerColor = colors.danger)
                 ) {
-                    Text("Minden adat törlése", color = colors.dangerText, fontWeight = FontWeight.Bold)
+                    Text(strings.getString(R.string.native_settings_erase_confirm), color = colors.dangerText, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { viewModel.closeEraseLocalDialog() }) {
-                    Text("Mégse", color = colors.text)
+                    Text(strings.getString(R.string.native_settings_cancel), color = colors.text)
                 }
             },
             containerColor = colors.card
@@ -393,7 +380,7 @@ fun SettingsScreen(
         val scroll = rememberScrollState()
         AlertDialog(
             onDismissRequest = { viewModel.closePrivacyDialog() },
-            title = { Text("Adatkezelési tájékoztató", color = colors.text, fontWeight = FontWeight.Bold) },
+            title = { Text(strings.getString(R.string.native_settings_privacy_title), color = colors.text, fontWeight = FontWeight.Bold) },
             text = {
                 Box(modifier = Modifier.fillMaxWidth().height(360.dp).verticalScroll(scroll)) {
                     Text(PrivacyPolicy.text(state.settings.language), color = colors.muted, fontSize = 12.sp, lineHeight = 16.sp)
@@ -404,7 +391,7 @@ fun SettingsScreen(
                     onClick = { viewModel.closePrivacyDialog() },
                     colors = ButtonDefaults.buttonColors(containerColor = colors.accent)
                 ) {
-                    Text("Értem", color = colors.onAccent, fontWeight = FontWeight.Bold)
+                    Text(strings.getString(R.string.native_settings_understood), color = colors.onAccent, fontWeight = FontWeight.Bold)
                 }
             },
             containerColor = colors.card
@@ -415,14 +402,14 @@ fun SettingsScreen(
     state.statusMessage?.let { msg ->
         AlertDialog(
             onDismissRequest = { viewModel.clearStatusMessage() },
-            title = { Text("Értesítés", color = colors.text, fontWeight = FontWeight.Bold) },
+            title = { Text(strings.getString(R.string.native_settings_notice_title), color = colors.text, fontWeight = FontWeight.Bold) },
             text = { Text(msg, color = colors.muted) },
             confirmButton = {
                 Button(
                     onClick = { viewModel.clearStatusMessage() },
                     colors = ButtonDefaults.buttonColors(containerColor = colors.accent)
                 ) {
-                    Text("Rendben", color = colors.onAccent, fontWeight = FontWeight.Bold)
+                    Text(strings.getString(R.string.native_settings_ok), color = colors.onAccent, fontWeight = FontWeight.Bold)
                 }
             },
             containerColor = colors.card
