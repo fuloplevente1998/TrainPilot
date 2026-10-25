@@ -2,6 +2,9 @@ package com.repforge.app.ui.workout
 
 import org.json.JSONObject
 import com.repforge.app.NativeWorkoutStartValues
+import com.repforge.app.NativeGpsMeasurement
+import com.repforge.app.NativeSetStopwatch
+import com.repforge.shared.WorkoutOwnership193
 
 /** Pure admission policy. The actual write uses NativeWorkoutEditing.commitEdit CAS. */
 internal object NativeTrainingModeProposal {
@@ -21,13 +24,22 @@ internal object NativeTrainingModeProposal {
         return if (original != null)
             original.opt("reps")?.toString().orEmpty() == reps &&
                 original.opt("weight")?.toString().orEmpty() == weight
-        else reps.isBlank() // do not silently overwrite a manually entered rep target
+        else reps.isBlank() && weight.toDoubleOrNull() == 0.0
+        // An unmarked nonzero prescription/prefill cannot prove the user left weight untouched.
     }
 
     fun eligible(frame: JSONObject, exerciseId: String, proposedWeight: Double): Boolean {
         if (!frame.optBoolean("active") || frame.optBoolean("workoutPaused") ||
             frame.optBoolean("finalizationPending") || frame.optBoolean("ownershipAwaitingResume193") ||
-            frame.optBoolean("automatic162") || frame.optString("timerOwner") != "phone" ||
+            WorkoutOwnership193.pending(frame) ||
+            frame.optJSONObject("automatic162")?.optBoolean("pending") == true ||
+            NativeGpsMeasurement.busy(frame) ||
+            frame.optJSONObject(NativeSetStopwatch.FIELD)?.let(NativeSetStopwatch::running) == true ||
+            frame.optJSONObject("latestTimer162")?.let {
+                !it.optBoolean("stopped", false) && !it.optBoolean("interrupted", false) &&
+                    it.optString("phase") != "complete"
+            } == true ||
+            frame.optString("timerOwner") != "phone" ||
             frame.optInt("nativeEditorProjection") != 1 || frame.optString("workoutId").isBlank() ||
             frame.optString("programId").isBlank() || !proposedWeight.isFinite() ||
             proposedWeight <= 0 || proposedWeight > 10000) return false
