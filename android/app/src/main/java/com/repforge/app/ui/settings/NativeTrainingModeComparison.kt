@@ -25,7 +25,7 @@ internal object NativeTrainingModeComparison {
         val restSeconds: Int?, val beforeWeight: Double?, val afterWeight: Double?,
         val rir: String, val reason: String
     )
-    data class Snapshot(val programName: String, val dayCount: String, val rows: List<Row>)
+    data class Snapshot(val programName: String, val rows: List<Row>)
 
     suspend fun read(context: Context, preview: NativeTrainingModeChange.Preview): Snapshot {
         val db = TrainPilotDatabase.getInstance(context)
@@ -33,9 +33,9 @@ internal object NativeTrainingModeComparison {
         check(settings.trainingModes197Json == preview.expectedRaw &&
             settings.activeProgramId == preview.expectedActiveProgramId) { "Stale training modes preview" }
         val pid = preview.programId ?: settings.activeProgramId
-        val program = db.programDao().getProgramWithDaysById(pid) ?: return Snapshot("", "", emptyList())
+        val program = db.programDao().getProgramWithDaysById(pid) ?: return Snapshot("", emptyList())
         val daysInProgram = program.days.sortedBy { it.sortOrder }
-        if (daysInProgram.isEmpty()) return Snapshot("", "", emptyList())
+        if (daysInProgram.isEmpty()) return Snapshot("", emptyList())
         val now = Instant.now()
         val zone = ZoneId.systemDefault()
         val date = now.atZone(zone).toLocalDate()
@@ -98,6 +98,6 @@ internal object NativeTrainingModeComparison {
             "en" -> program.program.nameEn; "de" -> program.program.nameDe
             "ro" -> program.program.nameRo; else -> program.program.nameHu
         }.ifBlank { program.program.nameHu }
-        return Snapshot(name, daysInProgram.size.toString(), rows)
+        return Snapshot(name, rows)
     }
 }
