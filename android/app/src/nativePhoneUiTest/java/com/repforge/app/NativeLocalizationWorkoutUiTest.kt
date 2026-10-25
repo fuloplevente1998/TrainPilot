@@ -116,7 +116,12 @@ class NativeLocalizationWorkoutUiTest {
     }
 
     @Test fun gpsReadyAndActionLabelsTranslateWithoutPermissionOrMeasurementSuccess() {
-        fixture.startQuick("running") // Real bundled distance exercise, GPS explicitly not requested.
+        val distanceId = runBlocking(Dispatchers.IO) {
+            fixture.database.exerciseLibraryDao().getAllExercises()
+                .first { it.measurementType == "distance" ||
+                    it.repUnit.trim().lowercase() in setOf("m", "km") }.id
+        }
+        fixture.startQuick(distanceId) // Bundled distance entry; explicit GPS selection is false.
         val initial = snapshot()
         val exercise = initial.getJSONArray("exercises").getJSONObject(0)
         assertTrue("Requires an actual distance exercise",
