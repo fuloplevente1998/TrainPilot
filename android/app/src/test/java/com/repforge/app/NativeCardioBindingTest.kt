@@ -174,6 +174,22 @@ class NativeCardioBindingTest {
         assertTrue(result.records.isEmpty())
     }
 
+    @Test fun activityNamesUseStoredLocalesAndHungarianFallbackNotModelId() {
+        val option = com.repforge.app.ui.progress.CardioActivityOption(
+            exerciseId = "custom-run", nameHu = "Egyedi futás",
+            nameEn = "Custom run", nameDe = "custom-run", nameRo = "",
+            setCount = 1, workoutCount = 1
+        )
+        assertEquals("Egyedi futás",
+            com.repforge.app.ui.progress.cardioActivityName("hu", option))
+        assertEquals("Custom run",
+            com.repforge.app.ui.progress.cardioActivityName("en", option))
+        assertEquals("Egyedi futás",
+            com.repforge.app.ui.progress.cardioActivityName("de", option))
+        assertEquals("Egyedi futás",
+            com.repforge.app.ui.progress.cardioActivityName("ro", option))
+    }
+
     @Test fun cancelledCardioLoadPropagatesWithoutReturningPartialStats() = runBlocking {
         insert(1, meters = 2000.0)
         val cancelled = kotlinx.coroutines.Job().apply { cancel() }
