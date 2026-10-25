@@ -4,6 +4,19 @@ Frissítve: **2026-10-25**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## PR246 beépítve, PR245 javított forrása még nem távoli – 2026-10-25
+
+A felhasználó engedélyezte a review-t és migrációs összeépítést.
+**Appforrás cf1db70b:** PR246 exacte482cd7 teljes25fájlos appdelta squash-integrálva.
+Kardió Room/progress és review6 lifecycle/date/timezone fix +5 JVM-tesztkód.
+Korábbi11binding+15model XML PASS e9eb8cb-re; az új5 JVM és3 UI/integrált változat
+még nem futott. Diff/XML/20Kotlin lexical PASS, nincs új CI/Gradle/APK vagy main merge.
+Részletek: reviews/NATIVE_PR246_INTEGRATION.md. A korábbi „Room+UI nincs” történeti
+állapotot ez felülírja. Új hozzáadott tesztkód16 JVM+3 UI; mathmag15 változatlan.
+PR245 REST+git ls-remote még2ff2985: öt review-javítás nem érkezett a távoli ágra,
+ezért nem emeltük be. PR244 két review-javítása külön várható. A közös hat baseline
+hiba és az integrált natív gate hátra; main/verzió/élő adat install STOP marad.
+
 ## #244 készre jelentve, review két javítást talált – 2026-10-25
 
 Exact külső HEAD8c00b46, app/teszt5d89db4 (csak docsdelta). Review:

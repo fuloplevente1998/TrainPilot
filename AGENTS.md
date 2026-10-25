@@ -103,6 +103,9 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
   29 JVM+1 UI valódi XML PASS; P1 IO/main admission és P2 ZIP gate cleanup
   javítandó, még nem integrált. Az aktuális review-k felülírják a korábbi
   történeti „még nem érkezett” státuszokat; nincs új CI/main/release elfogadás.
+- PR246 exacte482cd7 teljes appdelta integrálva cf1db70b-ben (review6 dátum/
+  lifecycle fixszel). reviews/NATIVE_PR246_INTEGRATION.md. Külső draft nyitott,
+  ne alkalmazd újra a régi diffet. PR245 távoli HEAD még2ff2985, nem integrált.
 - A: docs/plans/NATIVE_CARDIO_BINDING_HANDOFF.md, feat/native-cardio-progress-ui.
   Progress UI/VM/query +DAO és új projection DTO. Math mag csak olvasható.
 - B: docs/plans/NATIVE_TRAINING_MODES_HANDOFF.md, feat/native-training-modes.
