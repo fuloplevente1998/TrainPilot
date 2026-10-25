@@ -86,6 +86,19 @@ class NativeTrainingModeChangeTest {
         assertTrue(NativeTrainingModes.validForWrite(next))
     }
 
+    @Test fun globalChangeDoesNotReplaceExplicitProgramOverride() {
+        val raw = selected()
+        raw.getJSONObject("byProgram").put("p", JSONObject()
+            .put("trainingStyle", "hit").put("progressionMode", "rir")
+            .put("explicitChoice", true))
+        val preview = NativeTrainingModeChange.prepare(
+            raw.toString(), "p", "global", null, "normal", "linear")
+        val applied = NativeTrainingModeChange.next(preview)
+        assertEquals("linear", applied.getJSONObject("defaults").getString("progressionMode"))
+        assertEquals("rir", NativeTrainingModes.resolve(applied, "p").progressionMode)
+        assertEquals("linear", NativeTrainingModes.resolve(applied, "other").progressionMode)
+    }
+
     @Test fun malformedUndoAndScopeAreNotApplied() {
         val raw = selected().put("undo", JSONObject().put("scope", "global").put("previous", "corrupt")).toString()
         assertNull(NativeTrainingModeChange.undoValue(raw, "global", null))
