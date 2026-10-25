@@ -64,14 +64,17 @@ internal object NativeTrainingModeComparison {
             before.mapNotNull { old ->
                 val updated = afterById[old.id] ?: return@mapNotNull null
                 val rx = prescriptions?.optJSONObject(old.id)
-                val rest = rx?.opt("rest")?.let { value ->
-                    val parsed = when (value) {
-                        is Number -> value.toInt()
-                        is String -> value.toIntOrNull()
-                        else -> null
-                    }
-                    parsed?.takeIf { it in 0..3600 }
-                } ?: settings.restSeconds
+                // Program-day edits override the program-level Rx, just as the Coach repository does.
+                val dayItems = org.json.JSONArray(day.exercisesJson)
+                val specific = (0 until dayItems.length())
+                    .mapNotNull { dayItems.optJSONObject(it) }
+                    .firstOrNull { it.optString("id") == old.id }
+                val restRaw = specific?.opt("rest") ?: rx?.opt("rest")
+                val rest = when (restRaw) {
+                    is Number -> restRaw.toInt()
+                    is String -> restRaw.toIntOrNull()
+                    else -> null
+                }?.takeIf { it in 0..3600 } ?: settings.restSeconds
                 val targetRir = old.advice.target.run {
                     when {
                         rirMin == null && rirMax == null -> "—"
