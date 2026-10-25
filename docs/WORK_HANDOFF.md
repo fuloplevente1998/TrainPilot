@@ -4,6 +4,21 @@ Frissítve: **2026-10-25**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## #244 készre jelentve, review két javítást talált – 2026-10-25
+
+Exact külső HEAD8c00b46, app/teszt5d89db4 (csak docsdelta). Review:
+[ NATIVE_PR244_HEALTH_AUTO_REFRESH_REVIEW.md ](reviews/NATIVE_PR244_HEALTH_AUTO_REFRESH_REVIEW.md).
+Root valós XML-ből ellenőrizte40239961158:29 JVM+1 Compose UI PASS,0fail/skip;
+merge-ref17eedd7 app/Wear/shared/workflow forrásazonos. A production útban P1:
+VM IO-prepare és SDK-callback safe()→main-only PhoneWorkoutExecution.store→
+catchfalse, így AUTO és MANUAL providerfrissítés is blokkolódik. A zöld tesztek
+csak pure eligible +kapcsoló/persistence útját fedik. P2: ZIP-import begin után
+transactionDir mkdir még try/finally előtt; IO-hibánál gate számláló beragad.
+Külső munkásnak e két fix és valódi IO-entry/staging failure regresszió adható.
+Nincs root appjavítás/integráció vagy új CI. Közös40239961291 még futott a review
+végén.30napos/incremental providerparitás külön nyitott. Új workflow/baseline
+átfedések integrációja külön egyeztetendő, nem vak merge. Main/version STOP.
+
 ## #244 részátadás és további munkamegosztás – 2026-10-25
 
 A felhasználó jelezte a #244 részbeni elkészültét, új Codex-munkát nem akar
