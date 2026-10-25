@@ -86,14 +86,14 @@ class NativeHealthDateRangeTest {
         var query = HealthRecordQuery(from, endDay = today)
         val all = mutableListOf<String>()
         val sizes = mutableListOf<Int>()
-        repeat(4) {
+        for (index in 0 until 4) {
             val page = reader.load(query)
             sizes += page.rows.size
             all += page.rows.map { it.id }
-            if (page.next == null) return@repeat
+            if (page.next == null) break
             query = query.copy(cursor = page.next, generation = page.generation)
         }
-        assertEquals(listOf(25, 25, 18), sizes.take(3))
+        assertEquals(listOf(25, 25, 18), sizes)
         assertEquals(68, all.size)
         assertEquals(68, all.toSet().size)
         assertEquals((0 until 68).map { "record-$it" }.toSet(), all.toSet())
