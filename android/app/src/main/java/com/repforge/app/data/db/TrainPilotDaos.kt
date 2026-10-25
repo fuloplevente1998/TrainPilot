@@ -273,6 +273,13 @@ interface WorkoutHistoryDao {
     @Query("SELECT COUNT(*) FROM workout_history")
     suspend fun getWorkoutCount(): Int
 
+    @Query("""SELECT COUNT(*) FROM workout_history w
+        WHERE w.startedEpochMs >= :fromInclusive AND w.startedEpochMs < :toExclusive
+          AND NOT EXISTS (SELECT 1 FROM history_tombstones t
+            WHERE t.primaryId IN (w.id, w.syncId, w.workoutKey)
+               OR (t.workoutKey <> '' AND t.workoutKey = w.workoutKey))""")
+    suspend fun getWorkoutCountBetween(fromInclusive: Long, toExclusive: Long): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertWorkout(workout: WorkoutHistoryEntity)
 

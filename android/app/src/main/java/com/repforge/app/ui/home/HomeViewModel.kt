@@ -19,6 +19,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.time.LocalDate
+import java.time.ZoneId
 import kotlin.math.roundToInt
 
 data class TodayMetricsUiModel(
@@ -67,9 +68,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             val active = programs.firstOrNull { it.program.id == settings.activeProgramId } ?: programs.firstOrNull()
             val nextDay = active?.days?.firstOrNull()
 
-            val today = LocalDate.now().toString()
-            val workoutsCount = database.workoutHistoryDao().getWorkoutCount()
-            val todayMetrics = fetchTodayMetrics(today, workoutsCount)
+            val zone = ZoneId.systemDefault()
+            val today = LocalDate.now(zone)
+            val workoutsCount = database.workoutHistoryDao().getWorkoutCountBetween(
+                today.atStartOfDay(zone).toInstant().toEpochMilli(),
+                today.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli())
+            val todayMetrics = fetchTodayMetrics(today.toString(), workoutsCount)
             val liveHealth = WearLiveHealthStore.current(context)
 
             _uiState.value = HomeUiState(
@@ -111,8 +115,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 recoveryText = if (energyScore.isFinite() && energyScore > 0.0) "${energyScore.roundToInt()}%" else "—",
                 isPartial = dayObj.optBoolean("partial", false)
             )
-        } catch (_: Exception) {
-            TodayMetricsUiModel()
+        } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+        catch (_: Exception) {
+            TodayMetricsUiModel(workoutCountText = workoutCount.toString(), isPartial = true)
         }
     }
 }
