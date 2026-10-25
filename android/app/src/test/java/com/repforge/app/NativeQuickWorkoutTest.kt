@@ -65,6 +65,30 @@ class NativeQuickWorkoutTest {
         assertNotNull("The invalid start must fail", failure)
     }
 
+    @Test fun editedProgramTargetsReachTheActualNativeSessionAndStayIncompleteUntilRecorded() = runTest {
+        val source = db.exerciseLibraryDao().getExerciseById("goblet-squat")!!
+        var draft = NativeProgramEditor.addDay(NativeProgramEditor.Draft("Rx plan", "", emptyList()), "A")
+        draft = draft.copy(days = draft.days.map { NativeProgramEditor.addExercise(it, source.id) })
+        val id = NativeProgramEditor.save(context, db, null, draft, "hu")
+        val opened = db.programDao().getProgramWithDaysById(id)!!
+        val patch = NativeProgramPrescription.edit(NativeProgramPrescription.Fields("4", "6–8", "22.5", "75"), source.loadType)
+        val edited = NativeProgramEditor.from(opened, "hu").copy(prescriptionEdits = mapOf(source.id to
+            NativeProgramPrescription.Edit(patch.toString(), NativeProgramPrescription.source(source))))
+        NativeProgramEditor.save(context, db, opened, edited, "hu")
+        val session = NativeWorkoutSession.startProgramWorkout(context, id, opened.days.single().dayId, database = db).snapshot
+        val exercise = session.getJSONArray("exercises").getJSONObject(0)
+        assertEquals("6–8", exercise.getString("targetReps"))
+        assertEquals(75, exercise.getInt("restSeconds162"))
+        assertEquals(4, exercise.getJSONArray("sets").length())
+        assertEquals(22.5, exercise.getJSONObject("prescription").getDouble("weight"), 0.0)
+        for (index in 0 until exercise.getJSONArray("sets").length()) {
+            val set = exercise.getJSONArray("sets").getJSONObject(index)
+            assertEquals(22.5, set.getDouble("weight"), 0.0)
+            assertFalse(set.optBoolean("done"))
+        }
+        assertEquals(0, db.workoutHistoryDao().getWorkoutCount())
+    }
+
     @Test fun quickStartNeedsNoProgramAndDurablySharesItsIdsWithTheEditor() = runTest {
         assertTrue(db.programDao().getProgramsWithDays().isEmpty())
         val result = start()

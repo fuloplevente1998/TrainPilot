@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="program_rx_open">Zielwerte</string>
+    <string name="program_rx_title">Zielwerte · %1$s</string>
+    <string name="program_rx_scope">Änderungen gelten für diese Übung an allen Programmtagen und werden beim Speichern des Programms gesichert.</string>
+    <string name="program_rx_sets">Sätze (1–10)</string>
+    <string name="program_rx_target_reps">Zielwiederholungen</string>
+    <string name="program_rx_target_time">Zielzeit (s)</string>
+    <string name="program_rx_target_side">Zielzeit je Seite (s)</string>
+    <string name="program_rx_weight">Gewicht (kg)</string>
+    <string name="program_rx_weight_total">Gesamtgewicht (kg)</string>
+    <string name="program_rx_weight_hand">Gewicht je Hand (kg)</string>
+    <string name="program_rx_weight_single">Gewicht einer Kurzhantel (kg)</string>
+    <string name="program_rx_weight_assisted">Unterstützung (kg)</string>
+    <string name="program_rx_trial">Leer lassen, um das Gewicht mit einem Probesatz zu wählen.</string>
+    <string name="program_rx_rest">Pause (30–300 s)</string>
+    <string name="program_rx_invalid">Zielwerte prüfen: 1–10 Sätze, Ziel mit 1–40 Zeichen, 0–10000 kg und 30–300 s Pause.</string>
+    <string name="program_rx_apply">Zielwerte übernehmen</string>
+    <string name="program_rx_cancel">Abbrechen</string>
+</resources>

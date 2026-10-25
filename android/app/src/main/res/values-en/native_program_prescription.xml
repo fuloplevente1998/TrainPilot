@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="program_rx_open">Targets</string>
+    <string name="program_rx_title">Targets · %1$s</string>
+    <string name="program_rx_scope">Changes apply to this exercise on every program day and are stored when you save the program.</string>
+    <string name="program_rx_sets">Sets (1–10)</string>
+    <string name="program_rx_target_reps">Target reps</string>
+    <string name="program_rx_target_time">Target time (s)</string>
+    <string name="program_rx_target_side">Target time per side (s)</string>
+    <string name="program_rx_weight">Load (kg)</string>
+    <string name="program_rx_weight_total">Total load (kg)</string>
+    <string name="program_rx_weight_hand">Load per hand (kg)</string>
+    <string name="program_rx_weight_single">Single dumbbell weight (kg)</string>
+    <string name="program_rx_weight_assisted">Assistance (kg)</string>
+    <string name="program_rx_trial">Leave blank to choose the load with a trial set.</string>
+    <string name="program_rx_rest">Rest (30–300 s)</string>
+    <string name="program_rx_invalid">Check targets: 1–10 sets, a 1–40 character target, 0–10000 kg and 30–300 s rest.</string>
+    <string name="program_rx_apply">Apply targets</string>
+    <string name="program_rx_cancel">Cancel</string>
+</resources>

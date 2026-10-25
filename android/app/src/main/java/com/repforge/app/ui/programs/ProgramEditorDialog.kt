@@ -29,6 +29,7 @@ import com.repforge.app.ui.text.nativeResources
 import androidx.compose.ui.platform.LocalContext
 import android.content.res.Resources
 import com.repforge.app.NativeProgramEditor
+import com.repforge.app.NativeProgramPrescription
 import com.repforge.app.data.db.ExerciseLibraryEntity
 import com.repforge.app.data.db.ProgramWithDays
 import java.util.Locale
@@ -65,9 +66,11 @@ private fun exerciseName(ex: ExerciseLibraryEntity, lang: String) = when (lang) 
     "en" -> ex.nameEn; "de" -> ex.nameDe; "ro" -> ex.nameRo; else -> ex.nameHu
 }.ifBlank { ex.nameHu }
 
+private data class PrescriptionRequest(val dayId: String, val index: Int, val exerciseId: String)
+
 @Composable
 internal fun ProgramEditorDialog(
-    opened: ProgramWithDays?, language: String, exercises: List<ExerciseLibraryEntity>,
+    opened: ProgramWithDays?, language: String, exercises: List<ExerciseLibraryEntity>, defaultRestSeconds: Int,
     saving: Boolean, error: String?, onSave: (NativeProgramEditor.Draft) -> Unit,
     onDelete: () -> Unit, onCancel: () -> Unit
 ) {
@@ -81,10 +84,15 @@ internal fun ProgramEditorDialog(
     }
     var focusedDay by remember(opened?.program?.id) { mutableStateOf(draft.days.firstOrNull()?.id) }
     var search by remember { mutableStateOf("") }
+    var prescriptionRequest by remember(opened?.program?.id, language) { mutableStateOf<PrescriptionRequest?>(null) }
     var deletionPending by remember { mutableStateOf(false) }
     val active = draft.days.firstOrNull { it.id == focusedDay }
+    fun replaceDays(days: List<NativeProgramEditor.DayDraft>) {
+        val selected = days.flatMap { it.entries.map(NativeProgramEditor::exerciseId) }.toSet()
+        draft = draft.copy(days = days, prescriptionEdits = draft.prescriptionEdits.filterKeys { it in selected })
+    }
     fun editDay(day: NativeProgramEditor.DayDraft) {
-        draft = draft.copy(days = draft.days.map { if (it.id == day.id) day else it })
+        replaceDays(draft.days.map { if (it.id == day.id) day else it })
     }
     val choices = remember(exercises, search, language) {
         val q = search.trim().lowercase(Locale.ROOT)
@@ -137,14 +145,21 @@ internal fun ProgramEditorDialog(
                         modifier = Modifier.fillMaxWidth().testTag("program_editor_day_name"), singleLine = true,
                         label = { Text(labels.day) })
                     if (draft.days.size > 1) TextButton(onClick = {
-                        draft = draft.copy(days = draft.days.filterNot { it.id == active.id })
+                        replaceDays(draft.days.filterNot { it.id == active.id })
                         focusedDay = draft.days.firstOrNull()?.id
                     }, enabled = !saving, modifier = Modifier.testTag("program_editor_remove_day")) { Text(labels.remove) }
                     active.entries.forEachIndexed { ix, entry ->
                         val id = runCatching { NativeProgramEditor.exerciseId(entry) }.getOrDefault("?")
                         val name = exercises.firstOrNull { it.id == id }?.let { exerciseName(it, language) } ?: id
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Text("${ix + 1}. $name", modifier = Modifier.weight(1f))
+                            TextButton(onClick = { prescriptionRequest = PrescriptionRequest(active.id, ix, id) },
+                                enabled = !saving && exercises.any { it.id == id },
+                                modifier = Modifier.weight(1f).testTag("program_editor_rx_$ix")) {
+                                Column {
+                                    Text("${ix + 1}. $name")
+                                    Text(resources.getString(R.string.program_rx_open))
+                                }
+                            }
                             TextButton(onClick = {
                                 editDay(active.copy(entries = NativeProgramEditor.move(active.entries, ix, -1)))
                             }, enabled = ix > 0 && !saving) { Text("↑") }
@@ -192,8 +207,23 @@ internal fun ProgramEditorDialog(
                 if (opened != null && !opened.program.builtin)
                     TextButton(onClick = { deletionPending = true }, enabled = !saving,
                         modifier = Modifier.testTag("program_editor_delete")) { Text(labels.delete) }
-                TextButton(onClick = onCancel, enabled = !saving) { Text(labels.cancel) }
+                TextButton(onClick = onCancel, enabled = !saving, modifier = Modifier.testTag("program_editor_cancel")) { Text(labels.cancel) }
             }
         }
     )
+    prescriptionRequest?.let { request ->
+        val entry = draft.days.firstOrNull { it.id == request.dayId }?.entries?.getOrNull(request.index)
+        val source = exercises.firstOrNull { it.id == request.exerciseId }
+        if (entry != null && source != null && NativeProgramEditor.exerciseId(entry) == request.exerciseId) {
+            val effective = NativeProgramPrescription.effective(opened?.program, entry, source,
+                draft.prescriptionEdits, defaultRestSeconds)
+            ProgramPrescriptionDialog(exerciseName(source, language), effective, language, saving,
+                onApply = { patch ->
+                    draft = draft.copy(prescriptionEdits = draft.prescriptionEdits + (request.exerciseId to
+                        NativeProgramPrescription.Edit(patch.toString(), NativeProgramPrescription.source(source))))
+                    prescriptionRequest = null
+                }, onCancel = { prescriptionRequest = null })
+        }
+    }
+
 }

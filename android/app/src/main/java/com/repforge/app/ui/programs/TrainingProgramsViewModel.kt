@@ -24,6 +24,7 @@ internal data class TrainingProgramsUiState(
     val personalLoading: Boolean = false,
     val language: String = "hu",
     val trainingProfileJson: String = "{}",
+    val defaultRestSeconds: Int = com.repforge.app.data.store.TrainPilotUserSettings().restSeconds,
     val writeFailed: Boolean = false,
     val exerciseChoices: List<ExerciseLibraryEntity> = emptyList(),
     val editorSaving: Boolean = false,
@@ -53,6 +54,7 @@ internal class TrainingProgramsViewModel(application: Application) : AndroidView
                 }
                 _uiState.value = _uiState.value.copy(activeProgramId = result.first.activeProgramId,
                     language = result.first.language, trainingProfileJson = result.first.profileJson,
+                    defaultRestSeconds = result.first.restSeconds,
                     programs = result.second,
                     exerciseChoices = result.third, writeFailed = false)
             } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }

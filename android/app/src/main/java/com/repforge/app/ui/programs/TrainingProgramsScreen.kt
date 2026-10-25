@@ -182,7 +182,8 @@ internal fun TrainingProgramsScreen(
         onCancel = viewModel::closePersonalPlanner
     )
     if (editorOpen) ProgramEditorDialog(opened = editing, language = language,
-        exercises = state.exerciseChoices, saving = state.editorSaving, error = state.editorError,
+        exercises = state.exerciseChoices, defaultRestSeconds = state.defaultRestSeconds,
+        saving = state.editorSaving, error = state.editorError,
         onSave = { draft -> viewModel.saveProgram(editing, draft, language) },
         onDelete = { editing?.let(viewModel::deleteProgram) },
         onCancel = { if (!state.editorSaving) {

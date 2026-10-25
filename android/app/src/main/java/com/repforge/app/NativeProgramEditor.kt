@@ -18,7 +18,8 @@ import java.util.UUID
  */
 internal object NativeProgramEditor {
     data class DayDraft(val id: String, val name: String, val entries: List<String>)
-    data class Draft(val name: String, val description: String, val days: List<DayDraft>)
+    data class Draft(val name: String, val description: String, val days: List<DayDraft>,
+        val prescriptionEdits: Map<String, NativeProgramPrescription.Edit> = emptyMap())
     private val langs = setOf("hu", "en", "de", "ro")
     private const val MAX_DAYS = 31
     private const val MAX_EXERCISES = 60
@@ -84,6 +85,11 @@ internal object NativeProgramEditor {
             require(day.name.isNotBlank() && day.name.length <= 120)
             require(day.entries.size <= MAX_EXERCISES)
             day.entries.forEach { exerciseId(it) }
+        }
+        val selected = draft.days.flatMap { it.entries.map(::exerciseId) }.toSet()
+        for ((id, edit) in draft.prescriptionEdits) {
+            require(id in selected) { "Prescription/exercise mismatch" }
+            NativeProgramPrescription.validate(JSONObject(edit.patch))
         }
         return draft.copy(name = name)
     }
@@ -195,6 +201,20 @@ internal object NativeProgramEditor {
             }
             val originalProgram = opened?.program
             val originalJson = originalProgram?.rawJson?.let { JSONObject(it) } ?: JSONObject()
+            val prescriptions = originalJson.optJSONObject("prescriptions")?.let { JSONObject(it.toString()) } ?: JSONObject()
+            for ((editedId, edit) in d.prescriptionEdits) {
+                val source = requireNotNull(db.exerciseLibraryDao().getExerciseById(editedId)) { "Unknown exercise" }
+                check(NativeProgramPrescription.source(source) == edit.source) { "Exercise units changed; reopen editor" }
+                val patch = JSONObject(edit.patch)
+                for (entry in d.days.flatMap { it.entries }.filter { exerciseId(it) == editedId }) {
+                    val effective = NativeProgramPrescription.effective(originalProgram, entry, source,
+                        d.prescriptionEdits, source.defaultRestSeconds)
+                    NativeProgramPrescription.validate(patch, effective.getString("loadType"))
+                }
+                val merged = prescriptions.optJSONObject(editedId)?.let { JSONObject(it.toString()) } ?: JSONObject()
+                for (key in patch.keys()) merged.put(key, patch.get(key))
+                prescriptions.put(editedId, merged)
+            }
             val nameHu = if (language == "hu" || originalProgram == null) d.name else originalProgram.nameHu
             val names = mapOf("hu" to nameHu,
                 "en" to (if (language == "en" || originalProgram == null) d.name else originalProgram.nameEn),
@@ -213,7 +233,10 @@ internal object NativeProgramEditor {
                 val de = if (language == "de" || previous == null) day.name else previous.nameDe
                 val ro = if (language == "ro" || previous == null) day.name else previous.nameRo
                 ProgramDayEntity("$id:${day.id}", id, day.id, hu, en, de, ro, index,
-                    JSONArray().apply { day.entries.forEach { put(JSONTokener(it).nextValue()) } }.toString())
+                    JSONArray().apply { day.entries.forEach { entry ->
+                        put(NativeProgramPrescription.applyToInline(entry,
+                            d.prescriptionEdits[exerciseId(entry)]?.patch?.let(::JSONObject)))
+                    } }.toString())
             }
             val jsonDays = JSONArray()
             dayEntities.forEach { day ->
@@ -231,6 +254,7 @@ internal object NativeProgramEditor {
                 .put("builtin", false).put("generated", personalMetadata != null)
                 .put("sourceType", if (personalMetadata == null) "own" else "profile-template")
                 .put("days", jsonDays).put("updatedAt", System.currentTimeMillis())
+            if (d.prescriptionEdits.isNotEmpty()) raw.put("prescriptions", prescriptions)
             if (personalMetadata != null) {
                 raw.put("sourceTemplateId", opened!!.program.id).put("templateVersion", 2)
                     .put("estimatedMinutes", NativeProfileProgramPreview.estimatedMinutes(d.days, personalMetadata.getJSONObject("prescriptions")))

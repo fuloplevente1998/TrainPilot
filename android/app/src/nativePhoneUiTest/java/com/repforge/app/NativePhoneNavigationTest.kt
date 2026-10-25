@@ -825,6 +825,20 @@ class NativePhoneNavigationTest {
         compose.onNodeWithTag("program_editor_choices")
             .performScrollToNode(hasTestTag("program_editor_add_exercise_goblet-squat"))
         compose.onNodeWithTag("program_editor_add_exercise_goblet-squat").performClick()
+        compose.onNodeWithTag("program_editor_rx_0").performScrollTo().performClick()
+        compose.onNodeWithTag("program_rx_sets").performScrollTo().performTextReplacement("0")
+        compose.onNodeWithTag("program_rx_apply").performClick()
+        compose.onNodeWithTag("program_rx_error").assertExists()
+        compose.onNodeWithTag("program_rx_cancel").performClick()
+        compose.onNodeWithTag("program_editor_rx_0").performScrollTo().performClick()
+        compose.onNodeWithTag("program_rx_sets").performScrollTo().performTextReplacement("4")
+        compose.onNodeWithTag("program_rx_reps").performScrollTo().performTextReplacement("6–8")
+        compose.onNodeWithTag("program_rx_weight").performScrollTo().performTextReplacement("22.5")
+        compose.onNodeWithTag("program_rx_rest").performScrollTo().performTextReplacement("75")
+        compose.onNodeWithTag("program_rx_apply").performClick()
+        assertFalse(runBlocking(Dispatchers.IO) {
+            TrainPilotDatabase.getInstance(context).programDao().getProgramsWithDays().any { it.program.nameHu == "Gyakorlatos terv" }
+        })
         compose.onNodeWithTag("program_editor_save").performClick()
         val db = TrainPilotDatabase.getInstance(context)
         compose.waitUntil(15000) { runBlocking(Dispatchers.IO) {
@@ -833,6 +847,18 @@ class NativePhoneNavigationTest {
                     org.json.JSONArray(it.days.singleOrNull()?.exercisesJson ?: "[]").optString(0) == "goblet-squat"
             }
         } }
+        val saved = runBlocking(Dispatchers.IO) { db.programDao().getProgramsWithDays().first { it.program.nameHu == "Gyakorlatos terv" } }
+        val rx = JSONObject(saved.program.rawJson).getJSONObject("prescriptions").getJSONObject("goblet-squat")
+        assertEquals(4, rx.getInt("sets")); assertEquals(22.5, rx.getDouble("weight"), 0.0)
+        assertEquals("6–8", rx.getString("reps")); assertEquals(75, rx.getInt("rest"))
+        compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("program_edit_${saved.program.id}"))
+        compose.onNodeWithTag("program_edit_${saved.program.id}").performClick()
+        compose.onNodeWithTag("program_editor_rx_0").performScrollTo().performClick()
+        compose.onNodeWithTag("program_rx_sets").assertTextContains("4")
+        compose.onNodeWithTag("program_rx_sets").performScrollTo().performTextReplacement("7")
+        compose.onNodeWithTag("program_rx_apply").performClick()
+        compose.onNodeWithTag("program_editor_cancel").performClick()
+        assertEquals(saved, runBlocking(Dispatchers.IO) { db.programDao().getProgramWithDaysById(saved.program.id) })
         assertFalse(ActiveWorkoutStore.current(context)?.optBoolean("active") == true)
     }
 
