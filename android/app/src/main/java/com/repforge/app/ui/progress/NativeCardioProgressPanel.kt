@@ -39,7 +39,7 @@ internal fun NativeCardioProgressPanel(state: ProgressUiState,
     val context = LocalContext.current
     val strings = remember(context, state.language) { nativeResources(context, state.language) }
     val model = state.cardio
-    var showAllRecords by remember(state.selectedCardioId) { mutableStateOf(false) }
+    var visibleRecordCount by remember(state.selectedCardioId) { mutableIntStateOf(12) }
     Card(Modifier.fillMaxWidth().testTag("progress_cardio"),
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = colors.card),
@@ -113,13 +113,17 @@ internal fun NativeCardioProgressPanel(state: ProgressUiState,
                     if (model.records.isEmpty()) Text(
                         strings.getString(R.string.cardio_progress_no_records),
                         color = colors.muted, modifier = Modifier.testTag("progress_cardio_no_records"))
-                    val displayedRecords = if (showAllRecords) model.records else model.records.take(12)
+                    val activityNames = model.activities.associate { activity ->
+                        activity.exerciseId to cardioActivityName(state.language, activity)
+                    }
+                    val displayedRecords = model.records.take(visibleRecordCount)
                     displayedRecords.forEach { record ->
                         Column(Modifier.fillMaxWidth()
                             .background(colors.card2, RoundedCornerShape(10.dp)).padding(10.dp)
                             .testTag("progress_cardio_record_${record.exerciseId}_${record.roundedDistanceMeters}")) {
-                            Text(strings.getString(R.string.cardio_progress_record_distance,
-                                record.roundedDistanceMeters, record.count),
+                            Text("${activityNames[record.exerciseId] ?: record.exerciseId} · " +
+                                strings.getString(R.string.cardio_progress_record_distance,
+                                    record.roundedDistanceMeters, record.count),
                                 color = colors.text, fontWeight = FontWeight.SemiBold)
                             Text(strings.getString(R.string.cardio_progress_record_best,
                                 cardioDuration(record.best.seconds),
@@ -132,12 +136,12 @@ internal fun NativeCardioProgressPanel(state: ProgressUiState,
                             }
                         }
                     }
-                    if (model.records.size > 12) TextButton(
-                        onClick = { showAllRecords = !showAllRecords },
+                    if (model.records.size > visibleRecordCount) TextButton(
+                        onClick = { visibleRecordCount = (visibleRecordCount + 12).coerceAtMost(model.records.size) },
                         modifier = Modifier.defaultMinSize(minHeight = 48.dp)
                             .testTag("progress_cardio_expand")) {
-                        Text(if (showAllRecords) strings.getString(R.string.cardio_progress_less)
-                            else strings.getString(R.string.cardio_progress_more, model.records.size - 12))
+                        Text(strings.getString(R.string.cardio_progress_more,
+                            (model.records.size - visibleRecordCount).coerceAtMost(12)))
                     }
                 }
             }
