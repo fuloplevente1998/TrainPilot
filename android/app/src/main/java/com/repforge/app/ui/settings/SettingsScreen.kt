@@ -118,6 +118,7 @@ fun SettingsScreen(
             }, color = colors.muted)
         }
 
+        item { NativeLanguagePicker(state.settings.language, !state.replacementBusy, viewModel::setLanguage) }
         item { NativeThemePicker(state.settings, viewModel::setTheme) }
         item {
             Card(modifier = Modifier.fillMaxWidth(),

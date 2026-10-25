@@ -182,7 +182,9 @@ class NativePhoneNavigationTest {
         launch(); tab("journal")
         compose.onNodeWithTag("navigation_settings").performClick()
         for ((language, theme) in listOf("hu" to "classicBlue", "en" to "yellow", "de" to "classicRose", "ro" to "cyan")) {
-            runBlocking { settings.setLanguage(language) }
+            compose.onNodeWithTag("settings_language_$language").performScrollTo().performClick()
+            compose.waitUntil(10000) { runBlocking { settings.current().language == language } }
+            compose.onNodeWithTag("settings_language_$language").assertIsSelected()
             compose.onNodeWithTag("theme_$theme").performScrollTo().performClick()
             compose.waitUntil(10000) { runBlocking { settings.current().themeKey == theme && settings.current().language == language } }
             screenshot("settings", language, theme)

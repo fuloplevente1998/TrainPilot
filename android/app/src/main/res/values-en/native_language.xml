@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_language_title">App language</string>
+    <string name="native_language_hint">TrainPilot changes language immediately. Your phone language stays the same.</string>
+</resources>
