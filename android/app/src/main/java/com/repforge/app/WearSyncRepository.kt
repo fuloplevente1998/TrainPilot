@@ -105,7 +105,9 @@ object WearSyncRepository {
         val appContext = context.applicationContext
         syncScope.launch {
             try {
-                NativeDataReplacement.mutate(appContext) {
+                // Explicit Unit bounds the K2 inference across the many command branches
+                // and nested Main dispatcher receipts; result is intentionally discarded.
+                NativeDataReplacement.mutate<Unit>(appContext) {
                     check(!NativeDataReplacement.blocked(appContext)) { "Adat-visszaállítás vagy törlés van folyamatban." }
                     val action = command.optString("action")
                     val pending = ActiveWorkoutStore.current(appContext)?.optBoolean("finalizationPending") == true
@@ -324,6 +326,7 @@ object WearSyncRepository {
                         }
                     }
                 }
+                Unit // Keep the metadata lease operation's result invariant.
             } catch (_: Exception) {
                 if (uri != null) {
                     try {
