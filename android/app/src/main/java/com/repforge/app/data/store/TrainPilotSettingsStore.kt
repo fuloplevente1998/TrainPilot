@@ -307,9 +307,24 @@ class TrainPilotSettingsStore(private val context: Context) {
      * The caller must separately enforce explicit confirmation and active-session guards.
      */
     internal suspend fun saveApprovedTrainingModes197(expectedRaw: String?, approved: JSONObject?,
-        expectedActiveProgramId: String? = null): Boolean {
-        require(approved == null || NativeTrainingModes.validForWrite(approved)) {
-            "Invalid approved training modes configuration"
+        expectedActiveProgramId: String? = null, restoringUndo: Boolean = false): Boolean {
+        if (restoringUndo) {
+            // Restoring a previously imported malformed document is permitted solely
+            // if it is precisely the undo snapshot of the currently saved version.
+            // The resolver still treats it as legacy; no malformed mode can activate.
+            val previous = runCatching { expectedRaw?.let(::JSONObject) }
+                .getOrNull()?.optJSONObject("undo")?.opt("previous")
+            val expectedPrevious = (previous as? JSONObject)?.let {
+                JSONObject(it.toString()).apply { remove("undo") }
+            }
+            require((previous == JSONObject.NULL && approved == null) ||
+                (expectedPrevious != null && approved?.toString() == expectedPrevious.toString())) {
+                "Undo did not match the last saved mode"
+            }
+        } else {
+            require(approved == null || NativeTrainingModes.validForWrite(approved)) {
+                "Invalid approved training modes configuration"
+            }
         }
         val replacement = approved?.toString()
         return NativeDataReplacement.mutate(context) {
