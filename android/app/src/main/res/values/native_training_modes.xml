@@ -59,4 +59,5 @@
     <string name="native_modes_coach_review">Súlyjavaslat ellenőrzése</string>
     <string name="native_modes_coach_cancel">Mégse</string>
     <string name="native_modes_coach_sets">Javasolt munkasorozatok: %1$d (csak előnézet)</string>
+    <string name="native_modes_inherit">Globális mód öröklése</string>
 </resources>
