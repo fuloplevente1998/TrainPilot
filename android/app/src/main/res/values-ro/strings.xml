@@ -622,4 +622,25 @@
     <string name="native_library_27">Cardio</string>
     <string name="native_library_28">Editează exercițiul</string>
     <string name="native_library_29">Creează exercițiu</string>
+    <string name="native_custom_chip_muscle_chest">Piept</string>
+    <string name="native_custom_chip_muscle_back">Spate</string>
+    <string name="native_custom_chip_muscle_shoulders">Umeri</string>
+    <string name="native_custom_chip_muscle_arms">Brațe</string>
+    <string name="native_custom_chip_muscle_core">Trunchi</string>
+    <string name="native_custom_chip_muscle_legs">Picioare</string>
+    <string name="native_custom_chip_muscle_cardio">Cardio</string>
+    <string name="native_custom_chip_muscle_full">Corp întreg</string>
+    <string name="native_custom_chip_measure_reps">Repetări</string>
+    <string name="native_custom_chip_measure_time">Timp</string>
+    <string name="native_custom_chip_measure_distance">Distanță</string>
+    <string name="native_custom_chip_measure_steps">Pași</string>
+    <string name="native_custom_chip_measure_strength">Forță</string>
+    <string name="native_custom_chip_load_bodyweight">Greutate corporală</string>
+    <string name="native_custom_chip_load_weight">Greutate</string>
+    <string name="native_custom_chip_load_dumbbell">Gantere</string>
+    <string name="native_custom_chip_load_barbell">Haltera</string>
+    <string name="native_custom_chip_load_single_dumbbell">O singură ganteră</string>
+    <string name="native_custom_chip_load_total">Greutate totală</string>
+    <string name="native_custom_chip_load_machine">Aparat</string>
+    <string name="native_custom_chip_load_cable">Scripete</string>
 </resources>

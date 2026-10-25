@@ -72,6 +72,33 @@ internal fun CustomExerciseDialog(
     val measurements = listOf("reps", "time", "distance", "steps", "strength")
     val loads = listOf("bodyweight", "weight", "dumbbell", "barbell", "single_dumbbell",
         "total", "machine", "cable")
+    val muscleLabels = listOf(
+        resources.getString(R.string.native_custom_chip_muscle_chest),
+        resources.getString(R.string.native_custom_chip_muscle_back),
+        resources.getString(R.string.native_custom_chip_muscle_shoulders),
+        resources.getString(R.string.native_custom_chip_muscle_arms),
+        resources.getString(R.string.native_custom_chip_muscle_core),
+        resources.getString(R.string.native_custom_chip_muscle_legs),
+        resources.getString(R.string.native_custom_chip_muscle_cardio),
+        resources.getString(R.string.native_custom_chip_muscle_full)
+    )
+    val measureLabels = listOf(
+        resources.getString(R.string.native_custom_chip_measure_reps),
+        resources.getString(R.string.native_custom_chip_measure_time),
+        resources.getString(R.string.native_custom_chip_measure_distance),
+        resources.getString(R.string.native_custom_chip_measure_steps),
+        resources.getString(R.string.native_custom_chip_measure_strength)
+    )
+    val loadLabels = listOf(
+        resources.getString(R.string.native_custom_chip_load_bodyweight),
+        resources.getString(R.string.native_custom_chip_load_weight),
+        resources.getString(R.string.native_custom_chip_load_dumbbell),
+        resources.getString(R.string.native_custom_chip_load_barbell),
+        resources.getString(R.string.native_custom_chip_load_single_dumbbell),
+        resources.getString(R.string.native_custom_chip_load_total),
+        resources.getString(R.string.native_custom_chip_load_machine),
+        resources.getString(R.string.native_custom_chip_load_cable)
+    )
     AlertDialog(onDismissRequest = { if (!saving) onCancel() },
         title = { Text(if (exercise == null) words[0] else words[1]) },
         text = {
@@ -87,19 +114,19 @@ internal fun CustomExerciseDialog(
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                     for (key in muscles) FilterChip(selected = draft.muscle == key,
                         onClick = { draft = draft.copy(muscle = key) },
-                        label = { Text(key) }, modifier = Modifier.testTag("custom_exercise_muscle_$key"))
+                        label = { Text(muscleLabels[muscles.indexOf(key)]) }, modifier = Modifier.testTag("custom_exercise_muscle_$key"))
                 }
                 Text(words[5])
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                     for (key in measurements) FilterChip(selected = draft.measurement == key,
                         onClick = { draft = draft.copy(measurement = key) },
-                        label = { Text(key) }, modifier = Modifier.testTag("custom_exercise_measure_$key"))
+                        label = { Text(measureLabels[measurements.indexOf(key)]) }, modifier = Modifier.testTag("custom_exercise_measure_$key"))
                 }
                 Text(words[6])
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                     for (key in loads) FilterChip(selected = draft.load == key,
                         onClick = { draft = draft.copy(load = key) },
-                        label = { Text(key) }, modifier = Modifier.testTag("custom_exercise_load_$key"))
+                        label = { Text(loadLabels[loads.indexOf(key)]) }, modifier = Modifier.testTag("custom_exercise_load_$key"))
                 }
                 OutlinedTextField(draft.repUnit, { draft = draft.copy(repUnit = it) },
                     label = { Text(words[7]) }, singleLine = true, modifier = Modifier.fillMaxWidth())

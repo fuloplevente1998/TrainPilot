@@ -622,4 +622,25 @@
     <string name="native_library_27">Kardió</string>
     <string name="native_library_28">Saját gyakorlat szerkesztése</string>
     <string name="native_library_29">Saját gyakorlat létrehozása</string>
+    <string name="native_custom_chip_muscle_chest">Mell</string>
+    <string name="native_custom_chip_muscle_back">Hát</string>
+    <string name="native_custom_chip_muscle_shoulders">Váll</string>
+    <string name="native_custom_chip_muscle_arms">Kar</string>
+    <string name="native_custom_chip_muscle_core">Törzs</string>
+    <string name="native_custom_chip_muscle_legs">Láb</string>
+    <string name="native_custom_chip_muscle_cardio">Kardió</string>
+    <string name="native_custom_chip_muscle_full">Teljes test</string>
+    <string name="native_custom_chip_measure_reps">Ismétlés</string>
+    <string name="native_custom_chip_measure_time">Idő</string>
+    <string name="native_custom_chip_measure_distance">Távolság</string>
+    <string name="native_custom_chip_measure_steps">Lépések</string>
+    <string name="native_custom_chip_measure_strength">Erő</string>
+    <string name="native_custom_chip_load_bodyweight">Saját testsúly</string>
+    <string name="native_custom_chip_load_weight">Súly</string>
+    <string name="native_custom_chip_load_dumbbell">Kézisúlyzó</string>
+    <string name="native_custom_chip_load_barbell">Rúd</string>
+    <string name="native_custom_chip_load_single_dumbbell">Egy kézisúlyzó</string>
+    <string name="native_custom_chip_load_total">Összesített súly</string>
+    <string name="native_custom_chip_load_machine">Gép</string>
+    <string name="native_custom_chip_load_cable">Csiga</string>
 </resources>

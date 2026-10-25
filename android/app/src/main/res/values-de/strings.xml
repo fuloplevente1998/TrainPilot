@@ -622,4 +622,25 @@
     <string name="native_library_27">Ausdauer</string>
     <string name="native_library_28">Übung bearbeiten</string>
     <string name="native_library_29">Eigene Übung erstellen</string>
+    <string name="native_custom_chip_muscle_chest">Brust</string>
+    <string name="native_custom_chip_muscle_back">Rücken</string>
+    <string name="native_custom_chip_muscle_shoulders">Schultern</string>
+    <string name="native_custom_chip_muscle_arms">Arme</string>
+    <string name="native_custom_chip_muscle_core">Rumpf</string>
+    <string name="native_custom_chip_muscle_legs">Beine</string>
+    <string name="native_custom_chip_muscle_cardio">Ausdauer</string>
+    <string name="native_custom_chip_muscle_full">Ganzkörper</string>
+    <string name="native_custom_chip_measure_reps">Wiederholungen</string>
+    <string name="native_custom_chip_measure_time">Zeit</string>
+    <string name="native_custom_chip_measure_distance">Entfernung</string>
+    <string name="native_custom_chip_measure_steps">Schritte</string>
+    <string name="native_custom_chip_measure_strength">Kraft</string>
+    <string name="native_custom_chip_load_bodyweight">Körpergewicht</string>
+    <string name="native_custom_chip_load_weight">Gewicht</string>
+    <string name="native_custom_chip_load_dumbbell">Kurzhanteln</string>
+    <string name="native_custom_chip_load_barbell">Langhantel</string>
+    <string name="native_custom_chip_load_single_dumbbell">Einzelne Kurzhantel</string>
+    <string name="native_custom_chip_load_total">Gesamtgewicht</string>
+    <string name="native_custom_chip_load_machine">Gerät</string>
+    <string name="native_custom_chip_load_cable">Kabelzug</string>
 </resources>
