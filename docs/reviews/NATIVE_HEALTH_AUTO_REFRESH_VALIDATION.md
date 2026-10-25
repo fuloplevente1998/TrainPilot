@@ -44,3 +44,7 @@ The separate `NativeHealthBackupGate` now covers JSON/ZIP SAF import/export **an
 The second native PR run `40233832132` progressed past the FIR analyzer and reported two independent pre-existing Kotlin source errors: a stray brace in the Wear discard-command catch block (`WearSyncRepository.kt:247`), and a non-property constructor parameter reference in backup erase (`BackupRestoreManager.kt:590`). Both are repaired by minimal changes on the feature branch, without changing the Wear protocol, database schema, or package/version metadata. New build verification is required after these fixes.
 
 The native compiler's subsequent detailed diagnostics located the real source-level errors: the `WearSyncRepository` lambda's closing brace belonged after `when(action)`, rather than before the discard `catch`, and the backup erase method must use `appContext`. Both have now been corrected; a brace-balance source check returned zero unmatched blocks. Prior CI failures are not green build evidence.
+
+### Fourth native build result and UI test API repairs
+
+Existing native gate `40234213957` compiled the phone application and Wear debug sources, then failed at `:app:compileDebugAndroidTestKotlin`. Independent source errors: unsupported explicit `assertExists`/`assertDoesNotExist` top-level imports in two UI tests and a `ComposeContentTestRule`-vs-`ComposeTestRule` helper signature that disagreed with `createEmptyComposeRule()`. These were corrected in test sources only, preserving all scenarios. Fifth gate checks those fixes.
