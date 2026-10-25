@@ -124,6 +124,22 @@ class NativeHealthAutoRefreshUiTest {
         assertTrue(NativeHealthBackupGate.available())
     }
 
+    @Test fun ioProviderPublicationRejectsStaleScreenTicketBeforeWritingJournal() {
+        var writes = 0
+        val failure = runBlocking(Dispatchers.IO) {
+            runCatching {
+                NativeHealthForegroundAdmission.publish(
+                    context,
+                    { throw IllegalStateException("Stale Health screen/provider generation") },
+                    { writes++ }
+                )
+            }.exceptionOrNull()
+        }
+        assertTrue("Stale screen/provider ticket must invalidate local publication",
+            failure is IllegalStateException)
+        assertTrue("No stale provider result may reach the Health journal", writes == 0)
+    }
+
     @Test fun ioProviderPublicationRejectsActiveOrPausedPhoneSnapshot() {
         val prefs = context.getSharedPreferences("trainpilot_wear_sync", Context.MODE_PRIVATE)
         val previous = prefs.getString("snapshot", null)
