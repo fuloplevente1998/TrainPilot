@@ -196,7 +196,7 @@ fun HomeScreen(
 }
 
 @Composable
-fun TodayMetricsGrid(metrics: TodayMetricsUiModel, language: String) {
+fun TodayMetricsGrid(metrics: TodayMetricsUiModel, language: String = "hu") {
     val colors = LocalTrainPilotColors.current
     val context = LocalContext.current
     val strings = remember(context, language) { nativeResources(context, language) }
