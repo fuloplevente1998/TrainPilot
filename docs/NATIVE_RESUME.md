@@ -20,6 +20,19 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
   prototípus/fake Health-forrás tilos. Nyolcgombos menü helyett öt alsó fül elfogadva,
   jobb felső Settings; abból visszatérés nem pause, valódi editor-elhagyás igen.
 
+## Legújabb explicit Level2-receptblokk – 2026-10-25
+
+**5bf0654**: közös NativeTrainingPrescription main tp128Rx/Level2 felülírásokból,
+személyes/Coach előnézet ugyanazt használja. Level2 intermediate és gear guard,
+paused pushup/weighted core, címkék, csak tényleges súlyzós trial kér kg-ot.
+History128 effektív rx.loadType alapján örökli a súlyozott testsúlyos mozgás súlyát.
+14 main JS referencia-fixture generálva és reprodukálva; Kotlin nem futott.
+18 új unit+1 UI-kód: **batch345 unit+36 UI még nem futott**. XML/diff/fixture check.
+Mainben nincs külön automatikus Level2-trigger; kézi előnézet/elfogadás az út.
+Következő valós rés: a data-only katalógus korábbi napjai helyett tp128Template v2
+szerepsorrend/gyakorlatok és szerepalapú helyettesítés/min3; utána időkeret/
+előzmény-adaptáció. Nem teljes generátorparitás, CI/APK/telepítés továbbra STOP.
+
 ## Legfrissebb Coach variáció-bekötés – 2026-10-25
 
 **432727e**: meglévő Coach 3 stabil alkalmas ajánlóból read-only variáció-előnézet,

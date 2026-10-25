@@ -4,6 +4,39 @@ Frissítve: **2026-10-24**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Explicit Level2 receptek és közös main-referenciájú mag – 2026-10-25
+
+**5bf0654** [skip ci]. Pontos main `7473b30:www/app.js` tp128Rx és a
+`generatePersonalProgram` két Level2-receptfelülírása alapján közös
+NativeTrainingPrescription került a személyes előnézet és Coach-variáció elé.
+Compound/erő/Level2 ismétléstartomány, gyakorlat-specifikus cél, profil/perc/munka
+alapú 2–3 sorozat, 150/120/75 mp pihenő, trial0 és RIR/p. szint; Level2-ben csak
+intermediate profilnál paused pushup és explicit kézisúlyzó mellett weighted
+side-plank/crunch. A súlyozott core recept `single_dumbbell`, ezért history128
+most az effektív recept-terheléstípusból örököl súlyt, nem a katalógus bodyweight
+besorolásából. A variációcímke megjelenik az előnézetben; testsúlyos trial0 nem
+kér kg-próbasúlyt, a tényleges súlyzós változat igen. Autoajánlott sablon pontosan
+intermediate→Level2, egyébként basic; kézi választás megmarad.
+
+**Forráspontosítás:** a main `level2` javaslatszövegének nincs külön automatikus
+programszint-emelési hívási útja. Nem találunk ki többgyakorlatos küszöböt. A Level2
+kézi előnézet/elfogadás a tényleges út. További valódi eltérés: a data-only
+katalógus jelenlegi Level2 napjai a korábbi builtin szerkezetet őrzik, míg a main
+későbbi tp128Template v2 más szerepsorrendet/gyakorlatokat épít. Ennek és a
+szerepalapú helyettesítésnek, min3 gyakorlatnak, valós időkeret/örökölt terhelés
+adaptációnak a teljes portja még nyitott. Ez a receptblokk nem teljes generátorparitás.
+
+`scripts/native/prescription-reference.cjs` a rögzített app blob ellenőrzése után
+a tényleges JS-függvényeket futtatva 14 reprodukálható adatreferenciát generál.
+Ez helyi célzott JS-referencia, nem Kotlin teszteredmény. Új 14 parametrizált JVM
+paritási eset +3 előnézet +1 súlyozott core öröklési eset, +1 Phone UI-próbakód;
+**batch345 új unit+36 UI kód megírva, még nem futott**. A korábbi trial-elvárás
+igazolt main-szerződés alapján frissítve: a flag önmagában nem jelent kg-kérést.
+Négy XML/kulcs/hivatkozás, fixture-shape és diff rendben; nincs új CI/APK/valódi
+kép. Utolsó zöld továbbra dd4cc27, main és élő telepítés STOP. PR #238 frissítve.
+Következő: tp128Template v2 napok és szerepalapú helyettesítés, majd időkeret-
+adaptáció; utána fennmaradó teljes UI/paritás és közös CI.
+
 ## Coach variáció: előnézet és külön programmásolat – 2026-10-25
 
 **432727e** alkalmazás-/tesztforrás, [skip ci]. Main `7473b30:www/app.js`
