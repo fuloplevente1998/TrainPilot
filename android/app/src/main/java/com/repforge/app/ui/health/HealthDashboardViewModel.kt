@@ -327,6 +327,8 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
             try {
                 val visibleGeneration = screenGeneration
                 val selected = historyQuery.day.toString()
+                // PhoneWorkoutExecution.store is MAIN-ONLY; never call it inside IO/mutate.
+                val executionSafe = NativeHealthForegroundAdmission.safeOnMain(context)
                 val prepared = withContext(Dispatchers.IO) {
                     NativeDataReplacement.mutate(context) {
                         val prefs = healthStore.preferences()
@@ -343,14 +345,15 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
                                 if (trigger == NativeHealthAutoRefreshGate.Trigger.AUTO) LocalDate.now().toString()
                                 else selected,
                                 healthStore.generation(), visibleGeneration),
-                            prefs.optBoolean("autoOnOpen", false), permitted && NativeHealthForegroundAdmission.safe(context)
+                            prefs.optBoolean("autoOnOpen", false),
+                            permitted && NativeHealthForegroundAdmission.safeOffMain(context)
                         )
                     }
                 }
                 val snapshot = prepared.first
                 if (!screenVisible || screenGeneration != visibleGeneration || historyQuery.day.toString() != selected) return@launch
                 ticket = refreshGate.begin(trigger, SystemClock.elapsedRealtime(), prepared.second,
-                    prepared.third, prepared.third, snapshot) ?: return@launch
+                    prepared.third, executionSafe && prepared.third, snapshot) ?: return@launch
                 val activeTicket = ticket!!
                 manualSamsungPermissionVisible = trigger == NativeHealthAutoRefreshGate.Trigger.MANUAL &&
                     requestSamsungPermission && snapshot.provider == HealthJournalStore.SAMSUNG
@@ -363,7 +366,11 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
                         screenGeneration == visibleGeneration) {
                         "Health screen changed while refreshing"
                     }
-                    check(NativeHealthForegroundAdmission.safe(context)) { "Workout or data replacement in progress" }
+                    // Synchronous guard runs on provider IO threads; main-only execution is
+                    // checked by NativeHealthRefresh *before* each protected publication.
+                    check(NativeHealthForegroundAdmission.safeOffMain(context)) {
+                        "Workout ownership, restore or backup blocks Health refresh"
+                    }
                     if (trigger == NativeHealthAutoRefreshGate.Trigger.AUTO)
                         check(day == LocalDate.now()) { "Local health day changed while refreshing" }
                     check(refreshGate.isCurrent(activeTicket, snapshot, true, true)) {
