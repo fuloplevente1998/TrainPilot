@@ -72,8 +72,16 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
   exact 9c3c264. Csak egy report változott, a migrációba byte-pontosan átemelve.
   Rövid aktuális triage: docs/reviews/NATIVE_FEATURE_PARITY_TRIAGE.md; a hosszú
   eredeti riportot csak konkrét forráshivatkozáshoz olvasd. Hét forrásszintű hiány,
-  ebből a programcélérték-szerkesztés b161126/97f18fd-ben kódban pótolva, nem
-  futtatott elfogadás. Külső ágra nem írtunk, PR-merge/lezárás nem történt.
+  ebből program Rx b161126/97f18fd és Journal edit1a9b6d3/6856abe kódban
+  pótolva, nem futtatott elfogadás. Külső ágra nem írtunk, PR-merge/lezárás nincs.
+- Új elkülönített promptok a felhasználónak átadva, indulás/eredmény nem igazolt:
+  docs/plans/NATIVE_HEALTH_DATE_RANGE_HANDOFF.md (külön ChatGPT, két Health
+  browser/query fájl +új resource/teszt) és NATIVE_CARDIO_GEMINI_HANDOFF.md
+  (Gemini AI Studio, csak új NativeCardioModel +Test). Bázis9a18ca6, saját
+  test/native-health-date-range és test/native-cardio-model ág, nem main/migráció
+  írás. Ez a két konkrét külső feladat ágkivétel; nem belső subagent-felhatalmazás.
+  Fő munkásnál marad Home/Journal/HC/integráció, közben ne írd a lefoglalt
+  fájlokat/neveket. Exact diff-review kell, nem vak merge vagy késznek jelölés.
 
 ## Felhasználói thinking-fázisok (2026-10-24)
 

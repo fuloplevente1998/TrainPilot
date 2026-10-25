@@ -12,7 +12,7 @@ elmaradt tesztfuttatás. Ez statikus megerősítés, nem eszközös reprodukció
 
 | Prioritás | Hiány | Aktuális állapot |
 | --- | --- | --- |
-| P1 | Naplózott edzés idő-/gyakorlat-/sorozatadatainak utólagos szerkesztése | Nyitott: JournalScreen/VM részletek+törlés, nincs edit/save adatút. |
+| P1 | Naplózott edzés idő-/gyakorlat-/sorozatadatainak utólagos szerkesztése | **1a9b6d3/6856abe** kódban pótolva, futtatás/elfogadás hátra. |
 | P1 | Programgyakorlat sorozat/ismétlés-idő/súly/pihenő/próbasúly szerkesztése | **b161126** kódban pótolva, futtatás/elfogadás hátra. |
 | P2 | Kardió heti táv/tempó/idő és azonos távú rekordok | Nyitott: Progress jelenleg izom/1RM/testsúly út. |
 | P2 | Edzésidőablakhoz kötött HC-részletek és felhasználói frissítés | Nyitott: Journal forrásfül JSON jelenlétét jelzi, nem részletes értéket/refresh-t. |
@@ -27,6 +27,27 @@ autoOnOpen → rf250Sync és readPage(from,to). Natív oldalon a megfelelő UI/V
 vezérlők/callbackek/queryk átnézve. A rögzített permalinkek az eredeti riportban.
 Testsúlynapló,26 metrika/nyers rekord/alvás, aktív edzés/undo és globális
 intervallumpreset már létező adatútját nem minősítjük hiánynak.
+
+## Naplószerkesztés – 1a9b6d3 /6856abe
+
+- Részletekből explicit edit/save/cancel, ViewModel-owned izolált draft; idő,
+  gyakorlat/szett add/remove, weight/reps/time/bilateral/distance/done/RIR.
+- Exact-ID Room detail lookup és teljes parent/exercise/set/photo CAS a tx-ben;
+  dataset ticket, törlés/tombstone, azonos active/finalization guard. Új
+  katalógusgyakorlatnál loadType/repUnit/measurementType változás elutasítás.
+- Egyetlen meglévő mapper és bounded PR értékelés; nincs aktív UI/finish/nyugta
+  újrajátszás. ID/sync/key/schedule és retainedsetUUID/route/photo/Health megmarad.
+- Canonical single-row export kiemelve a backup mapperből; megmaradó raw unknown
+  exercise/set/photo/feedback mezőket sem dobja el a későbbi portable export.
+- Időváltozáskor egészségmérés eredeti window-ja külön jelölve a Source fülön;
+  mérést nem tolunk át új időszakra. Változatlan dátumoknál duration és a
+  UI-formátumban nem látható szubmásodpercek megmaradnak. Hibás legacy dátum
+  megnyitás előtt műveleti hiba; a kézi dátummező explicit timezone offsetet kér.
+- 20 új resource HU/EN/DE/RO.12 JVM-metódus és1 valódi appos UI-case új kód,
+  **NEM FUTOTT**. Statikus lexical/XML/R-ref/adatút és exact-ID SQLite index check;
+  nem Kotlin/Room/Compose futás. Batch545 JVM+49 Phone UI vár a közös kapura.
+- A megnyitott PR/audit nem lezárt. Ez functional UI bekötés, nem végleges
+  vizuális polish; összes paritás/platform/CI/device elfogadás továbbra külön.
 
 ## Programcélérték-javítás – b161126
 
@@ -53,10 +74,8 @@ prescription JSON-t, nem parse-olja a teljes programot minden sorhoz.
 
 ## Következő csomagok
 
-1. A másik P1: exact-ID/CAS naplószerkesztés a meglévő mapperrel és Room tranzakcióval;
-   ne játsszon le aktív edzés-UI-t, ne hívjon új finish-wrappert. Route/fotó/Health/
-   RIR/unknown mezők és törlési/nyugtázási invariánsok megőrzése. Ehhez kapcsolódhat
-   az edzéshez kötött HC-panel és explicit refresh.
+1. A két P1 kódban pótolva; következő Journal-rész az edzéshez kötött HC-panel és
+   explicit refresh. Közben Home target/start/invalidation a fő munkásnál.
 2. Külön program/settings módválasztás +valódi progressziós policy parity.
 3. Kardió bounded projekció/aggregátum és megfelelő Progress UI.
 4. Health foreground opt-in/throttle +permission-aware sync és többnapos records UI/query.
@@ -65,3 +84,8 @@ A korábban javított Home napi count e4920f4, célprogramnap/start/invalidation
 külön hátra. Az audit29 útvonala nem teljes release-elfogadás: a többi A–E,
 Google/cross-device/Health/GPS/platform és a végső kapuk is megmaradnak.
 Main merge, verzióemelés, PR-lezárás vagy élő adatos APK-frissítés nem történt.
+
+Elkülönített promptok átadva a felhasználónak, indulás/eredmény nem igazolt:
+Health date range → plans/NATIVE_HEALTH_DATE_RANGE_HANDOFF.md; Gemini cardio
+számítás → plans/NATIVE_CARDIO_GEMINI_HANDOFF.md. Csak saját ág/two-file keret,
+main/migráció írás tiltott a külső munkásnak; közös review/integráció itt.

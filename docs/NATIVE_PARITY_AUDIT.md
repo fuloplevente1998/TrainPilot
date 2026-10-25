@@ -1,5 +1,12 @@
 # Natív migráció – funkcióegyezési ellenőrzés
 
+Friss kódállapot2026-10-25:1a9b6d3/6856abe Journal edit explicit Save/CAS/
+canonical mapper és b161126/97f18fd program Rx kódban pótolva. Külső #242
+forrásaudit és aktuális triage: reviews/NATIVE_FEATURE_PARITY_TRIAGE.md.
+**Batch545 új JVM+49 Phone UI-kód NEM FUTOTT**, friss teljes CI/APK/kép nincs;
+utolsó teljes zöld dd4cc27/40072751592. A lenti korábbi kapueredmények pontos
+SHA-khoz tartozó történeti pillanatképek, nem az új forrás tesztbizonyítékai.
+
 Állapot: 2026-10-24, `dd4cc27` importált draft-átvétel, `9da639d` gyors/kültéri indítás és GPS-választás, `40384e7` kézi measured/interval/időnapló, `922b6b7` CI / `e164ef3` GPS/pihenő/gyakorlatváltás, `b6e8158` stabil UI-célzás/alsó stopper, `9492755` editor/motor és `cab522a` indítás/lezárás alapján. A korábbi teljes technikai zöld alap `134adcd`. Ez forrásellenőrzés, nem készülékes elfogadás.
 Összehasonlítási alap: a készüléken elfogadott gyorsított 1.3.71 /2735,
 `v1.3.71-perf-20261022`, forrás `5d27aa9` (appkód: `715dc5d`).

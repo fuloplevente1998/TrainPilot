@@ -4,6 +4,32 @@ Frissítve: **2026-10-25**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Naplószerkesztés és két elkülönített átadó – 2026-10-25
+
+**1a9b6d3 /6856abe**: a meglévő Journal részletekből izolált szerkesztő nyílik:
+idő, gyakorlat/szett add/remove, súly/ismétlés/idő/kétoldali/táv/done/RIR.
+Explicit Save → meglévő bounded PR és canonical Room mapper egy tx-ben;
+exact-ID parent+relations CAS, dataset ticket, tombstone és azonos active/
+finalization védelem. Main-looper snapshotcheck; más aktív edzést nem replay-el.
+Új katalógusgyakorlat unitváltozása stale hibát ad. ID/sync/key/schedule és
+megmaradó setUUID/route/fotó/Health megmarad; single-row exporter a backupban is
+megőrzi az unknown exercise/set/photo/feedback mezőket. Időváltozáskor eredeti
+Health-window jelölés; nincs átcímkézett mérés. Változatlan időknél duration és
+szubmásodperc marad. Hibás legacy dátum megnyitás előtt error.20 új resource
+négy nyelven, kézi dátummező explicit offsettel; még nem végső vizuális polish.
+
+12 új JVM +1 valódi appos UI-case kód. **Batch545 JVM+49 Phone UI NEM FUTOTT.**
+Lexical/XML/kulcs/R-ref/adatút/tx-sorrend és exact-ID SQLite index check volt,
+nem Kotlin/Room/Compose futás. Nincs új CI/APK/screenshot, zöld dd4cc27 marad.
+A két audit-P1 kódban pótolva, öt P2 nyitott, összes elfogadás továbbra hátra.
+
+Felhasználónak másolható prompt/raw link átadva: [külön ChatGPT – date range](plans/NATIVE_HEALTH_DATE_RANGE_HANDOFF.md)
+és [Gemini – kardió számítás](plans/NATIVE_CARDIO_GEMINI_HANDOFF.md). Mindkettő
+pinned9a18ca6, saját branch/tiszta fájlhatár; indulás/eredmény még nem igazolt,
+belső subagent nincs. Fő munkás következő konkrét része Home target/start/
+invalidation, utána workout HC-panel/refresh és modes/foregroundauto. Követő #238
+frissítendő az új branch HEAD-re. Main/verzió/élő adatos telepítés STOP marad.
+
 ## PR242 audit átvéve, P1 programcélértékek bekötve – 2026-10-25
 
 Külső audit draft #242 **9c3c264**, csak egy dokumentum, pinned main7473b30 /
