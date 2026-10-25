@@ -274,4 +274,22 @@
     <string name="planner_day_reduction">%1$s: gyakorlat %2$d → %3$d, sorozat %4$d → %5$d. %6$s</string>
     <string name="planner_day_time_reason">Időkerethez igazítva</string>
     <string name="planner_day_equipment_reason">Felszereléshez, kizárásokhoz vagy gyakorlatváltozáshoz igazítva</string>
+    <string name="native_home_resume_draft">Félbehagyott edzés folytatása</string>
+    <string name="native_home_next_workout">KÖVETKEZŐ EDZÉS</string>
+    <string name="native_home_default_program">Otthoni Alap</string>
+    <string name="native_home_planned_exercises">%1$d gyakorlat tervezve mára</string>
+    <string name="native_home_start_workout">Edzés indítása</string>
+    <string name="native_home_today_status">Mai állapot</string>
+    <string name="native_home_quick_workout">Gyors edzés</string>
+    <string name="native_home_gym">Edzőterem</string>
+    <string name="native_home_select_exercise">Gyakorlat választása</string>
+    <string name="native_home_outdoor_gps">Szabadtéri GPS</string>
+    <string name="native_home_run_walk">Futás / Séta</string>
+    <string name="native_home_wear_watch">Wear OS okosóra</string>
+    <string name="native_home_sleep">Alvás</string>
+    <string name="native_home_active_calories">Aktív kalória</string>
+    <string name="native_home_pulse">Pulzus</string>
+    <string name="native_home_steps">Lépések</string>
+    <string name="native_home_today_workout">Mai edzés</string>
+    <string name="native_home_recovery">Regeneráció</string>
 </resources>

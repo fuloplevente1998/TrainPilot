@@ -41,6 +41,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.repforge.app.R
+import com.repforge.app.ui.text.nativeResources
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.remember
 import com.repforge.app.ui.navigation.NativePlanningShortcuts
 import com.repforge.app.ui.theme.LocalTrainPilotColors
 
@@ -59,6 +63,8 @@ fun HomeScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val colors = LocalTrainPilotColors.current
+    val context = LocalContext.current
+    val strings = remember(context, language) { nativeResources(context, language) }
     val scrollState = rememberScrollState()
 
     Column(
@@ -69,7 +75,7 @@ fun HomeScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         if (state.hasImportedDraft) Button(onClick = onResumeDraft, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
-            Text("Félbehagyott edzés folytatása")
+            Text(strings.getString(R.string.native_home_resume_draft))
         }
         NativePlanningShortcuts(language, !busy, onPrograms, onCalendar, onCoach)
         // 1. Következő edzés ajánló kártya (Next Workout Hero Card)
@@ -86,14 +92,14 @@ fun HomeScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "KÖVETKEZŐ EDZÉS",
+                        text = strings.getString(R.string.native_home_next_workout),
                         color = colors.accentText,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
                     )
                     Text(
-                        text = state.activeProgram?.program?.nameHu ?: "Otthoni Alap",
+                        text = state.activeProgram?.program?.nameHu ?: strings.getString(R.string.native_home_default_program),
                         color = colors.muted,
                         fontSize = 11.sp
                     )
@@ -106,7 +112,7 @@ fun HomeScreen(
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "${state.nextDayExercisesCount} gyakorlat tervezve mára",
+                    text = strings.getString(R.string.native_home_planned_exercises, state.nextDayExercisesCount),
                     color = colors.muted,
                     fontSize = 13.sp
                 )
@@ -119,38 +125,38 @@ fun HomeScreen(
                 ) {
                     Icon(Icons.Default.PlayArrow, contentDescription = null, tint = colors.onAccent)
                     Spacer(Modifier.width(8.dp))
-                    Text("Edzés indítása", color = colors.onAccent, fontWeight = FontWeight.Bold)
+                    Text(strings.getString(R.string.native_home_start_workout), color = colors.onAccent, fontWeight = FontWeight.Bold)
                 }
             }
         }
 
         // 2. Phase 5 #44: Mai állapot rács (Today Status 6-Metric Grid)
         Text(
-            text = "Mai állapot",
+            text = strings.getString(R.string.native_home_today_status),
             color = colors.text,
             fontSize = 16.sp,
             fontWeight = FontWeight.SemiBold
         )
-        TodayMetricsGrid(metrics = state.todayMetrics)
+        TodayMetricsGrid(metrics = state.todayMetrics, language = language)
 
         // 3. Gyorsindítás szekció (Quick Workout Buttons)
         Text(
-            text = "Gyors edzés",
+            text = strings.getString(R.string.native_home_quick_workout),
             color = colors.text,
             fontSize = 16.sp,
             fontWeight = FontWeight.SemiBold
         )
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             QuickActionButton(
-                title = "Edzőterem",
-                subtitle = "Gyakorlat választása",
+                title = strings.getString(R.string.native_home_gym),
+                subtitle = strings.getString(R.string.native_home_select_exercise),
                 icon = Icons.Default.FitnessCenter,
                 modifier = Modifier.weight(1f),
                 onClick = { onQuickWorkout(false) }
             )
             QuickActionButton(
-                title = "Szabadtéri GPS",
-                subtitle = "Futás / Séta",
+                title = strings.getString(R.string.native_home_outdoor_gps),
+                subtitle = strings.getString(R.string.native_home_run_walk),
                 icon = Icons.Default.DirectionsRun,
                 modifier = Modifier.weight(1f),
                 onClick = { onQuickWorkout(true) }
@@ -174,7 +180,7 @@ fun HomeScreen(
                     Icon(Icons.Default.Watch, contentDescription = null, tint = colors.accent2)
                     Spacer(Modifier.width(10.dp))
                     Column {
-                        Text("Wear OS okosóra", color = colors.text, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Text(strings.getString(R.string.native_home_wear_watch), color = colors.text, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                         Text(state.watchState, color = colors.muted, fontSize = 11.sp)
                     }
                 }
@@ -190,15 +196,17 @@ fun HomeScreen(
 }
 
 @Composable
-fun TodayMetricsGrid(metrics: TodayMetricsUiModel) {
+fun TodayMetricsGrid(metrics: TodayMetricsUiModel, language: String) {
     val colors = LocalTrainPilotColors.current
+    val context = LocalContext.current
+    val strings = remember(context, language) { nativeResources(context, language) }
     val items = listOf(
-        Triple("Alvás", metrics.sleepText, "h"),
-        Triple("Aktív kalória", metrics.caloriesText, "kcal"),
-        Triple("Pulzus", metrics.pulseText, "bpm"),
-        Triple("Lépések", metrics.stepsText, "lépés"),
-        Triple("Mai edzés", metrics.workoutCountText, "edzés"),
-        Triple("Regeneráció", metrics.recoveryText, " readiness")
+        Triple(strings.getString(R.string.native_home_sleep), metrics.sleepText, "h"),
+        Triple(strings.getString(R.string.native_home_active_calories), metrics.caloriesText, "kcal"),
+        Triple(strings.getString(R.string.native_home_pulse), metrics.pulseText, "bpm"),
+        Triple(strings.getString(R.string.native_home_steps), metrics.stepsText, "lépés"),
+        Triple(strings.getString(R.string.native_home_today_workout), metrics.workoutCountText, "edzés"),
+        Triple(strings.getString(R.string.native_home_recovery), metrics.recoveryText, " readiness")
     )
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

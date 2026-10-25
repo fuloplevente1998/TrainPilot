@@ -274,4 +274,22 @@
     <string name="planner_day_reduction">%1$s: exerciții %2$d → %3$d, serii %4$d → %5$d. %6$s</string>
     <string name="planner_day_time_reason">Adaptat la timpul disponibil</string>
     <string name="planner_day_equipment_reason">Adaptat la echipament, excluderi sau modificări ale exercițiilor</string>
+    <string name="native_home_resume_draft">Reia antrenamentul întrerupt</string>
+    <string name="native_home_next_workout">URMĂTORUL ANTRENAMENT</string>
+    <string name="native_home_default_program">Antrenament de bază acasă</string>
+    <string name="native_home_planned_exercises">%1$d exerciții planificate pentru azi</string>
+    <string name="native_home_start_workout">Începe antrenamentul</string>
+    <string name="native_home_today_status">Starea de azi</string>
+    <string name="native_home_quick_workout">Antrenament rapid</string>
+    <string name="native_home_gym">Sală de sport</string>
+    <string name="native_home_select_exercise">Alege exercițiul</string>
+    <string name="native_home_outdoor_gps">GPS în aer liber</string>
+    <string name="native_home_run_walk">Alergare / Mers</string>
+    <string name="native_home_wear_watch">Ceas inteligent Wear OS</string>
+    <string name="native_home_sleep">Somn</string>
+    <string name="native_home_active_calories">Calorii active</string>
+    <string name="native_home_pulse">Puls</string>
+    <string name="native_home_steps">Pași</string>
+    <string name="native_home_today_workout">Antrenament azi</string>
+    <string name="native_home_recovery">Recuperare</string>
 </resources>
