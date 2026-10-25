@@ -20,6 +20,24 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
   prototípus/fake Health-forrás tilos. Nyolcgombos menü helyett öt alsó fül elfogadva,
   jobb felső Settings; abból visszatérés nem pause, valódi editor-elhagyás igen.
 
+## Legújabb testsúlynapló-betöltés – 2026-10-25
+
+**29ed6a4**: observeAllWeights eltávolítva a felületi adatútból; Room Paging32,
+prefetch8/maxSize160 cél-cache, visszalapozás és invalidáció. A Fejlődés nem tölti
+be a méréslistát. Teljes adathalmaz skalár kezdő/aktuális/min-max/darabszám és
+kiválasztott időszak <=180 explicit átlagpontja egy read tx-ben; minden szűrt minta
+beleszámít, nincs legutolsó180-ra vágás. Egyedi mérések a teljes listában maradnak,
+rawJson/export/írásvédelem változatlan. Azonos count melletti edit/restore is frissít;
+régi időszakválasz nem publikálható. HU/EN/DE/RO és külön read/page retry.
+13 új JVM+2 UI-kód: **batch401 unit+41 Phone UI még nem futott**. Actual DAO SQL
+SQLite0/200/1500 + azonos dátum1500 pontos lapozás, teljes grafikonfedés és négy XML/
+resource/diff rendben. Room/Kotlin/Compose/új CI/APK/készülékes sebesség nem igazolt.
+Aktív Groovy Room2.7.0 room-paging új függőség; DB-séma/appverzió/Wear változatlan.
+Következő: finalizer PR-számítás getAllWorkoutsWithDetails teljes relációbetöltésének
+kiváltása könnyű bounded projekcióval, azonos lezárási/PR-szemantikával. Export/restore
+külön; cloud-fotó/konkurencia/súlytörlés-replay/A–E/UI és végső közös kapu nyitott.
+PR #238 frissítve, csak migrációs ág; main/élő telepítés STOP, utolsó zöld dd4cc27.
+
 ## Legújabb előzményalapú programadaptáció – 2026-10-25
 
 **89a0cba + 4c1d06a**: aktív program/nap 90 napos bounded Room bizonyítékával

@@ -286,6 +286,13 @@ Ez funkcionális bekötés, nem a végleges vizuális dizájn vagy teljes D06-el
 A providerből érkező történeti testsúly ugyanabban az Egészség menüben külön
 adatforrásként marad; kézi mérés szerkesztése nem írja át a provider mérését.
 
+D06 adatbetöltés pontosítása (`29ed6a4`, 2026-10-25): a teljes szerkeszthető lista
+Room-lapozott. A kezdő/aktuális/min-max/darabszám a teljes naplóé; az időszakválasztó
+csak a grafikont szűri. Grafikon legfeljebb180 időablak-átlag, kifejezett átlag és
+mintaszám felirattal; ez nem mérésvágás vagy nyers adatok felülírása. Ismeretlen
+dátumú import sor megmarad, de nem lesz kitalált pont. Külön retry; HU/EN/DE/RO.
+13 új JVM+2 UI-kód még nem futott; célzott SQL-próba nem Android-eredmény.
+
 ### D03–D05 részletpanel implementációs nyom – 2026-10-24
 
 `606b8c0`: kiválasztott napi/csatornás egyedi mérések és külön alvás részletpanel,

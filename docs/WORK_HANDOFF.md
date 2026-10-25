@@ -4,6 +4,46 @@ Frissítve: **2026-10-25**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Lapozott testsúlynapló és teljes adathalmazból számolt áttekintés – 2026-10-25
+
+**29ed6a4**, [skip ci]. A WeightJournalViewModel már nem observeAllWeights teljes
+listát figyel: a meglévő repository Room Paging adatútját használja, 32-es kezdő
+lappal, 8-as prefetch és 160-as cél-cache beállítással (Paging best effort).
+Room kezeli a visszafelé lapozást és az írás/adatcsere miatti generációcserét;
+lista külön cold flow, Fejlődés áttekintése nem indít teljes méréslistát.
+Az aktív Groovy build a már használt Room-verzióhoz illő room-paging függőséget
+kapta; Room-séma/verzió, package/appverzió és Wear változatlan.
+
+A teljes napló kezdő/aktuális/minimum/maximum súlya és darabszáma skalár SQL-ből
+jön, nem a látható lapból. Egy read tranzakció tölti az összesítést és a kiválasztott
+időszak legfeljebb180 grafikonpontját. Ezek **feliratozott időablak-átlagok**, nem
+kitalált egyedi mérések; a mintaszám összege a teljes szűrt adathalmazé, hosszú
+időtávnál sincs legutolsó180-ra vágás. Minden egyedi mérés lapozva szerkeszthető;
+export/rawJson és exact-ID/stale írásvédelem megmarad. Ismeretlen importdátum
+nem lesz hamis grafikonpont, de a mérés a listában/globális statisztikában marad.
+
+Csak body_weights invalidáció indít új összesítést: azonos darabszám melletti
+középső súlymódosítás/adatcsere sem marad cache-ben. Gyors időszakváltásnál kérés-
+azonosság kizárja a korábbi válasz publikálását. Összesítés- és lapozási hibának
+külön explicit retry, HU/EN/DE/RO; az időszak továbbra a grafikont szűri, nem a
+szerkeszthető teljes naplót. A korábbi inclusive cutoff (pl.7→8 naptári nap) megmarad.
+
+13 új JVM-metódus +2 Phone UI-próbakód; a régi teljeslistás state-teszt valódi Room
+aggregátum/lapozás útvonalra alakítva, az eredeti megőrzési elvárással.
+**Batch401 új unit+41 Phone UI megírva, még nem futott.** Tényleges DAO SQL célzott
+SQLite-próbája: 0/200/1500 minta, <=180 pont, teljes mintafedés, azonos dátumú1500
+külön ID pontos lapozása, skalár szélsőértékek, hibás dátum megőrzése. Négy XML/
+resource/formátumargumentum és diff ellenőrizve. Ez nem Kotlin/Room/Compose-build
+vagy telefonos sebességmérés; új CI/APK/screenshot nincs, utolsó teljes zöld dd4cc27.
+
+Következő konkrét teljeslista-rés: TrainPilotWorkoutFinalization.finishWorkout a
+PR-számításhoz még getAllWorkoutsWithDetails-t hív (összes sorozat/fotó hidratálás).
+Ezt ugyanazon PR-szerződés mellett könnyű, bounded projekcióra kell cserélni;
+a lezárási tranzakció/nyugta/draft/naptár út nem kerülhető meg. Export/restore
+szándékos teljesadat-olvasása külön feladat; cloud-fotó staging/konkurencia,
+súlytörlés felhőreplay, maradó A–E/UI/lokalizáció és közös végső kapu továbbra nyitott.
+PR #238 követi; nincs main merge, verzióemelés vagy élő adatok fölé telepítés.
+
 ## Bizonyított teljes nap és kezdő practiced-kivétel – 2026-10-25
 
 **89a0cba + 4c1d06a**, [skip ci]. NativeProfileDayHistory128 a kanonikus Room
