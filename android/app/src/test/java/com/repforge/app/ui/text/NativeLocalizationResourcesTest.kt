@@ -62,6 +62,30 @@ class NativeLocalizationResourcesTest {
     }
 
     @Test
+    fun homeMetricMetadataAndBleFallbacksHaveFourExplicitTranslations() {
+        val keys = listOf(
+            "native_home_unit_steps",
+            "native_home_unit_workouts",
+            "native_home_unit_readiness",
+            "native_health_ble_connected_watch",
+            "native_health_ble_steps_count",
+            "native_health_ble_unnamed_device"
+        )
+        val expected = mapOf(
+            "values" to listOf("lépés", "edzés", "készenlét", "Csatlakoztatott óra", "%1$d lépés", "Névtelen eszköz"),
+            "values-en" to listOf("steps", "workouts", "readiness", "Connected watch", "%1$d steps", "Unnamed device"),
+            "values-de" to listOf("Schritte", "Trainingseinheiten", "Trainingsbereitschaft", "Verbundene Uhr", "%1$d Schritte", "Unbenanntes Gerät"),
+            "values-ro" to listOf("pași", "antrenamente", "pregătire", "Ceas conectat", "%1$d pași", "Dispozitiv fără nume")
+        )
+        for ((folder, expectedValues) in expected) {
+            val strings = readStrings(folder)
+            for ((key, expectedValue) in keys.zip(expectedValues)) {
+                assertEquals("$folder / $key", expectedValue, strings.getValue(key))
+            }
+        }
+    }
+
+    @Test
     fun sensitiveWorkoutStatesAndUnitsArePresentInEveryLocale() {
         val required = listOf(
             "native_quick_library_error",

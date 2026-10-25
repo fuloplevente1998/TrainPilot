@@ -647,7 +647,7 @@
     <string name="native_workout_right_initial">J</string>
     <string name="native_home_unit_steps">lépés</string>
     <string name="native_home_unit_workouts">edzés</string>
-    <string name="native_home_unit_readiness">readiness</string>
+    <string name="native_home_unit_readiness">készenlét</string>
     <string name="native_health_ble_connected_watch">Csatlakoztatott óra</string>
     <string name="native_health_ble_steps_count">%1$d lépés</string>
     <string name="native_health_ble_unnamed_device">Névtelen eszköz</string>
