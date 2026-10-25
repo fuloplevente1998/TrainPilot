@@ -14,7 +14,7 @@
     <string name="program_rx_weight_assisted">Asistență (kg)</string>
     <string name="program_rx_trial">Lasă gol pentru a alege greutatea printr-o serie de probă.</string>
     <string name="program_rx_rest">Pauză (30–300 s)</string>
-    <string name="program_rx_invalid">Verifică valorile: 1–10 serii, țintă de 1–40 de caractere, 0–10000 kg și pauză de 30–300 s.</string>
+    <string name="program_rx_invalid">Verifică valorile țintă: 1–10 serii, țintă de 1–40 de caractere, 0–10000 kg și pauză de 30–300 s.</string>
     <string name="program_rx_apply">Aplică valorile țintă</string>
     <string name="program_rx_cancel">Anulează</string>
 </resources>

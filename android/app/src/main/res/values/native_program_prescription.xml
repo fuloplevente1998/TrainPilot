@@ -10,11 +10,11 @@
     <string name="program_rx_weight">Terhelés (kg)</string>
     <string name="program_rx_weight_total">Összes terhelés (kg)</string>
     <string name="program_rx_weight_hand">Terhelés kézenként (kg)</string>
-    <string name="program_rx_weight_single">Egy kézisúlyzó tömege (kg)</string>
+    <string name="program_rx_weight_single">Egy kézisúlyzó súlya (kg)</string>
     <string name="program_rx_weight_assisted">Rásegítés (kg)</string>
     <string name="program_rx_trial">Hagyd üresen, ha próbasúllyal választanád ki a terhelést.</string>
     <string name="program_rx_rest">Pihenő (30–300 mp)</string>
-    <string name="program_rx_invalid">Ellenőrizd a célértékeket: 1–10 sorozat, 1–40 karakteres cél, 0–10000 kg és 30–300 mp pihenő.</string>
+    <string name="program_rx_invalid">Ellenőrizd a célértékeket: 1–10 sorozat, 1–40 karakteres cél (ismétlés/idő), 0–10000 kg és 30–300 mp pihenő.</string>
     <string name="program_rx_apply">Célértékek alkalmazása</string>
     <string name="program_rx_cancel">Mégse</string>
 </resources>
