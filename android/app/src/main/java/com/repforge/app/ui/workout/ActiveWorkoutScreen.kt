@@ -171,6 +171,7 @@ fun ActiveWorkoutScreen(
             // 1. Fejléc: Cím, Időtartam, Szenzor státuszok és Ownership gomb
             ActiveWorkoutHeader(
                 state = state,
+                language = language,
                 onTogglePause = { viewModel.toggleWorkoutPause(renderedWorkoutId, renderedGeneration) },
                 onOwnershipAction = {
                     if (state.timerOwner == "watch") viewModel.requestOwnershipBackFromWatch()
@@ -237,6 +238,7 @@ fun ActiveWorkoutScreen(
                     fun target(index: Int) = renderedTargets.getOrNull(index)
                     ExerciseCardItem(
                         exercise = ex,
+                        language = language,
                         onEditSet = { sIdx, field, v -> target(sIdx)?.let { viewModel.editSet(it, field, v) } },
                         onToggleSetDone = { sIdx -> target(sIdx)?.let { viewModel.toggleSetCompleted(it) } },
                         onSetRir = { sIdx, rir -> target(sIdx)?.let { viewModel.setSetRir(it, rir) } },
@@ -250,10 +252,12 @@ fun ActiveWorkoutScreen(
                             val isDistance = ex.measurementType == "distance" || ex.repUnit.trim().lowercase() in setOf("m", "km")
                             if (isDistance) {
                                 DistanceMeasurementPanel(state, ex,
+                                     language = language,
                                     onToggle = { measurementId -> if (nextIndex >= 0) target(nextIndex)?.let { requestGps(it, measurementId) } },
                                     onOpenRoute = viewModel::openRouteMap)
                             } else if (ex.isTimed && nextIndex >= 0 && !intervalActive) {
                                 LowerSetStopwatch(state, ex.sets[nextIndex], ex.isBilateral,
+                                     language = language,
                                     onToggle = { side -> target(nextIndex)?.let { viewModel.toggleSetStopwatch(it, side) } },
                                     onReset = { target(nextIndex)?.let { viewModel.resetSetStopwatch(it) } })
                             }
@@ -330,7 +334,8 @@ fun ActiveWorkoutScreen(
                     remainingSec = state.timerRemainingSec,
                     onAdjust = { delta -> viewModel.adjustRestTimer(renderedTimer, delta) },
                     onSkip = { viewModel.skipRestTimer(renderedTimer) },
-                    canAdjust = state.timerRestOnly && state.timerRunning && !state.isPaused
+                    canAdjust = state.timerRestOnly && state.timerRunning && !state.isPaused,
+                    language = language
                 )
                 Spacer(Modifier.height(8.dp))
             }
@@ -472,9 +477,12 @@ fun ActiveWorkoutScreen(
 fun ActiveWorkoutHeader(
     state: ActiveWorkoutUiState,
     onTogglePause: () -> Unit,
-    onOwnershipAction: () -> Unit
+    onOwnershipAction: () -> Unit,
+    language: String = "hu"
 ) {
     val colors = LocalTrainPilotColors.current
+    val context = LocalContext.current
+    val strings = remember(context, language) { nativeResources(context, language) }
     Card(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
         shape = RoundedCornerShape(16.dp),
@@ -489,7 +497,7 @@ fun ActiveWorkoutHeader(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(state.title, color = colors.text, fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                     Text(
-                        text = if (state.isPaused) "Edzés szünetel" else if (state.timerOwner == "watch") "Óra vezérli (#193)" else "Telefon vezérli",
+                        text = if (state.isPaused) strings.getString(R.string.native_workout_component_paused) else if (state.timerOwner == "watch") strings.getString(R.string.native_workout_component_owner_watch) else strings.getString(R.string.native_workout_component_owner_phone),
                         color = if (state.isPaused) colors.accent else colors.muted,
                         fontSize = 11.sp
                     )
@@ -501,15 +509,15 @@ fun ActiveWorkoutHeader(
                 ) {
                     Icon(
                         imageVector = if (state.isPaused) Icons.Default.PlayArrow else Icons.Default.Pause,
-                        contentDescription = if (state.isPaused) "Folytatás" else "Szünet",
+                        contentDescription = strings.getString(if (state.isPaused) R.string.native_workout_component_resume else R.string.native_workout_component_pause),
                         tint = colors.accent
                     )
                 }
             }
 
-            Text("Mért munka: ${measuredTime(state.measuredWorkSeconds)} · Pihenő: ${measuredTime(state.measuredRestSeconds)}",
+            Text(strings.getString(R.string.native_workout_component_measured_work, measuredTime(state.measuredWorkSeconds), measuredTime(state.measuredRestSeconds)),
                 color = colors.muted, fontSize = 11.sp)
-            if ((state.measuredPauseSeconds ?: 0L) > 0) Text("Mérési szünet: ${measuredTime(state.measuredPauseSeconds)}", color = colors.muted, fontSize = 11.sp)
+            if ((state.measuredPauseSeconds ?: 0L) > 0) Text(strings.getString(R.string.native_workout_component_measured_pause, measuredTime(state.measuredPauseSeconds)), color = colors.muted, fontSize = 11.sp)
             Spacer(Modifier.height(8.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -546,7 +554,7 @@ fun ActiveWorkoutHeader(
                         Icon(Icons.Default.SwapHoriz, contentDescription = null, tint = colors.accent2, modifier = Modifier.size(14.dp))
                         Spacer(Modifier.width(4.dp))
                         Text(
-                            text = if (state.timerOwner == "watch") "Visszavétel" else "Indítás órán",
+                            text = strings.getString(if (state.timerOwner == "watch") R.string.native_workout_component_takeback else R.string.native_workout_component_start_watch),
                             color = colors.accent2,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold
@@ -561,6 +569,7 @@ fun ActiveWorkoutHeader(
 @Composable
 fun ExerciseCardItem(
     exercise: ActiveExerciseUiModel,
+    language: String = "hu",
     onEditSet: (Int, String, String) -> Unit,
     onToggleSetDone: (Int) -> Unit,
     onSetRir: (Int, Int?) -> Unit,
@@ -570,6 +579,8 @@ fun ExerciseCardItem(
     stopwatch: @Composable () -> Unit = {}
 ) {
     val colors = LocalTrainPilotColors.current
+    val context = LocalContext.current
+    val strings = remember(context, language) { nativeResources(context, language) }
     val isDistance = exercise.measurementType == "distance" || exercise.repUnit.trim().lowercase() in setOf("m", "km")
     var manualDistance by remember(exercise.sets.firstOrNull()?.setId) { mutableStateOf(false) }
     Card(
@@ -585,25 +596,25 @@ fun ExerciseCardItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(exercise.name, color = colors.text, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                Text("${exercise.sets.count { it.isCompleted }}/${exercise.sets.size} kész", color = colors.accentText, fontSize = 12.sp)
+                Text(strings.getString(R.string.native_workout_component_sets_done, exercise.sets.count { it.isCompleted }, exercise.sets.size), color = colors.accentText, fontSize = 12.sp)
             }
             Spacer(Modifier.height(10.dp))
 
             stopwatch()
 
             if (isDistance) TextButton(onClick = { manualDistance = !manualDistance }) {
-                Text("Kézi adatbevitel (GPS nélkül)", color = colors.muted)
+                Text(strings.getString(R.string.native_workout_component_manual), color = colors.muted)
             }
             if (!isDistance || manualDistance) {
             // Szett fejléc
             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
                 Text("#", color = colors.muted, fontSize = 11.sp, modifier = Modifier.width(24.dp))
-                Text(if (isDistance) "Távolság (km)" else "Súly (kg)", color = colors.muted, fontSize = 11.sp, modifier = Modifier.weight(1f))
-                Text(if (exercise.isBilateral) "Bal / Jobb (mp)" else if (exercise.isTimed || isDistance) "Idő (mp)" else "Ism.", color = colors.muted, fontSize = 11.sp, modifier = Modifier.weight(1.2f))
+                Text(strings.getString(if (isDistance) R.string.native_workout_component_distance else R.string.native_workout_component_weight), color = colors.muted, fontSize = 11.sp, modifier = Modifier.weight(1f))
+                Text(strings.getString(if (exercise.isBilateral) R.string.native_workout_component_bilateral else if (exercise.isTimed || isDistance) R.string.native_workout_component_time else R.string.native_workout_component_reps), color = colors.muted, fontSize = 11.sp, modifier = Modifier.weight(1.2f))
                 if (exercise.setRirEnabled) {
                     Text("RIR", color = colors.muted, fontSize = 11.sp, modifier = Modifier.width(40.dp))
                 }
-                Text("Kész", color = colors.muted, fontSize = 11.sp, modifier = Modifier.width(44.dp), textAlign = TextAlign.Center)
+                Text(strings.getString(R.string.native_workout_component_done), color = colors.muted, fontSize = 11.sp, modifier = Modifier.width(44.dp), textAlign = TextAlign.Center)
             }
             Spacer(Modifier.height(6.dp))
 
@@ -635,10 +646,10 @@ fun ExerciseCardItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 TextButton(onClick = onAddSet) {
-                    Text("+ Szett hozzáadása", color = colors.accentText, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    Text(strings.getString(R.string.native_workout_component_add_set), color = colors.accentText, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 }
                 TextButton(onClick = { onToggleRirMode(!exercise.setRirEnabled) }) {
-                    Text(if (exercise.setRirEnabled) "RIR elrejtése" else "#229 RIR megadása", color = colors.muted, fontSize = 11.sp)
+                    Text(strings.getString(if (exercise.setRirEnabled) R.string.native_workout_component_hide_rir else R.string.native_workout_component_show_rir), color = colors.muted, fontSize = 11.sp)
                 }
             }
         }
@@ -646,8 +657,10 @@ fun ExerciseCardItem(
 }
 
 @Composable
-private fun DistanceMeasurementPanel(state: ActiveWorkoutUiState, exercise: ActiveExerciseUiModel, onToggle: (String?) -> Unit, onOpenRoute: (String) -> Unit) {
+private fun DistanceMeasurementPanel(state: ActiveWorkoutUiState, exercise: ActiveExerciseUiModel, onToggle: (String?) -> Unit, onOpenRoute: (String) -> Unit, language: String = "hu") {
     val colors = LocalTrainPilotColors.current
+    val context = LocalContext.current
+    val strings = remember(context, language) { nativeResources(context, language) }
     val set = exercise.sets.firstOrNull { !it.isCompleted } ?: exercise.sets.lastOrNull() ?: return
     val bound = state.gpsBoundSetId == set.setId
     val live = bound && state.gpsBindingState in setOf("prepared", "running", "explicitStopped")
@@ -656,16 +669,16 @@ private fun DistanceMeasurementPanel(state: ActiveWorkoutUiState, exercise: Acti
     Column(Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
         Text("${"%.2f".format(meters / 1000.0)} km · ${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}",
             color = colors.accentText, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-        Text(if (set.isCompleted) "Mérés rögzítve" else if (live && !state.gpsHasFix) "GPS-jelre várunk" else if (live) "GPS-mérés folyamatban" else "Mérésre kész",
+        Text(strings.getString(if (set.isCompleted) R.string.native_workout_component_gps_saved else if (live && !state.gpsHasFix) R.string.native_workout_component_gps_wait else if (live) R.string.native_workout_component_gps_running else R.string.native_workout_component_gps_ready),
             color = colors.muted, fontSize = 12.sp)
         Button(onClick = { onToggle(if (live) state.gpsMeasurementId else null) }, enabled = !set.isCompleted && state.timerOwner == "phone" && !state.isPaused && !state.isFinishing,
             modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = colors.accent)) {
-            Text(if (live && state.gpsBindingState == "explicitStopped") "Rögzítés újrapróbálása" else if (live) "Mérés befejezése" else "GPS-mérés indítása",
+            Text(strings.getString(if (live && state.gpsBindingState == "explicitStopped") R.string.native_workout_component_gps_retry else if (live) R.string.native_workout_component_gps_finish else R.string.native_workout_component_gps_start),
                 color = colors.onAccent)
         }
         if (bound && state.gpsError.isNotEmpty()) Text(state.gpsError, color = colors.dangerText, fontSize = 12.sp)
         val route = exercise.sets.lastOrNull { it.gpsRouteKey.isNotBlank() }?.gpsRouteKey
-        if (route != null) TextButton(onClick = { onOpenRoute(route) }) { Text("Térkép", color = colors.accent) }
+        if (route != null) TextButton(onClick = { onOpenRoute(route) }) { Text(strings.getString(R.string.native_workout_component_map), color = colors.accent) }
     }
 }
 
@@ -762,13 +775,16 @@ private fun LowerSetStopwatch(
     set: ActiveSetUiModel,
     bilateral: Boolean,
     onToggle: (String) -> Unit,
-    onReset: () -> Unit
+    onReset: () -> Unit,
+    language: String = "hu"
 ) {
     val colors = LocalTrainPilotColors.current
+    val context = LocalContext.current
+    val strings = remember(context, language) { nativeResources(context, language) }
     val bound = state.stopwatchSetId == set.setId
     val enabled = state.timerOwner == "phone" && !state.isPaused && !state.isFinishing && !state.isTransferPending
     Column(Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
-        Text("Stopper · ${set.setNumber}. sorozat", color = colors.text, fontWeight = FontWeight.SemiBold)
+        Text(strings.getString(R.string.native_workout_component_stopwatch_set, set.setNumber), color = colors.text, fontWeight = FontWeight.SemiBold)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             (if (bilateral) listOf("left", "right") else listOf("single")).forEach { side ->
                 val matching = bound && state.stopwatchSide == side
@@ -777,19 +793,18 @@ private fun LowerSetStopwatch(
                     "left" -> set.leftSeconds.toLong(); "right" -> set.rightSeconds.toLong(); else -> 0L
                 }
                 Column(Modifier.weight(1f)) {
-                    if (bilateral) Text(if (side == "left") "Bal oldal" else "Jobb oldal", color = colors.muted, fontSize = 12.sp)
+                    if (bilateral) Text(strings.getString(if (side == "left") R.string.native_workout_component_left else R.string.native_workout_component_right), color = colors.muted, fontSize = 12.sp)
                     Text("${(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}",
                         color = colors.accentText, fontSize = 30.sp, fontWeight = FontWeight.Bold)
                     Button(onClick = { onToggle(side) }, enabled = enabled && (!state.stopwatchRunning || running),
                         modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = colors.accent)) {
-                        Text(if (running) "Leállítás" else "Indítás", color = colors.onAccent)
+                        Text(strings.getString(if (running) R.string.native_workout_component_stop else R.string.native_workout_component_start), color = colors.onAccent)
                     }
                 }
             }
         }
-        if (bound) TextButton(onClick = onReset, enabled = enabled) { Text("Stopper nullázása", color = colors.muted) }
-        Text(if (bilateral) "Mindkét pozitív oldal után a sorozat automatikusan elkészül."
-            else "Leállításkor a pozitív mért idő automatikusan rögzül.", color = colors.muted, fontSize = 12.sp)
+        if (bound) TextButton(onClick = onReset, enabled = enabled) { Text(strings.getString(R.string.native_workout_component_reset), color = colors.muted) }
+        Text(strings.getString(if (bilateral) R.string.native_workout_component_bilateral_note else R.string.native_workout_component_stopwatch_note), color = colors.muted, fontSize = 12.sp)
     }
 }
 
@@ -913,9 +928,12 @@ fun RestTimerFloatingBar(
     remainingSec: Int,
     onAdjust: (Int) -> Unit,
     onSkip: () -> Unit,
-    canAdjust: Boolean = true
+    canAdjust: Boolean = true,
+    language: String = "hu"
 ) {
     val colors = LocalTrainPilotColors.current
+    val context = LocalContext.current
+    val strings = remember(context, language) { nativeResources(context, language) }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -934,7 +952,7 @@ fun RestTimerFloatingBar(
                 fontWeight = FontWeight.Bold
             )
             Spacer(Modifier.width(8.dp))
-            Text("Pihenő", color = colors.muted, fontSize = 11.sp)
+            Text(strings.getString(R.string.native_workout_component_rest), color = colors.muted, fontSize = 11.sp)
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             TextButton(onClick = { onAdjust(-15) }, enabled = canAdjust) {
@@ -948,7 +966,7 @@ fun RestTimerFloatingBar(
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = colors.accent)
             ) {
-                Text("Kihagyás", color = colors.onAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Text(strings.getString(R.string.native_workout_component_skip), color = colors.onAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
