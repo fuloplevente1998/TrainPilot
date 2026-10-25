@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="health_range_from">Startdatum</string>
+    <string name="health_range_to">Enddatum</string>
+    <string name="health_range_apply">Zeitraum anwenden</string>
+    <string name="health_range_invalid">Das Startdatum darf nicht nach dem Enddatum liegen.</string>
+</resources>

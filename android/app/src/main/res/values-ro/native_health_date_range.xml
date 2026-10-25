@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="health_range_from">Data de început</string>
+    <string name="health_range_to">Data de sfârșit</string>
+    <string name="health_range_apply">Aplică intervalul</string>
+    <string name="health_range_invalid">Data de început nu poate fi după data de sfârșit.</string>
+</resources>
