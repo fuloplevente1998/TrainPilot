@@ -1,6 +1,7 @@
 package com.repforge.app
 
 import android.content.Context
+import com.repforge.app.ui.health.NativeHealthForegroundAdmission
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.hasTestTag
@@ -64,6 +65,61 @@ class NativeHealthAutoRefreshUiTest {
         compose.onNodeWithTag("health_journal_list")
             .performScrollToNode(hasTestTag("health_auto_refresh_switch"))
         compose.onNodeWithTag("health_auto_refresh_switch").assertExists()
+    }
+
+    @Test fun quietIoProviderAdmissionActuallyCrossesTheMainLooperAndRejectsBackupRestore() {
+        // This exercises the production dispatcher split instead of the pure eligible()
+        // helper. The prior bug always rejected even a quiet provider call from IO.
+        instrumentation.runOnMainSync {
+            assertTrue("Quiet main-looper workout execution should allow a provider read",
+                NativeHealthForegroundAdmission.safeOnMain(context))
+        }
+        runBlocking(Dispatchers.IO) {
+            NativeHealthForegroundAdmission.requireMainAdmission(context)
+            assertTrue("Actual IO provider admission must be allowed when quiet",
+                NativeHealthForegroundAdmission.safeOffMain(context))
+        }
+        NativeHealthBackupGate.begin()
+        try {
+            assertFalse(runBlocking(Dispatchers.IO) {
+                NativeHealthForegroundAdmission.safeOffMain(context)
+            })
+        } finally {
+            NativeHealthBackupGate.end()
+        }
+        val prefs = context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE)
+        val before = prefs.getBoolean("blocked", false)
+        try {
+            assertTrue(prefs.edit().putBoolean("blocked", true).commit())
+            assertFalse(runBlocking(Dispatchers.IO) {
+                NativeHealthForegroundAdmission.safeOffMain(context)
+            })
+        } finally {
+            prefs.edit().putBoolean("blocked", before).commit()
+        }
+        assertTrue(NativeHealthBackupGate.available())
+    }
+
+    @Test fun ioProviderPublicationRejectsActiveOrPausedPhoneSnapshot() {
+        val prefs = context.getSharedPreferences("trainpilot_wear_sync", Context.MODE_PRIVATE)
+        val previous = prefs.getString("snapshot", null)
+        try {
+            for (frame in listOf(
+                JSONObject().put("active", true),
+                JSONObject().put("active", true).put("workoutPaused", true),
+                JSONObject().put("active", false).put("finalizationPending", true)
+            )) {
+                assertTrue(prefs.edit().putString("snapshot", frame.toString()).commit())
+                assertFalse("A live/paused/finalizing workout must deny IO publication",
+                    runBlocking(Dispatchers.IO) {
+                        NativeHealthForegroundAdmission.safeOffMain(context)
+                    })
+            }
+        } finally {
+            val editor = prefs.edit()
+            if (previous == null) editor.remove("snapshot") else editor.putString("snapshot", previous)
+            assertTrue(editor.commit())
+        }
     }
 
     @Test fun realAutoSwitchPersistsInExistingHealthJournalAndSurvivesDestinationReentry() {
