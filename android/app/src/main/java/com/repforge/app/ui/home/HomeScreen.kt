@@ -29,7 +29,10 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,6 +43,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.repforge.app.R
 import com.repforge.app.ui.text.nativeResources
@@ -54,7 +61,7 @@ import com.repforge.app.ui.theme.LocalTrainPilotColors
 fun HomeScreen(
     navController: NavController,
     viewModel: HomeViewModel = viewModel(),
-    onStartWorkout: (String) -> Unit,
+    onStartWorkout: (String, String, String?) -> Unit,
     onQuickWorkout: (Boolean) -> Unit,
     onResumeDraft: () -> Unit,
     onCalendar: () -> Unit,
@@ -68,6 +75,8 @@ fun HomeScreen(
     val context = LocalContext.current
     val strings = remember(context, language) { nativeResources(context, language) }
     val scrollState = rememberScrollState()
+    val target = state.nextTarget
+    HomeLocalRefresh(viewModel)
 
     Column(
         modifier = Modifier
@@ -80,6 +89,13 @@ fun HomeScreen(
             Text(strings.getString(R.string.native_home_resume_draft))
         }
         NativePlanningShortcuts(language, !busy, onPrograms, onCalendar, onCoach)
+        if (state.loading) LinearProgressIndicator(Modifier.fillMaxWidth().testTag("home_loading"))
+        if (state.loadFailed) {
+            Text(strings.getString(R.string.home_state_error), color = colors.dangerText)
+            OutlinedButton(onClick = viewModel::loadHomeData, enabled = !busy, modifier = Modifier.testTag("home_retry")) {
+                Text(strings.getString(R.string.home_state_retry))
+            }
+        }
         // 1. Következő edzés ajánló kártya (Next Workout Hero Card)
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -101,9 +117,9 @@ fun HomeScreen(
                         letterSpacing = 1.sp
                     )
                     Text(
-                        text = state.activeProgram?.program?.let {
+                        text = state.recommendedProgram?.program?.let {
                             nativeLocalizedName(language, it.nameHu, it.nameEn, it.nameDe, it.nameRo)
-                        } ?: strings.getString(R.string.native_home_default_program),
+                        } ?: strings.getString(R.string.home_state_no_program),
                         modifier = Modifier.testTag("home_program_name"),
                         color = colors.muted,
                         fontSize = 11.sp
@@ -111,23 +127,24 @@ fun HomeScreen(
                 }
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = state.activeProgram?.days?.firstOrNull { it.dayId == state.nextDayId }?.let {
+                    text = state.recommendedProgram?.days?.firstOrNull { it.dayId == target?.dayId }?.let {
                         nativeLocalizedName(language, it.nameHu, it.nameEn, it.nameDe, it.nameRo)
-                    } ?: strings.getString(R.string.native_home_default_day),
+                    } ?: strings.getString(if (state.loading) R.string.home_state_loading else R.string.home_state_no_target),
                     modifier = Modifier.testTag("home_day_name"),
                     color = colors.text,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold
                 )
-                Text(
+                if (target != null) Text(
                     text = strings.getString(R.string.native_home_planned_exercises, state.nextDayExercisesCount),
                     color = colors.muted,
                     fontSize = 13.sp
                 )
                 Spacer(Modifier.height(16.dp))
                 Button(
-                    onClick = { onStartWorkout(state.nextDayId) }, enabled = !busy,
-                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { target?.let { onStartWorkout(it.programId, it.dayId, it.scheduleId) } },
+                    enabled = !busy && !state.loading && target != null,
+                    modifier = Modifier.fillMaxWidth().testTag("home_start_workout"),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = colors.accent)
                 ) {
@@ -189,7 +206,7 @@ fun HomeScreen(
                     Spacer(Modifier.width(10.dp))
                     Column {
                         Text(strings.getString(R.string.native_home_wear_watch), color = colors.text, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                        Text(state.watchState, color = colors.muted, fontSize = 11.sp)
+                        Text(state.watchState.ifBlank { strings.getString(R.string.home_state_watch_unknown) }, color = colors.muted, fontSize = 11.sp)
                     }
                 }
                 Box(
@@ -199,6 +216,30 @@ fun HomeScreen(
                         .background(if (state.watchConnected == true) colors.success else colors.muted)
                 )
             }
+        }
+    }
+}
+
+/** Re-read local state on return and local-date changes. This does not request provider/network sync. */
+@Composable
+private fun HomeLocalRefresh(model: HomeViewModel) {
+    val context = LocalContext.current
+    val owner = LocalLifecycleOwner.current
+    DisposableEffect(context, owner, model) {
+        val receiver = object : android.content.BroadcastReceiver() {
+            override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) { model.loadHomeData() }
+        }
+        val filter = android.content.IntentFilter().apply {
+            addAction(android.content.Intent.ACTION_DATE_CHANGED)
+            addAction(android.content.Intent.ACTION_TIME_CHANGED)
+            addAction(android.content.Intent.ACTION_TIMEZONE_CHANGED)
+        }
+        ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
+        val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_RESUME) model.loadHomeData() }
+        owner.lifecycle.addObserver(observer)
+        onDispose {
+            owner.lifecycle.removeObserver(observer)
+            context.unregisterReceiver(receiver)
         }
     }
 }
@@ -235,6 +276,7 @@ fun TodayMetricsGrid(metrics: TodayMetricsUiModel, language: String = "hu") {
                             Spacer(Modifier.height(4.dp))
                             Text(
                                 text = value,
+                                modifier = Modifier.testTag("home_metric_${key}_value"),
                                 color = colors.text,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,

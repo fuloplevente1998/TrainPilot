@@ -286,6 +286,60 @@ class NativePhoneNavigationTest {
         }
     }
 
+    @Test fun homeTracksPlanSettingsProgramAndHistoryChangesAndStartsTheDisplayedSchedule() {
+        val db = TrainPilotDatabase.getInstance(context)
+        val start = java.time.Instant.now().plusSeconds(60)
+        val zone = java.time.ZoneId.systemDefault()
+        val planned = runBlocking(Dispatchers.IO) {
+            val source = db.programDao().getProgramWithDaysById("home-basic")!!
+            db.programDao().saveProgramWithDays(source.program.copy(id = "home-scheduled-program", nameHu = "Naptári célprogram", builtin = false),
+                listOf(source.days.first().copy(compositeId = "home-scheduled-program:scheduled-day", programId = "home-scheduled-program",
+                    dayId = "scheduled-day", nameHu = "Naptári célnap", exercisesJson = "[\"goblet-squat\"]")))
+            com.repforge.app.data.db.CalendarScheduleEntity("home-target-plan", "", start.atZone(zone).toLocalDate().toString(),
+                start.toString(), start.plusSeconds(1800).toString(), "home-scheduled-program", "Naptári célprogram",
+                "scheduled-day", "Naptári célnap", "planned", 1L, "{}")
+                .also { db.calendarScheduleDao().upsertEntry(it) }
+        }
+        launch()
+        fun awaitHomeProgram(name: String) {
+            compose.waitUntil(15000) { compose.onAllNodes(hasTestTag("home_program_name") and hasText(name)).fetchSemanticsNodes().isNotEmpty() &&
+                compose.onAllNodesWithTag("home_loading").fetchSemanticsNodes().isEmpty() }
+        }
+        awaitHomeProgram("Naptári célprogram")
+        compose.onNodeWithTag("home_day_name").assertTextEquals("Naptári célnap")
+        val activeName = runBlocking(Dispatchers.IO) { db.programDao().getProgramWithDaysById("home-basic")!!.program.nameHu }
+        runBlocking(Dispatchers.IO) { db.calendarScheduleDao().upsertEntry(planned.copy(status = "skipped")) }
+        awaitHomeProgram(activeName)
+        runBlocking { settings.setActiveProgramId("home-scheduled-program") }
+        awaitHomeProgram("Naptári célprogram")
+        runBlocking { settings.setActiveProgramId("home-basic") }
+        awaitHomeProgram(activeName)
+        runBlocking(Dispatchers.IO) {
+            db.calendarScheduleDao().upsertEntry(planned.copy(id = "home-target-plan-second"))
+            val source = db.programDao().getProgramWithDaysById("home-scheduled-program")!!
+            db.programDao().saveProgramWithDays(source.program.copy(nameHu = "Frissített célprogram"), source.days)
+        }
+        awaitHomeProgram("Frissített célprogram")
+        compose.onNodeWithTag("home_metric_workouts_value").performScrollTo().assertTextEquals("0")
+        runBlocking(Dispatchers.IO) {
+            val now = java.time.Instant.now()
+            com.repforge.app.data.migration.LegacyWebViewMigrator(context, db, settings).saveWorkoutJsonToRoom(JSONObject()
+                .put("id", "home-live-count").put("started", now.minusSeconds(1).toString()).put("finished", now.toString())
+                .put("exercises", org.json.JSONArray()))
+        }
+        compose.waitUntil(15000) { compose.onAllNodes(hasTestTag("home_metric_workouts_value") and hasText("1")).fetchSemanticsNodes().isNotEmpty() &&
+            compose.onAllNodesWithTag("home_loading").fetchSemanticsNodes().isEmpty() }
+        compose.onNodeWithTag("home_start_workout").performScrollTo().assertIsEnabled().performClick()
+        compose.waitUntil(15000) { snapshot()?.optBoolean("active") == true }
+        val launched = snapshot()!!
+        assertEquals("home-scheduled-program", launched.getString("programId"))
+        assertEquals("scheduled-day", launched.getString("dayId"))
+        assertEquals("home-target-plan-second", launched.getString("scheduleId"))
+        assertEquals("home-basic", runBlocking { settings.current().activeProgramId })
+        assertEquals(1, runBlocking(Dispatchers.IO) { db.workoutHistoryDao().getWorkoutCount() })
+        screenshot("home_scheduled_target_started")
+    }
+
     @Test fun journalEditorCancelInvalidSaveAndRealSavePreserveTheExistingWorkout() {
         val db = TrainPilotDatabase.getInstance(context)
         val end = java.time.Instant.now().minusSeconds(60)

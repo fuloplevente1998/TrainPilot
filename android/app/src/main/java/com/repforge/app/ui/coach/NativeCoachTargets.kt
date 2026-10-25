@@ -2,14 +2,16 @@ package com.repforge.app.ui.coach
 
 import com.repforge.app.data.db.CalendarScheduleEntity
 import com.repforge.app.data.db.TrainPilotDatabase
+import com.repforge.app.data.db.ProgramWithDays
 import com.repforge.app.ui.calendar.NativeCalendarRepository
 import java.time.Instant
 import java.time.ZoneId
 
 /** rf233 target precedence: today's plan, upcoming plan, then the active program's next cycle day. */
 internal class NativeCoachTargets(private val db: TrainPilotDatabase) {
-    suspend fun select(activeProgramId: String, language: String, now: Instant, zone: ZoneId): CoachTarget? {
-        val programs = db.programDao().getProgramsWithDays()
+    suspend fun select(activeProgramId: String, language: String, now: Instant, zone: ZoneId,
+        programsSnapshot: List<ProgramWithDays>? = null): CoachTarget? {
+        val programs = programsSnapshot ?: db.programDao().getProgramsWithDays()
         val today = now.atZone(zone).toLocalDate()
         var offset = 0
         var plan: CalendarScheduleEntity? = null

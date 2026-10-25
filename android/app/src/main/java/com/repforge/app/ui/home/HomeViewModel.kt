@@ -3,22 +3,20 @@ package com.repforge.app.ui.home
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.repforge.app.HealthDailySource
 import com.repforge.app.HealthJournalStore
-import com.repforge.app.HealthProviderProjection
+import com.repforge.app.NativeDataReplacement
 import com.repforge.app.WearLiveHealthStore
 import com.repforge.app.data.db.ProgramWithDays
 import com.repforge.app.data.db.TrainPilotDatabase
 import com.repforge.app.data.store.TrainPilotSettingsStore
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
-import java.time.LocalDate
+import java.time.Instant
 import java.time.ZoneId
 import kotlin.math.roundToInt
 
@@ -28,67 +26,80 @@ data class TodayMetricsUiModel(
     val caloriesText: String = "—",
     val pulseText: String = "—",
     val stepsText: String = "—",
-    val workoutCountText: String = "0",
+    val workoutCountText: String = "—",
     val recoveryText: String = "—",
     val isPartial: Boolean = false
 )
 
+data class HomeWorkoutTarget(val programId: String, val dayId: String, val scheduleId: String? = null)
+
 data class HomeUiState(
-    val activeProgram: ProgramWithDays? = null,
-    val nextDayId: String = "A",
-    val nextDayExercisesCount: Int = 4,
+    val recommendedProgram: ProgramWithDays? = null,
+    val nextTarget: HomeWorkoutTarget? = null,
+    val nextDayExercisesCount: Int = 0,
+    val loading: Boolean = true,
+    val loadFailed: Boolean = false,
     val todayMetrics: TodayMetricsUiModel = TodayMetricsUiModel(),
     val watchConnected: Boolean? = null,
     val watchBattery: Int? = null,
     val hasImportedDraft: Boolean = false,
-    val watchState: String = "—"
+    val watchState: String = ""
 )
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val context = application.applicationContext
     private val database = TrainPilotDatabase.getInstance(context)
     private val settingsStore = TrainPilotSettingsStore(context)
-
+    private val repository = NativeHomeRepository(database)
+    private var loading: Job? = null
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     init {
-        loadHomeData()
         viewModelScope.launch {
-            database.keyValueDocumentDao().observeDocument("draft").collect { document ->
-                _uiState.value = _uiState.value.copy(hasImportedDraft = document != null)
-            }
+            repository.invalidations().catch { error -> if (error is CancellationException) throw error else failed() }
+                .collect { loadHomeData() }
+        }
+        viewModelScope.launch {
+            // Theme/timer edits need no program/history read. Language and active program do.
+            settingsStore.settingsFlow.map { it.activeProgramId to it.language }.distinctUntilChanged()
+                .catch { error -> if (error is CancellationException) throw error else failed() }
+                .collect { loadHomeData() }
+        }
+        viewModelScope.launch {
+            database.keyValueDocumentDao().observeDocument("draft")
+                .catch { error -> if (error is CancellationException) throw error else failed() }
+                .collect { document -> _uiState.update { it.copy(hasImportedDraft = document != null) } }
         }
     }
 
+    /** Cancelling an older read prevents its result from overwriting a changed plan or dataset. */
     fun loadHomeData() {
-        viewModelScope.launch {
-            val settings = settingsStore.current()
-            val programs = database.programDao().getProgramsWithDays()
-            val active = programs.firstOrNull { it.program.id == settings.activeProgramId } ?: programs.firstOrNull()
-            val nextDay = active?.days?.firstOrNull()
-
-            val zone = ZoneId.systemDefault()
-            val today = LocalDate.now(zone)
-            val workoutsCount = database.workoutHistoryDao().getWorkoutCountBetween(
-                today.atStartOfDay(zone).toInstant().toEpochMilli(),
-                today.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli())
-            val todayMetrics = fetchTodayMetrics(today.toString(), workoutsCount)
-            val liveHealth = WearLiveHealthStore.current(context)
-
-            _uiState.value = HomeUiState(
-                hasImportedDraft = _uiState.value.hasImportedDraft,
-                activeProgram = active,
-                nextDayId = nextDay?.dayId ?: "A",
-                nextDayExercisesCount = nextDay?.exercisesJson?.let {
-                    runCatching { org.json.JSONArray(it).length() }.getOrDefault(4)
-                } ?: 4,
-                todayMetrics = todayMetrics,
-                watchConnected = liveHealth != null,
-                watchBattery = null,
-                watchState = liveHealth?.optString("state") ?: "Nincs kapcsolat"
-            )
+        loading?.cancel()
+        loading = viewModelScope.launch {
+            _uiState.update { it.copy(loading = true, loadFailed = false) }
+            try {
+                val result = withContext(Dispatchers.IO) {
+                    NativeDataReplacement.mutate(context) {
+                        val settings = settingsStore.current()
+                        val now = Instant.now(); val zone = ZoneId.systemDefault()
+                        val snapshot = repository.read(settings.activeProgramId, settings.language, now, zone)
+                        val metrics = fetchTodayMetrics(now.atZone(zone).toLocalDate().toString(), snapshot.workoutCount)
+                        val liveHealth = WearLiveHealthStore.current(context)
+                        HomeUiState(recommendedProgram = snapshot.program, nextTarget = snapshot.target,
+                            nextDayExercisesCount = snapshot.exerciseCount, loading = false, todayMetrics = metrics,
+                            watchConnected = liveHealth != null, watchState = liveHealth?.optString("state").orEmpty())
+                    }
+                }
+                _uiState.update { result.copy(hasImportedDraft = it.hasImportedDraft) }
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) { failed() }
         }
+    }
+
+    private fun failed() {
+        _uiState.update { it.copy(loading = false, loadFailed = true, recommendedProgram = null, nextTarget = null,
+            nextDayExercisesCount = 0, todayMetrics = it.todayMetrics.copy(isPartial = true)) }
     }
 
     private suspend fun fetchTodayMetrics(today: String, workoutCount: Int): TodayMetricsUiModel = withContext(Dispatchers.IO) {

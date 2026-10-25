@@ -250,8 +250,8 @@ fun TrainPilotAppScaffold(
                 composable(Screen.Home.route) {
                     HomeScreen(
                         navController = navController,
-                        onStartWorkout = { dayId ->
-                            startWorkout(null, dayId)
+                        onStartWorkout = { programId, dayId, scheduleId ->
+                            startWorkout(programId, dayId, scheduleId)
                         },
                         onCalendar = { selectDestination("calendar") }, onCoach = { selectDestination("coach") },
                         onPrograms = { selectDestination("programs") }, language = settings.language, busy = navigationBlocked,
