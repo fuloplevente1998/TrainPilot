@@ -35,6 +35,7 @@ class NativeHealthAutoRefreshBackupTest {
     }
 
     @Test fun initialPartialHealthDayKeepsActualFieldsAndMarksMissingOnesUnavailable() {
+        context.deleteDatabase("health-journal.db")
         val store = HealthJournalStore(context)
         try {
             val date = LocalDate.now().minusDays(2).toString()
