@@ -1,14 +1,24 @@
 package com.repforge.app.ui.health
 
 import android.content.Context
+import android.os.Looper
 import com.repforge.app.ActiveWorkoutStore
 import com.repforge.app.HealthJournalStore
 import com.repforge.app.NativeHealthBackupGate
 import com.repforge.app.NativeDataReplacement
 import com.repforge.app.PhoneOwnership193
 import com.repforge.app.PhoneWorkoutExecution
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
 
-/** Fail-closed foreground admission. Recheck at prepare AND at each journal write site. */
+/**
+ * Split the foreground admission by the real thread ownership of its dependencies.
+ *
+ * PhoneWorkoutExecution.store() is canonically main-looper-only. Calling it from an
+ * SDK/IO publisher catches "Execution requires main looper" and rejects EVERY read.
+ * The other conditions are checked on IO, including again under the short commit lease.
+ */
 internal object NativeHealthForegroundAdmission {
     private val ownershipTransitions = setOf(
         "requested", "offered", "incoming", "accepted", "committed", "installed"
@@ -18,7 +28,7 @@ internal object NativeHealthForegroundAdmission {
         replacementReady: Boolean,
         executionReady: Boolean,
         ownershipStage: String,
-        frames: List<org.json.JSONObject?>
+        frames: List<JSONObject?>
     ): Boolean =
         replacementReady && executionReady && ownershipStage !in ownershipTransitions &&
             frames.filterNotNull().none { frame ->
@@ -26,24 +36,40 @@ internal object NativeHealthForegroundAdmission {
                     frame.optBoolean("finalizationPending") || frame.optBoolean("discardPending")
             }
 
-    fun safe(context: Context): Boolean {
+    /** No metadata lock, provider IPC or coroutine hop in this main-only section. */
+    fun safeOnMain(context: Context): Boolean {
+        check(Looper.myLooper() == Looper.getMainLooper()) { "Foreground admission requires main looper" }
         return try {
-        if (NativeHealthBackupGate.available().not() || NativeDataReplacement.blocked(context)) return false
+            val execution = PhoneWorkoutExecution.store(context)
+            eligible(
+                replacementReady = true,
+                executionReady = !execution.commandsSuspended() && !execution.restoreBlocked(),
+                ownershipStage = "",
+                frames = listOf(execution.snapshot())
+            )
+        } catch (_: Exception) {
+            false // Fail closed for unreadable execution state.
+        }
+    }
+
+    /** Room/restore/backup/ownership checks are legal on an SDK reader's IO thread. */
+    fun safeOffMain(context: Context): Boolean = try {
+        if (!NativeHealthBackupGate.available() || NativeDataReplacement.blocked(context)) return false
         if (HealthJournalStore.get(context).pendingRestore().isNotEmpty()) return false
-        val execution = PhoneWorkoutExecution.store(context)
-        if (execution.commandsSuspended() || execution.restoreBlocked()) return false
         val ownership = PhoneOwnership193.journal(context).read()
         eligible(
             replacementReady = true,
             executionReady = true,
             ownershipStage = ownership.optString("stage"),
-            frames = listOf(
-                ActiveWorkoutStore.current(context), execution.snapshot(),
-                ownership.optJSONObject("snapshot")
-            )
+            frames = listOf(ActiveWorkoutStore.current(context), ownership.optJSONObject("snapshot"))
         )
     } catch (_: Exception) {
-        false // ambiguous ownership or restore state must never trigger unattended reading
-        }
+        false
+    }
+
+    /** Outside ALL metadata locks; only the main-looper execution probe changes dispatcher. */
+    suspend fun requireMainAdmission(context: Context) {
+        val safe = withContext(Dispatchers.Main.immediate) { safeOnMain(context) }
+        check(safe) { "Workout execution or restore blocks foreground Health refresh" }
     }
 }
