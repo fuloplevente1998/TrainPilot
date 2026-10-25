@@ -105,7 +105,9 @@ object WearSyncRepository {
         val appContext = context.applicationContext
         syncScope.launch {
             try {
-                NativeDataReplacement.mutate(appContext) {
+                // Explicit result type keeps Kotlin FIR from recursively inferring a very
+                // large heterogeneous command/receipt lambda (no execution-path change).
+                NativeDataReplacement.mutate<Unit>(appContext) {
                     check(!NativeDataReplacement.blocked(appContext)) { "Adat-visszaállítás vagy törlés van folyamatban." }
                     val action = command.optString("action")
                     val pending = ActiveWorkoutStore.current(appContext)?.optBoolean("finalizationPending") == true
