@@ -97,6 +97,14 @@ internal fun NativeTrainingModePicker(
                     }
                 }
             }
+            if (scope == "program" && programId != null) {
+                TextButton(
+                    onClick = {
+                        pending = NativeTrainingModeChange.prepareInherit(raw, activeProgramId, programId)
+                    }, enabled = enabled,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("${tag}_inherit")
+                ) { Text(strings.getString(R.string.native_modes_inherit), color = colors.accentText) }
+            }
             Text(
                 strings.getString(if (effective.explicitChoice) R.string.native_modes_selected
                     else R.string.native_modes_legacy),
