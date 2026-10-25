@@ -60,4 +60,17 @@
     <string name="native_modes_coach_cancel">Mégse</string>
     <string name="native_modes_coach_sets">Javasolt munkasorozatok: %1$d (csak előnézet)</string>
     <string name="native_modes_inherit">Globális mód öröklése</string>
+    <string name="native_modes_comparison_title">Edzésprogram számszerű előnézete</string>
+    <string name="native_modes_comparison_empty">Az edzésprogram még nem tartalmaz megjeleníthető gyakorlatot.</string>
+    <string name="native_modes_comparison_error">Az előnézetet nem sikerült ellenőrizni; a módot nem mentjük.</string>
+    <string name="native_modes_comparison_loading">Előnézet számítása…</string>
+    <string name="native_modes_comparison_program">Program: %1$s</string>
+    <string name="native_modes_comparison_day">Nap: %1$s</string>
+    <string name="native_modes_comparison_sets">Munkasorozat: %1$s → %2$s</string>
+    <string name="native_modes_comparison_reps">Ismétlés: %1$s → %2$s</string>
+    <string name="native_modes_comparison_weight">Súly: %1$s → %2$s</string>
+    <string name="native_modes_comparison_rest">Pihenő: %1$d mp</string>
+    <string name="native_modes_comparison_rir">Cél-RIR: %1$s</string>
+    <string name="native_modes_comparison_reason">Indok: %1$s</string>
+    <string name="native_modes_comparison_notice">Az értékek előnézeti javaslatok, nem mentett edzésváltozások.</string>
 </resources>
