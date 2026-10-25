@@ -72,10 +72,10 @@ class NativeLocalizationResourcesTest {
             "native_health_ble_unnamed_device"
         )
         val expected = mapOf(
-            "values" to listOf("lépés", "edzés", "készenlét", "Csatlakoztatott óra", "%1$d lépés", "Névtelen eszköz"),
-            "values-en" to listOf("steps", "workouts", "readiness", "Connected watch", "%1$d steps", "Unnamed device"),
-            "values-de" to listOf("Schritte", "Trainingseinheiten", "Trainingsbereitschaft", "Verbundene Uhr", "%1$d Schritte", "Unbenanntes Gerät"),
-            "values-ro" to listOf("pași", "antrenamente", "pregătire", "Ceas conectat", "%1$d pași", "Dispozitiv fără nume")
+            "values" to listOf("lépés", "edzés", "készenlét", "Csatlakoztatott óra", "%1\$d lépés", "Névtelen eszköz"),
+            "values-en" to listOf("steps", "workouts", "readiness", "Connected watch", "%1\$d steps", "Unnamed device"),
+            "values-de" to listOf("Schritte", "Trainingseinheiten", "Trainingsbereitschaft", "Verbundene Uhr", "%1\$d Schritte", "Unbenanntes Gerät"),
+            "values-ro" to listOf("pași", "antrenamente", "pregătire", "Ceas conectat", "%1\$d pași", "Dispozitiv fără nume")
         )
         for ((folder, expectedValues) in expected) {
             val strings = readStrings(folder)
