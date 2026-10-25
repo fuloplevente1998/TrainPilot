@@ -6,6 +6,8 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import com.repforge.app.HealthConnectRepository
@@ -367,7 +369,8 @@ fun HealthJournalTabContent(
                         checked = state.autoOnOpen,
                         enabled = !state.autoOnOpenSaving && !state.historyLoading,
                         onCheckedChange = onAutoOnOpen,
-                        modifier = Modifier.testTag("health_auto_refresh_switch"),
+                        modifier = Modifier.testTag("health_auto_refresh_switch")
+                            .semantics { contentDescription = strings.getString(R.string.native_health_auto_refresh_title) },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = colors.accent,
                             checkedTrackColor = colors.card
