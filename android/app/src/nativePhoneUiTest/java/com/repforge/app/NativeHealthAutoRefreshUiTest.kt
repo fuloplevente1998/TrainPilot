@@ -1,7 +1,6 @@
 package com.repforge.app
 
 import android.content.Context
-import androidx.compose.ui.test.assertExists
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.hasTestTag
