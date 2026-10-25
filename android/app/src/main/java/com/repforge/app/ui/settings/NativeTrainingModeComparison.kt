@@ -98,9 +98,6 @@ internal object NativeTrainingModeComparison {
             "en" -> program.program.nameEn; "de" -> program.program.nameDe
             "ro" -> program.program.nameRo; else -> program.program.nameHu
         }.ifBlank { program.program.nameHu }
-        val dayName = when (settings.language) {
-            "en" -> day.nameEn; "de" -> day.nameDe; "ro" -> day.nameRo; else -> day.nameHu
-        }.ifBlank { day.nameHu }
-        return Snapshot(name, dayName, rows)
+        return Snapshot(name, daysInProgram.size.toString(), rows)
     }
 }
