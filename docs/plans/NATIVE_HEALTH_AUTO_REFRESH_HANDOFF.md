@@ -1,3 +1,17 @@
+## 2026-10-25 – #244 review P1/P2 javítva és újratesztelve
+
+A [3e2a81bd-es integrációs review](https://github.com/fuloplevente1998/TrainPilot/blob/3e2a81bd/docs/reviews/NATIVE_PR244_HEALTH_AUTO_REFRESH_REVIEW.md) **mindkét kötelező javítása a saját ágban elkészült**. Az alábbi státusz felülírja a később megőrzött korábbi 29+1 sikeres mérföldkő-összegzést.
+
+- **P1 – tényleges szolgáltatói frissítési út:** `PhoneWorkoutExecution.store` csak `Dispatchers.Main.immediate` alatt, rövid Main-only admission; többi ownership/backup/restore ellenőrzés IO-n, commitkor is. `NativeHealthForegroundAdmission.publish` közös HC/Samsung callback a Main-checket metadata lock **előtt**, rövid journal írást és dataset/screen guardot utána végzi. Nincs Main→IO→Main kör a lock alatt, nincs SDK IPC a mutexben, és nem változott a canonical main-only védelem.
+- **P2 – ZIP staging:** `transactionDir(token)` és a hibalehetőséget tartalmazó teljes előkészítés a backup gate `finally` alatt. Injektált `archive_transactions` mkdir-hiba után a gate felszabadul, és a következő tényleges JSON export működik.
+- **Utolsó tényleges app/teszt HEAD:** `7cb2c11332ab39f2d78831e9f79f5e0c5f533fd7`. Célzott Health workflow [#40243229800](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40243229800): **SUCCESS mindkét jobban**.
+- **XML riport szerint:** **30/30 JVM PASS**, 0 failure/error/skipped ([artifact #12617517971](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40243229800/artifacts/12617517971)); **4/4 Android 35 Compose UI PASS**, 0 failure/error/skipped ([artifact #12617558453](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40243229800/artifacts/12617558453)).
+- **Teszt-izoláció:** a három új production IO/Main/publish ellenőrzés után a korábbi kapcsolóteszt is zöld, mert a mesterséges workout snapshot `ActiveWorkoutStore.snapshotFlow` memóriabeli state-je a tesztek között már tisztul.
+- **Határ:** a célzott gate nem a teljes migrációs release gate vagy fizikai Samsung/HC read/próba; a WebView rf250Sync 30 napos/incrementális paritás továbbra külön. A PR **Draft**, nincs merge vagy main/migration módosítás.
+- **Integrátori delta:** `docs/reviews/NATIVE_PR244_HEALTH_AUTO_REFRESH_FIX_DELTA.md`; részletes test evidence: `docs/reviews/NATIVE_HEALTH_AUTO_REFRESH_VALIDATION.md`.
+
+---
+
 ## 2026-10-25 – megvalósítás és UI-validáció lezárása (PR #244)
 
 > **A lenti eredeti átadó fejlesztésindítási korlátozásokat rögzít; ez a rész a később, felhasználói kérésre engedélyezett branch-local integráció és tényleges CI-eredmények lezárt állapota.** Az eredeti szöveget változatlanul megőrizzük alább.
