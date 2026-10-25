@@ -8,6 +8,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -49,7 +51,9 @@ internal object NativeHealthRefresh {
             foreground.set(owner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))
         }
         owner.lifecycle.addObserver(observer)
+        val operationContext = currentCoroutineContext()
         val screenGuard = {
+            operationContext.ensureActive()
             check(foreground.get()) { "Foreground health read interrupted" }
             requireScreenGuard()
             Unit
