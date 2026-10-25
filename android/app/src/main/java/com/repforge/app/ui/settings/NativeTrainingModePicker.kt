@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.padding
@@ -59,15 +58,18 @@ internal fun NativeTrainingModePicker(
     }
     var comparison by remember { mutableStateOf<NativeTrainingModeComparison.Snapshot?>(null) }
     var comparisonFailed by remember { mutableStateOf(false) }
+    var comparisonFor by remember { mutableStateOf<NativeTrainingModeChange.Preview?>(null) }
     LaunchedEffect(pending, raw, activeProgramId) {
         val proposal = pending
         comparison = null
+        comparisonFor = null
         comparisonFailed = false
         if (proposal != null) {
             try {
                 comparison = withContext(Dispatchers.IO) {
                     NativeTrainingModeComparison.read(ctx, proposal)
                 }
+                comparisonFor = proposal
             } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
             catch (_: Exception) { comparisonFailed = true }
         }
@@ -224,7 +226,7 @@ internal fun NativeTrainingModePicker(
             },
             confirmButton = {
                 Button(onClick = { pending = null; onApprove(preview) },
-                    enabled = enabled && comparison != null && !comparisonFailed,
+                    enabled = enabled && comparison != null && comparisonFor == preview && !comparisonFailed,
                     modifier = Modifier.heightIn(min = 48.dp).testTag("${tag}_approve")) {
                     Text(strings.getString(R.string.native_modes_approve))
                 }
