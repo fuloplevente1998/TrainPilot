@@ -30,6 +30,7 @@ internal class NativeHealthAutoRefreshGate(
     private var invalidation = 0L
     private var running: Ticket? = null
     private var lastAutoStartMs: Long? = null
+    private var lastAutoKey: String? = null
 
     /**
      * One provider operation at a time. Auto never prompts for permissions. The call site
@@ -48,11 +49,16 @@ internal class NativeHealthAutoRefreshGate(
         if (running != null || !permitted || !safeToRead || (trigger == Trigger.AUTO && !optedIn)) return null
         if (trigger == Trigger.AUTO) {
             val previous = lastAutoStartMs
-            if (previous != null && elapsedMs >= previous && elapsedMs - previous < intervalMs) return null
+            val key = "${snapshot.provider}|${snapshot.day}"
+            if (previous != null && lastAutoKey == key &&
+                elapsedMs >= previous && elapsedMs - previous < intervalMs) return null
         }
         return Ticket(++serial, trigger, snapshot, invalidation).also {
             running = it
-            if (trigger == Trigger.AUTO) lastAutoStartMs = elapsedMs
+            if (trigger == Trigger.AUTO) {
+                lastAutoStartMs = elapsedMs
+                lastAutoKey = "${snapshot.provider}|${snapshot.day}"
+            }
         }
     }
 
@@ -69,4 +75,9 @@ internal class NativeHealthAutoRefreshGate(
     fun finish(ticket: Ticket) {
         if (running == ticket) running = null
     }
+}
+
+/** Shared across navigation-entry ViewModel recreation; never retains an Activity or Context. */
+internal object NativeHealthAutoRefreshCoordinator {
+    val gate = NativeHealthAutoRefreshGate()
 }
