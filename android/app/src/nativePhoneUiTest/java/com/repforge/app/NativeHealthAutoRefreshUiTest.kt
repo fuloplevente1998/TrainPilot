@@ -74,6 +74,11 @@ class NativeHealthAutoRefreshUiTest {
             assertTrue("Quiet main-looper workout execution should allow a provider read",
                 NativeHealthForegroundAdmission.safeOnMain(context))
         }
+        val forbiddenDirectIo = runBlocking(Dispatchers.IO) {
+            runCatching { NativeHealthForegroundAdmission.safeOnMain(context) }.exceptionOrNull()
+        }
+        assertTrue("Direct IO access must retain the canonical main-looper guard",
+            forbiddenDirectIo is IllegalStateException)
         runBlocking(Dispatchers.IO) {
             NativeHealthForegroundAdmission.requireMainAdmission(context)
             assertTrue("Actual IO provider admission must be allowed when quiet",
