@@ -63,6 +63,7 @@ class NativeTrainingModesUiTest {
             compose.onAllNodesWithTag("training_modes_global_approve").fetchSemanticsNodes()
                 .any { it.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.Disabled) == null }
         }
+        compose.onNodeWithTag("training_modes_global_comparison_0").assertExists()
         compose.onNodeWithTag("training_modes_global_approve").assertIsEnabled().performClick()
         compose.waitUntil(15_000) { current().trainingModes197Json != null }
         assertEquals("global", NativeTrainingModes.resolveSavedJson(current().trainingModes197Json, "p").source)
@@ -117,6 +118,7 @@ class NativeTrainingModesUiTest {
             compose.onAllNodesWithTag("training_modes_program_approve").fetchSemanticsNodes()
                 .any { it.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.Disabled) == null }
         }
+        compose.onNodeWithTag("training_modes_program_comparison_0").assertExists()
         compose.onNodeWithTag("training_modes_program_approve").assertIsEnabled().performClick()
         compose.waitUntil(15_000) {
             NativeTrainingModes.resolveSavedJson(current().trainingModes197Json, programId).source == "program"
