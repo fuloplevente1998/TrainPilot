@@ -26,7 +26,8 @@ internal object NativeHealthRefresh {
         val provider: String,
         val journalGeneration: Long,
         val replacement: NativeDataReplacement.Continuation,
-        val zone: ZoneId
+        val zone: ZoneId,
+        val healthGrants: Set<String>
     )
 
     suspend fun readToday(
@@ -70,7 +71,10 @@ internal object NativeHealthRefresh {
                         "Unknown health provider"
                     }
                     Prepared(provider, store.generation(),
-                        NativeDataReplacement.continuationForCurrentData(context), ZoneId.systemDefault())
+                        NativeDataReplacement.continuationForCurrentData(context), ZoneId.systemDefault(),
+                        if (provider == HealthJournalStore.HC && Build.VERSION.SDK_INT >= 34)
+                            HealthConnectRepository.READ_PERMS.filter { HealthConnectRepository.isAllowed(context, it) }.toSet()
+                        else emptySet())
                 }
             }
 
@@ -83,6 +87,11 @@ internal object NativeHealthRefresh {
                 guard()
                 check(ZoneId.systemDefault() == prepared.zone) { "Health timezone changed; refresh again" }
                 val store = HealthJournalStore.get(context)
+                if (prepared.provider == HealthJournalStore.HC) {
+                    check(HealthConnectRepository.READ_PERMS.filter {
+                        HealthConnectRepository.isAllowed(context, it)
+                    }.toSet() == prepared.healthGrants) { "Health permission changed during refresh" }
+                }
                 check(store.generation() == prepared.journalGeneration &&
                     store.preferences().optString("provider", HealthJournalStore.HC) == prepared.provider) {
                     "Health provider or dataset changed; refresh again"
