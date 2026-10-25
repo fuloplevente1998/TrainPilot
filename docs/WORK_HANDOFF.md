@@ -4,6 +4,20 @@ Frissítve: **2026-10-25**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Három új párhuzamos átadó – 2026-10-25
+
+Felhasználó Sol6/5.6 külön chateknek kér promptot, teljes GitHub-hozzáféréssel.
+Három standalone MD készült pinned **0a5abbeb3b95cede671df39a3f8d09dc4ab8ec20**
+bázisra; indulás/eredmény még nem igazolt. [A kardió bekötés](plans/NATIVE_CARDIO_BINDING_HANDOFF.md),
+[B módok/progresszió](plans/NATIVE_TRAINING_MODES_HANDOFF.md),
+[C foreground autoHealth](plans/NATIVE_HEALTH_AUTO_REFRESH_HANDOFF.md).
+Saját három ág, draft célmigration, köztes skipci, nincs main/version/schema/
+workflow változtatás vagy külső teljeskapu. Pontos fájlhatárok az MD-kben;
+Root integrátor és a külön csomagokon kívüli Journal/mainleltár marad.
+Korábbi #243/Gemini/Flash eredmény mind már beemelve/review-zva. Nem belső
+subagent-felhatalmazás. A globális issue197 mainen zárt, a mostani cél natív
+portparitás; nem újra lezárandó vagy szenzorfejlesztés.
+
 ## IO programmentés guard – 2026-10-25
 
 19ddf80/880026f: a NativeProgramEditor guard immár Main.immediate-en olvassa

@@ -82,6 +82,26 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
   véget értek, nincs belső subagent. Új külső delta mindig exact refből review,
   ne integráld újra a régi diffet. Külső PR-merge/lezárás és zöld futás nem történt.
 
+## Új külön chat átadók – három elkülönített csomag
+
+- A felhasználó új, teljes GitHub-hozzáférésű külön chateknek kérte a maradék
+  három funkciót; promptok elkészítve, indulás/eredmény még nem igazolt.
+  Bázis0a5abbeb3b95cede671df39a3f8d09dc4ab8ec20, mindenki saját ág/draft PR,
+  nincs main/migráció írás vagy belső subagent.
+- A: docs/plans/NATIVE_CARDIO_BINDING_HANDOFF.md, feat/native-cardio-progress-ui.
+  Progress UI/VM/query +DAO és új projection DTO. Math mag csak olvasható.
+- B: docs/plans/NATIVE_TRAINING_MODES_HANDOFF.md, feat/native-training-modes.
+  SettingsStore/settings/program UI +Coach advice +explicit active proposal,
+  mapper csak settings-rész. Nincs Progress/DAO/Health/finalizer változtatás.
+- C: docs/plans/NATIVE_HEALTH_AUTO_REFRESH_HANDOFF.md, feat/native-health-auto-refresh.
+  HealthDashboard/NativeHealthRefresh és szükséges napi SDK-guard. Store/paging/
+  workout-window HC/Settings/Progress/Coach csak olvasható.
+- A pontos fájlhatárt az átadó adja. Az új saját tesztosztályok ne írják át a
+  közös NativePhoneNavigationTest-et. Ezek a területek az átadás idejére a külön
+  munkásoknak fenntartva; fő munkás integráció/review, fennmaradó Journal/main
+  leltár és keresztmetszeti hibák. Visszaérkezéskor exact delta/teszt és paritás
+  ellenőrzése kell, nem vak merge; CI/készülékes/main elfogadás továbbra külön.
+
 ## Felhasználói thinking-fázisok (2026-10-24)
 
 - Kódolás, funkciók és meglévő blokkok bekötése: a felhasználó **High** módot használ.

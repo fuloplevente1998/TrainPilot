@@ -150,11 +150,14 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
 
 ## Következő konkrét lépések
 
-1. Következő fő kód: kardió lapozott Room-projekció és Fejlődés UI bekötése a
-   review-javított NativeCardioModelhez (whole-exercise flags, source/route ID,
-   valódi adatok, ne teljes historygraph). Utána modes/progression és Health
-   foreground opt-in/throttle. Külső #243 és Gemini/Flash eredmény mind beemelve/
-   review-zva; újabb külső delta exact HEAD/fájl alapján, nem vak újraintegrálás.
+1. A három fennmaradó auditcsomagra új külön chat prompt készült, bázis0a5abbe,
+   indulás/eredmény még nem igazolt: plans/NATIVE_CARDIO_BINDING_HANDOFF.md
+   (Progress+DAO), NATIVE_TRAINING_MODES_HANDOFF.md (settings/Coach/explicit
+   proposal), NATIVE_HEALTH_AUTO_REFRESH_HANDOFF.md (HealthDashboard/napi SDK).
+   Saját feat/native-* ágak, draft célmigration. Pontos diszjunkt fájlhatárok
+   az átadókban/AGENTS-ben; ezekbe fő munkás közben ne írjon. Rootnál marad a
+   review/integráció, teljes mainleltár fennmaradó Journal-funkciói és a közös
+   gate előkészítése. Nincs belső subagent, nincs új CI/elfogadás.
 2. Lokális in-flight photo delete / új ref / restore admission kódban, de szerver-
    timeout utáni bizonytalan befejezés, processdeath és cross-device/older-peer
    továbbra nyitott. A foglalás nem tartós Drive-lock/elosztott atomikusság.
