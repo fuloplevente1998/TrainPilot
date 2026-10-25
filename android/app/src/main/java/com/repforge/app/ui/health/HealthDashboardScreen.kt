@@ -54,6 +54,7 @@ import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -118,6 +119,9 @@ fun HealthDashboardScreen(
     }
     val strings = remember(context, state.language) { nativeResources(context, state.language) }
     var detailType by rememberSaveable(state.selectedDay, state.historyChannel) { mutableStateOf<String?>(null) }
+    LaunchedEffect(detailType) {
+        viewModel.healthRecordDetailChanged(detailType != null)
+    }
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         viewModel.refresh(activity)
     }
@@ -361,7 +365,7 @@ fun HealthJournalTabContent(
                     }
                     Switch(
                         checked = state.autoOnOpen,
-                        enabled = !state.autoOnOpenSaving,
+                        enabled = !state.autoOnOpenSaving && !state.historyLoading,
                         onCheckedChange = onAutoOnOpen,
                         modifier = Modifier.testTag("health_auto_refresh_switch"),
                         colors = SwitchDefaults.colors(
