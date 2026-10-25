@@ -338,6 +338,9 @@ interface WorkoutHistoryDao {
 
 @Dao
 interface BodyWeightDao {
+    @Query("SELECT id, date, kg FROM body_weights WHERE (:afterId IS NULL OR id > :afterId) ORDER BY id ASC LIMIT :limit")
+    suspend fun scanWeightDeletionCandidates(afterId: String?, limit: Int): List<WeightDeletionCandidate>
+
     @Query("SELECT * FROM body_weights ORDER BY date DESC, id DESC")
     fun weightJournalPages(): androidx.paging.PagingSource<Int, BodyWeightEntryEntity>
 
@@ -425,6 +428,15 @@ interface CalendarScheduleDao {
 
 @Dao
 interface KeyValueDocumentDao {
+    @Query("SELECT * FROM kv_documents WHERE doc_key GLOB 'native:weightTombstone18:*' ORDER BY doc_key")
+    suspend fun getWeightTombstoneDocuments(): List<KeyValueDocumentEntity>
+
+    @Query("SELECT COUNT(*) FROM kv_documents WHERE doc_key GLOB 'native:weightTombstone18:*'")
+    suspend fun getWeightTombstoneCount(): Int
+
+    @Query("DELETE FROM kv_documents WHERE doc_key GLOB 'native:weightTombstone18:*'")
+    suspend fun deleteWeightTombstoneDocuments()
+
     @Query("SELECT * FROM kv_documents WHERE doc_key = :key LIMIT 1")
     fun observeDocument(key: String): Flow<KeyValueDocumentEntity?>
 

@@ -2,6 +2,7 @@ package com.repforge.app.data.migration
 
 import com.repforge.app.NativeDataReplacement
 import com.repforge.app.NativeExerciseFavorites
+import com.repforge.app.NativeWeightTombstones18
 import android.content.Context
 import androidx.datastore.preferences.core.edit
 import com.repforge.app.data.db.BodyWeightEntryEntity
@@ -44,7 +45,7 @@ class LegacyWebViewMigrator(
     companion object {
         internal fun decodeSnapshot(values: Map<String, String>): JSONObject {
             val root = JSONObject()
-            val arrays = setOf("history", "weights", "scheduled", "exercises", "programs", "exerciseFavorites", "phase3HistoryTombstones")
+            val arrays = setOf("history", "weights", "scheduled", "exercises", "programs", "exerciseFavorites", "phase3HistoryTombstones", NativeWeightTombstones18.KEY)
             for ((key, rawValue) in values) {
                 val value = try { org.json.JSONTokener(rawValue).nextValue() }
                 catch (failure: Exception) { throw IllegalStateException("Invalid legacy value for $key", failure) }
@@ -64,6 +65,7 @@ class LegacyWebViewMigrator(
         val KNOWN_DB_KEYS = setOf(
             "history",
             "weights",
+            NativeWeightTombstones18.KEY,
             "scheduled",
             "settings",
             "exercises",
@@ -186,13 +188,17 @@ class LegacyWebViewMigrator(
         // Reject malformed favorites before the first Room write in this import.
         val incomingFavorites = if (data.has(NativeExerciseFavorites.KEY) && !data.isNull(NativeExerciseFavorites.KEY))
             NativeExerciseFavorites.decode(data.get(NativeExerciseFavorites.KEY)) else null
+        val incomingWeightDeletions = if (data.has(NativeWeightTombstones18.KEY))
+            NativeWeightTombstones18.decode(data.get(NativeWeightTombstones18.KEY)) else null
 
         database.withTransaction {
+            val weightDeletions = NativeWeightTombstones18.install(database, incomingWeightDeletions, replaceAll,
+                replacingWeights = replaceAll && data.optJSONArray("weights") != null)
             // Preserve all original documents, even fields not yet projected by native screens.
             // The immutable file archive holds the whole source; avoid duplicating full
             // normalized history/catalog collections again in the key-value table.
             val projected = setOf("history", "exercises", "programs", "weights", "scheduled",
-                NativeExerciseFavorites.KEY, "legacyStorageRaw")
+                NativeExerciseFavorites.KEY, NativeWeightTombstones18.KEY, "legacyStorageRaw")
             for (key in data.keys()) if (key !in projected) database.keyValueDocumentDao().putDocument(
                 KeyValueDocumentEntity(key = "legacy:$key", json = JSONObject().put("value", data.get(key)).toString(), updatedAt = System.currentTimeMillis())
             )
@@ -359,6 +365,7 @@ class LegacyWebViewMigrator(
                     val kg = w.optDouble("kg", Double.NaN)
                     val date = w.optString("date").trim()
                     if (!kg.isFinite() || kg <= 0.0 || date.isEmpty()) continue
+                    if (weightDeletions.deleted(w)) continue
                     val id = w.optString("id").takeIf { it.isNotBlank() } ?: LegacySyncIdentity18.legacyWeightId(w)
                     val dayKey = if (date.length >= 10) date.substring(0, 10) else date
                     val copyJson = JSONObject(w.toString()).put("id", id)
@@ -631,6 +638,7 @@ class LegacyWebViewMigrator(
 
             // Canonical v144 export and Drive snapshots must include favorites, even when empty.
             out.put(NativeExerciseFavorites.KEY, NativeExerciseFavorites.encode(NativeExerciseFavorites.load(database)))
+            out.put(NativeWeightTombstones18.KEY, NativeWeightTombstones18.encode(NativeWeightTombstones18.load(database)))
 
             // History
             val historyArray = JSONArray()

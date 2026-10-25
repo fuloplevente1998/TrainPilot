@@ -185,4 +185,25 @@ class NativeCloudPhotoRecoveryTest {
         assertTrue(BackupRestoreManager(context).resumeInterruptedReplacement().isFailure)
         assertEquals("original", photo(deleted).readText()); assertFalse(photo(active).exists())
     }
+    @Test fun weightDeletionIntentSurvivesTheVerifiedCloudZipRedoAndLaterStaleImport() = runTest(dispatcher) {
+        val importer = LegacyWebViewMigrator(context, db, settings)
+        val stale = JSONObject().put("history", JSONArray()).put("weights", JSONArray().put(
+            JSONObject().put("id", "deleted-weight").put("date", "2026-10-25").put("kg", 72)))
+        importer.importBackupJson(stale, false)
+        com.repforge.app.ui.progress.NativeWeightJournalRepository(context, db)
+            .delete(db.bodyWeightDao().getWeightById("deleted-weight")!!)
+        val snapshot = importer.exportBackupJson(false)
+        db.keyValueDocumentDao().deleteWeightTombstoneDocuments()
+        prepared(snapshot).use { stage ->
+            val manager = BackupRestoreManager(context).apply {
+                restoreCheckpoint = { if (it == "receipt-prepared") throw IOException("stop") }
+            }
+            reject { install(manager, snapshot, stage) }
+        }
+        assertTrue(NativeWeightTombstones18.load(db).isEmpty())
+        assertTrue(BackupRestoreManager(context).resumeInterruptedReplacement().isSuccess)
+        assertEquals(1, NativeWeightTombstones18.load(db).size)
+        importer.importBackupJson(stale, false)
+        assertTrue(db.bodyWeightDao().getAllWeights().isEmpty())
+    }
 }

@@ -255,6 +255,8 @@ data class WeightJournalSummary(val measurementCount: Long, val firstKg: Double?
 
 data class WeightChartBounds(val firstDay: Double?, val lastDay: Double?, val measurementCount: Long)
 
+data class WeightDeletionCandidate(val id: String, val date: String, val kg: Double)
+
 /** A time bucket is explicitly displayed as an average, not an invented individual measurement. */
 data class WeightChartPoint(val bucket: Int, val averageKg: Double, val minimumKg: Double,
     val maximumKg: Double, val measurementCount: Long)

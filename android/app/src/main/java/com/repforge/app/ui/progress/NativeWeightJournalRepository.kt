@@ -83,6 +83,7 @@ internal class NativeWeightJournalRepository(
         NativeDataReplacement.mutate(context) {
             database.withTransaction {
                 if (database.bodyWeightDao().getWeightById(expected.id) != expected) throw ChangedEntry()
+                com.repforge.app.NativeWeightTombstones18.record(database, expected, now())
                 // Day-based deletion would also remove distinct measurements from the same day.
                 check(database.bodyWeightDao().deleteWeightById(expected.id) == 1)
             }

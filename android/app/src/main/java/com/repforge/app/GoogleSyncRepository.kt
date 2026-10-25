@@ -497,6 +497,12 @@ class GoogleSyncRepository(context: Context) {
         preferLocalOnConflict: Boolean
     ): JSONObject {
         val out = JSONObject(local.toString())
+        fun readWeightMarkers(data: JSONObject?): List<NativeWeightTombstones18.Marker> =
+            if (data == null || !data.has(NativeWeightTombstones18.KEY)) emptyList()
+            else NativeWeightTombstones18.decode(data.get(NativeWeightTombstones18.KEY))
+        val mergedWeightMarkers = NativeWeightTombstones18.union(readWeightMarkers(local), readWeightMarkers(base),
+            *remotes.map(::readWeightMarkers).toTypedArray(), *archives.map(::readWeightMarkers).toTypedArray())
+        out.put(NativeWeightTombstones18.KEY, NativeWeightTombstones18.encode(mergedWeightMarkers))
         out.put(
             "history",
             mergeHistoryRows18(
@@ -516,7 +522,7 @@ class GoogleSyncRepository(context: Context) {
                 remotes.map { it.optJSONArray("weights") },
                 base?.optJSONArray("weights"),
                 archives.map { it.optJSONArray("weights") },
-                preferLocalOnConflict
+                preferLocalOnConflict, NativeWeightTombstones18.Index(mergedWeightMarkers)
             )
         )
         out.put(
@@ -694,11 +700,13 @@ class GoogleSyncRepository(context: Context) {
         remoteSets: List<JSONArray?>,
         baseRows: JSONArray?,
         archiveSets: List<JSONArray?>,
-        preferLocal: Boolean
+        preferLocal: Boolean,
+        deletions: NativeWeightTombstones18.Index
     ): JSONArray {
         val items = ArrayList<JSONObject>()
         fun add(src: JSONObject?, archiveOnly: Boolean) {
             if (src == null) return
+            if (deletions.deleted(src)) return
             val x = JSONObject(src.toString())
             val xId = x.optString("id")
             if (archiveOnly && xId.isNotEmpty()) return
