@@ -318,4 +318,25 @@
     <string name="native_calendar_23">Datum, Uhrzeit und Dauer prüfen.</string>
     <string name="native_calendar_24">Der Plan wurde geändert oder konnte nicht gespeichert werden. Erneut öffnen und Eingaben prüfen. Protokollierte Trainings bleiben erhalten.</string>
     <string name="native_calendar_25">OK</string>
+    <string name="native_coach_00">Daten konnten nicht geladen werden. Erneut versuchen.</string>
+    <string name="native_coach_01">Heutige Bereitschaft</string>
+    <string name="native_coach_02">Die verfügbaren Signale unterstützen die geplante normale Belastung.</string>
+    <string name="native_coach_03">Heute moderat trainieren und keine Steigerung erzwingen.</string>
+    <string name="native_coach_04">Leichter beginnen; Regeneration oder letzte Belastung begrenzen die Empfehlung.</string>
+    <string name="native_coach_05">Zu wenig aktuelle Daten. Bisherige Leistung und heutiges Befinden berücksichtigen.</string>
+    <string name="native_coach_06">Aktuelle Schmerzmeldung: bei der betroffenen Übung nicht steigern.</string>
+    <string name="native_coach_07">Samsung Energie /100</string>
+    <string name="native_coach_08">TrainPilot Schätzung /100</string>
+    <string name="native_coach_09">Schlaf (Minuten)</string>
+    <string name="native_coach_10">HRV-Basis (ms)</string>
+    <string name="native_coach_11">Letzte Belastung /100</string>
+    <string name="native_coach_12">Samsung Energie und TrainPilot-Schätzung sind getrennt. Schmerz und hohe Belastung können die Bereitschaft begrenzen. Nur aktuelle, zuordenbare Samsung-Werte werden verwendet; fehlende Werte bleiben leer.</string>
+    <string name="native_coach_13">Trainingsvorschlag</string>
+    <string name="native_coach_14">Kein verfügbarer Programmtag.</string>
+    <string name="native_coach_15">Kalender öffnen</string>
+    <string name="native_coach_16">Training starten</string>
+    <string name="native_coach_17">Gespeicherte Daten neu laden</string>
+    <string name="native_coach_18">Gesundheit / Aktualisierung</string>
+    <string name="native_coach_19">Fortschritt</string>
+    <string name="native_coach_20">Orientierende Schätzung, keine medizinische Bewertung.</string>
 </resources>

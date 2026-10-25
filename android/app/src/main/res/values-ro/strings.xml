@@ -318,4 +318,25 @@
     <string name="native_calendar_23">Verifică data, ora și durata.</string>
     <string name="native_calendar_24">Planul a fost modificat sau nu a putut fi salvat. Redeschide-l și verifică datele. Antrenamentele înregistrate rămân disponibile.</string>
     <string name="native_calendar_25">OK</string>
+    <string name="native_coach_00">Datele nu au putut fi încărcate. Încearcă din nou.</string>
+    <string name="native_coach_01">Pregătire azi</string>
+    <string name="native_coach_02">Semnalele disponibile permit încărcarea normală planificată.</string>
+    <string name="native_coach_03">Menține încărcarea moderată; nu forța progresia.</string>
+    <string name="native_coach_04">Începe mai ușor; recuperarea sau încărcarea recentă limitează recomandarea.</string>
+    <string name="native_coach_05">Nu există suficiente date recente. Ține cont de performanța anterioară și de cum te simți azi.</string>
+    <string name="native_coach_06">Durere raportată recent: nu crește încărcarea exercițiului afectat.</string>
+    <string name="native_coach_07">Energie Samsung /100</string>
+    <string name="native_coach_08">Estimare TrainPilot /100</string>
+    <string name="native_coach_09">Somn (minute)</string>
+    <string name="native_coach_10">Bază HRV (ms)</string>
+    <string name="native_coach_11">Încărcare recentă /100</string>
+    <string name="native_coach_12">Energia Samsung și estimarea TrainPilot sunt separate. Durerea și efortul mare pot limita pregătirea. Sunt folosite doar valori Samsung recente, cu sursă identificabilă; valorile lipsă rămân goale.</string>
+    <string name="native_coach_13">Antrenament sugerat</string>
+    <string name="native_coach_14">Nicio zi de program disponibilă.</string>
+    <string name="native_coach_15">Deschide calendarul</string>
+    <string name="native_coach_16">Începe antrenamentul</string>
+    <string name="native_coach_17">Reîncarcă datele salvate</string>
+    <string name="native_coach_18">Sănătate / actualizare</string>
+    <string name="native_coach_19">Progres</string>
+    <string name="native_coach_20">Estimare orientativă, nu o evaluare medicală.</string>
 </resources>

@@ -318,4 +318,25 @@
     <string name="native_calendar_23">Ellenőrizd a dátumot, időpontot és időtartamot.</string>
     <string name="native_calendar_24">Az alkalom megváltozott vagy nem menthető. Nyisd meg újra és ellenőrizd az adatokat. A naplózott edzések megmaradtak.</string>
     <string name="native_calendar_25">Rendben</string>
+    <string name="native_coach_00">Az adatok nem tölthetők be. Próbáld újra.</string>
+    <string name="native_coach_01">Mai készenlét</string>
+    <string name="native_coach_02">A rendelkezésre álló jelek alapján mehet a tervezett normál terhelés.</string>
+    <string name="native_coach_03">Ma mérsékelt terhelést tarts; ne erőltesd a progressziót.</string>
+    <string name="native_coach_04">Kezdj könnyebben; a regeneráció vagy a legutóbbi terhelés korlátozza a javaslatot.</string>
+    <string name="native_coach_05">Nincs elég friss adat. A korábbi teljesítményt és a mai közérzetedet vedd alapul.</string>
+    <string name="native_coach_06">Friss fájdalomjelzés: az érintett gyakorlatnál ne emelj terhelést.</string>
+    <string name="native_coach_07">Samsung energia /100</string>
+    <string name="native_coach_08">TrainPilot becslés /100</string>
+    <string name="native_coach_09">Alvás (perc)</string>
+    <string name="native_coach_10">HRV alapérték (ms)</string>
+    <string name="native_coach_11">Legutóbbi terhelés /100</string>
+    <string name="native_coach_12">A Samsung-pontszám és a TrainPilot becslése külön számítás. Fájdalom és nagy terhelés korlátozhatja a készenlétet. Csak friss, azonosítható Samsung-mérést használunk; a hiányzó értékek üresen maradnak.</string>
+    <string name="native_coach_13">Edzésjavaslat</string>
+    <string name="native_coach_14">Nincs elérhető programnap.</string>
+    <string name="native_coach_15">Naptár megnyitása</string>
+    <string name="native_coach_16">Edzés indítása</string>
+    <string name="native_coach_17">Tárolt adatok újraolvasása</string>
+    <string name="native_coach_18">Egészség / frissítés megnyitása</string>
+    <string name="native_coach_19">Fejlődés</string>
+    <string name="native_coach_20">Tájékoztató becslés; nem orvosi értékelés.</string>
 </resources>
