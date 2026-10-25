@@ -112,7 +112,8 @@ class NativeProfileProgramPreviewTest {
         for (id in result.prescriptions.keys()) {
             val rx = result.prescriptions.getJSONObject(id)
             assertEquals(0, rx.getInt("weight"))
-            assertEquals(known.getValue(id).loadType != "bodyweight", rx.getBoolean("trial"))
+            assertTrue(rx.getBoolean("trial"))
+            assertEquals(known.getValue(id).loadType != "bodyweight", NativeTrainingPrescription.needsLoad(rx))
             assertEquals(2, rx.getInt("rir"))
         }
     }
@@ -140,6 +141,29 @@ class NativeProfileProgramPreviewTest {
         assertFalse("bulgarian-split-squat" in ids)
         assertFalse("barbell-row" in ids)
         assertTrue(result.reductions.any { it.reason == "experience" })
+    }
+    @Test fun explicitLevel2UsesNewTargetsAndEquipmentBoundWeightedCore() {
+        val result = preview(profile(90).put("experience", "intermediate"), "home-level2")
+        assertEquals("6–10", result.prescriptions.getJSONObject("db-floor-press").getString("reps"))
+        val core = result.prescriptions.getJSONObject("side-plank")
+        assertEquals("weighted", core.getString("variation"))
+        assertEquals("single_dumbbell", core.getString("loadType"))
+        assertEquals("20–40 mp", core.getString("reps"))
+        assertTrue(NativeTrainingPrescription.needsLoad(core))
+        val push = result.prescriptions.getJSONObject("pushup")
+        assertEquals("paused", push.getString("variation")); assertEquals("6–12", push.getString("reps"))
+    }
+    @Test fun level2WithoutDumbbellsDoesNotAddExternalLoadToBodyweightCore() {
+        val result = preview(profile(90, listOf("barbell")).put("experience", "intermediate"), "home-level2")
+        val core = result.prescriptions.getJSONObject("side-plank")
+        assertEquals("bodyweight", core.getString("loadType"))
+        assertFalse(core.has("variation")); assertFalse(NativeTrainingPrescription.needsLoad(core))
+    }
+    @Test fun beginnerSelectingLevel2DoesNotReceiveIntermediateWeightedCore() {
+        val result = preview(profile(90), "home-level2")
+        assertTrue(result.prescriptions.keys().asSequence().none {
+            result.prescriptions.getJSONObject(it).optString("variation") == "weighted"
+        })
     }
 
     @Test fun replacementVariationCannotBypassBeginnerEligibility() {

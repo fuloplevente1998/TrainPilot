@@ -40,7 +40,7 @@ internal fun PersonalProgramPreviewDialog(
     onCancel: () -> Unit
 ) {
     val profile = remember(profileJson) { runCatching { JSONObject(profileJson) }.getOrDefault(JSONObject()) }
-    val recommended = if (profile.optString("experience") in setOf("intermediate", "advanced"))
+    val recommended = if (profile.optString("experience") == "intermediate")
         "home-level2" else "home-basic"
     var choice by remember(profileJson) { mutableStateOf(recommended) }
     val preview = previews[choice]
@@ -110,7 +110,14 @@ internal fun PersonalProgramPreviewDialog(
                             }.orEmpty().ifBlank { ex?.nameHu ?: id }
                             val recipe = preview.prescriptions.getJSONObject(id)
                             Text("• $name — ${recipe.getInt("sets")} × ${recipe.getString("reps")}")
-                            if (recipe.optBoolean("trial"))
+                            if (recipe.optString("variation").isNotBlank()) {
+                                val text = com.repforge.app.ui.text.nativeResources(androidx.compose.ui.platform.LocalContext.current, language)
+                                Text(com.repforge.app.ui.coach.NativeCoachAdviceText.variation(text,
+                                    com.repforge.app.ui.coach.NativeCoachExerciseAdvice.Variation(id,
+                                        recipe.getString("variation"), recipe.optInt("progressionLevel"))),
+                                    modifier = Modifier.testTag("personal_variation_$id"))
+                            }
+                            if (com.repforge.app.NativeTrainingPrescription.needsLoad(recipe))
                                 Text(label[8], modifier = Modifier.testTag("personal_trial_$id"))
                             else if (recipe.optDouble("weight") > 0) {
                                 Text(when (language) {

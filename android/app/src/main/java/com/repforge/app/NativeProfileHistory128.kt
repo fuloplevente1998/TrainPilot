@@ -192,8 +192,9 @@ internal object NativeProfileHistory128 {
             basis.put("evidenceHash", digest(candidates.joinToString("|") {
                 "${it.programId}:${it.key}:${it.raw}"
             }))
-            if (first.sets in 2..3 && (lib.loadType == "bodyweight" || first.load > 0)) {
-                if (lib.loadType != "bodyweight") {
+            val effectiveLoad = rx.optString("loadType", lib.loadType)
+            if (first.sets in 2..3 && (effectiveLoad == "bodyweight" || first.load > 0)) {
+                if (effectiveLoad != "bodyweight") {
                     rx.put("weight", first.load).put("trial", false)
                 }
                 rx.put("sets", first.sets)

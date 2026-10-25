@@ -87,6 +87,26 @@ class NativeProfileHistory128Test {
             .put("started", end.minusSeconds(3600).toString()).put("finished", end.toString())
             .put("exercises", JSONArray().put(exercise)))
     }
+    @Test fun weightedBodyweightMovementInheritsItsExplicitDumbbellLoadAndVariation() = runBlocking {
+        val (programs, days) = TrainPilotDatabase.defaultPrograms()
+        val level2 = programs.first { it.id == "home-level2" }
+        db.programDao().saveProgramWithDays(level2, days.filter { it.programId == level2.id })
+        val end = now.minusSeconds(86400)
+        val sets = JSONArray((0..1).map { i -> JSONObject().put("setId", "weighted-$i")
+            .put("done", true).put("weight", 4).put("reps", "40") })
+        importer.saveWorkoutJsonToRoom(JSONObject().put("id", "weighted-core").put("programId", level2.id).put("dayId", "A")
+            .put("started", end.minusSeconds(60).toString()).put("finished", end.toString())
+            .put("exercises", JSONArray().put(JSONObject().put("id", "side-plank").put("loadType", "single_dumbbell")
+                .put("repUnit", "mp").put("effort", "good").put("prescription", JSONObject().put("variation", "weighted")).put("sets", sets))))
+        val base = NativeProfileProgramPreview.preview(db.programDao().getProgramWithDaysById(level2.id)!!,
+            profile().toString(), db.exerciseLibraryDao().getAllExercises(), "hu")
+        val result = NativeProfileHistory128.apply(db, base, now)
+        val rx = result.prescriptions.getJSONObject("side-plank")
+        assertEquals("single_dumbbell", rx.getString("loadType")); assertEquals("weighted", rx.getString("variation"))
+        assertEquals(4.0, rx.getDouble("weight"), .0001); assertFalse(rx.getBoolean("trial"))
+        assertEquals("weighted-core", result.history128.getJSONObject("entries").getJSONObject("side-plank")
+            .getJSONArray("sources").getJSONObject(0).getString("key"))
+    }
 
     @Test fun inheritsLastCompletedWeightAndBoundedExplicitLineage() = runBlocking {
         workout("old-first", 4, weight = 5.0)

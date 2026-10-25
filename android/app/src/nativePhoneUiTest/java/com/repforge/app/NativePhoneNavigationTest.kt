@@ -528,6 +528,31 @@ class NativePhoneNavigationTest {
         assertEquals("home-basic", runBlocking(Dispatchers.IO) { settings.current().activeProgramId })
     }
 
+    @Test fun level2PreviewShowsWeightedCoreAndUnsetLoadWithoutActivatingIt() {
+        runBlocking(Dispatchers.IO) {
+            settings.saveTrainingProfile(JSONObject().put("minutes", 90).put("experience", "intermediate")
+                .put("goal", "fitness").put("gear", org.json.JSONArray().put("dumbbells").put("barbell")))
+        }
+        val db = TrainPilotDatabase.getInstance(context)
+        val baseline = runBlocking(Dispatchers.IO) { db.programDao().getProgramIds().toSet() }
+        launch(); tab("training")
+        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
+        compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("personal_planner_open"))
+        compose.onNodeWithTag("personal_planner_open").performClick()
+        compose.waitUntil(15000) {
+            compose.onAllNodesWithTag("personal_preview_loading").fetchSemanticsNodes().isEmpty() &&
+                compose.onAllNodesWithTag("personal_variation_side-plank").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("personal_template_home-level2").assertIsSelected()
+        compose.onNodeWithTag("personal_variation_side-plank").performScrollTo()
+            .assertTextContains("Súllyal nehezített változat")
+        compose.onNodeWithTag("personal_trial_side-plank").assertExists()
+        screenshot("personal_level2_weighted_core")
+        compose.onNodeWithText("Mégse").performClick()
+        assertEquals(baseline, runBlocking(Dispatchers.IO) { db.programDao().getProgramIds().toSet() })
+        assertEquals("home-basic", runBlocking { settings.current().activeProgramId })
+    }
+
     @Test fun personalPlannerAcceptanceCreatesNewProgramAndRetainsTrialWeights() {
         runBlocking(Dispatchers.IO) {
             settings.saveTrainingProfile(JSONObject().put("minutes", 45)

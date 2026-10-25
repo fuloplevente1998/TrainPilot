@@ -102,9 +102,7 @@ internal object NativeProfileProgramPreview {
             else -> ""
         }
         val count = (minutes / 6).coerceIn(1, 7)
-        val higherSets = profile.optString("goal") == "muscle" &&
-            profile.optString("experience") in setOf("intermediate", "advanced") &&
-            minutes >= 60 && profile.optString("activity") !in setOf("physical", "heavy")
+        val level2 = source.program.id == "home-level2" && profile.optString("experience") == "intermediate"
         val repetitions = JSONObject()
         val removed = ArrayList<Reduction>()
         var totalSets = 0
@@ -140,15 +138,11 @@ internal object NativeProfileProgramPreview {
             for ((id, _) in finalRows.drop(count)) removed += Reduction(day.dayId, id, "time")
             for ((id, exercise) in selected) {
                 val original = JSONObject(exercise.rawJson)
-                val compound = original.optBoolean("compound", false)
-                val sets = if (higherSets && compound) 3 else 2
-                totalSets += sets
-                val bodyweight = exercise.loadType == "bodyweight"
-                repetitions.put(id, JSONObject()
-                    .put("sets", sets).put("reps", exercise.defaultReps)
-                    .put("weight", 0).put("trial", !bodyweight)
-                    .put("rest", if (compound) 120 else 75)
-                    .put("rir", 2).put("loadType", exercise.loadType))
+                original.put("id", id).put("repUnit", exercise.repUnit).put("loadType", exercise.loadType)
+                val rx = if (level2) NativeTrainingPrescription.level2(original, profile)
+                    else NativeTrainingPrescription.create(original, profile)
+                totalSets += rx.getInt("sets")
+                repetitions.put(id, rx)
             }
             NativeProgramEditor.DayDraft(day.dayId,
                 when (language) {

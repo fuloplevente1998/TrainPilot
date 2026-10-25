@@ -45,7 +45,7 @@ internal class NativeCoachVariation(private val context: Context, private val db
                 val gear = profile.getJSONArray("gear")
                 require((0 until gear.length()).any { gear.optString(it) in setOf("dumbbell", "dumbbells", "barbell") })
             }
-            val recipe = recipe(next, JSONObject(proposed.rawJson).put("repUnit", proposed.repUnit), profile)
+            val recipe = recipe(next, JSONObject(proposed.rawJson).put("id", proposed.id).put("repUnit", proposed.repUnit).put("loadType", proposed.loadType), profile)
             val original = NativeProgramEditor.from(source, settings.language)
             val draft = original.copy(days = original.days.map { day ->
                 val replaced = day.entries.map { encoded ->
@@ -108,18 +108,8 @@ internal class NativeCoachVariation(private val context: Context, private val db
 
     companion object {
         internal fun recipe(next: NativeCoachExerciseAdvice.Variation, library: JSONObject, profile: JSONObject): JSONObject {
-            val compound = library.optBoolean("compound")
-            var reps = if (library.optString("repUnit").contains("mp")) "20–40 mp"
-                else if (compound) if (profile.optString("goal") == "strength") "6–10" else "8–12" else "10–15"
-            if (next.exerciseId in setOf("pushup", "decline-pushup", "modified-pushup", "incline-pushup")) reps = "8–15"
-            if (next.exerciseId == "lateral-raise") reps = "12–20"
-            if (next.exerciseId == "crunch") reps = "10–20"
-            if (next.exerciseId == "db-ohp") reps = "6–10"
-            return JSONObject().put("sets", if (profile.optString("experience") == "intermediate" &&
-                profile.optString("goal") == "muscle" && profile.optInt("minutes") >= 60 && profile.optString("activity") != "physical") 3 else 2)
-                .put("reps", reps).put("weight", 0).put("trial", true)
-                .put("rest", if (compound) if (profile.optString("goal") == "strength") 150 else 120 else 75)
-                .put("rir", 2).put("rirMin", 1).put("rirMax", 2)
+            return NativeTrainingPrescription.create(JSONObject(library.toString()).put("id", next.exerciseId)
+                .put("loadType", library.optString("loadType", "bodyweight")), profile)
                 .put("variation", next.name).put("progressionLevel", next.level)
                 .also { if (next.name == "weighted") it.put("loadType", "single_dumbbell") }
         }
