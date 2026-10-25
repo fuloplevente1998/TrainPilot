@@ -87,7 +87,7 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
 
     private var historyQuery = NativeHealthQuery()
     private var historyJob: Job? = null
-    private val refreshGate = NativeHealthAutoRefreshGate()
+    private val refreshGate = NativeHealthAutoRefreshCoordinator.gate
     private var screenActivity: WeakReference<Activity>? = null
     private var screenVisible = false
     private var screenGeneration = 0L
