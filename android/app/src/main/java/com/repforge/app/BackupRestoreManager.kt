@@ -45,6 +45,9 @@ class BackupRestoreManager(context: Context) {
         const val ARCHIVE_LIMIT: Long = 500L * 1024L * 1024L
         private val UUID_REGEX = Regex("[a-f0-9-]{36}")
         private val ROUTE_KEY_REGEX = Regex("^[A-Za-z0-9:._|+\\-]{1,200}$")
+        internal fun photoDeleted(photo: JSONObject): Boolean = photo.has("deletedAt") &&
+            !photo.isNull("deletedAt") && photo.optLong("deletedAt", -1L) != 0L &&
+            photo.opt("deletedAt") != false && photo.optString("deletedAt").isNotBlank()
     }
 
     private val appContext = context.applicationContext
@@ -105,12 +108,7 @@ class BackupRestoreManager(context: Context) {
             val a = history.getJSONObject(i).optJSONArray("photos") ?: continue
             for (j in 0 until a.length()) {
                 val p = a.getJSONObject(j)
-                if (p.has("deletedAt") &&
-                    !p.isNull("deletedAt") &&
-                    p.optLong("deletedAt", -1L) != 0L &&
-                    p.opt("deletedAt") != false &&
-                    p.optString("deletedAt") != ""
-                ) {
+                if (photoDeleted(p)) {
                     continue
                 }
                 val id = p.optString("id")
@@ -170,13 +168,45 @@ class BackupRestoreManager(context: Context) {
     }
 
     /** Reuse the same staged redo path for an already merged Drive payload, under its caller's lease. */
-    internal suspend fun installCloudMerge(data: JSONObject) {
+    internal suspend fun installCloudMerge(data: JSONObject, stagedPhotos: NativeCloudPhotoStage? = null) {
         check(NativeDataReplacement.blocked(appContext)) { "Cloud import requires the replacement lease" }
-        photoIds(data)
+        val ids = photoIds(data)
         val token = UUID.randomUUID().toString()
         val dir = transactionDir(token); mkdir(dir)
-        writeSynced(File(dir, "backup.json"), data.toString().toByteArray(StandardCharsets.UTF_8))
-        completeReplacement(NativeReplacementJournal.Entry("json", token, false))
+        try {
+            val bytes = data.toString().toByteArray(StandardCharsets.UTF_8)
+            if (bytes.isEmpty() || bytes.size > JSON_LIMIT) throw IOException("Invalid cloud backup size.")
+            if (stagedPhotos == null) {
+                writeSynced(File(dir, "backup.json"), bytes)
+                completeReplacement(NativeReplacementJournal.Entry("json", token, false))
+            } else {
+                stagedPhotos.requireUnchanged()
+                val incoming = File(dir, "incoming"); mkdir(incoming)
+                val photos = File(incoming, "photos"); mkdir(photos)
+                writeSynced(File(incoming, "backup.json"), bytes)
+                val hashes = JSONObject().put("backup.json", FileInputStream(File(incoming, "backup.json")).use { ArchiveIO.hash(it) })
+                var total = bytes.size.toLong()
+                for (id in ids) {
+                    val target = File(photos, "$id.jpg")
+                    FileInputStream(File(stagedPhotos.photos, "$id.jpg")).use { input -> FileOutputStream(target).use { out ->
+                        total += ArchiveIO.copy(input, out, PHOTO_LIMIT.toLong()); out.fd.sync()
+                    } }
+                    if (total > ARCHIVE_LIMIT) throw IOException("Cloud photo archive is too large.")
+                    hashes.put("photos/$id.jpg", stagedPhotos.verifiedCopyHash(id, target))
+                }
+                val manifest = JSONObject().put("format", "TrainPilotArchive").put("version", 1)
+                    .put("cloudMerge", true).put("cloudPhotoDeletes", JSONArray(stagedPhotos.deletedPhotoIds.toList()))
+                    .put("sha256", hashes).toString().toByteArray(StandardCharsets.UTF_8)
+                if (manifest.size > JSON_LIMIT || total + manifest.size > ARCHIVE_LIMIT) throw IOException("Cloud manifest is too large.")
+                writeSynced(File(incoming, "manifest.json"), manifest)
+                completeReplacement(NativeReplacementJournal.Entry("zip", token, false))
+                stagedPhotos.markInstalled()
+            }
+        } catch (error: Exception) {
+            // Once a receipt exists, replay owns this directory and must keep its verified files.
+            if (!NativeReplacementJournal(appContext).exists()) runCatching { removeRecursive(dir) }
+            throw error
+        }
     }
 
     /** Explicit replay of the staged, already selected backup; never an automatic unlock. */
@@ -201,6 +231,7 @@ class BackupRestoreManager(context: Context) {
             val durableEntry = entry.copy(payloadSha256 = payloadHash)
             val data = JSONObject(String(readLimited(File(dir, if (entry.kind == "zip") "incoming/backup.json" else "backup.json"), JSON_LIMIT), StandardCharsets.UTF_8))
             photoIds(data)
+            var cloudDeletes: Set<String> = emptySet()
             if (entry.kind == "zip") {
                 // Recheck staged checksums during replay as well as on the original import.
                 val incoming = File(dir, "incoming")
@@ -210,10 +241,17 @@ class BackupRestoreManager(context: Context) {
                 val expected = setOf("backup.json", "manifest.json") + photoIds(data).map { "photos/$it.jpg" }
                 val actual = incoming.walkTopDown().filter { it.isFile }.map { it.relativeTo(incoming).invariantSeparatorsPath }.toSet()
                 ArchiveIO.verify(incoming, actual, expected, hashes.keys().asSequence().associateWith { hashes.getString(it) })
+                if (manifest.opt("cloudMerge") == true) {
+                    val rows = manifest.getJSONArray("cloudPhotoDeletes")
+                    val requested = (0 until rows.length()).map { rows.getString(it) }
+                    cloudDeletes = requested.toSet()
+                    check(requested.size == cloudDeletes.size && cloudDeletes == NativeCloudPhotoStage.references(data)
+                        .filter { it.deleted }.map { it.id }.toSet()) { "Invalid cloud photo deletion plan." }
+                }
             }
             journal.write(durableEntry)
             restoreCheckpoint?.invoke("receipt-prepared")
-            if (entry.kind == "zip") installPhotosTransactionally(dir, data)
+            if (entry.kind == "zip") installPhotosTransactionally(dir, data, cloudDeletes)
             restoreCheckpoint?.invoke("photos-installed")
             applyValidatedRestoreData(data)
             restoreCheckpoint?.invoke("data-imported")
@@ -349,29 +387,30 @@ class BackupRestoreManager(context: Context) {
         }
     }
 
-    private fun installPhotosTransactionally(dir: File, data: JSONObject) {
+    private fun installPhotosTransactionally(dir: File, data: JSONObject, deleted: Set<String> = emptySet()) {
         val original = File(dir, "originals")
         mkdir(original)
         val priorJournal = File(dir, "journal.json")
         val touched = if (priorJournal.isFile) JSONArray(String(readLimited(priorJournal, JSON_LIMIT), StandardCharsets.UTF_8)) else JSONArray()
+        fun rememberOriginal(id: String) {
+            val dest = File(photosDir(), "$id.jpg")
+            val alreadyTouched = (0 until touched.length()).any { touched.optString(it) == id }
+            if (!alreadyTouched && dest.exists() && !File(original, "$id.jpg").exists()) {
+                FileInputStream(dest).use { input -> FileOutputStream(File(original, "$id.jpg")).use { out ->
+                    ArchiveIO.copy(input, out, PHOTO_LIMIT.toLong()); out.fd.sync()
+                } }
+            }
+            if (!alreadyTouched) {
+                touched.put(id)
+                writeSynced(File(dir, "journal.json"), touched.toString().toByteArray(StandardCharsets.UTF_8))
+            }
+        }
         try {
             for (id in photoIds(data)) {
                 val dest = File(photosDir(), "$id.jpg")
                 val src = File(dir, "incoming/photos/$id.jpg")
                 if (!src.isFile) throw IOException("Photo archive missing.")
-                val alreadyTouched = (0 until touched.length()).any { touched.optString(it) == id }
-                if (!alreadyTouched && dest.exists() && !File(original, "$id.jpg").exists()) {
-                    FileInputStream(dest).use { input ->
-                        FileOutputStream(File(original, "$id.jpg")).use { out ->
-                            ArchiveIO.copy(input, out, PHOTO_LIMIT.toLong())
-                            out.fd.sync()
-                        }
-                    }
-                }
-                if (!alreadyTouched) {
-                    touched.put(id)
-                    writeSynced(File(dir, "journal.json"), touched.toString().toByteArray(StandardCharsets.UTF_8))
-                }
+                rememberOriginal(id)
                 val tmp = File(photosDir(), "$id.restore")
                 FileInputStream(src).use { input ->
                     FileOutputStream(tmp).use { out ->
@@ -381,6 +420,13 @@ class BackupRestoreManager(context: Context) {
                 }
                 if (dest.exists() && !dest.delete()) throw IOException("Cannot replace photo.")
                 if (!tmp.renameTo(dest)) throw IOException("Cannot install photo.")
+                restoreCheckpoint?.invoke("photo-installed:$id")
+            }
+            for (id in deleted) {
+                rememberOriginal(id)
+                val dest = File(photosDir(), "$id.jpg")
+                if (dest.exists() && !dest.delete()) throw IOException("Cannot remove deleted cloud photo.")
+                restoreCheckpoint?.invoke("photo-deleted:$id")
             }
         } catch (e: Exception) {
             rollbackDir(dir)

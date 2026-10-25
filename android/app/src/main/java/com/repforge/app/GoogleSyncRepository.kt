@@ -30,7 +30,6 @@ import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
-import java.io.FileOutputStream
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
@@ -235,6 +234,7 @@ class GoogleSyncRepository(context: Context) {
             return@withContext Result.failure(IllegalStateException("Fejezd be az aktív edzést a felhőszinkron előtt."))
         }
         _uiState.value = _uiState.value.copy(isBusy = true, activeOperation = "drive", stageMessage = "Drive-fájlok lekérése…", errorMessage = null)
+        var photoStage: NativeCloudPhotoStage? = null
         try {
             val profile = verifyAndFetchProfile(accessToken)
             val owner = profile.getString("sub")
@@ -263,7 +263,7 @@ class GoogleSyncRepository(context: Context) {
                 }
             }
 
-            val tombstones = database.workoutHistoryDao().getTombstones()
+            val tombstones = database.workoutHistoryDao().getAllTombstones()
             val deletedIds = HashSet<String>()
             val deletedKeys = HashSet<String>()
             for (t in tombstones) {
@@ -287,9 +287,11 @@ class GoogleSyncRepository(context: Context) {
             // Validate portable v144 favorites before any Drive upload or local replacement.
             NativeExerciseFavorites.decode(merged.opt(NativeExerciseFavorites.KEY))
 
-            // Sync Workout Photos (upload missing to Drive, download missing to local)
+            // Network work may only touch private staged files; errors must not become a successful sync.
             _uiState.value = _uiState.value.copy(stageMessage = "Edzésfotók szinkronizálása…")
-            syncWorkoutPhotosWithDrive(accessToken, merged)
+            val stagedPhotos = NativeCloudPhotoStage(appContext, merged).also { photoStage = it }
+            stagedPhotos.prepare(upload = { id, file -> writeDrivePhotoInternal(accessToken, id, file) },
+                download = { id, driveId, file -> readDrivePhotoInternal(accessToken, id, driveId, file) })
 
             val deviceId = settingsStore.ensureCloudDeviceId()
             val mergedCanonical = LegacySyncIdentity18.canonical(merged)
@@ -311,9 +313,14 @@ class GoogleSyncRepository(context: Context) {
                 // Network work intentionally occurs without holding the workout-start fence.
                 // Revalidate the actual local content; a count-only comparison misses edits/deletions.
                 NativeCloudMergeGuard.requireUnchanged(localData, migrator.exportBackupJson(includeHealthJournal = false))
-                BackupRestoreManager(appContext).installCloudMerge(merged)
+                BackupRestoreManager(appContext).installCloudMerge(merged, stagedPhotos)
                 database.keyValueDocumentDao().putDocument(
                     KeyValueDocumentEntity("cloudBase:$owner", merged.toString(), System.currentTimeMillis()))
+            }
+
+            // Deleted photo IDs remain in durable metadata if a network deletion fails; retry is idempotent.
+            stagedPhotos.finishRemoteDeletes { id, driveId -> deleteDrivePhotoInternal(accessToken, id, driveId) }
+            NativeDataReplacement.mutate(appContext) {
                 database.keyValueDocumentDao().putDocument(
                     KeyValueDocumentEntity("cloudStatus", JSONObject().put("drive", nowIso).toString(), System.currentTimeMillis()))
             }
@@ -332,11 +339,14 @@ class GoogleSyncRepository(context: Context) {
                 errorMessage = null
             )
             Result.success(nowIso)
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            _uiState.value = _uiState.value.copy(isBusy = false, activeOperation = "", stageMessage = "")
+            throw cancelled
         } catch (e: Exception) {
             val msg = formatError(e)
             _uiState.value = _uiState.value.copy(isBusy = false, activeOperation = "", stageMessage = "", errorMessage = msg)
             Result.failure(Exception(msg, e))
-        }
+        } finally { photoStage?.close() }
     }
 
     /** Syncs scheduled workouts with the TrainPilot-managed Google Calendar (`rf[0-9a-f]{64}` IDs). */
@@ -894,43 +904,6 @@ class GoogleSyncRepository(context: Context) {
         return JSONObject().put("deleted", deleted).put("protectedLegacy", protectedLegacy)
     }
 
-    private fun syncWorkoutPhotosWithDrive(accessToken: String, mergedData: JSONObject) {
-        val history = mergedData.optJSONArray("history") ?: return
-        val photosDir = File(appContext.filesDir, "workout_photos")
-        if (!photosDir.exists()) photosDir.mkdirs()
-
-        for (i in 0 until history.length()) {
-            val photos = history.optJSONObject(i)?.optJSONArray("photos") ?: continue
-            for (j in 0 until photos.length()) {
-                val p = photos.optJSONObject(j) ?: continue
-                val pid = p.optString("id")
-                if (!UUID_REGEX.matches(pid)) continue
-                val isDeleted = p.has("deletedAt") &&
-                    !p.isNull("deletedAt") &&
-                    p.opt("deletedAt") != false &&
-                    p.optString("deletedAt") != "0" &&
-                    p.optString("deletedAt").isNotBlank()
-                val localFile = File(photosDir, "$pid.jpg")
-                val driveId = p.optString("driveFileId")
-
-                if (isDeleted) {
-                    if (driveId.isNotEmpty() && FILE_ID_REGEX.matches(driveId)) {
-                        runCatching { deleteDrivePhotoInternal(accessToken, pid, driveId) }
-                        p.remove("driveFileId")
-                    }
-                    if (localFile.exists()) localFile.delete()
-                } else if (localFile.isFile && localFile.length() in 1L..PHOTO_LIMIT.toLong()) {
-                    if (driveId.isEmpty()) {
-                        val uploadedId = runCatching { writeDrivePhotoInternal(accessToken, pid, localFile) }.getOrNull()
-                        if (!uploadedId.isNullOrEmpty()) p.put("driveFileId", uploadedId)
-                    }
-                } else if (!localFile.exists() && driveId.isNotEmpty() && FILE_ID_REGEX.matches(driveId)) {
-                    runCatching { readDrivePhotoInternal(accessToken, pid, driveId, localFile) }
-                }
-            }
-        }
-    }
-
     private fun photoName(id: String): String = "trainpilot-photo-$id.jpg"
 
     private fun md5(f: File): String {
@@ -1015,7 +988,7 @@ class GoogleSyncRepository(context: Context) {
         val meta = request(
             accessToken,
             "GET",
-            "https://www.googleapis.com/drive/v3/files/$driveFileId?fields=name,size,mimeType",
+            "https://www.googleapis.com/drive/v3/files/$driveFileId?fields=name,size,mimeType,md5Checksum",
             null
         )
         val size = meta.optLong("size", -1L)
@@ -1023,14 +996,7 @@ class GoogleSyncRepository(context: Context) {
             throw IOException("Nem érvényes TrainPilot-fotó.")
         }
         val bytes = download(accessToken, "https://www.googleapis.com/drive/v3/files/$driveFileId?alt=media", PHOTO_LIMIT)
-        if (bytes.size.toLong() != size) throw IOException("A letöltött fotó mérete eltér.")
-        val tmp = File(destFile.parentFile, "$pid.tmp")
-        FileOutputStream(tmp).use { o ->
-            o.write(bytes)
-            o.fd.sync()
-        }
-        if (destFile.exists() && !destFile.delete()) throw IOException("A régi helyi fotó nem cserélhető.")
-        if (!tmp.renameTo(destFile)) throw IOException("A letöltött fotó nem menthető.")
+        NativeCloudPhotoStage.installDownload(pid, meta, bytes, destFile)
     }
 
     private fun deleteDrivePhotoInternal(accessToken: String, pid: String, driveFileId: String) {
