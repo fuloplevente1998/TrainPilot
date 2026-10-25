@@ -273,7 +273,7 @@ fun ActiveWorkoutScreen(
                             }
                         }
                     )
-                    if (!ex.isTimed && ex.measurementType !in setOf("distance", "time", "gps") &&
+                    if (state.explicitTrainingMode && !ex.isTimed && ex.measurementType !in setOf("distance", "time", "gps") &&
                         ex.loadType != "bodyweight") {
                         Card(modifier = Modifier.fillMaxWidth().testTag("training_mode_coach_panel"),
                             colors = CardDefaults.cardColors(containerColor = colors.card)) {
