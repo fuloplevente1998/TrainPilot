@@ -69,17 +69,17 @@ internal class TrainingProgramsViewModel(application: Application) : AndroidView
         }
     }
 
-    fun approveTrainingMode(preview: NativeTrainingModeChange.Preview) = changeTrainingMode {
+    fun approveTrainingMode(preview: NativeTrainingModeChange.Preview) = changeTrainingMode(R.string.native_modes_saved) {
         NativeTrainingModeChange.approve(settingsStore, preview)
     }
 
-    fun undoTrainingMode(programId: String) = changeTrainingMode {
+    fun undoTrainingMode(programId: String) = changeTrainingMode(R.string.native_modes_reverted) {
         NativeTrainingModeChange.undo(settingsStore, "program", programId)
     }
 
     fun clearModeStatus() { _uiState.value = _uiState.value.copy(modeStatus = null) }
 
-    private fun changeTrainingMode(change: suspend () -> Boolean) {
+    private fun changeTrainingMode(successLabel: Int, change: suspend () -> Boolean) {
         if (_uiState.value.modeSaving) return
         _uiState.value = _uiState.value.copy(modeSaving = true, modeStatus = null)
         viewModelScope.launch {
@@ -89,7 +89,7 @@ internal class TrainingProgramsViewModel(application: Application) : AndroidView
                 _uiState.value = _uiState.value.copy(
                     activeProgramId = fresh.activeProgramId, trainingModes197Json = fresh.trainingModes197Json,
                     modeStatus = nativeResources(context, fresh.language).getString(
-                        if (success) R.string.native_modes_saved else R.string.native_modes_error))
+                        if (success) successLabel else R.string.native_modes_error))
             } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
             catch (_: Exception) {
                 _uiState.value = _uiState.value.copy(modeStatus =
