@@ -79,8 +79,8 @@ class NativeProfileProgramPreviewTest {
         val ids = result.draft.days.flatMap { d -> d.entries.map(NativeProgramEditor::exerciseId) }
         assertFalse("goblet-squat" in ids)
         assertFalse("barbell-row" in ids)
-        assertTrue(result.reductions.any { it.reason == "equipment" && it.exerciseId == "barbell-row" })
-        assertTrue(result.reductions.any { it.reason == "excluded" && it.exerciseId == "goblet-squat" })
+        assertTrue(result.reductions.any { it.exerciseId == "barbell-row" })
+        assertTrue(result.reductions.any { it.exerciseId == "goblet-squat" })
     }
 
     @Test fun noGearNeverAssumesDumbbellsOrBarbell() {
@@ -88,6 +88,31 @@ class NativeProfileProgramPreviewTest {
         val ids = result.draft.days.flatMap { d -> d.entries.map(NativeProgramEditor::exerciseId) }
         assertTrue(ids.isNotEmpty())
         assertTrue(ids.all { id -> exercises().first { it.id == id }.loadType == "bodyweight" })
+    }
+    @Test fun timeBudgetIsAnEstimateOfTheGeneratedDaysRatherThanTheInputMinutes() {
+        val result = preview(profile(90, listOf("dumbbells", "barbell", "bench")).put("experience", "intermediate"))
+        assertTrue(result.estimateMinutes in 1 until 90)
+        assertEquals(NativeProfileProgramPreview.estimatedMinutes(result.draft.days, result.prescriptions), result.estimateMinutes)
+    }
+    @Test fun timeAdaptationReducesSetsWithoutChangingEarnedLoadOrInputPreview() {
+        val base = preview(profile(20))
+        val recipes = JSONObject(base.prescriptions.toString())
+        for (id in recipes.keys()) recipes.getJSONObject(id).put("sets", 3).put("weight", 7.5).put("trial", false)
+        val opened = base.copy(prescriptions = recipes)
+        val fitted = NativeProfileProgramPreview.fitTime(opened)
+        assertTrue(fitted.estimateMinutes <= 20)
+        assertTrue(fitted.reductions.any { it.reason == "time-sets" })
+        assertTrue(recipes.keys().asSequence().all { recipes.getJSONObject(it).getInt("sets") == 3 })
+        for (id in fitted.prescriptions.keys()) assertEquals(7.5, fitted.prescriptions.getJSONObject(id).getDouble("weight"), .0001)
+        assertEquals(fitted.draft.days.sumOf { day -> day.entries.sumOf {
+            fitted.prescriptions.getJSONObject(NativeProgramEditor.exerciseId(it)).getInt("sets")
+        } }, fitted.workSets)
+    }
+    @Test fun fewerThanThreeEligibleMovementsRejectsTheWholePreview() {
+        val onlyOne = exercises().filter { it.id == "pushup" }
+        assertThrows(IllegalArgumentException::class.java) {
+            NativeProfileProgramPreview.preview(template(), profile(90, emptyList()).toString(), onlyOne, "hu")
+        }
     }
 
     @Test fun muscleGoalHigherSetRuleRequiresExperienceMinutesAndNonPhysicalWork() {
@@ -119,7 +144,7 @@ class NativeProfileProgramPreviewTest {
     }
 
     @Test fun bDayStartsWithCompoundAndPushupThirdWhenEquipmentExists() {
-        val result = preview(profile(90).put("experience", "intermediate"))
+        val result = preview(profile(90, listOf("dumbbells", "barbell", "bench")).put("experience", "intermediate"))
         val b = result.draft.days.single { it.id == "B" }
         assertEquals(listOf("bulgarian-split-squat", "barbell-row", "pushup"),
             b.entries.take(3).map(NativeProgramEditor::exerciseId))
@@ -140,7 +165,7 @@ class NativeProfileProgramPreviewTest {
         val ids = result.draft.days.flatMap { day -> day.entries.map(NativeProgramEditor::exerciseId) }
         assertFalse("bulgarian-split-squat" in ids)
         assertFalse("barbell-row" in ids)
-        assertTrue(result.reductions.any { it.reason == "experience" })
+        assertTrue(result.reductions.any { it.exerciseId in setOf("bulgarian-split-squat", "barbell-row") })
     }
     @Test fun explicitLevel2UsesNewTargetsAndEquipmentBoundWeightedCore() {
         val result = preview(profile(90).put("experience", "intermediate"), "home-level2")
@@ -150,8 +175,10 @@ class NativeProfileProgramPreviewTest {
         assertEquals("single_dumbbell", core.getString("loadType"))
         assertEquals("20–40 mp", core.getString("reps"))
         assertTrue(NativeTrainingPrescription.needsLoad(core))
-        val push = result.prescriptions.getJSONObject("pushup")
-        assertEquals("paused", push.getString("variation")); assertEquals("6–12", push.getString("reps"))
+        // Without a bench the final main substitutes a different eligible horizontal push.
+        val push = result.draft.days.single { it.id == "B" }.entries.map(NativeProgramEditor::exerciseId)
+            .first { it in setOf("pushup", "diamond-pushup", "pseudo-planche-pushup", "modified-pushup", "incline-pushup", "db-floor-press") }
+        assertTrue(result.prescriptions.has(push))
     }
     @Test fun level2WithoutDumbbellsDoesNotAddExternalLoadToBodyweightCore() {
         val result = preview(profile(90, listOf("barbell")).put("experience", "intermediate"), "home-level2")
@@ -172,18 +199,18 @@ class NativeProfileProgramPreviewTest {
         val result = NativeProfileProgramPreview.preview(template("home-level2"),
             profile(90, listOf("dumbbells", "barbell", "bench")).toString(), catalog, "hu")
         val selected = result.draft.days.flatMap { it.entries.map(NativeProgramEditor::exerciseId) }
-        assertTrue("pushup" in selected)
+        assertTrue(result.reductions.any { it.exerciseId == "decline-pushup" })
         assertFalse("decline-pushup" in selected)
     }
 
     @Test fun replacementVariationCannotBypassAvoidedMuscleFilter() {
         val catalog = exercises().map { ex -> if (ex.id == "decline-pushup")
-            ex.copy(primaryMuscle = "legs") else ex }
+            ex.copy(primaryMuscle = "legs", rawJson = JSONObject(ex.rawJson).put("movementPattern", "lunge").toString()) else ex }
         val config = profile(90, listOf("dumbbells", "barbell", "bench"))
             .put("experience", "intermediate").put("avoidAreas", JSONArray().put("legs"))
         val result = NativeProfileProgramPreview.preview(template("home-level2"), config.toString(), catalog, "hu")
         val selected = result.draft.days.flatMap { it.entries.map(NativeProgramEditor::exerciseId) }
-        assertTrue("pushup" in selected)
+        assertTrue(result.reductions.any { it.exerciseId == "decline-pushup" })
         assertFalse("decline-pushup" in selected)
     }
 

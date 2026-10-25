@@ -258,4 +258,12 @@
     <string name="coach_variation_saved">Neue Programmkopie gespeichert.</string>
     <string name="coach_variation_failed">Der Vorschlag kann nicht übernommen werden oder Daten wurden geändert. Öffne eine neue Vorschau.</string>
     <string name="coach_variation_programs">Programme öffnen</string>
+    <string name="planner_substitution">%1$s → %2$s</string>
+    <string name="planner_reason_equipment">Ausrüstung fehlt</string>
+    <string name="planner_reason_excluded">Ausgeschlossene Übung</string>
+    <string name="planner_reason_avoid">Zu vermeidender Körperbereich</string>
+    <string name="planner_reason_experience">Für Anfänger nicht empfohlen</string>
+    <string name="planner_reason_sets">Weniger Sätze wegen des Zeitbudgets</string>
+    <string name="planner_reason_time">Wegen des Zeitbudgets ausgelassen</string>
+    <string name="planner_reason_missing">Übung nicht verfügbar</string>
 </resources>

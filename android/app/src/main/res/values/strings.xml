@@ -258,4 +258,12 @@
     <string name="coach_variation_saved">Az új programmásolat mentve.</string>
     <string name="coach_variation_failed">A javaslat nem alkalmazható vagy az adatok megváltoztak. Készíts új előnézetet.</string>
     <string name="coach_variation_programs">Programok megnyitása</string>
+    <string name="planner_substitution">%1$s → %2$s</string>
+    <string name="planner_reason_equipment">Hiányzó felszerelés</string>
+    <string name="planner_reason_excluded">Kizárt gyakorlat</string>
+    <string name="planner_reason_avoid">Kerülendő testrész</string>
+    <string name="planner_reason_experience">Kezdőnek nem javasolt</string>
+    <string name="planner_reason_sets">Kevesebb sorozat az időkeret miatt</string>
+    <string name="planner_reason_time">Kihagyva az időkeret miatt</string>
+    <string name="planner_reason_missing">Nem elérhető gyakorlat</string>
 </resources>

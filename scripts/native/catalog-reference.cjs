@@ -34,8 +34,33 @@ const data=JSON.parse(run(`JSON.stringify({exercises:exercises().filter(e=>!e.cu
 assert.equal(data.exercises.length,106);
 assert.equal(new Set(data.exercises.map(e=>e.raw.id)).size,106);
 for(const p of data.programs)for(const d of p.days)for(const id of d.raw.exercises)assert.ok(data.exercises.some(e=>e.raw.id===(typeof id==='object'?id.id:id)),id);
-const payload={source:{commit:'7473b30',appBlob:'b5567576bed9a8f93608a6bf1ed8db1dee4723f4',indexBlob:'a5d5011fc5c7d45815f7eb0ddf401a9e17fc9a5a'},...data};
+const planner=process.argv[5]==='planner'?JSON.parse(run(`JSON.stringify({
+ roles:RF148_ROLE_PATTERNS,areas:RF148_AREA_PATTERNS,needs:NEEDS132,
+ beginnerFavorites:[...RF14_BEGINNER_FAVOR],
+ templates:['home-basic','home-level2'].map(id=>tp128Template(id)),
+ meta:Object.fromEntries(exercises().filter(e=>!e.custom).map(e=>{const m=rf14Meta(e);return [e.id,{movementPattern:m.movementPattern,difficulty:m.difficulty,complexity:m.complexity,beginnerSafe:m.beginnerSafe,compound:m.compound,goalTags:m.goalTags}]}))
+})`)):null;
+const payload={source:{commit:'7473b30',appBlob:'b5567576bed9a8f93608a6bf1ed8db1dee4723f4',indexBlob:'a5d5011fc5c7d45815f7eb0ddf401a9e17fc9a5a'},...(planner||data)};
 const target=process.argv[4]||'android/app/src/main/resources/native-catalog-main-7473.json';
 fs.mkdirSync(require('node:path').dirname(target),{recursive:true});
 fs.writeFileSync(target,JSON.stringify(payload,null,2)+'\n');
-console.log(`${data.exercises.length} exercises and ${data.programs.length} programs extracted; no Android tests executed.`);
+console.log(planner?`Final planner policy extracted; no Android tests executed.`:`${data.exercises.length} exercises and ${data.programs.length} programs extracted; no Android tests executed.`);
+
+if(planner && process.argv[6]) {
+ const cases=JSON.parse(run(`JSON.stringify([
+  ['home-basic',90,['dumbbells','barbell','bench'],'intermediate',[]],
+  ['home-level2',90,['dumbbells','barbell','bench'],'intermediate',[]],
+  ['home-level2',90,['dumbbells','barbell'],'intermediate',[]],
+  ['home-basic',20,['dumbbells','barbell'],'beginner',[]],
+  ['home-basic',90,[],'beginner',[]],
+  ['home-basic',60,['dumbbells','barbell'],'intermediate',['barbell-row']],
+  ['home-level2',60,['barbell'],'intermediate',[]],
+  ['home-basic',90,[],'beginner',['pushup','modified-pushup','incline-pushup','squat','air-squat']]
+ ].map(([templateId,minutes,gear,experience,excluded],i)=>{
+  const profile={age:30,height:175,weight:75,goal:'fitness',activity:'mixed',location:'home',cadence:'alternate',split:'auto',focus:'balanced',avoidAreas:[],minutes,gear,experience,excluded,templateId};
+  try {const p=generatePersonalProgram(profile);return {name:'main-plan-'+i,profile,days:p.days.map(d=>({id:d.id,exercises:d.exercises})),estimate:p.estimatedMinutes};}
+  catch(e){return {name:'main-plan-'+i,profile,rejected:true};}
+ }))`));
+ fs.writeFileSync(process.argv[6],JSON.stringify({source:payload.source,cases},null,2)+'\n');
+ console.log(`${cases.length} actual-main planner fixtures generated; Kotlin not executed.`);
+}

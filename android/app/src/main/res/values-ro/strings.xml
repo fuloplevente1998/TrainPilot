@@ -258,4 +258,12 @@
     <string name="coach_variation_saved">Copia nouă a programului a fost salvată.</string>
     <string name="coach_variation_failed">Propunerea nu poate fi aplicată sau datele s-au schimbat. Deschide o previzualizare nouă.</string>
     <string name="coach_variation_programs">Deschide programele</string>
+    <string name="planner_substitution">%1$s → %2$s</string>
+    <string name="planner_reason_equipment">Echipament indisponibil</string>
+    <string name="planner_reason_excluded">Exercițiu exclus</string>
+    <string name="planner_reason_avoid">Zonă corporală de evitat</string>
+    <string name="planner_reason_experience">Nerecomandat începătorilor</string>
+    <string name="planner_reason_sets">Mai puține serii pentru timpul disponibil</string>
+    <string name="planner_reason_time">Omis pentru timpul disponibil</string>
+    <string name="planner_reason_missing">Exercițiu indisponibil</string>
 </resources>

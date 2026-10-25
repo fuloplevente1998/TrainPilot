@@ -258,4 +258,12 @@
     <string name="coach_variation_saved">New program copy saved.</string>
     <string name="coach_variation_failed">The suggestion cannot be applied or data changed. Open a fresh preview.</string>
     <string name="coach_variation_programs">Open programs</string>
+    <string name="planner_substitution">%1$s → %2$s</string>
+    <string name="planner_reason_equipment">Equipment unavailable</string>
+    <string name="planner_reason_excluded">Excluded exercise</string>
+    <string name="planner_reason_avoid">Avoided body area</string>
+    <string name="planner_reason_experience">Not recommended for beginners</string>
+    <string name="planner_reason_sets">Fewer sets to fit the time budget</string>
+    <string name="planner_reason_time">Omitted to fit the time budget</string>
+    <string name="planner_reason_missing">Exercise unavailable</string>
 </resources>

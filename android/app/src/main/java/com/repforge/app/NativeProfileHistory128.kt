@@ -205,6 +205,6 @@ internal object NativeProfileHistory128 {
         }
         val history = JSONObject().put("entries", entries)
             .put("asOf", asOf.toEpochMilli())
-        return preview.copy(prescriptions = prescriptions, history128 = history)
+        return NativeProfileProgramPreview.fitTime(preview.copy(prescriptions = prescriptions, history128 = history))
     }
 }

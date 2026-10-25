@@ -7,7 +7,7 @@ import org.json.JSONObject
 
 /** Read-only #128 A/B preview. No invented weights, history evidence or automatic increases. */
 internal object NativeProfileProgramPreview {
-    data class Reduction(val dayId: String, val exerciseId: String, val reason: String)
+    data class Reduction(val dayId: String, val exerciseId: String, val reason: String, val cause: String = "")
     data class Preview(
         val source: ProgramWithDays,
         val draft: NativeProgramEditor.Draft,
@@ -40,37 +40,12 @@ internal object NativeProfileProgramPreview {
         }.toSet()
     }
 
-    private fun available(ex: ExerciseLibraryEntity, gear: Set<String>): Boolean {
-        val raw = JSONObject(ex.rawJson)
-        if (ex.loadType == "bodyweight") {
-            val equipment = raw.optString("equipment").lowercase()
-            return !("pad" in equipment || "támasz" in equipment) ||
-                "bench" in gear || "support" in gear
-        }
-        val required = raw.optString("gear")
-        if (required.isNotBlank()) return when (required) {
-            "bodyweight" -> true
-            "dumbbells", "dumbbell" -> "dumbbells" in gear
-            "barbell" -> "barbell" in gear
-            "kettlebell" -> "kettlebell" in gear
-            "bands" -> "bands" in gear
-            else -> required in gear
-        }
-        val eq = raw.optString("equipment").lowercase()
-        return when {
-            "kézisúlyzó" in eq -> "dumbbells" in gear
-            "kétkezes rúd" in eq -> "barbell" in gear
-            "kettlebell" in eq -> "kettlebell" in gear
-            "gumiszalag" in eq -> "bands" in gear
-            "testsúly" in eq -> true
-            else -> false // Unknown equipment is never silently assumed available.
-        }
-    }
+    private fun available(ex: ExerciseLibraryEntity, gear: Set<String>) = NativePlannerPolicy.available(ex, gear)
 
     internal fun variationRejection(ex: ExerciseLibraryEntity, profile: JSONObject): String = when {
         ex.id in keys(profile, "excluded") -> "excluded"
-        ex.primaryMuscle in avoidedMuscles(keys(profile, "avoidAreas")) -> "avoid-area"
-        profile.optString("experience") == "beginner" && !JSONObject(ex.rawJson).optBoolean("beginnerSafe", true) -> "experience"
+        NativePlannerPolicy.avoided(ex, avoidedMuscles(keys(profile, "avoidAreas"))) -> "avoid-area"
+        profile.optString("experience") == "beginner" && !NativePlannerPolicy.metadata(ex).optBoolean("beginnerSafe", true) -> "experience"
         !available(ex, keys(profile, "gear")) -> "equipment"
         else -> ""
     }
@@ -96,59 +71,52 @@ internal object NativeProfileProgramPreview {
         fun exclusionReason(id: String, ex: ExerciseLibraryEntity?): String = when {
             ex == null -> "missing"
             id in excluded -> "excluded"
-            ex.primaryMuscle in areas -> "avoid-area"
-            beginner && !JSONObject(ex.rawJson).optBoolean("beginnerSafe", true) -> "experience"
+            NativePlannerPolicy.avoided(ex, areas) -> "avoid-area"
+            beginner && !NativePlannerPolicy.metadata(ex).optBoolean("beginnerSafe", true) -> "experience"
             !available(ex, gear) -> "equipment"
             else -> ""
         }
-        val count = (minutes / 6).coerceIn(1, 7)
+        val count = NativePlannerPolicy.capacity(minutes)
         val level2 = source.program.id == "home-level2" && profile.optString("experience") == "intermediate"
         val repetitions = JSONObject()
         val removed = ArrayList<Reduction>()
         var totalSets = 0
-        val draftDays = source.days.sortedBy { it.sortOrder }.map { day ->
-            val ids = JSONArray(day.exercisesJson)
-            val filtered = ArrayList<Pair<String, ExerciseLibraryEntity>>()
-            for (index in 0 until ids.length()) {
-                val row = ids.get(index)
-                val id = if (row is JSONObject) row.optString("id") else row as? String ?: ""
-                val ex = catalogById[id]
-                val reason = exclusionReason(id, ex)
-                if (reason.isNotBlank()) removed += Reduction(day.dayId, id, reason)
-                else filtered += id to ex!!
-            }
-            // Main #128 B day: compound order before isolation, push-up third.
-            // Level 2 may use decline push-up only when the user explicitly has a bench.
-            val finalRows = if (day.dayId == "B") {
-                val variation = catalogById["decline-pushup"]
-                val index = filtered.indexOfFirst { it.first == "pushup" }
-                if (source.program.id == "home-level2" && index >= 0 &&
-                    "pushup" !in excluded && "decline-pushup" !in excluded &&
-                    variation != null && exclusionReason("decline-pushup", variation).isEmpty()) {
-                    filtered[index] = "decline-pushup" to variation
+        val eligible = catalog.filter { exclusionReason(it.id, it).isBlank() }
+        val pools = mutableMapOf<String, List<ExerciseLibraryEntity>>()
+        val draftDays = NativePlannerPolicy.slots(source.program.id).map { (dayId, slotIds) ->
+            val day = source.days.firstOrNull { it.dayId == dayId }
+            val filtered = ArrayList<ExerciseLibraryEntity>()
+            for (id in slotIds) {
+                val original = catalogById[id]
+                var chosen = eligible.firstOrNull { it.id == id && filtered.none { old -> old.id == id } }
+                val reason = exclusionReason(id, original)
+                if (chosen == null) {
+                    val role = original?.let(NativePlannerPolicy::role)
+                    chosen = role?.let { pools.getOrPut(it) { NativePlannerPolicy.pool(it, eligible, profile) } }
+                        ?.firstOrNull { candidate -> filtered.none { it.id == candidate.id } }
                 }
-                val order = listOf("bulgarian-split-squat", "barbell-row",
-                    "decline-pushup", "pushup", "db-pullover",
-                    "lateral-raise", "oh-triceps", "dead-bug")
-                filtered.sortedWith(compareBy<Pair<String, ExerciseLibraryEntity>> {
-                    order.indexOf(it.first).takeIf { index -> index >= 0 } ?: Int.MAX_VALUE
-                })
-            } else filtered
+                if (chosen?.id != id) removed += Reduction(dayId, id,
+                    if (chosen == null) reason.ifBlank { "missing" } else "substitution:${chosen.id}", reason)
+                if (chosen != null) filtered += chosen
+            }
+            require(filtered.size >= 3) { "Fewer than three eligible exercises for day $dayId" }
+            val finalRows = filtered.sortedByDescending { NativePlannerPolicy.metadata(it).optBoolean("compound") }
+                .map { it.id to it }
             val selected = finalRows.take(count)
-            for ((id, _) in finalRows.drop(count)) removed += Reduction(day.dayId, id, "time")
+            for ((id, _) in finalRows.drop(count)) removed += Reduction(dayId, id, "time")
             for ((id, exercise) in selected) {
-                val original = JSONObject(exercise.rawJson)
+                val original = NativePlannerPolicy.metadata(exercise)
                 original.put("id", id).put("repUnit", exercise.repUnit).put("loadType", exercise.loadType)
                 val rx = if (level2) NativeTrainingPrescription.level2(original, profile)
                     else NativeTrainingPrescription.create(original, profile)
                 totalSets += rx.getInt("sets")
                 repetitions.put(id, rx)
             }
-            NativeProgramEditor.DayDraft(day.dayId,
+            NativeProgramEditor.DayDraft(dayId,
                 when (language) {
-                    "en" -> day.nameEn; "de" -> day.nameDe
-                    "ro" -> day.nameRo; else -> day.nameHu
-                }.ifBlank { day.nameHu }, selected.map { JSONObject.quote(it.first) })
+                    "en" -> day?.nameEn; "de" -> day?.nameDe
+                    "ro" -> day?.nameRo; else -> day?.nameHu
+                }.orEmpty().ifBlank { dayId }, selected.map { JSONObject.quote(it.first) })
         }
         require(draftDays.isNotEmpty() && draftDays.all { it.entries.isNotEmpty() }) {
             "No safe A/B day for the selected equipment and exclusions"
@@ -157,14 +125,46 @@ internal object NativeProfileProgramPreview {
             "en" -> source.program.nameEn; "de" -> source.program.nameDe
             "ro" -> source.program.nameRo; else -> source.program.nameHu
         }.ifBlank { source.program.nameHu }
-        return Preview(source,
+        return fitTime(Preview(source,
             NativeProgramEditor.Draft(name, source.program.description, draftDays),
-            repetitions, profile, removed, minutes, totalSets, rawProfile)
+            repetitions, profile, removed, minutes, totalSets, rawProfile))
+    }
+
+    private fun dayMinutes(day: NativeProgramEditor.DayDraft, recipes: JSONObject): Double =
+        4.0 + day.entries.sumOf { encoded ->
+            val rx = recipes.getJSONObject(NativeProgramEditor.exerciseId(encoded))
+            val sets = rx.getInt("sets")
+            sets * .65 + (sets - 1) * rx.getDouble("rest") / 60.0 + 1.0
+        }
+
+    fun estimatedMinutes(days: List<NativeProgramEditor.DayDraft>, recipes: JSONObject): Int =
+        kotlin.math.ceil(days.maxOf { dayMinutes(it, recipes) }).toInt()
+
+    /** Main tp128AdaptHistory reduces working-set count, never the already earned load. */
+    fun fitTime(preview: Preview): Preview {
+        val recipes = JSONObject(preview.prescriptions.toString())
+        val budget = preview.profileSnapshot.getInt("minutes")
+        val reductions = preview.reductions.toMutableList()
+        for (day in preview.draft.days) {
+            for (encoded in day.entries.asReversed()) {
+                val id = NativeProgramEditor.exerciseId(encoded)
+                val rx = recipes.getJSONObject(id)
+                if (dayMinutes(day, recipes) > budget && rx.getInt("sets") > 2) {
+                    rx.put("sets", 2)
+                    reductions += Reduction(day.id, id, "time-sets")
+                }
+            }
+            require(dayMinutes(day, recipes) <= budget) { "The minimum safe workout does not fit the requested time" }
+        }
+        return preview.copy(prescriptions = recipes, reductions = reductions.distinct(),
+            estimateMinutes = estimatedMinutes(preview.draft.days, recipes),
+            workSets = preview.draft.days.sumOf { day -> day.entries.sumOf { recipes.getJSONObject(NativeProgramEditor.exerciseId(it)).getInt("sets") } })
     }
 
     fun metadata(preview: Preview): JSONObject = JSONObject()
         .put("profileSnapshot", JSONObject(preview.profileSnapshot.toString()))
         .put("prescriptions", JSONObject(preview.prescriptions.toString()))
+        .put("estimatedMinutes", preview.estimateMinutes)
         .put("templateVersion", 2)
         .put("sourceTemplateId", preview.source.program.id)
         .also { if (preview.history128.has("entries")) it.put("history128", JSONObject(preview.history128.toString())) }

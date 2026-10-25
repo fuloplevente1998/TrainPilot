@@ -39,6 +39,20 @@ internal fun PersonalProgramPreviewDialog(
     onAccept: (NativeProfileProgramPreview.Preview) -> Unit,
     onCancel: () -> Unit
 ) {
+    val strings = com.repforge.app.ui.text.nativeResources(androidx.compose.ui.platform.LocalContext.current, language)
+    fun exerciseName(id: String): String {
+        val ex = catalog.firstOrNull { it.id == id } ?: return id
+        return when (language) { "en" -> ex.nameEn; "de" -> ex.nameDe; "ro" -> ex.nameRo; else -> ex.nameHu }.ifBlank { ex.nameHu }
+    }
+    fun reason(code: String): String = strings.getString(when (code) {
+        "equipment" -> com.repforge.app.R.string.planner_reason_equipment
+        "excluded" -> com.repforge.app.R.string.planner_reason_excluded
+        "avoid-area" -> com.repforge.app.R.string.planner_reason_avoid
+        "experience" -> com.repforge.app.R.string.planner_reason_experience
+        "time-sets" -> com.repforge.app.R.string.planner_reason_sets
+        "time" -> com.repforge.app.R.string.planner_reason_time
+        else -> com.repforge.app.R.string.planner_reason_missing
+    })
     val profile = remember(profileJson) { runCatching { JSONObject(profileJson) }.getOrDefault(JSONObject()) }
     val recommended = if (profile.optString("experience") == "intermediate")
         "home-level2" else "home-basic"
@@ -47,22 +61,22 @@ internal fun PersonalProgramPreviewDialog(
     val label = when (language) {
         "en" -> listOf("Personal A/B plan preview", "Basic", "Level 2", "Check your Training profile",
             "Set workout minutes and equipment first in Settings → Training profile. No exercise or weight is guessed.",
-            "Work sets", "Minutes available", "Removed exercises", "Load: to be set with a trial set",
+            "Work sets", "Estimated minutes / budget", "Plan adjustments", "Load: to be set with a trial set",
             "Accept and activate", "Cancel", "Could not save. Check that your profile or template has not changed.",
             "No safe workout for the selected profile.")
         "de" -> listOf("Persönlicher A/B-Plan – Vorschau", "Basis", "Stufe 2", "Trainingsprofil prüfen",
             "Trainingsdauer und Ausrüstung zuerst in Einstellungen → Trainingsprofil angeben.",
-            "Arbeitssätze", "Minuten verfügbar", "Entfernte Übungen", "Gewicht: durch Probesatz bestimmen",
+            "Arbeitssätze", "Geschätzte Minuten / Zeitbudget", "Plananpassungen", "Gewicht: durch Probesatz bestimmen",
             "Annehmen und aktivieren", "Abbrechen", "Speichern fehlgeschlagen. Prüfe Profil und Vorlage.",
             "Kein geeignetes Training für dieses Profil.")
         "ro" -> listOf("Previzualizare program A/B", "De bază", "Nivel 2", "Verifică profilul",
             "Completează minutele și echipamentul în Setări → Profil antrenament.",
-            "Serii", "Minute disponibile", "Exerciții eliminate", "Greutate: se stabilește printr-o serie de probă",
+            "Serii", "Minute estimate / buget", "Modificări ale planului", "Greutate: se stabilește printr-o serie de probă",
             "Acceptă și activează", "Anulează", "Salvarea a eșuat. Verifică profilul și șablonul.",
             "Niciun antrenament sigur pentru acest profil.")
         else -> listOf("Személyes A/B edzésterv előnézete", "Alap", "2. szint", "Edzésprofil ellenőrzése",
             "Előbb add meg az edzésidőt és felszerelést a Beállítások → Edzésprofil alatt. Nem találgatunk gyakorlatot vagy súlyt.",
-            "Munkasorozatok", "Rendelkezésre álló perc", "Kihagyott gyakorlatok", "Súly: próbasorozattal beállítandó",
+            "Munkasorozatok", "Becsült perc / időkeret", "Tervmódosítások", "Súly: próbasorozattal beállítandó",
             "Elfogadás és aktiválás", "Mégse", "Nem menthető. Lehet, hogy közben változott a profil vagy a sablon.",
             "Nincs biztonsággal javasolható edzés ezzel a profillal.")
     }
@@ -89,7 +103,7 @@ internal fun PersonalProgramPreviewDialog(
                     Text(label[3])
                     Text(label[4], modifier = Modifier.testTag("personal_preview_blocked"))
                 } else {
-                    Text("${label[6]}: ${preview.estimateMinutes} · ${label[5]}: ${preview.workSets}")
+                    Text("${label[6]}: ${preview.estimateMinutes} / ${preview.profileSnapshot.getInt("minutes")} · ${label[5]}: ${preview.workSets}")
                     val inherited = preview.history128.optJSONObject("entries")
                     if (inherited != null && inherited.length() > 0) {
                         Text(when (language) {
@@ -131,8 +145,14 @@ internal fun PersonalProgramPreviewDialog(
                     }
                     if (preview.reductions.isNotEmpty()) {
                         Text("${label[7]}: ${preview.reductions.size}")
-                        preview.reductions.take(12).forEach { removed ->
-                            Text("${removed.exerciseId} (${removed.reason})")
+                        preview.reductions.forEach { removed ->
+                            val name = exerciseName(removed.exerciseId)
+                            val message = if (removed.reason.startsWith("substitution:")) {
+                                strings.getString(com.repforge.app.R.string.planner_substitution, name,
+                                    exerciseName(removed.reason.substringAfter(":"))) +
+                                    if (removed.cause.isBlank()) "" else " (${reason(removed.cause)})"
+                            } else "$name (${reason(removed.reason)})"
+                            Text(message, modifier = Modifier.testTag("personal_change_${removed.dayId}_${removed.exerciseId}"))
                         }
                     }
                 }

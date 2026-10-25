@@ -553,6 +553,28 @@ class NativePhoneNavigationTest {
         assertEquals("home-basic", runBlocking { settings.current().activeProgramId })
     }
 
+    @Test fun plannerShowsLocalizedEquipmentSubstitutionWithoutSavingIt() {
+        runBlocking(Dispatchers.IO) {
+            settings.saveTrainingProfile(JSONObject().put("minutes", 90).put("experience", "intermediate")
+                .put("goal", "fitness").put("gear", org.json.JSONArray().put("dumbbells").put("barbell")))
+        }
+        val db = TrainPilotDatabase.getInstance(context)
+        val baseline = runBlocking(Dispatchers.IO) { db.programDao().getProgramIds().toSet() }
+        launch(); tab("training")
+        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
+        compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("personal_planner_open"))
+        compose.onNodeWithTag("personal_planner_open").performClick()
+        compose.waitUntil(15000) {
+            compose.onAllNodesWithTag("personal_preview_loading").fetchSemanticsNodes().isEmpty() &&
+                compose.onAllNodesWithTag("personal_change_B_bulgarian-split-squat").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("personal_change_B_bulgarian-split-squat").performScrollTo()
+            .assertTextContains("→").assertTextContains("Hiányzó felszerelés")
+        screenshot("personal_equipment_substitution")
+        compose.onNodeWithText("Mégse").performClick()
+        assertEquals(baseline, runBlocking(Dispatchers.IO) { db.programDao().getProgramIds().toSet() })
+    }
+
     @Test fun personalPlannerAcceptanceCreatesNewProgramAndRetainsTrialWeights() {
         runBlocking(Dispatchers.IO) {
             settings.saveTrainingProfile(JSONObject().put("minutes", 45)

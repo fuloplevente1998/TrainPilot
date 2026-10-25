@@ -231,6 +231,7 @@ internal object NativeProgramEditor {
                 .put("days", jsonDays).put("updatedAt", System.currentTimeMillis())
             if (personalMetadata != null) {
                 raw.put("sourceTemplateId", opened!!.program.id).put("templateVersion", 2)
+                    .put("estimatedMinutes", NativeProfileProgramPreview.estimatedMinutes(d.days, personalMetadata.getJSONObject("prescriptions")))
                     .put("profileSnapshot", JSONObject(personalMetadata.getJSONObject("profileSnapshot").toString()))
                     .put("prescriptions", JSONObject(personalMetadata.getJSONObject("prescriptions").toString()))
                 personalMetadata.optJSONObject("history128")?.let { history ->
