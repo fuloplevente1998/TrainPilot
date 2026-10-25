@@ -163,6 +163,7 @@ class GoogleSyncRepository internal constructor(context: Context, private val op
         val language = settingsStore.current().language
         val strings = com.repforge.app.ui.text.nativeResources(appContext, language)
         runGoogleOperation(action.key, strings.getString(R.string.native_google_authorizing)) {
+            val dataTicket = NativeDataReplacement.continuationForCurrentData(appContext)
             val email = prefs().getString("email", "").orEmpty()
             if (action != GoogleSyncAction.CONNECT)
                 NativeGoogleAccountPolicy.requireConnected(prefs().getString("sub", "").orEmpty(), email)
@@ -181,14 +182,15 @@ class GoogleSyncRepository internal constructor(context: Context, private val op
             val token = result.accessToken?.takeIf { it.isNotBlank() }
                 ?: throw IOException(strings.getString(R.string.native_google_no_token))
             currentCoroutineContext().ensureActive()
+            dataTicket.requireCurrent(appContext)
             when (action) {
                 GoogleSyncAction.CONNECT -> {
-                    connectWithTokenInternal(token)
+                    connectWithTokenInternal(token, dataTicket)
                     GoogleSyncCompletion(action)
                 }
                 GoogleSyncAction.DRIVE -> GoogleSyncCompletion(action,
                     syncedAt = syncDriveCloudInternal(token, false, recoverEarlier, true))
-                GoogleSyncAction.CALENDAR -> GoogleSyncCompletion(action, count = syncCalendarCloudInternal(token))
+                GoogleSyncAction.CALENDAR -> GoogleSyncCompletion(action, count = syncCalendarCloudInternal(token, dataTicket))
             }
         }
     }
@@ -199,17 +201,21 @@ class GoogleSyncRepository internal constructor(context: Context, private val op
         }
     }
 
-    private suspend fun connectWithTokenInternal(accessToken: String): JSONObject {
+    private suspend fun connectWithTokenInternal(accessToken: String,
+        dataTicket: NativeDataReplacement.Continuation = NativeDataReplacement.continuationForCurrentData(appContext)): JSONObject {
         val profile = verifyAndFetchProfile(accessToken, connecting = true)
         currentCoroutineContext().ensureActive()
-        val safe = JSONObject().put("sub", profile.getString("sub"))
-            .put("email", profile.getString("email")).put("name", profile.optString("name"))
-        val editor = prefs().edit().putString("profile", safe.toString())
-            .putString("email", safe.getString("email")).putString("sub", safe.getString("sub"))
-        if (prefs().getString("sub", "") != safe.getString("sub")) editor.remove("calendar")
-        check(editor.commit()) { "A Google-fiók nem menthető." }
-        refreshProfileState()
-        return safe
+        return NativeDataReplacement.mutate(appContext) {
+            dataTicket.requireCurrent(appContext)
+            val safe = JSONObject().put("sub", profile.getString("sub"))
+                .put("email", profile.getString("email")).put("name", profile.optString("name"))
+            val editor = prefs().edit().putString("profile", safe.toString())
+                .putString("email", safe.getString("email")).putString("sub", safe.getString("sub"))
+            if (prefs().getString("sub", "") != safe.getString("sub")) editor.remove("calendar")
+            check(editor.commit()) { "A Google-fiók nem menthető." }
+            refreshProfileState()
+            safe
+        }
     }
 
     fun disconnect(): Result<Unit> = try {
@@ -375,15 +381,18 @@ class GoogleSyncRepository internal constructor(context: Context, private val op
         }
     }
 
-    private suspend fun syncCalendarCloudInternal(accessToken: String): Int {
+    private suspend fun syncCalendarCloudInternal(accessToken: String,
+        dataTicket: NativeDataReplacement.Continuation = NativeDataReplacement.continuationForCurrentData(appContext)): Int {
         verifyAndFetchProfile(accessToken)
         currentCoroutineContext().ensureActive()
-        val calendarId = ensureManagedCalendar(accessToken)
+        dataTicket.requireCurrent(appContext)
+        val calendarId = ensureManagedCalendar(accessToken, dataTicket)
         val entries = database.calendarScheduleDao().getAllEntries()
         val base = "https://www.googleapis.com/calendar/v3/calendars/${enc(calendarId)}/events"
         var count = 0
         for (operation in NativeCalendarSyncPlan.operations(entries)) {
             kotlinx.coroutines.currentCoroutineContext().ensureActive()
+            dataTicket.requireCurrent(appContext)
             val id = operation.id
             if (operation.delete) {
                 try { request(accessToken, "DELETE", "$base/$id", null) }
@@ -398,6 +407,7 @@ class GoogleSyncRepository internal constructor(context: Context, private val op
             count++
         }
         val nowIso = Instant.now().toString()
+        dataTicket.requireCurrent(appContext)
         _uiState.value = _uiState.value.copy(
             lastCalendarSyncIso = nowIso,
             errorMessage = null
@@ -1026,7 +1036,7 @@ class GoogleSyncRepository internal constructor(context: Context, private val op
         }
     }
 
-    private fun ensureManagedCalendar(accessToken: String): String {
+    private suspend fun ensureManagedCalendar(accessToken: String, dataTicket: NativeDataReplacement.Continuation): String {
         var id = prefs().getString("calendar", "") ?: ""
         if (id.isNotEmpty()) {
             try {
@@ -1037,7 +1047,10 @@ class GoogleSyncRepository internal constructor(context: Context, private val op
                 return id
             } catch (e: ApiError) {
                 if (e.code != 404 && e.code != 410) throw e
-                prefs().edit().remove("calendar").apply()
+                NativeDataReplacement.mutate(appContext) {
+                    dataTicket.requireCurrent(appContext)
+                    check(prefs().edit().remove("calendar").commit()) { "A Google-naptár állapota nem menthető." }
+                }
                 id = ""
             }
         }
@@ -1069,7 +1082,10 @@ class GoogleSyncRepository internal constructor(context: Context, private val op
                 .put("timeZone", TimeZone.getDefault().id)
             id = request(accessToken, "POST", "https://www.googleapis.com/calendar/v3/calendars", c).getString("id")
         }
-        prefs().edit().putString("calendar", id).apply()
+        NativeDataReplacement.mutate(appContext) {
+            dataTicket.requireCurrent(appContext)
+            check(prefs().edit().putString("calendar", id).commit()) { "A Google-naptár állapota nem menthető." }
+        }
         return id
     }
 

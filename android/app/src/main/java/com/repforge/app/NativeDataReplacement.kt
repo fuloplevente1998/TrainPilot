@@ -26,9 +26,9 @@ internal object NativeDataReplacement {
      * The enclosing replacement increments the epoch once more on exit, before releasing admission.
      * Ordinary metadata edits are allowed: cloudBase describes the published snapshot, not current UI.
      */
-    internal class Continuation internal constructor(private val enteredEpoch: Long) {
+    internal class Continuation internal constructor(private val expectedEpoch: Long) {
         fun requireCurrent(context: Context) {
-            check(replacementEpoch.get() == enteredEpoch + 1 && !blocked(context)) {
+            check(replacementEpoch.get() == expectedEpoch && !blocked(context)) {
                 "Az adatok közben lecserélődtek. Indítsd újra a szinkronizálást."
             }
         }
@@ -37,7 +37,14 @@ internal object NativeDataReplacement {
     internal suspend fun continuationAfterReplacement(): Continuation {
         val access = currentCoroutineContext()[Access]
         check(access != null && access.active.get() && access.replacement) { "Replacement lease required" }
-        return Continuation(replacementEpoch.get())
+        return Continuation(replacementEpoch.get() + 1)
+    }
+
+    /** For consent/network work started on the current dataset, without holding a local write lease. */
+    internal fun continuationForCurrentData(context: Context): Continuation {
+        val epoch = replacementEpoch.get()
+        check(!blocked(context)) { "Adatcsere van folyamatban." }
+        return Continuation(epoch).also { it.requireCurrent(context) }
     }
 
     /** Serialize admitted metadata writers with replacement, including callbacks already in progress. */

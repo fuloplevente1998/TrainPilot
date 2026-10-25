@@ -141,4 +141,24 @@ class NativeDataReplacementTest {
         }
         assertThrows(IllegalStateException::class.java) { continuation.requireCurrent(context) }
     }
+
+    @Test fun consentStartedOnCurrentDataCannotPersistAfterAnExplicitRestore() = runTest {
+        val pendingConsent = NativeDataReplacement.continuationForCurrentData(context)
+        NativeDataReplacement.mutate(context) { pendingConsent.requireCurrent(context) }
+        NativeDataReplacement.exclusively(context) { }
+        var wroteProfile = false
+        reject { NativeDataReplacement.mutate(context) {
+            pendingConsent.requireCurrent(context)
+            wroteProfile = true
+        } }
+        assertFalse(wroteProfile)
+    }
+
+    @Test fun newConsentCannotCaptureAContinuationDuringReplacementOrInterruptedRecovery() = runTest {
+        NativeDataReplacement.exclusively(context) {
+            assertThrows(IllegalStateException::class.java) { NativeDataReplacement.continuationForCurrentData(context) }
+        }
+        context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE).edit().putBoolean("blocked", true).commit()
+        assertThrows(IllegalStateException::class.java) { NativeDataReplacement.continuationForCurrentData(context) }
+    }
 }
