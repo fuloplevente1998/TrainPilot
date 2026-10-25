@@ -58,4 +58,5 @@
     <string name="native_modes_coach_no_action">Nincs biztonságosan alkalmazható súlyemelés.</string>
     <string name="native_modes_coach_review">Súlyjavaslat ellenőrzése</string>
     <string name="native_modes_coach_cancel">Mégse</string>
+    <string name="native_modes_coach_sets">Javasolt munkasorozatok: %1$d (csak előnézet)</string>
 </resources>
