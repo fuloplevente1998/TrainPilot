@@ -107,6 +107,25 @@ class NativeTrainingModesStoreTest {
         assertEquals("ro", store.current().language)
     }
 
+    @Test fun undoRestoresOriginalMalformedImportedModeWithoutActivatingIt() = runBlocking {
+        val older = chosen().put("schemaVersion", 99).put("futureExtension",
+            JSONObject().put("mustSurvive", true))
+        store.importPortableSettings(JSONObject().put("settings",
+            JSONObject().put("trainingModes197", older)))
+        val raw = store.current().trainingModes197Json
+        val proposal = com.repforge.app.data.store.NativeTrainingModeChange.prepare(
+            raw, store.current().activeProgramId, "global", null, "hit", "linear")
+        assertTrue(com.repforge.app.data.store.NativeTrainingModeChange.approve(store, proposal))
+        assertEquals("global", NativeTrainingModes.resolveSavedJson(
+            store.current().trainingModes197Json, "p").source)
+        assertTrue(com.repforge.app.data.store.NativeTrainingModeChange.undo(store, "global", null))
+        val restored = JSONObject(store.current().trainingModes197Json!!)
+        assertEquals(99, restored.getInt("schemaVersion"))
+        assertTrue(restored.getJSONObject("futureExtension").getBoolean("mustSurvive"))
+        assertEquals("legacy", NativeTrainingModes.resolve(restored, "p").source)
+        assertFalse(com.repforge.app.data.store.NativeTrainingModeChange.undo(store, "global", null))
+    }
+
     @Test fun malformedImportedModeIsPreservedButCannotActivateOrBeApproved() = runBlocking {
         val invalid = chosen().put("schemaVersion", 99)
         store.importPortableSettings(JSONObject().put("settings", JSONObject().put("trainingModes197", invalid)))
