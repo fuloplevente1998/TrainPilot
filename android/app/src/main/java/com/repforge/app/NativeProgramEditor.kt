@@ -7,6 +7,8 @@ import com.repforge.app.data.db.ProgramEntity
 import com.repforge.app.data.db.ProgramWithDays
 import com.repforge.app.data.db.TrainPilotDatabase
 import com.repforge.app.data.store.TrainPilotSettingsStore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import org.json.JSONTokener
@@ -94,7 +96,7 @@ internal object NativeProgramEditor {
         return draft.copy(name = name)
     }
 
-    private fun assertNoActiveWorkout(context: Context) {
+    private suspend fun assertNoActiveWorkout(context: Context) = withContext(Dispatchers.Main.immediate) {
         check(ActiveWorkoutStore.current(context)?.optBoolean("active") != true &&
             PhoneWorkoutExecution.store(context).snapshot()?.optBoolean("active") != true) {
             "Finish the active workout before modifying programs"
