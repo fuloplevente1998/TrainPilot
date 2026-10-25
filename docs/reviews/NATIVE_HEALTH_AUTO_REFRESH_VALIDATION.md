@@ -54,3 +54,9 @@ Existing native gate `40234213957` compiled the phone application and Wear debug
 The fifth native gate `40234621721` successfully compiled **both debug phone/Wear app source and the Compose Android instrumentation APK**; it then failed in `:app:compileDebugUnitTestKotlin` because existing `NativeProfileHistory128Test.kt` referenced a removed `ProgramDayEntity.id` instead of `compositeId`, and a `this.id` inside `runBlocking` resolved to its coroutine scope rather than the test fixture. Fixed the two exact test references without weakening assertions. A new gate is needed for actual test execution.
 
 Additional consent lifecycle hardening keeps a manually requested Samsung permission flow alive across a transient external permission activity's STOP, while destination disposal always cancels it.
+
+### Sixth native CI: actual JVM results and cross-suite fixture repair
+
+Run `40235050303` compiled phone/Wear debug APK and Compose androidTest APK successfully, then executed `972` JVM tests with `88` failures. The actual uploaded `TrainPilot-Native-Tests-d2d4e515...` XML report confirms **24/24 new Health JVM tests passed** and **4/4 existing NativeHealthRefresh tests passed**.
+
+Inspection of the unrelated Coach/Profile/Planner failure clusters found a **test classpath resource collision**: `src/test/resources/native-planner-main-7473.json` held parity test *cases* and masked `src/main/resources/native-planner-main-7473.json` which holds the actual 106-item native planner policy *meta*. Test resource renamed to `native-planner-cases-7473.json`, and `NativePlannerTemplateParityTest` reads the renamed file; the production policy remains unchanged. Two unrelated JUnit test functions gained explicit `Unit` return types to meet JUnit4 signatures without changing any assertion. Remaining unrelated failures, if any, require separate diagnosis.
