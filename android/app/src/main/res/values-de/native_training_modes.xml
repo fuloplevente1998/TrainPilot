@@ -47,4 +47,15 @@
     <string name="native_modes_reason_missing_load_step">Keine sichere verfügbare Gewichtsabstufung.</string>
     <string name="native_modes_reason_invalid_mode">Gewählter Modus nicht unterstützt.</string>
     <string name="native_modes_reason_hit">HIT-inspirierte Vorschau; weniger Sätze sind nur ein Vorschlag.</string>
+    <string name="native_modes_coach_open">Coach-Vorschlag anzeigen</string>
+    <string name="native_modes_coach_preview">Nur ein Vorschlag; nicht übernommen</string>
+    <string name="native_modes_coach_history">Passende Trainingseinheiten: %1$d</string>
+    <string name="native_modes_coach_weight">Bisheriges Gewicht: %1$s → Vorschlag: %2$s</string>
+    <string name="native_modes_coach_apply">Vorgeschlagenes Gewicht bestätigen</string>
+    <string name="native_modes_coach_confirm">Gewicht nur für unberührte Sätze ändern?</string>
+    <string name="native_modes_coach_blocked">Vorschlag veraltet, Satz bearbeitet/abgeschlossen oder Uhr steuert. Keine Änderung.</string>
+    <string name="native_modes_coach_done">Gewicht im nativen Editor geändert.</string>
+    <string name="native_modes_coach_no_action">Keine sichere Gewichtssteigerung verfügbar.</string>
+    <string name="native_modes_coach_review">Gewichtsvorschlag prüfen</string>
+    <string name="native_modes_coach_cancel">Abbrechen</string>
 </resources>
