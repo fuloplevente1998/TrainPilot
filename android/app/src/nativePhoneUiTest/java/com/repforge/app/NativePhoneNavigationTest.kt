@@ -286,6 +286,47 @@ class NativePhoneNavigationTest {
         }
     }
 
+    @Test fun journalSeparatesWearAndHcMetricsKeepsDataOnRefreshFailureAndHidesAnOldWindow() {
+        val db = TrainPilotDatabase.getInstance(context)
+        val end = java.time.Instant.now().minusSeconds(60)
+        val start = end.minusSeconds(600)
+        val mapper = com.repforge.app.data.migration.LegacyWebViewMigrator(context, db, settings)
+        runBlocking(Dispatchers.IO) {
+            mapper.saveWorkoutJsonToRoom(JSONObject().put("id", "journal-health-ui")
+                .put("started", start.toString()).put("finished", end.toString()).put("dayName", "Forrásonkénti egészségadat")
+                .put("wear", JSONObject().put("totalCalories", 500).put("averageHeartRate", 117.2))
+                .put("health240", JSONObject().put("windowStart", start.toString()).put("windowEnd", end.toString())
+                    .put("syncedAt", end.toString()).put("activeCalories", 243).put("steps", 0)
+                    .put("sources", org.json.JSONArray().put("com.sec.android.app.shealth")))
+                .put("exercises", org.json.JSONArray()))
+        }
+        fun stored() = runBlocking(Dispatchers.IO) { db.workoutHistoryDao().getWorkoutWithDetailsById("journal-health-ui")!! }
+        val before = stored()
+        launch(); tab("journal")
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("journal_workout_journal-health-ui").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("journal_workout_journal-health-ui").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("journal_tab_2").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("journal_tab_2").performClick()
+        compose.onNodeWithTag("journal_wear_totalCalories_value").performScrollTo().assertTextEquals("500 kcal")
+        compose.onNodeWithTag("journal_hc_activeCalories_value").performScrollTo().assertTextEquals("243 kcal")
+        compose.onNodeWithTag("journal_hc_steps_value").performScrollTo().assertTextEquals("0")
+        val prefs = context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE)
+        prefs.edit().putBoolean("blocked", true).commit()
+        try {
+            compose.onNodeWithTag("journal_health_refresh").performScrollTo().performClick()
+            compose.waitUntil(15000) { compose.onAllNodesWithTag("journal_health_error").fetchSemanticsNodes().isNotEmpty() }
+            assertEquals(before, stored())
+            screenshot("journal_health_separate_sources_failure")
+        } finally { prefs.edit().clear().commit() }
+        runBlocking(Dispatchers.IO) {
+            mapper.saveWorkoutJsonToRoom(JSONObject(before.workout.rawJson).put("finished", end.plusSeconds(60).toString()))
+        }
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("journal_health_status").fetchSemanticsNodes().isNotEmpty() }
+        compose.onAllNodesWithTag("journal_hc_activeCalories_value").assertCountEquals(0)
+        compose.onNodeWithTag("journal_wear_totalCalories_value").performScrollTo().assertTextEquals("500 kcal")
+        assertEquals(1, runBlocking(Dispatchers.IO) { db.workoutHistoryDao().getWorkoutCount() })
+    }
+
     @Test fun homeTracksPlanSettingsProgramAndHistoryChangesAndStartsTheDisplayedSchedule() {
         val db = TrainPilotDatabase.getInstance(context)
         val start = java.time.Instant.now().plusSeconds(60)

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="journal_health_wear">TrainPilot óra</string>
+    <string name="journal_health_window">Időablak</string>
+    <string name="journal_health_synced">Frissítve</string>
+    <string name="journal_health_sources">Adatforrások</string>
+    <string name="journal_health_missing">Ehhez az edzéshez még nincs mentett Health Connect-lekérdezés.</string>
+    <string name="journal_health_stale">A mentett Health Connect-adatok másik időablakhoz tartoznak. Frissítsd őket a jelenlegi edzéshez.</string>
+    <string name="journal_health_empty">Ehhez az időablakhoz nincs megosztott mérési adat.</string>
+    <string name="journal_health_partial">A mérés vagy az elérhető engedélyek miatt az adatok hiányosak lehetnek.</string>
+    <string name="journal_health_prorated">Az edzéshez párosított energia részben időarányos.</string>
+    <string name="journal_health_refresh">Health Connect-adatok frissítése</string>
+    <string name="journal_health_refreshing">Frissítés…</string>
+    <string name="journal_health_refresh_error">Nem sikerült frissíteni. Az edzés vagy az egészségadat közben változhatott; próbáld újra.</string>
+    <string name="journal_health_permission">Engedélyezd az edzésadatok Health Connect-olvasását az Egészség oldalon.</string>
+    <string name="journal_health_unavailable">A frissítéshez Android 14 vagy újabb rendszer és elérhető Health Connect szükséges.</string>
+    <string name="journal_health_workout_energy">Edzéshez párosított energia</string>
+    <string name="journal_health_distance">Távolság</string>
+    <string name="journal_health_active_duration">Aktív mérési idő</string>
+    <string name="journal_health_exercise_minutes">Edzésidő a Health Connectben</string>
+    <string name="journal_health_exercise_count">Edzésbejegyzések száma</string>
+    <string name="journal_health_average_speed">Átlagsebesség</string>
+    <string name="journal_health_max_speed">Maximális sebesség</string>
+    <string name="journal_health_separate_energy">Az órán mért összes energia és a Health Connect aktív energiája külön adat. Nem adjuk őket össze.</string>
+</resources>

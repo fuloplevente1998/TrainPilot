@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="journal_health_wear">TrainPilot watch</string>
+    <string name="journal_health_window">Time window</string>
+    <string name="journal_health_synced">Updated</string>
+    <string name="journal_health_sources">Data sources</string>
+    <string name="journal_health_missing">No Health Connect query is saved for this workout yet.</string>
+    <string name="journal_health_stale">Saved Health Connect data belongs to a different time window. Refresh it for the current workout.</string>
+    <string name="journal_health_empty">No measurement data is shared for this time window.</string>
+    <string name="journal_health_partial">Measurements or available permissions may make the data incomplete.</string>
+    <string name="journal_health_prorated">Energy matched to the workout is partly prorated.</string>
+    <string name="journal_health_refresh">Refresh Health Connect data</string>
+    <string name="journal_health_refreshing">Refreshing…</string>
+    <string name="journal_health_refresh_error">Could not refresh. The workout or health data may have changed; try again.</string>
+    <string name="journal_health_permission">Allow Health Connect workout-data access on the Health screen.</string>
+    <string name="journal_health_unavailable">Refreshing requires Android 14 or later and an available Health Connect service.</string>
+    <string name="journal_health_workout_energy">Energy matched to the workout</string>
+    <string name="journal_health_distance">Distance</string>
+    <string name="journal_health_active_duration">Active recording time</string>
+    <string name="journal_health_exercise_minutes">Exercise time in Health Connect</string>
+    <string name="journal_health_exercise_count">Exercise record count</string>
+    <string name="journal_health_average_speed">Average speed</string>
+    <string name="journal_health_max_speed">Maximum speed</string>
+    <string name="journal_health_separate_energy">Total energy measured by the watch and Health Connect active energy are separate measurements. They are not added together.</string>
+</resources>

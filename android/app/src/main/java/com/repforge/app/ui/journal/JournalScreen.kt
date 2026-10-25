@@ -144,7 +144,8 @@ private fun JournalDetailDialog(state: JournalUiState, text: Resources, language
                         Text(workout.dayName, style = MaterialTheme.typography.headlineSmall)
                         val tabs = listOf(R.string.journal_exercises, R.string.journal_statistics, R.string.journal_source)
                         TabRow(tab) { tabs.forEachIndexed { index, label ->
-                            Tab(tab == index, onClick = { tab = index }, text = { Text(text.getString(label)) })
+                            Tab(tab == index, onClick = { tab = index }, modifier = Modifier.testTag("journal_tab_$index"),
+                                text = { Text(text.getString(label)) })
                         } }
                         LazyColumn(Modifier.weight(1f).testTag("journal_details_list"), verticalArrangement = Arrangement.spacedBy(12.dp),
                             contentPadding = PaddingValues(vertical = 12.dp)) {
@@ -184,11 +185,9 @@ private fun JournalDetailDialog(state: JournalUiState, text: Resources, language
                             if (tab == 2) item {
                                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                     Text(text.getString(if (workout.originDevice == "watch") R.string.journal_watch else R.string.journal_phone))
-                                    if (workout.wearMetricsJson != null) Text("TrainPilot Wear OS · Health Services")
-                                    if (workout.health240Json != null) Text("Health Connect / Samsung Health")
-                                    if (runCatching { org.json.JSONObject(workout.rawJson).optBoolean("nativeHealthWindowStale") }.getOrDefault(false))
-                                        Text(text.getString(R.string.journal_edit_stale), color = colors.muted)
-                                    if (workout.wearMetricsJson == null && workout.health240Json == null) Text(text.getString(R.string.journal_no_data), color = colors.muted)
+                                    JournalHealthPanel(detail, text, language, state.healthRefreshing, state.healthError, !state.deleting) {
+                                        model.refreshWorkoutHealth(context as? android.app.Activity)
+                                    }
                                 }
                             }
                             val keys = detail.exercises.flatMap { it.sets }.flatMap { listOfNotNull(it.gpsRouteKey193, it.gpsRouteKey163) }

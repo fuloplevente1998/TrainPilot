@@ -57,7 +57,7 @@ internal object NativeJournalEditor {
         exercises = detail.exercises.sortedBy { it.exercise.rowId }.map { it.copy(sets = it.sets.sortedBy { s -> s.rowId }) },
         photos = detail.photos.sortedBy { it.id })
 
-    private suspend fun assertNotActive(context: Context, aliases: kotlin.collections.Set<String>) = withContext(Dispatchers.Main.immediate) {
+    internal suspend fun requireNotActive(context: Context, aliases: kotlin.collections.Set<String>) = withContext(Dispatchers.Main.immediate) {
         val snapshots = listOfNotNull(ActiveWorkoutStore.current(context),
             PhoneWorkoutExecution.store(context).snapshot(), PhoneOwnership193.journal(context).read().optJSONObject("snapshot"))
         check(snapshots.none { frame ->
@@ -71,7 +71,7 @@ internal object NativeJournalEditor {
             opened.ticket.requireCurrent(context)
             val w = opened.detail.workout
             val aliases = setOf(w.id, w.syncId, w.workoutKey).filter { it.isNotBlank() }.toSet()
-            assertNotActive(context, aliases)
+            requireNotActive(context, aliases)
             db.withTransaction {
                 val latest = db.workoutHistoryDao().getWorkoutWithDetailsById(w.id)
                 check(latest != null && sorted(latest) == sorted(opened.detail)) { "Workout changed; reopen editor" }

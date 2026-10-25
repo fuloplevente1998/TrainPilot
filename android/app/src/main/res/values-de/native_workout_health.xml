@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="journal_health_wear">TrainPilot-Uhr</string>
+    <string name="journal_health_window">Zeitraum</string>
+    <string name="journal_health_synced">Aktualisiert</string>
+    <string name="journal_health_sources">Datenquellen</string>
+    <string name="journal_health_missing">Für dieses Training ist noch keine Health-Connect-Abfrage gespeichert.</string>
+    <string name="journal_health_stale">Die gespeicherten Health-Connect-Daten gehören zu einem anderen Zeitraum. Aktualisiere sie für das aktuelle Training.</string>
+    <string name="journal_health_empty">Für diesen Zeitraum sind keine Messdaten freigegeben.</string>
+    <string name="journal_health_partial">Messung oder verfügbare Berechtigungen können zu unvollständigen Daten führen.</string>
+    <string name="journal_health_prorated">Die dem Training zugeordnete Energie wird teilweise zeitanteilig berechnet.</string>
+    <string name="journal_health_refresh">Health-Connect-Daten aktualisieren</string>
+    <string name="journal_health_refreshing">Aktualisieren…</string>
+    <string name="journal_health_refresh_error">Aktualisierung fehlgeschlagen. Training oder Gesundheitsdaten könnten sich geändert haben; versuche es erneut.</string>
+    <string name="journal_health_permission">Erlaube auf der Gesundheitsseite den Zugriff auf Trainingsdaten in Health Connect.</string>
+    <string name="journal_health_unavailable">Die Aktualisierung erfordert Android 14 oder neuer und einen verfügbaren Health-Connect-Dienst.</string>
+    <string name="journal_health_workout_energy">Dem Training zugeordnete Energie</string>
+    <string name="journal_health_distance">Distanz</string>
+    <string name="journal_health_active_duration">Aktive Messzeit</string>
+    <string name="journal_health_exercise_minutes">Trainingszeit in Health Connect</string>
+    <string name="journal_health_exercise_count">Anzahl der Trainingseinträge</string>
+    <string name="journal_health_average_speed">Durchschnittsgeschwindigkeit</string>
+    <string name="journal_health_max_speed">Höchstgeschwindigkeit</string>
+    <string name="journal_health_separate_energy">Die von der Uhr gemessene Gesamtenergie und die aktive Energie aus Health Connect sind getrennte Messwerte. Sie werden nicht addiert.</string>
+</resources>

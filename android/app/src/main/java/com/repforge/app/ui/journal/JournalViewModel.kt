@@ -8,6 +8,8 @@ import androidx.lifecycle.viewModelScope
 import com.repforge.app.BackupRestoreManager
 import com.repforge.app.GpsRouteStore
 import com.repforge.app.NativeJournalEditor
+import com.repforge.app.NativeWorkoutHealth
+import com.repforge.app.R
 import com.repforge.app.data.db.ExerciseLibraryEntity
 import com.repforge.app.WearSyncRepository
 import com.repforge.app.data.db.HistoryTombstoneEntity
@@ -51,7 +53,8 @@ data class JournalUiState(
     val activeRoute: RouteCoordinatesUiModel? = null,
     val routeLoading: Boolean = false, val routeError: Boolean = false,
     val workoutToDelete: WorkoutHistoryWithDetails? = null,
-    val deleting: Boolean = false, val operationFailed: Boolean = false
+    val deleting: Boolean = false, val operationFailed: Boolean = false,
+    val healthRefreshing: Boolean = false, val healthError: Int? = null
 )
 
 internal data class JournalEditState(val opened: NativeJournalEditor.Opened,
@@ -70,6 +73,8 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
     private val selected = MutableStateFlow<DetailRequest?>(null)
     private var requestRevision = 0L
     private var routeRevision = 0L
+    private var healthRevision = 0L
+    private var healthJob: kotlinx.coroutines.Job? = null
     private val _uiState = MutableStateFlow(JournalUiState())
     private var editRevision = 0L
     private val _editor = MutableStateFlow<JournalEditState?>(null)
@@ -104,6 +109,7 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
     fun openDetails(id: String) {
         if (_editor.value?.saving == true) return
         cancelEditor()
+        cancelHealthRefresh()
         closeRouteMap()
         _uiState.update { it.copy(selectedWorkoutId = id, detail = null, detailLoading = true, detailError = false) }
         selected.value = DetailRequest(id, ++requestRevision)
@@ -111,6 +117,7 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
     fun closeDetails() {
         if (_uiState.value.deleting || _editor.value?.saving == true) return
         cancelEditor()
+        cancelHealthRefresh()
         selected.value = null
         closeRouteMap()
         _uiState.update { it.copy(selectedWorkoutId = null, detail = null, detailLoading = false, detailError = false) }
@@ -156,6 +163,31 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
                 runCatching { WearSyncRepository.publishWatchHomeSnapshot(context) }
             } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
             catch (_: Exception) { _editor.update { it?.copy(saving = false, failed = true) } }
+        }
+    }
+    private fun cancelHealthRefresh() {
+        healthRevision++
+        healthJob?.cancel()
+        _uiState.update { it.copy(healthRefreshing = false, healthError = null) }
+    }
+    fun refreshWorkoutHealth(activity: android.app.Activity?) {
+        val detail = _uiState.value.detail ?: return
+        if (_uiState.value.healthRefreshing || _uiState.value.deleting || _editor.value?.saving == true) return
+        if (activity == null) { _uiState.update { it.copy(healthError = R.string.journal_health_unavailable) }; return }
+        val revision = ++healthRevision
+        _uiState.update { it.copy(healthRefreshing = true, healthError = null) }
+        healthJob = viewModelScope.launch {
+            val result = NativeWorkoutHealth(context, database).refresh(activity, detail.workout)
+            if (revision == healthRevision && _uiState.value.selectedWorkoutId == detail.workout.id) {
+                val error = result.exceptionOrNull()?.let {
+                    when (it) {
+                        is SecurityException -> R.string.journal_health_permission
+                        is UnsupportedOperationException -> R.string.journal_health_unavailable
+                        else -> R.string.journal_health_refresh_error
+                    }
+                }
+                _uiState.update { it.copy(healthRefreshing = false, healthError = error) }
+            }
         }
     }
     fun openRouteMap(keys: List<String>) {
