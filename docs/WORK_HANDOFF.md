@@ -4,6 +4,29 @@ Frissítve: **2026-10-25**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Két külső eredmény visszaérkezett – 2026-10-25
+
+- Draft #245, `feat/native-training-modes`, exact
+  `2ff2985c4376e2a7ee946c73e6523c65a983a980`: implementáció és33 JVM+3 UI
+  teszt megírva a PR szerint; fordítás/futtatás még nincs.27 android/app fájl,
+  CoachScreen-bővítés külön felhasználói engedélyét a külső átadás jelzi.
+- Draft #246, `feat/native-cardio-progress-ui`, exact
+  `e9eb8cbd52d83ab86327f60dbf6193d41e681396`: kardió Room/UI késznek jelentve,
+  debug fordítás és11 binding+15 model JVM zöld a külső átadás szerint.
+  Root ténylegesen ellenőrizte a legutóbbi Actions40238833748 futás naplóját:
+  **984 teszt /6 fail**, nem a képen szereplő korábbi7. Hibás: CoachVariation,
+  GoogleConsentBridge, HomeRepository, MetadataGate, PlannerTemplateParity,
+  WorkoutDiscard. A Wear UI, Phone Compose UI és signed upgrade job skipped.
+  Közös zöld nincs. A külső PR a kijelölt feature-fájlokon kívüli fordítási/
+  fixture-javításokat is tartalmaz: ezeket integrálás előtt külön review-zni kell.
+- Harmadik draft #244 Health foregroundauto, exact
+  `023d411409c808d2512b0120d1c18b338bc54927`; a felhasználó még nem jelentette késznek.
+- Ez **PR/meta/CI-log ellenőrzés**, nem teljes forrásreview vagy integráció.
+  Mindhárom PR nyitott draft, célmigration. Root appforrás továbbra880026f;
+  a külső ág futása nem a migrációs ág tesztbizonyítéka. Nincs merge/lezárás/
+  új CI/APK vagy élő telepítés. A felhasználói szünet marad; folytatáskor exact
+  diff és a plusz baseline-javítások review-ja következik, nem vak merge.
+
 ## Három új párhuzamos átadó – 2026-10-25
 
 Felhasználó Sol6/5.6 külön chateknek kér promptot, teljes GitHub-hozzáféréssel.

@@ -86,8 +86,14 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
 
 - A felhasználó új, teljes GitHub-hozzáférésű külön chateknek kérte a maradék
   három funkciót; 2026-10-25-én megerősítette, hogy mindhárom külön munka
-  elindult. Eredmény/új PR még nem érkezett. A fő munkás a limit miatti
-  felhasználói szünetet tartja; később a visszaérkező exact PR-ok review-ja következik.
+  elindult. Két eredmény visszaérkezett: draft #245 edzésmódok exact2ff2985
+  (kód/36 teszt megírva, nem futott), draft #246 cardio exacte9eb8cb
+  (saját ágán debug fordítás és 26 kardiós JVM zöldnek jelentve; legfrissebb
+  Actions40238833748 ténylegesen984/6 fail, UI/upgrade skipped). A harmadik
+  draft #244 Health auto-refresh, exact023d411, még nem átadott eredmény.
+  Root csak PR/meta/CI-log ellenőrzést végzett, alkalmazáskód-review/integráció
+  még nem történt; main/migration appforrás változatlan. A limit miatti szünet
+  folytatódik, következő lépés az exact diff review, nem automatikus merge.
   Bázis0a5abbeb3b95cede671df39a3f8d09dc4ab8ec20, mindenki saját ág/draft PR,
   nincs main/migráció írás vagy belső subagent.
 - A: docs/plans/NATIVE_CARDIO_BINDING_HANDOFF.md, feat/native-cardio-progress-ui.
