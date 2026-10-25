@@ -60,4 +60,17 @@
     <string name="native_modes_coach_cancel">Anulează</string>
     <string name="native_modes_coach_sets">Serii de lucru propuse: %1$d (doar previzualizare)</string>
     <string name="native_modes_inherit">Folosește modul global</string>
+    <string name="native_modes_comparison_title">Previzualizare numerică a programului</string>
+    <string name="native_modes_comparison_empty">Programul nu are exerciții disponibile pentru previzualizare.</string>
+    <string name="native_modes_comparison_error">Previzualizarea nu a putut fi validată; modul nu va fi salvat.</string>
+    <string name="native_modes_comparison_loading">Se calculează previzualizarea…</string>
+    <string name="native_modes_comparison_program">Program: %1$s</string>
+    <string name="native_modes_comparison_day">Zi: %1$s</string>
+    <string name="native_modes_comparison_sets">Serii de lucru: %1$s → %2$s</string>
+    <string name="native_modes_comparison_reps">Repetări: %1$s → %2$s</string>
+    <string name="native_modes_comparison_weight">Greutate: %1$s → %2$s</string>
+    <string name="native_modes_comparison_rest">Pauză: %1$d sec</string>
+    <string name="native_modes_comparison_rir">RIR țintă: %1$s</string>
+    <string name="native_modes_comparison_reason">Motiv: %1$s</string>
+    <string name="native_modes_comparison_notice">Valorile sunt propuneri, nu modificări salvate ale antrenamentului.</string>
 </resources>
