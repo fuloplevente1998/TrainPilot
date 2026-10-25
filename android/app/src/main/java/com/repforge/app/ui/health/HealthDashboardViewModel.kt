@@ -93,6 +93,7 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
     private var screenGeneration = 0L
     private var providerJob: Job? = null
     private var samsungPermissionPending = false
+    private var manualSamsungPermissionVisible = false
     private var healthRecordDetailVisible = false
 
     fun healthRecordDetailChanged(visible: Boolean) {
@@ -118,13 +119,17 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
             screenVisible = true
             screenActivity = WeakReference(activity)
         }
-        if (!_uiState.value.historyLoading && _uiState.value.activeTab == "journal" && !healthRecordDetailVisible) {
+        if (!_uiState.value.historyLoading && _uiState.value.activeTab == "journal" &&
+            !healthRecordDetailVisible && !manualSamsungPermissionVisible) {
             launchRefresh(activity, NativeHealthAutoRefreshGate.Trigger.AUTO)
         }
     }
 
-    fun healthScreenHidden(activity: Activity?) {
+    fun healthScreenHidden(activity: Activity?, force: Boolean = false) {
         if (!screenVisible || (activity != null && screenActivity?.get() !== activity)) return
+        // A Samsung permission dialog may STOP the activity. Preserve only this explicitly
+        // requested consent; publication itself still requires a RESUMED activity.
+        if (!force && manualSamsungPermissionVisible && providerJob?.isActive == true) return
         screenVisible = false
         screenActivity = null
         invalidateRefresh()
@@ -344,6 +349,8 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
                 ticket = refreshGate.begin(trigger, SystemClock.elapsedRealtime(), prepared.second,
                     prepared.third, prepared.third, snapshot) ?: return@launch
                 val activeTicket = ticket!!
+                manualSamsungPermissionVisible = trigger == NativeHealthAutoRefreshGate.Trigger.MANUAL &&
+                    requestSamsungPermission && snapshot.provider == HealthJournalStore.SAMSUNG
                 val day = if (trigger == NativeHealthAutoRefreshGate.Trigger.AUTO) LocalDate.now()
                     else historyQuery.day
                 _uiState.update { it.copy(healthRefreshing = true) }
@@ -381,6 +388,7 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
                     _uiState.update { it.copy(statusMessage = text.getString(com.repforge.app.R.string.coach_refresh_failed)) }
                 }
             } finally {
+                manualSamsungPermissionVisible = false
                 ticket?.let { refreshGate.finish(it) }
                 _uiState.update { it.copy(healthRefreshing = false) }
             }
