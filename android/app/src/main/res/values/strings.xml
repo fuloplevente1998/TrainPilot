@@ -420,4 +420,17 @@
     <string name="native_progress_1rm_chart">1RM Fejlődési görbe (Epley)</string>
     <string name="native_progress_1rm_description">Kalkulált 1RM fejlődés az edzések alapján</string>
     <string name="native_progress_no_history">Nincs elég előzmény ehhez a gyakorlathoz</string>
+    <string name="native_program_planner">Személyes Edzéstervező</string>
+    <string name="native_program_planner_help">Készíts egyéni tervet szinted és céljaid alapján</string>
+    <string name="native_program_open">Megnyitás ›</string>
+    <string name="native_program_list">Edzésprogramok</string>
+    <string name="native_program_available">%1$d program elérhető</string>
+    <string name="native_program_create">Saját program létrehozása</string>
+    <string name="native_program_active">Aktív</string>
+    <string name="native_program_select">Kiválasztás</string>
+    <string name="native_program_copy_edit">Másolat szerkesztése</string>
+    <string name="native_program_edit">Szerkesztés</string>
+    <string name="native_program_days">%1$d edzésnap megtekintése</string>
+    <string name="native_program_exercises">%1$d gyakorlat</string>
+    <string name="native_program_start">Indítás</string>
 </resources>

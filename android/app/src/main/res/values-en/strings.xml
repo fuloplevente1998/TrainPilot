@@ -420,4 +420,17 @@
     <string name="native_progress_1rm_chart">1RM progress chart (Epley)</string>
     <string name="native_progress_1rm_description">Estimated 1RM progression from workouts</string>
     <string name="native_progress_no_history">Not enough history for this exercise</string>
+    <string name="native_program_planner">Personal workout planner</string>
+    <string name="native_program_planner_help">Create a personal plan based on your level and goals</string>
+    <string name="native_program_open">Open ›</string>
+    <string name="native_program_list">Workout programs</string>
+    <string name="native_program_available">%1$d programs available</string>
+    <string name="native_program_create">Create program</string>
+    <string name="native_program_active">Active</string>
+    <string name="native_program_select">Select</string>
+    <string name="native_program_copy_edit">Copy and edit</string>
+    <string name="native_program_edit">Edit</string>
+    <string name="native_program_days">View %1$d workout days</string>
+    <string name="native_program_exercises">%1$d exercises</string>
+    <string name="native_program_start">Start</string>
 </resources>

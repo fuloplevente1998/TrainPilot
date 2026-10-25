@@ -420,4 +420,17 @@
     <string name="native_progress_1rm_chart">Grafic progres 1RM (Epley)</string>
     <string name="native_progress_1rm_description">Evoluția 1RM estimată din antrenamente</string>
     <string name="native_progress_no_history">Nu există suficient istoric pentru acest exercițiu</string>
+    <string name="native_program_planner">Planificator personal de antrenament</string>
+    <string name="native_program_planner_help">Creează un plan adaptat nivelului și obiectivelor tale</string>
+    <string name="native_program_open">Deschide ›</string>
+    <string name="native_program_list">Programe de antrenament</string>
+    <string name="native_program_available">%1$d programe disponibile</string>
+    <string name="native_program_create">Creează program</string>
+    <string name="native_program_active">Activ</string>
+    <string name="native_program_select">Selectează</string>
+    <string name="native_program_copy_edit">Copiază și editează</string>
+    <string name="native_program_edit">Editează</string>
+    <string name="native_program_days">Vezi %1$d zile de antrenament</string>
+    <string name="native_program_exercises">%1$d exerciții</string>
+    <string name="native_program_start">Începe</string>
 </resources>
