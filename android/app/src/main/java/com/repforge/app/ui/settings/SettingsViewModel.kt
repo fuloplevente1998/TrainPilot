@@ -127,12 +127,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun approveTrainingMode(preview: NativeTrainingModeChange.Preview) =
-        writeModeChange { NativeTrainingModeChange.approve(settingsStore, preview) }
+        writeModeChange(R.string.native_modes_saved) { NativeTrainingModeChange.approve(settingsStore, preview) }
 
     fun undoTrainingMode(scope: String, programId: String?) =
-        writeModeChange { NativeTrainingModeChange.undo(settingsStore, scope, programId) }
+        writeModeChange(R.string.native_modes_reverted) { NativeTrainingModeChange.undo(settingsStore, scope, programId) }
 
-    private fun writeModeChange(operation: suspend () -> Boolean) {
+    private fun writeModeChange(successLabel: Int, operation: suspend () -> Boolean) {
         if (_uiState.value.modeSaving || _uiState.value.replacementBusy) return
         _uiState.value = _uiState.value.copy(modeSaving = true)
         viewModelScope.launch {
@@ -140,7 +140,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 val succeeded = withContext(Dispatchers.IO) { operation() }
                 _uiState.value = _uiState.value.copy(statusMessage =
                     nativeResources(context, _uiState.value.settings.language).getString(
-                        if (succeeded) R.string.native_modes_saved else R.string.native_modes_error))
+                        if (succeeded) successLabel else R.string.native_modes_error))
             } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
             catch (_: Exception) {
                 _uiState.value = _uiState.value.copy(statusMessage =
