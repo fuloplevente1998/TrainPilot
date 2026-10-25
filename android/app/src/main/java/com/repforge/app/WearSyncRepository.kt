@@ -327,6 +327,7 @@ object WearSyncRepository {
                     }
                 }
                 Unit // Keep the metadata lease operation's result invariant.
+                }
             } catch (_: Exception) {
                 if (uri != null) {
                     try {
