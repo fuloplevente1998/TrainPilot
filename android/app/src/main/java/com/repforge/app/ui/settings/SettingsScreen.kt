@@ -126,7 +126,7 @@ fun SettingsScreen(
                 raw = state.settings.trainingModes197Json,
                 activeProgramId = state.settings.activeProgramId,
                 scope = "global",
-                enabled = !state.modeSaving && !state.replacementBusy,
+                enabled = allowDataReplacement && !state.modeSaving && !state.replacementBusy,
                 onApprove = viewModel::approveTrainingMode,
                 onUndo = { viewModel.undoTrainingMode("global", null) }
             )
