@@ -130,7 +130,9 @@ object SamsungHealthRepository {
         startIso: String,
         endIso: String,
         dayKey: String = "",
-        requireForegroundGuard: () -> Unit
+        requireForegroundGuard: () -> Unit,
+        expectedGeneration: Long? = null,
+        readCommit: ((() -> Unit) -> Unit) = { writer -> writer() }
     ): Result<JSONObject> = withContext(Dispatchers.IO) {
         try {
             requireForegroundGuard()
@@ -139,12 +141,15 @@ object SamsungHealthRepository {
             val day = dayKey.ifEmpty { range[0].atZone(ZoneId.systemDefault()).toLocalDate().toString() }
             require(HealthJournalStore.validDay(day) && range[0].atZone(ZoneId.systemDefault()).toLocalDate().toString() == day)
             val journal = HealthJournalStore.get(context)
-            val generation = journal.generation()
+            val generation = expectedGeneration ?: journal.generation()
             val reader = SamsungSdkReader.open(context) { requireForegroundGuard() }
             check(reader.granted.isNotEmpty()) { "Samsung Health olvasási engedély szükséges." }
             val result = reader.daily(range[0], range[1]).put("day", day)
             requireForegroundGuard()
-            journal.samsungDay(day, result, reader.journal, generation)
+            readCommit {
+                requireForegroundGuard()
+                journal.samsungDay(day, result, reader.journal, generation)
+            }
             Result.success(result)
         } catch (cancelled: CancellationException) { throw cancelled }
         catch (failure: Exception) { Result.failure(failure) }
