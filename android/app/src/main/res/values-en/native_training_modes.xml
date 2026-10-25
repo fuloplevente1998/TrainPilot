@@ -59,4 +59,5 @@
     <string name="native_modes_coach_review">Review load suggestion</string>
     <string name="native_modes_coach_cancel">Cancel</string>
     <string name="native_modes_coach_sets">Proposed working sets: %1$d (preview only)</string>
+    <string name="native_modes_inherit">Use global mode</string>
 </resources>
