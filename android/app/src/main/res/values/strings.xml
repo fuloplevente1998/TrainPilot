@@ -361,4 +361,14 @@
     <string name="native_quick_demo_02">Ez keresés, nem konkrét bemutatóvideó.</string>
     <string name="native_quick_demo_03">A videó nem nyitható meg.</string>
     <string name="native_quick_library_error">A gyakorlatkönyvtár nem tölthető be. Az edzésadatok nem változtak.</string>
+    <string name="native_training_landing_00">Edzés</string>
+    <string name="native_training_landing_01">Gyors edzés</string>
+    <string name="native_training_landing_02">Gyakorlat választása</string>
+    <string name="native_training_landing_03">Szabadtéri edzés</string>
+    <string name="native_training_landing_04">Aktív program</string>
+    <string name="native_training_landing_05">Programok</string>
+    <string name="native_training_landing_06">Edzés indítása</string>
+    <string name="native_training_landing_07">Nincs aktív program.</string>
+    <string name="native_training_landing_08">gyakorlat</string>
+    <string name="native_training_landing_09">Gyakorlatkönyvtár</string>
 </resources>

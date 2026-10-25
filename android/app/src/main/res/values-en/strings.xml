@@ -361,4 +361,14 @@
     <string name="native_quick_demo_02">This is a search, not an identified video.</string>
     <string name="native_quick_demo_03">Unable to open the video.</string>
     <string name="native_quick_library_error">Exercise library could not be loaded. Workout data was not changed.</string>
+    <string name="native_training_landing_00">Training</string>
+    <string name="native_training_landing_01">Quick workout</string>
+    <string name="native_training_landing_02">Choose exercise</string>
+    <string name="native_training_landing_03">Outdoor workout</string>
+    <string name="native_training_landing_04">Active program</string>
+    <string name="native_training_landing_05">Programs</string>
+    <string name="native_training_landing_06">Start workout</string>
+    <string name="native_training_landing_07">No active program.</string>
+    <string name="native_training_landing_08">exercises</string>
+    <string name="native_training_landing_09">Exercise library</string>
 </resources>

@@ -361,4 +361,14 @@
     <string name="native_quick_demo_02">Aceasta este o căutare, nu un videoclip identificat.</string>
     <string name="native_quick_demo_03">Videoclipul nu poate fi deschis.</string>
     <string name="native_quick_library_error">Biblioteca de exerciții nu a putut fi încărcată. Datele antrenamentului nu au fost modificate.</string>
+    <string name="native_training_landing_00">Antrenament</string>
+    <string name="native_training_landing_01">Antrenament rapid</string>
+    <string name="native_training_landing_02">Alege exercițiul</string>
+    <string name="native_training_landing_03">Antrenament în aer liber</string>
+    <string name="native_training_landing_04">Program activ</string>
+    <string name="native_training_landing_05">Programe</string>
+    <string name="native_training_landing_06">Începe antrenamentul</string>
+    <string name="native_training_landing_07">Niciun program activ.</string>
+    <string name="native_training_landing_08">exerciții</string>
+    <string name="native_training_landing_09">Bibliotecă de exerciții</string>
 </resources>

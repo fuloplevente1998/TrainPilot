@@ -361,4 +361,14 @@
     <string name="native_quick_demo_02">Dies ist eine Suche, kein identifiziertes Video.</string>
     <string name="native_quick_demo_03">Video konnte nicht geöffnet werden.</string>
     <string name="native_quick_library_error">Die Übungsbibliothek konnte nicht geladen werden. Trainingsdaten wurden nicht geändert.</string>
+    <string name="native_training_landing_00">Training</string>
+    <string name="native_training_landing_01">Schnelltraining</string>
+    <string name="native_training_landing_02">Übung wählen</string>
+    <string name="native_training_landing_03">Training im Freien</string>
+    <string name="native_training_landing_04">Aktives Programm</string>
+    <string name="native_training_landing_05">Programme</string>
+    <string name="native_training_landing_06">Training starten</string>
+    <string name="native_training_landing_07">Kein aktives Programm.</string>
+    <string name="native_training_landing_08">Übungen</string>
+    <string name="native_training_landing_09">Übungsbibliothek</string>
 </resources>
