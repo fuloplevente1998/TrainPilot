@@ -22,44 +22,45 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import com.repforge.app.R
+import com.repforge.app.ui.text.nativeResources
+import androidx.compose.ui.platform.LocalContext
+import android.content.res.Resources
 import com.repforge.app.NativeCustomExerciseEditor
 import com.repforge.app.data.db.ExerciseLibraryEntity
 
-private fun formText(lang: String) = when (lang) {
-    "en" -> listOf("New exercise", "Edit exercise", "Name", "Instructions", "Muscle group",
-        "Measurement", "Load type", "Unit", "Sets", "Repetitions / time",
-        "Weight (kg)", "Rest (s)", "YouTube watch URL (optional)", "Save",
-        "Cancel", "Delete", "Delete this custom exercise?", "References in programs or history block deletion.",
-        "Required fields or YouTube URL are invalid.",
-        "Exercise changed elsewhere. Reopen it before retrying.", "Data restore in progress. Try again afterward.")
-    "de" -> listOf("Neue Übung", "Übung bearbeiten", "Name", "Anleitung", "Muskelgruppe",
-        "Messart", "Belastung", "Einheit", "Sätze", "Wiederholungen / Zeit",
-        "Gewicht (kg)", "Pause (s)", "YouTube-Video-URL (optional)", "Speichern",
-        "Abbrechen", "Löschen", "Eigene Übung löschen?", "Referenzen in Plänen oder Historie verhindern das Löschen.",
-        "Ungültige Pflichtfelder oder YouTube-URL.",
-        "Die Übung wurde anderswo geändert. Bitte erneut öffnen.", "Datenwiederherstellung läuft. Später erneut versuchen.")
-    "ro" -> listOf("Exercițiu nou", "Editează exercițiul", "Nume", "Instrucțiuni", "Grupă musculară",
-        "Măsurare", "Tip încărcare", "Unitate", "Serii", "Repetări / timp",
-        "Greutate (kg)", "Pauză (s)", "URL videoclip YouTube (opțional)", "Salvează",
-        "Anulează", "Șterge", "Ștergi acest exercițiu personalizat?", "Referințele din programe sau istoric împiedică ștergerea.",
-        "Date obligatorii sau adresă YouTube invalidă.",
-        "Exercițiul a fost modificat în altă parte. Redeschide-l.", "Restaurarea datelor este în curs. Încearcă mai târziu.")
-    else -> listOf("Új gyakorlat", "Gyakorlat szerkesztése", "Név", "Leírás / végrehajtás",
-        "Izomcsoport", "Mérés típusa", "Terhelés típusa", "Egység", "Sorozatok",
-        "Ismétlés / idő", "Súly (kg)", "Pihenő (mp)", "YouTube-videó link (opcionális)",
-        "Mentés", "Mégse", "Törlés", "Törlöd a saját gyakorlatot?",
-        "Programban vagy naplóban használt gyakorlat nem törölhető.",
-        "Érvénytelen kötelező mező vagy YouTube-hivatkozás.",
-        "A gyakorlat közben módosult. Nyisd meg újra a szerkesztéshez.",
-        "Adat-visszaállítás folyamatban. Próbáld meg később.")
-}
+private fun formText(resources: Resources): List<String> = listOf(
+    resources.getString(R.string.native_custom_exercise_00),
+    resources.getString(R.string.native_custom_exercise_01),
+    resources.getString(R.string.native_custom_exercise_02),
+    resources.getString(R.string.native_custom_exercise_03),
+    resources.getString(R.string.native_custom_exercise_04),
+    resources.getString(R.string.native_custom_exercise_05),
+    resources.getString(R.string.native_custom_exercise_06),
+    resources.getString(R.string.native_custom_exercise_07),
+    resources.getString(R.string.native_custom_exercise_08),
+    resources.getString(R.string.native_custom_exercise_09),
+    resources.getString(R.string.native_custom_exercise_10),
+    resources.getString(R.string.native_custom_exercise_11),
+    resources.getString(R.string.native_custom_exercise_12),
+    resources.getString(R.string.native_custom_exercise_13),
+    resources.getString(R.string.native_custom_exercise_14),
+    resources.getString(R.string.native_custom_exercise_15),
+    resources.getString(R.string.native_custom_exercise_16),
+    resources.getString(R.string.native_custom_exercise_17),
+    resources.getString(R.string.native_custom_exercise_18),
+    resources.getString(R.string.native_custom_exercise_19),
+    resources.getString(R.string.native_custom_exercise_20)
+)
 
 @Composable
 internal fun CustomExerciseDialog(
     exercise: ExerciseLibraryEntity?, language: String, saving: Boolean, error: String?,
     onSave: (NativeCustomExerciseEditor.Draft) -> Unit, onDelete: () -> Unit, onCancel: () -> Unit
 ) {
-    val words = remember(language) { formText(language) }
+    val context = LocalContext.current
+    val resources = remember(context, language) { nativeResources(context, language) }
+    val words = formText(resources)
     var draft by remember(exercise?.id, language) {
         mutableStateOf(NativeCustomExerciseEditor.draft(exercise, language))
     }

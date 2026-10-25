@@ -371,4 +371,25 @@
     <string name="native_training_landing_07">Kein aktives Programm.</string>
     <string name="native_training_landing_08">Übungen</string>
     <string name="native_training_landing_09">Übungsbibliothek</string>
+    <string name="native_custom_exercise_00">Neue Übung</string>
+    <string name="native_custom_exercise_01">Übung bearbeiten</string>
+    <string name="native_custom_exercise_02">Name</string>
+    <string name="native_custom_exercise_03">Anleitung</string>
+    <string name="native_custom_exercise_04">Muskelgruppe</string>
+    <string name="native_custom_exercise_05">Messart</string>
+    <string name="native_custom_exercise_06">Belastung</string>
+    <string name="native_custom_exercise_07">Einheit</string>
+    <string name="native_custom_exercise_08">Sätze</string>
+    <string name="native_custom_exercise_09">Wiederholungen / Zeit</string>
+    <string name="native_custom_exercise_10">Gewicht (kg)</string>
+    <string name="native_custom_exercise_11">Pause (s)</string>
+    <string name="native_custom_exercise_12">YouTube-Video-URL (optional)</string>
+    <string name="native_custom_exercise_13">Speichern</string>
+    <string name="native_custom_exercise_14">Abbrechen</string>
+    <string name="native_custom_exercise_15">Löschen</string>
+    <string name="native_custom_exercise_16">Eigene Übung löschen?</string>
+    <string name="native_custom_exercise_17">Referenzen in Plänen oder Historie verhindern das Löschen.</string>
+    <string name="native_custom_exercise_18">Ungültige Pflichtfelder oder YouTube-URL.</string>
+    <string name="native_custom_exercise_19">Die Übung wurde anderswo geändert. Bitte erneut öffnen.</string>
+    <string name="native_custom_exercise_20">Datenwiederherstellung läuft. Später erneut versuchen.</string>
 </resources>

@@ -371,4 +371,25 @@
     <string name="native_training_landing_07">Niciun program activ.</string>
     <string name="native_training_landing_08">exerciții</string>
     <string name="native_training_landing_09">Bibliotecă de exerciții</string>
+    <string name="native_custom_exercise_00">Exercițiu nou</string>
+    <string name="native_custom_exercise_01">Editează exercițiul</string>
+    <string name="native_custom_exercise_02">Nume</string>
+    <string name="native_custom_exercise_03">Instrucțiuni</string>
+    <string name="native_custom_exercise_04">Grupă musculară</string>
+    <string name="native_custom_exercise_05">Măsurare</string>
+    <string name="native_custom_exercise_06">Tip încărcare</string>
+    <string name="native_custom_exercise_07">Unitate</string>
+    <string name="native_custom_exercise_08">Serii</string>
+    <string name="native_custom_exercise_09">Repetări / timp</string>
+    <string name="native_custom_exercise_10">Greutate (kg)</string>
+    <string name="native_custom_exercise_11">Pauză (s)</string>
+    <string name="native_custom_exercise_12">URL videoclip YouTube (opțional)</string>
+    <string name="native_custom_exercise_13">Salvează</string>
+    <string name="native_custom_exercise_14">Anulează</string>
+    <string name="native_custom_exercise_15">Șterge</string>
+    <string name="native_custom_exercise_16">Ștergi acest exercițiu personalizat?</string>
+    <string name="native_custom_exercise_17">Referințele din programe sau istoric împiedică ștergerea.</string>
+    <string name="native_custom_exercise_18">Date obligatorii sau adresă YouTube invalidă.</string>
+    <string name="native_custom_exercise_19">Exercițiul a fost modificat în altă parte. Redeschide-l.</string>
+    <string name="native_custom_exercise_20">Restaurarea datelor este în curs. Încearcă mai târziu.</string>
 </resources>

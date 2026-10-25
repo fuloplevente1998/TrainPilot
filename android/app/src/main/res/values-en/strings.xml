@@ -371,4 +371,25 @@
     <string name="native_training_landing_07">No active program.</string>
     <string name="native_training_landing_08">exercises</string>
     <string name="native_training_landing_09">Exercise library</string>
+    <string name="native_custom_exercise_00">New exercise</string>
+    <string name="native_custom_exercise_01">Edit exercise</string>
+    <string name="native_custom_exercise_02">Name</string>
+    <string name="native_custom_exercise_03">Instructions</string>
+    <string name="native_custom_exercise_04">Muscle group</string>
+    <string name="native_custom_exercise_05">Measurement</string>
+    <string name="native_custom_exercise_06">Load type</string>
+    <string name="native_custom_exercise_07">Unit</string>
+    <string name="native_custom_exercise_08">Sets</string>
+    <string name="native_custom_exercise_09">Repetitions / time</string>
+    <string name="native_custom_exercise_10">Weight (kg)</string>
+    <string name="native_custom_exercise_11">Rest (s)</string>
+    <string name="native_custom_exercise_12">YouTube watch URL (optional)</string>
+    <string name="native_custom_exercise_13">Save</string>
+    <string name="native_custom_exercise_14">Cancel</string>
+    <string name="native_custom_exercise_15">Delete</string>
+    <string name="native_custom_exercise_16">Delete this custom exercise?</string>
+    <string name="native_custom_exercise_17">References in programs or history block deletion.</string>
+    <string name="native_custom_exercise_18">Required fields or YouTube URL are invalid.</string>
+    <string name="native_custom_exercise_19">Exercise changed elsewhere. Reopen it before retrying.</string>
+    <string name="native_custom_exercise_20">Data restore in progress. Try again afterward.</string>
 </resources>

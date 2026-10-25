@@ -371,4 +371,25 @@
     <string name="native_training_landing_07">Nincs aktív program.</string>
     <string name="native_training_landing_08">gyakorlat</string>
     <string name="native_training_landing_09">Gyakorlatkönyvtár</string>
+    <string name="native_custom_exercise_00">Új gyakorlat</string>
+    <string name="native_custom_exercise_01">Gyakorlat szerkesztése</string>
+    <string name="native_custom_exercise_02">Név</string>
+    <string name="native_custom_exercise_03">Leírás / végrehajtás</string>
+    <string name="native_custom_exercise_04">Izomcsoport</string>
+    <string name="native_custom_exercise_05">Mérés típusa</string>
+    <string name="native_custom_exercise_06">Terhelés típusa</string>
+    <string name="native_custom_exercise_07">Egység</string>
+    <string name="native_custom_exercise_08">Sorozatok</string>
+    <string name="native_custom_exercise_09">Ismétlés / idő</string>
+    <string name="native_custom_exercise_10">Súly (kg)</string>
+    <string name="native_custom_exercise_11">Pihenő (mp)</string>
+    <string name="native_custom_exercise_12">YouTube-videó link (opcionális)</string>
+    <string name="native_custom_exercise_13">Mentés</string>
+    <string name="native_custom_exercise_14">Mégse</string>
+    <string name="native_custom_exercise_15">Törlés</string>
+    <string name="native_custom_exercise_16">Törlöd a saját gyakorlatot?</string>
+    <string name="native_custom_exercise_17">Programban vagy naplóban használt gyakorlat nem törölhető.</string>
+    <string name="native_custom_exercise_18">Érvénytelen kötelező mező vagy YouTube-hivatkozás.</string>
+    <string name="native_custom_exercise_19">A gyakorlat közben módosult. Nyisd meg újra a szerkesztéshez.</string>
+    <string name="native_custom_exercise_20">Adat-visszaállítás folyamatban. Próbáld meg később.</string>
 </resources>
