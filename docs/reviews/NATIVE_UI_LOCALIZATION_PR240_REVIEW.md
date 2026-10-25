@@ -7,6 +7,25 @@ Az alábbiak forrás-/erőforrásellenőrzések, nem Android-fordítás vagy UI-
 A felhasználó később jelezte, hogy javítva. Ez a riport továbbra a fenti
 59da34d pillanatkép első reviewja; a frissebb HEAD újraellenőrzése még hátra van.
 
+## Frissített HEAD re-review – 2026-10-25
+
+Vizsgált új HEAD **82883abf11609d2585639aad71d5f3aa41ec5bbb**; csak read-only,
+külső ágra/PR-ra nem írtunk, nincs merge. Az első reviewhoz képest7 fájl/54+
+6- diff: a Home egységmetaadatok és BLE fallback/lépés feliratok resource-ból
+jönnek. Négy XML651 string,377 native_* kulcs; kulcsok/formátumok egyeznek.
+Négy JVM-metódus megírva, nem futott (eredetileg3 volt).
+
+Az eredeti Home programnév-észrevétel továbbra fennáll: a104. sor nameHu mezőt
+használ. TodayMetricsGrid for ((label, value, _) in row) eldobja az új egységmezőt;
+az egységmetaadatok resource-tesztje nem igazolja azok látható megjelenését.
+A nextDayName szintén a VM nameHu/fallback ágából jön; teljes app-lokalizációhoz
+még paritás-feladat. A BLE maradék helyes resource-bekötése statikusan ellenőrizve.
+
+#241 külön hat UI-eset nem futott és nem integrált; jelezte a Settings nyelvválasztó
+hiányát. A migration a63a1f1 ezt pótolja, az external teszteket integrációkor
+DataStore-közvetlen írás helyett UI-választóra kell kötni. Így a „#240 javítva”
+nem teljes lokalizációs és végső UI-elfogadás. A lenti eredeti riport59da34d-re szól.
+
 ## Megállapítások
 
 ### P2 – Hatókörön belüli egység- és fallbackfeliratok még magyarok

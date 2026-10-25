@@ -54,3 +54,17 @@ ha PR240 közben integrálódott, a fő agent intézi az új célágat. Ne merge
 GitHub-hozzáférés nélkül patch és riport is megfelelő. Átadás: SHA, esetlista,
 fixture-izoláció, futtatott eredmény/hiányzó feltétel, CI-regisztráció igénye.
 A fő agent közben folytatja a cloud-fotó/backup/szinkron javítását.
+
+
+## Átadás utáni állapot – 2026-10-25
+
+A felhasználó átadta; draft #241, test/native-localization-ui HEAD ab25d84,
+bázis #240 82883ab, négy új fájl/hat nem futott Compose-eset. A jelzett látható
+nyelvválasztó-hiányt a fő migrációs ág a63a1f1 pótolja: settings_language_<code>
+radio selectable tagekkel, meglévő DataStore-úton. Integráció után az új tesztek
+fixture.selectLanguage hívásait UI-kattintásra kell állítani; a root közös
+settingsThemeAndLanguageChangesReturnToTheirOrigin tesztje már így módosítva.
+A négy saját tesztfájlt és a külső ágat a fő munkás nem írta át.
+Ellenőrzött aktuális runner: phone-ui-gate.py -e package com.repforge.app,
+tehát az új osztályok kiválasztásához külön class-filter nem kell. Tesztkód és
+adatút megléte továbbra nem zöld Compose-futtatás; teljes review/CI hátra van.

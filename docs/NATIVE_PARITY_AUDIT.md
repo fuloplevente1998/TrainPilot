@@ -37,12 +37,18 @@ aláírt szintetikus upgrade **2/2**, nincs hiba/kihagyás. Letöltött release 
 hash/csomag/verzió/signer ellenőrizve; a measured protokoll és az időnaplómezők a telefonos R8 DEX-ben is jelen vannak.
 [Gépi bizonylat](builds/2026-10-23-native-measured-intervals.json).
 
-**Aktuális nem bevizsgált batch:** `567117a`, 464 új unit + 42 Phone
+**Aktuális nem bevizsgált batch:** `a63a1f1`, 490 új unit + 42 Phone
 instrumentációs tesztkód megírva, még nem futtatva. Bounded/paging napló, fotó/több
 route, naptár sync/kezdeti GPS, témák, tartós replacement/redó és metadata guard,
 Phone discard/retry, lokális/globális interval preset és nem-auto mód, közös
 valós Health-frissítő adatút, időzónahelyes Coach-célválasztás és gyakorlatonkénti tanács forrásban bekötve.
 [Aktuális átadó](WORK_HANDOFF.md), [rövid checkpoint](NATIVE_RESUME.md).
+Google shared operation gate + disconnected-token tiltás, local acceptance utáni
+snapshot-publish és replacement-epoch continuation guard kódban, +26 JVM-kód nem futott.
+Látható HU/EN/DE/RO picker a Settings tetején; meglévő UI-eset most rákattint, nem
+DataStore-t ír. Külső #240 négy unit és #241 hat UI-esete még nem integrált, nem része a490+42-nek;
+#241 nyelvváltását integrációkor valódi pickerre kell átállítani. Auth UI/pending
+consent callback, remote delete/restore race és teljes Google próba még nyitott.
 Exact-ID súlytombstone JSON/ZIP/Drive replay-védelem kódban, nem futott;
 cloud fotó privát staging/MD5/lease utáni ZIP-redo install+törlés kódban;
 remote/local atomikusság és valódi Google próba még nyitott.

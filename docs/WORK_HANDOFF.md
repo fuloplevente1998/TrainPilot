@@ -4,6 +4,56 @@ Frissítve: **2026-10-25**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Google műveleti kapu, publikálási sorrend és valódi nyelvválasztó – 2026-10-25
+
+**1839dd0**: GoogleSyncRepository minden auth/connect/revoke/sync/törlés/
+disconnect belépése egy közös processz-szintű atomikus gate-et használ minden
+repo-példányon át. Elutasít, nem queue-zik késői fiókváltás/törlés. Busy finally
+felszabadul, cancellation nem lesz Result.failure/siker. Prefs profile/clear
+commit hibája látható; nem kapcsolt/hiányos fiók még userinfo előtt tiltott.
+A korábbi stabil-sub eltérésellenőrzés megmarad, email átnevezés nem tulajdonosváltás.
++17 megírt, nem futott gate/account/repository-admission JVM-eset.
+
+**7e8f1e5**: a Drive snapshot feltöltése a sikeres canonical guard és existing
+BackupRestoreManager ZIP-redo acceptance UTÁN következik, nem előtte. Hálózat
+lease-en kívül. cloudBase csak publisher/read-back siker után; offline/cancel
+esetén helyben elfogadott adatok + régi base megmaradnak a következő merge-hez.
+Immutable payload-másolat. NativeDataReplacement epoch continuation ticket
+megakadályozza, hogy időközbeni restore/erase után régi base/status íródjon vagy
+új remote-delete induljon. Ordinary köztes edit megmarad, base a publikált
+pillanatkép, nem a későbbi helyi állapot. +7 valódi Room/fájl/importer-hibafázis
+és2 ticket JVM-próbakód. Nem elosztott tranzakció: már futó HTTP-delete nem
+vonható vissza a ticket miatt; orphan upload/read-back és új ref/restore verseny
+még nyitott. Token/fiókhoz tartozó Google pending consent lifecycle sincs kész.
+
+**a63a1f1**: a user #241-visszajelzése alapján a hiányzó látható HU/EN/DE/RO
+választó bekerült a Settings tetejére. NativeLanguagePicker rádiószemantika,
+48dp minimum/FlowRow, téma-tokenek/autonymok, settings_language_<code> tagek,
+négy külön native_language.xml. Meglévő VM.setLanguage/DataStore út; replacement
+alatt tiltás. A meglévő settingsThemeAndLanguageChangesReturnToTheirOrigin UI-
+próba most a valódi választóra kattint, nem direkt tárolt nyelvet állít. Nem futott.
+
+**Batch490 új unit+42 Phone UI megírva, NEM FUTOTT** (464+17+9; UI-esetszám
+változatlan, egy meglévő javítva). Most csak lexical delimiter/sorrend/diff és
+négy XML/kulcsütközés ellenőrzés, nem Kotlin/Room/Compose/Google. [skip ci],
+új CI/APK/screenshot nincs. Migrációs ág utolsó teljes zöld dd4cc27/40072751592
+read-only ellenőrizve. Main/verzió/élő adatok fölé telepítés STOP változatlan.
+
+Külső #240 friss **82883ab** statikus re-review: 20 engedélyezett fájl, négy XML
+651 stringgel /377 native-kulccsal és format-paraméterek egyeznek. BLE maradék javítva, Home
+programcím nameHu továbbra nyitott; egységmetaadatok lokalizáltak, de a grid nem
+rajzolja ki őket. Négy JVM-kód nem futott, nem integrált. [Review](reviews/NATIVE_UI_LOCALIZATION_PR240_REVIEW.md).
+Külső #241 **ab25d84**, cél #240 ága: négy új tesztfájl/hat eset, nem futott,
+csak előfeltétel-triage történt, teljes review nem. DataStore-közvetlen nyelvváltás
+helyett integrációkor valódi pickerre váltás kell; nincs még kész teljes UI-rész.
+A jelenlegi phone-ui-gate.py package-szűrője az új osztályokat is kiválasztja,
+külön class-filter bekötés nem kell. A külön4+6 nincs a490+42-ben. Ágaikat nem írtuk.
+
+Következő: külső lokalizáció/UI-próbák maradékai és integráció; Google tényleges
+bejelentkezés/pending intent/result adatút (jelenleg disconnected gomb sync-et
+hív, callback9001/9002 nincs kezelve), remote-delete/restore verseny, további A–E
+funkcióleltár és a közös kapu. Rövid belépési pont: [NATIVE_RESUME](NATIVE_RESUME.md).
+
 ## Tartós testsúlytörlés és késői cloud-replay védelem – 2026-10-25
 
 **567117a**, [skip ci]. Új opcionális portable `weightTombstones18` markerarray
