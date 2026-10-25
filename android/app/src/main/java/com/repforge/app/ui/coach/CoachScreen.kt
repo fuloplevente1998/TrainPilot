@@ -1,5 +1,7 @@
 package com.repforge.app.ui.coach
 
+import android.content.res.Resources
+import com.repforge.app.R
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -41,7 +43,7 @@ internal fun CoachScreen(starting: Boolean, onStart: (String, String, String?) -
                 Text(text.getString(com.repforge.app.R.string.weight_cancel))
             } }, containerColor = colors.card)
     }
-    val words = coachWords(state.language)
+    val words = coachWords(text)
     val number = remember(state.language) { NumberFormat.getNumberInstance(Locale.forLanguageTag(state.language)).apply { maximumFractionDigits = 1 } }
     fun value(n: Number?) = n?.let { number.format(it) } ?: "—"
     val owner = LocalLifecycleOwner.current
@@ -152,9 +154,26 @@ internal fun CoachScreen(starting: Boolean, onStart: (String, String, String?) -
     }
 }
 
-private fun coachWords(language: String) = when(language) {
-    "en" -> listOf("Data could not be loaded. Try again.", "Today readiness", "Normal planned load is supported by the available signals.", "Keep the load moderate today; avoid forcing progression.", "Start lighter; recovery or recent load limits the recommendation.", "Not enough recent data. Consider your previous performance and how you feel today.", "Recent pain feedback: do not increase load for the affected exercise.", "Samsung energy /100", "TrainPilot estimate /100", "Sleep (minutes)", "HRV baseline (ms)", "Recent load /100", "Samsung energy and TrainPilot's estimate are separate. Pain and heavy effort can limit readiness. Only recent, identifiable Samsung readings are used; missing values stay empty.", "Workout suggestion", "No available program day.", "Open calendar", "Start workout", "Reload stored data", "Open Health / refresh", "Progress", "Informational estimate, not a medical assessment.")
-    "de" -> listOf("Daten konnten nicht geladen werden. Erneut versuchen.", "Heutige Bereitschaft", "Die verfügbaren Signale unterstützen die geplante normale Belastung.", "Heute moderat trainieren und keine Steigerung erzwingen.", "Leichter beginnen; Regeneration oder letzte Belastung begrenzen die Empfehlung.", "Zu wenig aktuelle Daten. Bisherige Leistung und heutiges Befinden berücksichtigen.", "Aktuelle Schmerzmeldung: bei der betroffenen Übung nicht steigern.", "Samsung Energie /100", "TrainPilot Schätzung /100", "Schlaf (Minuten)", "HRV-Basis (ms)", "Letzte Belastung /100", "Samsung Energie und TrainPilot-Schätzung sind getrennt. Schmerz und hohe Belastung können die Bereitschaft begrenzen. Nur aktuelle, zuordenbare Samsung-Werte werden verwendet; fehlende Werte bleiben leer.", "Trainingsvorschlag", "Kein verfügbarer Programmtag.", "Kalender öffnen", "Training starten", "Gespeicherte Daten neu laden", "Gesundheit / Aktualisierung", "Fortschritt", "Orientierende Schätzung, keine medizinische Bewertung.")
-    "ro" -> listOf("Datele nu au putut fi încărcate. Încearcă din nou.", "Pregătire azi", "Semnalele disponibile permit încărcarea normală planificată.", "Menține încărcarea moderată; nu forța progresia.", "Începe mai ușor; recuperarea sau încărcarea recentă limitează recomandarea.", "Nu există suficiente date recente. Ține cont de performanța anterioară și de cum te simți azi.", "Durere raportată recent: nu crește încărcarea exercițiului afectat.", "Energie Samsung /100", "Estimare TrainPilot /100", "Somn (minute)", "Bază HRV (ms)", "Încărcare recentă /100", "Energia Samsung și estimarea TrainPilot sunt separate. Durerea și efortul mare pot limita pregătirea. Sunt folosite doar valori Samsung recente, cu sursă identificabilă; valorile lipsă rămân goale.", "Antrenament sugerat", "Nicio zi de program disponibilă.", "Deschide calendarul", "Începe antrenamentul", "Reîncarcă datele salvate", "Sănătate / actualizare", "Progres", "Estimare orientativă, nu o evaluare medicală.")
-    else -> listOf("Az adatok nem tölthetők be. Próbáld újra.", "Mai készenlét", "A rendelkezésre álló jelek alapján mehet a tervezett normál terhelés.", "Ma mérsékelt terhelést tarts; ne erőltesd a progressziót.", "Kezdj könnyebben; a regeneráció vagy a legutóbbi terhelés korlátozza a javaslatot.", "Nincs elég friss adat. A korábbi teljesítményt és a mai közérzetedet vedd alapul.", "Friss fájdalomjelzés: az érintett gyakorlatnál ne emelj terhelést.", "Samsung energia /100", "TrainPilot becslés /100", "Alvás (perc)", "HRV alapérték (ms)", "Legutóbbi terhelés /100", "A Samsung-pontszám és a TrainPilot becslése külön számítás. Fájdalom és nagy terhelés korlátozhatja a készenlétet. Csak friss, azonosítható Samsung-mérést használunk; a hiányzó értékek üresen maradnak.", "Edzésjavaslat", "Nincs elérhető programnap.", "Naptár megnyitása", "Edzés indítása", "Tárolt adatok újraolvasása", "Egészség / frissítés megnyitása", "Fejlődés", "Tájékoztató becslés; nem orvosi értékelés.")
-}
+private fun coachWords(resources: Resources): List<String> = listOf(
+    resources.getString(R.string.native_coach_00),
+    resources.getString(R.string.native_coach_01),
+    resources.getString(R.string.native_coach_02),
+    resources.getString(R.string.native_coach_03),
+    resources.getString(R.string.native_coach_04),
+    resources.getString(R.string.native_coach_05),
+    resources.getString(R.string.native_coach_06),
+    resources.getString(R.string.native_coach_07),
+    resources.getString(R.string.native_coach_08),
+    resources.getString(R.string.native_coach_09),
+    resources.getString(R.string.native_coach_10),
+    resources.getString(R.string.native_coach_11),
+    resources.getString(R.string.native_coach_12),
+    resources.getString(R.string.native_coach_13),
+    resources.getString(R.string.native_coach_14),
+    resources.getString(R.string.native_coach_15),
+    resources.getString(R.string.native_coach_16),
+    resources.getString(R.string.native_coach_17),
+    resources.getString(R.string.native_coach_18),
+    resources.getString(R.string.native_coach_19),
+    resources.getString(R.string.native_coach_20)
+)

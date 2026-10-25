@@ -19,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import com.repforge.app.R
 import com.repforge.app.NativeProfileProgramPreview
 import com.repforge.app.NativeProgramEditor
 import com.repforge.app.data.db.ExerciseLibraryEntity
@@ -58,28 +59,21 @@ internal fun PersonalProgramPreviewDialog(
         "home-level2" else "home-basic"
     var choice by remember(profileJson) { mutableStateOf(recommended) }
     val preview = previews[choice]
-    val label = when (language) {
-        "en" -> listOf("Personal A/B plan preview", "Basic", "Level 2", "Check your Training profile",
-            "Set workout minutes and equipment first in Settings → Training profile. No exercise or weight is guessed.",
-            "Work sets", "Estimated minutes / budget", "Plan adjustments", "Load: to be set with a trial set",
-            "Accept and activate", "Cancel", "Could not save. Check that your profile or template has not changed.",
-            "No safe workout for the selected profile.")
-        "de" -> listOf("Persönlicher A/B-Plan – Vorschau", "Basis", "Stufe 2", "Trainingsprofil prüfen",
-            "Trainingsdauer und Ausrüstung zuerst in Einstellungen → Trainingsprofil angeben.",
-            "Arbeitssätze", "Geschätzte Minuten / Zeitbudget", "Plananpassungen", "Gewicht: durch Probesatz bestimmen",
-            "Annehmen und aktivieren", "Abbrechen", "Speichern fehlgeschlagen. Prüfe Profil und Vorlage.",
-            "Kein geeignetes Training für dieses Profil.")
-        "ro" -> listOf("Previzualizare program A/B", "De bază", "Nivel 2", "Verifică profilul",
-            "Completează minutele și echipamentul în Setări → Profil antrenament.",
-            "Serii", "Minute estimate / buget", "Modificări ale planului", "Greutate: se stabilește printr-o serie de probă",
-            "Acceptă și activează", "Anulează", "Salvarea a eșuat. Verifică profilul și șablonul.",
-            "Niciun antrenament sigur pentru acest profil.")
-        else -> listOf("Személyes A/B edzésterv előnézete", "Alap", "2. szint", "Edzésprofil ellenőrzése",
-            "Előbb add meg az edzésidőt és felszerelést a Beállítások → Edzésprofil alatt. Nem találgatunk gyakorlatot vagy súlyt.",
-            "Munkasorozatok", "Becsült perc / időkeret", "Tervmódosítások", "Súly: próbasorozattal beállítandó",
-            "Elfogadás és aktiválás", "Mégse", "Nem menthető. Lehet, hogy közben változott a profil vagy a sablon.",
-            "Nincs biztonsággal javasolható edzés ezzel a profillal.")
-    }
+    val label = listOf(
+        strings.getString(R.string.native_preview_00),
+        strings.getString(R.string.native_preview_01),
+        strings.getString(R.string.native_preview_02),
+        strings.getString(R.string.native_preview_03),
+        strings.getString(R.string.native_preview_04),
+        strings.getString(R.string.native_preview_05),
+        strings.getString(R.string.native_preview_06),
+        strings.getString(R.string.native_preview_07),
+        strings.getString(R.string.native_preview_08),
+        strings.getString(R.string.native_preview_09),
+        strings.getString(R.string.native_preview_10),
+        strings.getString(R.string.native_preview_11),
+        strings.getString(R.string.native_preview_12)
+    )
     AlertDialog(
         onDismissRequest = { if (!saving) onCancel() },
         title = { Text(label[0]) },
@@ -94,24 +88,15 @@ internal fun PersonalProgramPreviewDialog(
                     }
                 }
                 if (loading) {
-                    Text(when (language) {
-                        "en" -> "Checking workout history…"; "de" -> "Trainingsverlauf wird geprüft…"
-                        "ro" -> "Se verifică istoricul antrenamentelor…"
-                        else -> "Edzéselőzmények ellenőrzése…"
-                    }, modifier = Modifier.testTag("personal_preview_loading"))
+                    Text(strings.getString(R.string.native_preview_13), modifier = Modifier.testTag("personal_preview_loading"))
                 } else if (preview == null) {
                     Text(label[3])
                     Text(label[4], modifier = Modifier.testTag("personal_preview_blocked"))
                 } else {
-                    Text("${label[6]}: ${preview.estimateMinutes} / ${preview.profileSnapshot.getInt("minutes")} · ${label[5]}: ${preview.workSets}")
+                    Text(strings.getString(R.string.native_preview_17, label[6], preview.estimateMinutes, preview.profileSnapshot.getInt("minutes"), label[5], preview.workSets))
                     val inherited = preview.history128.optJSONObject("entries")
                     if (inherited != null && inherited.length() > 0) {
-                        Text(when (language) {
-                            "en" -> "History-backed loads: ${inherited.length()} exercises"
-                            "de" -> "Trainingshistorie: ${inherited.length()} Übungen"
-                            "ro" -> "Istoric compatibil: ${inherited.length()} exerciții"
-                            else -> "Kompatibilis edzéselőzmény: ${inherited.length()} gyakorlat"
-                        }, modifier = Modifier.testTag("personal_history_summary"))
+                        Text(strings.getString(R.string.native_preview_14, inherited.length()), modifier = Modifier.testTag("personal_history_summary"))
                     }
                     preview.history128.optJSONObject("days")?.let { days ->
                         for (id in days.keys()) if (days.getJSONObject(id).optBoolean("retained")) {
@@ -158,17 +143,12 @@ internal fun PersonalProgramPreviewDialog(
                             if (com.repforge.app.NativeTrainingPrescription.needsLoad(recipe))
                                 Text(label[8], modifier = Modifier.testTag("personal_trial_$id"))
                             else if (recipe.optDouble("weight") > 0) {
-                                Text(when (language) {
-                                    "en" -> "Last completed load: ${recipe.optDouble("weight")} kg (no automatic increase)"
-                                    "de" -> "Letztes Arbeitsgewicht: ${recipe.optDouble("weight")} kg (keine automatische Erhöhung)"
-                                    "ro" -> "Ultima greutate: ${recipe.optDouble("weight")} kg (fără creștere automată)"
-                                    else -> "Utolsó teljesített súly: ${recipe.optDouble("weight")} kg (nincs automatikus emelés)"
-                                }, modifier = Modifier.testTag("personal_inherited_$id"))
+                                Text(strings.getString(R.string.native_preview_15, recipe.optDouble("weight").toString()), modifier = Modifier.testTag("personal_inherited_$id"))
                             }
                         }
                     }
                     if (preview.reductions.isNotEmpty()) {
-                        Text("${label[7]}: ${preview.reductions.size}")
+                        Text(strings.getString(R.string.native_preview_16, label[7], preview.reductions.size))
                         preview.reductions.forEach { removed ->
                             val name = exerciseName(removed.exerciseId)
                             val message = if (removed.reason.startsWith("substitution:")) {

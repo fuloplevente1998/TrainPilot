@@ -52,6 +52,9 @@ import androidx.navigation.NavController
 import com.repforge.app.data.db.ProgramWithDays
 import com.repforge.app.ui.theme.LocalTrainPilotColors
 import org.json.JSONArray
+import com.repforge.app.R
+import com.repforge.app.ui.text.nativeResources
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 internal fun TrainingProgramsScreen(
@@ -62,6 +65,8 @@ internal fun TrainingProgramsScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val colors = LocalTrainPilotColors.current
+    val context = LocalContext.current
+    val strings = remember(context, language) { nativeResources(context, language) }
     var editorOpen by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<ProgramWithDays?>(null) }
     LaunchedEffect(state.savedProgramId, state.deletedProgramId) {
@@ -108,18 +113,18 @@ internal fun TrainingProgramsScreen(
                     Spacer(Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Személyes Edzéstervező",
+                            text = strings.getString(R.string.native_program_planner),
                             color = colors.text,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Készíts egyéni tervet szinted és céljaid alapján",
+                            text = strings.getString(R.string.native_program_planner_help),
                             color = colors.muted,
                             fontSize = 12.sp
                         )
                     }
-                    Text("Megnyitás ›", color = colors.accentText, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    Text(strings.getString(R.string.native_program_open), color = colors.accentText, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -131,13 +136,13 @@ internal fun TrainingProgramsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Edzésprogramok",
+                    text = strings.getString(R.string.native_program_list),
                     color = colors.text,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "${state.programs.size} program elérhető",
+                    text = strings.getString(R.string.native_program_available, state.programs.size),
                     color = colors.muted,
                     fontSize = 12.sp
                 )
@@ -147,10 +152,7 @@ internal fun TrainingProgramsScreen(
         item {
             OutlinedButton(onClick = { editing = null; editorOpen = true; viewModel.clearEditorOutcome() },
                 enabled = !state.editorSaving, modifier = Modifier.fillMaxWidth().testTag("program_create")) {
-                Text(when (language) {
-                    "en" -> "Create program"; "de" -> "Programm erstellen"
-                    "ro" -> "Creează program"; else -> "Saját program létrehozása"
-                })
+                Text(strings.getString(R.string.native_program_create))
             }
         }
 
@@ -198,6 +200,8 @@ fun ProgramCardItem(
     onEdit: () -> Unit
 ) {
     val colors = LocalTrainPilotColors.current
+    val context = LocalContext.current
+    val strings = remember(context, language) { nativeResources(context, language) }
     var expanded by remember { mutableStateOf(isActive) }
     val prog = programWithDays.program
     fun name(hu: String, en: String, de: String, ro: String) = when (language) {
@@ -239,14 +243,14 @@ fun ProgramCardItem(
                     }
                 }
                 if (isActive) {
-                    Text("Aktív", color = colors.accentText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text(strings.getString(R.string.native_program_active), color = colors.accentText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 } else {
                     OutlinedButton(
                         onClick = onActivate,
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.text)
                     ) {
-                        Text("Kiválasztás", fontSize = 11.sp)
+                        Text(strings.getString(R.string.native_program_select), fontSize = 11.sp)
                     }
                 }
             }
@@ -255,12 +259,7 @@ fun ProgramCardItem(
             Text(prog.description, color = colors.muted, fontSize = 12.sp)
             OutlinedButton(onClick = onEdit, modifier = Modifier.fillMaxWidth()
                 .testTag("program_edit_${prog.id}")) {
-                Text(when (language) {
-                    "en" -> if (prog.builtin) "Copy and edit" else "Edit"
-                    "de" -> if (prog.builtin) "Kopie bearbeiten" else "Bearbeiten"
-                    "ro" -> if (prog.builtin) "Copiază și editează" else "Editează"
-                    else -> if (prog.builtin) "Másolat szerkesztése" else "Szerkesztés"
-                })
+                Text(strings.getString(if (prog.builtin) R.string.native_program_copy_edit else R.string.native_program_edit))
             }
 
             Spacer(Modifier.height(12.dp))
@@ -272,7 +271,7 @@ fun ProgramCardItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "${programWithDays.days.size} edzésnap megtekintése",
+                    text = strings.getString(R.string.native_program_days, programWithDays.days.size),
                     color = colors.accentText,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold
@@ -299,7 +298,7 @@ fun ProgramCardItem(
                         ) {
                             Column {
                                 Text(name(day.nameHu, day.nameEn, day.nameDe, day.nameRo), color = colors.text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                                Text("$exCount gyakorlat", color = colors.muted, fontSize = 11.sp)
+                                Text(strings.getString(R.string.native_program_exercises, exCount), color = colors.muted, fontSize = 11.sp)
                             }
                             Button(
                                 onClick = { onStartDay(day.dayId) },
@@ -309,7 +308,7 @@ fun ProgramCardItem(
                             ) {
                                 Icon(Icons.Default.PlayArrow, contentDescription = null, tint = colors.onAccent)
                                 Spacer(Modifier.width(4.dp))
-                                Text("Indítás", color = colors.onAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Text(strings.getString(R.string.native_program_start), color = colors.onAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }

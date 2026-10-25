@@ -14,6 +14,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.repforge.app.ui.navigation.NativePlanningShortcuts
 import com.repforge.app.ui.theme.LocalTrainPilotColors
 import org.json.JSONArray
+import com.repforge.app.R
+import com.repforge.app.ui.text.nativeResources
+import androidx.compose.ui.platform.LocalContext
 
 /** Main's Training entry shows quick start and active program days; Programs remains separate. */
 @Composable
@@ -23,12 +26,20 @@ internal fun TrainingLandingScreen(language: String, activeProgramId: String, bu
     model: TrainingProgramsViewModel = viewModel()) {
     val state by model.uiState.collectAsStateWithLifecycle()
     val colors = LocalTrainPilotColors.current
-    val labels = when(language) {
-        "en" -> listOf("Training", "Quick workout", "Choose exercise", "Outdoor workout", "Active program", "Programs", "Start workout", "No active program.", "exercises", "Exercise library")
-        "de" -> listOf("Training", "Schnelltraining", "Übung wählen", "Training im Freien", "Aktives Programm", "Programme", "Training starten", "Kein aktives Programm.", "Übungen", "Übungsbibliothek")
-        "ro" -> listOf("Antrenament", "Antrenament rapid", "Alege exercițiul", "Antrenament în aer liber", "Program activ", "Programe", "Începe antrenamentul", "Niciun program activ.", "exerciții", "Bibliotecă de exerciții")
-        else -> listOf("Edzés", "Gyors edzés", "Gyakorlat választása", "Szabadtéri edzés", "Aktív program", "Programok", "Edzés indítása", "Nincs aktív program.", "gyakorlat", "Gyakorlatkönyvtár")
-    }
+    val context = LocalContext.current
+    val resources = remember(context, language) { nativeResources(context, language) }
+    val labels = listOf(
+        resources.getString(R.string.native_training_landing_00),
+        resources.getString(R.string.native_training_landing_01),
+        resources.getString(R.string.native_training_landing_02),
+        resources.getString(R.string.native_training_landing_03),
+        resources.getString(R.string.native_training_landing_04),
+        resources.getString(R.string.native_training_landing_05),
+        resources.getString(R.string.native_training_landing_06),
+        resources.getString(R.string.native_training_landing_07),
+        resources.getString(R.string.native_training_landing_08),
+        resources.getString(R.string.native_training_landing_09)
+    )
     fun name(hu: String, en: String, de: String, ro: String) = when(language) {
         "en" -> en; "de" -> de; "ro" -> ro; else -> hu
     }.ifBlank { hu }

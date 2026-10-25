@@ -42,6 +42,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.repforge.app.R
+import com.repforge.app.ui.text.nativeResources
+import android.content.res.Resources
 import com.repforge.app.NativeExerciseDemo
 import com.repforge.app.data.db.ExerciseLibraryEntity
 import com.repforge.app.ui.theme.LocalTrainPilotColors
@@ -57,32 +60,29 @@ private data class LibraryWords(
     val muscle: String, val demoCredit: String
 )
 
-private fun words(lang: String): LibraryWords = when (lang) {
-    "en" -> LibraryWords("Exercise library", "Search exercises", "Favorites", "All", "exercises",
-        "No matching exercises.", "Back to library", "Details", "Watch original video",
-        "Search on YouTube", "Unverified search, not a confirmed demonstration",
-        "No video in original catalog", "No application available to open the link.",
-        "Could not load exercises.", "Could not save favorite.", "Add favorite",
-        "Remove favorite", "Sets", "Repetitions", "Muscle", "Video source")
-    "de" -> LibraryWords("Übungsbibliothek", "Übungen suchen", "Favoriten", "Alle", "Übungen",
-        "Keine passenden Übungen.", "Zur Bibliothek", "Details", "Originalvideo ansehen",
-        "Auf YouTube suchen", "Ungeprüfte Suche, kein bestätigtes Demonstrationsvideo",
-        "Kein Video im ursprünglichen Katalog", "Kein Programm kann den Link öffnen.",
-        "Übungen können nicht geladen werden.", "Favorit konnte nicht gespeichert werden.",
-        "Favorit hinzufügen", "Favorit entfernen", "Sätze", "Wiederholungen", "Muskel", "Videoquelle")
-    "ro" -> LibraryWords("Bibliotecă de exerciții", "Caută exerciții", "Favorite", "Toate", "exerciții",
-        "Nu există exerciții potrivite.", "Înapoi la bibliotecă", "Detalii", "Deschide videoclipul original",
-        "Caută pe YouTube", "Căutare neverificată, nu un videoclip demonstrativ confirmat",
-        "Nu există videoclip în catalogul original", "Nu există aplicație pentru deschiderea linkului.",
-        "Exercițiile nu au putut fi încărcate.", "Favoritul nu a putut fi salvat.",
-        "Adaugă favorit", "Elimină favorit", "Serii", "Repetări", "Mușchi", "Sursa video")
-    else -> LibraryWords("Gyakorlatkönyvtár", "Gyakorlat keresése", "Kedvencek", "Összes", "gyakorlat",
-        "Nincs találat.", "Vissza a könyvtárhoz", "Részletek", "Eredeti videó megnyitása",
-        "Keresés a YouTube-on", "Nem ellenőrzött keresés, nem konkrét bemutatóvideó",
-        "Az eredeti katalógusban nincs videó", "Nincs alkalmazás a hivatkozás megnyitásához.",
-        "Nem sikerült betölteni a gyakorlatokat.", "Nem sikerült menteni a kedvencet.",
-        "Kedvencnek jelölés", "Eltávolítás a kedvencekből", "Sorozatok", "Ismétlések", "Izomcsoport", "Videó forrása")
-}
+private fun words(resources: Resources): LibraryWords = LibraryWords(
+    resources.getString(R.string.native_library_00),
+    resources.getString(R.string.native_library_01),
+    resources.getString(R.string.native_library_02),
+    resources.getString(R.string.native_library_03),
+    resources.getString(R.string.native_library_04),
+    resources.getString(R.string.native_library_05),
+    resources.getString(R.string.native_library_06),
+    resources.getString(R.string.native_library_07),
+    resources.getString(R.string.native_library_08),
+    resources.getString(R.string.native_library_09),
+    resources.getString(R.string.native_library_10),
+    resources.getString(R.string.native_library_11),
+    resources.getString(R.string.native_library_12),
+    resources.getString(R.string.native_library_13),
+    resources.getString(R.string.native_library_14),
+    resources.getString(R.string.native_library_15),
+    resources.getString(R.string.native_library_16),
+    resources.getString(R.string.native_library_17),
+    resources.getString(R.string.native_library_18),
+    resources.getString(R.string.native_library_19),
+    resources.getString(R.string.native_library_20)
+)
 
 private fun localized(ex: ExerciseLibraryEntity, lang: String): String =
     when (lang) { "en" -> ex.nameEn; "de" -> ex.nameDe; "ro" -> ex.nameRo; else -> ex.nameHu }
@@ -97,15 +97,18 @@ private fun key(value: String) = Normalizer.normalize(value, Normalizer.Form.NFD
 
 private val muscles = listOf("chest", "back", "shoulders", "arms", "core", "legs", "cardio")
 
-private fun muscleName(value: String, language: String): String {
+private fun muscleName(value: String, resources: Resources): String {
     val at = muscles.indexOf(value)
     if (at < 0) return value
-    return when (language) {
-        "en" -> listOf("Chest", "Back", "Shoulders", "Arms", "Core", "Legs", "Cardio")[at]
-        "de" -> listOf("Brust", "Rücken", "Schultern", "Arme", "Rumpf", "Beine", "Ausdauer")[at]
-        "ro" -> listOf("Piept", "Spate", "Umeri", "Brațe", "Trunchi", "Picioare", "Cardio")[at]
-        else -> listOf("Mell", "Hát", "Váll", "Kar", "Törzs", "Láb", "Kardió")[at]
-    }
+    return resources.getString(intArrayOf(
+        R.string.native_library_21,
+        R.string.native_library_22,
+        R.string.native_library_23,
+        R.string.native_library_24,
+        R.string.native_library_25,
+        R.string.native_library_26,
+        R.string.native_library_27
+    )[at])
 }
 
 @Composable
@@ -113,7 +116,8 @@ internal fun ExerciseLibraryScreen(language: String, model: ExerciseLibraryViewM
     val state by model.state.collectAsStateWithLifecycle()
     val colors = LocalTrainPilotColors.current
     val context = LocalContext.current
-    val labels = remember(language) { words(language) }
+    val strings = remember(context, language) { nativeResources(context, language) }
+    val labels = words(strings)
     var query by rememberSaveable { mutableStateOf("") }
     var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
     var favoritesOnly by rememberSaveable { mutableStateOf(false) }
@@ -164,14 +168,13 @@ internal fun ExerciseLibraryScreen(language: String, model: ExerciseLibraryViewM
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).testTag("exercise_library_detail"),
                 verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(localized(selected, language), color = colors.text, fontWeight = FontWeight.Bold)
-                Text("${labels.muscle}: ${muscleName(selected.primaryMuscle, language)} • ${labels.sets}: ${selected.defaultSets} • ${labels.reps}: ${selected.defaultReps}",
+                Text("${labels.muscle}: ${muscleName(selected.primaryMuscle, strings)} • ${labels.sets}: ${selected.defaultSets} • ${labels.reps}: ${selected.defaultReps}",
                     color = colors.muted)
                 Text(description(selected, language), color = colors.text)
                 if (selected.custom) {
                     OutlinedButton(onClick = { editingExercise = selected; editorOpen = true; model.clearEditOutcome() },
                         modifier = Modifier.testTag("custom_exercise_edit")) {
-                        Text(when (language) { "en" -> "Edit exercise"; "de" -> "Übung bearbeiten"
-                            "ro" -> "Editează exercițiul"; else -> "Saját gyakorlat szerkesztése" })
+                        Text(strings.getString(R.string.native_library_28))
                     }
                 }
                 TextButton(onClick = { model.toggleFavorite(selected.id) }, enabled = !state.saving,
@@ -203,8 +206,7 @@ internal fun ExerciseLibraryScreen(language: String, model: ExerciseLibraryViewM
             Text(labels.title, color = colors.text, fontWeight = FontWeight.Bold)
             OutlinedButton(onClick = { editingExercise = null; editorOpen = true; model.clearEditOutcome() },
                 modifier = Modifier.fillMaxWidth().testTag("custom_exercise_create")) {
-                Text(when (language) { "en" -> "Create exercise"; "de" -> "Eigene Übung erstellen"
-                    "ro" -> "Creează exercițiu"; else -> "Saját gyakorlat létrehozása" })
+                Text(strings.getString(R.string.native_library_29))
             }
             Text("${state.rows.size} ${labels.count}", color = colors.muted,
                 modifier = Modifier.testTag("exercise_library_count"))
@@ -218,7 +220,7 @@ internal fun ExerciseLibraryScreen(language: String, model: ExerciseLibraryViewM
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(selected = muscle.isEmpty(), onClick = { muscle = "" }, label = { Text(labels.all) })
                 for (part in muscles) FilterChip(selected = muscle == part, onClick = { muscle = part },
-                    label = { Text(muscleName(part, language)) }, modifier = Modifier.testTag("exercise_library_muscle_$part"))
+                    label = { Text(muscleName(part, strings)) }, modifier = Modifier.testTag("exercise_library_muscle_$part"))
             }
             if (state.writeFailed) Text(labels.saveError, color = colors.danger,
                 modifier = Modifier.testTag("exercise_library_favorite_error"))
@@ -231,7 +233,7 @@ internal fun ExerciseLibraryScreen(language: String, model: ExerciseLibraryViewM
                             Column(Modifier.weight(1f).clickable { selectedId = ex.id; openingError = false }
                                 .padding(8.dp).testTag("exercise_library_row_${ex.id}")) {
                                 Text(localized(ex, language), color = colors.text)
-                                Text(muscleName(ex.primaryMuscle, language), color = colors.muted)
+                                Text(muscleName(ex.primaryMuscle, strings), color = colors.muted)
                             }
                             TextButton(onClick = { model.toggleFavorite(ex.id) }, enabled = !state.saving,
                                 modifier = Modifier.testTag("exercise_library_favorite_${ex.id}").semantics {

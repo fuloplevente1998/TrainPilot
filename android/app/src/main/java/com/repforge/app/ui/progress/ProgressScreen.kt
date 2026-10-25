@@ -37,6 +37,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.repforge.app.R
+import com.repforge.app.ui.text.nativeResources
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.remember
 import com.repforge.app.ui.theme.LocalTrainPilotColors
 import kotlin.math.max
 
@@ -49,6 +53,8 @@ fun ProgressScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val colors = LocalTrainPilotColors.current
     val weights by weightViewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val strings = remember(context, state.language) { nativeResources(context, state.language) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
@@ -56,21 +62,12 @@ fun ProgressScreen(
     ) {
         item { Spacer(Modifier.height(8.dp)) }
         if (state.loading) item {
-            Text(when (state.language) {
-                "en" -> "Loading progress…"; "de" -> "Fortschritt wird geladen…"
-                "ro" -> "Se încarcă progresul…"; else -> "Fejlődés betöltése…"
-            }, color = colors.muted)
+            Text(strings.getString(R.string.native_progress_loading), color = colors.muted)
         }
         if (state.loadError) item {
-            Text(when (state.language) {
-                "en" -> "Could not load progress data."; "de" -> "Fortschrittsdaten konnten nicht geladen werden."
-                "ro" -> "Datele despre progres nu pot fi încărcate."
-                else -> "Nem sikerült betölteni a fejlődési adatokat."
-            }, color = colors.danger, modifier = Modifier.testTag("progress_error"))
+            Text(strings.getString(R.string.native_progress_error), color = colors.danger, modifier = Modifier.testTag("progress_error"))
             androidx.compose.material3.TextButton(onClick = viewModel::loadProgressData) {
-                Text(when (state.language) {
-                    "en" -> "Retry"; "de" -> "Erneut versuchen"; "ro" -> "Reîncearcă"; else -> "Újrapróbálás"
-                })
+                Text(strings.getString(R.string.native_progress_retry))
             }
         }
 
@@ -83,8 +80,8 @@ fun ProgressScreen(
                 border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Izom-anatómia terhelés (#177)", color = colors.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    Text("Elmúlt 30 nap sorozat-eloszlása", color = colors.muted, fontSize = 11.sp)
+                    Text(strings.getString(R.string.native_progress_muscle_load), color = colors.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(strings.getString(R.string.native_progress_month_sets), color = colors.muted, fontSize = 11.sp)
                     Spacer(Modifier.height(14.dp))
 
                     state.muscleLoads.forEach { load ->
@@ -110,7 +107,7 @@ fun ProgressScreen(
                                 )
                             }
                             Spacer(Modifier.width(10.dp))
-                            Text("${load.setsCount} szett", color = colors.muted, fontSize = 11.sp, modifier = Modifier.width(50.dp))
+                            Text(strings.getString(R.string.native_progress_sets_count, load.setsCount), color = colors.muted, fontSize = 11.sp, modifier = Modifier.width(50.dp))
                         }
                     }
                 }
@@ -126,8 +123,8 @@ fun ProgressScreen(
                 border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("1RM Fejlődési görbe (Epley)", color = colors.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    Text("Kalkulált 1RM fejlődés az edzések alapján", color = colors.muted, fontSize = 11.sp)
+                    Text(strings.getString(R.string.native_progress_1rm_chart), color = colors.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(strings.getString(R.string.native_progress_1rm_description), color = colors.muted, fontSize = 11.sp)
                     Spacer(Modifier.height(12.dp))
 
                     // Gyakorlat választó chip sor
@@ -165,7 +162,7 @@ fun ProgressScreen(
                     ) {
                         if (state.exercise1RmTrend.size < 2) {
                             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                Text("Nincs elég előzmény ehhez a gyakorlathoz", color = colors.muted, fontSize = 12.sp)
+                                Text(strings.getString(R.string.native_progress_no_history), color = colors.muted, fontSize = 12.sp)
                             }
                         } else {
                             TrendCanvas(points = state.exercise1RmTrend.map { it.e1rmKg })

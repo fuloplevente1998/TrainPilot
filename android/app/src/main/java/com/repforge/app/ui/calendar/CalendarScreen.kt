@@ -7,6 +7,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import android.content.res.Resources
+import androidx.compose.ui.platform.LocalContext
+import com.repforge.app.R
+import com.repforge.app.ui.text.nativeResources
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -23,7 +27,9 @@ internal fun CalendarScreen(starting: Boolean, onStart: (CalendarScheduleEntity)
     onJournal: () -> Unit, model: CalendarViewModel = viewModel()) {
     val state by model.state.collectAsStateWithLifecycle()
     val colors = LocalTrainPilotColors.current
-    val words = calendarWords(state.language)
+    val context = LocalContext.current
+    val strings = remember(context, state.language) { nativeResources(context, state.language) }
+    val words = calendarWords(strings)
     val locale = Locale.forLanguageTag(state.language)
     val dateFormat = remember(state.language) { DateTimeFormatter.ofPattern("yyyy. MMMM d.", locale) }
     var editing by remember { mutableStateOf<CalendarScheduleEntity?>(null) }
@@ -159,9 +165,31 @@ private fun CalendarEditor(state: CalendarUiState, row: CalendarScheduleEntity?,
     }, dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text(words[16]) } })
 }
 
-private fun calendarWords(language: String) = when (language) {
-    "en" -> listOf("Calendar", "Previous", "Next", "Add workout", "Create a program day first.", "No workout on this date.", "Planned", "Skipped", "Completed", "Open journal", "Start workout", "Edit / move", "Skip", "Restore", "Delete", "Delete this planned occasion? Logged workouts remain in the journal.", "Cancel", "Date", "Time", "Minutes", "Program", "Program day", "Save", "Check the date, time and duration.", "The plan changed or could not be saved. Reopen it and check your input. Logged workouts remain available.", "OK")
-    "de" -> listOf("Kalender", "Zurück", "Weiter", "Training hinzufügen", "Zuerst einen Programmtag erstellen.", "Kein Training an diesem Datum.", "Geplant", "Übersprungen", "Abgeschlossen", "Protokoll öffnen", "Training starten", "Bearbeiten / verschieben", "Überspringen", "Wiederherstellen", "Löschen", "Diesen geplanten Termin löschen? Protokollierte Trainings bleiben erhalten.", "Abbrechen", "Datum", "Uhrzeit", "Minuten", "Programm", "Programmtag", "Speichern", "Datum, Uhrzeit und Dauer prüfen.", "Der Plan wurde geändert oder konnte nicht gespeichert werden. Erneut öffnen und Eingaben prüfen. Protokollierte Trainings bleiben erhalten.", "OK")
-    "ro" -> listOf("Calendar", "Înapoi", "Înainte", "Adaugă antrenament", "Creează mai întâi o zi de program.", "Niciun antrenament la această dată.", "Planificat", "Omis", "Finalizat", "Deschide jurnalul", "Începe antrenamentul", "Editează / mută", "Omite", "Restabilește", "Șterge", "Ștergi această sesiune planificată? Antrenamentele înregistrate rămân în jurnal.", "Anulează", "Data", "Ora", "Minute", "Program", "Zi de program", "Salvează", "Verifică data, ora și durata.", "Planul a fost modificat sau nu a putut fi salvat. Redeschide-l și verifică datele. Antrenamentele înregistrate rămân disponibile.", "OK")
-    else -> listOf("Naptár", "Előző", "Következő", "Edzés hozzáadása", "Előbb hozz létre programnapot.", "Erre a napra nincs edzés.", "Tervezett", "Kihagyva", "Teljesített", "Napló megnyitása", "Edzés indítása", "Módosítás / áthelyezés", "Kihagyás", "Visszaállítás", "Törlés", "Törlöd ezt a tervezett alkalmat? A naplózott edzések megmaradnak.", "Mégse", "Dátum", "Időpont", "Perc", "Program", "Programnap", "Mentés", "Ellenőrizd a dátumot, időpontot és időtartamot.", "Az alkalom megváltozott vagy nem menthető. Nyisd meg újra és ellenőrizd az adatokat. A naplózott edzések megmaradtak.", "Rendben")
-}
+private fun calendarWords(strings: Resources): List<String> = listOf(
+    strings.getString(R.string.native_calendar_00),
+    strings.getString(R.string.native_calendar_01),
+    strings.getString(R.string.native_calendar_02),
+    strings.getString(R.string.native_calendar_03),
+    strings.getString(R.string.native_calendar_04),
+    strings.getString(R.string.native_calendar_05),
+    strings.getString(R.string.native_calendar_06),
+    strings.getString(R.string.native_calendar_07),
+    strings.getString(R.string.native_calendar_08),
+    strings.getString(R.string.native_calendar_09),
+    strings.getString(R.string.native_calendar_10),
+    strings.getString(R.string.native_calendar_11),
+    strings.getString(R.string.native_calendar_12),
+    strings.getString(R.string.native_calendar_13),
+    strings.getString(R.string.native_calendar_14),
+    strings.getString(R.string.native_calendar_15),
+    strings.getString(R.string.native_calendar_16),
+    strings.getString(R.string.native_calendar_17),
+    strings.getString(R.string.native_calendar_18),
+    strings.getString(R.string.native_calendar_19),
+    strings.getString(R.string.native_calendar_20),
+    strings.getString(R.string.native_calendar_21),
+    strings.getString(R.string.native_calendar_22),
+    strings.getString(R.string.native_calendar_23),
+    strings.getString(R.string.native_calendar_24),
+    strings.getString(R.string.native_calendar_25)
+)

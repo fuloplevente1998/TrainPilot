@@ -22,44 +22,45 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import com.repforge.app.R
+import com.repforge.app.ui.text.nativeResources
+import androidx.compose.ui.platform.LocalContext
+import android.content.res.Resources
 import com.repforge.app.NativeCustomExerciseEditor
 import com.repforge.app.data.db.ExerciseLibraryEntity
 
-private fun formText(lang: String) = when (lang) {
-    "en" -> listOf("New exercise", "Edit exercise", "Name", "Instructions", "Muscle group",
-        "Measurement", "Load type", "Unit", "Sets", "Repetitions / time",
-        "Weight (kg)", "Rest (s)", "YouTube watch URL (optional)", "Save",
-        "Cancel", "Delete", "Delete this custom exercise?", "References in programs or history block deletion.",
-        "Required fields or YouTube URL are invalid.",
-        "Exercise changed elsewhere. Reopen it before retrying.", "Data restore in progress. Try again afterward.")
-    "de" -> listOf("Neue Übung", "Übung bearbeiten", "Name", "Anleitung", "Muskelgruppe",
-        "Messart", "Belastung", "Einheit", "Sätze", "Wiederholungen / Zeit",
-        "Gewicht (kg)", "Pause (s)", "YouTube-Video-URL (optional)", "Speichern",
-        "Abbrechen", "Löschen", "Eigene Übung löschen?", "Referenzen in Plänen oder Historie verhindern das Löschen.",
-        "Ungültige Pflichtfelder oder YouTube-URL.",
-        "Die Übung wurde anderswo geändert. Bitte erneut öffnen.", "Datenwiederherstellung läuft. Später erneut versuchen.")
-    "ro" -> listOf("Exercițiu nou", "Editează exercițiul", "Nume", "Instrucțiuni", "Grupă musculară",
-        "Măsurare", "Tip încărcare", "Unitate", "Serii", "Repetări / timp",
-        "Greutate (kg)", "Pauză (s)", "URL videoclip YouTube (opțional)", "Salvează",
-        "Anulează", "Șterge", "Ștergi acest exercițiu personalizat?", "Referințele din programe sau istoric împiedică ștergerea.",
-        "Date obligatorii sau adresă YouTube invalidă.",
-        "Exercițiul a fost modificat în altă parte. Redeschide-l.", "Restaurarea datelor este în curs. Încearcă mai târziu.")
-    else -> listOf("Új gyakorlat", "Gyakorlat szerkesztése", "Név", "Leírás / végrehajtás",
-        "Izomcsoport", "Mérés típusa", "Terhelés típusa", "Egység", "Sorozatok",
-        "Ismétlés / idő", "Súly (kg)", "Pihenő (mp)", "YouTube-videó link (opcionális)",
-        "Mentés", "Mégse", "Törlés", "Törlöd a saját gyakorlatot?",
-        "Programban vagy naplóban használt gyakorlat nem törölhető.",
-        "Érvénytelen kötelező mező vagy YouTube-hivatkozás.",
-        "A gyakorlat közben módosult. Nyisd meg újra a szerkesztéshez.",
-        "Adat-visszaállítás folyamatban. Próbáld meg később.")
-}
+private fun formText(resources: Resources): List<String> = listOf(
+    resources.getString(R.string.native_custom_exercise_00),
+    resources.getString(R.string.native_custom_exercise_01),
+    resources.getString(R.string.native_custom_exercise_02),
+    resources.getString(R.string.native_custom_exercise_03),
+    resources.getString(R.string.native_custom_exercise_04),
+    resources.getString(R.string.native_custom_exercise_05),
+    resources.getString(R.string.native_custom_exercise_06),
+    resources.getString(R.string.native_custom_exercise_07),
+    resources.getString(R.string.native_custom_exercise_08),
+    resources.getString(R.string.native_custom_exercise_09),
+    resources.getString(R.string.native_custom_exercise_10),
+    resources.getString(R.string.native_custom_exercise_11),
+    resources.getString(R.string.native_custom_exercise_12),
+    resources.getString(R.string.native_custom_exercise_13),
+    resources.getString(R.string.native_custom_exercise_14),
+    resources.getString(R.string.native_custom_exercise_15),
+    resources.getString(R.string.native_custom_exercise_16),
+    resources.getString(R.string.native_custom_exercise_17),
+    resources.getString(R.string.native_custom_exercise_18),
+    resources.getString(R.string.native_custom_exercise_19),
+    resources.getString(R.string.native_custom_exercise_20)
+)
 
 @Composable
 internal fun CustomExerciseDialog(
     exercise: ExerciseLibraryEntity?, language: String, saving: Boolean, error: String?,
     onSave: (NativeCustomExerciseEditor.Draft) -> Unit, onDelete: () -> Unit, onCancel: () -> Unit
 ) {
-    val words = remember(language) { formText(language) }
+    val context = LocalContext.current
+    val resources = remember(context, language) { nativeResources(context, language) }
+    val words = formText(resources)
     var draft by remember(exercise?.id, language) {
         mutableStateOf(NativeCustomExerciseEditor.draft(exercise, language))
     }
@@ -71,6 +72,33 @@ internal fun CustomExerciseDialog(
     val measurements = listOf("reps", "time", "distance", "steps", "strength")
     val loads = listOf("bodyweight", "weight", "dumbbell", "barbell", "single_dumbbell",
         "total", "machine", "cable")
+    val muscleLabels = listOf(
+        resources.getString(R.string.native_custom_chip_muscle_chest),
+        resources.getString(R.string.native_custom_chip_muscle_back),
+        resources.getString(R.string.native_custom_chip_muscle_shoulders),
+        resources.getString(R.string.native_custom_chip_muscle_arms),
+        resources.getString(R.string.native_custom_chip_muscle_core),
+        resources.getString(R.string.native_custom_chip_muscle_legs),
+        resources.getString(R.string.native_custom_chip_muscle_cardio),
+        resources.getString(R.string.native_custom_chip_muscle_full)
+    )
+    val measureLabels = listOf(
+        resources.getString(R.string.native_custom_chip_measure_reps),
+        resources.getString(R.string.native_custom_chip_measure_time),
+        resources.getString(R.string.native_custom_chip_measure_distance),
+        resources.getString(R.string.native_custom_chip_measure_steps),
+        resources.getString(R.string.native_custom_chip_measure_strength)
+    )
+    val loadLabels = listOf(
+        resources.getString(R.string.native_custom_chip_load_bodyweight),
+        resources.getString(R.string.native_custom_chip_load_weight),
+        resources.getString(R.string.native_custom_chip_load_dumbbell),
+        resources.getString(R.string.native_custom_chip_load_barbell),
+        resources.getString(R.string.native_custom_chip_load_single_dumbbell),
+        resources.getString(R.string.native_custom_chip_load_total),
+        resources.getString(R.string.native_custom_chip_load_machine),
+        resources.getString(R.string.native_custom_chip_load_cable)
+    )
     AlertDialog(onDismissRequest = { if (!saving) onCancel() },
         title = { Text(if (exercise == null) words[0] else words[1]) },
         text = {
@@ -86,19 +114,19 @@ internal fun CustomExerciseDialog(
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                     for (key in muscles) FilterChip(selected = draft.muscle == key,
                         onClick = { draft = draft.copy(muscle = key) },
-                        label = { Text(key) }, modifier = Modifier.testTag("custom_exercise_muscle_$key"))
+                        label = { Text(muscleLabels[muscles.indexOf(key)]) }, modifier = Modifier.testTag("custom_exercise_muscle_$key"))
                 }
                 Text(words[5])
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                     for (key in measurements) FilterChip(selected = draft.measurement == key,
                         onClick = { draft = draft.copy(measurement = key) },
-                        label = { Text(key) }, modifier = Modifier.testTag("custom_exercise_measure_$key"))
+                        label = { Text(measureLabels[measurements.indexOf(key)]) }, modifier = Modifier.testTag("custom_exercise_measure_$key"))
                 }
                 Text(words[6])
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                     for (key in loads) FilterChip(selected = draft.load == key,
                         onClick = { draft = draft.copy(load = key) },
-                        label = { Text(key) }, modifier = Modifier.testTag("custom_exercise_load_$key"))
+                        label = { Text(loadLabels[loads.indexOf(key)]) }, modifier = Modifier.testTag("custom_exercise_load_$key"))
                 }
                 OutlinedTextField(draft.repUnit, { draft = draft.copy(repUnit = it) },
                     label = { Text(words[7]) }, singleLine = true, modifier = Modifier.fillMaxWidth())

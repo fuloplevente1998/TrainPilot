@@ -67,6 +67,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.repforge.app.R
+import com.repforge.app.ui.text.nativeResources
+import androidx.compose.runtime.remember
 import com.repforge.app.ui.theme.LocalTrainPilotColors
 
 
@@ -92,6 +95,7 @@ fun HealthDashboardScreen(
     val colors = LocalTrainPilotColors.current
     val context = LocalContext.current
     val activity = context as? Activity
+    val strings = remember(context, state.language) { nativeResources(context, state.language) }
     var detailType by rememberSaveable(state.selectedDay, state.historyChannel) { mutableStateOf<String?>(null) }
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         viewModel.refresh(activity)
@@ -135,7 +139,7 @@ fun HealthDashboardScreen(
             Tab(
                 selected = state.activeTab == "ble",
                 onClick = { viewModel.setTab("ble") },
-                text = { Text("BLE Okosóra (#111)", fontWeight = FontWeight.Bold) }
+                text = { Text(strings.getString(R.string.native_health_ble_tab), fontWeight = FontWeight.Bold) }
             )
         }
 
@@ -205,6 +209,8 @@ fun HealthJournalTabContent(
     onDailySource: (String) -> Unit
 ) {
     val colors = LocalTrainPilotColors.current
+    val context = LocalContext.current
+    val strings = remember(context, state.language) { nativeResources(context, state.language) }
     LazyColumn(
         modifier = Modifier.fillMaxSize().testTag("health_journal_list").padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
@@ -254,9 +260,9 @@ fun HealthJournalTabContent(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Egészségügyi forrás", color = colors.text, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                        Text(strings.getString(R.string.native_health_source), color = colors.text, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                         IconButton(onClick = onRefresh, modifier = Modifier.size(32.dp)) {
-                            Icon(Icons.Default.Refresh, contentDescription = "Frissítés", tint = colors.accent)
+                            Icon(Icons.Default.Refresh, contentDescription = strings.getString(R.string.native_health_refresh), tint = colors.accent)
                         }
                     }
                     Spacer(Modifier.height(10.dp))
@@ -276,7 +282,7 @@ fun HealthJournalTabContent(
                     }
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        text = "A kiválasztott szolgáltató adatai képezik a napi aggregáció alapját (duplikáció és összeadás nélkül).",
+                        text = strings.getString(R.string.native_health_provider_help),
                         color = colors.muted,
                         fontSize = 11.sp
                     )
@@ -369,8 +375,8 @@ fun HealthJournalTabContent(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Health Connect háttérszinkron", color = colors.text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                        Text("Periodikus 15 perces háttérfrissítés (ha támogatott és engedélyezett)", color = colors.muted, fontSize = 11.sp)
+                        Text(strings.getString(R.string.native_health_background_title), color = colors.text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        Text(strings.getString(R.string.native_health_background_help), color = colors.muted, fontSize = 11.sp)
                         val text = com.repforge.app.ui.text.nativeResources(LocalContext.current, state.language)
                         Text(text.getString(backgroundReasonResource(state.hcBackgroundBlock)),
                             color = if (state.hcBackgroundBlock == BackgroundBlock.READY) colors.muted else colors.dangerText,
@@ -401,6 +407,8 @@ fun BleDiscoveryTabContent(
 ) {
     val colors = LocalTrainPilotColors.current
     val ble = state.bleState
+    val context = LocalContext.current
+    val strings = remember(context, state.language) { nativeResources(context, state.language) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().testTag("health_ble_list").padding(horizontal = 16.dp),
@@ -423,15 +431,15 @@ fun BleDiscoveryTabContent(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
-                            Text("Bluetooth LE Keresés", color = colors.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                            Text("Állapot: ${ble.state} (${ble.code})", color = colors.muted, fontSize = 11.sp)
+                            Text(strings.getString(R.string.native_health_ble_search), color = colors.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            Text(strings.getString(R.string.native_health_ble_state, ble.state, ble.code), color = colors.muted, fontSize = 11.sp)
                         }
                         if (ble.state == "scanning") {
                             Button(
                                 onClick = { bleRepo.stopScan() },
                                 colors = ButtonDefaults.buttonColors(containerColor = colors.danger)
                             ) {
-                                Text("Leállítás", color = colors.dangerText, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Text(strings.getString(R.string.native_health_ble_stop), color = colors.dangerText, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
                         } else {
                             Button(
@@ -440,7 +448,7 @@ fun BleDiscoveryTabContent(
                             ) {
                                 Icon(Icons.Default.BluetoothSearching, contentDescription = null, tint = colors.onAccent)
                                 Spacer(Modifier.width(4.dp))
-                                Text("Keresés (60 mp)", color = colors.onAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Text(strings.getString(R.string.native_health_ble_scan), color = colors.onAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -454,7 +462,7 @@ fun BleDiscoveryTabContent(
                             trackColor = colors.card2
                         )
                         Spacer(Modifier.height(4.dp))
-                        Text("${ble.scanRemainingSeconds} mp van hátra", color = colors.muted, fontSize = 10.sp)
+                        Text(strings.getString(R.string.native_health_ble_remaining, ble.scanRemainingSeconds), color = colors.muted, fontSize = 10.sp)
                     }
                 }
             }
@@ -475,9 +483,9 @@ fun BleDiscoveryTabContent(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(ble.deviceName.ifBlank { "Csatlakoztatott óra" }, color = colors.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            Text(ble.deviceName.ifBlank { strings.getString(R.string.native_health_ble_connected_watch) }, color = colors.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                             TextButton(onClick = { bleRepo.disconnect() }) {
-                                Text("Bontás", color = colors.dangerText, fontSize = 11.sp)
+                                Text(strings.getString(R.string.native_health_ble_disconnect), color = colors.dangerText, fontSize = 11.sp)
                             }
                         }
                         Spacer(Modifier.height(10.dp))
@@ -485,13 +493,13 @@ fun BleDiscoveryTabContent(
                             // 0x2A37 Élő Pulzus
                             Card(modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = colors.card)) {
                                 Column(modifier = Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("Élő pulzus (0x2A37)", color = colors.muted, fontSize = 10.sp)
+                                    Text(strings.getString(R.string.native_health_ble_heart_rate), color = colors.muted, fontSize = 10.sp)
                                     Spacer(Modifier.height(4.dp))
                                     Text(if (ble.liveHeartRateBpm != null) "${ble.liveHeartRateBpm} bpm" else "—", color = Color(0xFFEF5350), fontSize = 22.sp, fontWeight = FontWeight.Bold)
                                     if (ble.heartSupported && ble.state != "monitoring") {
                                         Spacer(Modifier.height(6.dp))
                                         OutlinedButton(onClick = { bleRepo.startHeartRate() }) {
-                                            Text("Figyelés", fontSize = 10.sp)
+                                            Text(strings.getString(R.string.native_health_ble_listen), fontSize = 10.sp)
                                         }
                                     }
                                 }
@@ -499,13 +507,13 @@ fun BleDiscoveryTabContent(
                             // RDFit Lépés & Akkumulátor
                             Card(modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = colors.card)) {
                                 Column(modifier = Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("RDFit mérés (0xED)", color = colors.muted, fontSize = 10.sp)
+                                    Text(strings.getString(R.string.native_health_ble_rd_fit), color = colors.muted, fontSize = 10.sp)
                                     Spacer(Modifier.height(4.dp))
-                                    Text(if (ble.rdfitProbe.stepsCount != null) "${ble.rdfitProbe.stepsCount} lépés" else if (ble.rdfitProbe.batteryPercent != null) "${ble.rdfitProbe.batteryPercent}%" else "—", color = colors.accentText, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                    Text(if (ble.rdfitProbe.stepsCount != null) strings.getString(R.string.native_health_ble_steps_count, ble.rdfitProbe.stepsCount) else if (ble.rdfitProbe.batteryPercent != null) "${ble.rdfitProbe.batteryPercent}%" else "—", color = colors.accentText, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                                     if (ble.probeSupported && ble.state != "probing") {
                                         Spacer(Modifier.height(6.dp))
                                         OutlinedButton(onClick = { bleRepo.readRdfitData() }) {
-                                            Text("Lekérdezés", fontSize = 10.sp)
+                                            Text(strings.getString(R.string.native_health_ble_request), fontSize = 10.sp)
                                         }
                                     }
                                 }
@@ -518,14 +526,14 @@ fun BleDiscoveryTabContent(
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(containerColor = colors.accent)
                             ) {
-                                Text("Óra megjegyzése", color = colors.onAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Text(strings.getString(R.string.native_health_ble_remember), color = colors.onAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
                             if (ble.rememberedWatchPresent) {
                                 Button(
                                     onClick = { bleRepo.forgetWatch() },
                                     colors = ButtonDefaults.buttonColors(containerColor = colors.danger)
                                 ) {
-                                    Text("Elfelejtés", color = colors.dangerText, fontSize = 11.sp)
+                                    Text(strings.getString(R.string.native_health_ble_forget), color = colors.dangerText, fontSize = 11.sp)
                                 }
                             }
                         }
@@ -547,8 +555,8 @@ fun BleDiscoveryTabContent(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Háttérbeli lépésszinkron (BLE)", color = colors.text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                        Text("A kiválasztott RDFit óra lépésszámának 5 percenkénti frissítése", color = colors.muted, fontSize = 11.sp)
+                        Text(strings.getString(R.string.native_health_ble_background), color = colors.text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        Text(strings.getString(R.string.native_health_ble_background_help), color = colors.muted, fontSize = 11.sp)
                         val text = com.repforge.app.ui.text.nativeResources(LocalContext.current, state.language)
                         Text(text.getString(backgroundReasonResource(state.bleBackgroundBlock)),
                             color = if (state.bleBackgroundBlock == BackgroundBlock.READY) colors.muted else colors.dangerText,
@@ -569,7 +577,7 @@ fun BleDiscoveryTabContent(
 
         // Talált eszközök listája (#111 .tp111-ble)
         item {
-            Text("Felfedezett eszközök (${ble.devices.size})", color = colors.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text(strings.getString(R.string.native_health_ble_found, ble.devices.size), color = colors.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
         }
         items(ble.devices, key = { it.id }) { dev ->
             Card(
@@ -584,17 +592,17 @@ fun BleDiscoveryTabContent(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(dev.name.ifBlank { "Névtelen eszköz" }, color = colors.text, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                        Text("${dev.displayAddress} • RSSI: ${dev.rssi} dBm", color = colors.muted, fontSize = 11.sp)
+                        Text(dev.name.ifBlank { strings.getString(R.string.native_health_ble_unnamed_device) }, color = colors.text, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        Text(strings.getString(R.string.native_health_ble_rssi, dev.displayAddress, dev.rssi), color = colors.muted, fontSize = 11.sp)
                         if (dev.remembered) {
-                            Text("★ Megjegyzett óra", color = colors.accent2, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            Text(strings.getString(R.string.native_health_ble_saved), color = colors.accent2, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                     Button(
                         onClick = { bleRepo.connect(dev.id) },
                         colors = ButtonDefaults.buttonColors(containerColor = colors.card2)
                     ) {
-                        Text("Kapcsolódás", color = colors.accentText, fontSize = 11.sp)
+                        Text(strings.getString(R.string.native_health_ble_connect), color = colors.accentText, fontSize = 11.sp)
                     }
                 }
             }

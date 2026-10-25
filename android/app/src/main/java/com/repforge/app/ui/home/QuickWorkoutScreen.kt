@@ -16,6 +16,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.repforge.app.R
+import com.repforge.app.ui.text.nativeResources
 import com.repforge.app.NativeOutdoorStart
 import com.repforge.app.NativeExerciseFavorites
 import com.repforge.app.NativeExerciseDemo
@@ -55,10 +57,11 @@ internal fun QuickWorkoutScreen(outdoorOnly: Boolean, starting: Boolean,
             }
             favorites = loaded?.third.orEmpty().toSet()
         } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
-        catch (_: Exception) { error = "A gyakorlatkönyvtár nem tölthető be. Az edzésadatok nem változtak." }
+        catch (_: Exception) { error = nativeResources(context, loaded?.second?.language ?: "hu").getString(R.string.native_quick_library_error) }
     }
     val settings = loaded?.second ?: TrainPilotUserSettings()
-    val text = quickWords(settings.language)
+    val resources = remember(context, settings.language) { nativeResources(context, settings.language) }
+    val text = quickWords(resources)
     fun name(ex: ExerciseLibraryEntity) = when (settings.language) {
         "en" -> ex.nameEn; "de" -> ex.nameDe; "ro" -> ex.nameRo; else -> ex.nameHu
     }.ifBlank { ex.nameHu }
@@ -77,7 +80,7 @@ internal fun QuickWorkoutScreen(outdoorOnly: Boolean, starting: Boolean,
         Text(text[2], color = colors.muted)
         OutlinedTextField(value = query, onValueChange = { query = it }, label = { Text(text[3]) },
             modifier = Modifier.fillMaxWidth().testTag("exercise_search"), enabled = !starting, singleLine = true)
-        val favText = quickFavoriteWords(settings.language)
+        val favText = quickFavoriteWords(resources)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(selected = favoritesOnly, onClick = { favoritesOnly = !favoritesOnly },
                 enabled = !starting, label = { Text(favText[0]) }, modifier = Modifier.testTag("exercise_favorites_filter"))
@@ -123,7 +126,7 @@ internal fun QuickWorkoutScreen(outdoorOnly: Boolean, starting: Boolean,
     }
     selected?.let { ex ->
         val demo = remember(ex) { NativeExerciseDemo.resolve(ex) }
-        val demoWords = quickDemoWords(settings.language)
+        val demoWords = quickDemoWords(resources)
         AlertDialog(onDismissRequest = { if (!starting) selected = null }, title = { Text(name(ex)) }, text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(text[6])
@@ -162,27 +165,32 @@ internal fun QuickWorkoutScreen(outdoorOnly: Boolean, starting: Boolean,
 private fun searchKey(value: String) = Normalizer.normalize(value, Normalizer.Form.NFD)
     .replace(Regex("\\p{M}+"), "").lowercase(java.util.Locale.ROOT).trim()
 
-private fun quickWords(language: String): List<String> = when (language) {
-    "en" -> listOf("Quick workout", "Outdoor workout", "Choose the first exercise. Add more during the workout.", "Search exercises", "No matching exercise.", "Cancel", "Starts a new quick workout with this exercise.", "Record GPS route", "Remembered for this activity. Starts only on explicit workout start.", "GPS points stay in private storage, outside cloud backups.", "Precise location permission and system location must be enabled. The workout remains available without GPS.", "Start workout", "Starting…")
-    "de" -> listOf("Schnelltraining", "Training im Freien", "Erste Übung wählen. Weitere Übungen im Training hinzufügen.", "Übungen suchen", "Keine passende Übung.", "Abbrechen", "Startet ein neues Schnelltraining mit dieser Übung.", "GPS-Route aufzeichnen", "Für diese Aktivität gespeichert. Startet nur beim ausdrücklichen Trainingsstart.", "GPS-Punkte bleiben im privaten Speicher, ohne Cloud-Sicherung.", "Genauer Standort und Systemstandort müssen aktiviert sein. Das Training bleibt ohne GPS verfügbar.", "Training starten", "Startet…")
-    "ro" -> listOf("Antrenament rapid", "Antrenament în aer liber", "Alege primul exercițiu. Poți adăuga altele în timpul antrenamentului.", "Caută exerciții", "Niciun exercițiu găsit.", "Anulează", "Începe un antrenament rapid nou cu acest exercițiu.", "Înregistrează traseul GPS", "Memorat pentru această activitate. Pornește doar la începerea explicită a antrenamentului.", "Punctele GPS rămân în spațiul privat, fără copii cloud.", "Locația precisă și locația sistemului trebuie activate. Antrenamentul rămâne disponibil fără GPS.", "Începe antrenamentul", "Se pornește…")
-    else -> listOf("Gyors edzés", "Szabadtéri edzés", "Válaszd ki az első gyakorlatot. Edzés közben továbbiakat is hozzáadhatsz.", "Gyakorlat keresése", "Nincs megfelelő gyakorlat.", "Mégse", "Új gyors edzést indít ezzel a gyakorlattal.", "GPS-útvonal rögzítése", "Ehhez a mozgáshoz megjegyezzük. Csak kifejezett edzésindításkor kapcsol be.", "A GPS-pontok privát tárhelyen maradnak, felhőmentés nélkül.", "Pontos helyengedély és bekapcsolt rendszerhely szükséges. Az edzés GPS nélkül is használható.", "Edzés indítása", "Indítás…")
-}
+private fun quickWords(res: android.content.res.Resources): List<String> = listOf(
+    res.getString(R.string.native_quick_label_00),
+    res.getString(R.string.native_quick_label_01),
+    res.getString(R.string.native_quick_label_02),
+    res.getString(R.string.native_quick_label_03),
+    res.getString(R.string.native_quick_label_04),
+    res.getString(R.string.native_quick_label_05),
+    res.getString(R.string.native_quick_label_06),
+    res.getString(R.string.native_quick_label_07),
+    res.getString(R.string.native_quick_label_08),
+    res.getString(R.string.native_quick_label_09),
+    res.getString(R.string.native_quick_label_10),
+    res.getString(R.string.native_quick_label_11),
+    res.getString(R.string.native_quick_label_12)
+)
 
-private fun quickFavoriteWords(language: String) = when (language) {
-    "en" -> listOf("Favorites", "Add to favorites", "Remove from favorites", "Could not save favorite; retry.")
-    "de" -> listOf("Favoriten", "Als Favorit markieren", "Aus Favoriten entfernen", "Favorit konnte nicht gespeichert werden. Erneut versuchen.")
-    "ro" -> listOf("Favorite", "Adaugă la favorite", "Elimină din favorite", "Favoritul nu a fost salvat. Încearcă din nou.")
-    else -> listOf("Kedvencek", "Kedvencekhez", "Eltávolítás a kedvencekből", "A kedvenc mentése sikertelen. Próbáld újra.")
-}
+private fun quickFavoriteWords(res: android.content.res.Resources): List<String> = listOf(
+    res.getString(R.string.native_quick_favorite_00),
+    res.getString(R.string.native_quick_favorite_01),
+    res.getString(R.string.native_quick_favorite_02),
+    res.getString(R.string.native_quick_favorite_03)
+)
 
-private fun quickDemoWords(language: String) = when (language) {
-    "en" -> listOf("Watch demonstration video", "Search YouTube (not a confirmed video)",
-        "This is a search, not an identified video.", "Unable to open the video.")
-    "de" -> listOf("Übungsvideo öffnen", "Auf YouTube suchen (kein bestätigtes Video)",
-        "Dies ist eine Suche, kein identifiziertes Video.", "Video konnte nicht geöffnet werden.")
-    "ro" -> listOf("Deschide videoclipul demonstrativ", "Caută pe YouTube (videoclip neconfirmat)",
-        "Aceasta este o căutare, nu un videoclip identificat.", "Videoclipul nu poate fi deschis.")
-    else -> listOf("Bemutatóvideó megnyitása", "YouTube-keresés (nem ellenőrzött videó)",
-        "Ez keresés, nem konkrét bemutatóvideó.", "A videó nem nyitható meg.")
-}
+private fun quickDemoWords(res: android.content.res.Resources): List<String> = listOf(
+    res.getString(R.string.native_quick_demo_00),
+    res.getString(R.string.native_quick_demo_01),
+    res.getString(R.string.native_quick_demo_02),
+    res.getString(R.string.native_quick_demo_03)
+)
