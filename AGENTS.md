@@ -85,7 +85,9 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
 ## Új külön chat átadók – három elkülönített csomag
 
 - A felhasználó új, teljes GitHub-hozzáférésű külön chateknek kérte a maradék
-  három funkciót; promptok elkészítve, indulás/eredmény még nem igazolt.
+  három funkciót; 2026-10-25-én megerősítette, hogy mindhárom külön munka
+  elindult. Eredmény/új PR még nem érkezett. A fő munkás a limit miatti
+  felhasználói szünetet tartja; később a visszaérkező exact PR-ok review-ja következik.
   Bázis0a5abbeb3b95cede671df39a3f8d09dc4ab8ec20, mindenki saját ág/draft PR,
   nincs main/migráció írás vagy belső subagent.
 - A: docs/plans/NATIVE_CARDIO_BINDING_HANDOFF.md, feat/native-cardio-progress-ui.

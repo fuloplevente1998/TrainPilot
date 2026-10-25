@@ -151,7 +151,8 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
 ## Következő konkrét lépések
 
 1. A három fennmaradó auditcsomagra új külön chat prompt készült, bázis0a5abbe,
-   indulás/eredmény még nem igazolt: plans/NATIVE_CARDIO_BINDING_HANDOFF.md
+   a felhasználó mindhárom indulását2026-10-25-én megerősítette, eredmény/PR
+   még nincs: plans/NATIVE_CARDIO_BINDING_HANDOFF.md
    (Progress+DAO), NATIVE_TRAINING_MODES_HANDOFF.md (settings/Coach/explicit
    proposal), NATIVE_HEALTH_AUTO_REFRESH_HANDOFF.md (HealthDashboard/napi SDK).
    Saját feat/native-* ágak, draft célmigration. Pontos diszjunkt fájlhatárok
@@ -172,3 +173,12 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
 5. Batch végén közös GitHub JVM/Compose/Wear/R8/signer/upgrade kapu ugyanazon
    appforráson, majd valódi képek és fizikai telefon/Watch7. Ne jelöljünk késznek
    funkciót pusztán fájl/tesztkód miatt. Élő adatok fölé APK még nem adható.
+
+## Felhasználói szünet – 2026-10-25
+
+Az5órás limit miatt a felhasználó később jelez. Mindhárom külső új feladat
+elindult (A kardió, B módok/progresszió, C autoHealth), saját ágakon. Root most
+nem kezd új kódot és nem ír a kijelölt fájlterületekre. Következő esemény az új
+PR-ok/eredmények beérkezése; exact base/head/delta és integrált tesztkód review,
+nem vak merge. Legutóbbi app-/tesztforrás880026f,580 JVM+52 UI UNRUN,
+main/verzió/élő frissítés STOP, teljes kapu változatlanul hátra.

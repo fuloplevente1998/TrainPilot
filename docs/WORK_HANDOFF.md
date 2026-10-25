@@ -8,7 +8,9 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
 Felhasználó Sol6/5.6 külön chateknek kér promptot, teljes GitHub-hozzáféréssel.
 Három standalone MD készült pinned **0a5abbeb3b95cede671df39a3f8d09dc4ab8ec20**
-bázisra; indulás/eredmény még nem igazolt. [A kardió bekötés](plans/NATIVE_CARDIO_BINDING_HANDOFF.md),
+bázisra. A felhasználó2026-10-25-én megerősítette: mindhárom külön munka
+elindult; új PR/eredmény még nem érkezett. Az5órás limit miatt Root szünetel,
+később a visszaérkező PR-ok exact review-ja/integrációja következik. [A kardió bekötés](plans/NATIVE_CARDIO_BINDING_HANDOFF.md),
 [B módok/progresszió](plans/NATIVE_TRAINING_MODES_HANDOFF.md),
 [C foreground autoHealth](plans/NATIVE_HEALTH_AUTO_REFRESH_HANDOFF.md).
 Saját három ág, draft célmigration, köztes skipci, nincs main/version/schema/
