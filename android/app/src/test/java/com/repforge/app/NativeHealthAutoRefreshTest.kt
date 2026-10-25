@@ -38,6 +38,24 @@ class NativeHealthAutoRefreshTest {
         assertNotNull(gate.begin(NativeHealthAutoRefreshGate.Trigger.AUTO, 600_200, true, true, true, today))
     }
 
+    @Test fun partialReadGrantIsAdmittedWithoutInventingMissingMetrics() {
+        // permitted means at least one real provider read permission; partial fields remain the provider's responsibility.
+        val gate = NativeHealthAutoRefreshGate()
+        val partial = gate.begin(NativeHealthAutoRefreshGate.Trigger.AUTO, 10L, true, true, true, today)
+        assertNotNull(partial)
+        gate.finish(partial!!)
+        val missing = gate.begin(NativeHealthAutoRefreshGate.Trigger.MANUAL, 20L, true, false, true, today)
+        assertNull(missing)
+    }
+
+    @Test fun failedAttemptStillThrottlesAutomaticRetryButManualIsImmediate() {
+        val gate = NativeHealthAutoRefreshGate()
+        val attempt = gate.begin(NativeHealthAutoRefreshGate.Trigger.AUTO, 5_000L, true, true, true, today)!!
+        gate.finish(attempt) // failure is reported by the provider; it must never be fabricated as success
+        assertNull(gate.begin(NativeHealthAutoRefreshGate.Trigger.AUTO, 5_001L, true, true, true, today))
+        assertNotNull(gate.begin(NativeHealthAutoRefreshGate.Trigger.MANUAL, 5_002L, true, true, true, today))
+    }
+
     @Test fun concurrentTriggersCannotStartTwoProviderRequests() {
         val gate = NativeHealthAutoRefreshGate()
         val auto = gate.begin(NativeHealthAutoRefreshGate.Trigger.AUTO, 1L, true, true, true, today)!!
