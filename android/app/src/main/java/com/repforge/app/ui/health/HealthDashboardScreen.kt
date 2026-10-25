@@ -107,7 +107,10 @@ fun HealthDashboardScreen(
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_RESUME -> viewModel.healthScreenVisible(activity)
-                Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP -> viewModel.healthScreenHidden(activity)
+                // Samsung's explicit permission dialog can pause the activity briefly.
+                // Foreground SDK publication is independently guarded by RESUMED; do not
+                // cancel the in-flight permission request until STOP or destination disposal.
+                Lifecycle.Event.ON_STOP -> viewModel.healthScreenHidden(activity)
                 else -> Unit
             }
         }
