@@ -225,7 +225,7 @@ fun HealthJournalTabContent(
     state: HealthDashboardUiState,
     onSelectProvider: (String) -> Unit,
     onToggleHcBackground: (Boolean) -> Unit,
-    onAutoOnOpen: (Boolean) -> Unit = {},
+    onAutoOnOpen: (Boolean) -> Unit,
     onRefresh: () -> Unit,
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
