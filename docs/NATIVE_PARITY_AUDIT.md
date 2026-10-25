@@ -1,10 +1,10 @@
 # Natív migráció – funkcióegyezési ellenőrzés
 
-Friss kódállapot2026-10-25:2ff85ad. Home target/start/invalidation e915bd9,
+Friss kódállapot2026-10-25:880026f. Home target/start/invalidation e915bd9,
 workout HC panel/explicit refresh0a69035, #243 date range1864a8c/c611cc7 kódban
 bekötve, a korábbi Journal/Rx mellé. Gemini cardio math5aacc8a/0f8bb70 csak mag,
 DAO/UI nincs; nyelvi auditok23 felirata pontosítva. Reviewk és aktuális #242
-triage a reviews könyvtárban. **Batch579 új JVM+52 Phone UI NEM FUTOTT**.
+triage a reviews könyvtárban. **Batch580 új JVM+52 Phone UI NEM FUTOTT**.
 Friss teljes CI/APK/kép nincs, utolsó zöld dd4cc27/40072751592. A lenti régi
 kapueredmények történeti SHA-pillanatképek, nem az új forrás bizonyítékai.
 

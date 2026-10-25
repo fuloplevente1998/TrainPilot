@@ -85,7 +85,7 @@ prescription JSON-t, nem parse-olja a teljes programot minden sorhoz.
 - Két külső nyelvi audit →2ff85ad,23 szöveg javítva, offset/DST és runtime
   állítások review-zva; részletek a három integrációs review-ban.
 
-**Batch579 JVM+52 Phone UI NEM FUTOTT**. Csak static/source és a pontos main JS
+**Batch580 JVM+52 Phone UI NEM FUTOTT**. Csak static/source és a pontos main JS
 hat referenciaesete futott Node-ban; ez nem Kotlin/Room/Compose/SDK-bizonyíték.
 Az audit7 hiányából4 kódban pótolva,3 funkcionális csomag marad:
 

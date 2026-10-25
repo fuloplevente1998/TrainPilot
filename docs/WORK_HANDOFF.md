@@ -4,9 +4,16 @@ Frissítve: **2026-10-25**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## IO programmentés guard – 2026-10-25
+
+19ddf80/880026f: a NativeProgramEditor guard immár Main.immediate-en olvassa
+az execution store-t, miközben a UI mentés/törlés IO-n marad. Új1 tényleges
+IO-entry regressziós JVM-kód, még nem futott. Aktuális kód880026f, batch580 JVM+
+52 Phone UI UNRUN. A lentiek részletes korábbi blokkok, nem új futási eredmények.
+
 ## Home/HC bekötés, #243 és Gemini/Flash eredmények – 2026-10-25
 
-Aktuális alkalmazás-/tesztforrás **2ff85ad**. Home e915bd9 a meglévő Coach-
+Aktuális alkalmazás-/tesztforrás **880026f**. Home e915bd9 a meglévő Coach-
 kiválasztást és teljes program/day/schedule starttuple-t használja, valós Room/
 settings invalidationnel, helyi resume/date/time/zone frissítéssel, IO/cancel és
 üres/hiba állapotokkal. Scalar helyinapi count marad; nincs A/4/defaultprogram
@@ -27,7 +34,7 @@ ez referencia, nem új Kotlin működési bizonyíték. Két nyelvi audit forrá
 ellenőrizve,23 szöveg2ff85ad-ben javítva; DST-offset és runtime-állítások nem
 átvéve vakon. Eredeti auditok és integrációs döntések a reviews könyvtárban.
 
-**Batch579 JVM+52 Phone UI NEM FUTOTT**. Lexical/diff/XML/key/format/R-ref és
+**Batch580 JVM+52 Phone UI NEM FUTOTT**. Lexical/diff/XML/key/format/R-ref és
 hívási/lock/CAS/SQL szerződés ellenőrzés volt. Nincs új Kotlin/Room/Compose/
 SDK-futás, CI/APK/kép; dd4cc27/40072751592 az utolsó teljes zöld. Az audit7
 hiányából4 kódban pótolva; cardio bekötés, modes és foregroundauto nyitott,

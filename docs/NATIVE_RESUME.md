@@ -21,7 +21,11 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
 
 ## Legújabb alkalmazásforrás
 
-- **Aktuális app/tesztforrás2ff85ad**, összesen **579 új JVM+52 Phone UI
+- **19ddf80/880026f:** NativeProgramEditor active guard Main.immediate-re vált,
+  mert a valódi UI IO-ból hívja a mentést/törlést, a canonical store main-looperes.
+  Új valódi IO→Main→Room save/delete JVM-regressziós kód, NEM FUTOTT. Settings
+  argumentum a tényleges delete signature szerint. Nem UI-/adatmodell-változtatás.
+- **Aktuális app/tesztforrás880026f**, összesen **580 új JVM+52 Phone UI
   tesztkód NEM FUTOTT**. Új CI/APK/kép nincs, utolsó teljes zöld dd4cc27 marad.
 - **e915bd9 Home:** meglévő NativeCoachTargets ugyanazon Room snapshot/program-
   katalógus alapján; naptárból más program is lehet a cél. ProgramId/dayId/
@@ -123,7 +127,7 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
 
 ## Bizonyíték és külső ágak
 
-- **Batch579 új JVM +52 Phone UI tesztkód NEM FUTOTT** (545+5+7+7+9+6 /49+1+1+1).
+- **Batch580 új JVM +52 Phone UI tesztkód NEM FUTOTT** (545+5+7+7+9+6+1 /49+1+1+1).
   Helyben csak lexical delimiter, diff, XML/kulcs/format/import/R-ref és pontos
   forrássorrend/kiemelési diff ellenőrzés volt. Nem Kotlin/Room/Compose/Google.
 - Migrációs ág utolsó teljes zöldje továbbra dd4cc27, Actions40072751592:
