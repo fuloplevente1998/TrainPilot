@@ -93,6 +93,16 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
     private var screenGeneration = 0L
     private var providerJob: Job? = null
     private var samsungPermissionPending = false
+    private var healthRecordDetailVisible = false
+
+    fun healthRecordDetailChanged(visible: Boolean) {
+        if (healthRecordDetailVisible == visible) return
+        healthRecordDetailVisible = visible
+        invalidateRefresh()
+        if (!visible && screenVisible) screenActivity?.get()?.let {
+            launchRefresh(it, NativeHealthAutoRefreshGate.Trigger.AUTO)
+        }
+    }
 
     private fun invalidateRefresh() {
         screenGeneration++
@@ -108,7 +118,7 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
             screenVisible = true
             screenActivity = WeakReference(activity)
         }
-        if (!_uiState.value.historyLoading && _uiState.value.activeTab == "journal") {
+        if (!_uiState.value.historyLoading && _uiState.value.activeTab == "journal" && !healthRecordDetailVisible) {
             launchRefresh(activity, NativeHealthAutoRefreshGate.Trigger.AUTO)
         }
     }
@@ -201,7 +211,7 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
                         page.selected.optJSONArray("sleepSessions")?.length() ?: 0),
                     hcSupported = access[0], hcGranted = access[1], samsungInstalled = access[2], samsungAvailable = access[3])
                 // The first visible open can occur while preferences are still loading.
-                if (screenVisible && _uiState.value.activeTab == "journal") {
+                if (screenVisible && _uiState.value.activeTab == "journal" && !healthRecordDetailVisible) {
                     screenActivity?.get()?.let { launchRefresh(it, NativeHealthAutoRefreshGate.Trigger.AUTO) }
                 }
             } catch (cancelled: CancellationException) { throw cancelled }
@@ -294,7 +304,7 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
         requestSamsungPermission: Boolean = false
     ) {
         if (!screenVisible || screenActivity?.get() !== activity ||
-            _uiState.value.activeTab != "journal" ||
+            _uiState.value.activeTab != "journal" || healthRecordDetailVisible ||
             (trigger == NativeHealthAutoRefreshGate.Trigger.AUTO && samsungPermissionPending)) return
         val previous = providerJob
         if (previous != null && !previous.isCompleted) {
@@ -337,7 +347,8 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
                 _uiState.update { it.copy(healthRefreshing = true) }
                 val guard = {
                     check(screenVisible && screenActivity?.get() === activity && _uiState.value.activeTab == "journal" &&
-                        historyQuery.day.toString() == selected && screenGeneration == visibleGeneration) {
+                        !healthRecordDetailVisible && historyQuery.day.toString() == selected &&
+                        screenGeneration == visibleGeneration) {
                         "Health screen changed while refreshing"
                     }
                     check(NativeHealthForegroundAdmission.safe(context)) { "Workout or data replacement in progress" }
