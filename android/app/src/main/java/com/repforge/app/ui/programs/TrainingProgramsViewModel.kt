@@ -9,6 +9,9 @@ import com.repforge.app.data.db.ExerciseLibraryEntity
 import com.repforge.app.data.db.ProgramWithDays
 import com.repforge.app.data.db.TrainPilotDatabase
 import com.repforge.app.data.store.TrainPilotSettingsStore
+import com.repforge.app.data.store.NativeTrainingModeChange
+import com.repforge.app.ui.text.nativeResources
+import com.repforge.app.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +28,9 @@ internal data class TrainingProgramsUiState(
     val language: String = "hu",
     val trainingProfileJson: String = "{}",
     val defaultRestSeconds: Int = com.repforge.app.data.store.TrainPilotUserSettings().restSeconds,
+    val trainingModes197Json: String? = null,
+    val modeSaving: Boolean = false,
+    val modeStatus: String? = null,
     val writeFailed: Boolean = false,
     val exerciseChoices: List<ExerciseLibraryEntity> = emptyList(),
     val editorSaving: Boolean = false,
@@ -55,10 +61,40 @@ internal class TrainingProgramsViewModel(application: Application) : AndroidView
                 _uiState.value = _uiState.value.copy(activeProgramId = result.first.activeProgramId,
                     language = result.first.language, trainingProfileJson = result.first.profileJson,
                     defaultRestSeconds = result.first.restSeconds,
+                    trainingModes197Json = result.first.trainingModes197Json,
                     programs = result.second,
                     exerciseChoices = result.third, writeFailed = false)
             } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
             catch (_: Exception) { _uiState.value = _uiState.value.copy(writeFailed = true) }
+        }
+    }
+
+    fun approveTrainingMode(preview: NativeTrainingModeChange.Preview) = changeTrainingMode {
+        NativeTrainingModeChange.approve(settingsStore, preview)
+    }
+
+    fun undoTrainingMode(programId: String) = changeTrainingMode {
+        NativeTrainingModeChange.undo(settingsStore, "program", programId)
+    }
+
+    fun clearModeStatus() { _uiState.value = _uiState.value.copy(modeStatus = null) }
+
+    private fun changeTrainingMode(change: suspend () -> Boolean) {
+        if (_uiState.value.modeSaving) return
+        _uiState.value = _uiState.value.copy(modeSaving = true, modeStatus = null)
+        viewModelScope.launch {
+            try {
+                val success = withContext(Dispatchers.IO) { change() }
+                val fresh = settingsStore.current()
+                _uiState.value = _uiState.value.copy(
+                    activeProgramId = fresh.activeProgramId, trainingModes197Json = fresh.trainingModes197Json,
+                    modeStatus = nativeResources(context, fresh.language).getString(
+                        if (success) R.string.native_modes_saved else R.string.native_modes_error))
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (_: Exception) {
+                _uiState.value = _uiState.value.copy(modeStatus =
+                    nativeResources(context, _uiState.value.language).getString(R.string.native_modes_error))
+            } finally { _uiState.value = _uiState.value.copy(modeSaving = false) }
         }
     }
 
