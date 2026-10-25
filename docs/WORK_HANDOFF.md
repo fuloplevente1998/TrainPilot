@@ -9,7 +9,9 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 Felhasználó jóváhagyta: külön ChatGPT-beszélgetés dolgozhat a telefonos UI
 megmaradt HU/EN/DE/RO feliratain a **feat/native-ui-localization** ágon,
 **958907c** alkalmazásbázisból. Az ág ellenőrzéskor már létezett ezen a refen;
-idegen fejlesztési commitot nem írtunk felül. Pontos megengedett fájlok,
+a dokumentáció publikálása közben a másik munkás már új lokalizációs commitokat
+pusholt (ellenőrzött pillanatkép bea5192). Emiatt erre az ágra mi nem írtunk;
+az átadó a migrációs ágon elérhető. Pontos megengedett fájlok,
 átfedés- és fordítási szabályok, riport/draft PR/patch átadás:
 [delegálási feladat](plans/NATIVE_UI_LOCALIZATION_HANDOFF.md). AGENTS szűk
 ágkivétellel bővült; nem belső subagent-indítás. A fő migrációs agentnél marad

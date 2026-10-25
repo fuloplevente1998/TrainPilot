@@ -32,8 +32,10 @@ Részletes, másik beszélgetésnek átadható feladat:
 [lokalizációs átadó](plans/NATIVE_UI_LOCALIZATION_HANDOFF.md).
 A fő agent cloud-fotó/backup/szinkron/törlési replay
 munkát folytat; lefoglalt UI/resource fájlokat lehetőleg nem ír. Külső eredmény
-külön draft PR/patch, célág migráció, integráció csak review után. Ez még kiosztás,
-nem kész lokalizáció/teszteredmény; natív kód és418+42 nem futott tesztkód változatlan.
+külön draft PR/patch, célág migráció, integráció csak review után. A másik ágon
+közben lokalizációs commitok jelentek meg (bea5192 pillanatkép), ezért azt nem
+módosítottuk; átadó a migrációs ágban. Ez nem kész lokalizáció/teszteredmény;
+natív kód és418+42 nem futott tesztkód változatlan.
 
 ## Legújabb streaming PR-adatút – 2026-10-25
 
