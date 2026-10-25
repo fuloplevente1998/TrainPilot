@@ -35,6 +35,7 @@ class NativeLocalizationSafetyUiTest {
             runBlocking(Dispatchers.IO) { fixture.database.programDao().getProgramIds() }
         val originalWorkouts =
             runBlocking(Dispatchers.IO) { fixture.database.workoutHistoryDao().getWorkoutCount() }
+        val storedProfileBefore = fixture.profileJson().toString()
 
         scenario = fixture.launch()
         compose.waitUntil(30_000) {
@@ -67,7 +68,7 @@ class NativeLocalizationSafetyUiTest {
             runBlocking(Dispatchers.IO) { fixture.database.programDao().getProgramIds() })
         assertEquals(originalWorkouts,
             runBlocking(Dispatchers.IO) { fixture.database.workoutHistoryDao().getWorkoutCount() })
-        assertEquals(originalProfile.toString(), fixture.profileJson().toString())
+        assertEquals(storedProfileBefore, fixture.profileJson().toString())
         assertFalse(fixture.currentWorkout()?.optBoolean("active") == true)
         assertEquals("de", fixture.selectedLanguage())
     }
