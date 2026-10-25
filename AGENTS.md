@@ -96,6 +96,9 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
   folytatódik, következő lépés az exact diff review, nem automatikus merge.
   Bázis0a5abbeb3b95cede671df39a3f8d09dc4ab8ec20, mindenki saját ág/draft PR,
   nincs main/migráció írás vagy belső subagent.
+- A későbbi exact forrásreview elkészült: docs/reviews/NATIVE_PARALLEL_PR245_PR246_REVIEW.md.
+  #245 öt javítandó megállapítás, #246 időfüggő heti frissítés hiány;11+15 kardiós
+  JVM valós XML-ből ellenőrzött PASS. Nem történt kódjavítás/integráció/új CI.
 - A: docs/plans/NATIVE_CARDIO_BINDING_HANDOFF.md, feat/native-cardio-progress-ui.
   Progress UI/VM/query +DAO és új projection DTO. Math mag csak olvasható.
 - B: docs/plans/NATIVE_TRAINING_MODES_HANDOFF.md, feat/native-training-modes.

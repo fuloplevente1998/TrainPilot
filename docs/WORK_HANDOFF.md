@@ -4,6 +4,20 @@ Frissítve: **2026-10-25**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## #245/#246 forrásreview kész – 2026-10-25
+
+Review: [NATIVE_PARALLEL_PR245_PR246_REVIEW.md](reviews/NATIVE_PARALLEL_PR245_PR246_REVIEW.md).
+Exact #2452ff2985-ben öt javítandó pont: public VM/internal Preview láthatóság,
+IO→main-only mode-save/undo, IO→canonical weight commit, global picker helytelen
+programoverride és mainhez képest megengedőbb pure-RIR policy. #246e9eb8cb-nél
+nap/hét/timezone-resume invalidation hiányzik. Kardiós11+15 JVM PASS **valódi XML-ből
+ellenőrizve**. A40238833748 merge-ref62cc08f app/Wear/shared/workflow fái azonosak
+a külső HEAD-del; eltérés csak docs. Phone984/6 fail, Wear167/0; UI/upgrade skipped.
+A hat hiba okait/nyitott vizsgálatait a review külön kezeli; discard fixture már
+prepare revision1 vs record revision0 miatt elbukik a tényleges discard előtt.
+Root kizárólag review/dokumentáció: nincs appjavítás, integráció/merge vagy új CI.
+Következő: izolált hibajavítások, exact új delta, #244 külön review, integrált gate.
+
 ## Két külső eredmény visszaérkezett – 2026-10-25
 
 - Draft #245, `feat/native-training-modes`, exact
