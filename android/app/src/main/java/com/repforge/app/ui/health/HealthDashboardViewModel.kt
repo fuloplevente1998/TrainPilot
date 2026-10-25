@@ -344,6 +344,8 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
                 ticket = refreshGate.begin(trigger, SystemClock.elapsedRealtime(), prepared.second,
                     prepared.third, prepared.third, snapshot) ?: return@launch
                 val activeTicket = ticket!!
+                val day = if (trigger == NativeHealthAutoRefreshGate.Trigger.AUTO) LocalDate.now()
+                    else historyQuery.day
                 _uiState.update { it.copy(healthRefreshing = true) }
                 val guard = {
                     check(screenVisible && screenActivity?.get() === activity && _uiState.value.activeTab == "journal" &&
@@ -352,13 +354,13 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
                         "Health screen changed while refreshing"
                     }
                     check(NativeHealthForegroundAdmission.safe(context)) { "Workout or data replacement in progress" }
+                    if (trigger == NativeHealthAutoRefreshGate.Trigger.AUTO)
+                        check(day == LocalDate.now()) { "Local health day changed while refreshing" }
                     check(refreshGate.isCurrent(activeTicket, snapshot, true, true)) {
                         "Health refresh result is obsolete"
                     }
                     Unit
                 }
-                val day = if (trigger == NativeHealthAutoRefreshGate.Trigger.AUTO) LocalDate.now()
-                    else historyQuery.day
                 // Auto refresh always targets today; the user-selected historical day/filter is never reset.
                 val result = NativeHealthRefresh.readDay(
                     context, activity, day, requestSamsungPermission && trigger == NativeHealthAutoRefreshGate.Trigger.MANUAL,
