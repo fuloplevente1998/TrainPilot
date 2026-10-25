@@ -92,6 +92,7 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
     private var screenVisible = false
     private var screenGeneration = 0L
     private var providerJob: Job? = null
+    private var samsungPermissionPending = false
 
     private fun invalidateRefresh() {
         screenGeneration++
@@ -233,7 +234,9 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
 
     fun setProvider(newProvider: String, activity: Activity? = null) {
         if (newProvider !in setOf(HealthJournalStore.HC, HealthJournalStore.SAMSUNG)) return
+        val previousRead = providerJob
         invalidateRefresh()
+        if (newProvider == HealthJournalStore.SAMSUNG) samsungPermissionPending = true
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) {
@@ -242,15 +245,21 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
                     }
                 }
                 _uiState.update { it.copy(provider = newProvider) }
-                // Manual Samsung selection must retain its explicit permission dialog;
-                // do not let the implicit open/read win the single-operation gate.
-                if (newProvider == HealthJournalStore.SAMSUNG) refresh(activity, requestSamsungPermission = true)
                 loadHealthDashboard()
+                // Explicit provider selection owns the permission prompt even when an old
+                // automatic operation was cancelled while waiting for the SDK.
+                if (newProvider == HealthJournalStore.SAMSUNG) {
+                    previousRead?.join()
+                    samsungPermissionPending = false
+                    refresh(activity, requestSamsungPermission = true)
+                }
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Exception) {
                 val text = com.repforge.app.ui.text.nativeResources(context, _uiState.value.language)
                 _uiState.update { it.copy(statusMessage = text.getString(com.repforge.app.R.string.coach_refresh_failed)) }
                 loadHealthDashboard()
+            } finally {
+                samsungPermissionPending = false
             }
         }
     }
@@ -285,7 +294,8 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
         requestSamsungPermission: Boolean = false
     ) {
         if (!screenVisible || screenActivity?.get() !== activity ||
-            _uiState.value.activeTab != "journal" || providerJob?.isActive == true) return
+            _uiState.value.activeTab != "journal" || providerJob?.isActive == true ||
+            (trigger == NativeHealthAutoRefreshGate.Trigger.AUTO && samsungPermissionPending)) return
         providerJob = viewModelScope.launch {
             var ticket: NativeHealthAutoRefreshGate.Ticket? = null
             try {
