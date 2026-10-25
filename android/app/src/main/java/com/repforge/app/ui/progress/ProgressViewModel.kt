@@ -48,6 +48,7 @@ data class ProgressUiState(
     val loadError: Boolean = false,
     val selectedCardioId: String = NativeCardioModel.ALL_ACTIVITIES,
     val cardio: CardioModelResult? = null,
+    val cardioActivities: List<CardioActivityOption> = emptyList(),
     val cardioLoading: Boolean = true,
     val cardioError: Boolean = false
 )
@@ -140,7 +141,7 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
 
     fun selectCardioActivity(exerciseId: String) {
         if (_uiState.value.selectedCardioId == exerciseId) return
-        _uiState.update { it.copy(selectedCardioId = exerciseId) }
+        _uiState.update { it.copy(selectedCardioId = exerciseId, cardioLoading = true, cardio = null) }
         reloadCardio()
     }
 
@@ -167,7 +168,8 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
                     reloadCardio()
                     return@launch
                 }
-                _uiState.update { it.copy(cardio = result, cardioLoading = false, cardioError = false) }
+                _uiState.update { it.copy(cardio = result, cardioActivities = result.activities,
+                    cardioLoading = false, cardioError = false) }
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Exception) {
                 if (revision == cardioRevision && _uiState.value.selectedCardioId == selected)
