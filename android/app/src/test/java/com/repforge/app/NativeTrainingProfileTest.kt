@@ -132,7 +132,7 @@ class NativeTrainingProfileTest {
         assertNotNull(db.programDao().getProgramWithDaysById(originalProgram.id))
     }
 
-    @Test fun restoreFenceRejectsProfileWrites() = runBlocking {
+    @Test fun restoreFenceRejectsProfileWrites(): Unit = runBlocking {
         context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE)
             .edit().putBoolean("blocked", true).commit()
         try {
