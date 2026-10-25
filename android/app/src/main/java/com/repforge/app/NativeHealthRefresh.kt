@@ -81,6 +81,7 @@ internal object NativeHealthRefresh {
             val guard = {
                 screenGuard()
                 prepared.replacement.requireCurrent(context)
+                check(NativeHealthBackupGate.available()) { "Backup is in progress" }
                 Unit
             }
             val requireCommitIdentity = {
@@ -103,8 +104,10 @@ internal object NativeHealthRefresh {
             val commitRead: ((() -> Unit) -> Unit) = { writer ->
                 runBlocking {
                     NativeDataReplacement.mutate(context) {
-                        requireCommitIdentity()
-                        writer()
+                        NativeHealthBackupGate.publish {
+                            requireCommitIdentity()
+                            writer()
+                        }
                     }
                 }
             }
