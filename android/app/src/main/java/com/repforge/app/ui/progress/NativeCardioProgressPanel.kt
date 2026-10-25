@@ -57,7 +57,7 @@ internal fun NativeCardioProgressPanel(state: ProgressUiState,
                         onSelectActivity(NativeCardioModel.ALL_ACTIVITIES)
                     }
                 }
-                items(model?.activities.orEmpty(), key = { it.exerciseId }) { activity ->
+                items(model?.activities ?: state.cardioActivities, key = { it.exerciseId }) { activity ->
                     CardioChoice(cardioActivityName(state.language, activity),
                         activity.exerciseId == state.selectedCardioId,
                         "progress_cardio_activity_${activity.exerciseId}") {
@@ -113,7 +113,8 @@ internal fun NativeCardioProgressPanel(state: ProgressUiState,
                     if (model.records.isEmpty()) Text(
                         strings.getString(R.string.cardio_progress_no_records),
                         color = colors.muted, modifier = Modifier.testTag("progress_cardio_no_records"))
-                    (if (showAllRecords) model.records else model.records.take(12)).forEach { record ->
+                    val displayedRecords = if (showAllRecords) model.records else model.records.take(12)
+                    displayedRecords.forEach { record ->
                         Column(Modifier.fillMaxWidth()
                             .background(colors.card2, RoundedCornerShape(10.dp)).padding(10.dp)
                             .testTag("progress_cardio_record_${record.exerciseId}_${record.roundedDistanceMeters}")) {
