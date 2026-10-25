@@ -204,9 +204,9 @@ fun TodayMetricsGrid(metrics: TodayMetricsUiModel, language: String = "hu") {
         Triple(strings.getString(R.string.native_home_sleep), metrics.sleepText, "h"),
         Triple(strings.getString(R.string.native_home_active_calories), metrics.caloriesText, "kcal"),
         Triple(strings.getString(R.string.native_home_pulse), metrics.pulseText, "bpm"),
-        Triple(strings.getString(R.string.native_home_steps), metrics.stepsText, "lépés"),
-        Triple(strings.getString(R.string.native_home_today_workout), metrics.workoutCountText, "edzés"),
-        Triple(strings.getString(R.string.native_home_recovery), metrics.recoveryText, " readiness")
+        Triple(strings.getString(R.string.native_home_steps), metrics.stepsText, strings.getString(R.string.native_home_unit_steps)),
+        Triple(strings.getString(R.string.native_home_today_workout), metrics.workoutCountText, strings.getString(R.string.native_home_unit_workouts)),
+        Triple(strings.getString(R.string.native_home_recovery), metrics.recoveryText, strings.getString(R.string.native_home_unit_readiness))
     )
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

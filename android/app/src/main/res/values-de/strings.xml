@@ -645,4 +645,7 @@
     <string name="native_custom_chip_load_cable">Kabelzug</string>
     <string name="native_workout_left_initial">L</string>
     <string name="native_workout_right_initial">R</string>
+    <string name="native_home_unit_steps">Schritte</string>
+    <string name="native_home_unit_workouts">Trainingseinheiten</string>
+    <string name="native_home_unit_readiness">Trainingsbereitschaft</string>
 </resources>
