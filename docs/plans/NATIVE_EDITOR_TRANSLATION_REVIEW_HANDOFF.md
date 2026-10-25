@@ -1,5 +1,9 @@
 # TrainPilot – Gemini Flash fordításellenőrzési átadó
 
+Két külső audit visszaérkezett; közös review és23 feliratjavítás2ff85ad-ben.
+Döntések: ../reviews/NATIVE_EDITOR_TRANSLATION_REVIEW.md. A lenti prompt
+történeti átadó, nem új feladatindítás.
+
 ## Feladat
 
 Kizárólag nyelvi és szövegkövetkezetességi auditot végezz a két új natív

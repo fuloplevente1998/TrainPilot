@@ -1,10 +1,12 @@
 # Gemini AI Studio – elkülönített kardiószámítás
 
 2026-10-25. A felhasználó kérte a külön Gemini-chatnek adható promptot és raw
-linkeket. Az átadó elkészült; az elindítás/eredmény még nincs visszaigazolva.
+linkeket. A két teljes Kotlin-fájl visszaérkezett, import5aacc8a, root parityfix
+0f8bb70. A mellékelt patch hibás/csonka; ne alkalmazd. Review:
+../reviews/NATIVE_CARDIO_INTEGRATION.md. A Room/UI bekötés még hátra.
 Nem belső subagent-felhatalmazás. A fő munkás naplószerkesztést és integrációt végez.
-A többnapos Health-böngészőre külön ChatGPT-prompt is átadva; annak elindítása
-szintén nem igazolt, a fájlhatárokat fenntartjuk az eredményig vagy lemondásig.
+A külön többnapos Health #243 is visszaérkezett és integrálva. A lenti prompt
+történeti átadó, a korábbi fájlfoglalások véget értek.
 
 ## Másolható feladat
 

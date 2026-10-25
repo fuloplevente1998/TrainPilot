@@ -74,14 +74,13 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
   eredeti riportot csak konkrét forráshivatkozáshoz olvasd. Hét forrásszintű hiány,
   ebből program Rx b161126/97f18fd és Journal edit1a9b6d3/6856abe kódban
   pótolva, nem futtatott elfogadás. Külső ágra nem írtunk, PR-merge/lezárás nincs.
-- Új elkülönített promptok a felhasználónak átadva, indulás/eredmény nem igazolt:
-  docs/plans/NATIVE_HEALTH_DATE_RANGE_HANDOFF.md (külön ChatGPT, két Health
-  browser/query fájl +új resource/teszt) és NATIVE_CARDIO_GEMINI_HANDOFF.md
-  (Gemini AI Studio, csak új NativeCardioModel +Test). Bázis9a18ca6, saját
-  test/native-health-date-range és test/native-cardio-model ág, nem main/migráció
-  írás. Ez a két konkrét külső feladat ágkivétel; nem belső subagent-felhatalmazás.
-  Fő munkásnál marad Home/Journal/HC/integráció, közben ne írd a lefoglalt
-  fájlokat/neveket. Exact diff-review kell, nem vak merge vagy késznek jelölés.
+- A három új külső részfeladat visszaérkezett: #243 exact1bf745e Health date
+  range →1864a8c/c611cc7, Gemini teljes cardio .kt fájlok →5aacc8a/0f8bb70,
+  két nyelvi audit →2ff85ad. Reviewk: docs/reviews/NATIVE_HEALTH_DATE_RANGE_INTEGRATION.md,
+  NATIVE_CARDIO_INTEGRATION.md, NATIVE_EDITOR_TRANSLATION_REVIEW.md. A cardio patch
+  csonka, ne alkalmazd; a teljes javított fájlok a mérvadók. Régi fájlfoglalások
+  véget értek, nincs belső subagent. Új külső delta mindig exact refből review,
+  ne integráld újra a régi diffet. Külső PR-merge/lezárás és zöld futás nem történt.
 
 ## Felhasználói thinking-fázisok (2026-10-24)
 

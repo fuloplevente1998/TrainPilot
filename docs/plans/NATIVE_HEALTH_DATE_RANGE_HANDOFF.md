@@ -1,7 +1,9 @@
 # Külön ChatGPT-chat – többnapos egészségrekord-szűrés
 
 2026-10-25. A felhasználónak átadott prompt és rögzített raw források.
-Elindítás/elkészült eredmény még nincs visszaigazolva. Nem belső subagent-kérés.
+Visszaérkezett: draft #243 exact1bf745e, integrálva1864a8c/c611cc7.
+Review: ../reviews/NATIVE_HEALTH_DATE_RANGE_INTEGRATION.md. Nincs futtatott kapu
+vagy GitHub-merge. A lenti prompt történeti átadó, nem új kiosztási kérés.
 
 ## Másolható feladat
 

@@ -14,11 +14,11 @@ elmaradt tesztfuttatás. Ez statikus megerősítés, nem eszközös reprodukció
 | --- | --- | --- |
 | P1 | Naplózott edzés idő-/gyakorlat-/sorozatadatainak utólagos szerkesztése | **1a9b6d3/6856abe** kódban pótolva, futtatás/elfogadás hátra. |
 | P1 | Programgyakorlat sorozat/ismétlés-idő/súly/pihenő/próbasúly szerkesztése | **b161126** kódban pótolva, futtatás/elfogadás hátra. |
-| P2 | Kardió heti táv/tempó/idő és azonos távú rekordok | Nyitott: Progress jelenleg izom/1RM/testsúly út. |
-| P2 | Edzésidőablakhoz kötött HC-részletek és felhasználói frissítés | Nyitott: Journal forrásfül JSON jelenlétét jelzi, nem részletes értéket/refresh-t. |
+| P2 | Kardió heti táv/tempó/idő és azonos távú rekordok | **5aacc8a/0f8bb70** számítási mag kódban; lapozott Room-projekció és Progress UI még nyitott. |
+| P2 | Edzésidőablakhoz kötött HC-részletek és felhasználói frissítés | **0a69035** külön Wear/HC panel és explicit window refresh kódban; SDK/UI-futtatás hátra. |
 | P2 | Globális/programonkénti edzésstílus/progresszió megerősítéssel és undo-val | Nyitott: main trainingModes197 UI és natív effektus útja külön pótlandó. |
 | P2 | Egészségnapló automatikus foreground/on-open frissítés | Nyitott: main autoOnOpen és10perces throttle nem azonos a natív háttérmóddal. |
-| P2 | Nyers egészségrekordok tetszőleges többnapos from/to szűrése | Nyitott: natív record query/browser egy kiválasztott napra épül. |
+| P2 | Nyers egészségrekordok tetszőleges többnapos from/to szűrése | **1864a8c/c611cc7**, külső #243 beemelve; inclusive range/DatePicker/paging kódban, futtatás hátra. |
 
 Ellenőrzött main hívási utak: végső editHistoryWorkout → rf151HistoryEditor /
 rf151SaveHistory; tp107SaveProgramRow → program.prescriptions[exerciseId];
@@ -72,20 +72,30 @@ intervallumpreset már létező adatútját nem minősítjük hiánynak.
 97f18fd a mentésnél egyszer indexeli az exercise-entryket és újrahasználja a
 prescription JSON-t, nem parse-olja a teljes programot minden sorhoz.
 
-## Következő csomagok
+## Legújabb integrációk és következő csomagok
 
-1. A két P1 kódban pótolva; következő Journal-rész az edzéshez kötött HC-panel és
-   explicit refresh. Közben Home target/start/invalidation a fő munkásnál.
-2. Külön program/settings módválasztás +valódi progressziós policy parity.
-3. Kardió bounded projekció/aggregátum és megfelelő Progress UI.
-4. Health foreground opt-in/throttle +permission-aware sync és többnapos records UI/query.
+- e915bd9 Home target/start/invalidation kódban pótolva a meglévő Coach-maggal;
+  nem első nap/defaultprogram.5 JVM+1 UI új kód. Nem provider autoOnOpen.
+- 0a69035 workout HC: separate source panelek/zero/missing/stale és valós explicit
+  window API; epoch/window/HC CAS, latest-row mapper, IPC lockon kívül.7 JVM+1 UI.
+- #243 exact1bf745e →1864a8c/c611cc7: inclusive range/25rekord/generation és
+  DatePicker/atomic Apply, root lifecycle/locale/fixture javítás.7 JVM+1 UI.
+- Gemini cardio feltöltések →5aacc8a/0f8bb70, hibás patch helyett teljesfájl-
+  import,9 külső+6 main-paritás regressziós JVM. Pure mag, DAO/UI még nincs.
+- Két külső nyelvi audit →2ff85ad,23 szöveg javítva, offset/DST és runtime
+  állítások review-zva; részletek a három integrációs review-ban.
 
-A korábban javított Home napi count e4920f4, célprogramnap/start/invalidation
-külön hátra. Az audit29 útvonala nem teljes release-elfogadás: a többi A–E,
-Google/cross-device/Health/GPS/platform és a végső kapuk is megmaradnak.
-Main merge, verzióemelés, PR-lezárás vagy élő adatos APK-frissítés nem történt.
+**Batch579 JVM+52 Phone UI NEM FUTOTT**. Csak static/source és a pontos main JS
+hat referenciaesete futott Node-ban; ez nem Kotlin/Room/Compose/SDK-bizonyíték.
+Az audit7 hiányából4 kódban pótolva,3 funkcionális csomag marad:
 
-Elkülönített promptok átadva a felhasználónak, indulás/eredmény nem igazolt:
-Health date range → plans/NATIVE_HEALTH_DATE_RANGE_HANDOFF.md; Gemini cardio
-számítás → plans/NATIVE_CARDIO_GEMINI_HANDOFF.md. Csak saját ág/two-file keret,
-main/migráció írás tiltott a külső munkásnak; közös review/integráció itt.
+1. Kardió bounded DAO/projekció és Progress UI a javított magra. Whole-exercise
+   flags, valódi source/ID és nyers DB-cursor, cancellation és locale fallback.
+2. Globális/programonkénti módválasztás és valódi progression policy.
+3. Health foreground opt-in/throttle/permission-aware providerfrissítés.
+
+A teljes A–E/24nézet/Google/Health/cross-device/platform kapu továbbra hátra;
+audit29 útvonala nem teljes release-elfogadás. Külső részfeladatok beérkeztek,
+régi fájlfoglalások véget értek, nincs új külső ág-írás vagy belső subagent.
+A #243/#240/#241/#242 draftok nyitva maradnak az integrált futtatás/elfogadásig;
+main merge/verzióemelés/élő adatos frissítési jóváhagyás nincs.

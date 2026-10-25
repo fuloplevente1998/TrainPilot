@@ -4,6 +4,41 @@ Frissítve: **2026-10-25**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Home/HC bekötés, #243 és Gemini/Flash eredmények – 2026-10-25
+
+Aktuális alkalmazás-/tesztforrás **2ff85ad**. Home e915bd9 a meglévő Coach-
+kiválasztást és teljes program/day/schedule starttuple-t használja, valós Room/
+settings invalidationnel, helyi resume/date/time/zone frissítéssel, IO/cancel és
+üres/hiba állapotokkal. Scalar helyinapi count marad; nincs A/4/defaultprogram
+kitalálása.5 új JVM+1 UI; nem bizonyított gyorsulás, nem provider auto-sync.
+
+0a69035: Journal Source külön Wear és HC mérőpanelek/zero/missing/stale/partial,
+explicit valós readTrainingWindowSuspend. A providerolvasás előtt rövid prepare,
+IPC lockon kívül, utána epoch/window/HC CAS és canonical latest-row mentés,
+aktív/tombstone guard. Közben történt set edit megmarad; Wear-window/energia
+külön, nincs total+active összeadás.22 új string4nyelven,7 JVM+1 UI új kód.
+
+Külső #243 exact1bf745e engedélyezett8fájlos delta →1864a8c; rootc611cc7
+picker-lifecycle/locale/48dp és UI-fixture/async-firstload javítás.7 JVM+1 UI új.
+Gemini teljes két .kt →5aacc8a, main-paritás korrekció0f8bb70: hibás patch nem
+alkalmazva. A pure cardio mag streaming/all-time/8hét/pace/records, **Room+UI
+még nincs**.9 külső+6 saját JVM-kód. Exact main JS6fixture valóban futott Node-ban;
+ez referencia, nem új Kotlin működési bizonyíték. Két nyelvi audit forrással
+ellenőrizve,23 szöveg2ff85ad-ben javítva; DST-offset és runtime-állítások nem
+átvéve vakon. Eredeti auditok és integrációs döntések a reviews könyvtárban.
+
+**Batch579 JVM+52 Phone UI NEM FUTOTT**. Lexical/diff/XML/key/format/R-ref és
+hívási/lock/CAS/SQL szerződés ellenőrzés volt. Nincs új Kotlin/Room/Compose/
+SDK-futás, CI/APK/kép; dd4cc27/40072751592 az utolsó teljes zöld. Az audit7
+hiányából4 kódban pótolva; cardio bekötés, modes és foregroundauto nyitott,
+plusz a teljes A–E/design/Google/cross-device/platform elfogadás. Következő fő
+kód a cardio bounded DAO/projekció +Fejlődés UI, a review korlátaival.
+
+Minden külső részfeladat beérkezett; korábbi fájlfoglalások véget értek. #243/#240/
+#241/#242 draftok nem merge-elve/lezárva; új külső commitot külön exact diffből.
+Main/verzió/élő install STOP marad; High kód/bekötés, vizuális polish/CI-debug
+fázisváltást továbbra jelezni kell. #238 leírás az aktuális HEAD-re frissítendő.
+
 ## Naplószerkesztés és két elkülönített átadó – 2026-10-25
 
 **1a9b6d3 /6856abe**: a meglévő Journal részletekből izolált szerkesztő nyílik:

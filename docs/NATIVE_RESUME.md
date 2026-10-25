@@ -21,6 +21,37 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
 
 ## Legújabb alkalmazásforrás
 
+- **Aktuális app/tesztforrás2ff85ad**, összesen **579 új JVM+52 Phone UI
+  tesztkód NEM FUTOTT**. Új CI/APK/kép nincs, utolsó teljes zöld dd4cc27 marad.
+- **e915bd9 Home:** meglévő NativeCoachTargets ugyanazon Room snapshot/program-
+  katalógus alapján; naptárból más program is lehet a cél. ProgramId/dayId/
+  scheduleId végig a valódi nav-startnak. Indexelt helyinapi count, program/day/
+  calendar/history/tombstone invalidation és aktívprogram/nyelv DataStore-trigger;
+  régi read cancel, IO+metadata-lease. Nincs kitalált A/4 vagy első-program fallback.
+  ON_RESUME/date/time/zone csak helyi re-read, nem provider auto-sync.5 JVM+1 UI új.
+- **0a69035 workout HC:** Journal Source külön Wear/HC metric/pending/stale/partial
+  panel, zero≠missing, total/active/matched energia nem összegzett. Explicit
+  readTrainingWindowSuspend valós API; foreground/permission/SDK guard, provider
+  IPC nincs metadata/Room lock alatt. Prepare/attach dataset+window+HC CAS,
+  tombstone/active guard és latest-row canonical mapper, más közben történt
+  szerkesztés megmarad. Eredeti Wear-window markerek nem lesznek HC-vel átírva.
+ 22 resource4nyelven,7 JVM+1 UI új kód; tényleges HC-szolgáltatás nem tesztelt.
+- **#2431bf745e →1864a8c/c611cc7:** inclusive többnapos Health query,25/lap,
+  DatePicker/atomic Apply/invalid range, cursor/generation/history reset és régi
+  válasz guard. Régi egynapos constructor megmarad. Rootfix: picker locale/
+  lifecycle/48dp, UI-fixture native-store reset és elsőload várás.7 JVM+1 UI új.
+  Külső draft nyitva, nem GitHub-merge. reviews/NATIVE_HEALTH_DATE_RANGE_INTEGRATION.md.
+- **Gemini uploads →5aacc8a/0f8bb70:** cardio mag+9 JVM átvéve, hibás/csonka
+  patch helyett a teljes fájlokból.6 saját main-paritás regressziós kód: source≠
+  routeID, no-record best=latest, malformed finish/ISO-date, nem kitalált idő,
+  exercise-wide flag és literal activity IDs. Pure streaming addPage, DAO-cursor
+  az adapter dolga. **Room+Fejlődés UI még NINCS**, P2 nyitott. Main exact JS
+  6case referencia futott Node-ban, nem Kotlin. reviews/NATIVE_CARDIO_INTEGRATION.md.
+- **2ff85ad két nyelvi audit:**23 felirat pontosítva;148 kulcs/format megmarad.
+  Offsetek mindkét mezőre érvényesek (DST), nem vettük át vakon a singular
+  javaslatot/fordítási-siker állításokat. reviews/NATIVE_EDITOR_TRANSLATION_REVIEW.md.
+  A három külső feladat beérkezett; a korábbi fájlfoglalások véget értek.
+
 - **1a9b6d3 /6856abe**: Journal részletekből valódi izolált edit/save/cancel:
   idő, gyakorlat/szett add/remove, weight/reps/time/bilateral/distance/done/RIR.
   Csak explicit Save ír; exact-ID detail CAS minden relationnel, dataset epoch,
@@ -92,13 +123,13 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
 
 ## Bizonyíték és külső ágak
 
-- **Batch545 új JVM +49 Phone UI tesztkód NEM FUTOTT** (533+12 /48+1).
+- **Batch579 új JVM +52 Phone UI tesztkód NEM FUTOTT** (545+5+7+7+9+6 /49+1+1+1).
   Helyben csak lexical delimiter, diff, XML/kulcs/format/import/R-ref és pontos
   forrássorrend/kiemelési diff ellenőrzés volt. Nem Kotlin/Room/Compose/Google.
 - Migrációs ág utolsó teljes zöldje továbbra dd4cc27, Actions40072751592:
   Phone393/Wear167/WearUI183/signed upgrades2. Friss CI/APK/screenshot nincs.
 - Külső #240 feat/native-ui-localization82883ab és #241 test/native-localization-ui
-  ab25d84 kódja már bent, 4+6 most része a545+49-nek. Ágaikat nem írtuk, nem
+  ab25d84 kódja már bent, 4+6 most része a579+52-nek. Ágaikat nem írtuk, nem
   GitHub-merge történt; draftok nyitva maradnak az integrált próba/elfogadásig.
   Új külső HEAD-et az innen vett delta alapján nézz, ne integráld újra a régi diffet.
   Review: reviews/NATIVE_LOCALIZATION_INTEGRATION.md. Korábbi „nem integrált”/
@@ -109,27 +140,25 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
 - Külső funkcióaudit #242/9c3c264 visszaérkezett: docs/reviews/
   NATIVE_FEATURE_PARITY_AUDIT.md exact másolat, rövid aktuális állapot a
   NATIVE_FEATURE_PARITY_TRIAGE.md-ben. Bázis a5f562d/main7473b30 +Home delta
-  ellenőrizve. Hét igazolt source gap, ebből Rx és Journal edit kódban pótolva, öt P2 nyitott.
+  ellenőrizve. Hét igazolt source gap: Rx/Journal edit/HC panel/date range kódban pótolva; cardio (mag kész, bekötés nincs), modes és foregroundauto nyitott.
   Report nem runtime-teszt és nem minden feature teljes leltára; ne kezeld release-
   elfogadásnak. Külső ágra nem írtunk, draft #242 nyitva, nincs GitHub-merge.
 
 ## Következő konkrét lépések
 
-1. A két audit-P1 (Rx/Journal edit) kódban, még nem tesztelfogadás. Fő munkás
-   következő területe Home NativeCoachTargets/start/invalidation, majd workout
-   HC-panel/refresh, modes/progression és foreground auto. Külön chat/Gemini
-   promptok: plans/NATIVE_HEALTH_DATE_RANGE_HANDOFF.md és
-   plans/NATIVE_CARDIO_GEMINI_HANDOFF.md. Indulás/eredmény nem igazolt; a két
-   Health-böngészőfájlt és az új NativeCardioModel(+Test) neveket ne írd közben.
-   Raw bázis9a18ca6 mindkettőnek, külső eredmény mindig exact diffből review.
+1. Következő fő kód: kardió lapozott Room-projekció és Fejlődés UI bekötése a
+   review-javított NativeCardioModelhez (whole-exercise flags, source/route ID,
+   valódi adatok, ne teljes historygraph). Utána modes/progression és Health
+   foreground opt-in/throttle. Külső #243 és Gemini/Flash eredmény mind beemelve/
+   review-zva; újabb külső delta exact HEAD/fájl alapján, nem vak újraintegrálás.
 2. Lokális in-flight photo delete / új ref / restore admission kódban, de szerver-
    timeout utáni bizonytalan befejezés, processdeath és cross-device/older-peer
    továbbra nyitott. A foglalás nem tartós Drive-lock/elosztott atomikusság.
-3. Teljes A–E/UI/Health/main funkcióleltár és maradék dinamikus VM-/hibafeliratok;
-   15 lokalizált képernyő nem minden funkció. A mai Home edzésszám e4920f4-ben javítva; az ajánlott nap még első nap. Következő kód: meglévő
-   ui/coach/NativeCoachTargets újrahasználata Home-ban, programId/dayId/scheduleId
-   végig vitele a nav-startnak (most csak dayId), helyi nap/DST epoch count és
-   tényleges adat-invalidation. Ezt még nem implementáltuk.
+3. Teljes A–E/UI/Health/main funkcióleltár és maradó dinamikus VM-/hibafeliratok;
+   15 lokalizált képernyő nem minden funkció. Home target/start/invalidation és
+   workout HC panel kódban most kész, platform/foreground/race mérés és teljes
+   UI/design/készülékes paritás nem lezárt. A helyi Home re-read nem a külön
+   auditgap autoOnOpen providerfrissítés, és nem watch-kapcsolat/freshness javítás.
 4. Google-fiókos engedély/részleges grant/revoke/offline/rotation/processdeath,
    backup közbeni cancel, calendar cache és cél-scope valódi szolgáltatással még
    nem igazolt. Unit consent-intent nem OAuth- vagy UI-szolgáltatás-siker.
