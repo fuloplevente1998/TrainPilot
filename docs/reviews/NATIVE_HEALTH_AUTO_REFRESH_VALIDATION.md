@@ -30,3 +30,11 @@ New cases total: **24 JVM test methods + 1 UI test method**, pending actual Grad
 ## Main parity boundary
 
 This feature provides **foreground/on-open latest-day real provider refresh**, not a reimplementation of the old WebView `rf250Sync` incremental change-log/30-day full backfill. The latter remains a separate parity task, not claimed by this branch. Older WebView entry points, canonical workout refresh and Wear ownership were not rewritten.
+
+## CI diagnosis and integration additions
+
+The initial existing PR validation at `70c4f584` ran (GitHub Actions `40233270552`, `40233270556`).
+* Native APK workflow failed in pre-existing `WearSyncRepository.kt:106` during `:app:kaptGenerateStubsDebugKotlin`, Kotlin FIR internal analysis exception; it did **not** get as far as JVM tests. A narrow explicit `mutate<Unit>` type annotation is added on this branch to validate the workaround.
+* Quick validation stopped at `actions/setup-node` because the native migration branch lacks `package.json` and npm lockfile; the native migration does not own the main web/npm tree. No unrelated web toolchain was copied into this feature branch.
+
+The separate `NativeHealthBackupGate` now covers JSON/ZIP SAF import/export **and** native Drive backup/sync staging. `HealthJournalStore.healthDay` persists a first partial HC daily row without inventing absent metric values. `NativeHealthRefresh.dayWindow` clips today's future end and is tested across Budapest DST. A transient permission-dialog pause does not cancel explicit Samsung permission consent; STOP/dispose still invalidates stale publication.
