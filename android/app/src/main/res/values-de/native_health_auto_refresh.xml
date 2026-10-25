@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_health_auto_refresh_title">Automatische Gesundheitsaktualisierung</string>
+    <string name="native_health_auto_refresh_help">Wenn aktiviert, werden die Daten beim Öffnen von Gesundheit höchstens alle 10 Minuten vom Anbieter aktualisiert. Berechtigungen werden nicht automatisch angefordert.</string>
+    <string name="native_health_auto_refresh_save_error">Die Einstellung konnte nicht gespeichert werden. Bitte erneut versuchen.</string>
+    <string name="native_health_auto_refresh_running">Gesundheitsdaten werden aktualisiert…</string>
+</resources>
