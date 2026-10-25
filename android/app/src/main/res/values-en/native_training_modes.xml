@@ -60,4 +60,17 @@
     <string name="native_modes_coach_cancel">Cancel</string>
     <string name="native_modes_coach_sets">Proposed working sets: %1$d (preview only)</string>
     <string name="native_modes_inherit">Use global mode</string>
+    <string name="native_modes_comparison_title">Numeric workout-program preview</string>
+    <string name="native_modes_comparison_empty">This program has no exercises available for preview.</string>
+    <string name="native_modes_comparison_error">Could not validate preview; mode will not be saved.</string>
+    <string name="native_modes_comparison_loading">Calculating preview…</string>
+    <string name="native_modes_comparison_program">Program: %1$s</string>
+    <string name="native_modes_comparison_day">Day: %1$s</string>
+    <string name="native_modes_comparison_sets">Working sets: %1$s → %2$s</string>
+    <string name="native_modes_comparison_reps">Repetitions: %1$s → %2$s</string>
+    <string name="native_modes_comparison_weight">Weight: %1$s → %2$s</string>
+    <string name="native_modes_comparison_rest">Rest: %1$d sec</string>
+    <string name="native_modes_comparison_rir">Target RIR: %1$s</string>
+    <string name="native_modes_comparison_reason">Reason: %1$s</string>
+    <string name="native_modes_comparison_notice">Values are preview suggestions, not saved workout changes.</string>
 </resources>
