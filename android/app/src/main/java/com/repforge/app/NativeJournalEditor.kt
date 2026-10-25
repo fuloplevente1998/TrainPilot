@@ -28,6 +28,9 @@ internal object NativeJournalEditor {
         Opened(detail, NativeDataReplacement.continuationForCurrentData(context))
 
     fun from(detail: WorkoutHistoryWithDetails): Draft {
+        // Legacy import can retain malformed dates; surface an operation error before composing date fields.
+        Instant.parse(detail.workout.started)
+        Instant.parse(detail.workout.finished)
         val raw = LegacyWebViewMigrator.workoutJson(detail)
         val exercises = raw.getJSONArray("exercises")
         return Draft(detail.workout.started, detail.workout.finished, (0 until exercises.length()).map { e ->

@@ -155,6 +155,9 @@ class NativeJournalEditorTest {
 
     @Test fun invalidWindowsNumbersAndCompletedSetsLeaveOriginalUntouched() = runTest(dispatcher) {
         val before = seed()
+        assertThrows(java.time.format.DateTimeParseException::class.java) {
+            NativeJournalEditor.from(before.copy(workout = before.workout.copy(started = "invalid-legacy-date")))
+        }
         val opened = NativeJournalEditor.open(context, before)
         val draft = changed(before)
         val exercise = draft.exercises.single()
