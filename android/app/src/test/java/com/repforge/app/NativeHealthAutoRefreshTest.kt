@@ -56,6 +56,18 @@ class NativeHealthAutoRefreshTest {
         assertNotNull(gate.begin(NativeHealthAutoRefreshGate.Trigger.MANUAL, 5_002L, true, true, true, today))
     }
 
+    @Test fun cooldownIsScopedToActualProviderAndLocalReadDay() {
+        val gate = NativeHealthAutoRefreshGate()
+        val first = gate.begin(NativeHealthAutoRefreshGate.Trigger.AUTO, 500L, true, true, true, today)!!
+        gate.finish(first)
+        assertNull(gate.begin(NativeHealthAutoRefreshGate.Trigger.AUTO, 600L, true, true, true, today))
+        val nextDay = today.copy(day = "2026-10-26")
+        val newDayTicket = gate.begin(NativeHealthAutoRefreshGate.Trigger.AUTO, 600L, true, true, true, nextDay)!!
+        gate.finish(newDayTicket)
+        val newSource = today.copy(provider = HealthJournalStore.SAMSUNG)
+        assertNotNull(gate.begin(NativeHealthAutoRefreshGate.Trigger.AUTO, 601L, true, true, true, newSource))
+    }
+
     @Test fun concurrentTriggersCannotStartTwoProviderRequests() {
         val gate = NativeHealthAutoRefreshGate()
         val auto = gate.begin(NativeHealthAutoRefreshGate.Trigger.AUTO, 1L, true, true, true, today)!!
