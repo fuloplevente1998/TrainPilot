@@ -289,7 +289,7 @@ interface WorkoutHistoryDao {
             w.startedEpochMs, w.finishedEpochMs,
             w.started AS startedIso, w.finished AS finishedIso,
             s.setId, s.rowId AS setRowId, s.setNumber,
-            e.exerciseId,
+            e.orderIndex AS exerciseOrderIndex, e.exerciseId,
             e.nameHu AS exerciseNameHu, e.nameEn AS exerciseNameEn,
             COALESCE(l.nameDe, '') AS exerciseNameDe,
             COALESCE(l.nameRo, '') AS exerciseNameRo,

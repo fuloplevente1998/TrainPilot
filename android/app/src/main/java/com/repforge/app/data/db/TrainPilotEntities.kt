@@ -374,6 +374,7 @@ data class CardioSetProjection(
     val setId: String,
     val setRowId: Long,
     val setNumber: Int,
+    val exerciseOrderIndex: Int,
     val exerciseId: String,
     val exerciseNameHu: String,
     val exerciseNameEn: String,
