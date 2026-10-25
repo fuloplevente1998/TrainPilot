@@ -27,6 +27,7 @@ internal object NativeProfileHistory128 {
         val entries = history.optJSONObject("entries")
             ?: throw IllegalArgumentException("Missing history128 entries")
         require(entries.length() <= 200) { "Too many history128 entries" }
+        NativeProfileDayHistory128.validate(history)
         for (id in entries.keys()) {
             require(id.isNotBlank() && id.length <= 200)
             val basis = entries.optJSONObject(id)
@@ -138,14 +139,19 @@ internal object NativeProfileHistory128 {
         return "$lower–$newReps"
     }
 
-    /** Recompute under the same timestamp at acceptance to invalidate stale history previews. */
+    /** Keep the preview identity (asOf), but re-read through validationNow at acceptance. */
     suspend fun apply(db: TrainPilotDatabase, preview: NativeProfileProgramPreview.Preview,
-        asOf: Instant): NativeProfileProgramPreview.Preview {
+        asOf: Instant, activeProgramId: String = preview.source.program.id,
+        validationNow: Instant = asOf): NativeProfileProgramPreview.Preview {
+        require(activeProgramId.isNotBlank() && activeProgramId.length <= 200 && !validationNow.isBefore(asOf))
+        val catalog = db.exerciseLibraryDao().getAllExercises()
+        val full = NativeProfileProgramPreview.preview(preview.source, preview.sourceProfileJson,
+            catalog, preview.language, deferHistoryLimits = true)
         val allow = compatiblePrograms(db, preview.source.program.id)
-        val prescriptions = JSONObject(preview.prescriptions.toString())
+        val prescriptions = JSONObject(full.prescriptions.toString())
         val entries = JSONObject()
         val visited = HashSet<String>()
-        for (day in preview.draft.days) for (encoded in day.entries) {
+        for (day in full.draft.days) for (encoded in day.entries) {
             val id = NativeProgramEditor.exerciseId(encoded)
             if (!visited.add(id)) continue
             val lib = db.exerciseLibraryDao().getExerciseById(id) ?: continue
@@ -159,7 +165,7 @@ internal object NativeProfileHistory128 {
             var unsafeLatest = false
             while (pageCount++ < MAX_PAGES && candidates.size < MAX_SOURCES && !unsafeLatest) {
                 val rows = db.workoutHistoryDao().getCoachExerciseCandidates(id,
-                    asOf.minus(Duration.ofDays(90)).toEpochMilli(), asOf.toEpochMilli(),
+                    validationNow.minus(Duration.ofDays(90)).toEpochMilli(), validationNow.toEpochMilli(),
                     before, beforeId, PAGE)
                 for (row in rows) {
                     if (row.programId !in allow ||
@@ -203,8 +209,6 @@ internal object NativeProfileHistory128 {
             } else basis.put("status", "review")
             entries.put(id, basis)
         }
-        val history = JSONObject().put("entries", entries)
-            .put("asOf", asOf.toEpochMilli())
-        return NativeProfileProgramPreview.fitTime(preview.copy(prescriptions = prescriptions, history128 = history))
+        return NativeProfileDayHistory128.adapt(db, full, prescriptions, entries, activeProgramId, asOf, validationNow)
     }
 }

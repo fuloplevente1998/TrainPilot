@@ -17,7 +17,8 @@ internal object NativeProfileProgramPreview {
         val estimateMinutes: Int,
         val workSets: Int,
         val sourceProfileJson: String,
-        val history128: JSONObject = JSONObject()
+        val history128: JSONObject = JSONObject(),
+        val language: String = "hu"
     )
 
     private fun keys(json: JSONObject, name: String): Set<String> {
@@ -51,7 +52,7 @@ internal object NativeProfileProgramPreview {
     }
 
     fun preview(source: ProgramWithDays, rawProfile: String,
-        catalog: List<ExerciseLibraryEntity>, language: String): Preview {
+        catalog: List<ExerciseLibraryEntity>, language: String, deferHistoryLimits: Boolean = false): Preview {
         require(source.program.builtin && source.program.id in setOf("home-basic", "home-level2")) {
             "Only an accepted A/B template can produce this preview"
         }
@@ -102,8 +103,8 @@ internal object NativeProfileProgramPreview {
             require(filtered.size >= 3) { "Fewer than three eligible exercises for day $dayId" }
             val finalRows = filtered.sortedByDescending { NativePlannerPolicy.metadata(it).optBoolean("compound") }
                 .map { it.id to it }
-            val selected = finalRows.take(count)
-            for ((id, _) in finalRows.drop(count)) removed += Reduction(dayId, id, "time")
+            val selected = if (deferHistoryLimits) finalRows else finalRows.take(count)
+            if (!deferHistoryLimits) for ((id, _) in finalRows.drop(count)) removed += Reduction(dayId, id, "time")
             for ((id, exercise) in selected) {
                 val original = NativePlannerPolicy.metadata(exercise)
                 original.put("id", id).put("repUnit", exercise.repUnit).put("loadType", exercise.loadType)
@@ -125,9 +126,10 @@ internal object NativeProfileProgramPreview {
             "en" -> source.program.nameEn; "de" -> source.program.nameDe
             "ro" -> source.program.nameRo; else -> source.program.nameHu
         }.ifBlank { source.program.nameHu }
-        return fitTime(Preview(source,
+        val result = Preview(source,
             NativeProgramEditor.Draft(name, source.program.description, draftDays),
-            repetitions, profile, removed, minutes, totalSets, rawProfile))
+            repetitions, profile, removed, minutes, totalSets, rawProfile, language = language)
+        return if (deferHistoryLimits) result else fitTime(result)
     }
 
     private fun dayMinutes(day: NativeProgramEditor.DayDraft, recipes: JSONObject): Double =

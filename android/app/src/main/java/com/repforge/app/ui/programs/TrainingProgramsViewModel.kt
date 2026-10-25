@@ -151,7 +151,8 @@ internal class TrainingProgramsViewModel(application: Application) : AndroidView
             try {
                 val fresh = withContext(Dispatchers.IO) {
                     com.repforge.app.NativeDataReplacement.mutate(context) {
-                        val profile = settingsStore.current().profileJson
+                        val settings = settingsStore.current()
+                        val profile = settings.profileJson
                         val programs = database.programDao().getProgramsWithDays()
                         val exercises = database.exerciseLibraryDao().getAllExercises()
                         val at = java.time.Instant.now()
@@ -163,7 +164,7 @@ internal class TrainingProgramsViewModel(application: Application) : AndroidView
                                         source, profile, exercises, _uiState.value.language)
                                 }.getOrNull() ?: return@mapNotNull null
                                 source.program.id to com.repforge.app.NativeProfileHistory128.apply(
-                                    database, base, at)
+                                    database, base, at, activeProgramId = settings.activeProgramId)
                             }.toMap()
                         Triple(profile, programs, exercises) to previews
                     }

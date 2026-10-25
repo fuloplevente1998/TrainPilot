@@ -575,6 +575,51 @@ class NativePhoneNavigationTest {
         assertEquals(baseline, runBlocking(Dispatchers.IO) { db.programDao().getProgramIds().toSet() })
     }
 
+    @Test fun plannerRetainsAProvenFullDayBeyondStaticCapacityWithoutActivatingPreview() {
+        val db = TrainPilotDatabase.getInstance(context)
+        val active = "full-day-fixture"
+        runBlocking(Dispatchers.IO) {
+            val profile = JSONObject().put("minutes", 40).put("experience", "intermediate").put("goal", "fitness")
+                .put("gear", org.json.JSONArray(listOf("dumbbells", "barbell", "bench")))
+            settings.saveTrainingProfile(profile); settings.setActiveProgramId(active)
+            val source = db.programDao().getProgramWithDaysById("home-basic")!!
+            val catalog = db.exerciseLibraryDao().getAllExercises()
+            val full = NativeProfileProgramPreview.preview(source, profile.toString(), catalog, "hu", true)
+            db.programDao().saveProgramWithDays(source.program.copy(id = active, builtin = false, sourceType = "own",
+                rawJson = JSONObject(source.program.rawJson).put("id", active).put("builtin", false).toString()),
+                full.draft.days.mapIndexed { i, day -> com.repforge.app.data.db.ProgramDayEntity("$active:${day.id}", active,
+                    day.id, day.name, day.name, day.name, day.name, i, org.json.JSONArray(day.entries.map(NativeProgramEditor::exerciseId)).toString()) })
+            val ids = full.draft.days.first { it.id == "A" }.entries.map(NativeProgramEditor::exerciseId)
+            val end = java.time.Instant.now().minusSeconds(86400)
+            val exercises = org.json.JSONArray(ids.map { id ->
+                val lib = catalog.first { it.id == id }; val rx = full.prescriptions.getJSONObject(id)
+                val top = com.repforge.app.ui.coach.NativeCoachExerciseAdvice.target(JSONObject(lib.rawJson), rx).max!!.toInt()
+                JSONObject().put("id", id).put("loadType", lib.loadType).put("repUnit", lib.repUnit).put("effort", "good")
+                    .put("prescription", JSONObject(rx.toString())).put("sets", org.json.JSONArray((0..1).map { i ->
+                        JSONObject().put("setId", "full-$id-$i").put("done", true).put("reps", "$top")
+                            .put("weight", if (lib.loadType == "bodyweight") 0 else 5)
+                    }))
+            })
+            com.repforge.app.data.migration.LegacyWebViewMigrator(context, db, settings).saveWorkoutJsonToRoom(
+                JSONObject().put("id", "proven-full-day").put("programId", active).put("dayId", "A")
+                    .put("started", end.minusSeconds(1800).toString()).put("finished", end.toString()).put("exercises", exercises))
+        }
+        val baseline = runBlocking(Dispatchers.IO) { db.programDao().getProgramIds().toSet() }
+        launch(); tab("training")
+        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
+        compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("personal_planner_open"))
+        compose.onNodeWithTag("personal_planner_open").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("personal_preview_loading").fetchSemanticsNodes().isEmpty() &&
+            compose.onAllNodesWithTag("personal_preview_accept").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("personal_template_home-basic").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("personal_retained_A").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("personal_retained_A").performScrollTo().assertTextContains("teljes nap megmarad")
+        screenshot("personal_proven_full_day")
+        compose.onNodeWithText("Mégse").performClick()
+        assertEquals(baseline, runBlocking(Dispatchers.IO) { db.programDao().getProgramIds().toSet() })
+        assertEquals(active, runBlocking { settings.current().activeProgramId })
+    }
+
     @Test fun personalPlannerAcceptanceCreatesNewProgramAndRetainsTrialWeights() {
         runBlocking(Dispatchers.IO) {
             settings.saveTrainingProfile(JSONObject().put("minutes", 45)

@@ -143,6 +143,19 @@ interface WorkoutHistoryDao {
         beforeEpoch: Long?, beforeId: String, limit: Int): List<WorkoutHistoryEntity>
 
     @Query("""
+        SELECT w.* FROM workout_history w
+        WHERE w.programId = :programId AND w.dayId = :dayId
+          AND w.finishedEpochMs >= :fromEpoch AND w.finishedEpochMs <= :toEpoch
+          AND (:beforeEpoch IS NULL OR w.finishedEpochMs < :beforeEpoch OR
+            (w.finishedEpochMs = :beforeEpoch AND w.id < :beforeId))
+          AND NOT EXISTS (SELECT 1 FROM history_tombstones t
+            WHERE t.primaryId IN (w.id, w.syncId, w.workoutKey) OR t.workoutKey = w.workoutKey)
+        ORDER BY w.finishedEpochMs DESC, w.id DESC LIMIT :limit
+    """)
+    suspend fun getProfileDayCandidates(programId: String, dayId: String, fromEpoch: Long, toEpoch: Long,
+        beforeEpoch: Long?, beforeId: String, limit: Int): List<WorkoutHistoryEntity>
+
+    @Query("""
         SELECT DISTINCT ROUND(s.weight, 2) FROM workout_history_sets s
         INNER JOIN workout_history_exercises e ON e.rowId = s.historyExerciseRowId
         INNER JOIN workout_history w ON w.id = s.workoutHistoryId

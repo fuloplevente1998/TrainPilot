@@ -266,4 +266,8 @@
     <string name="planner_reason_sets">Kevesebb sorozat az időkeret miatt</string>
     <string name="planner_reason_time">Kihagyva az időkeret miatt</string>
     <string name="planner_reason_missing">Nem elérhető gyakorlat</string>
+    <string name="planner_retained_day">%1$s: a korábban teljesített teljes nap megmarad az időkeretben.</string>
+    <string name="planner_day_reduction">%1$s: gyakorlat %2$d → %3$d, sorozat %4$d → %5$d. %6$s</string>
+    <string name="planner_day_time_reason">Időkerethez igazítva</string>
+    <string name="planner_day_equipment_reason">Felszereléshez, kizárásokhoz vagy gyakorlatváltozáshoz igazítva</string>
 </resources>

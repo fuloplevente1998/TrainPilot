@@ -162,7 +162,9 @@ internal object NativeProgramEditor {
                     db.exerciseLibraryDao().getAllExercises(), language)
                 val historical = personalMetadata.optJSONObject("history128")
                 val fresh = if (historical == null) base else NativeProfileHistory128.apply(db, base,
-                    java.time.Instant.ofEpochMilli(historical.getLong("asOf")))
+                    java.time.Instant.ofEpochMilli(historical.getLong("asOf")),
+                    activeProgramId = com.repforge.app.data.store.TrainPilotSettingsStore(context).current().activeProgramId,
+                    validationNow = java.time.Instant.now())
                 require(fresh.draft == d && fresh.prescriptions.toString() ==
                     personalMetadata.getJSONObject("prescriptions").toString() &&
                     (historical == null || fresh.history128.toString() == historical.toString())) {

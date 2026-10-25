@@ -113,6 +113,24 @@ internal fun PersonalProgramPreviewDialog(
                             else -> "Kompatibilis edzéselőzmény: ${inherited.length()} gyakorlat"
                         }, modifier = Modifier.testTag("personal_history_summary"))
                     }
+                    preview.history128.optJSONObject("days")?.let { days ->
+                        for (id in days.keys()) if (days.getJSONObject(id).optBoolean("retained")) {
+                            val name = preview.draft.days.firstOrNull { it.id == id }?.name ?: id
+                            Text(strings.getString(com.repforge.app.R.string.planner_retained_day, name),
+                                modifier = Modifier.testTag("personal_retained_$id"))
+                        }
+                    }
+                    preview.history128.optJSONArray("reductions")?.let { changes ->
+                        for (i in 0 until changes.length()) {
+                            val row = changes.getJSONObject(i)
+                            val id = row.getString("dayId")
+                            val name = preview.draft.days.firstOrNull { it.id == id }?.name ?: id
+                            Text(strings.getString(com.repforge.app.R.string.planner_day_reduction, name,
+                                row.getInt("fromExercises"), row.getInt("toExercises"), row.getInt("fromSets"), row.getInt("toSets"),
+                                strings.getString(if (row.getString("reason") == "time") com.repforge.app.R.string.planner_day_time_reason
+                                    else com.repforge.app.R.string.planner_day_equipment_reason)), modifier = Modifier.testTag("personal_day_reduction_$id"))
+                        }
+                    }
                     preview.draft.days.forEach { day ->
                         Text(day.name)
                         day.entries.forEach { entry ->
