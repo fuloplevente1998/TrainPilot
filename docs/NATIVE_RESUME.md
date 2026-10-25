@@ -19,6 +19,23 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
   High kód; Medium vizuális dizájn előtt jelezni; Extra High komoly végső debug előtt.
   Kevés lényegi magyar output, nincs belső subagent külön kérés nélkül. PR238 követőlap.
 
+## #244 részátadás és további munkamegosztás – 2026-10-25
+
+A felhasználó jelezte a #244 részbeni elkészültét, új Codex-munkát nem akar
+indítani a tokenköltség miatt. Exact HEAD5d89db49f57eb0867a526f522e201b4d3d72c8f9,
+nyitott draft célmigration. Root a40239961158 aktuális állapotát ellenőrizte:
+Health JVM test contract SUCCESS, Real Health screen/preference UI IN_PROGRESS.
+Ez nem teljes forrásreview, nem integráció és nem közös zöld kapu. A PR-leírás
+még régebbi natív runra hivatkozik, a képernyőkép/új run és HEAD a friss adat.
+
+Tokenkímélő javaslat: a három meglévő chat saját javítás/célzott próba körét
+zárja: #245 review1–5; #246 review6 és26 kardiós JVM; #244 folyamatban levő UI
+és részletes átadó. Hat közös baseline-hiba integrátornál marad; ne javítsa mind
+három chat párhuzamosan. Új teljes CI csak összeépített forráson, nem három
+másolaton; Actions önállóan futhat, nincs szükség folyamatos agent watch-ra.
+#244 által jelzett rf250Sync30nap/incremental backfill-paritás továbbra nyitott,
+a foreground legújabb napi frissítés nem az egész egészségszinkron befejezése.
+
 ## #245/#246 forrásreview kész – 2026-10-25
 
 Review: [NATIVE_PARALLEL_PR245_PR246_REVIEW.md](reviews/NATIVE_PARALLEL_PR245_PR246_REVIEW.md).
