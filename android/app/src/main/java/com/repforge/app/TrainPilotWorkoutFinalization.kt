@@ -117,8 +117,7 @@ internal class TrainPilotWorkoutFinalization(
                         }
                         val existing = database.workoutHistoryDao().getWorkoutWithDetails(id)
                         if (existing != null) history.put("id", existing.workout.id).put("finished", existing.workout.finished)
-                        val prior = database.workoutHistoryDao().getAllWorkoutsWithDetails()
-                        PersonalRecordCalculator226.evaluateAndAttachPrs(history, prior)
+                        PersonalRecordCalculator226.evaluateAndAttachPrs(history, database)
                         LegacyWebViewMigrator(context, database, TrainPilotSettingsStore(context)).saveWorkoutJsonToRoom(history)
                         check(database.workoutHistoryDao().getWorkoutWithDetails(id) != null) { "A törölt vagy hibás edzés nem menthető újra." }
                         val scheduleId = history.optString("scheduleId")

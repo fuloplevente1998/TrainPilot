@@ -2,6 +2,7 @@ package com.repforge.app
 
 import android.content.Context
 import android.content.Intent
+import androidx.room.withTransaction
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
@@ -308,6 +309,44 @@ class NativePhoneNavigationTest {
         compose.onNodeWithTag("program_gym-strength-abc").assertIsDisplayed()
         compose.onNodeWithText("Gym strength A/B/C").assertIsDisplayed()
         screenshot("programs_full_catalog", "en")
+    }
+
+    @Test fun journalShowsPrAfterLargeHistoryWatchFinishWithoutDuplicatingOnReplay() {
+        val db = TrainPilotDatabase.getInstance(context)
+        runBlocking(Dispatchers.IO) {
+            db.withTransaction { repeat(1500) { i ->
+                val started = java.time.Instant.now().minusSeconds(172800 + i.toLong()).toString()
+                db.workoutHistoryDao().insertWorkout(com.repforge.app.data.db.WorkoutHistoryEntity(
+                    id = "prior-$i", workoutKey = "prior-$i", syncId = "prior-$i", started = started, finished = started,
+                    startedEpochMs = java.time.Instant.parse(started).toEpochMilli(), finishedEpochMs = java.time.Instant.parse(started).toEpochMilli(),
+                    durationSeconds = 0, programId = "fixture", programName = "Fixture", dayId = "A", dayName = "A", scheduleId = "",
+                    quickWorkout = false, originDevice = "phone", ownershipProtocol193 = 0, ownerEpoch193 = 0,
+                    effortFeedback = null, feedbackSkipped = false, feedbackUpdatedAt = 0, totalVolumeKg = 0.0,
+                    completedSetsCount = 0, totalSetsCount = 0, totalRepsCount = 0, hasPr226 = false,
+                    prRecordsJson226 = "[]", wearMetricsJson = null, health240Json = null, timeLogs162Json = null,
+                    activeIntervalsJson = null, editedAt = null, rawJson = "{}"))
+            } }
+            val end = java.time.Instant.now()
+            val importer = com.repforge.app.data.migration.LegacyWebViewMigrator(context, db, settings)
+            fun exercise(kg: Double) = JSONObject().put("id", "db-floor-press").put("hu", "Talajon nyomás")
+                .put("repUnit", "ism.").put("loadType", "per_hand").put("sets", org.json.JSONArray().put(
+                    JSONObject().put("setId", "press-set").put("done", true).put("weight", kg).put("reps", "8")))
+            importer.saveWorkoutJsonToRoom(JSONObject().put("id", "previous-press").put("programId", "fixture").put("dayId", "A")
+                .put("started", end.minusSeconds(86460).toString()).put("finished", end.minusSeconds(86400).toString())
+                .put("exercises", org.json.JSONArray().put(exercise(10.0))))
+            val finished = JSONObject().put("id", "watch-pr").put("workoutId", "watch-pr").put("timerOwner", "watch")
+                .put("active", false).put("programId", "fixture").put("programName", "PR teszt")
+                .put("dayId", "A").put("dayName", "A").put("started", end.minusSeconds(60).toString())
+                .put("finished", end.toString()).put("exercises", org.json.JSONArray().put(exercise(12.5)))
+            val finalizer = TrainPilotWorkoutFinalization(context, db)
+            finalizer.finishWorkout(finished, fromWatch = true); finalizer.finishWorkout(finished, fromWatch = true)
+            assertEquals(1502, db.workoutHistoryDao().getWorkoutCount())
+            assertTrue(db.workoutHistoryDao().getWorkoutWithDetails("watch-pr")!!.workout.hasPr226)
+        }
+        launch(); tab("journal")
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("journal_workout_watch-pr").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("journal_workout_watch-pr").assertTextContains("Személyes csúcs")
+        screenshot("journal_large_history_pr")
     }
 
     @Test fun weightJournalSupportsDatedAddEditAndConfirmedExactDeletion() {

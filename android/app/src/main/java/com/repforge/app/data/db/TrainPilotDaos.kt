@@ -179,6 +179,21 @@ interface WorkoutHistoryDao {
     @Query("SELECT * FROM workout_history ORDER BY started DESC")
     suspend fun getAllWorkoutsWithDetails(): List<WorkoutHistoryWithDetails>
 
+    @Query("""
+        SELECT s.rowId AS setRowId, e.exerciseId, e.repUnit, s.weight, s.reps,
+          s.leftSeconds, s.rightSeconds, s.distanceMeters
+        FROM workout_history_sets s
+        INNER JOIN workout_history_exercises e ON e.rowId = s.historyExerciseRowId
+        INNER JOIN workout_history w ON w.id = e.workoutHistoryId
+        WHERE e.exerciseId IN (:exerciseIds) AND s.done = 1 AND s.rowId > :afterRowId
+          AND w.id != :excludedId AND w.started != :excludedStarted
+          AND NOT EXISTS (SELECT 1 FROM history_tombstones t
+            WHERE t.primaryId IN (w.id, w.syncId, w.workoutKey) OR t.workoutKey = w.workoutKey)
+        ORDER BY s.rowId ASC LIMIT :limit
+    """)
+    suspend fun scanPersonalRecordSets(exerciseIds: List<String>, excludedId: String,
+        excludedStarted: String, afterRowId: Long, limit: Int): List<PersonalRecordSet226>
+
     /** Parent LIMIT applies before Room loads relations: never load the full phone journal for Wear. */
     @Transaction
     @Query("SELECT * FROM workout_history ORDER BY startedEpochMs DESC, id DESC LIMIT 8")

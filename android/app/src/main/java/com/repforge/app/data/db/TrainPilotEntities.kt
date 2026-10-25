@@ -348,6 +348,11 @@ data class JournalSearchRow(@Embedded val summary: JournalWorkoutSummary, val se
 /** Lightweight Progress aggregate; no historical raw JSON/photos or set relations. */
 data class ProgressMuscleSummary(val muscleKey: String, val setsCount: Int)
 
+/** Completed-set PR input only; no history JSON, photos, routes or Room relations. */
+data class PersonalRecordSet226(val setRowId: Long, val exerciseId: String, val repUnit: String,
+    val weight: Double?, val reps: String, val leftSeconds: Int?, val rightSeconds: Int?,
+    val distanceMeters: Double?)
+
 /** Keyset-paged completed strength sets for a single exercise, independent of journal size. */
 data class ProgressSetSummary(val workoutId: String, val started: String,
     val startedEpochMs: Long, val setRowId: Long, val weightKg: Double, val reps: String)

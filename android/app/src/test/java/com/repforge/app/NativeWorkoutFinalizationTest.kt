@@ -2,6 +2,7 @@ package com.repforge.app
 
 import android.content.Context
 import androidx.room.Room
+import androidx.room.withTransaction
 import com.repforge.app.data.db.CalendarScheduleEntity
 import com.repforge.app.data.db.HistoryTombstoneEntity
 import com.repforge.app.data.db.TrainPilotDatabase
@@ -21,6 +22,8 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.Executor
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -29,16 +32,19 @@ class NativeWorkoutFinalizationTest {
     private lateinit var context: Context
     private lateinit var db: TrainPilotDatabase
     private val dispatcher = StandardTestDispatcher()
+    private val queries = ConcurrentLinkedQueue<String>()
     private val field = PhoneWorkoutExecution::class.java.getDeclaredField("store").apply { isAccessible = true }
 
     @Before fun open() {
         Dispatchers.setMain(dispatcher)
         context = RuntimeEnvironment.getApplication()
+        context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE).edit().clear().commit()
         (field.get(null) as? PhoneWorkoutExecutionStore)?.close()
         field.set(null, null)
         context.deleteDatabase(PhoneWorkoutExecutionStore.DATABASE)
         context.getSharedPreferences("trainpilot_wear_sync", Context.MODE_PRIVATE).edit().clear().commit()
-        db = Room.inMemoryDatabaseBuilder(context, TrainPilotDatabase::class.java).build()
+        db = Room.inMemoryDatabaseBuilder(context, TrainPilotDatabase::class.java)
+            .setQueryCallback({ sql, _ -> queries.add(sql) }, Executor { it.run() }).build()
     }
 
     @After fun close() {
@@ -75,6 +81,30 @@ class NativeWorkoutFinalizationTest {
             "2026-10-22T10:00:00Z", "2026-10-22T11:00:00Z", "program", "Program", "A", "A", "planned", 1L, "{}"))
     }
 
+    private suspend fun priorPress() {
+        com.repforge.app.data.migration.LegacyWebViewMigrator(context, db,
+            com.repforge.app.data.store.TrainPilotSettingsStore(context)).saveWorkoutJsonToRoom(
+            JSONObject().put("id", "earlier-press").put("programId", "program").put("dayId", "A")
+                .put("started", "2026-10-20T10:00:00Z").put("finished", "2026-10-20T11:00:00Z")
+                .put("exercises", JSONArray().put(JSONObject().put("id", "press").put("repUnit", "ism.")
+                    .put("sets", JSONArray().put(JSONObject().put("done", true).put("weight", 10).put("reps", "8"))))))
+    }
+
+    @Test fun largeHistoryPrEvaluationStillReconcilesRecordsCompletesCalendarAndClosesNativeFrame() = runTest(dispatcher) {
+        db.withTransaction { repeat(1500) { db.workoutHistoryDao().insertWorkout(JournalTestFixtures.row(it)) } }
+        priorPress(); val input = prepare(); record(); schedule(); queries.clear()
+        TrainPilotWorkoutFinalization(context, db).finishWorkout(input)
+        val saved = db.workoutHistoryDao().getWorkoutWithDetails("finish-me")!!
+        assertTrue(saved.workout.hasPr226)
+        assertEquals("maxWeight", JSONArray(saved.workout.prRecordsJson226).getJSONObject(0).getString("kind"))
+        assertEquals(1502, db.workoutHistoryDao().getWorkoutCount())
+        assertEquals("completed", db.calendarScheduleDao().getEntry("planned")!!.status)
+        assertFalse(PhoneWorkoutExecution.store(context).snapshot()!!.getBoolean("active"))
+        assertEquals(0, PhoneWorkoutExecution.store(context).pendingEvents("finish-me", 1, 0).length())
+        assertTrue(queries.none { it.contains("SELECT * FROM workout_history ORDER BY started DESC", true) })
+        assertTrue(queries.any { it.contains("AS setRowId") && it.contains("LIMIT") })
+    }
+
     @Test fun pendingRecordingIsSavedBeforeNativeCloseAndCalendarCompletion() = runTest(dispatcher) {
         val input = prepare()
         record()
@@ -93,6 +123,7 @@ class NativeWorkoutFinalizationTest {
     }
 
     @Test fun calendarFailureRollsBackHistoryKeepsRecordedDraftAndRetryDoesNotDuplicate() = runTest(dispatcher) {
+        priorPress()
         val input = prepare()
         record()
         schedule()
@@ -101,7 +132,8 @@ class NativeWorkoutFinalizationTest {
         var failed = false
         try { TrainPilotWorkoutFinalization(context, db).finishWorkout(input) } catch (_: Exception) { failed = true }
         assertTrue(failed)
-        assertEquals(0, db.workoutHistoryDao().getWorkoutCount())
+        assertEquals(1, db.workoutHistoryDao().getWorkoutCount())
+        assertFalse(db.workoutHistoryDao().getWorkoutWithDetails("earlier-press")!!.workout.hasPr226)
         assertEquals("planned", db.calendarScheduleDao().getEntry("planned")!!.status)
         val pending = ActiveWorkoutStore.current(context)!!
         assertTrue(pending.getBoolean("active"))
@@ -113,7 +145,9 @@ class NativeWorkoutFinalizationTest {
         val finished = pending.getString("finished")
         db.openHelper.writableDatabase.execSQL("DROP TRIGGER calendar_full")
         TrainPilotWorkoutFinalization(context, db).finishWorkout(input)
-        assertEquals(1, db.workoutHistoryDao().getWorkoutCount())
+        assertEquals(2, db.workoutHistoryDao().getWorkoutCount())
+        assertEquals("maxWeight", JSONArray(db.workoutHistoryDao().getWorkoutWithDetails("finish-me")!!.workout.prRecordsJson226)
+            .getJSONObject(0).getString("kind"))
         assertEquals(finished, db.workoutHistoryDao().getWorkoutWithDetails("finish-me")!!.workout.finished)
         assertFalse(ActiveWorkoutStore.current(context)!!.getBoolean("active"))
     }
