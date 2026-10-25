@@ -1,14 +1,14 @@
 package com.repforge.app.ui.progress
 
-import com.repforge.shared.WorkoutStatsCalculator
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.temporal.TemporalAdjusters
 import kotlin.math.floor
-import kotlin.math.max
 
 /**
  * Flat, immutable row projection for native cardio/distance statistics.
@@ -29,7 +29,7 @@ data class CardioSetRow(
     val exerciseNameEn: String = "",
     val exerciseNameDe: String = "",
     val exerciseNameRo: String = "",
-    val measurementType: String? = "distance",
+    val measurementType: String? = null,
     val libraryMeasurementType: String? = null,
     val isKnownLibraryExercise: Boolean = false,
     val repUnit: String = "mp",
@@ -41,11 +41,12 @@ data class CardioSetRow(
     val rightSeconds: Int? = null,
     val distanceSource: String? = null,
     val gpsRouteKey163: String? = null,
-    val gpsRouteKey193: String? = null
+    val gpsRouteKey193: String? = null,
+    // Main classifies the whole exercise before iterating its sets, including undone siblings.
+    // A paged adapter must project these two exercise-wide flags when siblings are on other pages.
+    val exerciseHasDistance: Boolean? = null,
+    val exerciseHasPositiveDistance: Boolean? = null
 )
-
-/** Keyset cursor matching `NativeProgressQuery` pagination (`beforeEpochMs`, `beforeWorkoutId`, `beforeSetRowId`). */
-data class CardioPageCursor(val beforeEpochMs: Long, val beforeWorkoutId: String, val beforeSetRowId: Long)
 
 data class CardioActivityOption(
     val exerciseId: String, val nameHu: String, val nameEn: String,
@@ -193,16 +194,19 @@ object NativeCardioModel {
         measurementType: String? = null,
         distanceMeters: Double? = null,
         libraryMeasurementType: String? = null,
-        isKnownLibraryExercise: Boolean = libraryMeasurementType != null
+        isKnownLibraryExercise: Boolean = libraryMeasurementType != null,
+        exerciseHasDistance: Boolean? = null,
+        exerciseHasPositiveDistance: Boolean? = null
     ): Boolean {
-        val id = exerciseId?.trim().orEmpty()
-        if (id.isEmpty()) return false
+        val id = exerciseId.orEmpty()
+        if (id.isBlank()) return false
         if (id in TP106_DISTANCE_IDS) return true
-        val isDistMeasure = measurementType?.trim()?.equals("distance", ignoreCase = true) == true
-        val hasDist = tp106HasDistance(distanceMeters)
+        val isDistMeasure = measurementType == "distance"
+        val hasPositive = exerciseHasPositiveDistance ?: (tp106HasDistance(distanceMeters) && distanceMeters!! > 0.0)
+        val hasDist = hasPositive || (exerciseHasDistance ?: tp106HasDistance(distanceMeters))
         if (!isDistMeasure && !hasDist && !id.startsWith("custom-")) return false
-        if (libraryMeasurementType?.trim()?.equals("distance", ignoreCase = true) == true) return true
-        if (isKnownLibraryExercise && !(hasDist && distanceMeters!! > 0.0)) return false
+        if (libraryMeasurementType == "distance") return true
+        if (isKnownLibraryExercise && !hasPositive) return false
         return isDistMeasure || hasDist
     }
 
@@ -212,7 +216,9 @@ object NativeCardioModel {
         measurementType = row.measurementType,
         distanceMeters = row.distanceMeters,
         libraryMeasurementType = row.libraryMeasurementType,
-        isKnownLibraryExercise = row.isKnownLibraryExercise || row.libraryMeasurementType != null
+        isKnownLibraryExercise = row.isKnownLibraryExercise || row.libraryMeasurementType != null,
+        exerciseHasDistance = row.exerciseHasDistance,
+        exerciseHasPositiveDistance = row.exerciseHasPositiveDistance
     )
 
     @JvmStatic
@@ -271,10 +277,7 @@ object NativeCardioModel {
 
     @JvmStatic
     fun resolveSource(row: CardioSetRow): String =
-        row.distanceSource?.trim()?.takeIf { it.isNotEmpty() }
-            ?: row.gpsRouteKey193?.trim()?.takeIf { it.isNotEmpty() }
-            ?: row.gpsRouteKey163?.trim()?.takeIf { it.isNotEmpty() }
-            ?: DEFAULT_SOURCE
+        row.distanceSource?.takeIf { it.isNotEmpty() } ?: DEFAULT_SOURCE
 
     @JvmStatic
     fun tp107CardioModel(
@@ -312,7 +315,7 @@ object NativeCardioModel {
         nowEpochMs: Long,
         zoneId: ZoneId = ZoneId.systemDefault()
     ): CardioDistanceExerciseStats? {
-        val targetId = exerciseId.trim()
+        val targetId = exerciseId
         if (targetId.isEmpty()) return null
         val acc = Accumulator(nowEpochMs = nowEpochMs, zoneId = zoneId, activityFilter = targetId)
         for (row in rows) acc.add(row)
@@ -336,8 +339,7 @@ object NativeCardioModel {
         val zoneId: ZoneId = ZoneId.systemDefault(),
         activityFilter: String? = null
     ) {
-        val normalizedFilter: String? = activityFilter?.trim()
-            ?.takeIf { it.isNotEmpty() && !it.equals("all", ignoreCase = true) && it != "*" }
+        val normalizedFilter: String? = activityFilter?.takeIf { it.isNotEmpty() }
 
         private val currentWeekMonday: LocalDate = tp107WeekStart(nowEpochMs, zoneId)
         private val weekAccumulators: Array<WeekAccumulator> = Array(WEEKS_WINDOW) { idx ->
@@ -362,25 +364,18 @@ object NativeCardioModel {
         private val activityBuckets = LinkedHashMap<String, ActivityAccumulator>()
         private val recordBuckets = HashMap<RecordBucketKey, RecordBucketAccumulator>()
         private var latestEntry: CardioRecordEntry? = null
-        private var firstMatchingEntry: CardioRecordEntry? = null
         private var sequenceCounter: Long = 0L
 
-        fun addPage(page: Iterable<CardioSetRow>): CardioPageCursor? {
-            var lastRow: CardioSetRow? = null
-            for (row in page) {
-                add(row)
-                lastRow = row
-            }
-            return lastRow?.let {
-                val cursorEpoch = it.finishedEpochMs?.takeIf { ms -> ms > 0L } ?: it.startedEpochMs
-                CardioPageCursor(cursorEpoch, it.workoutId, it.setRowId)
-            }
+        /** Feed any bounded page; the DAO/adapter owns its cursor, including rejected raw rows. */
+        fun addPage(page: Iterable<CardioSetRow>): Accumulator {
+            for (row in page) add(row)
+            return this
         }
 
         fun add(row: CardioSetRow): Accumulator {
             if (!row.done) return this
-            val exerciseId = row.exerciseId.trim()
-            if (exerciseId.isEmpty()) return this
+            val exerciseId = row.exerciseId
+            if (exerciseId.isBlank()) return this
 
             val effectiveEpochMs = resolveWorkoutEpochMs(row, zoneId) ?: return this
             if (effectiveEpochMs > nowEpochMs) return this
@@ -390,8 +385,8 @@ object NativeCardioModel {
             val meters = sanitizeMeters(row.distanceMeters)
             if (seconds <= 0.0 && meters <= 0.0) return this
 
-            val workoutId = row.workoutId.trim().ifEmpty { row.startedIso?.trim().orEmpty() }
-            if (workoutId.isEmpty()) return this
+            val workoutId = row.workoutId.ifEmpty { row.startedIso.orEmpty() }
+            if (workoutId.isBlank()) return this
 
             val actAcc = activityBuckets.getOrPut(exerciseId) {
                 ActivityAccumulator(
@@ -414,7 +409,7 @@ object NativeCardioModel {
             val entry = CardioRecordEntry(
                 exerciseId = exerciseId,
                 workoutId = workoutId,
-                setId = row.setId.trim(),
+                setId = row.setId,
                 setRowId = row.setRowId,
                 setNumber = row.setNumber,
                 epochMs = effectiveEpochMs,
@@ -423,12 +418,11 @@ object NativeCardioModel {
                 seconds = seconds,
                 pace = pace,
                 source = resolveSource(row),
-                distanceSource = row.distanceSource?.trim()?.takeIf { it.isNotEmpty() },
-                gpsRouteKey163 = row.gpsRouteKey163?.trim()?.takeIf { it.isNotEmpty() },
-                gpsRouteKey193 = row.gpsRouteKey193?.trim()?.takeIf { it.isNotEmpty() }
+                distanceSource = row.distanceSource?.takeIf { it.isNotEmpty() },
+                gpsRouteKey163 = row.gpsRouteKey163?.takeIf { it.isNotEmpty() },
+                gpsRouteKey193 = row.gpsRouteKey193?.takeIf { it.isNotEmpty() }
             )
 
-            if (firstMatchingEntry == null) firstMatchingEntry = entry
             val currentLatest = latestEntry
             if (currentLatest == null || entry.epochMs > currentLatest.epochMs) {
                 latestEntry = entry
@@ -491,7 +485,7 @@ object NativeCardioModel {
         internal fun buildDistanceExerciseStats(): CardioDistanceExerciseStats? {
             if (totalSetCount == 0) return null
             val model = build()
-            val best = model.records.firstOrNull()?.best ?: firstMatchingEntry ?: return null
+            val best = model.records.firstOrNull()?.best ?: latestEntry ?: return null
             val latest = latestEntry ?: best
             return CardioDistanceExerciseStats(
                 count = totalSetCount,
@@ -509,41 +503,32 @@ object NativeCardioModel {
     }
 
     private fun sanitizeSeconds(row: CardioSetRow): Double {
-        row.durationSeconds?.let { exp ->
-            return if (exp.isFinite() && exp > 0.0) exp else 0.0
-        }
-        val repsText = row.reps.trim().replace(',', '.')
-        if (repsText.isNotEmpty()) {
-            val parsed = repsText.toDoubleOrNull()
-            return if (parsed != null && parsed.isFinite() && parsed > 0.0) parsed else 0.0
-        }
-        if ((row.leftSeconds != null && row.leftSeconds < 0) ||
-            (row.rightSeconds != null && row.rightSeconds < 0)
-        ) return 0.0
-        val leftPos = row.leftSeconds?.takeIf { it > 0 }
-        val rightPos = row.rightSeconds?.takeIf { it > 0 }
-        if (WorkoutStatsCalculator.isBilateralUnit(row.repUnit, row.exerciseId)) {
-            return if (leftPos != null && rightPos != null) max(leftPos, rightPos).toDouble() else 0.0
-        }
-        if (leftPos != null || rightPos != null) {
-            return max(leftPos ?: 0, rightPos ?: 0).toDouble()
-        }
-        return 0.0
+        // Optional durationSeconds is a decoded numeric set.reps projection, not a second time source.
+        row.durationSeconds?.let { return if (it.isFinite() && it > 0.0) it else 0.0 }
+        // Actual main values come from Number(set.reps). Never infer time from bilateral fields.
+        // Canonical native records use decimal seconds; comma/Java-only hex-float forms are invalid.
+        val text = row.reps.trim()
+        if (!DECIMAL_SECONDS.matches(text)) return 0.0
+        return text.toDoubleOrNull()?.takeIf { it.isFinite() && it > 0.0 } ?: 0.0
     }
 
+    private val DECIMAL_SECONDS = Regex("[+-]?(?:[0-9]+(?:\\.[0-9]*)?|\\.[0-9]+)(?:[eE][+-]?[0-9]+)?")
+
     internal fun resolveWorkoutEpochMs(row: CardioSetRow, zoneId: ZoneId): Long? {
-        val direct = row.finishedEpochMs?.takeIf { it > 0L } ?: row.startedEpochMs.takeIf { it > 0L }
-        if (direct != null) return direct
-        if (row.startedEpochMs < 0L || (row.finishedEpochMs != null && row.finishedEpochMs < 0L)) return null
-        val iso = row.finishedIso?.trim()?.takeIf { it.isNotEmpty() }
-            ?: row.startedIso?.trim()?.takeIf { it.isNotEmpty() }
-            ?: return null
-        val parsed = try { Instant.parse(iso).toEpochMilli() } catch (_: Exception) {
-            try { OffsetDateTime.parse(iso).toInstant().toEpochMilli() } catch (_: Exception) {
-                try { LocalDate.parse(iso.take(10)).atStartOfDay(zoneId).toInstant().toEpochMilli() } catch (_: Exception) { null }
-            }
-        }
-        return parsed?.takeIf { it > 0L }
+        // A present but malformed finish must not silently fall back to a valid start.
+        row.finishedIso?.trim()?.takeIf { it.isNotEmpty() }?.let { return parseTime(it, zoneId) }
+        row.finishedEpochMs?.let { return it.takeIf { value -> value > 0L } }
+        row.startedIso?.trim()?.takeIf { it.isNotEmpty() }?.let { return parseTime(it, zoneId) }
+        return row.startedEpochMs.takeIf { it > 0L }
+    }
+
+    private fun parseTime(iso: String, zoneId: ZoneId): Long? {
+        val instant = runCatching { Instant.parse(iso) }.getOrNull()
+            ?: runCatching { OffsetDateTime.parse(iso).toInstant() }.getOrNull()
+            // ECMAScript date-only ISO strings mean UTC, even for a different display zone.
+            ?: runCatching { LocalDate.parse(iso).atStartOfDay(ZoneOffset.UTC).toInstant() }.getOrNull()
+            ?: runCatching { LocalDateTime.parse(iso).atZone(zoneId).toInstant() }.getOrNull()
+        return instant?.let { runCatching { it.toEpochMilli() }.getOrNull() }?.takeIf { it > 0L }
     }
 
     private data class RecordBucketKey(val exerciseId: String, val roundedDistanceMeters: Int)

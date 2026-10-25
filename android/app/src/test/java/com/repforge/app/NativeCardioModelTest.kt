@@ -202,7 +202,8 @@ class NativeCardioModelTest {
         val run5001 = records[2]
         assertEquals(5001, run5001.roundedDistanceMeters)
         assertEquals("w-5001", run5001.best.workoutId)
-        assertEquals("route-5001", run5001.best.source)
+        assertEquals("manual", run5001.best.source)
+        assertEquals("route-5001", run5001.best.gpsRouteKey163)
     }
 
     @Test
@@ -365,6 +366,75 @@ class NativeCardioModelTest {
         assertEquals("s-1410-2", bikeRec1500.second!!.setId)
     }
 
+    @Test fun noDistanceRecordUsesLatestTimeOnlyAttemptInsteadOfInputOrder() {
+        val now = Instant.parse("2026-10-24T12:00:00Z").toEpochMilli()
+        val old = CardioSetRow("old", startedEpochMs = now - 100000, exerciseId = "running", reps = "60")
+        val recent = old.copy(workoutId = "new", startedEpochMs = now - 1000, reps = "120")
+        for (rows in listOf(listOf(old, recent), listOf(recent, old))) {
+            val stats = NativeCardioModel.tp107DistanceStats("running", rows, now, utcZone)!!
+            assertEquals("new", stats.best.workoutId)
+            assertEquals("new", stats.latest.workoutId)
+            assertTrue(stats.cardio.records.isEmpty())
+        }
+    }
+
+    @Test fun malformedFinishIsNotReplacedByStartOrAParsedDatePrefix() {
+        val now = Instant.parse("2026-10-24T12:00:00Z").toEpochMilli()
+        val row = CardioSetRow("bad", startedEpochMs = now - 1000, exerciseId = "running", reps = "60", distanceMeters = 100.0)
+        val invalid = listOf(row.copy(finishedIso = "2026-10-20 garbage"), row.copy(finishedIso = "2026-02-30T10:00:00Z"),
+            row.copy(finishedEpochMs = -1), row.copy(startedIso = "2026-10-20 garbage"))
+        assertEquals(0, NativeCardioModel.compute(invalid, now, utcZone).totalSetCount)
+        val dateOnly = row.copy(finishedIso = "2026-10-20")
+        val stats = NativeCardioModel.tp107DistanceStats("running", listOf(dateOnly), now, ZoneId.of("America/New_York"))!!
+        assertEquals(Instant.parse("2026-10-20T00:00:00Z").toEpochMilli(), stats.latest.epochMs)
+    }
+
+    @Test fun secondsAreNotInventedFromDecimalCommasOrSideMeasurements() {
+        val now = Instant.parse("2026-10-24T12:00:00Z").toEpochMilli()
+        val row = CardioSetRow("bad-seconds", startedEpochMs = now - 1000, exerciseId = "running", distanceMeters = 100.0)
+        for (sample in listOf(row.copy(reps = "60,5"), row.copy(reps = "", leftSeconds = 30, rightSeconds = 40),
+            row.copy(reps = "0x1p4"))) {
+            val model = NativeCardioModel.compute(listOf(sample), now, utcZone)
+            assertEquals(100.0, model.totalDistanceMeters, 0.0)
+            assertEquals(0.0, model.totalDurationSeconds, 0.0)
+            assertNull(model.overallPaceSecondsPerKm)
+            assertTrue(model.records.isEmpty())
+        }
+    }
+
+    @Test fun routeIdentityDoesNotBecomeAnInventedMeasurementSource() {
+        val now = Instant.parse("2026-10-24T12:00:00Z").toEpochMilli()
+        val row = CardioSetRow("route", "set", startedEpochMs = now - 1000, exerciseId = "running",
+            distanceMeters = 100.0, reps = "60", gpsRouteKey193 = "private-route-identity")
+        val record = NativeCardioModel.compute(listOf(row), now, utcZone).records.single().best
+        assertEquals("manual", record.source)
+        assertEquals("private-route-identity", record.gpsRouteKey193)
+        assertEquals("gps", NativeCardioModel.compute(listOf(row.copy(distanceSource = "gps")), now, utcZone).records.single().best.source)
+    }
+
+    @Test fun exerciseWideFlagsPreserveClassificationWhenDistanceIsOnAnotherSetPage() {
+        val now = Instant.parse("2026-10-24T12:00:00Z").toEpochMilli()
+        val row = CardioSetRow("mixed", "time-only", startedEpochMs = now - 1000, exerciseId = "goblet-squat",
+            libraryMeasurementType = "reps", isKnownLibraryExercise = true, reps = "30")
+        assertEquals(0, NativeCardioModel.compute(listOf(row), now, utcZone).totalSetCount)
+        val projected = row.copy(exerciseHasDistance = true, exerciseHasPositiveDistance = true)
+        assertEquals(30.0, NativeCardioModel.compute(listOf(projected), now, utcZone).timeOnlyDurationSeconds, 0.0)
+        assertFalse(NativeCardioModel.tp106IsDistance("unknown", measurementType = "DISTANCE"))
+        assertFalse(NativeCardioModel.tp106IsDistance("unknown"))
+    }
+
+    @Test fun activityIdsAllAndStarRemainLiteralFiltersAndAreNotWildcards() {
+        val now = Instant.parse("2026-10-24T12:00:00Z").toEpochMilli()
+        val rows = listOf("all", "*", "running").map { id -> CardioSetRow("w-$id", startedEpochMs = now - 1000,
+            exerciseId = id, measurementType = "distance", reps = "30", distanceMeters = 100.0) }
+        for (id in listOf("all", "*")) {
+            val model = NativeCardioModel.compute(rows, now, utcZone, id)
+            assertEquals(1, model.totalSetCount)
+            assertEquals(id, model.records.single().exerciseId)
+        }
+        assertEquals(3, NativeCardioModel.compute(rows, now, utcZone, "").totalSetCount)
+    }
+
     private fun generateDeterministicWorkoutRows(workoutCount: Int, nowEpochMs: Long): List<CardioSetRow> {
         val out = ArrayList<CardioSetRow>(workoutCount * 2)
         var rowId = 1L
@@ -402,10 +472,7 @@ class NativeCardioModelTest {
     private fun computeViaPagedAccumulator(rows: List<CardioSetRow>, nowEpochMs: Long, zoneId: ZoneId) =
         NativeCardioModel.Accumulator(nowEpochMs = nowEpochMs, zoneId = zoneId).also { acc ->
             for (page in rows.chunked(NativeCardioModel.DEFAULT_PAGE_SIZE)) {
-                val cursor = acc.addPage(page)
-                assertNotNull(cursor)
-                assertEquals(page.last().workoutId, cursor!!.beforeWorkoutId)
-                assertEquals(page.last().setRowId, cursor.beforeSetRowId)
+                acc.addPage(page)
             }
         }.build()
 }
