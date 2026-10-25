@@ -80,6 +80,9 @@ fun SettingsScreen(
     val colors = LocalTrainPilotColors.current
     val context = LocalContext.current
     val strings = remember(context, state.settings.language) { nativeResources(context, state.settings.language) }
+    val googleConsent by viewModel.googleConsent.collectAsStateWithLifecycle()
+    NativeGoogleConsentLauncher(googleConsent, viewModel::takeGoogleConsent,
+        viewModel::completeGoogleConsent, viewModel::failGoogleConsent)
     val activity = context as? Activity
     var profileOpen by remember { mutableStateOf(false) }
     var openedProfileJson by remember { mutableStateOf("{}") }
@@ -172,6 +175,7 @@ fun SettingsScreen(
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Button(
                                 onClick = { activity?.let { viewModel.syncDriveCloud(it) } },
+                            enabled = !gs.isBusy && !state.replacementBusy,
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(containerColor = colors.accent)
                             ) {
@@ -179,6 +183,7 @@ fun SettingsScreen(
                             }
                             Button(
                                 onClick = { activity?.let { viewModel.syncCalendarCloud(it) } },
+                            enabled = !gs.isBusy && !state.replacementBusy,
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(containerColor = colors.card2)
                             ) {
@@ -186,14 +191,15 @@ fun SettingsScreen(
                             }
                         }
                         Spacer(Modifier.height(8.dp))
-                        TextButton(onClick = { viewModel.disconnectGoogle() }) {
+                        TextButton(onClick = { viewModel.disconnectGoogle() }, enabled = !gs.isBusy && !state.replacementBusy) {
                             Text(strings.getString(R.string.native_settings_disconnect), color = colors.dangerText, fontSize = 11.sp)
                         }
                     } else {
                         Text(strings.getString(R.string.native_settings_google_help), color = colors.muted, fontSize = 12.sp)
                         Spacer(Modifier.height(12.dp))
                         Button(
-                            onClick = { activity?.let { viewModel.syncDriveCloud(it) } },
+                            onClick = { activity?.let { viewModel.connectGoogle(it) } },
+                            enabled = !gs.isBusy && !state.replacementBusy,
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(containerColor = colors.accent)
                         ) {

@@ -50,7 +50,8 @@ class NativeGoogleRepositoryAdmissionTest {
                 second.deleteAllDriveAppData("must-not-leave-test"), first.deleteManagedCalendars("must-not-leave-test"),
                 second.completeConnectWithToken("must-not-leave-test"), first.revokeAccess(Activity()), second.disconnect())
             results.forEach { assertTrue(it.exceptionOrNull() is NativeGoogleOperationGate.Busy) }
-            assertTrue(second.authorizeOperation(Activity(), "connect") is GoogleAuthOutcome.Failed)
+            assertTrue(second.authorizeAndRun(Activity(), GoogleSyncAction.CONNECT, { fail("Busy consent must not launch"); null })
+                .exceptionOrNull() is NativeGoogleOperationGate.Busy)
             assertEquals("subject-a", context.getSharedPreferences("repforge-google", Context.MODE_PRIVATE).getString("sub", ""))
             assertFalse(first.uiState.value.isBusy); assertFalse(second.uiState.value.isBusy)
         }
@@ -71,7 +72,9 @@ class NativeGoogleRepositoryAdmissionTest {
 
     @Test fun disconnectedAuthorizationCannotOpenAccountConsentForADataOperation() = runTest(dispatcher) {
         val repo = GoogleSyncRepository(context)
-        assertTrue(repo.authorizeOperation(Activity(), "drive") is GoogleAuthOutcome.Failed)
+        val result = repo.authorizeAndRun(Activity(), GoogleSyncAction.DRIVE, { fail("Disconnected consent must not launch"); null })
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull()?.cause is IllegalStateException)
         assertFalse(repo.uiState.value.isBusy)
     }
 

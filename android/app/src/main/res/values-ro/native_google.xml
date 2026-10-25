@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_google_authorizing">Se verifică accesul Google…</string>
+    <string name="native_google_waiting">Se așteaptă aprobarea Google…</string>
+    <string name="native_google_launch_failed">Aprobarea Google nu a putut fi deschisă. Încearcă din nou.</string>
+    <string name="native_google_cancelled">Aprobarea Google a fost anulată. Sincronizarea nu a pornit.</string>
+    <string name="native_google_no_token">Google nu a acordat acces. Solicită din nou accesul.</string>
+    <string name="native_google_connected">Contul Google este conectat.</string>
+    <string name="native_google_drive_done">Sincronizarea Drive s-a încheiat.</string>
+    <string name="native_google_calendar_done">Calendar sincronizat: %1$d operațiuni.</string>
+    <string name="native_google_failed">Operațiunea Google a eșuat.</string>
+</resources>

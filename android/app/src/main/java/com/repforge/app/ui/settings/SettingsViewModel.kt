@@ -2,13 +2,17 @@ package com.repforge.app.ui.settings
 
 import android.app.Activity
 import android.app.Application
+import android.content.Intent
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.repforge.app.ActiveWorkoutStore
 import com.repforge.app.PhoneWorkoutExecution
 import com.repforge.app.BackupRestoreManager
-import com.repforge.app.GoogleAuthOutcome
+import com.repforge.app.GoogleSyncAction
+import com.repforge.app.NativeGoogleConsentBridge
+import com.repforge.app.R
+import com.repforge.app.ui.text.nativeResources
 import com.repforge.app.GoogleSyncRepository
 import com.repforge.app.GoogleSyncUiState
 import com.repforge.app.NativeDataReplacement
@@ -44,6 +48,17 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val settingsStore = TrainPilotSettingsStore(context)
     val backupManager = BackupRestoreManager(context)
     val googleRepo = GoogleSyncRepository(context)
+
+    private val googleConsentBridge = NativeGoogleConsentBridge()
+    internal val googleConsent = googleConsentBridge.prompt
+    private var googleRequestRunning = false
+
+    internal fun takeGoogleConsent(id: String) = googleConsentBridge.takeForLaunch(id)
+    internal fun completeGoogleConsent(id: String, data: Intent?) { googleConsentBridge.complete(id, data) }
+    internal fun failGoogleConsent(id: String) {
+        googleConsentBridge.fail(id, java.io.IOException(nativeResources(context, _uiState.value.settings.language)
+            .getString(R.string.native_google_launch_failed)))
+    }
 
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
@@ -121,43 +136,27 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         _uiState.value = _uiState.value.copy(recoverEarlierBackupsChecked = checked)
     }
 
-    fun syncDriveCloud(activity: Activity) {
-        if (_uiState.value.replacementBusy) return
-        viewModelScope.launch {
-            when (val auth = googleRepo.authorizeOperation(activity, "drive")) {
-                is GoogleAuthOutcome.Authorized -> {
-                    val r = googleRepo.syncDriveCloud(auth.accessToken, recoverEarlier = _uiState.value.recoverEarlierBackupsChecked)
-                    _uiState.value = _uiState.value.copy(
-                        statusMessage = if (r.isSuccess) "Drive szinkron sikeres!" else "Hiba: ${r.exceptionOrNull()?.message}"
-                    )
-                }
-                is GoogleAuthOutcome.NeedsResolution -> {
-                    try { activity.startIntentSenderForResult(auth.pendingIntent.intentSender, 9001, null, 0, 0, 0) } catch (_: Exception) {}
-                }
-                is GoogleAuthOutcome.Failed -> {
-                    _uiState.value = _uiState.value.copy(statusMessage = auth.message)
-                }
-            }
-        }
-    }
+    fun connectGoogle(activity: Activity) = runGoogleAction(activity, GoogleSyncAction.CONNECT)
+    fun syncDriveCloud(activity: Activity) = runGoogleAction(activity, GoogleSyncAction.DRIVE)
+    fun syncCalendarCloud(activity: Activity) = runGoogleAction(activity, GoogleSyncAction.CALENDAR)
 
-    fun syncCalendarCloud(activity: Activity) {
-        if (_uiState.value.replacementBusy) return
+    private fun runGoogleAction(activity: Activity, action: GoogleSyncAction) {
+        if (_uiState.value.replacementBusy || googleRequestRunning) return
+        googleRequestRunning = true
+        val recoverEarlier = _uiState.value.recoverEarlierBackupsChecked
         viewModelScope.launch {
-            when (val auth = googleRepo.authorizeOperation(activity, "calendar")) {
-                is GoogleAuthOutcome.Authorized -> {
-                    val r = googleRepo.syncCalendarCloud(auth.accessToken)
-                    _uiState.value = _uiState.value.copy(
-                        statusMessage = if (r.isSuccess) "Naptár szinkron sikeres (${r.getOrNull()} esemény)!" else "Hiba: ${r.exceptionOrNull()?.message}"
-                    )
-                }
-                is GoogleAuthOutcome.NeedsResolution -> {
-                    try { activity.startIntentSenderForResult(auth.pendingIntent.intentSender, 9002, null, 0, 0, 0) } catch (_: Exception) {}
-                }
-                is GoogleAuthOutcome.Failed -> {
-                    _uiState.value = _uiState.value.copy(statusMessage = auth.message)
-                }
-            }
+            try {
+                val result = googleRepo.authorizeAndRun(activity, action, googleConsentBridge::resolve, recoverEarlier)
+                val strings = nativeResources(context, _uiState.value.settings.language)
+                val message = result.fold(onSuccess = { completion ->
+                    when (completion.action) {
+                        GoogleSyncAction.CONNECT -> strings.getString(R.string.native_google_connected)
+                        GoogleSyncAction.DRIVE -> strings.getString(R.string.native_google_drive_done)
+                        GoogleSyncAction.CALENDAR -> strings.getString(R.string.native_google_calendar_done, completion.count ?: 0)
+                    }
+                }, onFailure = { it.message ?: strings.getString(R.string.native_google_failed) })
+                _uiState.value = _uiState.value.copy(statusMessage = message)
+            } finally { googleRequestRunning = false }
         }
     }
 
