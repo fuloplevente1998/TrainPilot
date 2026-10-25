@@ -1,6 +1,7 @@
 package com.repforge.app
 
 import android.content.Context
+import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.*
@@ -31,6 +32,22 @@ class NativeCloudPhotoStageTest {
         .also { if (deleted != null) it.put("deletedAt", deleted) }
     private fun data(vararg photos: JSONObject) = JSONObject().put("history", JSONArray().put(
         JSONObject().put("id", "workout").put("photos", JSONArray(photos.toList()))))
+
+    @Test fun liveDraftPhotoOverridesDeletedHistoryReferenceAndNeverEntersTheDeletionPlan() = runBlocking {
+        local().writeBytes(bytes)
+        val activeDraftPhoto = photo()
+        val payload = data(photo(deleted = 123L)).put("draft", JSONObject().put("session",
+            JSONObject().put("photos", JSONArray().put(activeDraftPhoto))))
+        NativeCloudPhotoStage(context, payload).use { stage ->
+            stage.prepare({ _, _ -> "new-draft-drive" }, { _, _, _ -> fail("Local draft bytes exist") })
+            assertTrue(stage.deletedPhotoIds.isEmpty())
+            assertEquals("new-draft-drive", activeDraftPhoto.getString("driveFileId"))
+            assertArrayEquals(bytes, File(stage.photos, "$one.jpg").readBytes())
+            stage.markInstalled()
+            stage.finishRemoteDeletes { _, _ -> fail("A resumable draft is still using this photo") }
+        }
+        assertArrayEquals(bytes, local().readBytes())
+    }
     private fun meta(id: String = one, content: ByteArray = bytes) = JSONObject().put("name", "trainpilot-photo-$id.jpg")
         .put("mimeType", "image/jpeg").put("size", content.size.toString()).put("md5Checksum",
             MessageDigest.getInstance("MD5").digest(content).joinToString("") { "%02x".format(it.toInt() and 255) })
@@ -60,7 +77,7 @@ class NativeCloudPhotoStageTest {
         val live = local().apply { writeBytes(bytes) }; val row = photo(deleted = 123L)
         NativeCloudPhotoStage(context, data(row)).use { stage ->
             prepare(stage)
-            assertThrows(IllegalStateException::class.java) { stage.finishRemoteDeletes { _, _ -> fail() } }
+            assertThrows(IllegalStateException::class.java) { runBlocking { stage.finishRemoteDeletes { _, _ -> fail() } } }
             assertArrayEquals(bytes, live.readBytes()); assertEquals("drive-$one", row.getString("driveFileId"))
         }
     }
@@ -154,7 +171,7 @@ class NativeCloudPhotoStageTest {
         local().writeBytes(bytes)
         NativeCloudPhotoStage(context, data(photo(), photo(deleted = 123))).use { stage ->
             prepare(stage); assertTrue(stage.deletedPhotoIds.isEmpty()); stage.markInstalled()
-            stage.finishRemoteDeletes { _, _ -> fail("Active photo cannot be deleted") }
+            runBlocking { stage.finishRemoteDeletes { _, _ -> fail("Active photo cannot be deleted") } }
         }
     }
     @Test fun zeroFalseEmptyAndNullDeletionMarkersStayActive() {
@@ -166,9 +183,9 @@ class NativeCloudPhotoStageTest {
         val row = photo(deleted = 123)
         NativeCloudPhotoStage(context, data(row)).use { stage ->
             prepare(stage); stage.markInstalled()
-            assertThrows(IOException::class.java) { stage.finishRemoteDeletes { _, _ -> throw IOException("network") } }
+            assertThrows(IOException::class.java) { runBlocking { stage.finishRemoteDeletes { _, _ -> throw IOException("network") } } }
             assertEquals("drive-$one", row.getString("driveFileId"))
-            var called = 0; stage.finishRemoteDeletes { _, id -> assertEquals("drive-$one", id); called++ }
+            var called = 0; runBlocking { stage.finishRemoteDeletes { _, id -> assertEquals("drive-$one", id); called++ } }
             assertEquals(1, called); assertEquals("drive-$one", row.getString("driveFileId"))
         }
     }

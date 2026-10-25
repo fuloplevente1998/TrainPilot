@@ -60,6 +60,7 @@ internal object ActiveWorkoutStore {
         snapshot.put("revision", revision)
         snapshot.put("active", true)
         snapshot.put("syncedAt", System.currentTimeMillis())
+        NativeCloudPhotoDeletion.requireUnreservedSnapshot(snapshot)
         val saved = prefs(context).edit()
             .putLong(REVISION, revision)
             .putString(SNAPSHOT, snapshot.toString())

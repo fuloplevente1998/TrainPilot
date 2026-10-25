@@ -77,6 +77,7 @@ internal object NativeDataReplacement {
         var acquired = false
         var versionChanged = false
         try {
+            NativeCloudPhotoDeletion.requireNoPendingDeletes()
             withContext(NonCancellable + Dispatchers.Main.immediate) {
                 // Same order as ownership publication: journal -> snapshot -> native execution.
                 synchronized(PhoneOwnership193.journal(app)) {

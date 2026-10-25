@@ -285,6 +285,11 @@ interface WorkoutHistoryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPhotos(photos: List<WorkoutPhotoEntity>)
 
+    @Query("""SELECT EXISTS(SELECT 1 FROM workout_photos
+        WHERE (id = :photoId OR driveFileId = :driveId)
+        AND (deletedAt IS NULL OR TRIM(deletedAt) IN ('', '0', '0.0', 'false')))""")
+    suspend fun hasLiveCloudPhotoReference(photoId: String, driveId: String): Boolean
+
     @Query("DELETE FROM workout_history_exercises WHERE workoutHistoryId = :workoutId")
     suspend fun deleteExercisesForWorkout(workoutId: String)
 

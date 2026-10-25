@@ -103,18 +103,12 @@ class BackupRestoreManager(context: Context) {
 
     private fun photoIds(data: JSONObject): Set<String> {
         val ids = TreeSet<String>()
-        val history = data.optJSONArray("history") ?: throw IOException("Missing workout history.")
-        for (i in 0 until history.length()) {
-            val a = history.getJSONObject(i).optJSONArray("photos") ?: continue
-            for (j in 0 until a.length()) {
-                val p = a.getJSONObject(j)
-                if (photoDeleted(p)) {
-                    continue
-                }
-                val id = p.optString("id")
-                if (!UUID_REGEX.matches(id)) throw IOException("Invalid photo reference.")
-                ids.add(id)
-            }
+        if (data.optJSONArray("history") == null) throw IOException("Missing workout history.")
+        for (photo in NativeCloudPhotoStage.photoRows(data)) {
+            if (photoDeleted(photo)) continue
+            val id = photo.optString("id")
+            if (!UUID_REGEX.matches(id)) throw IOException("Invalid photo reference.")
+            ids.add(id)
         }
         if (ids.size > 5000) throw IOException("Too many photos.")
         return ids

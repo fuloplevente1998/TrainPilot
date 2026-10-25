@@ -349,7 +349,9 @@ class GoogleSyncRepository internal constructor(context: Context, private val op
             stagedPhotos.finishRemoteDeletes { id, driveId ->
                 continuation.requireCurrent(appContext)
                 operationContext.ensureActive()
-                deleteDrivePhotoInternal(accessToken, id, driveId)
+                NativeCloudPhotoDeletion.deleteUnreferenced(appContext, id, driveId, continuation) {
+                    deleteDrivePhotoInternal(accessToken, id, driveId)
+                }
             }
             val nowIso = Instant.now().toString()
             NativeDataReplacement.mutate(appContext) {

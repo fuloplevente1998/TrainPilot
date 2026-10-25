@@ -165,6 +165,8 @@ class LegacyWebViewMigrator(
             rootInput
         }
 
+        com.repforge.app.NativeCloudPhotoDeletion.requireUnreservedReferences(data)
+
         // Validate profile *before* any Room mutation: DataStore is applied later,
         // so a malformed portable profile must not leave partially imported tables.
         data.optJSONObject("settings")?.let { settings ->
@@ -448,6 +450,7 @@ class LegacyWebViewMigrator(
     }
 
     private suspend fun saveWorkoutJsonToRoom(h: JSONObject, tombstones: List<HistoryTombstoneEntity>) {
+        com.repforge.app.NativeCloudPhotoDeletion.requireUnreservedReferences(h)
         val started = h.optString("started", "").trim()
         if (started.isEmpty()) return
         val finished = h.optString("finished", started).trim()
@@ -554,10 +557,7 @@ class LegacyWebViewMigrator(
                 val pObj = srcPhotos.optJSONObject(pIdx) ?: continue
                 val pid = pObj.optString("id")
                 if (!pid.matches(Regex("[a-f0-9-]{36}"))) continue
-                val deletedAt = if (pObj.has("deletedAt") && !pObj.isNull("deletedAt") &&
-                    pObj.opt("deletedAt") != false && pObj.optString("deletedAt") != "0" &&
-                    pObj.optString("deletedAt").isNotBlank()
-                ) pObj.optString("deletedAt") else null
+                val deletedAt = if (com.repforge.app.BackupRestoreManager.photoDeleted(pObj)) pObj.optString("deletedAt") else null
                 photosList.add(
                     WorkoutPhotoEntity(
                         id = pid,

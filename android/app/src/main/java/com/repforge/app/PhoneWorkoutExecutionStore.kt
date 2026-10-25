@@ -29,6 +29,7 @@ internal class PhoneWorkoutExecutionStore(context: Context) :
         }
 
         private fun save(db: SQLiteDatabase, frame: JSONObject) {
+            if (frame.optBoolean("active", true)) NativeCloudPhotoDeletion.requireUnreservedSnapshot(frame)
             db.execSQL("INSERT OR REPLACE INTO execution(slot,snapshot) VALUES(1,?)", arrayOf<Any>(frame.toString()))
         }
 

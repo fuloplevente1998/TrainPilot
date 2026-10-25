@@ -16,19 +16,31 @@ internal class NativeCloudPhotoStage(private val context: Context, data: JSONObj
     companion object {
         private val ID = Regex("[a-f0-9-]{36}")
         private val DRIVE_ID = Regex("[A-Za-z0-9_-]+")
+        /** Supported workout-photo roots: journal plus the resumable imported draft, not library assets. */
+        internal fun photoRows(data: JSONObject): List<JSONObject> {
+            val rows = ArrayList<JSONObject>()
+            fun append(workout: JSONObject) {
+                val photos = workout.optJSONArray("photos") ?: return
+                for (index in 0 until photos.length()) rows.add(photos.getJSONObject(index))
+            }
+            val history = data.getJSONArray("history")
+            for (index in 0 until history.length()) append(history.getJSONObject(index))
+            data.optJSONObject("draft")?.let { draft ->
+                append(draft)
+                draft.optJSONObject("session")?.let(::append)
+            }
+            return rows
+        }
+
         internal fun references(data: JSONObject): List<Reference> {
             val byId = linkedMapOf<String, MutableList<JSONObject>>()
-            val history = data.getJSONArray("history")
-            for (i in 0 until history.length()) {
-                val photos = history.getJSONObject(i).optJSONArray("photos") ?: continue
-                for (j in 0 until photos.length()) {
-                    val row = photos.getJSONObject(j); val id = row.optString("id")
-                    if (!ID.matches(id)) {
-                        if (BackupRestoreManager.photoDeleted(row)) continue
-                        throw IOException("Invalid photo reference.")
-                    }
-                    byId.getOrPut(id) { mutableListOf() }.add(row)
+            for (row in photoRows(data)) {
+                val id = row.optString("id")
+                if (!ID.matches(id)) {
+                    if (BackupRestoreManager.photoDeleted(row)) continue
+                    throw IOException("Invalid photo reference.")
                 }
+                byId.getOrPut(id) { mutableListOf() }.add(row)
             }
             val refs = byId.map { (id, rows) ->
                 val live = rows.filterNot { BackupRestoreManager.photoDeleted(it) }
@@ -126,7 +138,7 @@ internal class NativeCloudPhotoStage(private val context: Context, data: JSONObj
     internal fun markInstalled() { check(prepared); installed = true }
 
     /** Tombstone and Drive ID stay durable in the snapshot until a later retry succeeds. */
-    fun finishRemoteDeletes(delete: (String, String) -> Unit) {
+    suspend fun finishRemoteDeletes(delete: suspend (String, String) -> Unit) {
         check(prepared && installed) { "Local cloud photo commit is required before remote deletion." }
         for (ref in refs) if (ref.deleted && ref.driveId.isNotEmpty()) delete(ref.id, ref.driveId)
     }
