@@ -164,6 +164,11 @@ class NativeHealthAutoRefreshUiTest {
                 assertTrue(error is IllegalStateException)
             }
         } finally {
+            // ActiveWorkoutStore.current() also publishes into a process-wide StateFlow.
+            // Reset that in-memory projection before restoring the exact fixture value,
+            // otherwise the following MainActivity test may incorrectly navigate into
+            // the synthetic workout instead of opening the Health destination.
+            ActiveWorkoutStore.clear(context)
             val editor = prefs.edit()
             if (previous == null) editor.remove("snapshot") else editor.putString("snapshot", previous)
             assertTrue(editor.commit())
