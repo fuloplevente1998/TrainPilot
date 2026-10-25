@@ -115,7 +115,15 @@ internal object NativeHealthRefresh {
             }
             guard()
             val start = day.atStartOfDay(prepared.zone).toInstant().toString()
-            val end = day.plusDays(1).atStartOfDay(prepared.zone).toInstant().toString()
+            // Health Connect rejects a future end instant. For today use the observation
+            // horizon, not tomorrow's midnight (also works for DST-short/long local days).
+            val endOfDay = day.plusDays(1).atStartOfDay(prepared.zone).toInstant()
+            val horizon = java.time.Instant.now()
+            val endInstant = if (endOfDay.isAfter(horizon)) horizon else endOfDay
+            check(endInstant.isAfter(java.time.Instant.parse(start))) {
+                "Health day has not started yet"
+            }
+            val end = endInstant.toString()
             val result = if (prepared.provider == HealthJournalStore.SAMSUNG) {
                 SamsungHealthRepository.readHealthDay(
                     context, start, end, day.toString(), guard,
