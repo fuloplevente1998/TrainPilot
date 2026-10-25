@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cardio_progress_title">Kardio</string>
+    <string name="cardio_progress_description">Gespeicherte Strecken und Zeiten</string>
+    <string name="cardio_progress_all">Alle Aktivitäten</string>
+    <string name="cardio_progress_loading">Kardiodaten werden geladen…</string>
+    <string name="cardio_progress_error">Kardiodaten konnten nicht geladen werden.</string>
+    <string name="cardio_progress_retry">Erneut versuchen</string>
+    <string name="cardio_progress_empty">Für diese Aktivität gibt es noch keine Kardioergebnisse.</string>
+    <string name="cardio_progress_all_time">Gesamt</string>
+    <string name="cardio_progress_current_week">Diese Woche</string>
+    <string name="cardio_progress_previous_week">Vorwoche</string>
+    <string name="cardio_progress_eight_weeks">Strecke – letzte 8 Wochen</string>
+    <string name="cardio_progress_time_only">Nur Zeitmessung: %1$s</string>
+    <string name="cardio_progress_records">Rekorde über gleiche Distanz</string>
+    <string name="cardio_progress_no_records">Noch keine Zeitrekorde für gemessene Strecken.</string>
+    <string name="cardio_progress_record_distance">%1$d m • %2$d Versuche</string>
+    <string name="cardio_progress_record_best">Bestzeit: %1$s (%2$s)</string>
+    <string name="cardio_progress_record_second">Zweitbeste: %1$s (%2$s)</string>
+    <string name="cardio_progress_more">Weitere %1$d Rekorde anzeigen</string>
+    <string name="cardio_progress_less">Weniger Rekorde anzeigen</string>
+</resources>
