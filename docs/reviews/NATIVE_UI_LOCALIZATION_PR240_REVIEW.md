@@ -76,3 +76,9 @@ A teljes integrált Android/nyelvváltás/UI-kapu továbbra a közös batch vég
 Külön kiosztható következő munka:
 [nyelvváltási Compose UI-tesztek](../plans/NATIVE_LOCALIZATION_UI_TEST_HANDOFF.md).
 Ez a review nem main merge-, release- vagy élő adatos telepítési jóváhagyás.
+
+
+Frissítés: **3b548ac /6cf13be** squash integráció a migrációs ágon megtörtént,
+Home nevek/látható egységek javítva és mind a hat UI-teszt valódi pickerre kötve.
+Külső ág/PR változatlan; a fenti nem-integrált állapot az akkori SHA-ra szól.
+Aktuális részletek: docs/reviews/NATIVE_LOCALIZATION_INTEGRATION.md. Még nem futott.

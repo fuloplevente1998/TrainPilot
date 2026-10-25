@@ -4,6 +4,52 @@ Frissítve: **2026-10-25**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Lokalizációs integráció és Google consent tényleges bekötése – 2026-10-25
+
+**3b548ac**: draft #240 exact82883ab squash integrálva a migrációba, a külső ágra
+nem írtunk. 20 scoped fájl, négy új JVM-kód. Read-key készlet/ordered JSON-write
+és feedback adatkulcsok, testTagek megmaradtak, négy XML kulcs/formátum/R-ref rendben.
+Első túl szigorú helyi source-audit a teljes régi bázist/duplikált locale-olvasások
+számát is mérte; szűk exact integration-parent és read-key set/write-order újra-
+ellenőrzés sikeres, nem app-regresszió és nem futtatott Kotlin-teszt.
+
+**6cf13be**: #241 exactab25d84 négy új fájl/hat Compose-eset squash integrálva,
+majd közvetlen DataStore-nyelvírás helyett valódi picker-kattintásra javítva.
+Settings LazyColumn testTag+scrollToNode szükséges a nagy témapaletta alatti
+profilhoz; meglévő fő profil/nyelv UI-próbák is ezt használják. Home programnév
+és napnév a tárolt HU/EN/DE/RO mezőből fallbackkel, nincs eldobott egységmező:
+látható steps/workouts/recovery caption és stabil metric/name/day tagek. A hat
+próba ezek tényleges UI-ját is nézi, többértelmű fejléc-presence nem single-match.
+
+**547c2f8**: a valódi Bejelentkezés gomb connectGoogle-ot hív; authorizeAndRun
+végig egy Google-gate alatt tartja auth→consent→profil→közös régi sync-mag útját.
+NativeGoogleConsentBridge VM-élettartam, cancellable deferred + exact attempt ID,
+nincs token-lemezírás. Compose per-ID launcherkey, ActivityResult; forgatáskor
+nincs újralaunch, stale/duplicate/cancel/recreated-process eredmény nem folytathat.
+Korábbi request9001/9002/GoogleAuthOutcome út eltávolítva; meglévő connect/Drive/
+calendar mag kiemelve (azonos érdemi kód), nem párhuzamos rendszer. Kilenc új
+consent/kapu/cancel JVM-próba; négy nyelven kilenc új Google-felirat. Még nem futott.
+
+**87b593b**: dataset-ticket a consent előtt; restore/erase közben nem persistálhat
+régi consent profilt/calendar cache-t. Userinfo/HTTP a NativeDataReplacement lease-en
+kívül, prefs commit csak rövid mutate+ticket check alatt; calendar következő op/
+siker előtt is ellenőriz. Két további nem futott JVM-próba. Már elindult Google/
+calendar/photo HTTP nem visszavonható e checkkel, nem elosztott tranzakció.
+
+**Batch505 új JVM+48 Phone UI tesztkód megírva, NEM FUTOTT**: korábbi490+4
+külső resource+9 consent+2 ticket; korábbi42+6 külső UI. Helyben delimiter/diff/
+XML/kulcsütközés/paraméter/import/R-ref/forrássorrend és kiemelési diff, nem
+Kotlin/Room/Compose/Google. Migrációs utolsó teljes zöld továbbra dd4cc27/
+40072751592; új CI/APK/screenshot nincs. Mind [skip ci], main/verzió változatlan.
+Két külső draft nyitva marad, nem GitHub-merge; integrált exact SHA-k után új
+külső változást külön kell vizsgálni. [Integrációs review](reviews/NATIVE_LOCALIZATION_INTEGRATION.md).
+
+Következő: remote delete vs. új referencia/explicit restore, bizonytalan upload és
+cross-device próba; teljes A–E/main-UI/Health leltár (Home count/ajánlott nap és
+maradék VM-feliratok is), valódi Google-fiókos/grant/cancel/rotation/processdeath
+próba, majd közös natív kapu, valódi képek és készülékes elfogadás. Élő adatos
+frissítés továbbra tiltott, nincs main merge vagy verzióemelés.
+
 ## Google műveleti kapu, publikálási sorrend és valódi nyelvválasztó – 2026-10-25
 
 **1839dd0**: GoogleSyncRepository minden auth/connect/revoke/sync/törlés/

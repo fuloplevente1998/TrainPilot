@@ -58,15 +58,16 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
   négy strings.xml fájlokat lehetőleg nem módosítja. Az eredmény külön draft
   PR/patch; közös review és integráció a migrációs ágon, main merge nélkül.
   Kód/tesztkód és futtatott eredmény megkülönböztetése továbbra kötelező.
-- A külső lokalizáció draft #240; a következő tesztrész a felhasználó szerint
-  átadva/megkezdve, eredménye draft #241 (`test/native-localization-ui`, cél #240
-  ága). Pontos teszthatárok: `docs/plans/NATIVE_LOCALIZATION_UI_TEST_HANDOFF.md`.
-  Az új UI-tesztek nem módosíthatnak production kódot vagy közös tesztfájlt.
-- A #241 jelezte a látható nyelvválasztó hiányát. Ezt a fő migrációs munkás
-  a saját ágán pótolja (NativeLanguagePicker + Settings belépés + külön négy
-  XML), a meglévő közös UI-esetet valódi kattintásra állítva. A külső ágakra
-  továbbra sem ír; a külön hat teszt közvetlen DataStore-váltását integrációkor
-  a vezérlőre kell átállítani. Megírt teszt nem futtatott bizonyíték.
+- A külső lokalizáció draft #240 (82883ab) és a külön nyelvváltási tesztrész
+  draft #241 (ab25d84, cél #240 ága) kódját a fő munkás a migrációs ágba
+  squash-commitokkal integrálta: 3b548ac /6cf13be. Külső ágakra nem írt, a PR-ok
+  nyitva maradnak a közös futtatás/review lezárásáig; ne merge-eld rájuk újra
+  vakon ugyanazt a régi diffet. Új külső commitot az exact HEAD óta külön vizsgálj.
+- A #241 jelzett hiányát NativeLanguagePicker pótolja a fő ágban. A hat külön
+  nyelvváltási próba az integrációban már a settings_language_<code> választót
+  kattintja; a fő UI-készlet nyelvváltási próbája is. Kód és futási eredmény külön:
+  a négy unit +hat UI integrálása még nem zöld CI vagy készülékes elfogadás.
+  Részletek: docs/reviews/NATIVE_LOCALIZATION_INTEGRATION.md.
 
 ## Felhasználói thinking-fázisok (2026-10-24)
 

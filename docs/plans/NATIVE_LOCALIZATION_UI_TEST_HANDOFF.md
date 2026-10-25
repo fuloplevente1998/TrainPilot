@@ -68,3 +68,9 @@ A négy saját tesztfájlt és a külső ágat a fő munkás nem írta át.
 Ellenőrzött aktuális runner: phone-ui-gate.py -e package com.repforge.app,
 tehát az új osztályok kiválasztásához külön class-filter nem kell. Tesztkód és
 adatút megléte továbbra nem zöld Compose-futtatás; teljes review/CI hátra van.
+
+
+Frissítés: **3b548ac /6cf13be** squash integráció a migrációs ágon megtörtént,
+Home nevek/látható egységek javítva és mind a hat UI-teszt valódi pickerre kötve.
+Külső ág/PR változatlan; a fenti nem-integrált állapot az akkori SHA-ra szól.
+Aktuális részletek: docs/reviews/NATIVE_LOCALIZATION_INTEGRATION.md. Még nem futott.
