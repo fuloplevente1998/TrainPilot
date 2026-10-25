@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -15,7 +16,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,7 +42,7 @@ internal fun NativeTrainingModePicker(
     val colors = LocalTrainPilotColors.current
     val ctx = LocalContext.current
     val strings = remember(ctx, language) { nativeResources(ctx, language) }
-    val effective = remember(raw, scope, programId) {
+    val effective = remember(raw, scope, programId, activeProgramId) {
         NativeTrainingModes.resolveSavedJson(raw, if (scope == "global") activeProgramId else programId)
     }
     var style by remember(raw, scope, programId) { mutableStateOf(effective.trainingStyle) }
@@ -72,7 +72,7 @@ internal fun NativeTrainingModePicker(
             Text(strings.getString(R.string.native_modes_style), color = colors.text)
             androidx.compose.foundation.layout.Box {
                 OutlinedButton(onClick = { styleExpanded = true }, enabled = enabled,
-                    modifier = Modifier.fillMaxWidth().testTag("${tag}_style")) {
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("${tag}_style")) {
                     Text(styleLabel(style), color = colors.text)
                 }
                 DropdownMenu(expanded = styleExpanded, onDismissRequest = { styleExpanded = false }) {
@@ -86,7 +86,7 @@ internal fun NativeTrainingModePicker(
             Text(strings.getString(R.string.native_modes_progression), color = colors.text)
             androidx.compose.foundation.layout.Box {
                 OutlinedButton(onClick = { progressionExpanded = true }, enabled = enabled,
-                    modifier = Modifier.fillMaxWidth().testTag("${tag}_progression")) {
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("${tag}_progression")) {
                     Text(progressionLabel(progression), color = colors.text)
                 }
                 DropdownMenu(expanded = progressionExpanded, onDismissRequest = { progressionExpanded = false }) {
@@ -110,11 +110,11 @@ internal fun NativeTrainingModePicker(
                             raw, activeProgramId, scope, programId, style, progression)
                     },
                     enabled = enabled,
-                    modifier = Modifier.weight(1f).testTag("${tag}_preview")
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp).testTag("${tag}_preview")
                 ) { Text(strings.getString(R.string.native_modes_preview)) }
                 if (undoAllowed) {
                     TextButton(onClick = onUndo, enabled = enabled,
-                        modifier = Modifier.weight(1f).testTag("${tag}_undo")) {
+                        modifier = Modifier.weight(1f).heightIn(min = 48.dp).testTag("${tag}_undo")) {
                         Text(strings.getString(R.string.native_modes_undo), color = colors.accentText)
                     }
                 }
@@ -138,12 +138,12 @@ internal fun NativeTrainingModePicker(
             },
             confirmButton = {
                 Button(onClick = { pending = null; onApprove(preview) }, enabled = enabled,
-                    modifier = Modifier.testTag("${tag}_approve")) {
+                    modifier = Modifier.heightIn(min = 48.dp).testTag("${tag}_approve")) {
                     Text(strings.getString(R.string.native_modes_approve))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { pending = null }, modifier = Modifier.testTag("${tag}_cancel")) {
+                TextButton(onClick = { pending = null }, modifier = Modifier.heightIn(min = 48.dp).testTag("${tag}_cancel")) {
                     Text(strings.getString(R.string.native_modes_cancel))
                 }
             },
