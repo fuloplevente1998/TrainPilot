@@ -555,4 +555,23 @@
     <string name="native_workout_component_stopwatch_note">Leállításkor a pozitív mért idő automatikusan rögzül.</string>
     <string name="native_workout_component_rest">Pihenő</string>
     <string name="native_workout_component_skip">Kihagyás</string>
+    <string name="native_program_editor_00">Új program</string>
+    <string name="native_program_editor_01">Program szerkesztése</string>
+    <string name="native_program_editor_02">Beépített program másolása</string>
+    <string name="native_program_editor_03">Program neve</string>
+    <string name="native_program_editor_04">Leírás</string>
+    <string name="native_program_editor_05">Edzésnap hozzáadása</string>
+    <string name="native_program_editor_06">Edzésnap neve</string>
+    <string name="native_program_editor_07">Eltávolítás</string>
+    <string name="native_program_editor_08">Fel</string>
+    <string name="native_program_editor_09">Le</string>
+    <string name="native_program_editor_10">Gyakorlat keresése</string>
+    <string name="native_program_editor_11">Gyakorlat hozzáadása</string>
+    <string name="native_program_editor_12">Program mentése</string>
+    <string name="native_program_editor_13">Mégse</string>
+    <string name="native_program_editor_14">Törlés</string>
+    <string name="native_program_editor_15">Törlés megerősítése</string>
+    <string name="native_program_editor_16">Naplóban vagy naptárban használt program és edzésnap nem törölhető.</string>
+    <string name="native_program_editor_17">Nem menthető. Ha másik eszközön változott, nyisd meg újra.</string>
+    <string name="native_program_editor_18">A beépített program változatlan marad.</string>
 </resources>

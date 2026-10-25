@@ -555,4 +555,23 @@
     <string name="native_workout_component_stopwatch_note">Positive measured time is automatically recorded when stopped.</string>
     <string name="native_workout_component_rest">Rest</string>
     <string name="native_workout_component_skip">Skip</string>
+    <string name="native_program_editor_00">New program</string>
+    <string name="native_program_editor_01">Edit program</string>
+    <string name="native_program_editor_02">Copy built-in program</string>
+    <string name="native_program_editor_03">Program name</string>
+    <string name="native_program_editor_04">Description</string>
+    <string name="native_program_editor_05">Add day</string>
+    <string name="native_program_editor_06">Day name</string>
+    <string name="native_program_editor_07">Remove</string>
+    <string name="native_program_editor_08">Up</string>
+    <string name="native_program_editor_09">Down</string>
+    <string name="native_program_editor_10">Search exercises</string>
+    <string name="native_program_editor_11">Add exercise</string>
+    <string name="native_program_editor_12">Save program</string>
+    <string name="native_program_editor_13">Cancel</string>
+    <string name="native_program_editor_14">Delete</string>
+    <string name="native_program_editor_15">Confirm delete</string>
+    <string name="native_program_editor_16">Programs and days referenced by history or calendar cannot be removed.</string>
+    <string name="native_program_editor_17">Could not save changes. Reopen if another edit was saved.</string>
+    <string name="native_program_editor_18">The built-in template stays unchanged.</string>
 </resources>

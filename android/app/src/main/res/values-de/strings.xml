@@ -555,4 +555,23 @@
     <string name="native_workout_component_stopwatch_note">Beim Stoppen wird eine positive Messzeit automatisch erfasst.</string>
     <string name="native_workout_component_rest">Pause</string>
     <string name="native_workout_component_skip">Überspringen</string>
+    <string name="native_program_editor_00">Neues Programm</string>
+    <string name="native_program_editor_01">Programm bearbeiten</string>
+    <string name="native_program_editor_02">Vorlage kopieren</string>
+    <string name="native_program_editor_03">Programmname</string>
+    <string name="native_program_editor_04">Beschreibung</string>
+    <string name="native_program_editor_05">Tag hinzufügen</string>
+    <string name="native_program_editor_06">Tagesname</string>
+    <string name="native_program_editor_07">Entfernen</string>
+    <string name="native_program_editor_08">Hoch</string>
+    <string name="native_program_editor_09">Runter</string>
+    <string name="native_program_editor_10">Übungen suchen</string>
+    <string name="native_program_editor_11">Übung hinzufügen</string>
+    <string name="native_program_editor_12">Programm speichern</string>
+    <string name="native_program_editor_13">Abbrechen</string>
+    <string name="native_program_editor_14">Löschen</string>
+    <string name="native_program_editor_15">Löschen bestätigen</string>
+    <string name="native_program_editor_16">Tage und Programme mit Trainings- oder Kalendereinträgen können nicht gelöscht werden.</string>
+    <string name="native_program_editor_17">Änderung nicht gespeichert. Nach zwischenzeitlicher Änderung neu öffnen.</string>
+    <string name="native_program_editor_18">Die Vorlage bleibt unverändert.</string>
 </resources>

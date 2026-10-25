@@ -24,6 +24,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import com.repforge.app.R
+import com.repforge.app.ui.text.nativeResources
+import androidx.compose.ui.platform.LocalContext
+import android.content.res.Resources
 import com.repforge.app.NativeProgramEditor
 import com.repforge.app.data.db.ExerciseLibraryEntity
 import com.repforge.app.data.db.ProgramWithDays
@@ -36,30 +40,27 @@ private data class ProgramEditorWords(
     val save: String, val cancel: String, val delete: String, val confirmDelete: String,
     val referencedWarning: String, val error: String, val cloneHint: String
 )
-private fun words(lang: String) = when (lang) {
-    "en" -> ProgramEditorWords("New program", "Edit program", "Copy built-in program", "Program name",
-        "Description", "Add day", "Day name", "Remove", "Up", "Down", "Search exercises",
-        "Add exercise", "Save program", "Cancel", "Delete", "Confirm delete",
-        "Programs and days referenced by history or calendar cannot be removed.",
-        "Could not save changes. Reopen if another edit was saved.", "The built-in template stays unchanged.")
-    "de" -> ProgramEditorWords("Neues Programm", "Programm bearbeiten", "Vorlage kopieren", "Programmname",
-        "Beschreibung", "Tag hinzufügen", "Tagesname", "Entfernen", "Hoch", "Runter", "Übungen suchen",
-        "Übung hinzufügen", "Programm speichern", "Abbrechen", "Löschen", "Löschen bestätigen",
-        "Tage und Programme mit Trainings- oder Kalendereinträgen können nicht gelöscht werden.",
-        "Änderung nicht gespeichert. Nach zwischenzeitlicher Änderung neu öffnen.", "Die Vorlage bleibt unverändert.")
-    "ro" -> ProgramEditorWords("Program nou", "Editează program", "Copiază programul original", "Nume program",
-        "Descriere", "Adaugă zi", "Nume zi", "Elimină", "Sus", "Jos", "Caută exerciții",
-        "Adaugă exercițiu", "Salvează programul", "Anulează", "Șterge", "Confirmă ștergerea",
-        "Zilele și programele folosite în jurnal sau calendar nu pot fi șterse.",
-        "Modificările nu au fost salvate. Redeschide după o schimbare externă.", "Șablonul original rămâne neschimbat.")
-    else -> ProgramEditorWords("Új program", "Program szerkesztése", "Beépített program másolása", "Program neve",
-        "Leírás", "Edzésnap hozzáadása", "Edzésnap neve", "Eltávolítás",
-        "Fel", "Le", "Gyakorlat keresése", "Gyakorlat hozzáadása", "Program mentése",
-        "Mégse", "Törlés", "Törlés megerősítése",
-        "Naplóban vagy naptárban használt program és edzésnap nem törölhető.",
-        "Nem menthető. Ha másik eszközön változott, nyisd meg újra.",
-        "A beépített program változatlan marad.")
-}
+private fun words(resources: Resources) = ProgramEditorWords(
+    resources.getString(R.string.native_program_editor_00),
+    resources.getString(R.string.native_program_editor_01),
+    resources.getString(R.string.native_program_editor_02),
+    resources.getString(R.string.native_program_editor_03),
+    resources.getString(R.string.native_program_editor_04),
+    resources.getString(R.string.native_program_editor_05),
+    resources.getString(R.string.native_program_editor_06),
+    resources.getString(R.string.native_program_editor_07),
+    resources.getString(R.string.native_program_editor_08),
+    resources.getString(R.string.native_program_editor_09),
+    resources.getString(R.string.native_program_editor_10),
+    resources.getString(R.string.native_program_editor_11),
+    resources.getString(R.string.native_program_editor_12),
+    resources.getString(R.string.native_program_editor_13),
+    resources.getString(R.string.native_program_editor_14),
+    resources.getString(R.string.native_program_editor_15),
+    resources.getString(R.string.native_program_editor_16),
+    resources.getString(R.string.native_program_editor_17),
+    resources.getString(R.string.native_program_editor_18)
+)
 private fun exerciseName(ex: ExerciseLibraryEntity, lang: String) = when (lang) {
     "en" -> ex.nameEn; "de" -> ex.nameDe; "ro" -> ex.nameRo; else -> ex.nameHu
 }.ifBlank { ex.nameHu }
@@ -70,7 +71,9 @@ internal fun ProgramEditorDialog(
     saving: Boolean, error: String?, onSave: (NativeProgramEditor.Draft) -> Unit,
     onDelete: () -> Unit, onCancel: () -> Unit
 ) {
-    val labels = remember(language) { words(language) }
+    val context = LocalContext.current
+    val resources = remember(context, language) { nativeResources(context, language) }
+    val labels = words(resources)
     var draft by remember(opened?.program?.id, language) {
         mutableStateOf(NativeProgramEditor.from(opened, language).let { initial ->
             if (initial.days.isEmpty()) NativeProgramEditor.addDay(initial, "1") else initial

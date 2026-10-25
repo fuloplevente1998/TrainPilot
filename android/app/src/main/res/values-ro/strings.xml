@@ -555,4 +555,23 @@
     <string name="native_workout_component_stopwatch_note">La oprire, timpul pozitiv măsurat este înregistrat automat.</string>
     <string name="native_workout_component_rest">Pauză</string>
     <string name="native_workout_component_skip">Omite</string>
+    <string name="native_program_editor_00">Program nou</string>
+    <string name="native_program_editor_01">Editează program</string>
+    <string name="native_program_editor_02">Copiază programul original</string>
+    <string name="native_program_editor_03">Nume program</string>
+    <string name="native_program_editor_04">Descriere</string>
+    <string name="native_program_editor_05">Adaugă zi</string>
+    <string name="native_program_editor_06">Nume zi</string>
+    <string name="native_program_editor_07">Elimină</string>
+    <string name="native_program_editor_08">Sus</string>
+    <string name="native_program_editor_09">Jos</string>
+    <string name="native_program_editor_10">Caută exerciții</string>
+    <string name="native_program_editor_11">Adaugă exercițiu</string>
+    <string name="native_program_editor_12">Salvează programul</string>
+    <string name="native_program_editor_13">Anulează</string>
+    <string name="native_program_editor_14">Șterge</string>
+    <string name="native_program_editor_15">Confirmă ștergerea</string>
+    <string name="native_program_editor_16">Zilele și programele folosite în jurnal sau calendar nu pot fi șterse.</string>
+    <string name="native_program_editor_17">Modificările nu au fost salvate. Redeschide după o schimbare externă.</string>
+    <string name="native_program_editor_18">Șablonul original rămâne neschimbat.</string>
 </resources>
