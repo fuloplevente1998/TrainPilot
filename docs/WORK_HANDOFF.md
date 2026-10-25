@@ -1,8 +1,51 @@
 # TrainPilot – aktuális átadás
 
-Frissítve: **2026-10-24**. A main alkalmazásbaseline-ja `7473b30`, dokumentációs HEAD-je `8a36502`; **#235/#237 mainen, készüléken elfogadva, változatlan 1.3.71 /2735**. Latest: `v1.3.71-perf-20261022`, Wear párja `wear-v1.3.71-perf-20261022`; az október 21-i eredeti kiadás megmaradt. A natív migráció külön ágon folyamatban; #214 karbantartási issue marad. [Takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
+Frissítve: **2026-10-25**. A main alkalmazásbaseline-ja `7473b30`, dokumentációs HEAD-je `8a36502`; **#235/#237 mainen, készüléken elfogadva, változatlan 1.3.71 /2735**. Latest: `v1.3.71-perf-20261022`, Wear párja `wear-v1.3.71-perf-20261022`; az október 21-i eredeti kiadás megmaradt. A natív migráció külön ágon folyamatban; #214 karbantartási issue marad. [Takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
+
+## Bizonyított teljes nap és kezdő practiced-kivétel – 2026-10-25
+
+**89a0cba + 4c1d06a**, [skip ci]. NativeProfileDayHistory128 a kanonikus Room
+aktív program/azonos nap 90 napos, tombstone-szűrt előzményeiből, 32-es keyset
+oldalakon max640 rekordot olvas; nem hidratál fotó/route/sorozat-relációkat.
+Teljes, kompatibilis nap csak tényleges és becsült időkeret-egyezéssel maradhat
+meg a statikus gyakorlatkapacitás felett. Frissebb részleges/fájdalmas/hiányzó/
+túl lassú nap nem enged régebbi kényelmes sikerre visszaesni. Portable
+history128.days/activeProgramId és main-alakú reductions (nap, ok, gyakorlat- és
+sorozatszám előtte/utána), HU/EN/DE/RO magyarázat. Csak új programot készít.
+
+A main tp128PracticedIds alapján a kezdőnek nem alapból ajánlott gyakorlat
+korábbi teljesítéssel megengedhető: jelenlegi Room-katalógus, 90 napos legfrissebb
+előfordulás, teljes pozitív sorozat/érvényes súly, alapvariáció/loadType/metric
+azonosság, fájdalom nélkül. Egyetlen bounded rekord/érintett gyakorlat; bármely
+program bizonyíthat gyakorlottságot, ez nem engedélyez idegen programmunkasúlyt.
+Felszerelés/kizárás/kerülendő terület továbbra tilt; Coach-variáció külön guardja
+nem lett fellazítva. history128.practiced bizonyíték és felületi magyarázat;
+importált/hamis proof nem helyettesíti a friss Room-ellenőrzést.
+
+Elfogadáskor ugyanaz a kanonikus előnézetépítő fut a Room-írás előtt: az asOf a
+preview azonossága marad, de a lekérdezés felső határa az aktuális idő. Így a
+megnyitás UTÁN érkező edzés/aktívprogram-váltás/törlés sem marad ki. A kezdő
+practiced-jogosultság a min3/kapacitás vizsgálat ELŐTT épül. Megszakítás/DB-hiba
+nem nyelődik el jogosulatlanul üres előnézetként.
+
+18+14 új JVM tesztmetódus (utóbbiban12 actual-main/Room fixture-helyzet), 2 új
+Phone UI-próbakód. **Összesen388 új unit+39 Phone UI megírva, még nem futott.**
+A pinned main tényleges practiced-függvénye 12 szintetikus helyzeten futott;
+fixture script reprodukálható. A valódi DAO SQL 99 azonos idejű rekordot pontosan
+lapozott, idegen programot/tombstone-t kizárt. Négy XML/kulcs/argumentum/resource,
+Node-szintaxis és diff ellenőrizve. Ez NEM Kotlin/Room/Compose futtatás; nincs új
+natív CI/APK/valós screenshot. Utolsó teljes zöld továbbra dd4cc27.
+
+Szándékos biztonsági eltérés a mainhez képest: legfrissebb rossz előzmény blokkol
+régebbi practiced-sikert, min2 sorozattal sem beférő terv tiltott. Aktiválási út és
+teljes generátor/A–E paritás még ellenőrzendő; a teljes app nem kész. Következő
+konkrét teljesítményrés: WeightJournalViewModel még observeAllWeights teljes
+listát figyel; bounded/lapozott lista és globális időtartomány-összesítés szükséges.
+Cloud-fotó/konkurencia, maradó funkciók/UI/lokalizáció, végső GitHub-kapu és valódi
+Phone/Watch7 próba is nyitott. Wear #239 port csak elfogadás után, külön feladat.
+PR #238 frissítve; main/verzió/élő telepítés változatlan.
 
 ## Végső A/B sablonok, helyettesítés és számolt időkeret – 2026-10-25
 

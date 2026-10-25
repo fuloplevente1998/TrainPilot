@@ -37,12 +37,14 @@ aláírt szintetikus upgrade **2/2**, nincs hiba/kihagyás. Letöltött release 
 hash/csomag/verzió/signer ellenőrizve; a measured protokoll és az időnaplómezők a telefonos R8 DEX-ben is jelen vannak.
 [Gépi bizonylat](builds/2026-10-23-native-measured-intervals.json).
 
-**Aktuális nem bevizsgált batch:** `edc8f52`, 188 új unit + 10 Phone
+**Aktuális nem bevizsgált batch:** `4c1d06a` (előző `89a0cba`), 388 új unit + 39 Phone
 instrumentációs tesztkód megírva, még nem futtatva. Bounded/paging napló, fotó/több
 route, naptár sync/kezdeti GPS, témák, tartós replacement/redó és metadata guard,
 Phone discard/retry, lokális/globális interval preset és nem-auto mód, közös
 valós Health-frissítő adatút, időzónahelyes Coach-célválasztás és gyakorlatonkénti tanács forrásban bekötve.
 [Aktuális átadó](WORK_HANDOFF.md), [rövid checkpoint](NATIVE_RESUME.md).
+A személyes programelőnézet teljes nap/practiced-kivétel, friss elfogadási időhatár
+és portable bizonyítékbekötés kódja is elkészült; Kotlin/Room/UI még nem futott.
 A régebbi táblázati zöldek történeti bizonyítékok, nem az új kód igazolásai.
 Utolsó teljes zöld forrás `dd4cc27`; teljes UI/lokalizáció/katalógus/programszerkesztő,
 integrált futtatás, fizikai készülékes elfogadás és a terv többi pontja még nyitott.

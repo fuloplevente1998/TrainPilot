@@ -1,6 +1,6 @@
 # Natív folytatási pont – rövid kontextus
 
-Frissítve: 2026-10-24. Kontextustömörítés/új chat után ezt és az AGENTS.md-t,
+Frissítve: 2026-10-25. Kontextustömörítés/új chat után ezt és az AGENTS.md-t,
 majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra az
 összes történeti naplót vagy a Gemini-exportot; csak az érintett blokkokat keresd.
 
@@ -19,6 +19,26 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 - Nem indítható subagent külön kérés nélkül. Meglévő Kotlin/kanonikus adatút az alap;
   prototípus/fake Health-forrás tilos. Nyolcgombos menü helyett öt alsó fül elfogadva,
   jobb felső Settings; abból visszatérés nem pause, valódi editor-elhagyás igen.
+
+## Legújabb előzményalapú programadaptáció – 2026-10-25
+
+**89a0cba + 4c1d06a**: aktív program/nap 90 napos bounded Room bizonyítékával
+időben és becslésben beférő teljes nap megtartása statikus kapacitás felett;
+portable history128.days/reductions, valós nap/sorozat előtte-utána magyarázat.
+Kezdő practiced-kivétel bármely program valós legfrissebb teljesítéséből,
+azonos alapvariáció/egység/load, fájdalom nélkül. Felszerelés/kizárás/kerülendő
+terület változatlan; idegen programból ettől nem öröklődik súly. Frissebb rossz
+előzmény blokkol régebbi sikerre esést (mainnél szigorúbb). HU/EN/DE/RO indoklás.
+A jogosultság min3 előtt épül; elfogadás friss időhatárral, Room tx előtt újraszámol,
+az előnézet UTÁN érkezett edzést/törlést/aktívprogram-váltást is észleli.
+18+14 új JVM metódus +2 UI: **batch388 unit+39 Phone UI még nem futott**.
+12 actual-main practiced referenciahelyzet lefutott JS-ben, Kotlin nem;
+valódi DAO SQL 99 azonos idejű soron lapozva, tombstone/owner kizárással.
+XML/resource/Node/diff rendben, nincs új CI/APK/screenshot, utolsó zöld dd4cc27.
+Következő konkrét rés: WeightJournalViewModel observeAllWeights teljeslista
+helyett bounded lapozás és teljes időtartomány helyes összesítése. További A–E
+paritás, cloud-fotó/konkurencia/UI/lokalizáció és végső közös kapu nyitott.
+PR #238 követi; main, verzió és élő adatok fölé telepítés STOP változatlan.
 
 ## Legújabb sablon/helyettesítés/időkeret – 2026-10-25
 
