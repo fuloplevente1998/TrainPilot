@@ -59,4 +59,5 @@
     <string name="native_modes_coach_review">Gewichtsvorschlag prüfen</string>
     <string name="native_modes_coach_cancel">Abbrechen</string>
     <string name="native_modes_coach_sets">Vorgeschlagene Arbeitssätze: %1$d (nur Vorschau)</string>
+    <string name="native_modes_inherit">Globalen Modus übernehmen</string>
 </resources>
