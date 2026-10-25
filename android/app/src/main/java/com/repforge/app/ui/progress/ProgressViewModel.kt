@@ -86,6 +86,7 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
 
     fun loadProgressData() {
         summaryJob?.cancel()
+        trendJob?.cancel() // Same-ID strength reads from the previous dataset are stale too.
         summaryJob = viewModelScope.launch {
             _uiState.update { it.copy(loading = true, loadError = false) }
             try {
