@@ -345,9 +345,13 @@ class BackupRestoreManager(context: Context) {
     /** Extracts, verifies, and atomically installs a full ZIP archive from a user-selected SAF Uri. */
     suspend fun importZipArchiveFromUri(uri: Uri, recoverInterrupted: Boolean = false): Result<Unit> = withContext(Dispatchers.IO) {
         NativeHealthBackupGate.begin()
-        val token = UUID.randomUUID().toString()
-        val dir = transactionDir(token)
+        var stagingDir: File? = null
         try {
+            // mkdir of archive_transactions may throw. Include *all* staging
+            // preparation after begin() under finally, not only the ZIP extraction.
+            val token = UUID.randomUUID().toString()
+            val dir = transactionDir(token)
+            stagingDir = dir
             mkdir(dir)
             val incoming = File(dir, "incoming")
             mkdir(incoming)
@@ -378,9 +382,15 @@ class BackupRestoreManager(context: Context) {
             if (recoverInterrupted) NativeDataReplacement.recover(appContext, operation)
             else NativeDataReplacement.exclusively(appContext, operation)
             Result.success(Unit)
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            throw cancelled
         } catch (e: Exception) {
             // Keep originals/journal if rollback itself failed; never erase recovery evidence.
-            if (!NativeReplacementJournal(appContext).exists() && !File(dir, "journal.json").isFile) {
+            // transactionDir may have failed *before* a staging directory existed.
+            val dir = stagingDir
+            if (dir != null && !NativeReplacementJournal(appContext).exists() &&
+                !File(dir, "journal.json").isFile
+            ) {
                 try { removeRecursive(dir) } catch (_: Exception) { }
             }
             Result.failure(e)
