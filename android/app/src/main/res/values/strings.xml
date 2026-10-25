@@ -339,4 +339,26 @@
     <string name="native_coach_18">Egészség / frissítés megnyitása</string>
     <string name="native_coach_19">Fejlődés</string>
     <string name="native_coach_20">Tájékoztató becslés; nem orvosi értékelés.</string>
+    <string name="native_quick_label_00">Gyors edzés</string>
+    <string name="native_quick_label_01">Szabadtéri edzés</string>
+    <string name="native_quick_label_02">Válaszd ki az első gyakorlatot. Edzés közben továbbiakat is hozzáadhatsz.</string>
+    <string name="native_quick_label_03">Gyakorlat keresése</string>
+    <string name="native_quick_label_04">Nincs megfelelő gyakorlat.</string>
+    <string name="native_quick_label_05">Mégse</string>
+    <string name="native_quick_label_06">Új gyors edzést indít ezzel a gyakorlattal.</string>
+    <string name="native_quick_label_07">GPS-útvonal rögzítése</string>
+    <string name="native_quick_label_08">Ehhez a mozgáshoz megjegyezzük. Csak kifejezett edzésindításkor kapcsol be.</string>
+    <string name="native_quick_label_09">A GPS-pontok privát tárhelyen maradnak, felhőmentés nélkül.</string>
+    <string name="native_quick_label_10">Pontos helyengedély és bekapcsolt rendszerhely szükséges. Az edzés GPS nélkül is használható.</string>
+    <string name="native_quick_label_11">Edzés indítása</string>
+    <string name="native_quick_label_12">Indítás…</string>
+    <string name="native_quick_favorite_00">Kedvencek</string>
+    <string name="native_quick_favorite_01">Kedvencekhez</string>
+    <string name="native_quick_favorite_02">Eltávolítás a kedvencekből</string>
+    <string name="native_quick_favorite_03">A kedvenc mentése sikertelen. Próbáld újra.</string>
+    <string name="native_quick_demo_00">Bemutatóvideó megnyitása</string>
+    <string name="native_quick_demo_01">YouTube-keresés (nem ellenőrzött videó)</string>
+    <string name="native_quick_demo_02">Ez keresés, nem konkrét bemutatóvideó.</string>
+    <string name="native_quick_demo_03">A videó nem nyitható meg.</string>
+    <string name="native_quick_library_error">A gyakorlatkönyvtár nem tölthető be. Az edzésadatok nem változtak.</string>
 </resources>

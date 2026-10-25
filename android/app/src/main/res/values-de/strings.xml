@@ -339,4 +339,26 @@
     <string name="native_coach_18">Gesundheit / Aktualisierung</string>
     <string name="native_coach_19">Fortschritt</string>
     <string name="native_coach_20">Orientierende Schätzung, keine medizinische Bewertung.</string>
+    <string name="native_quick_label_00">Schnelltraining</string>
+    <string name="native_quick_label_01">Training im Freien</string>
+    <string name="native_quick_label_02">Erste Übung wählen. Weitere Übungen im Training hinzufügen.</string>
+    <string name="native_quick_label_03">Übungen suchen</string>
+    <string name="native_quick_label_04">Keine passende Übung.</string>
+    <string name="native_quick_label_05">Abbrechen</string>
+    <string name="native_quick_label_06">Startet ein neues Schnelltraining mit dieser Übung.</string>
+    <string name="native_quick_label_07">GPS-Route aufzeichnen</string>
+    <string name="native_quick_label_08">Für diese Aktivität gespeichert. Startet nur beim ausdrücklichen Trainingsstart.</string>
+    <string name="native_quick_label_09">GPS-Punkte bleiben im privaten Speicher, ohne Cloud-Sicherung.</string>
+    <string name="native_quick_label_10">Genauer Standort und Systemstandort müssen aktiviert sein. Das Training bleibt ohne GPS verfügbar.</string>
+    <string name="native_quick_label_11">Training starten</string>
+    <string name="native_quick_label_12">Startet…</string>
+    <string name="native_quick_favorite_00">Favoriten</string>
+    <string name="native_quick_favorite_01">Als Favorit markieren</string>
+    <string name="native_quick_favorite_02">Aus Favoriten entfernen</string>
+    <string name="native_quick_favorite_03">Favorit konnte nicht gespeichert werden. Erneut versuchen.</string>
+    <string name="native_quick_demo_00">Übungsvideo öffnen</string>
+    <string name="native_quick_demo_01">Auf YouTube suchen (kein bestätigtes Video)</string>
+    <string name="native_quick_demo_02">Dies ist eine Suche, kein identifiziertes Video.</string>
+    <string name="native_quick_demo_03">Video konnte nicht geöffnet werden.</string>
+    <string name="native_quick_library_error">Die Übungsbibliothek konnte nicht geladen werden. Trainingsdaten wurden nicht geändert.</string>
 </resources>

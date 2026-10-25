@@ -339,4 +339,26 @@
     <string name="native_coach_18">Sănătate / actualizare</string>
     <string name="native_coach_19">Progres</string>
     <string name="native_coach_20">Estimare orientativă, nu o evaluare medicală.</string>
+    <string name="native_quick_label_00">Antrenament rapid</string>
+    <string name="native_quick_label_01">Antrenament în aer liber</string>
+    <string name="native_quick_label_02">Alege primul exercițiu. Poți adăuga altele în timpul antrenamentului.</string>
+    <string name="native_quick_label_03">Caută exerciții</string>
+    <string name="native_quick_label_04">Niciun exercițiu găsit.</string>
+    <string name="native_quick_label_05">Anulează</string>
+    <string name="native_quick_label_06">Începe un antrenament rapid nou cu acest exercițiu.</string>
+    <string name="native_quick_label_07">Înregistrează traseul GPS</string>
+    <string name="native_quick_label_08">Memorat pentru această activitate. Pornește doar la începerea explicită a antrenamentului.</string>
+    <string name="native_quick_label_09">Punctele GPS rămân în spațiul privat, fără copii cloud.</string>
+    <string name="native_quick_label_10">Locația precisă și locația sistemului trebuie activate. Antrenamentul rămâne disponibil fără GPS.</string>
+    <string name="native_quick_label_11">Începe antrenamentul</string>
+    <string name="native_quick_label_12">Se pornește…</string>
+    <string name="native_quick_favorite_00">Favorite</string>
+    <string name="native_quick_favorite_01">Adaugă la favorite</string>
+    <string name="native_quick_favorite_02">Elimină din favorite</string>
+    <string name="native_quick_favorite_03">Favoritul nu a fost salvat. Încearcă din nou.</string>
+    <string name="native_quick_demo_00">Deschide videoclipul demonstrativ</string>
+    <string name="native_quick_demo_01">Caută pe YouTube (videoclip neconfirmat)</string>
+    <string name="native_quick_demo_02">Aceasta este o căutare, nu un videoclip identificat.</string>
+    <string name="native_quick_demo_03">Videoclipul nu poate fi deschis.</string>
+    <string name="native_quick_library_error">Biblioteca de exerciții nu a putut fi încărcată. Datele antrenamentului nu au fost modificate.</string>
 </resources>

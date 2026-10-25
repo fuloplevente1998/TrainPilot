@@ -339,4 +339,26 @@
     <string name="native_coach_18">Open Health / refresh</string>
     <string name="native_coach_19">Progress</string>
     <string name="native_coach_20">Informational estimate, not a medical assessment.</string>
+    <string name="native_quick_label_00">Quick workout</string>
+    <string name="native_quick_label_01">Outdoor workout</string>
+    <string name="native_quick_label_02">Choose the first exercise. Add more during the workout.</string>
+    <string name="native_quick_label_03">Search exercises</string>
+    <string name="native_quick_label_04">No matching exercise.</string>
+    <string name="native_quick_label_05">Cancel</string>
+    <string name="native_quick_label_06">Starts a new quick workout with this exercise.</string>
+    <string name="native_quick_label_07">Record GPS route</string>
+    <string name="native_quick_label_08">Remembered for this activity. Starts only on explicit workout start.</string>
+    <string name="native_quick_label_09">GPS points stay in private storage, outside cloud backups.</string>
+    <string name="native_quick_label_10">Precise location permission and system location must be enabled. The workout remains available without GPS.</string>
+    <string name="native_quick_label_11">Start workout</string>
+    <string name="native_quick_label_12">Starting…</string>
+    <string name="native_quick_favorite_00">Favorites</string>
+    <string name="native_quick_favorite_01">Add to favorites</string>
+    <string name="native_quick_favorite_02">Remove from favorites</string>
+    <string name="native_quick_favorite_03">Could not save favorite; retry.</string>
+    <string name="native_quick_demo_00">Watch demonstration video</string>
+    <string name="native_quick_demo_01">Search YouTube (not a confirmed video)</string>
+    <string name="native_quick_demo_02">This is a search, not an identified video.</string>
+    <string name="native_quick_demo_03">Unable to open the video.</string>
+    <string name="native_quick_library_error">Exercise library could not be loaded. Workout data was not changed.</string>
 </resources>
