@@ -52,7 +52,7 @@ class NativeProgramEditorThreadingTest {
         }
         val opened = db.programDao().getProgramWithDaysById(id)!!
         assertEquals("IO terv", opened.program.nameHu)
-        withContext(Dispatchers.IO) { NativeProgramEditor.delete(context, db, opened) }
+        withContext(Dispatchers.IO) { NativeProgramEditor.delete(context, db, opened, com.repforge.app.data.store.TrainPilotSettingsStore(context)) }
         assertNull(db.programDao().getProgramWithDaysById(id))
         assertNull(ActiveWorkoutStore.current(context))
         assertNull(PhoneWorkoutExecution.store(context).snapshot())
