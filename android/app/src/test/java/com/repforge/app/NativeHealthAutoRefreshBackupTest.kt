@@ -1,6 +1,9 @@
 package com.repforge.app
 
 import android.content.Context
+import android.net.Uri
+import kotlinx.coroutines.runBlocking
+import java.io.File
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.*
@@ -32,6 +35,39 @@ class NativeHealthAutoRefreshBackupTest {
         assertTrue(NativeHealthBackupGate.available())
         NativeHealthBackupGate.publish { commits++ }
         assertEquals(1, commits)
+    }
+
+    @Test fun zipTransactionDirectoryFailureReleasesAdmissionAndLaterExportSucceeds() = runBlocking {
+        // Deliberately replace the parent directory with a regular file. transactionDir()
+        // must fail in mkdir BEFORE ZIP extraction; the gate must still be released.
+        val root = File(context.noBackupFilesDir, "archive_transactions")
+        val hadDirectory = root.isDirectory
+        val temporaryBlock = File(context.noBackupFilesDir, "archive_transactions-blocked-test")
+        check(!temporaryBlock.exists()) { "ZIP staging test fixture already exists" }
+        if (hadDirectory) {
+            assertTrue(root.renameTo(temporaryBlock))
+        } else {
+            assertFalse(root.exists())
+        }
+        val output = File(context.cacheDir, "health-auto-refresh-recovery.json")
+        try {
+            assertTrue(root.createNewFile())
+            val manager = BackupRestoreManager(context)
+            val failed = manager.importZipArchiveFromUri(Uri.EMPTY)
+            assertTrue("ZIP mkdir failure must be reported", failed.isFailure)
+            assertTrue(failed.exceptionOrNull() is java.io.IOException)
+            assertTrue(failed.exceptionOrNull()!!.message.orEmpty().contains("Cannot create backup directory"))
+            assertTrue("Failed ZIP staging must never strand backup admission", NativeHealthBackupGate.available())
+            assertTrue(root.delete())
+            val valid = manager.exportJsonBackupToUri(Uri.fromFile(output))
+            assertTrue("Next real JSON archive export must work: ${valid.exceptionOrNull()}", valid.isSuccess)
+            assertTrue(NativeHealthBackupGate.available())
+        } finally {
+            if (root.isFile) root.delete()
+            if (hadDirectory) assertTrue(temporaryBlock.renameTo(root))
+            output.delete()
+            assertTrue("No admission leak after the fixture cleanup", NativeHealthBackupGate.available())
+        }
     }
 
     @Test fun initialPartialHealthDayKeepsActualFieldsAndMarksMissingOnesUnavailable() {
