@@ -126,7 +126,9 @@ class NativeHealthDateRangeUiTest {
         compose.waitUntil(15000) {
             compose.onAllNodesWithTag("health_record_yesterday").fetchSemanticsNodes().isNotEmpty()
         }
+        compose.onNodeWithTag("health_records_list").performScrollToNode(hasTestTag("health_record_today"))
         compose.onNodeWithTag("health_record_today").assertExists()
+        compose.onNodeWithTag("health_records_list").performScrollToNode(hasTestTag("health_record_yesterday"))
         compose.onNodeWithTag("health_record_yesterday").assertExists()
 
         // The draft can be reversed temporarily, but cannot be submitted to the store.
@@ -137,6 +139,7 @@ class NativeHealthDateRangeUiTest {
         compose.onNodeWithTag("health_range_error").assertExists()
         compose.onNodeWithTag("health_range_apply").assertIsNotEnabled()
         // Still shows the last successfully queried (two-day) record set.
+        compose.onNodeWithTag("health_records_list").performScrollToNode(hasTestTag("health_record_yesterday"))
         compose.onNodeWithTag("health_record_yesterday").assertExists()
     }
 }
