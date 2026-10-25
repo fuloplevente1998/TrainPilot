@@ -63,7 +63,7 @@ internal object NativeTrainingModeChange {
 
     suspend fun approve(store: TrainPilotSettingsStore, preview: Preview): Boolean {
         if (store.current().activeProgramId != preview.expectedActiveProgramId) return false
-        return store.saveApprovedTrainingModes197(preview.expectedRaw, next(preview))
+        return store.saveApprovedTrainingModes197(preview.expectedRaw, next(preview), preview.expectedActiveProgramId)
     }
 
     fun undoValue(raw: String?, scope: String, programId: String?): JSONObject? {
@@ -83,6 +83,7 @@ internal object NativeTrainingModeChange {
         if (scope == "program" && programId != current.activeProgramId) return false
         val raw = current.trainingModes197Json
         val result = undoValue(raw, scope, programId) ?: return false
-        return store.saveApprovedTrainingModes197(raw, if (result.optBoolean("_native197Clear")) null else result)
+        return store.saveApprovedTrainingModes197(raw, if (result.optBoolean("_native197Clear")) null else result,
+            if (scope == "program") current.activeProgramId else null)
     }
 }
