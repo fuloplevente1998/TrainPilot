@@ -1,5 +1,20 @@
 # Native Health foreground auto-refresh – branch validation
 
+## HITELLESÍTETT ZÁRÓÁLLAPOT – 2026-10-25
+
+**Health-specifikus UI és JVM CI: sikeres, nem többé „pending”.** A következő sorok a korábbi, kronologikusan megőrzött debugnapló-bejegyzéseknél frissebbek.
+
+- **Utoljára ellenőrzött kód/teszt HEAD:** `5d89db49f57eb0867a526f522e201b4d3d72c8f9`. Branch: `feat/native-health-auto-refresh`; Draft [PR #244](https://github.com/fuloplevente1998/TrainPilot/pull/244) → `feat/native-android-migration`.
+- **GitHub Actions [#40239961158](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40239961158) összesen SUCCESS.** A GitHub artifactból kibontott eredeti XML-ek összesítése: **29/29 JVM PASS (25 új Health auto-refresh + 4 korábbi NativeHealthRefresh), 0 failure/0 error/0 skipped**. Osztályok: `NativeHealthAutoRefreshAdmissionTest` 5, `NativeHealthAutoRefreshPublicationTest` 5, `NativeHealthAutoRefreshBackupTest` 2, `NativeHealthAutoRefreshTest` 9, `NativeHealthRefreshWindowTest` 4, `NativeHealthRefreshTest` 4. [Eredeti JVM jelentés #12616966543](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40239961158/artifacts/12616966543).
+- **Valódi Android 35 emulátoros Compose UI: 1/1 PASS**, 0 failure/0 error/0 skipped; `NativeHealthAutoRefreshUiTest.realAutoSwitchPersistsInExistingHealthJournalAndSurvivesDestinationReentry`; XML-ben 12.007 s, timestamp `2026-10-25T22:31:11`. [Eredeti UI jelentés #12616857420](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40239961158/artifacts/12616857420).
+- **Utolsó UI-regresszió oka és javítása:** az előző [#40237199407](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40237199407) futás `ComposeTimeoutException` hibával leállt, mert a LazyColumn még nem állította elő az offscreen kapcsolót, a teszt viszont már az elemre várt. A `5d89db49` commitban a teszt előbb a listára vár, majd `performScrollToNode(hasTestTag("health_auto_refresh_switch"))` hívással odagörget, és csak ezután ellenőrzi a kapcsolót. A következő valós emulátoros futás zöld.
+- **Független további kapuk:** a teljes natív [#40239961291](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40239961291) a záróellenőrzés kezdetén még dolgozott, a korábbi teljes migrációs regresszió `997 test, 7 failure`; a Quick [#40239961174](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40239961174) piros a hiányzó npm-lock/manifest miatt. Ezektől a *Health-specifikus* célzott kapu sikere nem lesz teljes projektszintű siker.
+- **Korlát:** a valós, fizikai Samsung/Health Connect SDK-szinkron, az offline és jogosultságvisszavonási edge-case, valamint a WebView `rf250Sync` inkrementális/30 napos backfill paritás **nincs készüléken bizonyítva, illetve nincs teljesen megvalósítva**. A PR továbbra is Draft, merge/issue-close nélkül.
+- **Eredeti átadó is megőrizve ezen az ágon:** `docs/plans/NATIVE_HEALTH_AUTO_REFRESH_HANDOFF.md`, a 2026-10-25-i igazolt státusszal.
+
+---
+
+
 Updated: 2026-10-25. Development branch `feat/native-health-auto-refresh`, pinned integration base `0a5abbeb3b95cede671df39a3f8d09dc4ab8ec20`. Draft PR #244 targets `feat/native-android-migration`. Do **not** merge without native test/device acceptance.
 
 ## Actual native call path
