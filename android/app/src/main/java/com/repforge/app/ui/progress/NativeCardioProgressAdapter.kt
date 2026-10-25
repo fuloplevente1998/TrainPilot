@@ -40,8 +40,10 @@ internal object NativeCardioProgressAdapter {
             for (projection in page) {
                 currentCoroutineContext().ensureActive()
                 val row = projection.toCardioRow()
-                // Avoid source-JSON lookup for weight-only/otherwise non-distance exercises.
-                if (NativeCardioModel.isDistance(row)) {
+                // Source affects records for the chosen activity, not the selector's
+                // cross-activity counts. Skip other parent JSON reads when filtered.
+                if (NativeCardioModel.isDistance(row) &&
+                    (activityFilter.isNullOrEmpty() || row.exerciseId == activityFilter)) {
                     if (cachedWorkoutId != projection.workoutId) {
                         cachedWorkoutId = projection.workoutId
                         cachedSources = SourceIndex.read(
