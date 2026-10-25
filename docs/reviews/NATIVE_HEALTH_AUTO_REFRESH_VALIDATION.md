@@ -1,5 +1,22 @@
 # Native Health foreground auto-refresh – branch validation
 
+## 2026-10-25 – végső review-javítási státusz (P1/P2)
+
+**A [3e2a81bd review](https://github.com/fuloplevente1998/TrainPilot/blob/3e2a81bd/docs/reviews/NATIVE_PR244_HEALTH_AUTO_REFRESH_REVIEW.md) mindkét jelzett hibája javítva a saját branch-en.**
+
+- **P1 main-only admission:** `HealthDashboardViewModel.launchRefresh` Main-lopperen vizsgálja az aktív `PhoneWorkoutExecution` állapotát, majd az IO-s `safeOffMain` ellenőrzi az ownership/backup/restore feltételeket. `NativeHealthRefresh.commitRead` a valódi HC/Samsung SDK callbackből `NativeHealthForegroundAdmission.publish`-t használ: Main.immediate check **a metadata-mutex előtt**, IO-safe és dataset/screen/permission ticket-validáció **az őrzött naplóíráson belül**. Nincs Main→IO→Main blokk a lockban.
+- **P2 ZIP staging:** `transactionDir(token)` és a teljes előkészítés `NativeHealthBackupGate.begin` után biztos `try/finally` blokkban van, a cleanup null `stagingDir` esetén sem akad meg. Valódi `archive_transactions` helyére tett fájl okozta mkdir/IOException regresszió `Result.failure`-t ad és utána egy érvényes JSON export bizonyítja a zárolás megszűnését.
+- **Végső code/test SHA:** `7cb2c11332ab39f2d78831e9f79f5e0c5f533fd7` (további commitok kizárólag átadó dokumentáció).
+- **CI [#40243229800](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40243229800): SUCCESS + SUCCESS**, két tényleges XML-riportból: **30/30 JVM (0 fail/error/skipped)** és **4/4 Android 35 Compose UI (0 fail/error/skipped)**.
+- Eredeti fájlok: [JVM XML #12617517971](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40243229800/artifacts/12617517971), [UI XML #12617558453](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40243229800/artifacts/12617558453).
+- Pontos javítási fájlok a 8c00b46 review-bázishoz képest: `HealthDashboardViewModel.kt`, `NativeHealthForegroundAdmission.kt`, `NativeHealthRefresh.kt`, `BackupRestoreManager.kt`, `NativeHealthAutoRefreshBackupTest.kt`, `NativeHealthAutoRefreshUiTest.kt`.
+- **Integrátori feltétel változatlan:** a teljes migrációs release gate és valódi fizikai HC/Samsung read/permission/revoke próba nincs ezen az ágon igazolva; a WebView `rf250Sync` full/incremental paritás külön. Nincs merge/main/migration írás, a #244 PR Draft.
+
+**Részletes integrátori delta-review:** `docs/reviews/NATIVE_PR244_HEALTH_AUTO_REFRESH_FIX_DELTA.md`.
+
+---
+
+
 ## HITELLESÍTETT ZÁRÓÁLLAPOT – 2026-10-25
 
 **Health-specifikus UI és JVM CI: sikeres, nem többé „pending”.** A következő sorok a korábbi, kronologikusan megőrzött debugnapló-bejegyzéseknél frissebbek.
