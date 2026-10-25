@@ -47,4 +47,15 @@
     <string name="native_modes_reason_missing_load_step">No safe available equipment load step.</string>
     <string name="native_modes_reason_invalid_mode">Unsupported selected mode.</string>
     <string name="native_modes_reason_hit">HIT-inspired preview; fewer sets are a suggestion only.</string>
+    <string name="native_modes_coach_open">View Coach suggestion</string>
+    <string name="native_modes_coach_preview">Suggestion only; not applied</string>
+    <string name="native_modes_coach_history">Matching workouts: %1$d</string>
+    <string name="native_modes_coach_weight">Previous load: %1$s → proposed: %2$s</string>
+    <string name="native_modes_coach_apply">Approve proposed weight</string>
+    <string name="native_modes_coach_confirm">Change the weight of untouched sets only?</string>
+    <string name="native_modes_coach_blocked">Proposal stale, set edited/completed or phone no longer owns workout. No changes made.</string>
+    <string name="native_modes_coach_done">Weight updated through native editor.</string>
+    <string name="native_modes_coach_no_action">No safe weight increase available.</string>
+    <string name="native_modes_coach_review">Review load suggestion</string>
+    <string name="native_modes_coach_cancel">Cancel</string>
 </resources>
