@@ -4,6 +4,23 @@ Frissítve: **2026-10-25**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Párhuzamos munkamegosztás – 2026-10-25
+
+Felhasználó jóváhagyta: külön ChatGPT-beszélgetés dolgozhat a telefonos UI
+megmaradt HU/EN/DE/RO feliratain a **feat/native-ui-localization** ágon,
+**958907c** alkalmazásbázisból. Az ág ellenőrzéskor már létezett ezen a refen;
+idegen fejlesztési commitot nem írtunk felül. Pontos megengedett fájlok,
+átfedés- és fordítási szabályok, riport/draft PR/patch átadás:
+[delegálási feladat](plans/NATIVE_UI_LOCALIZATION_HANDOFF.md). AGENTS szűk
+ágkivétellel bővült; nem belső subagent-indítás. A fő migrációs agentnél marad
+cloud-fotó/backup/szinkron és súlytörlés-replay. A lokalizáció lefoglalt képernyő/
+text-helper/négy strings.xml fájljait lehetőleg ne módosítsuk párhuzamosan.
+
+Ez kizárólag munkakiosztás/dokumentáció, nincs új natív funkció vagy futtatott
+próba. Az implementáció/teszt eredményét később külön review-val integráljuk;
+a lokalizációs draft PR célja migráció, main merge és verzióemelés továbbra tiltott.
+Legutóbbi alkalmazásforrás320ea83, batch418+42 nem futott tesztkód változatlan.
+
 ## Edzéslezárási rekordvizsgálat teljesnapló-betöltés nélkül – 2026-10-25
 
 **320ea83**, [skip ci]. A TrainPilotWorkoutFinalization meglévő mentés/naptár

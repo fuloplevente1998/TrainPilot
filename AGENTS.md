@@ -42,6 +42,23 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
 - Ne küldj GitHub-kommentet vagy másoknak üzenetet külön kérés nélkül.
   A kért nyomonkövetéshez issue/PR leírását és állapotát frissítheted.
 
+## Jóváhagyott párhuzamos lokalizáció (2026-10-25)
+
+- A felhasználó külön ChatGPT-beszélgetésnek adja a telefonos UI megmaradt
+  HU/EN/DE/RO feliratainak lokalizációját. Ennek saját ága
+  `feat/native-ui-localization`, funkcionális kiindulása `958907c`.
+  Ez a konkrét feladat kivétel a handoff általános „csak migrációs ág” szabálya alól.
+- A lokalizációs munkás csak a neki kijelölt ágra írhat; a main és
+  `feat/native-android-migration` változtatása/merge tiltott számára.
+  A migrációs munkásnál marad a cloud-fotó, backup/szinkron, törlési replay és motor.
+- Pontos fájlhatárok, ellenőrzések és átadás:
+  `docs/plans/NATIVE_UI_LOCALIZATION_HANDOFF.md`. Nem felhatalmazás belső
+  subagent indítására vagy további munkák önálló kiosztására.
+- A lokalizáció alatt a migrációs munkás a lefoglalt Screen/Dialog/text-helper/
+  négy strings.xml fájlokat lehetőleg nem módosítja. Az eredmény külön draft
+  PR/patch; közös review és integráció a migrációs ágon, main merge nélkül.
+  Kód/tesztkód és futtatott eredmény megkülönböztetése továbbra kötelező.
+
 ## Felhasználói thinking-fázisok (2026-10-24)
 
 - Kódolás, funkciók és meglévő blokkok bekötése: a felhasználó **High** módot használ.

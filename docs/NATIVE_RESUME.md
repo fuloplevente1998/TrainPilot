@@ -7,7 +7,9 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 ## Hatókör és munkamód
 
 - Repo fuloplevente1998/TrainPilot; munkafa `/workspace/TrainPilot-native-migration`;
-  kizárólag `feat/native-android-migration`.
+  kizárólag `feat/native-android-migration` a fő migrációs munkához.
+  Külön jóváhagyott UI-lokalizáció: `feat/native-ui-localization`, lásd az AGENTS
+  kivételét és `docs/plans/NATIVE_UI_LOCALIZATION_HANDOFF.md`-t.
 - Teljes elfogadott feladat: `docs/plans/NATIVE_FINAL_DELIVERY.md` és batch terv.
   Teljes appfunkció/bekötés + 24 nézet + témák + HU/EN/DE/RO + tesztek + végső
   valódi emulátoros képek. Nem csak témázás; nincs új generált mockup.
@@ -19,6 +21,19 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
 - Nem indítható subagent külön kérés nélkül. Meglévő Kotlin/kanonikus adatút az alap;
   prototípus/fake Health-forrás tilos. Nyolcgombos menü helyett öt alsó fül elfogadva,
   jobb felső Settings; abból visszatérés nem pause, valódi editor-elhagyás igen.
+
+## Jóváhagyott párhuzamos részfeladat – 2026-10-25
+
+A felhasználó másik ChatGPT-beszélgetésnek adja a megmaradt HU/EN/DE/RO UI-
+feliratok bekötését. Saját ág **feat/native-ui-localization**, alkalmazásbázis
+**958907c** (app320ea83), csak Screen/Dialog/text-helper/négy strings.xml és
+külön új tesztfájl/riport. Nincs VM/motor/DB/szinkron/Wear/Gradle/workflow/main.
+Részletes, másik beszélgetésnek átadható feladat:
+[lokalizációs átadó](plans/NATIVE_UI_LOCALIZATION_HANDOFF.md).
+A fő agent cloud-fotó/backup/szinkron/törlési replay
+munkát folytat; lefoglalt UI/resource fájlokat lehetőleg nem ír. Külső eredmény
+külön draft PR/patch, célág migráció, integráció csak review után. Ez még kiosztás,
+nem kész lokalizáció/teszteredmény; natív kód és418+42 nem futott tesztkód változatlan.
 
 ## Legújabb streaming PR-adatút – 2026-10-25
 
