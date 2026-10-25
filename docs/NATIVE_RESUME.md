@@ -20,6 +20,19 @@ majd a WORK_HANDOFF.md legfelső aktuális bekezdéseit olvasd. Ne töltsd újra
   prototípus/fake Health-forrás tilos. Nyolcgombos menü helyett öt alsó fül elfogadva,
   jobb felső Settings; abból visszatérés nem pause, valódi editor-elhagyás igen.
 
+## Legújabb sablon/helyettesítés/időkeret – 2026-10-25
+
+**b69eb56**: final main tp128Template v2 + szerep/needs/score/area data-only policy,
+aktuális Room-katalógus és profiltól függő csere, különböző ID-k, min3, perc-kapacitás.
+Meglévő programok nem íródnak át. Számolt max napi becslés + hátulról 3→2 sorozat
+időadaptáció base és history után, súly megmarad; estimatedMinutes/workSets friss.
+Lokalizált név/csere/ok az előnézetben, tényleges becsült perc/időkeret.
+8 main JS-generátor-fixture +3 unit+1 UI új kód; **batch356 unit+37 UI nem futott**.
+Default katalógus reprodukálva, XML/resource/Node/diff rendben; nincs Android/CI/APK.
+Következő: bizonyított beginner practiced-kivétel, korábban teljesített teljes nap
+időben beférő megtartása és hordozható history128.reductions. Teljes generátor/UI-
+paritás és végső közös kapu még nyitott. PR #238 követi, main/élő telepítés STOP.
+
 ## Legújabb explicit Level2-receptblokk – 2026-10-25
 
 **5bf0654**: közös NativeTrainingPrescription main tp128Rx/Level2 felülírásokból,

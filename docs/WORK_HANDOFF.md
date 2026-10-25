@@ -4,6 +4,45 @@ Frissítve: **2026-10-24**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Végső A/B sablonok, helyettesítés és számolt időkeret – 2026-10-25
+
+**b69eb56**, [skip ci]. A main végső tp128Template v2 A/B slotjai, NEEDS132,
+mozgásszerep/kerülendő terület térképei, rf14Score metaadatai és kezdőpreferenciái
+külön data-only `native-planner-main-7473.json` csomagban, ugyanabból a pontos
+7473b30 app/index blob-párból. NativePlannerPolicy az aktuális Room-katalógus
+mezőit használja, a bundle a kanonikus fallback/adatszabály. Nincs JS-motor az appban.
+A korábban tárolt builtin/saját programnapokat nem írjuk felül: az új személyes
+előnézet épül a végső slotokra. Basic B crunch, Level2 A front squat/barbell row/
+hammer curl és végső B decline/crunch; a régi extra csere/sorrend wrapper eltávolítva.
+
+Elérhetetlen/kizárt/kezdőnek nem megfelelő mozgás szerepkörön belül pontozott,
+eltérő elérhető gyakorlatra cserélhető. Ismételt ID nem keletkezik; szerep nélkül
+nincs kitalált csere. Kizárások és kerülendő mozgásminták érvényesek; a kezdő
+practiced-kivétel továbbra nincs engedélyezve. Háromnál kevesebb alkalmas gyakorlat
+esetén az egész előnézet tiltott. Kapacitás a main perc-küszöbei szerint, max7.
+
+Időbecslés: main 4 perc + sorozat*.65 + sorozatok közti pihenő +1 perc/gyakorlat,
+napok maximuma felfelé kerekítve. Explicit és örökölt 3-as sorozat időkeret miatt
+2-re csökkenthető hátulról; a megkeresett súly/ismétlés nem csökken. Friss workSets,
+valódi estimatedMinutes és időkeret látszik, becslés a program JSON-ba is kerül.
+Még minimumsorozattal sem beférő terv nem menthető. HU/EN/DE/RO változáslista valódi
+névvel, csere nyíllal és indokkal, nem nyers reason/ID; korábbi12 soros limit nincs.
+
+8 parametrizált főági generátorreferencia +3 új unit (becslés, súlyvesztés nélküli
+időadaptáció, min3) +1 UI-kód. **Batch356 új unit+37 Phone UI még nem futott.**
+A főági JS-generátor 8 szintetikus profilon ténylegesen futott, az adat-fixture
+nem Kotlin/Android teszt. A default106/13 katalógusextrakció változatlan outputja
+cmp-vel ellenőrizve; négy XML/kulcs/hivatkozás, Node-szintaxis, resource/fixture
+shape és diff rendben. Nincs új natív APK/emulátor/képernyőkép vagy teljes CI.
+
+Nyitott: valós 90 napos teljesítésre támaszkodó kezdő practiced-kivétel és
+korábban teljesített, időben beférő teljes nap megőrzése a statikus kapacitás helyett;
+a főági `history128.reductions` teljes portable nap/sorozat indoklása és további
+profilvezérelt programparitás. A jelenlegi időadaptáció min2 után szigorúan tilt,
+míg a main ilyen extrém rövid, nem validált profilnál túllépést is visszaadhat.
+Teljes UX/lokalizáció és közös CI/upgrade/Phone+Wear készülékpróba hátra. PR #238
+frissítve, main/verzió/élő telepítés STOP változatlan.
+
 ## Explicit Level2 receptek és közös main-referenciájú mag – 2026-10-25
 
 **5bf0654** [skip ci]. Pontos main `7473b30:www/app.js` tp128Rx és a
