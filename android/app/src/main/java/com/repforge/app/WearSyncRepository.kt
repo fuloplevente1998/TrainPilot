@@ -325,7 +325,8 @@ object WearSyncRepository {
                             WearCommandReceipts.complete(appContext, command, "processed", uri)
                         }
                     }
-                }
+                } // when(action)
+                } // NativeDataReplacement.mutate
             } catch (_: Exception) {
                 if (uri != null) {
                     try {
