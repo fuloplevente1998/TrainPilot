@@ -65,6 +65,27 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
     private var trendJob: Job? = null
     private var cardioJob: Job? = null
     private var cardioRevision = 0L
+    private var cardioRequestedStamp: NativeCardioCalendarRefresh.Stamp? = null
+
+    /**
+     * Screen lifecycle and protected system broadcasts must refresh time buckets
+     * even when Room has not changed. The periodic check only reloads on a
+     * different local day or zone, so it does not poll Room once per minute.
+     */
+    fun onCardioScreenResumed() =
+        refreshCardioForClock(NativeCardioCalendarRefresh.Trigger.SCREEN_RESUME)
+
+    fun onCardioSystemClockChanged() =
+        refreshCardioForClock(NativeCardioCalendarRefresh.Trigger.SYSTEM_CLOCK_CHANGE)
+
+    fun onCardioCalendarTick() =
+        refreshCardioForClock(NativeCardioCalendarRefresh.Trigger.CALENDAR_TICK)
+
+    private fun refreshCardioForClock(trigger: NativeCardioCalendarRefresh.Trigger) {
+        val stamp = NativeCardioCalendarRefresh.stamp(System.currentTimeMillis(), ZoneId.systemDefault())
+        if (NativeCardioCalendarRefresh.shouldRefresh(trigger, cardioRequestedStamp, stamp))
+            reloadCardio(stamp)
+    }
 
     init {
         // Unlike a count-based cache, this responds to same-count in-place edits.
@@ -148,8 +169,12 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
 
     fun retryCardio() = reloadCardio()
 
-    private fun reloadCardio() {
+    private fun reloadCardio(
+        stamp: NativeCardioCalendarRefresh.Stamp =
+            NativeCardioCalendarRefresh.stamp(System.currentTimeMillis(), ZoneId.systemDefault())
+    ) {
         cardioJob?.cancel()
+        cardioRequestedStamp = stamp
         val revision = ++cardioRevision
         val selected = _uiState.value.selectedCardioId
         cardioJob = viewModelScope.launch {
@@ -159,11 +184,19 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
                     NativeDataReplacement.mutate(context) {
                         NativeCardioProgressAdapter.load(
                             db.workoutHistoryDao(), System.currentTimeMillis(),
-                            ZoneId.systemDefault(), selected
+                            stamp.zone, selected
                         )
                     }
                 }
                 if (revision != cardioRevision || _uiState.value.selectedCardioId != selected) return@launch
+                // Time/date/zone can change while this paged Room read is running.
+                // Do not publish its now-stale week buckets.
+                val currentStamp = NativeCardioCalendarRefresh.stamp(
+                    System.currentTimeMillis(), ZoneId.systemDefault())
+                if (currentStamp != stamp) {
+                    reloadCardio(currentStamp)
+                    return@launch
+                }
                 if (selected.isNotEmpty() && result.activities.none { it.exerciseId == selected }) {
                     _uiState.update { it.copy(selectedCardioId = NativeCardioModel.ALL_ACTIVITIES) }
                     reloadCardio()
