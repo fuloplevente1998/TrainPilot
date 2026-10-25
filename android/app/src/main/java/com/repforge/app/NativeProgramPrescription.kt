@@ -17,7 +17,7 @@ internal object NativeProgramPrescription {
     fun allowsTrial(loadType: String) = loadType in setOf("total", "per_hand", "single_dumbbell")
 
     fun effective(program: ProgramEntity?, entry: String, source: ExerciseLibraryEntity,
-        edits: Map<String, Edit>, defaultRest: Int): JSONObject {
+        edits: Map<String, Edit>, defaultRest: Int, parsedPrescriptions: JSONObject? = null): JSONObject {
         val id = NativeProgramEditor.exerciseId(entry)
         require(id == source.id)
         val result = JSONObject().put("sets", source.defaultSets).put("reps", source.defaultReps)
@@ -26,7 +26,8 @@ internal object NativeProgramPrescription {
         fun overlay(value: JSONObject?) {
             if (value != null) for (key in value.keys()) if (key != "id") result.put(key, value.get(key))
         }
-        overlay(program?.rawJson?.let(::JSONObject)?.optJSONObject("prescriptions")?.optJSONObject(id))
+        val prescriptions = parsedPrescriptions ?: program?.rawJson?.let(::JSONObject)?.optJSONObject("prescriptions")
+        overlay(prescriptions?.optJSONObject(id))
         overlay(JSONTokener(entry).nextValue() as? JSONObject)
         overlay(edits[id]?.patch?.let(::JSONObject))
         return result

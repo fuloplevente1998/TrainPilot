@@ -202,13 +202,14 @@ internal object NativeProgramEditor {
             val originalProgram = opened?.program
             val originalJson = originalProgram?.rawJson?.let { JSONObject(it) } ?: JSONObject()
             val prescriptions = originalJson.optJSONObject("prescriptions")?.let { JSONObject(it.toString()) } ?: JSONObject()
+            val entriesByExercise = d.days.flatMap { it.entries }.groupBy(::exerciseId)
             for ((editedId, edit) in d.prescriptionEdits) {
                 val source = requireNotNull(db.exerciseLibraryDao().getExerciseById(editedId)) { "Unknown exercise" }
                 check(NativeProgramPrescription.source(source) == edit.source) { "Exercise units changed; reopen editor" }
                 val patch = JSONObject(edit.patch)
-                for (entry in d.days.flatMap { it.entries }.filter { exerciseId(it) == editedId }) {
+                for (entry in entriesByExercise.getValue(editedId)) {
                     val effective = NativeProgramPrescription.effective(originalProgram, entry, source,
-                        d.prescriptionEdits, source.defaultRestSeconds)
+                        d.prescriptionEdits, source.defaultRestSeconds, prescriptions)
                     NativeProgramPrescription.validate(patch, effective.getString("loadType"))
                 }
                 val merged = prescriptions.optJSONObject(editedId)?.let { JSONObject(it.toString()) } ?: JSONObject()
