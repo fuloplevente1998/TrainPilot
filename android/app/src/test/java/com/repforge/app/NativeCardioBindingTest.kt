@@ -174,6 +174,32 @@ class NativeCardioBindingTest {
         assertTrue(result.records.isEmpty())
     }
 
+    @Test fun daoUsesLibraryTranslationWhenLegacySnapshotContainsOnlyExerciseId() = runBlocking {
+        val library = TrainPilotDatabase.defaultExercises().first { it.id == "goblet-squat" }
+        db.exerciseLibraryDao().upsertExercise(library)
+        insert(1, exerciseId = "goblet-squat", meters = 1000.0, reps = "200")
+        val id = "goblet-squat"
+        val parent = dao.insertExercise(WorkoutHistoryExerciseEntity(
+            workoutHistoryId = "w-0001", exerciseId = id,
+            nameHu = id, nameEn = id, loadType = "bodyweight",
+            repUnit = "mp", measurementType = "distance", orderIndex = 1,
+            actualRir = null, setRir229 = false
+        ))
+        dao.insertSets(listOf(WorkoutHistorySetEntity(
+            setId = "legacy-placeholder", workoutHistoryId = "w-0001",
+            historyExerciseRowId = parent, exerciseId = id, setNumber = 1,
+            weight = null, reps = "180", leftSeconds = null, rightSeconds = null,
+            distanceMeters = 800.0, done = true, actualRir = null,
+            gpsRouteKey163 = null, gpsRouteKey193 = null
+        )))
+        val projection = dao.pageCardioSets(null, "", Long.MAX_VALUE, 10)
+        val placeholder = projection.single { it.setId == "legacy-placeholder" }
+        assertEquals(library.nameHu, placeholder.exerciseNameHu)
+        assertEquals(library.nameEn, placeholder.exerciseNameEn)
+        val saved = projection.single { it.setId == "set-1" }
+        assertEquals("Guggolás", saved.exerciseNameHu)
+    }
+
     @Test fun activityNamesUseStoredLocalesAndHungarianFallbackNotModelId() {
         val option = com.repforge.app.ui.progress.CardioActivityOption(
             exerciseId = "custom-run", nameHu = "Egyedi futás",
