@@ -2,4 +2,5 @@
 <resources>
     <string name="native_language_title">App language</string>
     <string name="native_language_hint">TrainPilot changes language immediately. Your phone language stays the same.</string>
+    <string name="native_home_default_day">Basic A</string>
 </resources>

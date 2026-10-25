@@ -43,6 +43,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.repforge.app.R
 import com.repforge.app.ui.text.nativeResources
+import com.repforge.app.ui.text.nativeLocalizedName
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.remember
 import com.repforge.app.ui.navigation.NativePlanningShortcuts
@@ -99,14 +101,20 @@ fun HomeScreen(
                         letterSpacing = 1.sp
                     )
                     Text(
-                        text = state.activeProgram?.program?.nameHu ?: strings.getString(R.string.native_home_default_program),
+                        text = state.activeProgram?.program?.let {
+                            nativeLocalizedName(language, it.nameHu, it.nameEn, it.nameDe, it.nameRo)
+                        } ?: strings.getString(R.string.native_home_default_program),
+                        modifier = Modifier.testTag("home_program_name"),
                         color = colors.muted,
                         fontSize = 11.sp
                     )
                 }
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = state.nextDayName,
+                    text = state.activeProgram?.days?.firstOrNull { it.dayId == state.nextDayId }?.let {
+                        nativeLocalizedName(language, it.nameHu, it.nameEn, it.nameDe, it.nameRo)
+                    } ?: strings.getString(R.string.native_home_default_day),
+                    modifier = Modifier.testTag("home_day_name"),
                     color = colors.text,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold
@@ -201,20 +209,20 @@ fun TodayMetricsGrid(metrics: TodayMetricsUiModel, language: String = "hu") {
     val context = LocalContext.current
     val strings = remember(context, language) { nativeResources(context, language) }
     val items = listOf(
-        Triple(strings.getString(R.string.native_home_sleep), metrics.sleepText, "h"),
-        Triple(strings.getString(R.string.native_home_active_calories), metrics.caloriesText, "kcal"),
-        Triple(strings.getString(R.string.native_home_pulse), metrics.pulseText, "bpm"),
-        Triple(strings.getString(R.string.native_home_steps), metrics.stepsText, strings.getString(R.string.native_home_unit_steps)),
-        Triple(strings.getString(R.string.native_home_today_workout), metrics.workoutCountText, strings.getString(R.string.native_home_unit_workouts)),
-        Triple(strings.getString(R.string.native_home_recovery), metrics.recoveryText, strings.getString(R.string.native_home_unit_readiness))
+        HomeMetric("sleep", strings.getString(R.string.native_home_sleep), metrics.sleepText),
+        HomeMetric("calories", strings.getString(R.string.native_home_active_calories), metrics.caloriesText),
+        HomeMetric("pulse", strings.getString(R.string.native_home_pulse), metrics.pulseText),
+        HomeMetric("steps", strings.getString(R.string.native_home_steps), metrics.stepsText, strings.getString(R.string.native_home_unit_steps)),
+        HomeMetric("workouts", strings.getString(R.string.native_home_today_workout), metrics.workoutCountText, strings.getString(R.string.native_home_unit_workouts)),
+        HomeMetric("recovery", strings.getString(R.string.native_home_recovery), metrics.recoveryText, strings.getString(R.string.native_home_unit_readiness))
     )
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         for (row in items.chunked(3)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                for ((label, value, _) in row) {
+                for ((key, label, value, unit) in row) {
                     Card(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).testTag("home_metric_$key"),
                         shape = RoundedCornerShape(12.dp),
                         colors = CardDefaults.cardColors(containerColor = colors.card),
                         border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
@@ -232,6 +240,8 @@ fun TodayMetricsGrid(metrics: TodayMetricsUiModel, language: String = "hu") {
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1
                             )
+                            if (unit != null) Text(unit, color = colors.muted, fontSize = 10.sp,
+                                modifier = Modifier.testTag("home_metric_${key}_unit"))
                         }
                     }
                 }
@@ -239,6 +249,8 @@ fun TodayMetricsGrid(metrics: TodayMetricsUiModel, language: String = "hu") {
         }
     }
 }
+
+private data class HomeMetric(val key: String, val label: String, val value: String, val unit: String? = null)
 
 @Composable
 fun QuickActionButton(

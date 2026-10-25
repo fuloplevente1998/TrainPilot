@@ -34,7 +34,6 @@ data class TodayMetricsUiModel(
 
 data class HomeUiState(
     val activeProgram: ProgramWithDays? = null,
-    val nextDayName: String = "Alap A",
     val nextDayId: String = "A",
     val nextDayExercisesCount: Int = 4,
     val todayMetrics: TodayMetricsUiModel = TodayMetricsUiModel(),
@@ -76,7 +75,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             _uiState.value = HomeUiState(
                 hasImportedDraft = _uiState.value.hasImportedDraft,
                 activeProgram = active,
-                nextDayName = nextDay?.nameHu ?: "Alap A",
                 nextDayId = nextDay?.dayId ?: "A",
                 nextDayExercisesCount = nextDay?.exercisesJson?.let {
                     runCatching { org.json.JSONArray(it).length() }.getOrDefault(4)

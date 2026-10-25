@@ -139,7 +139,8 @@ class NativePhoneNavigationTest {
     @Test fun trainingProfilePersistsAfterSettingsReentryWithoutGuessingMeasurements() {
         launch()
         compose.onNodeWithTag("navigation_settings").performClick()
-        compose.onNodeWithTag("training_profile_open").performScrollTo().performClick()
+        compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("training_profile_open"))
+        compose.onNodeWithTag("training_profile_open").performClick()
         compose.onNodeWithTag("profile_field_age").performTextReplacement("28")
         compose.onNodeWithTag("profile_field_minutes").performTextReplacement("75")
         compose.onNodeWithTag("profile_field_goal").performTextReplacement("fitness")
@@ -152,7 +153,8 @@ class NativePhoneNavigationTest {
         }
         compose.onNodeWithTag("navigation_back").performClick()
         compose.onNodeWithTag("navigation_settings").performClick()
-        compose.onNodeWithTag("training_profile_open").performScrollTo().performClick()
+        compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("training_profile_open"))
+        compose.onNodeWithTag("training_profile_open").performClick()
         compose.onNodeWithTag("profile_field_age").assertTextContains("28")
         compose.onNodeWithTag("profile_field_minutes").assertTextContains("75")
         assertFalse(JSONObject(runBlocking(Dispatchers.IO) { settings.current().profileJson }).has("height"))
@@ -166,7 +168,8 @@ class NativePhoneNavigationTest {
         }
         launch()
         compose.onNodeWithTag("navigation_settings").performClick()
-        compose.onNodeWithTag("training_profile_open").performScrollTo().performClick()
+        compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("training_profile_open"))
+        compose.onNodeWithTag("training_profile_open").performClick()
         compose.onNodeWithTag("profile_field_weight").performTextReplacement("Infinity")
         compose.onNodeWithTag("profile_save").performClick()
         compose.waitUntil(15000) {
@@ -182,7 +185,8 @@ class NativePhoneNavigationTest {
         launch(); tab("journal")
         compose.onNodeWithTag("navigation_settings").performClick()
         for ((language, theme) in listOf("hu" to "classicBlue", "en" to "yellow", "de" to "classicRose", "ro" to "cyan")) {
-            compose.onNodeWithTag("settings_language_$language").performScrollTo().performClick()
+            compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("settings_language_$language"))
+            compose.onNodeWithTag("settings_language_$language").performClick()
             compose.waitUntil(10000) { runBlocking { settings.current().language == language } }
             compose.onNodeWithTag("settings_language_$language").assertIsSelected()
             compose.onNodeWithTag("theme_$theme").performScrollTo().performClick()
