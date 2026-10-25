@@ -3,6 +3,8 @@ package com.repforge.app
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Looper
+import com.repforge.app.ui.health.NativeHealthForegroundAdmission
 import android.os.Build
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -70,6 +72,9 @@ internal object NativeHealthRefresh {
         }
         try {
             screenGuard()
+            // A real main-looper check before SDK work. The caller-side VM may only
+            // have a stale snapshot of the execution state by the time readDay begins.
+            NativeHealthForegroundAdmission.requireMainAdmission(context)
             require(!day.isAfter(LocalDate.now())) { "Future health day" }
             // Short metadata admission only; NEVER hold the lease over Samsung permission UI or SDK IPC.
             val prepared = withContext(Dispatchers.IO) {
@@ -89,6 +94,9 @@ internal object NativeHealthRefresh {
 
             val guard = {
                 screenGuard()
+                check(NativeHealthForegroundAdmission.safeOffMain(context)) {
+                    "Workout ownership, restore or backup blocks Health refresh"
+                }
                 prepared.replacement.requireCurrent(context)
                 check(NativeHealthBackupGate.available()) { "Backup is in progress" }
                 Unit
@@ -111,7 +119,14 @@ internal object NativeHealthRefresh {
             // The existing SDK adapters publish synchronously. Bridge ONLY their short journal writes
             // into the suspending metadata lease; the SDK/permission calls remain outside all leases.
             val commitRead: ((() -> Unit) -> Unit) = { writer ->
+                // Provider publication is synchronously invoked on IO by both SDK adapters.
+                // Never block the Android main thread; dispatch the short main-only
+                // execution probe BEFORE acquiring the metadata mutex.
+                check(Looper.myLooper() != Looper.getMainLooper()) {
+                    "Provider journal publication must run off the main thread"
+                }
                 runBlocking {
+                    NativeHealthForegroundAdmission.requireMainAdmission(context)
                     NativeDataReplacement.mutate(context) {
                         NativeHealthBackupGate.publish {
                             requireCommitIdentity()
