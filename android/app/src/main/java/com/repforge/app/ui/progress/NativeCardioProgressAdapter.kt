@@ -30,6 +30,7 @@ internal object NativeCardioProgressAdapter {
         var beforeSetRowId = Long.MAX_VALUE
         var cachedWorkoutId: String? = null
         var cachedSources = SourceIndex.EMPTY
+        val observedNames = HashMap<String, LocalizedNames>()
 
         do {
             currentCoroutineContext().ensureActive()
@@ -40,6 +41,9 @@ internal object NativeCardioProgressAdapter {
             for (projection in page) {
                 currentCoroutineContext().ensureActive()
                 val row = projection.toCardioRow()
+                if (row.exerciseId.isNotBlank() && NativeCardioModel.isDistance(row)) {
+                    observedNames.getOrPut(row.exerciseId) { LocalizedNames() }.remember(row)
+                }
                 // Source affects records for the chosen activity, not the selector's
                 // cross-activity counts. Skip other parent JSON reads when filtered.
                 if (NativeCardioModel.isDistance(row) &&
@@ -73,7 +77,39 @@ internal object NativeCardioProgressAdapter {
             beforeSetRowId = last.setRowId
         } while (page.size == PAGE_SIZE)
 
-        acc.build()
+        val built = acc.build()
+        // The pure model intentionally keeps its first activity label. Historic newer
+        // rows may contain only the exercise ID, whereas older rows have real names.
+        // Repair labels here without altering totals, records or the canonical math.
+        built.copy(activities = built.activities.map { activity ->
+            val observed = observedNames[activity.exerciseId]
+            if (observed == null) activity else activity.copy(
+                nameHu = observed.resolve(activity.nameHu, observed.hu, activity.exerciseId),
+                nameEn = observed.resolve(activity.nameEn, observed.en, activity.exerciseId),
+                nameDe = observed.resolve(activity.nameDe, observed.de, activity.exerciseId),
+                nameRo = observed.resolve(activity.nameRo, observed.ro, activity.exerciseId)
+            )
+        })
+    }
+
+    private class LocalizedNames {
+        var hu: String? = null
+        var en: String? = null
+        var de: String? = null
+        var ro: String? = null
+
+        fun remember(row: CardioSetRow) {
+            hu = hu ?: actual(row.exerciseNameHu, row.exerciseId)
+            en = en ?: actual(row.exerciseNameEn, row.exerciseId)
+            de = de ?: actual(row.exerciseNameDe, row.exerciseId)
+            ro = ro ?: actual(row.exerciseNameRo, row.exerciseId)
+        }
+
+        fun resolve(original: String, saved: String?, id: String): String =
+            actual(original, id) ?: saved ?: original
+
+        private fun actual(name: String, id: String): String? =
+            name.trim().takeIf { it.isNotEmpty() && it != id }
     }
 
     private fun CardioSetProjection.toCardioRow(): CardioSetRow = CardioSetRow(
