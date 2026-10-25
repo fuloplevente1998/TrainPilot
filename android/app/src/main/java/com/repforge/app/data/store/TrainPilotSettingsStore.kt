@@ -64,7 +64,9 @@ data class TrainPilotUserSettings(
     val pendingFeedbackWorkoutId: String = "",
     val pendingFeedbackStarted: String = "",
     val migrationV1371Complete: Boolean = false,
-    val gpsStartChoices216: Map<String, Boolean> = emptyMap()
+    val gpsStartChoices216: Map<String, Boolean> = emptyMap(),
+    /** Unmodified settings.trainingModes197 JSON, including unknown portable extensions. */
+    val trainingModes197Json: String? = null
 ) {
     fun timerConfiguration(): JSONObject = com.repforge.app.NativeIntervalPreset.normalized(JSONObject()
         .put("work", workSeconds).put("rest", restSeconds).put("rounds", rounds)
@@ -103,6 +105,7 @@ class TrainPilotSettingsStore(private val context: Context) {
         val KEY_PENDING_FEEDBACK_STARTED = stringPreferencesKey("pendingFeedbackStarted")
         val KEY_MIGRATION_V1371_COMPLETE = booleanPreferencesKey("migration_v1_3_71_complete")
         val KEY_GPS_START_CHOICES_216 = stringPreferencesKey("gpsStartChoices216")
+        val KEY_TRAINING_MODES_197 = stringPreferencesKey("trainingModes197")
 
         // Effective main 7473b30 palette: final Basic overrides + original Vivid keys.
         val AVAILABLE_THEMES = listOf(
@@ -185,7 +188,8 @@ class TrainPilotSettingsStore(private val context: Context) {
                 val json = JSONObject(prefs[KEY_GPS_START_CHOICES_216] ?: "{}")
                 json.keys().asSequence().filter { com.repforge.app.NativeOutdoorStart.eligible(it, "distance", "km") }
                     .associateWith { json.opt(it) == true }
-            }.getOrDefault(emptyMap())
+            }.getOrDefault(emptyMap()),
+            trainingModes197Json = prefs[KEY_TRAINING_MODES_197]
         )
     }
 
@@ -296,8 +300,32 @@ class TrainPilotSettingsStore(private val context: Context) {
         }
     }
 
+    /**
+     * Persists only an already approved v1 mode-settings change.
+     * Raw JSON compare-and-set rejects previews based on obsolete settings; it never
+     * modifies a workout, program prescription, draft or journal.
+     * The caller must separately enforce explicit confirmation and active-session guards.
+     */
+    internal suspend fun saveApprovedTrainingModes197(expectedRaw: String?, approved: JSONObject?): Boolean {
+        require(approved == null || NativeTrainingModes.validForWrite(approved)) {
+            "Invalid approved training modes configuration"
+        }
+        val replacement = approved?.toString()
+        return NativeDataReplacement.mutate(context) {
+            var updated = false
+            context.trainPilotDataStore.edit { prefs ->
+                if (prefs[KEY_TRAINING_MODES_197] == expectedRaw) {
+                    if (replacement == null) prefs.remove(KEY_TRAINING_MODES_197)
+                    else prefs[KEY_TRAINING_MODES_197] = replacement
+                    updated = true
+                }
+            }
+            updated
+        }
+    }
+
     /** One atomic portable-settings update, invoked only after the Room import commits. */
-    internal suspend fun importPortableSettings(data: JSONObject) {
+    internal suspend fun importPortableSettings(data: JSONObject, replaceTrainingModesOnMissing: Boolean = false) {
         val source = data.optJSONObject("settings") ?: JSONObject()
         val language = source.optString("language", source.optString("lang", data.optString("language")))
         val theme = importedTheme(data)
@@ -333,6 +361,16 @@ class TrainPilotSettingsStore(private val context: Context) {
                     if (n.isFinite() && n in .25..10.0) portable.put(key, n)
                 }
                 prefs[KEY_PROGRESSION_STEPS] = portable.toString()
+            }
+            if (source.has("trainingModes197")) {
+                // A valid JSON object is retained byte-for-byte at the field level
+                // (unknown future keys included); the resolver handles malformed v1 safely.
+                val mode = source.opt("trainingModes197")
+                if (mode is JSONObject) prefs[KEY_TRAINING_MODES_197] = mode.toString()
+                else prefs.remove(KEY_TRAINING_MODES_197)
+            } else if (replaceTrainingModesOnMissing) {
+                // Full restore of a legacy backup must not retain a newer local mode.
+                prefs.remove(KEY_TRAINING_MODES_197)
             }
             if (source.has("hapticSetRecorded227")) prefs[KEY_HAPTIC_SET_RECORDED_227] = source.optBoolean("hapticSetRecorded227", true)
             if (source.has("healthBackupConsent")) prefs[KEY_HEALTH_BACKUP_CONSENT] = source.optBoolean("healthBackupConsent")
