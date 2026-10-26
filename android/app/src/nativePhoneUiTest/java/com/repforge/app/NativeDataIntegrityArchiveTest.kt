@@ -80,7 +80,7 @@ class NativeDataIntegrityArchiveTest {
                 .put("builtin", false)
                 .put("days", JSONArray().put(JSONObject()
                     .put("id", "A").put("name", "Nap A")
-                    .put("exercises", JSONArray().put("side-plank")))))
+                    .put("exercises", JSONArray().put("side-plank"))))))
             .put("weights", JSONArray().put(JSONObject()
                 .put("id", "integrity-weight").put("date", "2026-10-21").put("kg", 77.5)))
             .put("scheduled", JSONArray().put(JSONObject().put("id", "integrity-calendar")
