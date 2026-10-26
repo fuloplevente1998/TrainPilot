@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_progress_photo_title">Fotók az edzésekről</string>
+    <string name="native_progress_photo_empty">Még nincs rögzített privát edzésfotó.</string>
+    <string name="native_progress_photo_loading">Fotó betöltése…</string>
+    <string name="native_progress_photo_unavailable">A fotó hiányzik vagy sérült.</string>
+    <string name="native_progress_photo_close">Bezárás</string>
+    <string name="native_progress_photo_workout">Edzés</string>
+    <string name="native_progress_photo_before">Előtte</string>
+    <string name="native_progress_photo_after">Utána</string>
+    <string name="native_progress_strength_30">30 nap</string>
+    <string name="native_progress_strength_90">90 nap</string>
+    <string name="native_progress_strength_year">1 év</string>
+    <string name="native_progress_strength_all">Összes</string>
+    <string name="native_progress_strength_loading">Súlyzós adatok betöltése…</string>
+    <string name="native_progress_strength_empty">A kiválasztott időszakban nincs súlyzós mérés.</string>
+</resources>
