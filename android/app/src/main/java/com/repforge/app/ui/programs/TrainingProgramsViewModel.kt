@@ -82,10 +82,13 @@ internal class TrainingProgramsViewModel(application: Application) : AndroidView
         preview: NativeTrainingModeChange.Preview,
         snapshot: NativeTrainingModeComparison.Snapshot
     ) = changeTrainingMode(R.string.native_modes_saved) {
-        // Read-only identity validation; actual write still goes through the
-        // existing active-workout/restore admission and DataStore CAS.
-        NativeTrainingModeComparison.isCurrent(context, preview, snapshot) &&
-            NativeTrainingModeChange.approve(settingsStore, preview)
+        // ProgramEditor.save/delete/restore use this same metadata lease. Keep
+        // the read-only program/epoch revalidation and the existing admitted
+        // settings CAS in one reentrant operation; never introduce a writer.
+        com.repforge.app.NativeDataReplacement.mutate(context) {
+            NativeTrainingModeComparison.isCurrent(context, preview, snapshot) &&
+                NativeTrainingModeChange.approve(settingsStore, preview)
+        }
     }
 
     fun undoTrainingMode(programId: String) = changeTrainingMode(R.string.native_modes_reverted) {
