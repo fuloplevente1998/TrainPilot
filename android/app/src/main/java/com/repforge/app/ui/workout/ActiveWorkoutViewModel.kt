@@ -977,13 +977,8 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
                                 // main-looper only. After IO recomputation, re-check
                                 // settings and the live frame on Main immediately before
                                 // the synchronous, single canonical editor commit.
-                                withContext(Dispatchers.Main.immediate) {
-                                    val currentSettings = settingsStore.current().trainingModes197Json
-                                    val current = ActiveWorkoutStore.current(context)
-                                    if (currentSettings != ticket.settingsRaw || current == null ||
-                                        !NativeTrainingModeProposal.permitted(current, ticket)) null
-                                    else NativeWorkoutEditing.commitEdit(context,
-                                        NativeTrainingModeProposal.editedFrame(current, ticket))
+                                NativeTrainingModeProposal.commitApprovedOnMain(context, ticket) {
+                                    settingsStore.current().trainingModes197Json
                                 }
                             }
                         }
