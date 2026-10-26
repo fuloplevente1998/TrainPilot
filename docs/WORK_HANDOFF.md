@@ -4,6 +4,21 @@ Frissítve: **2026-10-26**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Két külső chat területfoglalása – 2026-10-26
+
+User most két ChatGPT-chatnek kér munkát, új Codex/belső agent nélkül.
+Exact base98ef71b2e4f2fa4f08b415c3d0a94d113b62303d; promptok e8985f10:
+- plans/NATIVE_CALENDAR_UI_REPAIR_PLUS_HANDOFF.md → saját fix/native-calendar-planner-ui-readiness.
+  CalendarScreen/VM, saját planner UI teszt: readiness és Mégse/mentés/újranyitás.
+- plans/NATIVE_MODE_UI_REPAIR_PLUS_HANDOFF.md → saját fix/native-training-mode-approval-ui.
+  TrainingProgramsScreen/VM, NativeTrainingModePicker/Comparison, saját modes UI teszt.
+E területeket Root ne módosítsa párhuzamosan. Megosztott fixture/NavHost/SettingsStore/
+motor/workflow nem írható a munkásoknak. Saját draft PR célmigration; nincs main/
+migration push/merge/close. Teljes CI Rootnál; runner hiányában runtime UNRUN, nem PASS.
+Rootnál marad cardio/locale/sleep/navigation UI és közös screenshot/CI integráció.
+Feladatok kiadhatók; indulásuk még nem igazolt. Régi PR-ok lezárásához exact integráció
+és megfelelő tesztbizonyíték szükséges; a nyitott draft önmagában nem új hátralévő funkció.
+
 ## PR256/257 root review és integráció – 2026-10-26
 
 #257 exact533c7f0fab56957109e37e4af07586ee34409eb5 →993c7640:
