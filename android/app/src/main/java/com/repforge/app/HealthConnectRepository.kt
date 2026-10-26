@@ -137,13 +137,16 @@ object HealthConnectRepository {
          * never SDK IPC. The default preserves existing callers' write contract.
          */
         var readCommit: ((() -> Unit) -> Unit) = { writer -> writer() }
+        internal var dailyChangeRevision: Long? = null
 
         fun publishRead(writer: () -> Unit) {
             requireForeground()
             try {
                 readCommit {
                     requireForeground()
-                    writer()
+                    val revision = dailyChangeRevision
+                    if (revision == null) writer()
+                    else HealthJournalStore.get(appContext).nativePublishAtChangeRevision(requireNotNull(epoch), revision, writer)
                 }
             } catch (cancelled: kotlinx.coroutines.CancellationException) {
                 throw cancelled
@@ -200,6 +203,37 @@ object HealthConnectRepository {
         access.readCommit = readCommit
         val params = JSONObject().put("start", startIso).put("end", endIso).put("origin", origin)
         Api34.readHealthDay(access, params)
+    }
+
+    /** A token is a private candidate until the coordinator's durable checkpoint. */
+    @RequiresApi(34)
+    internal suspend fun createChangeTokenSuspend(
+        context: Context, generation: Long, guard: () -> Unit
+    ): String = withContext(Dispatchers.IO) {
+        guard()
+        Api34.createChangeToken(Access(context, generation, Runnable { guard() })).getString("token")
+    }
+
+    @RequiresApi(34)
+    internal suspend fun pollChangePageSuspend(
+        context: Context, token: String, generation: Long, guard: () -> Unit,
+        readCommit: ((() -> Unit) -> Unit)
+    ): NativeHealthSync.ChangePage = withContext(Dispatchers.IO) {
+        val access = Access(context, generation, Runnable { guard() }).also { it.readCommit = readCommit }
+        val result = Api34.pollChangePage(access, token)
+        val days = result.getJSONArray("changedDays")
+        NativeHealthSync.ChangePage(result.getString("nextToken"), result.getBoolean("hasMore"),
+            (0 until days.length()).map { LocalDate.parse(days.getString(it)) }.toSet(), result.getInt("deletedCount") > 0)
+    }
+
+    @RequiresApi(34)
+    internal fun invalidChangeToken(error: Throwable): Boolean {
+        var cause: Throwable? = error
+        while (cause != null) {
+            if (cause is HealthConnectException && cause.errorCode == HealthConnectException.ERROR_INVALID_ARGUMENT) return true
+            cause = cause.cause
+        }
+        return false
     }
 
     @RequiresApi(34)
@@ -689,6 +723,7 @@ object HealthConnectRepository {
         @JvmStatic
         @Throws(Exception::class)
         fun readHealthDay(p: Access, c: JSONObject): JSONObject {
+            p.dailyChangeRevision = p.epoch?.let { HealthJournalStore.get(p.getContext()).nativeChangeRevision(it) }
             val t = range(c, 36 * 60L)
             p.origin = c.optString("origin", "")
             if (p.origin.isNotEmpty() && !ORIGIN_REGEX.matches(p.origin)) {
@@ -1000,6 +1035,7 @@ object HealthConnectRepository {
                 is IntervalRecord -> {
                     var d = r.startTime.atZone(ZoneId.systemDefault()).toLocalDate()
                     val e = r.endTime.atZone(ZoneId.systemDefault()).toLocalDate()
+                    check(ChronoUnit.DAYS.between(d, e) <= 530) { "Health interval exceeds sync budget" }
                     while (!d.isAfter(e)) {
                         days.add(d.toString())
                         d = d.plusDays(1)
@@ -1008,56 +1044,57 @@ object HealthConnectRepository {
             }
         }
 
+        /** One bounded IPC page, then the SAME protected publication as daily reads. */
+        internal fun pollChangePage(p: Access, token: String): JSONObject {
+            p.dailyChangeRevision = null // This Access may have been used for an earlier daily read.
+            require(token.isNotEmpty()) { "Empty token" }
+            p.requireForeground()
+            val f = CompletableFuture<ChangeLogsResponse>()
+            p.getContext().getSystemService(HealthConnectManager::class.java)
+                .getChangeLogs(ChangeLogsRequest.Builder(token).setPageSize(2000).build(), DIRECT, receiver(f))
+            val r = f.get(30, TimeUnit.SECONDS)
+            val days = TreeSet<String>()
+            val types = TreeSet<String>()
+            for (record in r.upsertedRecords) {
+                if (src(record) == p.getContext().packageName) continue
+                types.add(record.javaClass.simpleName)
+                addRecordDays(days, record)
+            }
+            val deleted = JSONArray()
+            for (entry in r.deletedLogs) deleted.put(JSONObject()
+                .put("recordId", entry.deletedRecordId).put("deletedMs", entry.deletedTime.toEpochMilli()))
+            // Serialization and IPC stay outside the short publication fence.
+            val records = HealthConnectJournal.serialize(r.upsertedRecords, p.getContext().packageName)
+            if (p.epoch != null) p.publishRead {
+                val dirty = HealthJournalStore.get(p.getContext()).applyChanges(records, deleted, p.epoch)
+                for (i in 0 until dirty.length()) days.add(dirty.getString(i))
+            }
+            return JSONObject().put("changedDays", JSONArray(days)).put("changedTypes", JSONArray(types))
+                .put("deletedCount", r.deletedLogs.size).put("nextToken", r.nextChangesToken)
+                .put("hasMore", r.hasMorePages()).put("checkedAt", Instant.now().toString())
+        }
+
         @JvmStatic
         @Throws(Exception::class)
         fun pollChanges(p: Access, token: String): JSONObject {
-            if (token.isEmpty()) throw IllegalArgumentException("Empty token")
-            val m = p.getContext().getSystemService(HealthConnectManager::class.java)
             val days = TreeSet<String>()
             val types = TreeSet<String>()
+            var next = token
             var deleted = 0
             var pages = 0
-            var next = token
-            var more: Boolean
+            var page: JSONObject
             do {
-                p.requireForeground()
-                val f = CompletableFuture<ChangeLogsResponse>()
-                m.getChangeLogs(ChangeLogsRequest.Builder(next).setPageSize(2000).build(), DIRECT, receiver(f))
-                val r = f.get(30, TimeUnit.SECONDS)
-                for (x in r.upsertedRecords) {
-                    if (src(x) == p.getContext().packageName) continue
-                    types.add(x.javaClass.simpleName)
-                    addRecordDays(days, x)
-                }
-                val deletedRecords = JSONArray()
-                for (d in r.deletedLogs) {
-                    deletedRecords.put(
-                        JSONObject()
-                            .put("recordId", d.deletedRecordId)
-                            .put("deletedMs", d.deletedTime.toEpochMilli())
-                    )
-                }
-                if (p.epoch != null) {
-                    val dirty = HealthJournalStore.get(p.getContext()).applyChanges(
-                        HealthConnectJournal.serialize(r.upsertedRecords, p.getContext().packageName),
-                        deletedRecords,
-                        p.epoch
-                    )
-                    for (i in 0 until dirty.length()) {
-                        days.add(dirty.getString(i))
-                    }
-                }
-                deleted += r.deletedLogs.size
-                next = r.nextChangesToken
-                more = r.hasMorePages()
-                if (++pages > 20 && more) throw IllegalStateException("Túl sok változásoldal.")
-            } while (more)
-            return JSONObject()
-                .put("changedDays", JSONArray(days))
-                .put("changedTypes", JSONArray(types))
-                .put("deletedCount", deleted)
-                .put("nextToken", next)
-                .put("checkedAt", Instant.now().toString())
+                page = pollChangePage(p, next)
+                val changedDays = page.getJSONArray("changedDays")
+                for (i in 0 until changedDays.length()) days.add(changedDays.getString(i))
+                val changedTypes = page.getJSONArray("changedTypes")
+                for (i in 0 until changedTypes.length()) types.add(changedTypes.getString(i))
+                deleted += page.getInt("deletedCount")
+                next = page.getString("nextToken")
+                check(++pages <= 20 || !page.getBoolean("hasMore")) { "Too many change pages; retry full sync" }
+            } while (page.getBoolean("hasMore"))
+            return JSONObject().put("changedDays", JSONArray(days)).put("changedTypes", JSONArray(types))
+                .put("deletedCount", deleted).put("nextToken", next).put("checkedAt", Instant.now().toString())
         }
 
         @JvmStatic
