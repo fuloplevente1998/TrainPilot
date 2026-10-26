@@ -112,7 +112,7 @@ fun ActiveWorkoutScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val colors = LocalTrainPilotColors.current
     val context = LocalContext.current
-    val activity = context as? Activity
+    val activity = NativeGpsPermissionRecovery.findActivity(context)
     val strings = remember(context, language) { nativeResources(context, language) }
     val photoRepo = remember { WorkoutPhotoRepository(context) }
     // Only a user action may start a GPS measurement. A Settings return updates the prompt, never starts it.
