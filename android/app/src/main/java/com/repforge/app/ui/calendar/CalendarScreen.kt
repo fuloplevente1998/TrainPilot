@@ -198,7 +198,7 @@ private fun CalendarPlannerDialog(state: CalendarUiState, busy: Boolean, strings
             Column(Modifier.verticalScroll(rememberScrollState()).testTag("calendar_planner_form"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 state.programs.forEach { p ->
                     TextButton(onClick = { programId = p.program.id; first = 0 }, enabled = !busy,
-                        modifier = Modifier.heightIn(min = 48.dp)) { Text((if (programId == p.program.id) "✓ " else "") + p.program.nameHu) }
+                        modifier = Modifier.heightIn(min = 48.dp)) { Text((if (programId == p.program.id) "✓ " else "") + when (state.language) { "en" -> p.program.nameEn; "de" -> p.program.nameDe; "ro" -> p.program.nameRo; else -> p.program.nameHu }) }
                 }
                 listOf("alternate" to R.string.calendar_planner_alternate, "daily" to R.string.calendar_planner_daily,
                     "weekly" to R.string.calendar_planner_weekly).forEach { (value, label) ->
