@@ -122,8 +122,15 @@ jobs:
             out = Path("g10/results")
             shots = out / "screenshots"
             shots.mkdir(parents=True, exist_ok=True)
-            apk = Path("g10/apks/app/build/outputs/apk/debug/app-debug.apk")
-            test_apk = Path("g10/apks/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk")
+            # upload-artifact can strip the shared directory prefix; find the
+            # unique exact debug filenames rather than guessing archive layout.
+            def unique(name):
+                files = list(Path("g10/apks").rglob(name))
+                if len(files) != 1:
+                    raise RuntimeError(f"Expected one {name} in downloaded APK artifact; found {files}")
+                return files[0]
+            apk = unique("app-debug.apk")
+            test_apk = unique("app-debug-androidTest.apk")
             def sha(path):
                 return hashlib.sha256(path.read_bytes()).hexdigest()
             def adb(*args, check=True):
