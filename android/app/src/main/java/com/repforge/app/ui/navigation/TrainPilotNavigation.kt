@@ -102,7 +102,8 @@ fun TrainPilotAppScaffold(
     var onboardingSaving by remember { mutableStateOf(false) }
     var onboardingFailed by remember { mutableStateOf(false) }
     var reopenedOnboarding by remember { mutableStateOf(false) }
-    fun writeOnboarding(change: suspend (NativeDataReplacement.Continuation) -> Boolean) {
+    fun writeOnboarding(onSaved: () -> Unit = {},
+        change: suspend (NativeDataReplacement.Continuation) -> Boolean) {
         if (onboardingSaving) return
         val ticket = NativeDataReplacement.continuationForCurrentData(context)
         onboardingSaving = true
@@ -110,7 +111,7 @@ fun TrainPilotAppScaffold(
         scope.launch {
             try {
                 val saved = withContext(Dispatchers.IO) { change(ticket) }
-                if (!saved) onboardingFailed = true
+                if (saved) onSaved() else onboardingFailed = true
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Exception) { onboardingFailed = true }
             finally { onboardingSaving = false }
@@ -143,13 +144,13 @@ fun TrainPilotAppScaffold(
             onSkip = {
                 if (settings.onboarding128 == NativeOnboardingPolicy.SKIPPED) {
                     reopenedOnboarding = false
-                } else writeOnboarding { ticket ->
+                } else writeOnboarding(onSaved = { reopenedOnboarding = false }) { ticket ->
                     onboardingStore.transitionOnboarding(settings.onboarding128,
                         NativeOnboardingPolicy.SKIPPED, ticket)
                 }
             },
             onProfileSave = { fields ->
-                writeOnboarding { ticket ->
+                writeOnboarding(onSaved = { reopenedOnboarding = false }) { ticket ->
                     onboardingStore.completeOnboarding(settings.profileJson, fields, ticket)
                 }
             },
