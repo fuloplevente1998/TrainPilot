@@ -1,5 +1,10 @@
 # Végleges natív TrainPilot UI/UX – külön Codex átadó
 
+> **Aktuális Root pontosítás (2026-10-26):** [UI belépési kapu](NATIVE_UI_ENTRY_GATE.md)
+> és [korrigált G02–G12 audit](../reviews/NATIVE_G02_G12_CURRENT_BASELINE_TRIAGE.md)
+> az irányadó a történeti baseline mellett. G01/G10 integrált, G06 opcionális online
+> map+zoom létező main funkció; nem tisztán új feature. Teljes UI-kivitelezés még nem indult.
+
 Felhasználói irány, 2026-10-26. Repo fuloplevente1998/TrainPilot.
 Olvasd AGENTS.md-t, docs/NATIVE_RESUME.md-t és az egész
 **docs/design/NATIVE_DESIGN_HANDOFF.md** dokumentumot. Utóbbi a teljes

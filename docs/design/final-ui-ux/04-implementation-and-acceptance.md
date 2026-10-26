@@ -1,5 +1,10 @@
 # Nyitott kötések, kivitelezési sorrend és elfogadás
 
+> **Aktuális Root pontosítás (2026-10-26):** [UI belépési kapu](../../plans/NATIVE_UI_ENTRY_GATE.md)
+> és [korrigált G02–G12 audit](../../reviews/NATIVE_G02_G12_CURRENT_BASELINE_TRIAGE.md)
+> az irányadó a történeti baseline mellett. G01/G10 integrált, G06 opcionális online
+> map+zoom létező main funkció; nem tisztán új feature. Teljes UI-kivitelezés még nem indult.
+
 ## Pontos forráseltérések, nem dekorációval javítandó funkciók
 
 A G01–G12 sorok az exact c116a042 olvasási baseline-ra vonatkoznak. Nem a másik QA-ág mostani állapotát írják le, és nem újabb teljes audit. A phase2 integrált baseline-on mind újraellenőrizendő. G08 kifejezetten megengedett eltérés.
