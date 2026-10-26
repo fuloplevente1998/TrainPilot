@@ -1,0 +1,84 @@
+# Native CI evidence summary — offline használat
+
+A `scripts/native/evidence-summary.py` kizárólag **már letöltött és kibontott** GitHub Actions artifact-könyvtárakat olvas. A Python 3.11+ standard library elegendő. Nem kér tokent, nem hív hálózatot, nem indít buildet, emulátort vagy workflow-t, és nem ír a bemeneti artifactokba.
+
+Az eredeti artifactnevek (az SHA-val együtt) **könyvtárnévként megőrzendők**. Például az `artifacts/` alatt:
+
+- `TrainPilot-Native-Phone-UI-Evidence/manifest.json`, `instrumentation.txt`, `screenshots/*.png`
+- `TrainPilot-Native-Wear-UI-Results-<full40SHA>-0/`, `-1/`, `-2/`: `instrumentation.txt`, opcionális Wear PNG-k
+- `TrainPilot-Native-Tests-<full40SHA>/app/build/test-results/.../TEST-*.xml`, illetve `wear/...`
+- `TrainPilot-Native-Update-Verification/native-apk-sha256.txt` (ha letöltötték)
+
+Példa a kiválasztott kapukhoz (az APK-k a ZIP-ekből külön, változatlanul kibontva):
+
+```bash
+python3 scripts/native/evidence-summary.py artifacts \
+  --expected-commit "${COMMIT_FULL_SHA}" \
+  --require-gate jvm --require-gate phone --require-gate wear \
+  --wear-shards 3 --wear-total 183 \
+  --require-screenshot home \
+  --phone-apk extracted-phone-debug/app-debug.apk \
+  --phone-test-apk extracted-phone-ui-test/app-debug-androidTest.apk \
+  --json-out /tmp/native-ci-summary.json \
+  --markdown-out /tmp/native-ci-summary.md
+```
+
+Több bemeneti könyvtár is megadható. A `--require-gate` ismételhető: `jvm`, `phone`, `wear`, `apk`; hiányzó kötelező kapu `INCOMPLETE`. `--require-screenshot` ismételhető, a manifestben név szerint meglévő telefonos checkpointot követel meg. A `--apk-file 'app/build/outputs/apk/release/app-release.apk=/path/to/app-release.apk'` (szintén ismételhető) az `apk` gate checksum-sorát valódi APK-byte-hoz ellenőrzi. A forráskönyvtárban nem lehet a `--json-out`/`--markdown-out`; külön fájlra mutassanak.
+
+Kilépési kód: `0` = az átadott és megkövetelt kapuk bizonyítéka PASS, `1` = FAILED (teszthiba, ellentmondás, eltérő SHA/sérült hash/duplikáció), `2` = UNKNOWN/INCOMPLETE vagy érvénytelen CLI-argumentum. A statusokat **ne értelmezd új CI-futásként**: az eszköz csupán az átadott anyagot értékeli.
+
+## JSON v1
+
+`schema_version`, `expected_commit`, `status`, `complete`, `gates`, `limitations`; a `gates` kulcsai: `phone`, `wear`, `jvm`, `apk`. A telefon mezői: `declared`, `executed`, `passed`, `failed`, `errors`, `skipped`, `missing`, `crashed`, `complete`, `screenshots`, `commit`, `failure_excerpts`, `issues`, `raw`, `status`. A Wear: `expected_shards`, `shards[]` (index, commit, declared/executed/passed/fail/errors/skipped/missing/status, screenshot-szám, raw és hibalista), `unique_cases`, összesített számlálók. JVM: `modules.app|wear|shared.{tests,failures,errors,skips}`, `tests`, `xml_files`, `failures`, `skips`; APK metadata: `records`, `verified`, `issues`, `status`. `issues[]` típusos rövid diagnózisok, `failure_excerpts[]` csak testcase-azonosító, kiválasztott kivételtípus és relatív raw fájlút; nyers stack, GPS, személyes adat, token vagy URL nincs a kimenetben.
+
+## Konzervatív bizonyítási korlátok
+
+Az Android runner `numtests` nem azonos a végrehajtott tesztekkel. Egy eset csak a terminális `INSTRUMENTATION_STATUS_CODE` után számít; a hiányzó eseteket **nem találja ki**. A végső runner kód, `OK (N tests)` és az egyedi esetek egyezése kötelező. A `instrumentation-derived.xml` nem helyettesíti a raw naplót. Wear esetén a teljes, három külön indexű shard és az egyedi class+method párok szükségesek; a sharding megnevezése a könyvtárnévben van, nincs beágyazott SHA-attesztáció. JVM esetén a `TEST-*.xml` fájlok nyers testcase-elemeit számolja, és összeveti a deklarált suite-számmal. A `--wear-total` explicit globális elvárás; nincs varázslatosan feltételezett 183 minden jövőbeli változathoz.
+
+Telefonos sikerhez a két debug APK valódi byte-jainak egyezése, nem üres screenshot-manifest és érvényes PNG/hash szükséges. Az APK checksum metadata önmagában kevés; `--apk-file` nélkül `INCOMPLETE`. A valós futtatás és a screenshot eredetének kriptográfiai igazolása külső bizonyítékot igényel. Sem egy parser-PASS, sem egyetlen zöld gate nem natív készülékes elfogadás.
+
+Gyors szintetikus regresszió:
+
+```bash
+python3 -m unittest discover -s tests/native -p 'test_evidence_summary.py' -v
+```
+
+## PR257 QA — szigorított értelmezés (2026-10-26)
+
+A QA során az instrumentation PASS feltétele az **egyedi, elkezdett és terminális**
+`class#method` esetek, az egyetlen `numtests`, az egyetlen `INSTRUMENTATION_RESULT: stream`
+összesítő, a `OK (N tests)` és az egyetlen sikeres végső runner-kód egyezése.
+`FAILURES!!!`, duplikált eset, ellentmondó számláló, hibás UTF-8 vagy csonka
+bizonylat nem zöld. `skipped`/`assumption` esetek nem teljes PASS-ok.
+A `complete` csak hiba- és skip-mentes, teljesen lezárt futásnál igaz.
+
+JUnit esetén a `<testsuites>` felső totals mezőit is ellenőrzi, ha vannak;
+ugyanazon teszt több terminális eredménye, illetve a testcase/suite számlálók
+ellentmondása hibás forrás. A különböző paraméterindexű testcase-nevek
+önálló tesztek. A PNG-ellenőrzés a CRC mellett a szabványos IHDR beállításait,
+IDAT sorrendet, teljes zlib- és sorhossz-adatot, szűrőbájtokat és IEND/trailing
+adatot is vizsgálja. A jelenlegi konzervatív ellenőrzés az interlaced PNG-t
+nem támogatja: ez *nem* szabad átengedés, hanem sérült/nem támogatható evidencia.
+
+A hash-lista csak akkor PASS, ha **minden** rekordhoz külön megadott APK-fájl
+byte-jai egyeznek; részellenőrzés `INCOMPLETE`. A Wear/JVM artifactok nevében
+szereplő SHA csupán *filename attribution*, nem független kriptográfiai
+commit-bizonyíték. A raw failure szöveget (stack, URL, token, felhasználói rekord,
+GPS) nem írja a JSON/Markdown kivonatba. A `--wear-total` implicit Wear-kérést,
+a `--require-screenshot` és a phone APK argumentumok implicit phone-kérést jelentenek.
+
+QA-referencia, **valós, de csak offline feldolgozott** Actions 40317771457,
+artifactok: phone 12649155506, JVM 12647857246, Wear index0/1/2:
+12647683976/12647489630/12648950089. Kibontás után az eredeti
+`TrainPilot-Native-*` könyvtárneveket megőrizve:
+
+```bash
+python3 scripts/native/evidence-summary.py /path/to/unpacked-40317771457 \
+  --expected-commit e28ab41887a976ee380f63f465dbdcb51f494329 \
+  --require-gate phone --require-gate jvm --require-gate wear --wear-total 183 \
+  --json-out /tmp/pr257-qa.json --markdown-out /tmp/pr257-qa.md
+```
+
+Elvárt exit: `1` / `FAILED` (telefon: 75/75 terminális, 35 PASS, 40 FAIL,
+0 screenshot, *nem* process-crash; JVM app1120/Wear167 PASS; Wear három shard
+183 egyedi PASS). **Nem** új Android/CI futás vagy telefonos UI PASS.
