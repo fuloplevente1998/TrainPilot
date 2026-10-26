@@ -73,6 +73,13 @@ internal fun TrainingProgramsScreen(
     var editorOpen by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<ProgramWithDays?>(null) }
     var editorToken by remember { mutableStateOf(java.util.UUID.randomUUID().toString()) }
+    // Keep the proposal/approval owner outside the virtualized LazyColumn item.
+    // Scrolling must not cancel an in-flight comparison or dispose its dialog.
+    val programModeState = remember(state.trainingModes197Json, state.activeProgramId) {
+        com.repforge.app.ui.settings.NativeTrainingModePickerState(
+            com.repforge.app.data.store.NativeTrainingModes.resolveSavedJson(
+                state.trainingModes197Json, state.activeProgramId))
+    }
     LaunchedEffect(state.savedProgramId, state.deletedProgramId) {
         if (state.savedProgramId != null || state.deletedProgramId != null) {
             editorOpen = false
@@ -180,7 +187,9 @@ internal fun TrainingProgramsScreen(
                 programId = state.activeProgramId,
                 enabled = !state.modeSaving && !state.editorSaving,
                 onApprove = viewModel::approveTrainingMode,
-                onUndo = { viewModel.undoTrainingMode(state.activeProgramId) }
+                onApproveCompared = viewModel::approveTrainingModeCompared,
+                onUndo = { viewModel.undoTrainingMode(state.activeProgramId) },
+                holder = programModeState, showDialog = false
             )
         }
 
@@ -200,6 +209,19 @@ internal fun TrainingProgramsScreen(
                 }
             )
         }
+    }
+    // This dialog belongs to the screen, not to a lazy item that can leave composition.
+    if (state.programs.any { it.program.id == state.activeProgramId }) {
+        com.repforge.app.ui.settings.NativeTrainingModePicker(
+            language = language, raw = state.trainingModes197Json,
+            activeProgramId = state.activeProgramId, scope = "program",
+            programId = state.activeProgramId,
+            enabled = !state.modeSaving && !state.editorSaving,
+            onApprove = viewModel::approveTrainingMode,
+            onApproveCompared = viewModel::approveTrainingModeCompared,
+            onUndo = { viewModel.undoTrainingMode(state.activeProgramId) },
+            holder = programModeState, showCard = false
+        )
     }
     state.modeStatus?.let { message ->
         androidx.compose.material3.AlertDialog(
