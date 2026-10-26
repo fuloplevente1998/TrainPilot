@@ -132,7 +132,7 @@ internal object NativeProgramEditor {
         }))
         require((restoreProgram == null && restoreDayId == null && restorePrescriptionIds.isEmpty()) ||
             (restoreProgram != null && restoreDayId != null && personalMetadata == null && !clone &&
-                opened?.program?.builtin == false && restoreDayId in opened.days.map { it.dayId }))
+                opened != null && !opened.program.builtin && restoreDayId in opened.days.map { it.dayId }))
         assertNoActiveWorkout(context)
         val d = checked(draft)
         if (personalMetadata != null) {
@@ -330,7 +330,7 @@ internal object NativeProgramEditor {
                 d.description, false, personalMetadata != null,
                 if (personalMetadata == null) "own" else "profile-template",
                 if (personalMetadata != null) opened!!.program.id
-                else if (fork) originalProgram?.id?.takeIf { originalProgram.builtin }
+                else if (fork) originalProgram?.takeIf { it.builtin }?.id
                 else originalProgram?.sourceTemplateId,
                 if (personalMetadata != null) 2 else originalProgram?.templateVersion ?: 1, originalProgram?.accentHex ?: "#4d8fbe",
                 if (fork) db.programDao().getProgramIds().size else originalProgram!!.sortOrder,
