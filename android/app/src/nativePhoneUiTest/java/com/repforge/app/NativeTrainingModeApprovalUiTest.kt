@@ -131,15 +131,15 @@ class NativeTrainingModeApprovalUiTest {
         val pid = editableProgram()
         previewHitRir()
         val expectedSettings = current().trainingModes197Json
-        val originalDay = runBlocking(Dispatchers.IO) {
+        val (changedDayId, originalDay) = runBlocking(Dispatchers.IO) {
             fixture.database.programDao().getProgramWithDaysById(pid)!!.days
-                .first { org.json.JSONArray(it.exercisesJson).length() > 0 }.exercisesJson
+                .first { org.json.JSONArray(it.exercisesJson).length() > 0 }
+                .let { it.dayId to it.exercisesJson }
         }
         val savedRecipe = editProgram(pid, true)
         val changedDay = runBlocking(Dispatchers.IO) {
             fixture.database.programDao().getProgramWithDaysById(pid)!!.days
-                .first { it.dayId == fixture.database.programDao()
-                    .getProgramWithDaysById(pid)!!.days.first().dayId }.exercisesJson
+                .first { it.dayId == changedDayId }.exercisesJson
         }
         // A real editor save changed the day, and approval must not undo it.
         assertNotEquals(originalDay, changedDay)
