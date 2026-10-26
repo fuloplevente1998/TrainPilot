@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="google_maintenance_revoke">Google-hozzáférés visszavonása</string>
+    <string name="google_maintenance_drive">TrainPilot Drive-mentések törlése</string>
+    <string name="google_maintenance_calendar">Kezelt edzésnaptárak törlése</string>
+    <string name="google_maintenance_revoke_scope">Visszavonja a TrainPilot Google-engedélyeit és lekapcsolja a fiókot. A felhőadatokat nem törli.</string>
+    <string name="google_maintenance_drive_scope">A TrainPilot saját app-data tárában lévő mentéseket és edzésfotókat törli. Más Drive-fájlokat nem érint. A távoli törlés nem vonható vissza.</string>
+    <string name="google_maintenance_calendar_scope">Csak a fiók tulajdonában lévő, TrainPilot által kezelt edzésnaptárakat törli. Más naptárat nem érint. A törlés nem vonható vissza.</string>
+    <string name="google_maintenance_account">Érintett fiók: %1$s</string>
+    <string name="google_maintenance_local">A helyi napló és fotók megmaradnak. A felhőszinkron leáll; csak kifejezett új szinkronnal indul újra. Részleges távoli törlés nem állítható vissza.</string>
+    <string name="google_maintenance_confirm">Megerősítem</string>
+    <string name="google_maintenance_cancel">Mégse</string>
+    <string name="google_maintenance_done">Befejezve: %1$d művelet. A helyi adatok megmaradtak.</string>
+    <string name="google_maintenance_partial">Legalább %1$d távoli művelet visszaigazolva. A művelet nem fejeződött be; az utolsó kérés távoli eredménye bizonytalan lehet. Ellenőrizd a fiókot. Újrapróbáláshoz nyisd meg újra és erősítsd meg.</string>
+    <string name="google_maintenance_failed">Nem sikerült végrehajtani. Ellenőrizd a fiókot, jogosultságot és az edzés/szinkron állapotát. Újrapróbáláshoz külön megerősítés kell.</string>
+</resources>

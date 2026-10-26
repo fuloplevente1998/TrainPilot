@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="google_maintenance_revoke">Revoke Google access</string>
+    <string name="google_maintenance_drive">Delete TrainPilot Drive backups</string>
+    <string name="google_maintenance_calendar">Delete managed workout calendars</string>
+    <string name="google_maintenance_revoke_scope">Revokes TrainPilot Google permissions and disconnects the account. Cloud data is not deleted.</string>
+    <string name="google_maintenance_drive_scope">Deletes backups and workout photos in TrainPilot app-data storage only. Other Drive files are unaffected. Remote deletion cannot be undone.</string>
+    <string name="google_maintenance_calendar_scope">Deletes only workout calendars owned by this account and managed by TrainPilot. Other calendars are unaffected. Deletion cannot be undone.</string>
+    <string name="google_maintenance_account">Affected account: %1$s</string>
+    <string name="google_maintenance_local">Local history and photos are retained. Cloud sync pauses until you explicitly start sync again. Partial remote deletion cannot be rolled back.</string>
+    <string name="google_maintenance_confirm">Confirm</string>
+    <string name="google_maintenance_cancel">Cancel</string>
+    <string name="google_maintenance_done">Completed: %1$d operations. Local data retained.</string>
+    <string name="google_maintenance_partial">At least %1$d remote operations confirmed. The operation is incomplete; the last remote request may have an uncertain result. Check the account. Open and confirm again to retry.</string>
+    <string name="google_maintenance_failed">Operation failed. Check the account, permissions and workout/sync status. Retrying requires separate confirmation.</string>
+</resources>

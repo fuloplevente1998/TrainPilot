@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="google_maintenance_revoke">Google-Zugriff widerrufen</string>
+    <string name="google_maintenance_drive">TrainPilot Drive-Sicherungen löschen</string>
+    <string name="google_maintenance_calendar">Verwaltete Trainingskalender löschen</string>
+    <string name="google_maintenance_revoke_scope">Widerruft Google-Berechtigungen für TrainPilot und trennt das Konto. Cloud-Daten werden nicht gelöscht.</string>
+    <string name="google_maintenance_drive_scope">Löscht nur Sicherungen und Trainingsfotos im App-Datenspeicher von TrainPilot. Andere Drive-Dateien bleiben erhalten. Fernlöschung ist nicht umkehrbar.</string>
+    <string name="google_maintenance_calendar_scope">Löscht nur Trainingskalender im Besitz dieses Kontos, die TrainPilot verwaltet. Andere Kalender bleiben erhalten. Löschen ist nicht umkehrbar.</string>
+    <string name="google_maintenance_account">Betroffenes Konto: %1$s</string>
+    <string name="google_maintenance_local">Lokaler Verlauf und Fotos bleiben erhalten. Cloud-Synchronisierung pausiert bis zum ausdrücklichen Neustart. Teilweise Fernlöschung kann nicht rückgängig gemacht werden.</string>
+    <string name="google_maintenance_confirm">Bestätigen</string>
+    <string name="google_maintenance_cancel">Abbrechen</string>
+    <string name="google_maintenance_done">Abgeschlossen: %1$d Vorgänge. Lokale Daten erhalten.</string>
+    <string name="google_maintenance_partial">Mindestens %1$d Fernvorgänge bestätigt. Vorgang unvollständig; Ergebnis der letzten Anfrage eventuell ungewiss. Konto prüfen. Zum Wiederholen erneut öffnen und bestätigen.</string>
+    <string name="google_maintenance_failed">Vorgang fehlgeschlagen. Konto, Berechtigungen und Trainings-/Sync-Status prüfen. Wiederholen erfordert eine neue Bestätigung.</string>
+</resources>
