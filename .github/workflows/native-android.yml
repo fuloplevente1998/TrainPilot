@@ -1,341 +1,143 @@
-name: Native Android and Wear OS APK
+# QA-only branch-local workflow. Never integrate this delta into migration/main.
+name: Scoped Home Recovery QA
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - feat/native-android-migration
-    paths:
-      - 'android/**'
-      - '.github/workflows/native-android.yml'
-      - 'scripts/run-native-wear-ui.sh'
-      - 'scripts/run-native-signed-upgrade.sh'
-  pull_request:
-    paths:
-      - 'android/**'
-      - '.github/workflows/native-android.yml'
-      - 'scripts/run-native-wear-ui.sh'
-      - 'scripts/run-native-signed-upgrade.sh'
+      - feat/native-home-recovery-provenance
 
 permissions:
   contents: read
 
 concurrency:
-  group: native-android-${{ github.ref }}
-  cancel-in-progress: true
+  group: native-home-recovery-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  native-debug:
-    name: Build phone and Wear OS debug APKs
+  home-build-jvm:
+    name: Home debug APK and bounded JVM regressions
     runs-on: ubuntu-latest
-    timeout-minutes: 35
-    defaults:
-      run:
-        working-directory: android
+    timeout-minutes: 45
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Set up Java 21
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
-      # Preserve resolved dependencies even when a later regression test fails.
-      # setup-java's post cache only saves a successful job, which made each fix
-      # download the same Kotlin/Android toolchain again.
-      - name: Restore native Gradle dependencies
-        id: gradle-cache
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: native-gradle-v2-${{ runner.os }}-${{ hashFiles('android/**/*.gradle', 'android/**/*.gradle.kts', 'android/gradle.properties', 'android/gradle/wrapper/gradle-wrapper.properties') }}-${{ github.run_id }}
-          restore-keys: |
-            native-gradle-v2-${{ runner.os }}-${{ hashFiles('android/**/*.gradle', 'android/**/*.gradle.kts', 'android/gradle.properties', 'android/gradle/wrapper/gradle-wrapper.properties') }}-
-            native-gradle-v2-${{ runner.os }}-
-            native-gradle-v1-${{ runner.os }}-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v4
-      - name: Install Android SDK platform
+          cache: gradle
+          cache-dependency-path: |
+            android/**/*.gradle
+            android/**/*.gradle.kts
+            android/gradle/wrapper/gradle-wrapper.properties
+      - uses: android-actions/setup-android@v4
+      - name: Android 36 compile platform
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
-      - name: Validate Gradle wrapper
+      - name: Assemble real phone app and UI test APK
+        working-directory: android
+        shell: bash
         run: |
-          test -f gradlew
-          test -f gradle/wrapper/gradle-wrapper.jar
+          set -euo pipefail
           chmod +x gradlew
-      - name: Build native phone and watch debug APKs
-        run: ./gradlew --continue --no-daemon --stacktrace -PnativePhoneUiTests :app:assembleDebug :app:assembleDebugAndroidTest :wear:assembleDebug
-
-      - name: Run native unit tests
-        run: ./gradlew --continue --no-daemon --stacktrace -PnativeTestDiagnostics :app:testDebugUnitTest :wear:testDebugUnitTest :shared:testDebugUnitTest
-
-      - name: Prepare existing release keystore
+          ./gradlew --no-daemon --stacktrace -PnativePhoneUiTests :app:assembleDebug :app:assembleDebugAndroidTest 2>&1 | tee home-debug-build.log
+      - name: Run only impacted JVM tests and existing Home/Coach regression
+        working-directory: android
         shell: bash
-        env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          test -n "$ANDROID_KEYSTORE_BASE64"
-          test -n "$ANDROID_STORE_PASSWORD"
-          test -n "$ANDROID_KEY_ALIAS"
-          test -n "$ANDROID_KEY_PASSWORD"
-          KEYSTORE="$RUNNER_TEMP/trainpilot-native-release.jks"
-          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE"
-          chmod 600 "$KEYSTORE"
-          echo "ANDROID_KEYSTORE_PATH=$KEYSTORE" >> "$GITHUB_ENV"
-      - name: Build same-key signed native updates
-        env:
-          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ./gradlew --no-daemon --stacktrace -PnativeTestDiagnostics :app:testDebugUnitTest \
+            --tests 'com.repforge.app.NativeHomeRecoveryPresentationTest' \
+            --tests 'com.repforge.app.NativeHomeDailyCountTest' \
+            --tests 'com.repforge.app.NativeHomeRepositoryTest' \
+            --tests 'com.repforge.app.NativeCoachReadinessTest' \
+            --tests 'com.repforge.app.NativeCoachSignalsTest' \
+            2>&1 | tee home-jvm-tests.log
+      - name: Hash APKs and logs
+        if: always()
+        working-directory: android
         run: |
-          ./gradlew --no-daemon :wear:dependencyInsight --configuration releaseRuntimeClasspath --dependency androidx.fragment > wear-fragment-dependencies.txt
-          ./gradlew --no-daemon --stacktrace -PnativeUpgradeTests :app:assembleRelease :wear:assembleRelease :wear:assembleDebugAndroidTest :migration-seed:assembleRelease
-      - name: Verify update package version and signer continuity
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          PHONE="app/build/outputs/apk/release/app-release.apk"
-          WEAR="wear/build/outputs/apk/release/wear-release.apk"
-          test -s "$PHONE"
-          test -s "$WEAR"
-          AAPT="$(ls "$ANDROID_HOME"/build-tools/*/aapt | sort -V | tail -1)"
-          SIGNER="$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)"
-          "$AAPT" dump badging "$PHONE" > phone-native-badging.txt
-          "$AAPT" dump badging "$WEAR" > wear-native-badging.txt
-          grep -q "package: name='com.repforge.app'" phone-native-badging.txt
-          grep -q "package: name='com.repforge.app'" wear-native-badging.txt
-          grep -q "versionCode='2736'" phone-native-badging.txt
-          grep -q "versionCode='2736'" wear-native-badging.txt
-          grep -q "versionName='1.3.71-native-test'" phone-native-badging.txt
-          grep -q "versionName='1.3.71-native-test'" wear-native-badging.txt
-          "$SIGNER" verify --verbose "$PHONE"
-          "$SIGNER" verify --verbose "$WEAR"
-          mkdir -p "$RUNNER_TEMP/native-signer-baseline"
-          gh release download v1.0.0 --repo "$GITHUB_REPOSITORY" --pattern 'TrainPilot-1.0.0.apk' --dir "$RUNNER_TEMP/native-signer-baseline"
-          OLD="$RUNNER_TEMP/native-signer-baseline/TrainPilot-1.0.0.apk"
-          echo "485817d3c33b0623b030ad919fb5e07af27d5e5890a3f67fb8e4dbe4b729f22a  $OLD" | sha256sum --check --
-          ORIGINAL="$(python3 ../scripts/apk_signer_cert.py "$OLD")"
-          test -n "$ORIGINAL"
-          test "$ORIGINAL" = "$(python3 ../scripts/apk_signer_cert.py "$PHONE")"
-          test "$ORIGINAL" = "$(python3 ../scripts/apk_signer_cert.py "$WEAR")"
-          SEED_APK="migration-seed/build/outputs/apk/release/migration-seed-release.apk"
-          "$SIGNER" verify --verbose "$SEED_APK"
-          test "$ORIGINAL" = "$(python3 ../scripts/apk_signer_cert.py "$SEED_APK")"
-          echo "Original release signing identity verified."
-          sha256sum "$PHONE" "$WEAR" > native-apk-sha256.txt
-      - name: Upload independent old-release seed runner
-        uses: actions/upload-artifact@v4
-        with:
-          name: TrainPilot-Native-Migration-Seed
-          path: android/migration-seed/build/outputs/apk/release/*.apk
-          if-no-files-found: error
-      - name: Upload Wear UI test APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: TrainPilot-Native-Wear-UI-Test
-          path: android/wear/build/outputs/apk/androidTest/debug/*.apk
-          if-no-files-found: error
-      - name: Remove temporary signing keystore
+          sha256sum app/build/outputs/apk/debug/*.apk app/build/outputs/apk/androidTest/debug/*.apk > home-apk-sha256.txt || true
+          sha256sum home-*.log > home-log-sha256.txt || true
+      - name: Upload raw compile and JVM XML
         if: always()
-        run: rm -f "$RUNNER_TEMP/trainpilot-native-release.jks"
-      - name: Upload signed phone update
         uses: actions/upload-artifact@v4
         with:
-          name: TrainPilot-Native-Phone-Signed-Update
-          path: android/app/build/outputs/apk/release/app-release.apk
-          if-no-files-found: error
-      - name: Upload signed Wear update
-        uses: actions/upload-artifact@v4
-        with:
-          name: TrainPilot-Native-Wear-Signed-Update
-          path: android/wear/build/outputs/apk/release/wear-release.apk
-          if-no-files-found: error
-      - name: Upload APK verification metadata
-        uses: actions/upload-artifact@v4
-        with:
-          name: TrainPilot-Native-Update-Verification
+          name: Native-Home-Recovery-Build-JVM-${{ github.sha }}
           path: |
-            android/*-native-badging.txt
-            android/native-apk-sha256.txt
-            android/wear-fragment-dependencies.txt
-          if-no-files-found: error
-      - name: Upload native test reports
-        if: always()
+            android/home-*.log
+            android/home-*-sha256.txt
+            android/app/build/test-results/testDebugUnitTest/
+          if-no-files-found: warn
+      - name: Upload real compiled debug APKs
         uses: actions/upload-artifact@v4
         with:
-          name: TrainPilot-Native-Tests-${{ github.sha }}
+          name: Native-Home-Recovery-APK-${{ github.sha }}
           path: |
-            android/**/build/test-results/
-            android/**/build/reports/tests/
-          if-no-files-found: ignore
-      - name: Upload phone debug APK
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: TrainPilot-Native-Phone-Debug
-          path: android/app/build/outputs/apk/debug/*.apk
-          if-no-files-found: ignore
-      - name: Upload native phone UI test APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: TrainPilot-Native-Phone-UI-Test
-          path: android/app/build/outputs/apk/androidTest/debug/*.apk
+            android/app/build/outputs/apk/debug/app-debug.apk
+            android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
           if-no-files-found: error
-      - name: Upload Wear OS debug APK
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: TrainPilot-Native-Wear-Debug
-          path: android/wear/build/outputs/apk/debug/*.apk
-          if-no-files-found: ignore
-      - name: Preserve native Gradle dependencies
-        if: always() && steps.gradle-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ steps.gradle-cache.outputs.cache-primary-key }}
 
-  signed-upgrade:
-    name: Signed ${{ matrix.baseline.tag }} to native data upgrade
-    needs: native-debug
+  home-phone-ui:
+    name: API35 real Home synthetic-provider UI and raw screenshots
+    needs: home-build-jvm
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        baseline:
-          - tag: v1.3.71
-            sha256: f3fc054d9e2142fc7919b0e7beee8c2db35527de2fcb85406c23ab23141e5e68
-          - tag: v1.3.71-perf-20261022
-            sha256: 850b5e1e597e574dbf5cf55cf82721a3f77879447db9852fa056d2b889d50570
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: android-actions/setup-android@v4
       - uses: actions/download-artifact@v4
         with:
-          name: TrainPilot-Native-Phone-Signed-Update
-          path: upgrade/phone
-      - uses: actions/download-artifact@v4
-        with:
-          name: TrainPilot-Native-Migration-Seed
-          path: upgrade/seed
-      - name: Download verified original release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          BASELINE_TAG: ${{ matrix.baseline.tag }}
-          BASELINE_SHA256: ${{ matrix.baseline.sha256 }}
-        run: |
-          gh release download "$BASELINE_TAG" --repo "$GITHUB_REPOSITORY" --pattern 'TrainPilot-1.3.71.apk' --dir upgrade/original
-          echo "$BASELINE_SHA256  upgrade/original/TrainPilot-1.3.71.apk" | sha256sum --check --
+          name: Native-Home-Recovery-APK-${{ github.sha }}
+          path: phone-ui/apk
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - name: Install original, seed, and update without uninstalling
+      - name: Run isolated Home UI tests on disposable API35 emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
           target: google_apis
           arch: x86_64
           profile: pixel_2
-          disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 2048
-          script: bash scripts/run-native-signed-upgrade.sh
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: TrainPilot-Native-Signed-Upgrade-Results-${{ matrix.baseline.tag }}-${{ github.sha }}
-          path: upgrade/results/
-          if-no-files-found: error
-
-  wear-ui:
-    name: Preserved native Wear round UI
-    needs: native-debug
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [0, 1, 2]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: android-actions/setup-android@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: TrainPilot-Native-Wear-Debug
-          path: wear-ui/app
-      - uses: actions/download-artifact@v4
-        with:
-          name: TrainPilot-Native-Wear-UI-Test
-          path: wear-ui/test
-      - name: Enable KVM
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-      - uses: reactivecircus/android-emulator-runner@v2
-        env:
-          WEAR_SHARD: ${{ matrix.shard }}
-        with:
-          api-level: 30
-          target: android-wear
-          arch: x86
-          profile: wearos_small_round
-          disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 2048
-          script: bash scripts/run-native-wear-ui.sh
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: TrainPilot-Native-Wear-UI-Results-${{ github.sha }}-${{ matrix.shard }}
-          path: wear-ui/results/
-          if-no-files-found: error
-
-  phone-ui:
-    name: Native phone Compose UI and unmodified screenshots
-    needs: native-debug
-    runs-on: ubuntu-latest
-    timeout-minutes: 35
-    steps:
-      - uses: actions/checkout@v4
-      - uses: android-actions/setup-android@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: TrainPilot-Native-Phone-Debug
-          path: phone-ui/app
-      - uses: actions/download-artifact@v4
-        with:
-          name: TrainPilot-Native-Phone-UI-Test
-          path: phone-ui/test
-      - name: Enable KVM
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-      - uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 35
-          target: google_apis
-          arch: x86_64
           ram-size: 3072M
           disk-size: 6000M
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: python3 scripts/native/phone-ui-gate.py --app phone-ui/app/app-debug.apk --tests phone-ui/test/app-debug-androidTest.apk --output phone-ui/results --commit "$GITHUB_SHA"
-      - name: Upload raw phone UI evidence and screenshots
+          script: |
+            set -euo pipefail
+            mkdir -p phone-ui/results/raw
+            adb install -r phone-ui/apk/app-debug.apk
+            adb install -r phone-ui/apk/app-debug-androidTest.apk
+            adb shell am instrument -w -r -e class com.repforge.app.NativeHomeRecoveryUiTest com.repforge.app.test/androidx.test.runner.AndroidJUnitRunner | tee phone-ui/results/instrumentation.txt
+            python3 - <<'PY'
+            import re, xml.etree.ElementTree as ET, pathlib
+            raw=pathlib.Path('phone-ui/results/instrumentation.txt').read_text()
+            blocks=re.findall(r'INSTRUMENTATION_STATUS: test=(.*?)\r?\n(?:.*?\n)*?INSTRUMENTATION_STATUS_CODE: (-?\d+)', raw)
+            passed=[name for name,code in blocks if code=='0']
+            failing=[(name,code) for name,code in blocks if code in ('-2','-3','-4')]
+            names=set(passed)
+            expected={'verifiedSamsungOnRealHomeAndRawScreenshot','realHomeDisplaysTrainPilotFallbackNotFabricatedSamsung','emptyJournalDisplaysDashAndNoData','localeChangesPreserveEnergyIdentityAndRenderHuEnDeRoLabels'}
+            suite=ET.Element('testsuite',name='NativeHomeRecoveryUiTest',tests=str(len(passed)+len(failing)),failures=str(len(failing)),skipped='0')
+            for name in passed: ET.SubElement(suite,'testcase',classname='NativeHomeRecoveryUiTest',name=name)
+            for name,code in failing:
+              case=ET.SubElement(suite,'testcase',classname='NativeHomeRecoveryUiTest',name=name)
+              ET.SubElement(case,'failure',message=code).text=raw[-5000:]
+            ET.ElementTree(suite).write('phone-ui/results/native-home-junit.xml',encoding='utf-8',xml_declaration=True)
+            print('terminal PASS',len(passed),'FAIL/SKIP',failing,'found',names)
+            if set(passed)!=expected or failing or 'INSTRUMENTATION_CODE: -1' not in raw:
+              raise SystemExit('Home UI terminal gate failed')
+            PY
+            for name in samsung fallback none locale-hu locale-en locale-de locale-ro; do
+              adb pull "/sdcard/Download/native-home-$name.png" "phone-ui/results/raw/native-home-$name.png"
+              test -s "phone-ui/results/raw/native-home-$name.png"
+            done
+            (cd phone-ui/results && sha256sum instrumentation.txt native-home-junit.xml raw/*.png > SHA256SUMS.txt)
+      - name: Upload unmodified PNG + raw runner log + parsed XML + SHA256
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: TrainPilot-Native-Phone-UI-Evidence
+          name: Native-Home-Recovery-UI-${{ github.sha }}
           path: phone-ui/results/
-          if-no-files-found: error
+          if-no-files-found: warn
