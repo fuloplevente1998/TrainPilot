@@ -12,6 +12,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -111,6 +112,9 @@ fun ActiveWorkoutScreen(
     viewModel: ActiveWorkoutViewModel = viewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    // The workout exercise is a LazyColumn item: its expanded timer controls must
+    // belong to the screen so scrolling never discards the user's open panel.
+    val intervalExpansion = remember(state.workoutId, state.generation) { mutableStateMapOf<String, Boolean>() }
     val colors = LocalTrainPilotColors.current
     val context = LocalContext.current
     val activity = NativeGpsPermissionRecovery.findActivity(context)
@@ -352,7 +356,12 @@ fun ActiveWorkoutScreen(
                             }
                             target(if (nextIndex >= 0) nextIndex else 0)?.let { renderedTarget ->
                                 val renderedInterval = NativeTimerTarget(renderedTarget.workoutId, renderedTarget.generation, state.timerKey)
+                                val intervalIdentity = "${state.workoutId}:${state.generation}:${ex.exerciseId}"
                                 IntervalOptions(state, ex, intervalActive, language,
+                                    expanded = intervalExpansion[intervalIdentity] == true,
+                                    onToggleExpanded = {
+                                        intervalExpansion[intervalIdentity] = !(intervalExpansion[intervalIdentity] ?: false)
+                                    },
                                     onSave = { work, rest, rounds, sound, vibration, advance, global ->
                                         viewModel.configureIntervals(renderedTarget, work, rest, rounds, sound, vibration, advance, global) },
                                     onStart = { viewModel.startIntervals(renderedTarget) },
@@ -842,6 +851,8 @@ private fun IntervalOptions(
     exercise: ActiveExerciseUiModel,
     active: Boolean,
     language: String,
+    expanded: Boolean,
+    onToggleExpanded: () -> Unit,
     onSave: (String, String, String, Boolean, Boolean, Boolean, Boolean) -> Unit,
     onStart: () -> Unit,
     onStop: () -> Unit,
@@ -851,8 +862,7 @@ private fun IntervalOptions(
     val context = LocalContext.current
     val text = remember(context, language) { com.repforge.app.ui.text.nativeResources(context, language) }
     val identity = "${state.workoutId}:${state.generation}:${exercise.sets.firstOrNull()?.setId}"
-    var expanded by rememberSaveable(identity) { mutableStateOf(false) }
-    var work by remember(identity, state.intervalWork) { mutableStateOf(state.intervalWork.toString()) }
+     var work by remember(identity, state.intervalWork) { mutableStateOf(state.intervalWork.toString()) }
     var rest by remember(identity, state.intervalRest) { mutableStateOf(state.intervalRest.toString()) }
     var rounds by remember(identity, state.intervalRounds) { mutableStateOf(state.intervalRounds.toString()) }
     var sound by remember(identity, state.intervalSound) { mutableStateOf(state.intervalSound) }
@@ -864,7 +874,7 @@ private fun IntervalOptions(
     val saved = work == state.intervalWork.toString() && rest == state.intervalRest.toString() && rounds == state.intervalRounds.toString() &&
         sound == state.intervalSound && vibration == state.intervalVibration && advance == state.intervalAutoAdvance
     Column(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-        TextButton(onClick = { expanded = !expanded }, modifier = Modifier.fillMaxWidth().testTag("interval_options")) {
+        TextButton(onClick = onToggleExpanded, modifier = Modifier.fillMaxWidth().testTag("interval_options")) {
             Text(text.getString(com.repforge.app.R.string.interval_title) +
                 (if (active) " · ${measuredTime(state.timerRemainingSec.toLong())}" else "") + (if (expanded) " ▴" else " ▾"), color = colors.accentText)
         }
