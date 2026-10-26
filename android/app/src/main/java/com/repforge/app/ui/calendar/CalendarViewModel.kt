@@ -47,7 +47,11 @@ internal class CalendarViewModel(application: Application) : AndroidViewModel(ap
     }
     private var plannerContinuation: com.repforge.app.NativeDataReplacement.Continuation? = null
     private var plannerSettingsIdentity: String? = null
-    fun cancelPlanner() { _state.update { it.copy(plannerPreview = null) }; plannerContinuation = null }
+    fun cancelPlanner() {
+        _state.update { it.copy(plannerPreview = null) }
+        plannerContinuation = null
+        plannerSettingsIdentity = null
+    }
     fun previewPlanner(settings: NativeCalendarPlanner.Settings) = mutate {
         val continuation = com.repforge.app.NativeDataReplacement.continuationForCurrentData(app)
         val identity = TrainPilotSettingsStore(app).current().toString()
@@ -66,6 +70,8 @@ internal class CalendarViewModel(application: Application) : AndroidViewModel(ap
             repository.applyPreview(preview)
             withContext(Dispatchers.Main) {
                 _state.update { it.copy(plannerPreview = null, plannerSettings = preview.settings) }
+                plannerContinuation = null
+                plannerSettingsIdentity = null
                 saved()
             }
         }
