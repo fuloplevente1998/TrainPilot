@@ -60,7 +60,8 @@ data class NativeProgressPhoto(
     val label: String,
     val workoutStartedEpochMs: Long,
     val programName: String,
-    val dayName: String
+    val dayName: String,
+    val originDevice: String
 )
 
 /** Read-only, metadata-first projection. Never accepts private-dir contents as an index. */
@@ -78,7 +79,7 @@ internal object NativeProgressPhotoData {
             // cloud-photo reference check. A physically missing file stays as a
             // missing-photo state, never silently becomes a different image.
             val sql = """
-                SELECT p.id, p.label, w.startedEpochMs, w.programName, w.dayName
+                SELECT p.id, p.label, w.startedEpochMs, w.programName, w.dayName, w.originDevice
                 FROM workout_photos p
                 JOIN workout_history w ON w.id = p.workoutHistoryId
                 WHERE (p.deletedAt IS NULL OR TRIM(p.deletedAt) IN ('', '0', '0.0', 'false'))
@@ -99,7 +100,8 @@ internal object NativeProgressPhotoData {
                         label = rows.getString(1).orEmpty(),
                         workoutStartedEpochMs = rows.getLong(2),
                         programName = rows.getString(3).orEmpty(),
-                        dayName = rows.getString(4).orEmpty()
+                        dayName = rows.getString(4).orEmpty(),
+                        originDevice = rows.getString(5).orEmpty()
                     ))
                 }
             }
@@ -138,7 +140,7 @@ private sealed interface PhotoPreview {
 }
 
 @Composable
-private fun PrivateProgressPhoto(id: String, edge: Int, modifier: Modifier) {
+private fun PrivateProgressPhoto(id: String, edge: Int, language: String, modifier: Modifier) {
     val context = LocalContext.current
     val colors = LocalTrainPilotColors.current
     val preview by produceState<PhotoPreview>(PhotoPreview.Loading, id, edge) {
@@ -152,7 +154,7 @@ private fun PrivateProgressPhoto(id: String, edge: Int, modifier: Modifier) {
             }
         }
     }
-    val strings = nativeResources(context, context.resources.configuration.locales[0].language)
+    val strings = remember(context, language) { nativeResources(context, language) }
     Box(modifier, contentAlignment = Alignment.Center) {
         when (val result = preview) {
             PhotoPreview.Loading -> Text(strings.getString(R.string.native_progress_photo_loading), color = colors.muted)
@@ -206,7 +208,7 @@ internal fun NativeProgressPhotoGallery(
                                 .testTag("progress_photo_${photo.id}").size(140.dp),
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            PrivateProgressPhoto(photo.id, 256,
+                            PrivateProgressPhoto(photo.id, 256, state.language,
                                 Modifier.size(112.dp).background(colors.card2, RoundedCornerShape(12.dp)))
                             val label = when (photo.label) {
                                 "before" -> strings.getString(R.string.native_progress_photo_before)
@@ -238,12 +240,13 @@ internal fun NativeProgressPhotoGallery(
                 }
                 Text(
                     "${strings.getString(R.string.native_progress_photo_workout)}: " +
-                        listOf(selected.programName, selected.dayName).filter { it.isNotBlank() }.joinToString(" · "),
+                        listOf(selected.programName, selected.dayName, selected.originDevice)
+                            .filter { it.isNotBlank() }.joinToString(" · "),
                     color = colors.muted
                 )
                 Text(date.format(Instant.ofEpochMilli(selected.workoutStartedEpochMs)),
                     color = colors.muted)
-                PrivateProgressPhoto(selected.id, 1600,
+                PrivateProgressPhoto(selected.id, 1600, state.language,
                     Modifier.fillMaxWidth().weight(1f).testTag("progress_photo_detail"))
                 Spacer(Modifier.height(8.dp))
             }
