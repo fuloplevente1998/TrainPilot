@@ -1479,7 +1479,7 @@
     {
       "featureId": "E01",
       "feature": "Havi/napi naptár, tervezett/teljesült/törölt események és tényleges teljesítési kapcsolat",
-      "mainEntry": "www/index.html:L1037 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L3216 (rf2211SelectDate; app-part-016.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "calendar",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/calendar/CalendarScreen.kt:L26",
       "callerChain": "CalendarScreen → changeMonth → untraced underlying result",
@@ -1490,12 +1490,20 @@
       "status": "IMPLEMENTED_UNVERIFIED",
       "severity": "P2",
       "gap": "Execution, real data, main final JS override and UI acceptance not independently verified",
-      "acceptanceScenario": "From calendar, perform Havi/napi naptár, tervezett/teljesült/törölt események és tényleges teljesítési kapcsolat, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From calendar, perform Havi/napi naptár, tervezett/teljesült/törölt események és tényleges teljesítési kapcsolat, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "rf2211SelectDate",
+        "originalLine": 3216,
+        "rawFile": "app-part-016.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "e5b835747bb1a5722144821496480ce1f84a415c8c10476cfeb34192f85dcad1",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "E02",
       "feature": "Tervezés meglévő napi/váltott/heti módokkal, napok/idő/időtartam/ismétlődés és programciklus",
-      "mainEntry": "www/index.html:L1037 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L13063 (rf2211PlanWeeks=function; app-part-063.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "calendar/editor",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/calendar/CalendarScreen.kt:L105",
       "callerChain": "CalendarEditor → save → Edit",
@@ -1506,12 +1514,20 @@
       "status": "PARTIAL",
       "severity": "P2",
       "gap": "Native calendar recurrence daily/alternating/weekly not traced in editor",
-      "acceptanceScenario": "Schedule daily/weekly/alternating repeating days and inspect timeline"
+      "acceptanceScenario": "Schedule daily/weekly/alternating repeating days and inspect timeline",
+      "mainEvidence": {
+        "symbolToken": "rf2211PlanWeeks=function",
+        "originalLine": 13063,
+        "rawFile": "app-part-063.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "45a42389fc0852772e172b5ea6ef4ca15c1e3ac0035bfb8a00f258fc4142748b",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "E03",
       "feature": "Esemény létrehozás/módosítás/lemondás, programnap indítása és teljesítésjelölés",
-      "mainEntry": "www/index.html:L1037 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L3227 (rf2211DeleteDate; app-part-016.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "calendar/editor",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/calendar/CalendarScreen.kt:L85",
       "callerChain": "model.status → status → untraced underlying result",
@@ -1522,12 +1538,20 @@
       "status": "IMPLEMENTED_UNVERIFIED",
       "severity": "P2",
       "gap": "Execution, real data, main final JS override and UI acceptance not independently verified",
-      "acceptanceScenario": "From calendar/editor, perform Esemény létrehozás/módosítás/lemondás, programnap indítása és teljesítésjelölés, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From calendar/editor, perform Esemény létrehozás/módosítás/lemondás, programnap indítása és teljesítésjelölés, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "rf2211DeleteDate",
+        "originalLine": 3227,
+        "rawFile": "app-part-016.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "e5b835747bb1a5722144821496480ce1f84a415c8c10476cfeb34192f85dcad1",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "E04",
       "feature": "Google-kapcsolat és a mainben meglévő naptárszinkron/export",
-      "mainEntry": "www/index.html:L708 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L3205 (calendarEvents=async function; app-part-016.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "settings/calendar_sync",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/settings/SettingsScreen.kt:L196",
       "callerChain": "syncCalendarCloud → syncCalendarCloud → operations",
@@ -1538,12 +1562,20 @@
       "status": "PLATFORM_DEVICE_PENDING",
       "severity": "P1",
       "gap": "Google OAuth/calendar export pagination and >100 events requires real account",
-      "acceptanceScenario": "From settings/calendar_sync, perform Google-kapcsolat és a mainben meglévő naptárszinkron/export, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From settings/calendar_sync, perform Google-kapcsolat és a mainben meglévő naptárszinkron/export, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "calendarEvents=async function",
+        "originalLine": 3205,
+        "rawFile": "app-part-016.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "e5b835747bb1a5722144821496480ce1f84a415c8c10476cfeb34192f85dcad1",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "E05",
       "feature": "Wear óra státusz, megnyitás/mérés/vezérlés és kétirányú edzésszinkron",
-      "mainEntry": "www/index.html:L2053 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L17864 (Wear; app-part-083.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "active_workout/wear",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt:L177",
       "callerChain": "onOwnershipAction → startWatchMeasurementRemotely → untraced underlying result",
@@ -1554,12 +1586,20 @@
       "status": "PARTIAL",
       "severity": "P1",
       "gap": "Independent phone watch status/control settings screen not established",
-      "acceptanceScenario": "From active_workout/wear, perform Wear óra státusz, megnyitás/mérés/vezérlés és kétirányú edzésszinkron, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From active_workout/wear, perform Wear óra státusz, megnyitás/mérés/vezérlés és kétirányú edzésszinkron, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "Wear",
+        "originalLine": 17864,
+        "rawFile": "app-part-083.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "97ea2ff36128d445cc258483107ac71336f03473db0c8f6ee6958ce6ad43f319",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "E06",
       "feature": "Phone↔Watch ownership átadás/visszavétel, offline folytatás, reconnect és függő művelet",
-      "mainEntry": "www/index.html:L2054 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L19054 (ownership; app-part-088.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "active_workout/wear",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt:L178",
       "callerChain": "requestOwnershipBackFromWatch → requestOwnershipBackFromWatch → untraced underlying result",
@@ -1570,12 +1610,20 @@
       "status": "PLATFORM_DEVICE_PENDING",
       "severity": "P1",
       "gap": "Ownership reconnect/pending receipts needs paired Watch7/Phone",
-      "acceptanceScenario": "Offline watch handoff, reconnect, explicit phone acknowledgment"
+      "acceptanceScenario": "Offline watch handoff, reconnect, explicit phone acknowledgment",
+      "mainEvidence": {
+        "symbolToken": "ownership",
+        "originalLine": 19054,
+        "rawFile": "app-part-088.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "22059f4a6c7c7654455786722fa776ee56f67553fb90d602c1ef00a292b66083",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "E07",
       "feature": "Óráról indított gyors/tervezett edzés, GPS-útvonal, mérések és mini-napló megtartása",
-      "mainEntry": "www/index.html:L2053 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L18451 (journal; app-part-084.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "wear",
       "uiEntry": "android/wear/src/main/java/com/repforge/app/wear/WearScreens.kt:L325",
       "callerChain": "QuickWorkout → entries → untraced underlying result",
@@ -1586,12 +1634,20 @@
       "status": "PLATFORM_DEVICE_PENDING",
       "severity": "P1",
       "gap": "Execution, real data, main final JS override and UI acceptance not independently verified; BLOCKED UI anchor android/wear/src/main/java/com/repforge/app/wear/WearScreens.kt:UNRESOLVED(QuickWorkout)",
-      "acceptanceScenario": "From wear, perform Óráról indított gyors/tervezett edzés, GPS-útvonal, mérések és mini-napló megtartása, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From wear, perform Óráról indított gyors/tervezett edzés, GPS-útvonal, mérések és mini-napló megtartása, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "journal",
+        "originalLine": 18451,
+        "rawFile": "app-part-084.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "756f7868732dbf1785947a17e1b5e00079a80b81e2168fc405093319c7ce0257",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "E08",
       "feature": "Korona/lünetta, órás menürend, pihenő továbbélése, feloldás és meglévő órás vezérlők",
-      "mainEntry": "www/index.html:L2053 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L18463 (wear; app-part-085.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "wear",
       "uiEntry": "android/wear/src/main/java/com/repforge/app/wear/WearScreens.kt:L9",
       "callerChain": "onPreRotaryScrollEvent → entries → untraced underlying result",
@@ -1602,12 +1658,20 @@
       "status": "PLATFORM_DEVICE_PENDING",
       "severity": "P2",
       "gap": "Real rotating bezel/crown and 3-second unlock require hardware; BLOCKED UI anchor android/wear/src/main/java/com/repforge/app/wear/WearScreens.kt:UNRESOLVED(onPreRotaryScrollEvent)",
-      "acceptanceScenario": "From wear, perform Korona/lünetta, órás menürend, pihenő továbbélése, feloldás és meglévő órás vezérlők, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From wear, perform Korona/lünetta, órás menürend, pihenő továbbélése, feloldás és meglévő órás vezérlők, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "wear",
+        "originalLine": 18463,
+        "rawFile": "app-part-085.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "5897a825129743f33ba9dfb912ec085d2f8b979ed2343ef0bd2841a9b4b3659f",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "E09",
       "feature": "BLE keresés, protokoll-/eszközállapot, csatlakozás/bontás, megjegyzés/elfelejtés, reconnect",
-      "mainEntry": "www/index.html:L367 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L15981 (function scan(); app-part-075.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "health/ble",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/health/HealthDashboardScreen.kt:L204",
       "callerChain": "bleRepo → observeBleState → untraced underlying result",
@@ -1618,12 +1682,20 @@
       "status": "PARTIAL",
       "severity": "P1",
       "gap": "BLE connect/forget/discovery controls not exhaustively traced",
-      "acceptanceScenario": "From health/ble, perform BLE keresés, protokoll-/eszközállapot, csatlakozás/bontás, megjegyzés/elfelejtés, reconnect, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From health/ble, perform BLE keresés, protokoll-/eszközállapot, csatlakozás/bontás, megjegyzés/elfelejtés, reconnect, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "function scan()",
+        "originalLine": 15981,
+        "rawFile": "app-part-075.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "291f88d6b7ef0045a2a3204f91452460b9553c74ac9744cd556f423512c70b3b",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "E10",
       "feature": "Meglévő BLE élő pulzus, RDFit/egyéb támogatott mérési és diagnosztikai próbák, háttérkapcsolat",
-      "mainEntry": "www/index.html:L207 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L16002 (function heart(); app-part-075.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "health/ble",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/health/HealthDashboardScreen.kt:L204",
       "callerChain": "bleRepo → toggleBleBackground → untraced underlying result",
@@ -1634,7 +1706,15 @@
       "status": "PLATFORM_DEVICE_PENDING",
       "severity": "P2",
       "gap": "RDFit and reconnect diagnostics device required",
-      "acceptanceScenario": "From health/ble, perform Meglévő BLE élő pulzus, RDFit/egyéb támogatott mérési és diagnosztikai próbák, háttérkapcsolat, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From health/ble, perform Meglévő BLE élő pulzus, RDFit/egyéb támogatott mérési és diagnosztikai próbák, háttérkapcsolat, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "function heart()",
+        "originalLine": 16002,
+        "rawFile": "app-part-075.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "291f88d6b7ef0045a2a3204f91452460b9553c74ac9744cd556f423512c70b3b",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "E11",
@@ -2626,6 +2706,10 @@
       "unresolved": [],
       "perMetricDirectTokenHits": 25,
       "perMetricAggregateOnly": 1
+    },
+    "E01to10": {
+      "resolved": 10,
+      "unresolved": []
     }
   }
 }
