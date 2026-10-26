@@ -15,6 +15,7 @@ jobs:
       legacy: ${{ steps.target.outputs.legacy }}
     steps:
       - uses: actions/checkout@v4
+      # Route from the checked-out source layout, not from a branch-name convention.
       - name: Validate source layout and select applicable gate
         id: target
         shell: bash
