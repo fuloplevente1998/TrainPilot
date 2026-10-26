@@ -57,16 +57,25 @@ class NativeLocalizationLanguageUiTest {
             compose.onNodeWithTag("navigation_back").performClick()
             awaitText(stepsLabel)
             val expectedUnits = mapOf(
-                "hu" to Triple("lépés", "edzés", "készenlét"),
-                "en" to Triple("steps", "workouts", "readiness"),
-                "de" to Triple("Schritte", "Trainingseinheiten", "Trainingsbereitschaft"),
-                "ro" to Triple("pași", "antrenamente", "pregătire")
+                "hu" to Pair("lépés", "edzés"),
+                "en" to Pair("steps", "workouts"),
+                "de" to Pair("Schritte", "Trainingseinheiten"),
+                "ro" to Pair("pași", "antrenamente")
             ).getValue(language)
             for ((key, expectedUnit) in listOf("steps" to expectedUnits.first,
-                "workouts" to expectedUnits.second, "recovery" to expectedUnits.third)) {
+                "workouts" to expectedUnits.second)) {
                 compose.onNodeWithTag("home_metric_${key}_unit").performScrollTo()
                     .assertIsDisplayed().assertTextEquals(expectedUnit)
             }
+            // #263 replaced the misleading generic readiness unit with actual
+            // source/freshness. This wiped fixture has no measurements/history:
+            // verify the translated absence and no fabricated recovery score.
+            val expectedRecoverySource = mapOf("hu" to "Nincs adat", "en" to "No data",
+                "de" to "Keine Daten", "ro" to "Fără date").getValue(language)
+            compose.onNodeWithTag("home_metric_recovery_source").performScrollTo()
+                .assertIsDisplayed().assertTextEquals(expectedRecoverySource)
+            compose.onNodeWithTag("home_metric_recovery_value").performScrollTo()
+                .assertIsDisplayed().assertTextEquals("—")
             val program = runBlocking(Dispatchers.IO) {
                 val active = fixture.settings.current().activeProgramId
                 val programs = fixture.database.programDao().getProgramsWithDays()
