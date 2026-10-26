@@ -90,6 +90,7 @@ class NativeTrainingModeApprovalUiTest {
         select("training_modes_program_progression", "rir")
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("training_modes_program_preview"))
         compose.onNodeWithTag("training_modes_program_preview").performScrollTo().performClick()
+        compose.onNodeWithTag("training_modes_program_dialog").assertExists()
         awaitReady()
     }
 
@@ -133,6 +134,7 @@ class NativeTrainingModeApprovalUiTest {
         select("training_modes_program_style", "hit")
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("training_modes_program_preview"))
         compose.onNodeWithTag("training_modes_program_preview").performScrollTo().performClick()
+        compose.onNodeWithTag("training_modes_program_dialog").assertExists()
         try {
             compose.waitUntil(30_000) {
                 compose.onAllNodesWithTag("training_modes_program_comparison_error")
@@ -255,6 +257,7 @@ class NativeTrainingModeApprovalUiTest {
         select("training_modes_program_progression", "rir")
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("training_modes_program_preview"))
         compose.onNodeWithTag("training_modes_program_preview").performScrollTo().performClick()
+        compose.onNodeWithTag("training_modes_program_dialog").assertExists()
         awaitReady()
         assertEquals(initial, current().trainingModes197Json)
         compose.onNodeWithTag("training_modes_program_cancel").performClick()
@@ -283,6 +286,7 @@ class NativeTrainingModeApprovalUiTest {
         select("training_modes_program_progression", "rir")
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("training_modes_program_preview"))
         compose.onNodeWithTag("training_modes_program_preview").performScrollTo().performClick()
+        compose.onNodeWithTag("training_modes_program_dialog").assertExists()
         awaitReady()
         val competing = JSONObject(initial.toString()).put("revision", 2)
         runBlocking(Dispatchers.IO) {
