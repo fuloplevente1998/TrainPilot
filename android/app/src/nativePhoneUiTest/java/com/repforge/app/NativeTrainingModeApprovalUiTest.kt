@@ -7,6 +7,7 @@ import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.repforge.app.data.store.NativeTrainingModes
+import com.repforge.app.ui.text.nativeResources
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
@@ -104,12 +105,11 @@ class NativeTrainingModeApprovalUiTest {
         }
         val concurrentRaw = current().trainingModes197Json
         compose.onNodeWithTag("training_modes_program_approve").performClick()
+        val denied = nativeResources(fixture.context, current().language)
+            .getString(R.string.native_modes_error)
         compose.waitUntil(15_000) {
-            // The pending dialog has been consumed and the VM has completed the reject.
-            compose.onAllNodesWithTag("training_modes_program_approve")
-                .fetchSemanticsNodes().isEmpty() &&
-                compose.onAllNodesWithTag("training_modes_program_preview")
-                    .fetchSemanticsNodes().isNotEmpty()
+            // Wait for the actual rejection result, not just a dismissed dialog.
+            compose.onAllNodesWithText(denied).fetchSemanticsNodes().isNotEmpty()
         }
         assertEquals(concurrentRaw, current().trainingModes197Json)
         assertEquals("global", NativeTrainingModes.resolveSavedJson(current().trainingModes197Json, pid).source)
