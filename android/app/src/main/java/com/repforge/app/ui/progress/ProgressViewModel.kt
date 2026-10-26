@@ -203,7 +203,7 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
                 if (revision != trendRevision) return@launch
                 if (_uiState.value.selectedExerciseId != selected ||
                     _uiState.value.selectedStrengthRange != range) return@launch
-                if (LocalDate.now(ZoneId.systemDefault()) to ZoneId.systemDefault() != strengthRequestedStamp) {
+                if ((LocalDate.now(ZoneId.systemDefault()) to ZoneId.systemDefault()) != strengthRequestedStamp) {
                     reloadStrength()
                     return@launch
                 }
