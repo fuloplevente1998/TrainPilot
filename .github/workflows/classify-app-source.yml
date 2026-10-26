@@ -1,0 +1,60 @@
+name: Classify legacy or native application source
+on:
+  workflow_call:
+    outputs:
+      legacy:
+        description: Whether source is the WebView npm application
+        value: ${{ jobs.classify.outputs.legacy }}
+permissions:
+  contents: read
+jobs:
+  classify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      legacy: ${{ steps.target.outputs.legacy }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate source layout and select applicable gate
+        id: target
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+
+          def classify(package, lock, web, native):
+              if package and lock and web:
+                  return "true"
+              if not package and not lock and not web and native:
+                  return "false"
+              raise ValueError("Incomplete app source: WebView requires package.json, package-lock.json and www/app.js; native requires migration/Compose sources.")
+
+          assert classify(True, True, True, False) == "true"
+          assert classify(True, True, True, True) == "true"
+          assert classify(False, False, False, True) == "false"
+          for broken in [(True, False, True, False), (True, False, True, True),
+                         (False, False, False, False), (False, True, False, True)]:
+              try:
+                  classify(*broken)
+              except ValueError:
+                  pass
+              else:
+                  raise AssertionError("Malformed legacy source was accepted")
+          print("Source-routing policy: 7 cases passed (not application tests)")
+          activity = Path("android/app/src/main/java/com/repforge/app/MainActivity.kt")
+          native = (Path("MIGRATION_STATE.md").is_file() and
+                    Path("NATIVE_IMPORT_MANIFEST.md").is_file() and
+                    Path("android/app/build.gradle").is_file() and activity.is_file() and
+                    "ComponentActivity" in activity.read_text(encoding="utf-8"))
+          legacy = classify(Path("package.json").is_file(), Path("package-lock.json").is_file(),
+                            Path("www/app.js").is_file(), native)
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              output.write("legacy=" + legacy + "\n")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:
+              summary.write("## Application gate selection\n\n")
+              summary.write("WebView: npm/Chromium/Capacitor checks remain required.\n" if legacy == "true" else
+                            "Native Kotlin/Compose: npm/Chromium/Capacitor checks are not applicable. "
+                            "Use native-android.yml (JVM, signed upgrade and emulator checks). "
+                            "This classification is NOT a native test PASS.\n")
+          PY
