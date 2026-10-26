@@ -11,6 +11,7 @@ import com.repforge.app.data.db.ProgramWithDays
 import com.repforge.app.data.db.TrainPilotDatabase
 import com.repforge.app.data.store.TrainPilotSettingsStore
 import com.repforge.app.data.store.NativeTrainingModeChange
+import com.repforge.app.ui.settings.NativeTrainingModeComparison
 import com.repforge.app.ui.text.nativeResources
 import com.repforge.app.R
 import kotlinx.coroutines.Dispatchers
@@ -75,6 +76,16 @@ internal class TrainingProgramsViewModel(application: Application) : AndroidView
 
     fun approveTrainingMode(preview: NativeTrainingModeChange.Preview) = changeTrainingMode(R.string.native_modes_saved) {
         NativeTrainingModeChange.approve(settingsStore, preview)
+    }
+
+    fun approveTrainingModeCompared(
+        preview: NativeTrainingModeChange.Preview,
+        snapshot: NativeTrainingModeComparison.Snapshot
+    ) = changeTrainingMode(R.string.native_modes_saved) {
+        // Read-only identity validation; actual write still goes through the
+        // existing active-workout/restore admission and DataStore CAS.
+        NativeTrainingModeComparison.isCurrent(context, preview, snapshot) &&
+            NativeTrainingModeChange.approve(settingsStore, preview)
     }
 
     fun undoTrainingMode(programId: String) = changeTrainingMode(R.string.native_modes_reverted) {
