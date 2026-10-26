@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -72,8 +73,9 @@ internal object NativeProgressPhotoData {
     fun load(db: TrainPilotDatabase): List<NativeProgressPhoto> {
         val photos = ArrayList<NativeProgressPhoto>()
         var offset = 0
+        var count: Int
         do {
-            var count = 0
+            count = 0
             // Project five scalars, not @Relation, rawJson, route or photo bytes.
             // The matching active/deleted semantics are the same as the native
             // cloud-photo reference check. A physically missing file stays as a
@@ -226,7 +228,7 @@ internal fun NativeProgressPhotoGallery(
     val selected = state.progressPhotos.firstOrNull { it.id == state.selectedPhotoId }
     if (selected != null) {
         Dialog(onDismissRequest = close, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-            Column(Modifier.fillMaxSize().background(colors.bg).padding(16.dp),
+            Column(Modifier.fillMaxSize().background(colors.bg).systemBarsPadding().padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(strings.getString(R.string.native_progress_photo_title),
