@@ -43,6 +43,27 @@ internal object NativeTrainingModes {
         return true
     }
 
+    /**
+     * The global editor displays the stored global default, never the active
+     * program's effective override. It still labels an unapproved default as
+     * legacy (no selection is activated until explicitChoice is true).
+     */
+    fun globalChoice(raw: String?): Effective {
+        val config = runCatching { raw?.let(::JSONObject) }.getOrNull()
+            ?: return Effective(programId = null)
+        val version = config.opt("schemaVersion") as? Number
+            ?: return Effective(programId = null)
+        val explicit = config.opt("explicitChoice") as? Boolean
+            ?: return Effective(programId = null)
+        val defaults = validChoice(config.opt("defaults"))
+            ?: return Effective(programId = null)
+        if (version.toDouble() != 1.0) return Effective(programId = null)
+        return Effective(programId = null,
+            trainingStyle = defaults.getString("trainingStyle"),
+            progressionMode = defaults.getString("progressionMode"),
+            explicitChoice = explicit, source = if (explicit) "global" else "legacy")
+    }
+
     fun resolveSavedJson(json: String?, programId: String?): Effective {
         val obj = runCatching { json?.let(::JSONObject) }.getOrNull()
         return resolve(obj, programId)
