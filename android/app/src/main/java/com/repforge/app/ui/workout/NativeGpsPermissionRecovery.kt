@@ -3,6 +3,7 @@ package com.repforge.app.ui.workout
 import android.Manifest
 import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.LocationManager
@@ -45,6 +46,17 @@ internal data class NativeGpsRecoveryPrompt(
 )
 
 internal object NativeGpsPermissionRecovery {
+    /** Compose may supply a themed ContextWrapper instead of the direct Activity. */
+    fun findActivity(context: Context): Activity? {
+        var current: Context = context
+        repeat(12) {
+            if (current is Activity) return current
+            if (current !is ContextWrapper) return null
+            current = current.baseContext
+        }
+        return null
+    }
+
     fun decide(
         precise: Boolean,
         approximate: Boolean,
