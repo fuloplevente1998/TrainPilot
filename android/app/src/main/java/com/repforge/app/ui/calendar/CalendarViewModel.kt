@@ -19,6 +19,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
+import java.util.concurrent.atomic.AtomicLong
 
 internal data class CalendarUiState(
     val month: YearMonth = YearMonth.now(), val day: LocalDate = LocalDate.now(),
@@ -31,7 +32,12 @@ internal data class CalendarUiState(
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
-internal class CalendarViewModel(application: Application) : AndroidViewModel(application) {
+internal class CalendarViewModel @JvmOverloads constructor(
+    application: Application,
+    // Optional suspension points used by scoped instrumentation; real repository/Room remain in use.
+    private val beforePlannerSettingsRead: suspend () -> Unit = {},
+    private val afterPlannerPreviewRead: suspend () -> Unit = {}
+) : AndroidViewModel(application) {
     private val app = application.applicationContext
     private val db = TrainPilotDatabase.getInstance(app)
     private val repository = NativeCalendarRepository(db) {
@@ -47,18 +53,36 @@ internal class CalendarViewModel(application: Application) : AndroidViewModel(ap
     }
     private var plannerContinuation: com.repforge.app.NativeDataReplacement.Continuation? = null
     private var plannerSettingsIdentity: String? = null
-    fun cancelPlanner() {
-        _state.update { it.copy(plannerPreview = null) }
+    // Monotonic identity survives cancellation while the IO read is still in flight.
+    private val plannerPreviewEpoch = AtomicLong(0)
+
+    private fun invalidatePlannerPreview() {
+        plannerPreviewEpoch.incrementAndGet()
         plannerContinuation = null
         plannerSettingsIdentity = null
+        _state.update { it.copy(plannerPreview = null) }
     }
-    fun previewPlanner(settings: NativeCalendarPlanner.Settings) = mutate {
-        val continuation = com.repforge.app.NativeDataReplacement.continuationForCurrentData(app)
-        val identity = TrainPilotSettingsStore(app).current().toString()
-        val preview = repository.preview(settings)
-        withContext(Dispatchers.Main) {
-            plannerContinuation = continuation; plannerSettingsIdentity = identity
-            _state.update { it.copy(plannerPreview = preview) }
+
+    fun cancelPlanner() = invalidatePlannerPreview()
+
+    fun previewPlanner(settings: NativeCalendarPlanner.Settings) {
+        val request = plannerPreviewEpoch.incrementAndGet()
+        plannerContinuation = null
+        plannerSettingsIdentity = null
+        _state.update { it.copy(plannerPreview = null) }
+        mutate {
+            val continuation = com.repforge.app.NativeDataReplacement.continuationForCurrentData(app)
+            val identity = TrainPilotSettingsStore(app).current().toString()
+            val preview = repository.preview(settings)
+            afterPlannerPreviewRead()
+            withContext(Dispatchers.Main) {
+                // A Cancel, newer request or cleared ViewModel must not resurrect an old preview.
+                if (request == plannerPreviewEpoch.get()) {
+                    plannerContinuation = continuation
+                    plannerSettingsIdentity = identity
+                    _state.update { it.copy(plannerPreview = preview) }
+                }
+            }
         }
     }
     fun applyPlanner(saved: () -> Unit) {
@@ -83,6 +107,7 @@ internal class CalendarViewModel(application: Application) : AndroidViewModel(ap
 
     init {
         viewModelScope.launch {
+            beforePlannerSettingsRead()
             val value = withContext(Dispatchers.IO) { repository.plannerSettings() }
             _state.update { it.copy(plannerSettings = value, plannerLoaded = true) }
         }
@@ -137,6 +162,13 @@ internal class CalendarViewModel(application: Application) : AndroidViewModel(ap
             catch (_: Exception) { _state.update { it.copy(error = true) } }
             finally { _state.update { it.copy(busy = false) } }
         }
+    }
+
+    override fun onCleared() {
+        plannerPreviewEpoch.incrementAndGet()
+        plannerContinuation = null
+        plannerSettingsIdentity = null
+        super.onCleared()
     }
 
     fun historyDay(row: CalendarHistorySummary): LocalDate? = runCatching {
