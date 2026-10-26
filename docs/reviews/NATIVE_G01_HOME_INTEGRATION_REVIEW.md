@@ -121,3 +121,21 @@ A branch push által indított külön Quick TrainPilot Validation run `40404104
 ## Review döntés
 
 A #263 Home production/test/resource deltája a jelenlegi migration HEAD-del Home-szinten konfliktusmentes, a forrás/provenance/admission követelményeket megtartja, és ugyanazon saját production/test SHA-n a kötelező scoped JVM + API35 Home UI + meglévő Home navigation regresszió zöld. Root integrációra alkalmas a QA-only workflow kizárásával; közös/full és fizikai Samsung elfogadás továbbra külön kapu.
+
+
+## Post-run migration race / aktuális integrációs állapot
+
+A scoped run lezárása és a draft PR létrehozása közben a `feat/native-android-migration` ág
+`a075a21956ea4bd2f1089a9bc106dbe7a598c264` SHA-ról
+`5703883cc8aebfbf6bf2c6092f3b9e90600502b2` SHA-ra lépett előre.
+
+Az új migration HEAD-en újraolvasott mind a kilenc G01 production/test/resource fájl
+blob SHA-ja **pontosan megegyezik** a saját zöldre tesztelt
+`412ccc1c1f0ae235e3a183bbe8c9f4c1e1587ba8` commit és a #263 accepted head megfelelő blobjaival.
+Ezért a G01 app/test/resource kód időközben már byte-azonosan jelen van a migration ágon;
+nincs új G01 kódhunk, amit ebből a draft PR-ból be kellene emelni.
+
+A #268 draft PR ezért innentől audit/evidence átadóként kezelendő. A saját QA-only
+`.github/workflows/native-android.yml` továbbra **nem integrálandó**. A saját review report
+megőrizhető dokumentációként, de a már jelen lévő production/test/resource fájlokat nem kell
+újra cherry-pickelni vagy merge-elni.
