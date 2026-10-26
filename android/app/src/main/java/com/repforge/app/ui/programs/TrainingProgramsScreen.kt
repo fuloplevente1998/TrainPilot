@@ -250,7 +250,7 @@ internal fun TrainingProgramsScreen(
                     Text(exerciseNames(preview.after), color = colors.muted,
                         modifier = Modifier.testTag("program_restore_factory_exercises"))
                     Text(strings.getString(R.string.native_program_actions_recipe,
-                        preview.resetRecipeIds.joinToString(", ")), color = colors.muted)
+                        preview.resetRecipeIds.sorted().joinToString(", ").ifEmpty { "—" }), color = colors.muted)
                     if (preview.otherDaysUsingRecipes.isNotEmpty())
                         Text(strings.getString(R.string.native_program_actions_shared,
                             preview.otherDaysUsingRecipes.joinToString(", ")), color = colors.danger)
