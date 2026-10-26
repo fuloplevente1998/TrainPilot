@@ -100,7 +100,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     _uiState.update { result.copy(hasImportedDraft = it.hasImportedDraft) }
                 }
             } catch (cancelled: CancellationException) { throw cancelled }
-            catch (_: Exception) { if (readEpoch.get() == epoch) failed() }
+            catch (_: Exception) { if (readEpoch.isCurrent(epoch)) failed() }
         }
     }
 
