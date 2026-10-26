@@ -156,6 +156,20 @@ internal fun TrainingProgramsScreen(
             }
         }
 
+        // Training-mode overrides are settings-only, not writes into program recipes.
+        if (state.programs.any { it.program.id == state.activeProgramId }) item {
+            com.repforge.app.ui.settings.NativeTrainingModePicker(
+                language = language,
+                raw = state.trainingModes197Json,
+                activeProgramId = state.activeProgramId,
+                scope = "program",
+                programId = state.activeProgramId,
+                enabled = !state.modeSaving && !state.editorSaving,
+                onApprove = viewModel::approveTrainingMode,
+                onUndo = { viewModel.undoTrainingMode(state.activeProgramId) }
+            )
+        }
+
         // 2. Programkártyák listája
         items(state.programs, key = { it.program.id }) { programWithDays ->
             val isActive = programWithDays.program.id == state.activeProgramId
@@ -168,6 +182,19 @@ internal fun TrainingProgramsScreen(
                 onEdit = { editing = programWithDays; editorOpen = true; viewModel.clearEditorOutcome() }
             )
         }
+    }
+    state.modeStatus?.let { message ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = viewModel::clearModeStatus,
+            title = { Text(strings.getString(R.string.native_modes_title), color = colors.text) },
+            text = { Text(message, color = colors.muted) },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = viewModel::clearModeStatus) {
+                    Text(strings.getString(R.string.native_modes_approve), color = colors.accentText)
+                }
+            },
+            containerColor = colors.card
+        )
     }
     if (state.isPersonalPlannerOpen) PersonalProgramPreviewDialog(
         programs = state.programs,

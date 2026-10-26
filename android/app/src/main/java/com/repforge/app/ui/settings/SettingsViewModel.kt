@@ -20,6 +20,7 @@ import com.repforge.app.NativeTrainingProfile
 import org.json.JSONObject
 import com.repforge.app.data.store.ThemePaletteOption
 import com.repforge.app.data.store.TrainPilotSettingsStore
+import com.repforge.app.data.store.NativeTrainingModeChange
 import com.repforge.app.data.store.TrainPilotUserSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,7 +41,8 @@ data class SettingsUiState(
     val statusMessage: String? = null,
     val profileSaving: Boolean = false,
     val profileWriteFailed: Boolean = false,
-    val profileSavedSequence: Int = 0
+    val profileSavedSequence: Int = 0,
+    val modeSaving: Boolean = false
 )
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
@@ -122,6 +124,29 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun clearProfileError() {
         _uiState.value = _uiState.value.copy(profileWriteFailed = false)
+    }
+
+    internal fun approveTrainingMode(preview: NativeTrainingModeChange.Preview) =
+        writeModeChange(R.string.native_modes_saved) { NativeTrainingModeChange.approve(settingsStore, preview) }
+
+    fun undoTrainingMode(scope: String, programId: String?) =
+        writeModeChange(R.string.native_modes_reverted) { NativeTrainingModeChange.undo(settingsStore, scope, programId) }
+
+    private fun writeModeChange(successLabel: Int, operation: suspend () -> Boolean) {
+        if (_uiState.value.modeSaving || _uiState.value.replacementBusy) return
+        _uiState.value = _uiState.value.copy(modeSaving = true)
+        viewModelScope.launch {
+            try {
+                val succeeded = withContext(Dispatchers.IO) { operation() }
+                _uiState.value = _uiState.value.copy(statusMessage =
+                    nativeResources(context, _uiState.value.settings.language).getString(
+                        if (succeeded) successLabel else R.string.native_modes_error))
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (_: Exception) {
+                _uiState.value = _uiState.value.copy(statusMessage =
+                    nativeResources(context, _uiState.value.settings.language).getString(R.string.native_modes_error))
+            } finally { _uiState.value = _uiState.value.copy(modeSaving = false) }
+        }
     }
 
     fun setTheme(theme: ThemePaletteOption) = writeSetting { settingsStore.setTheme(theme) }

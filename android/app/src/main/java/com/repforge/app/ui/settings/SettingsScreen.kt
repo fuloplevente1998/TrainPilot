@@ -120,6 +120,17 @@ fun SettingsScreen(
         }
 
         item { NativeLanguagePicker(state.settings.language, !state.replacementBusy, viewModel::setLanguage) }
+        item {
+            NativeTrainingModePicker(
+                language = state.settings.language,
+                raw = state.settings.trainingModes197Json,
+                activeProgramId = state.settings.activeProgramId,
+                scope = "global",
+                enabled = allowDataReplacement && !state.modeSaving && !state.replacementBusy,
+                onApprove = viewModel::approveTrainingMode,
+                onUndo = { viewModel.undoTrainingMode("global", null) }
+            )
+        }
         item { NativeThemePicker(state.settings, viewModel::setTheme) }
         item {
             Card(modifier = Modifier.fillMaxWidth(),

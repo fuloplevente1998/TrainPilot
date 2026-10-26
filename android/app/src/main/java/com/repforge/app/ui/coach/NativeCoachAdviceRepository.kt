@@ -2,12 +2,15 @@ package com.repforge.app.ui.coach
 
 import com.repforge.app.data.db.TrainPilotDatabase
 import com.repforge.app.data.store.TrainPilotUserSettings
+import com.repforge.app.data.store.NativeTrainingModes
 import org.json.JSONArray
 import org.json.JSONObject
 import java.time.Duration
 import java.time.Instant
 
-internal data class CoachExerciseAdvice(val id: String, val name: String, val advice: NativeCoachExerciseAdvice.Advice, val loadType: String = "")
+internal data class CoachExerciseAdvice(val id: String, val name: String, val advice: NativeCoachExerciseAdvice.Advice,
+    val loadType: String = "", val modePreview: NativeTrainingModeProgression.Preview? = null,
+    val sourceFingerprint: String = "")
 
 /** Bounded canonical Room reads; no full-history relations/cache or second workout state. */
 internal class NativeCoachAdviceRepository(private val db: TrainPilotDatabase) {
@@ -18,6 +21,7 @@ internal class NativeCoachAdviceRepository(private val db: TrainPilotDatabase) {
         val day = program.days.firstOrNull { it.dayId == target.dayId } ?: return emptyList()
         val raw = JSONObject(program.program.rawJson)
         val recipes = raw.optJSONObject("prescriptions") ?: JSONObject()
+        val selectedMode = NativeTrainingModes.resolveSavedJson(settings.trainingModes197Json, target.programId)
         val ids = JSONArray(day.exercisesJson)
         return (0 until ids.length()).map { index ->
             val item = ids.get(index)
@@ -37,7 +41,19 @@ internal class NativeCoachAdviceRepository(private val db: TrainPilotDatabase) {
             val merged = JSONObject(lib.toString()).put("loadType", load)
             val observed = if (load == "bodyweight") null else observedStep(id, load)
             val step = NativeCoachExerciseAdvice.step(merged, base, settings.progressionSteps, observed)
-            val recommendation = NativeCoachExerciseAdvice.recommend(lib, rx, occurrences, prescription, readiness, step)
+            // Explicit #197 mode proposals use the same canonical history/target/step.
+            // Unselected legacy keeps its existing unmodified recommendation motor.
+            val preview = NativeTrainingModeProgression.compute(selectedMode, merged,
+                prescription, occurrences, readiness, step)
+            val recommendation = if (preview == null) NativeCoachExerciseAdvice.recommend(
+                lib, rx, occurrences, prescription, readiness, step)
+            else NativeCoachExerciseAdvice.Advice(
+                action = if (preview.action == "variation") "hold" else preview.action,
+                reason = "mode197:${preview.trainingStyle}:${preview.reason}",
+                weight = preview.proposedWeight, baseWeight = preview.baselineWeight,
+                autoApply = false, historyCount = preview.historyCount, target = prescription,
+                nextReps = preview.nextReps
+            )
             val lastRaw = db.workoutHistoryDao().getCoachExerciseCandidates(id, Long.MIN_VALUE, Long.MAX_VALUE, null, "", 1).firstOrNull()
                 ?.let { JSONObject(it.rawJson).optJSONArray("exercises") }
             val lastEffort = (0 until (lastRaw?.length() ?: 0)).mapNotNull { lastRaw?.optJSONObject(it) }
@@ -45,7 +61,18 @@ internal class NativeCoachAdviceRepository(private val db: TrainPilotDatabase) {
             val name = when (settings.language) {
                 "en" -> library.nameEn; "de" -> library.nameDe; "ro" -> library.nameRo; else -> library.nameHu
             }.ifBlank { library.nameHu }
-            CoachExerciseAdvice(id, name, NativeCoachExerciseAdvice.forCoach(recommendation, lastEffort, readiness), load)
+            CoachExerciseAdvice(id, name, NativeCoachExerciseAdvice.forCoach(recommendation, lastEffort, readiness),
+                load, preview, buildString {
+                    append(raw.toString()); append("\\u001f")
+                    append(lib.toString()); append("\\u001f")
+                    append(rx.toString()); append("\\u001f")
+                    append(step); append("\\u001f")
+                    append(settings.progressionSteps.toSortedMap().toString()); append("\\u001f")
+                    rows.forEach { (workout, exercise) ->
+                        append(workout.toString()); append("\\u001e"); append(exercise.toString()); append("\\u001f")
+                    }
+                    append(readiness.toString()); append("\\u001f"); append(settings.trainingModes197Json)
+                })
         }
     }
 
