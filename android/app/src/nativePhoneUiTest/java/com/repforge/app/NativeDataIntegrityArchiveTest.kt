@@ -201,8 +201,6 @@ class NativeDataIntegrityArchiveTest {
             assertEquals(before, sha(bytes))
         }
         Log.i("NativeDataIntegrity", "sample=photo photoSha256=$before reexportSha256=$before status=PASS")
-    }
-
     } }
 
     @Test fun invalidJsonAndTruncatedZipCannotReplaceExistingData() { runBlocking(Dispatchers.IO) {
