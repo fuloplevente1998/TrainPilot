@@ -186,7 +186,7 @@ internal fun calendarPlannerInitialSelection(
     val chosen = programs.filter { it.days.isNotEmpty() }.let { usable ->
         usable.firstOrNull { it.program.id == settings?.programId } ?: usable.firstOrNull()
     }
-    val firstIndex = if (settings?.programId == chosen?.program?.id && chosen != null) {
+    val firstIndex = if (settings != null && chosen != null && settings.programId == chosen.program.id) {
         settings.firstIndex.coerceIn(0, chosen.days.lastIndex)
     } else 0
     return CalendarPlannerInitialSelection(chosen?.program?.id.orEmpty(), firstIndex)
