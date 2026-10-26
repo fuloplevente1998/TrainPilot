@@ -49,15 +49,10 @@ internal object NativeTrainingModeProgression {
                 sets.coerceAtLeast(0), reps, rows.size, mode.progressionMode, mode.trainingStyle)
         if (lib.optString("measurementType") in setOf("distance", "time", "gps") ||
             lib.optString("repUnit").trim().lowercase() in setOf("km", "m", "mp", "sec", "second", "s") ||
-            target.kind !in setOf("reps", "rir"))
-            return result("hold", "non-strength-activity")
-        val pureRirTarget = mode.progressionMode == "rir" && target.kind == "rir"
-        if (target.kind != "reps" && !pureRirTarget)
-            return result("hold", "non-strength-activity")
+            target.kind != "reps") return result("hold", "non-strength-activity")
         val lo = target.min
         val hi = target.max
-        if (target.sets <= 0 || (!pureRirTarget &&
-                (lo == null || hi == null || lo <= 0 || hi < lo)))
+        if (target.sets <= 0 || lo == null || hi == null || lo <= 0 || hi < lo)
             return result("hold", "invalid-target")
         if (latest == null) return result("hold", "insufficient-history")
         fun hasPain(item: NativeCoachExerciseAdvice.Occurrence) =
