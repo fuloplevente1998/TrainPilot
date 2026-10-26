@@ -4,6 +4,21 @@ Frissítve: 2026-10-26. AGENTS.md + ez + WORK_HANDOFF.md teteje elég indulásko
 Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/exportot.
 
 
+## GPS UI-runner izoláció – 2026-10-26
+
+Root14513da5 javítja az e12tesztfutás permission-revoke okozta UID-killjét.
+A közös phone gate az általános suite-ból csak a GPS osztályt veszi ki, majd a
+négy eredeti metódust külön-külön VALÓBAN futtatja. A runner force-stop/revoke/
+clear-permission-flags/grant műveleteket az adott instrumentáció INDULÁSA ELŐTT
+végzi. Kotlin teszt csak ellenőrzi az előkészített engedélyeket, nem revoke-ol;
+a platform location on/off és valódi UI/retry/stale assertjei megmaradtak.
+Minden futás saját változatlan adb rawlog/XML; manifest additionalInstrumentation,
+evidence-summary mindet összesíti, hiányzó/hibás/dupla GPS eset elutasítva.
+Célzott helyi7gate+33evidence Python teszt PASS,1Kotlin lexical/diff PASS;
+Android compile/JVM/UI ezen az új forráson még nincs igazolva. Nincs tesztskip,
+app adat/motor/verzió/main módosítás. Egy új canonical CI indul a14513pushról;
+pontos run állapot GitHubról ellenőrizendő, ne tekintsd előre sikeresnek.
+
 ## PR258/259 második review integrálva; közös CI új blokkolója – 2026-10-26
 
 User átadta az új HEAD-eket, root forrásreview és integráció kész:
