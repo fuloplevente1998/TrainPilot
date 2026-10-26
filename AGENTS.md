@@ -126,6 +126,19 @@ javítás még nincs távol, ezért nem integrált. A lentebbi korábbi „javí
   leltár és keresztmetszeti hibák. Visszaérkezéskor exact delta/teszt és paritás
   ellenőrzése kell, nem vak merge; CI/készülékes/main elfogadás továbbra külön.
 
+## Új elkülönített baseline feladatok – 2026-10-26
+
+- #244b062e3d integrálva4eae08c8-ben, #246cf1db70b megmarad. Ne alkalmazd újra
+  a régi appdeltákat. Új közös CI nincs; #245 javított SHA még függőben.
+- Felhasználó két új külső chathez kért promptot. Pinned bázis4eae08c8:
+  docs/plans/NATIVE_BASELINE_HARNESS_HANDOFF.md: kizárólag három JVM-teszt
+  (MetadataGate, WorkoutDiscard, HomeRepository), saját test/native-baseline-harness-fixes.
+  docs/plans/NATIVE_PLANNER_PARITY_FIX_HANDOFF.md: PlannerPolicy/ProfileProgramPreview,
+  planner teszt/fixture, saját fix/native-planner-template-parity. Pontos határok az MD-kben.
+- Indulást még nem igazolt a felhasználó; az átadás idején ezeket ne írd át
+  párhuzamosan. Root közös integráció/gate és maradék leltár. Nem belső agent-
+  felhatalmazás. Új teljes CI és main merge továbbra központilag koordinált.
+
 ## Felhasználói thinking-fázisok (2026-10-24)
 
 - Kódolás, funkciók és meglévő blokkok bekötése: a felhasználó **High** módot használ.

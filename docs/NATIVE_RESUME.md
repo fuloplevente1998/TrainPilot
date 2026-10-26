@@ -19,6 +19,23 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
   High kód; Medium vizuális dizájn előtt jelezni; Extra High komoly végső debug előtt.
   Kevés lényegi magyar output, nincs belső subagent külön kérés nélkül. PR238 követőlap.
 
+## #244 beépítve és két új külön chat átadó – 2026-10-26
+
+**Aktuális appforrás4eae08c8:** #244b062e3d javított23fájlos delta integrálva;
+#246cf1db70b megmarad. Dupla baseline javítások egyszer, planner fixture neve
+cases-main-7473; külön új health workflow nincs átemelve.23fájl byteazonos a
+külső review HEAD-del;19Kotlin lexical+4XML/diff PASS, runtime/új CI nincs.
+reviews/NATIVE_PR244_INTEGRATION.md. #245 új távoli javítására továbbra várunk.
+
+A felhasználó új chateknek kér munkát, két elkülönített prompt készült pinned
+4eae08c8 bázison: plans/NATIVE_BASELINE_HARNESS_HANDOFF.md (három test fixture/
+scheduler/querytrace), plans/NATIVE_PLANNER_PARITY_FIX_HANDOFF.md (planner
+main-plan-7 oracle/port). Indulás még nincs visszaigazolva, de kijelölt fájljaik
+az átadás idejére foglaltak; root ne módosítsa őket párhuzamosan. Saját branch/
+draftmigration, nincs belső subagent vagy önálló teljes CI. A korábbi6 közös
+hibából Coach/Consent javítás bekerült #244-gyel, a maradék4 vizsgálata e két
+csomagé; mindegyik végső runtime-elfogadása az integrált gate-en marad.
+
 ## Ellenőrzött aktuális állapot – 2026-10-26
 
 | Rész | Távoli állapot | Migrációs integráció / elfogadás |
