@@ -48,7 +48,10 @@ internal object ArchiveIO {
         val staged = File.createTempFile("verified-archive-", ".zip", directory.parentFile ?: directory)
         try {
             FileOutputStream(staged).use { out ->
-                copy(input, out, totalLimit + jsonLimit.toLong())
+                // Compressed bytes include local/central headers and ZIP metadata
+                // even when expanded payload is tiny (see 100-byte JVM fixtures).
+                // Keep a bounded allowance without accepting unbounded input.
+                copy(input, out, totalLimit + entryLimit.toLong() * 4096L + 65557L)
                 out.fd.sync()
             }
             val names = HashSet<String>()
