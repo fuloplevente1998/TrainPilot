@@ -177,8 +177,11 @@ jobs:
                               manifest["screenshots"].append({**data, "path": str(file),
                                   "sha256": sha(file), "bytes": len(png)})
                               seen.add(name)
-                              adb("shell", "sh", "-c",
-                                  "printf %s " + name + " > /data/local/tmp/trainpilot-shot-ack")
+                              # adb shell joins argv; passing sh -c as multiple args
+                              # loses the quoted -c payload and exits 1. A single
+                              # validated shell-command string preserves redirection.
+                              adb("shell", "printf '%s' '" + name +
+                                  "' > /data/local/tmp/trainpilot-shot-ack")
                       time.sleep(.15)
               log = (out / "instrumentation.txt").read_text(errors="replace")
               spec = importlib.util.spec_from_file_location("gate", "scripts/native/phone-ui-gate.py")
