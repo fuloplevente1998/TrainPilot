@@ -49,15 +49,20 @@ class NativeTrainingModeApprovalUiTest {
     }
 
     private fun awaitReady() {
-        compose.waitUntil(30_000) {
-            check(compose.onAllNodesWithTag("training_modes_program_comparison_error")
-                .fetchSemanticsNodes().isEmpty()) {
-                "Real program comparison failed; inspect NativeModeApproval logcat"
+        try {
+            compose.waitUntil(30_000) {
+                check(compose.onAllNodesWithTag("training_modes_program_comparison_error")
+                    .fetchSemanticsNodes().isEmpty()) {
+                    "Real program comparison failed; inspect NativeModeApproval logcat"
+                }
+                compose.onAllNodesWithTag("training_modes_program_approve").fetchSemanticsNodes()
+                    .any { it.config.getOrNull(SemanticsProperties.Disabled) == null } &&
+                    compose.onAllNodesWithTag("training_modes_program_comparison_0")
+                        .fetchSemanticsNodes().isNotEmpty()
             }
-            compose.onAllNodesWithTag("training_modes_program_approve").fetchSemanticsNodes()
-                .any { it.config.getOrNull(SemanticsProperties.Disabled) == null } &&
-                compose.onAllNodesWithTag("training_modes_program_comparison_0")
-                    .fetchSemanticsNodes().isNotEmpty()
+        } catch (failure: Exception) {
+            throw AssertionError("Program picker after preview: " +
+                compose.onRoot(useUnmergedTree = true).printToString().take(8500), failure)
         }
         compose.onNodeWithTag("training_modes_program_approve").assertIsEnabled()
     }
