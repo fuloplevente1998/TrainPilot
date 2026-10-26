@@ -25,7 +25,8 @@ internal object NativeTrainingModeChange {
             "Invalid training mode"
         }
         val pid = if (scope == "global") null else programId
-        val before = NativeTrainingModes.resolveSavedJson(raw, pid ?: activeProgramId)
+        val before = if (scope == "global") NativeTrainingModes.globalChoice(raw)
+            else NativeTrainingModes.resolveSavedJson(raw, pid)
         return Preview(scope, pid, raw, activeProgramId, before,
             NativeTrainingModes.Effective(programId = pid, trainingStyle = style,
                 progressionMode = progression, explicitChoice = true,
