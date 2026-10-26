@@ -4,12 +4,11 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.repforge.app.NativeDataReplacement
-import com.repforge.app.WorkoutPhotoRepository
 import com.repforge.app.data.db.ExerciseLibraryEntity
 import com.repforge.app.data.db.TrainPilotDatabase
 import com.repforge.app.data.store.TrainPilotSettingsStore
-import java.io.File
 import java.time.ZoneId
+import java.time.LocalDate
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -42,7 +41,13 @@ data class ProgressUiState(
     val exercises: List<ExerciseLibraryEntity> = emptyList(),
     val selectedExerciseId: String = "goblet-squat",
     val exercise1RmTrend: List<Exercise1RmPointUiModel> = emptyList(),
-    val progressPhotos: List<File> = emptyList(),
+    val selectedStrengthRange: NativeStrengthRange = NativeStrengthRange.DAYS_90,
+    val strengthLoading: Boolean = true,
+    val strengthError: Boolean = false,
+    val progressPhotos: List<NativeProgressPhoto> = emptyList(),
+    val selectedPhotoId: String? = null,
+    val photosLoading: Boolean = true,
+    val photosError: Boolean = false,
     val language: String = "hu",
     val loading: Boolean = true,
     val loadError: Boolean = false,
@@ -56,13 +61,14 @@ data class ProgressUiState(
 class ProgressViewModel(application: Application) : AndroidViewModel(application) {
     private val context = application.applicationContext
     private val db = TrainPilotDatabase.getInstance(context)
-    private val photoRepo = WorkoutPhotoRepository(context)
     private val store = TrainPilotSettingsStore(context)
 
     private val _uiState = MutableStateFlow(ProgressUiState())
     val uiState: StateFlow<ProgressUiState> = _uiState.asStateFlow()
     private var summaryJob: Job? = null
     private var trendJob: Job? = null
+    private var trendRevision = 0L
+    private var strengthRequestedStamp: Pair<LocalDate, ZoneId>? = null
     private var cardioJob: Job? = null
     private var cardioRevision = 0L
     private var cardioRequestedStamp: NativeCardioCalendarRefresh.Stamp? = null
@@ -72,14 +78,26 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
      * even when Room has not changed. The periodic check only reloads on a
      * different local day or zone, so it does not poll Room once per minute.
      */
-    fun onCardioScreenResumed() =
+    fun onCardioScreenResumed() {
         refreshCardioForClock(NativeCardioCalendarRefresh.Trigger.SCREEN_RESUME)
+        refreshStrengthForClock()
+    }
 
-    fun onCardioSystemClockChanged() =
+    fun onCardioSystemClockChanged() {
         refreshCardioForClock(NativeCardioCalendarRefresh.Trigger.SYSTEM_CLOCK_CHANGE)
+        refreshStrengthForClock()
+    }
 
-    fun onCardioCalendarTick() =
+    fun onCardioCalendarTick() {
         refreshCardioForClock(NativeCardioCalendarRefresh.Trigger.CALENDAR_TICK)
+        refreshStrengthForClock()
+    }
+
+    private fun refreshStrengthForClock() {
+        val zone = ZoneId.systemDefault()
+        val stamp = LocalDate.now(zone) to zone
+        if (!_uiState.value.loading && stamp != strengthRequestedStamp) reloadStrength()
+    }
 
     private fun refreshCardioForClock(trigger: NativeCardioCalendarRefresh.Trigger) {
         val stamp = NativeCardioCalendarRefresh.stamp(System.currentTimeMillis(), ZoneId.systemDefault())
@@ -108,8 +126,9 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
     fun loadProgressData() {
         summaryJob?.cancel()
         trendJob?.cancel() // Same-ID strength reads from the previous dataset are stale too.
+        trendRevision++
         summaryJob = viewModelScope.launch {
-            _uiState.update { it.copy(loading = true, loadError = false) }
+            _uiState.update { it.copy(loading = true, loadError = false, photosLoading = true, photosError = false) }
             try {
                 val result = withContext(Dispatchers.IO) {
                     NativeDataReplacement.mutate(context) {
@@ -118,9 +137,7 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
                         val exercises = db.exerciseLibraryDao().getAllExercises()
                         val groups = db.workoutHistoryDao().getProgressMuscleSummary(
                             now - 30L * 86_400_000L, now)
-                        val photos = photoRepo.photoDir()
-                            .listFiles { f -> f.isFile && f.extension.equals("jpg", true) }
-                            ?.sortedByDescending { it.lastModified() }.orEmpty()
+                        val photos = runCatching { NativeProgressPhotoData.load(db) }
                         Triple(language, exercises, groups) to photos
                     }
                 }
@@ -132,32 +149,72 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
                     ?: exercises.firstOrNull()?.id.orEmpty()
                 _uiState.update { it.copy(
                     language = language, exercises = exercises, muscleLoads = muscle,
-                    progressPhotos = result.second, selectedExerciseId = id,
-                    loading = false, loadError = false
+                    progressPhotos = result.second.getOrDefault(emptyList()),
+                    selectedPhotoId = it.selectedPhotoId?.takeIf { photoId ->
+                        result.second.getOrNull()?.any { photo -> photo.id == photoId } == true
+                    },
+                    photosLoading = false, photosError = result.second.isFailure,
+                    selectedExerciseId = id, loading = false, loadError = false
                 ) }
                 selectExercise(id)
             } catch (cancelled: CancellationException) { throw cancelled }
-            catch (_: Exception) { _uiState.update { it.copy(loading = false, loadError = true) } }
+            catch (_: Exception) { _uiState.update { it.copy(loading = false, loadError = true,
+                photosLoading = false, photosError = true) } }
         }
     }
 
     fun selectExercise(exerciseId: String) {
+        _uiState.update { it.copy(selectedExerciseId = exerciseId) }
+        reloadStrength()
+    }
+
+    fun selectStrengthRange(range: NativeStrengthRange) {
+        if (_uiState.value.selectedStrengthRange == range) return
+        _uiState.update { it.copy(selectedStrengthRange = range) }
+        reloadStrength()
+    }
+
+    fun retryStrength() = reloadStrength()
+
+    fun openPhoto(id: String) {
+        _uiState.update { current ->
+            if (current.progressPhotos.any { it.id == id }) current.copy(selectedPhotoId = id) else current
+        }
+    }
+
+    fun closePhoto() { _uiState.update { it.copy(selectedPhotoId = null) } }
+
+    private fun reloadStrength() {
         trendJob?.cancel()
-        _uiState.update { it.copy(selectedExerciseId = exerciseId, exercise1RmTrend = emptyList()) }
+        val revision = ++trendRevision
+        val selected = _uiState.value.selectedExerciseId
+        val range = _uiState.value.selectedStrengthRange
+        val now = System.currentTimeMillis()
+        val zone = ZoneId.systemDefault()
+        strengthRequestedStamp = LocalDate.now(zone) to zone
+        _uiState.update { it.copy(exercise1RmTrend = emptyList(), strengthLoading = true, strengthError = false) }
         trendJob = viewModelScope.launch {
             try {
                 val trend = withContext(Dispatchers.IO) {
                     NativeDataReplacement.mutate(context) {
-                        NativeProgressQuery.trend(db.workoutHistoryDao(), exerciseId)
+                        NativeProgressQuery.trend(db.workoutHistoryDao(), selected, range, now, zone)
                     }
                 }
-                _uiState.update { current ->
-                    if (current.selectedExerciseId == exerciseId)
-                        current.copy(exercise1RmTrend = trend, loadError = false)
-                    else current
+                if (revision != trendRevision) return@launch
+                if (_uiState.value.selectedExerciseId != selected ||
+                    _uiState.value.selectedStrengthRange != range) return@launch
+                if (LocalDate.now(ZoneId.systemDefault()) to ZoneId.systemDefault() != strengthRequestedStamp) {
+                    reloadStrength()
+                    return@launch
                 }
+                _uiState.update { it.copy(exercise1RmTrend = trend,
+                    strengthLoading = false, strengthError = false) }
             } catch (cancelled: CancellationException) { throw cancelled }
-            catch (_: Exception) { _uiState.update { it.copy(loadError = true) } }
+            catch (_: Exception) {
+                if (revision == trendRevision) _uiState.update {
+                    it.copy(strengthLoading = false, strengthError = true)
+                }
+            }
         }
     }
 
