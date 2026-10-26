@@ -131,9 +131,14 @@ class NativeTrainingModeApprovalUiTest {
         openProgramPicker()
         select("training_modes_program_style", "hit")
         compose.onNodeWithTag("training_modes_program_preview").performClick()
-        compose.waitUntil(30_000) {
-            compose.onAllNodesWithTag("training_modes_program_comparison_error")
-                .fetchSemanticsNodes().isNotEmpty()
+        try {
+            compose.waitUntil(30_000) {
+                compose.onAllNodesWithTag("training_modes_program_comparison_error")
+                    .fetchSemanticsNodes().isNotEmpty()
+            }
+        } catch (failure: Exception) {
+            throw AssertionError("Empty program comparison dialog: " +
+                compose.onRoot(useUnmergedTree = true).printToString().take(8500), failure)
         }
         compose.onNodeWithTag("training_modes_program_approve").assertIsNotEnabled()
         assertEquals(raw, current().trainingModes197Json)
