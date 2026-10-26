@@ -13,6 +13,8 @@ Main/csomag/verzió nem változik. A modellváltást a felhasználó végzi.
   DataStore tesztizoláció setup+cleanup; nyers screenshot ellenőrzésben a nem
   értelmezett `&& echo` helyett valódi fájlméret-vizsgálat. QA-only workflow nem
   került a migration ágra. Az éles globális katalógustörlés nem lett hozzáadva.
+  Javított scoped40410654465 exactdc82e620: RootXML **33JVM+4UI PASS**,
+  0failure/error/skip,4rawPNG és mind6APK/PNGmanifesthash ellenőrizve.
 - A PR-ok saját forrását is ugyanazon meglévő ágon javította Root a user kérésére;
   új fejlesztési ág nem indult, a cél továbbra a migration, mainhez nem nyúltunk.
 

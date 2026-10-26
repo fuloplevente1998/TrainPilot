@@ -12,7 +12,8 @@ index.html2118/2297/2380 és további végsőwrapperek korrigálva; Root79bdc6cd
 11sor/141pinnedpath+line hivatkozás helyben validálva, nincs runtimePASS ebből.
 269owndc82e620: DataStore setup+cleanup izoláció és raw screenshot stat-check,
 nem értelmezett &&echo nélkül. Root ee6ac922 csak2teszt+report, sajátQAworkflow
-KIHAGYVA. Új saját scopedrun40410654465 folyamatban; eredményét kérd GitHubról.
+KIHAGYVA. Új scoped40410654465 exactdc82e620 SUCCESS: RootXML33JVM+4UI/0fail/error/skip;
+4rawPNG1080x1920 és6manifesthash(APKpair+PNG4) ellenőrizve. Nem közösphonegreen.
 Régi40408886805 JVM SUCCESS, UI4/3FAIL screenshot-helperen; nem aktuálisPASS.
 
 Friss közös3297/40404547333 artifact XML Root által kiértékelve:1327JVM/0fail/error/skip;
