@@ -130,7 +130,7 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
         summaryJob = viewModelScope.launch {
             _uiState.update { it.copy(loading = true, loadError = false, photosLoading = true, photosError = false) }
             try {
-                val result = withContext(Dispatchers.IO) {
+                val (result, admission) = withContext(Dispatchers.IO) {
                     NativeDataReplacement.mutate(context) {
                         val now = System.currentTimeMillis()
                         val language = store.current().language
@@ -138,9 +138,11 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
                         val groups = db.workoutHistoryDao().getProgressMuscleSummary(
                             now - 30L * 86_400_000L, now)
                         val photos = runCatching { NativeProgressPhotoData.load(db) }
-                        Triple(language, exercises, groups) to photos
+                        (Triple(language, exercises, groups) to photos) to
+                            NativeDataReplacement.continuationForCurrentData(context)
                     }
                 }
+                admission.requireCurrent(context)
                 val language = result.first.first
                 val exercises = result.first.second
                 val muscle = NativeProgressQuery.muscle(result.first.third, language)
@@ -195,11 +197,13 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
         _uiState.update { it.copy(exercise1RmTrend = emptyList(), strengthLoading = true, strengthError = false) }
         trendJob = viewModelScope.launch {
             try {
-                val trend = withContext(Dispatchers.IO) {
+                val (trend, admission) = withContext(Dispatchers.IO) {
                     NativeDataReplacement.mutate(context) {
-                        NativeProgressQuery.trend(db.workoutHistoryDao(), selected, range, now, zone)
+                        NativeProgressQuery.trend(db.workoutHistoryDao(), selected, range, now, zone) to
+                            NativeDataReplacement.continuationForCurrentData(context)
                     }
                 }
+                admission.requireCurrent(context)
                 if (revision != trendRevision) return@launch
                 if (_uiState.value.selectedExerciseId != selected ||
                     _uiState.value.selectedStrengthRange != range) return@launch
