@@ -390,6 +390,8 @@ class NativePhoneNavigationTest {
         assertEquals("home-basic", runBlocking { settings.current().activeProgramId })
         assertEquals(1, runBlocking(Dispatchers.IO) { db.workoutHistoryDao().getWorkoutCount() })
         screenshot("home_scheduled_target_started")
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("workout_discard").fetchSemanticsNodes().isNotEmpty() }
+        screenshot("active_strength") // Real programmed goblet-squat workout UI, emulator fixture.
     }
 
     @Test fun journalEditorCancelInvalidSaveAndRealSavePreserveTheExistingWorkout() {
