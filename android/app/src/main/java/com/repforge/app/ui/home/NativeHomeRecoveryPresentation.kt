@@ -41,10 +41,8 @@ object NativeHomeRecoveryPresentation {
         val readiness = NativeCoachReadiness.calculate(signals.recovery, signals.daily, history, now, zone)
         val partial = signals.daily.optBoolean("partial", false) ||
             signals.recovery.optBoolean("partial", false)
-        val older = days.any { row ->
-            val stamp = row.optString("day")
-            runCatching { LocalDate.parse(stamp) }.getOrNull()?.let { it < today } == true &&
-                (row.has("energyScore") || row.has("sleepMinutes") || row.has("hrvRmssdMs"))
+        val older = signals.recovery.optString("day").let { stamp ->
+            runCatching { LocalDate.parse(stamp) }.getOrNull()?.let { it < today } == true
         }
         val unverifiedEnergy = (days.any { row ->
             row.has("energyScore") && !row.isNull("energyScore")
