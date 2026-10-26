@@ -443,7 +443,7 @@ class NativePhoneNavigationTest {
                         .put("sets", org.json.JSONArray().put(JSONObject()
                             .put("setId", "native-route-set")
                             .put("set", 1).put("reps", "600").put("distanceMeters", 400.0)
-                            .put("done", true).put("gpsRouteKey163", routeKey)))))
+                            .put("done", true).put("gpsRouteKey163", routeKey))))))
         }
         launch(); tab("journal")
         compose.waitUntil(15_000) {
