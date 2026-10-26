@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_progress_photo_title">Fotografii de antrenament</string>
+    <string name="native_progress_photo_empty">Nu există încă fotografii private de antrenament.</string>
+    <string name="native_progress_photo_loading">Se încarcă fotografia…</string>
+    <string name="native_progress_photo_unavailable">Fotografia lipsește sau este deteriorată.</string>
+    <string name="native_progress_photo_close">Închide</string>
+    <string name="native_progress_photo_workout">Antrenament</string>
+    <string name="native_progress_photo_before">Înainte</string>
+    <string name="native_progress_photo_after">După</string>
+    <string name="native_progress_strength_30">30 de zile</string>
+    <string name="native_progress_strength_90">90 de zile</string>
+    <string name="native_progress_strength_year">1 an</string>
+    <string name="native_progress_strength_all">Toate</string>
+    <string name="native_progress_strength_loading">Se încarcă datele de forță…</string>
+    <string name="native_progress_strength_empty">Nu există măsurători de forță în această perioadă.</string>
+</resources>
