@@ -3,6 +3,25 @@
 Frissítve: 2026-10-26. AGENTS.md + ez + WORK_HANDOFF.md teteje elég induláskor.
 Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/exportot.
 
+
+## PR258/259 review visszaadás; közös CI compile-fix – 2026-10-26
+
+40333452302 checkout07835 FAILED a compileDebugAndroidTestKotlin lépésen:
+NativeLocalizationEmulatorFixture.performScrollTo import hiányzott. Unit/UI/upgrade
+kapuk nem futottak; nem app runtime regresszióbizonyíték. Root e12ed8a5 kétimportos
+javítása GitHubon. Helyi7dea3e11 ekvivalens commitot rebase elhagyta; munkafa most
+a connectoros távoli történetet követi. gh/git írótokent401miatt nem használható,
+GitHub connector olvasás/írás és publikus git fetch működik. Új run-ID még nincs
+ellenőrizve; ne állítsd, hogy újrafutás sikeres.
+
+PR258 exactb5cefd4e és PR259 exact9b1a2e22 review kész, egyik NINCS integrálva.
+60eeab4a commitban plans/NATIVE_PR258_REVIEW_FOLLOWUP.md és
+NATIVE_PR259_REVIEW_FOLLOWUP.md visszaadható a saját meglévő chateknek.
+258: folyamatban lévő preview késői publish invalidálása cancel után és readiness/
+fallback célzott regresszió. 259: comparison isCurrent + approve egy reentráns
+metadata lease alatt és Snapshot epoch-Continuation kötés, valódi stale-program/
+restore/active/dupla approval regressziók. Mindkettő compile/runtime UNRUN,
+nincs merge/close. Fájlhatár foglalt, main változatlan.
 ## Aktív közös CI és további root UI-delta – 2026-10-26
 
 Actions40333452302 elindítva workflow_dispatch-kal, exact checkout
