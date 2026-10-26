@@ -86,6 +86,14 @@ final class SamsungSdkReader {
             this.store = store; this.granted = granted; this.requireForeground = requireForeground;
         }
         boolean allowed(DataType type) { return granted.contains(Permission.of(type, AccessType.READ)); }
+        // One SDK-type mapping shared by status, reads and Kotlin sync scope checks.
+        Set<String> grantedKeys() {
+            Set<String> keys = new LinkedHashSet<>();
+            for (Map.Entry<String, DataType> entry : types().entrySet()) {
+                if (allowed(entry.getValue())) keys.add(entry.getKey());
+            }
+            return keys;
+        }
         private interface Read { void run() throws Exception; }
         private void safe(DataType type, Read action, String... fields) throws Exception {
             requireForeground.run();

@@ -68,7 +68,7 @@ jobs:
         run: ./gradlew --continue --no-daemon --stacktrace -PnativePhoneUiTests :app:assembleDebug :app:assembleDebugAndroidTest :wear:assembleDebug
 
       - name: Run native unit tests
-        run: ./gradlew --continue --no-daemon --stacktrace :app:testDebugUnitTest :wear:testDebugUnitTest :shared:testDebugUnitTest
+        run: ./gradlew --continue --no-daemon --stacktrace -PnativeTestDiagnostics :app:testDebugUnitTest :wear:testDebugUnitTest :shared:testDebugUnitTest
 
       - name: Prepare existing release keystore
         shell: bash

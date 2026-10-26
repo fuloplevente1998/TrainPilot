@@ -125,22 +125,7 @@ object SamsungHealthRepository {
     }
 
     /** Real SDK read. Never substitute an empty/fresh day for unavailable data. */
-    private fun grantScope(reader: SamsungSdkReader.Reader): Set<String> {
-        val types = listOf(
-            com.samsung.android.sdk.health.data.data.DataTypes.STEPS,
-            com.samsung.android.sdk.health.data.data.DataTypes.ACTIVITY_SUMMARY,
-            com.samsung.android.sdk.health.data.data.DataTypes.ACTIVITY_SUMMARY,
-            com.samsung.android.sdk.health.data.data.DataTypes.ACTIVITY_SUMMARY,
-            com.samsung.android.sdk.health.data.data.DataTypes.EXERCISE,
-            com.samsung.android.sdk.health.data.data.DataTypes.HEART_RATE,
-            com.samsung.android.sdk.health.data.data.DataTypes.SLEEP,
-            com.samsung.android.sdk.health.data.data.DataTypes.BODY_COMPOSITION,
-            com.samsung.android.sdk.health.data.data.DataTypes.BODY_COMPOSITION,
-            com.samsung.android.sdk.health.data.data.DataTypes.BLOOD_OXYGEN,
-            com.samsung.android.sdk.health.data.data.DataTypes.ENERGY_SCORE
-        )
-        return PERMISSION_KEYS.zip(types).filter { (_, type) -> reader.allowed(type) }.map { it.first }.toSet()
-    }
+    private fun grantScope(reader: SamsungSdkReader.Reader): Set<String> = reader.grantedKeys()
 
     /** Permission-only SDK IPC. Call outside every journal/metadata lock. */
     internal suspend fun readGrantScope(context: Context, guard: () -> Unit): Set<String> = withContext(Dispatchers.IO) {
