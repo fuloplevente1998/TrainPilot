@@ -182,10 +182,11 @@ internal object NativeProgramEditor {
             val original = opened?.let { db.programDao().getProgramWithDaysById(it.program.id) }
             if (opened != null) assertUnchanged(opened, original)
             if (restoreProgram != null) {
-                val factory = db.programDao().getProgramWithDaysById(restoreProgram.program.id)
+                val factory = requireNotNull(db.programDao().getProgramWithDaysById(restoreProgram.program.id))
+                val target = requireNotNull(original)
                 assertUnchanged(restoreProgram, factory)
-                check(factory!!.program.builtin && factory.program.id == "home-basic" &&
-                    original!!.program.sourceTemplateId == factory.program.id &&
+                check(factory.program.builtin && factory.program.id == "home-basic" &&
+                    target.program.sourceTemplateId == factory.program.id &&
                     restoreDayId in setOf("A", "B")) { "Factory day no longer matches; reopen preview" }
                 val factoryDay = factory.days.single { it.dayId == restoreDayId }
                 val restored = d.days.single { it.id == restoreDayId }
@@ -193,7 +194,7 @@ internal object NativeProgramEditor {
                     encodeEntry(JSONArray(factoryDay.exercisesJson).get(ix))
                 }) { "Factory preview changed; reopen preview" }
                 val factoryIds = restored.entries.map(::exerciseId).toSet()
-                val storedRx = JSONObject(original.program.rawJson).optJSONObject("prescriptions")
+                val storedRx = JSONObject(target.program.rawJson).optJSONObject("prescriptions")
                 val editableKeys = setOf("sets", "reps", "weight", "rest", "trial")
                 val actualChanges = factoryIds.filter { id ->
                     storedRx?.optJSONObject(id)?.keys()?.asSequence()?.any { it in editableKeys } == true
