@@ -361,7 +361,7 @@
     {
       "featureId": "B01",
       "feature": "Programnap/gyors/kültéri indítás és a megfelelő korábbi súly/ismétlés előtöltése",
-      "mainEntry": "www/index.html:L447 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L17173 (function merge(draft,result); app-part-081.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "active_workout",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/navigation/TrainPilotNavigation.kt:L112",
       "callerChain": "startWorkout → onEditorVisible → startProgramWorkout",
@@ -372,12 +372,20 @@
       "status": "IMPLEMENTED_UNVERIFIED",
       "severity": "P1",
       "gap": "Execution, real data, main final JS override and UI acceptance not independently verified",
-      "acceptanceScenario": "From active_workout, perform Programnap/gyors/kültéri indítás és a megfelelő korábbi súly/ismétlés előtöltése, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From active_workout, perform Programnap/gyors/kültéri indítás és a megfelelő korábbi súly/ismétlés előtöltése, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "function merge(draft,result)",
+        "originalLine": 17173,
+        "rawFile": "app-part-081.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "490079dacb746606b3c4e0cfae0685ed42ee555a349b41037bc284006b2b273f",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "B02",
       "feature": "Sorozat hozzáadás/törlés, értékszerkesztés, rögzítés és teljesítettség",
-      "mainEntry": "www/index.html:L996 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L15246 (toggleSet=function; app-part-070.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "active_workout",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt:L243",
       "callerChain": "onEditSet → editSet → untraced underlying result",
@@ -388,12 +396,20 @@
       "status": "IMPLEMENTED_UNVERIFIED",
       "severity": "P1",
       "gap": "Execution, real data, main final JS override and UI acceptance not independently verified",
-      "acceptanceScenario": "From active_workout, perform Sorozat hozzáadás/törlés, értékszerkesztés, rögzítés és teljesítettség, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From active_workout, perform Sorozat hozzáadás/törlés, értékszerkesztés, rögzítés és teljesítettség, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "toggleSet=function",
+        "originalLine": 15246,
+        "rawFile": "app-part-070.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "52227731371dc8453cd254793f2317fd7df04a1e83817091247d43924f73246e",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "B03",
       "feature": "Gyakorlat hozzáadása, előző/következő/közvetlen váltás",
-      "mainEntry": "www/index.html:L1001 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L15248 (nextExercise=function; app-part-070.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "active_workout",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt:L219",
       "callerChain": "selectExercise → addExerciseToWorkout → selectExercise",
@@ -404,12 +420,20 @@
       "status": "IMPLEMENTED_UNVERIFIED",
       "severity": "P2",
       "gap": "Execution, real data, main final JS override and UI acceptance not independently verified",
-      "acceptanceScenario": "From active_workout, perform Gyakorlat hozzáadása, előző/következő/közvetlen váltás, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From active_workout, perform Gyakorlat hozzáadása, előző/következő/közvetlen váltás, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "nextExercise=function",
+        "originalLine": 15248,
+        "rawFile": "app-part-070.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "52227731371dc8453cd254793f2317fd7df04a1e83817091247d43924f73246e",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "B04",
       "feature": "Visszavonás, megfelelő edzés/sorozat célzása",
-      "mainEntry": "www/index.html:L998 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L19491 (async function undo; app-part-089.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "active_workout",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt:L208",
       "callerChain": "undoLastSet → undoLastSet → undo",
@@ -420,12 +444,20 @@
       "status": "IMPLEMENTED_UNVERIFIED",
       "severity": "P1",
       "gap": "Execution, real data, main final JS override and UI acceptance not independently verified",
-      "acceptanceScenario": "From active_workout, perform Visszavonás, megfelelő edzés/sorozat célzása, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From active_workout, perform Visszavonás, megfelelő edzés/sorozat célzása, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "async function undo",
+        "originalLine": 19491,
+        "rawFile": "app-part-089.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "0936cf7a94e2c9effe61c0add61ff12faa96b05734ec6d2d62aefb3fe9f51210",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "B05",
       "feature": "Alsó sorozatstopper, indítás/stop/reset, egyoldali és kétoldali mérés",
-      "mainEntry": "www/index.html:L834 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L6972 (tp1481; app-part-033.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "active_workout",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt:L262",
       "callerChain": "toggleSetStopwatch → toggleSetStopwatch → untraced underlying result",
@@ -436,12 +468,20 @@
       "status": "IMPLEMENTED_UNVERIFIED",
       "severity": "P1",
       "gap": "Execution, real data, main final JS override and UI acceptance not independently verified",
-      "acceptanceScenario": "From active_workout, perform Alsó sorozatstopper, indítás/stop/reset, egyoldali és kétoldali mérés, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From active_workout, perform Alsó sorozatstopper, indítás/stop/reset, egyoldali és kétoldali mérés, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "tp1481",
+        "originalLine": 6972,
+        "rawFile": "app-part-033.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "d844c8d0c18879e0def9771bae3f2a0488dcc9bba14fc7a2dee1dc776e1f2451",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "B06",
       "feature": "Pozitív explicit időmérés-stop automatikus rögzítése, két pozitív oldal feltétele",
-      "mainEntry": "www/index.html:L834 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L6972 (tp1481; app-part-033.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "active_workout",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt:L263",
       "callerChain": "resetSetStopwatch → toggleSetStopwatch → stopStopwatch",
@@ -452,12 +492,20 @@
       "status": "IMPLEMENTED_UNVERIFIED",
       "severity": "P1",
       "gap": "Execution, real data, main final JS override and UI acceptance not independently verified",
-      "acceptanceScenario": "Positive left+right completion, zero/reset/pause never complete"
+      "acceptanceScenario": "Positive left+right completion, zero/reset/pause never complete",
+      "mainEvidence": {
+        "symbolToken": "tp1481",
+        "originalLine": 6972,
+        "rawFile": "app-part-033.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "d844c8d0c18879e0def9771bae3f2a0488dcc9bba14fc7a2dee1dc776e1f2451",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "B07",
       "feature": "Pihenő, pause/resume, átugrás, ±15 mp, gyakorlatváltás után is megmaradó idő",
-      "mainEntry": "www/index.html:L834 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L18672 (rest; app-part-086.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "active_workout",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt:L375",
       "callerChain": "adjustRestTimer → controlRest → controlRest",
@@ -468,12 +516,20 @@
       "status": "IMPLEMENTED_UNVERIFIED",
       "severity": "P1",
       "gap": "Execution, real data, main final JS override and UI acceptance not independently verified",
-      "acceptanceScenario": "Rest skip/-15/+15 and switch exercise without restarting rest"
+      "acceptanceScenario": "Rest skip/-15/+15 and switch exercise without restarting rest",
+      "mainEvidence": {
+        "symbolToken": "rest",
+        "originalLine": 18672,
+        "rawFile": "app-part-086.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "1d271385e755c06ad8004eb52e8f2a15d063937cf8ceecb36177d27b892b8ba0",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "B08",
       "feature": "Intervallum munka/pihenő/kör, hang/rezgés, edzés- és globális preset, auto/nem-auto léptetés",
-      "mainEntry": "www/index.html:L1707 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L18631 (function config(v); app-part-085.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "active_workout/settings",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt:L269",
       "callerChain": "configureIntervals → configureIntervals → normalized",
@@ -484,12 +540,20 @@
       "status": "PARTIAL",
       "severity": "P2",
       "gap": "Global timer preset input/non-autoAdvance UI not proven",
-      "acceptanceScenario": "From active_workout/settings, perform Intervallum munka/pihenő/kör, hang/rezgés, edzés- és globális preset, auto/nem-auto léptetés, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From active_workout/settings, perform Intervallum munka/pihenő/kör, hang/rezgés, edzés- és globális preset, auto/nem-auto léptetés, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "function config(v)",
+        "originalLine": 18631,
+        "rawFile": "app-part-085.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "5897a825129743f33ba9dfb912ec085d2f8b979ed2343ef0bd2841a9b4b3659f",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "B09",
       "feature": "Automata edzésvezérlés, natív háttéridőzítő, zárolt képernyő alatti állapot/értesítés",
-      "mainEntry": "www/index.html:L2269 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L18711 (automatic; app-part-086.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "active_workout",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt:L176",
       "callerChain": "toggleWorkoutPause → observeIntervalTimer → untraced underlying result",
@@ -500,12 +564,20 @@
       "status": "PLATFORM_DEVICE_PENDING",
       "severity": "P1",
       "gap": "Background process-death notification/clock requires real Android",
-      "acceptanceScenario": "From active_workout, perform Automata edzésvezérlés, natív háttéridőzítő, zárolt képernyő alatti állapot/értesítés, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From active_workout, perform Automata edzésvezérlés, natív háttéridőzítő, zárolt képernyő alatti állapot/értesítés, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "automatic",
+        "originalLine": 18711,
+        "rawFile": "app-part-086.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "1d271385e755c06ad8004eb52e8f2a15d063937cf8ceecb36177d27b892b8ba0",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "B10",
       "feature": "Edzésszünet, folytatás, tartós draft és kilépés",
-      "mainEntry": "www/index.html:L447 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L19055 (workoutPaused; app-part-088.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "home/active_workout",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt:L118",
       "callerChain": "leaveWorkout → leaveWorkout → untraced underlying result",
@@ -516,12 +588,20 @@
       "status": "IMPLEMENTED_UNVERIFIED",
       "severity": "P1",
       "gap": "Execution, real data, main final JS override and UI acceptance not independently verified",
-      "acceptanceScenario": "From home/active_workout, perform Edzésszünet, folytatás, tartós draft és kilépés, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From home/active_workout, perform Edzésszünet, folytatás, tartós draft és kilépés, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "workoutPaused",
+        "originalLine": 19055,
+        "rawFile": "app-part-088.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "22059f4a6c7c7654455786722fa776ee56f67553fb90d602c1ef00a292b66083",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "B11",
       "feature": "GPS szándék/választás aktivitásonként, idő/táv/sebesség/tempó, pontszám/pontosság, útvonal",
-      "mainEntry": "www/index.html:L1807 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L15180 (tp106StartGPS; app-part-070.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "quick_outdoor/active_workout",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt:L150",
       "callerChain": "toggleGpsTracking → toggleGpsTracking → untraced underlying result",
@@ -532,12 +612,20 @@
       "status": "PLATFORM_DEVICE_PENDING",
       "severity": "P1",
       "gap": "Location toggle/permission/poor-accuracy requires physical GPS",
-      "acceptanceScenario": "Explicit GPS intent, disable system location, continue clock with no invented points"
+      "acceptanceScenario": "Explicit GPS intent, disable system location, continue clock with no invented points",
+      "mainEvidence": {
+        "symbolToken": "tp106StartGPS",
+        "originalLine": 15180,
+        "rawFile": "app-part-070.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "52227731371dc8453cd254793f2317fd7df04a1e83817091247d43924f73246e",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "B12",
       "feature": "Kézi idő/táv, explicit Mérés befejezése és pozitív GPS-mérés automatikus készre jelölése",
-      "mainEntry": "www/index.html:L1807 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L15200 (tp206CompleteStoppedGps; app-part-070.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "active_workout",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt:L153",
       "callerChain": "requestGps → toggleGpsTracking → finishGps",
@@ -548,12 +636,20 @@
       "status": "IMPLEMENTED_UNVERIFIED",
       "severity": "P1",
       "gap": "Execution, real data, main final JS override and UI acceptance not independently verified",
-      "acceptanceScenario": "From active_workout, perform Kézi idő/táv, explicit Mérés befejezése és pozitív GPS-mérés automatikus készre jelölése, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From active_workout, perform Kézi idő/táv, explicit Mérés befejezése és pozitív GPS-mérés automatikus készre jelölése, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "tp206CompleteStoppedGps",
+        "originalLine": 15200,
+        "rawFile": "app-part-070.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "52227731371dc8453cd254793f2317fd7df04a1e83817091247d43924f73246e",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "B13",
       "feature": "Privát útvonal, vegyes telefon/óra szakaszok és edzés utáni térkép",
-      "mainEntry": "www/index.html:L2350 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L19534 (function merge(workout,bindings); app-part-089.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "active_workout/journal",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt:L258",
       "callerChain": "openRouteMap → openRouteMap → untraced underlying result",
@@ -564,12 +660,20 @@
       "status": "PARTIAL",
       "severity": "P1",
       "gap": "Mixed Watch/Phone private route segment visibility unverified",
-      "acceptanceScenario": "From active_workout/journal, perform Privát útvonal, vegyes telefon/óra szakaszok és edzés utáni térkép, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From active_workout/journal, perform Privát útvonal, vegyes telefon/óra szakaszok és edzés utáni térkép, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "function merge(workout,bindings)",
+        "originalLine": 19534,
+        "rawFile": "app-part-089.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "0936cf7a94e2c9effe61c0add61ff12faa96b05734ec6d2d62aefb3fe9f51210",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "B14",
       "feature": "Érvényes élő Watch/BLE pulzus, hiányzó/elavult forrás megkülönböztetése",
-      "mainEntry": "www/index.html:L207 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L16002 (function heart(); app-part-075.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "active_workout",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt:L590",
       "callerChain": "heartRate → observeLiveHeartRate → untraced underlying result",
@@ -580,12 +684,20 @@
       "status": "PLATFORM_DEVICE_PENDING",
       "severity": "P1",
       "gap": "Watch/BLE stale HR vs unavailable dash is device-gated; BLOCKED UI anchor android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt:UNRESOLVED(heartRate)",
-      "acceptanceScenario": "Disconnect HR source and verify no stale bpm"
+      "acceptanceScenario": "Disconnect HR source and verify no stale bpm",
+      "mainEvidence": {
+        "symbolToken": "function heart()",
+        "originalLine": 16002,
+        "rawFile": "app-part-075.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "291f88d6b7ef0045a2a3204f91452460b9553c74ac9744cd556f423512c70b3b",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "B15",
       "feature": "Tényleges RIR rögzítése, gyakorlat- és sorozatszintű adatok megőrzése",
-      "mainEntry": "www/index.html:L1007 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L20241 (tp197RirSave; app-part-092.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "active_workout",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt:L245",
       "callerChain": "onSetRir → setSetRir → untraced underlying result",
@@ -596,12 +708,20 @@
       "status": "IMPLEMENTED_UNVERIFIED",
       "severity": "P2",
       "gap": "Execution, real data, main final JS override and UI acceptance not independently verified",
-      "acceptanceScenario": "From active_workout, perform Tényleges RIR rögzítése, gyakorlat- és sorozatszintű adatok megőrzése, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From active_workout, perform Tényleges RIR rögzítése, gyakorlat- és sorozatszintű adatok megőrzése, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "tp197RirSave",
+        "originalLine": 20241,
+        "rawFile": "app-part-092.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "aeb48699f1a2566b229254fb0948718e3ad230c742dd7219636451db440ba0bf",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "B16",
       "feature": "Edzés-/gyakorlat-visszajelzés, hat effort-állapot, fájdalom, megjegyzések",
-      "mainEntry": "www/index.html:L1045 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L16869 (TrainPilotWorkoutFeedback=; app-part-080.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "active_workout/finish",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt:L465",
       "callerChain": "FinishWorkoutDialog → finishWorkout → finishWorkout",
@@ -612,12 +732,20 @@
       "status": "PARTIAL",
       "severity": "P2",
       "gap": "All six feedback/effort/pain/note values not roundtrip proven",
-      "acceptanceScenario": "From active_workout/finish, perform Edzés-/gyakorlat-visszajelzés, hat effort-állapot, fájdalom, megjegyzések, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From active_workout/finish, perform Edzés-/gyakorlat-visszajelzés, hat effort-állapot, fájdalom, megjegyzések, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "TrainPilotWorkoutFeedback=",
+        "originalLine": 16869,
+        "rawFile": "app-part-080.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "5ba7d9f30ead0a6fc2b3b2c6b836adb25483bf85b43dcf5797eb8242c90b533e",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "B17",
       "feature": "Mentés, szüneteltetve kilépés, külön elvetés; hibakezelés/újrapróbálás",
-      "mainEntry": "www/index.html:L1176 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L17256 (function commit(value); app-part-081.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "active_workout/finish",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt:L416",
       "callerChain": "workout_discard → discardWorkout → discardWorkout",
@@ -628,12 +756,20 @@
       "status": "IMPLEMENTED_UNVERIFIED",
       "severity": "P1",
       "gap": "Failure/retry must not emit premature saved receipt",
-      "acceptanceScenario": "Inject storage failure, retry once, verify single history row"
+      "acceptanceScenario": "Inject storage failure, retry once, verify single history row",
+      "mainEvidence": {
+        "symbolToken": "function commit(value)",
+        "originalLine": 17256,
+        "rawFile": "app-part-081.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "490079dacb746606b3c4e0cfae0685ed42ee555a349b41037bc284006b2b273f",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "B18",
       "feature": "Meglévő érintésvédelem és egy folyamatos3 mp-es feloldás, haptikus sorozatjelzés",
-      "mainEntry": "www/index.html:L834 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L20532 (haptic; app-part-093.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "active_workout/wear",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/settings/SettingsScreen.kt:L297",
       "callerChain": "hapticSetRecorded227 → setHapticSetRecorded227 → untraced underlying result",
@@ -644,7 +780,15 @@
       "status": "PARTIAL",
       "severity": "P2",
       "gap": "Execution, real data, main final JS override and UI acceptance not independently verified",
-      "acceptanceScenario": "From active_workout/wear, perform Meglévő érintésvédelem és egy folyamatos3 mp-es feloldás, haptikus sorozatjelzés, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From active_workout/wear, perform Meglévő érintésvédelem és egy folyamatos3 mp-es feloldás, haptikus sorozatjelzés, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "haptic",
+        "originalLine": 20532,
+        "rawFile": "app-part-093.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "ae1c382e768babd1ed00d8e78a630f0a1ce8df5bf1996d50949a2a162b1da3fb",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "C01",
@@ -1996,6 +2140,10 @@
           null
         ]
       ]
+    },
+    "B": {
+      "resolved": 18,
+      "unresolved": []
     }
   }
 }
