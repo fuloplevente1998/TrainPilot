@@ -99,6 +99,26 @@ class NativeTrainingModeChangeTest {
         assertEquals("linear", NativeTrainingModes.resolve(applied, "other").progressionMode)
     }
 
+    @Test fun globalPreviewBeforeAndAfterAreIndependentOfActiveProgram() {
+        val saved = selected()
+        saved.getJSONObject("byProgram").put("p", JSONObject()
+            .put("trainingStyle", "hit").put("progressionMode", "rir")
+            .put("explicitChoice", true))
+        val preview = NativeTrainingModeChange.prepare(
+            saved.toString(), "p", "global", null, "normal", "linear")
+        assertEquals("global", preview.before.source)
+        assertEquals("normal", preview.before.trainingStyle)
+        assertEquals("double", preview.before.progressionMode)
+        assertEquals("normal", preview.after.trainingStyle)
+        val changed = NativeTrainingModeChange.next(preview)
+        assertEquals("normal", changed.getJSONObject("defaults").getString("trainingStyle"))
+        assertEquals("linear", changed.getJSONObject("defaults").getString("progressionMode"))
+        assertEquals("hit", changed.getJSONObject("byProgram")
+            .getJSONObject("p").getString("trainingStyle"))
+        assertEquals("rir", changed.getJSONObject("byProgram")
+            .getJSONObject("p").getString("progressionMode"))
+    }
+
     @Test fun malformedUndoAndScopeAreNotApplied() {
         val raw = selected().put("undo", JSONObject().put("scope", "global").put("previous", "corrupt")).toString()
         assertNull(NativeTrainingModeChange.undoValue(raw, "global", null))
