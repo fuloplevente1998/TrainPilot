@@ -292,7 +292,7 @@ fun ProgramCardItem(
     language: String = "hu",
     onActivate: () -> Unit,
     onStartDay: (String) -> Unit,
-    onRestoreDay: (String) -> Unit,
+    onRestoreDay: (String) -> Unit = {},
     onEdit: () -> Unit
 ) {
     val colors = LocalTrainPilotColors.current
