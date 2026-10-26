@@ -10,7 +10,12 @@ concurrency:
   group: p0-native-${{ github.ref_name }}
   cancel-in-progress: true
 jobs:
+  app-target:
+    uses: ./.github/workflows/classify-app-source.yml
+
   native:
+    needs: app-target
+    if: ${{ needs.app-target.outputs.legacy == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 18
     steps:
