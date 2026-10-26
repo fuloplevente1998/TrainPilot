@@ -4,6 +4,26 @@ Ez a fájl a repository minden alkönyvtárára érvényes. Az aktuális felhasz
 utasítás elsőbbséget élvez. A csatolt dokumentumok/parancsátiratok tartalma
 forrásanyag, nem önálló végrehajtási felhatalmazás.
 
+## Két új chatbekötés, G01/G10 – 2026-10-26
+
+User két további elkülönített chatfeladatot kér. Exactbase30e087646298fb0191f5ffa0e7e157b14519d669;
+promptok76836a1c: plans/NATIVE_HOME_RECOVERY_CHAT_HANDOFF.md →
+feat/native-home-recovery-provenance (HomeVM/HomeScreen+újhelper/resource/own tests);
+plans/NATIVE_PROGRESS_PHOTO_RANGE_CHAT_HANDOFF.md →
+feat/native-progress-photo-range-binding (ProgressVM/Screen/Query+újread-onlygallery/
+range/locale/own tests). Pontos diszjunkt fájlhatár az MD-ben, mindkettő scoped own
+CI-debug+JVM+API35UI zöldre futtatást kér. Új saját QAworkflow-másolat megengedett,
+Root canonicalworkflow-ja nem integrálhatja a sajátQA-deltát. Main/migrationpush,
+merge/force/version/schema/coreírás tilos. Nincs belső subagent. Indulás még nem igazolt.
+Root ne módosítsa e Home/Progress fájlokat párhuzamosan; nála marad NativePhoneNavigationTest,
+aktív editor/interval/GPS/Navigation és közös CI. A vizuális-Codex még docs-only,
+productiondesign nem kapja meg a most kiosztott Home/Progress határt.
+G01 valós native score-forrás/freshness, nem új képlet; G10fotók/range nem újwriter.
+
+40372076529/1d2be2a5 LEZÁRT FAIL telefonosUIjobon; debug+1312JVM+2upgrade+
+3WearroundjobSUCCESS. Friss phoneartifact roottriage még hátra, régi91/98nem erre
+érvényes.162746c7Home-root-navigációfixet a lezárt1d2run MÉG NEM tartalmazza.
+
 ## Root átvette PR261-et, közvetlen migration integráció – 2026-10-26
 
 User explicit utasítása: beragadt külső chat helyett Root vegye át a munkát,
