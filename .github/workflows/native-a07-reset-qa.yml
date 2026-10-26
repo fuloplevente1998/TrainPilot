@@ -103,6 +103,69 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
+      - name: Prepare A07 API35 runner
+        shell: bash
+        run: |
+          cat > "$GITHUB_WORKSPACE/a07-ui-run.sh" <<'SH'
+          #!/usr/bin/env bash
+          set -u
+          OUT="$GITHUB_WORKSPACE/a07-ui-results"
+          mkdir -p "$OUT/screenshots" "$OUT/raw"
+          cd "$GITHUB_WORKSPACE/android"
+          set +e
+          set -o pipefail
+          ./gradlew --no-daemon --stacktrace -PnativePhoneUiTests \
+            -Pandroid.testInstrumentationRunnerArguments.class=com.repforge.app.NativeProgramActionsUiTest \
+            :app:connectedDebugAndroidTest 2>&1 | tee "$OUT/raw/connected-gradle.log"
+          STATUS=${PIPESTATUS[0]}
+          set +o pipefail
+
+          for name in preview-cancel confirmed stale-error migrated-preview; do
+            adb pull "/sdcard/Android/data/com.repforge.app/files/a07-${name}.png" \
+              "$OUT/screenshots/a07-${name}.png" >/dev/null 2>&1 || true
+          done
+
+          find app/build/outputs/androidTest-results -type f -name '*.xml' -exec cp --parents {} "$OUT/raw/" \; 2>/dev/null || true
+          find app/build/reports/androidTests -type f -exec cp --parents {} "$OUT/raw/" \; 2>/dev/null || true
+
+          python3 - "$OUT" <<'PY'
+          import glob, os, sys, xml.etree.ElementTree as ET
+          out=sys.argv[1]
+          files=glob.glob(os.path.join(out,"raw","**","*.xml"), recursive=True)
+          totals=dict(tests=0,failures=0,errors=0,skipped=0)
+          for path in files:
+              try:
+                  root=ET.parse(path).getroot()
+              except ET.ParseError:
+                  continue
+              if root.tag == "testsuites":
+                  suites=list(root)
+              else:
+                  suites=[root]
+              for suite in suites:
+                  for key in totals:
+                      totals[key]+=int(suite.attrib.get(key,0))
+          shots=glob.glob(os.path.join(out,"screenshots","*.png"))
+          line="A07_UI_TOTALS " + " ".join(f"{k}={v}" for k,v in totals.items()) + f" xml_files={len(files)} png={len(shots)}"
+          print(line)
+          open(os.path.join(out,"ui-summary.txt"),"w",encoding="utf-8").write(line+"\n")
+          PY
+
+          {
+            find app/build/outputs/apk/debug -type f -name '*.apk' -print0 2>/dev/null
+            find app/build/outputs/apk/androidTest/debug -type f -name '*.apk' -print0 2>/dev/null
+            find "$OUT/screenshots" -type f -name '*.png' -print0 2>/dev/null
+          } | xargs -0 -r sha256sum > "$OUT/SHA256SUMS.txt"
+          echo "A07_SHA256_MANIFEST"
+          cat "$OUT/SHA256SUMS.txt"
+
+          for required in preview-cancel confirmed stale-error migrated-preview; do
+            test -s "$OUT/screenshots/a07-${required}.png" || STATUS=1
+          done
+          test -s "$OUT/SHA256SUMS.txt" || STATUS=1
+          exit "$STATUS"
+          SH
+          chmod +x "$GITHUB_WORKSPACE/a07-ui-run.sh"
       - name: Run only NativeProgramActionsUiTest on API35
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -112,63 +175,7 @@ jobs:
           profile: pixel_2
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 3072
-          script: |
-            set -u
-            OUT="$GITHUB_WORKSPACE/a07-ui-results"
-            mkdir -p "$OUT/screenshots" "$OUT/raw"
-            cd "$GITHUB_WORKSPACE/android"
-            set +e
-            set -o pipefail
-            ./gradlew --no-daemon --stacktrace -PnativePhoneUiTests \
-              -Pandroid.testInstrumentationRunnerArguments.class=com.repforge.app.NativeProgramActionsUiTest \
-              :app:connectedDebugAndroidTest 2>&1 | tee "$OUT/raw/connected-gradle.log"
-            STATUS=${PIPESTATUS[0]}
-            set +o pipefail
-
-            for name in preview-cancel confirmed stale-error migrated-preview; do
-              adb pull "/sdcard/Android/data/com.repforge.app/files/a07-${name}.png" \
-                "$OUT/screenshots/a07-${name}.png" >/dev/null 2>&1 || true
-            done
-
-            find app/build/outputs/androidTest-results -type f -name '*.xml' -exec cp --parents {} "$OUT/raw/" \; 2>/dev/null || true
-            find app/build/reports/androidTests -type f -exec cp --parents {} "$OUT/raw/" \; 2>/dev/null || true
-
-            python3 - "$OUT" <<'PY'
-            import glob, os, sys, xml.etree.ElementTree as ET
-            out=sys.argv[1]
-            files=glob.glob(os.path.join(out,"raw","**","*.xml"), recursive=True)
-            totals=dict(tests=0,failures=0,errors=0,skipped=0)
-            for path in files:
-                try:
-                    root=ET.parse(path).getroot()
-                except ET.ParseError:
-                    continue
-                if root.tag == "testsuites":
-                    suites=list(root)
-                else:
-                    suites=[root]
-                for suite in suites:
-                    for key in totals:
-                        totals[key]+=int(suite.attrib.get(key,0))
-            shots=glob.glob(os.path.join(out,"screenshots","*.png"))
-            line="A07_UI_TOTALS " + " ".join(f"{k}={v}" for k,v in totals.items()) + f" xml_files={len(files)} png={len(shots)}"
-            print(line)
-            open(os.path.join(out,"ui-summary.txt"),"w",encoding="utf-8").write(line+"\n")
-            PY
-
-            {
-              find app/build/outputs/apk/debug -type f -name '*.apk' -print0 2>/dev/null
-              find app/build/outputs/apk/androidTest/debug -type f -name '*.apk' -print0 2>/dev/null
-              find "$OUT/screenshots" -type f -name '*.png' -print0 2>/dev/null
-            } | xargs -0 -r sha256sum > "$OUT/SHA256SUMS.txt"
-            echo "A07_SHA256_MANIFEST"
-            cat "$OUT/SHA256SUMS.txt"
-
-            for required in preview-cancel confirmed stale-error migrated-preview; do
-              test -s "$OUT/screenshots/a07-${required}.png" || STATUS=1
-            done
-            test -s "$OUT/SHA256SUMS.txt" || STATUS=1
-            exit "$STATUS"
+          script: bash "$GITHUB_WORKSPACE/a07-ui-run.sh"
       - name: Upload A07 API35 raw evidence
         if: always()
         uses: actions/upload-artifact@v4
