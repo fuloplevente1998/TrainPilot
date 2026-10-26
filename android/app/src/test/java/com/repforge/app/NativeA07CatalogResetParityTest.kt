@@ -57,6 +57,7 @@ class NativeA07CatalogResetParityTest {
     }
 
     @After fun cleanup() {
+        runBlocking { settings.setActiveProgramId("home-basic") }
         db.close()
         ActiveWorkoutStore.clear(context)
         (executionField.get(null) as? PhoneWorkoutExecutionStore)?.close()
