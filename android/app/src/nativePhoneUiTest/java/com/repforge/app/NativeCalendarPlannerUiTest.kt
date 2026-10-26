@@ -64,8 +64,8 @@ internal class CalendarPlannerUiHarness(private val compose: ComposeTestRule) {
                     }
                 }
                 // Own key prevents reuse of a ViewModel installed by MainActivity navigation.
-                model = ViewModelProvider(activity, customFactory)
-                    ["calendar_planner_ui_isolated_model", CalendarViewModel::class.java]
+                model = ViewModelProvider(activity, customFactory).get(
+                    "calendar_planner_ui_isolated_model", CalendarViewModel::class.java)
                 // Replaces MainActivity's default composition; never mounts a second one.
                 activity.setContent {
                     TrainPilotTheme(TrainPilotUserSettings()) {
