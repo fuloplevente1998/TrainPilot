@@ -10,7 +10,7 @@ import java.io.OutputStream
 import java.security.MessageDigest
 import java.util.Locale
 import java.util.zip.ZipEntry
-import java.util.zip.ZipInputStream
+import java.util.zip.ZipFile
 
 /** Bounded, allow-listed ZIP extraction shared by BackupRestoreManager and JVM regressions. */
 internal object ArchiveIO {
@@ -41,42 +41,56 @@ internal object ArchiveIO {
         totalLimit: Long,
         entryLimit: Int
     ): Set<String> {
-        val names = HashSet<String>()
-        var total = 0L
-        ZipInputStream(BufferedInputStream(input)).use { zip ->
-            var entry: ZipEntry? = zip.nextEntry
-            while (entry != null) {
-                val name = entry.name
-                if (!names.add(name) ||
-                    names.size > entryLimit ||
-                    entry.isDirectory ||
-                    !ALLOWED_ENTRY_REGEX.matches(name)
-                ) {
-                    throw IOException("Invalid or duplicate ZIP entry.")
-                }
-                val file = File(directory, name)
-                val parent = file.parentFile
-                if (parent == null || (!parent.isDirectory && !parent.mkdirs())) {
-                    throw IOException("Cannot create archive directory.")
-                }
-                val bytes: Long
-                FileOutputStream(file).use { out ->
-                    bytes = copy(
-                        zip,
-                        out,
-                        (if (name.startsWith("photos/")) photoLimit else jsonLimit).toLong()
-                    )
-                    out.fd.sync()
-                }
-                total += bytes
-                if (bytes == 0L || total > totalLimit) {
-                    throw IOException("Empty or oversized archive.")
-                }
-                zip.closeEntry()
-                entry = zip.nextEntry
+        // ZipInputStream accepts a local-file-header-only prefix when the central
+        // directory / end record has been truncated. This is not a complete backup.
+        // Stage the bounded compressed stream OUTSIDE the extraction directory, then
+        // require ZipFile to validate its central directory before any payload is used.
+        val staged = File.createTempFile("verified-archive-", ".zip", directory.parentFile ?: directory)
+        try {
+            FileOutputStream(staged).use { out ->
+                copy(input, out, totalLimit + jsonLimit.toLong())
+                out.fd.sync()
             }
+            val names = HashSet<String>()
+            var total = 0L
+            ZipFile(staged).use { zip ->
+                val entries = zip.entries()
+                while (entries.hasMoreElements()) {
+                    val entry = entries.nextElement()
+                    val name = entry.name
+                    if (!names.add(name) ||
+                        names.size > entryLimit ||
+                        entry.isDirectory ||
+                        !ALLOWED_ENTRY_REGEX.matches(name)
+                    ) {
+                        throw IOException("Invalid or duplicate ZIP entry.")
+                    }
+                    val file = File(directory, name)
+                    val parent = file.parentFile
+                    if (parent == null || (!parent.isDirectory && !parent.mkdirs())) {
+                        throw IOException("Cannot create archive directory.")
+                    }
+                    val bytes: Long
+                    zip.getInputStream(entry).use { input ->
+                        FileOutputStream(file).use { out ->
+                            bytes = copy(
+                                input,
+                                out,
+                                (if (name.startsWith("photos/")) photoLimit else jsonLimit).toLong()
+                            )
+                            out.fd.sync()
+                        }
+                    }
+                    total += bytes
+                    if (bytes == 0L || total > totalLimit) {
+                        throw IOException("Empty or oversized archive.")
+                    }
+                }
+            }
+            return names
+        } finally {
+            if (staged.exists() && !staged.delete()) staged.deleteOnExit()
         }
-        return names
     }
 
     @JvmStatic
