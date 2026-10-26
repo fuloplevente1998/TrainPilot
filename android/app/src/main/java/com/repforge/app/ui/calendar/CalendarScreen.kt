@@ -12,6 +12,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.repforge.app.R
 import com.repforge.app.ui.text.nativeResources
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -33,6 +34,7 @@ internal fun CalendarScreen(starting: Boolean, onStart: (CalendarScheduleEntity)
     val locale = Locale.forLanguageTag(state.language)
     val dateFormat = remember(state.language) { DateTimeFormatter.ofPattern("yyyy. MMMM d.", locale) }
     var editing by remember { mutableStateOf<CalendarScheduleEntity?>(null) }
+    var plannerOpen by remember { mutableStateOf(false) }
     var editorOpen by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf<CalendarScheduleEntity?>(null) }
     val busy = state.busy || starting
@@ -63,6 +65,10 @@ internal fun CalendarScreen(starting: Boolean, onStart: (CalendarScheduleEntity)
                 Text(state.day.format(dateFormat), color = colors.text)
                 Button(onClick = { editing = null; editorOpen = true }, enabled = !busy && state.programs.isNotEmpty(),
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(words[3]) }
+                OutlinedButton(onClick = { plannerOpen = true }, enabled = !busy && state.programs.isNotEmpty(),
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("calendar_planner_open")) {
+                    Text(strings.getString(R.string.calendar_planner_title))
+                }
                 if (state.programs.isEmpty()) Text(words[4], color = colors.muted)
                 if (!state.loaded) CircularProgressIndicator()
                 if (state.loaded && plans.isEmpty() && history.isEmpty()) Text(words[5], color = colors.muted)
@@ -105,6 +111,9 @@ internal fun CalendarScreen(starting: Boolean, onStart: (CalendarScheduleEntity)
     if (editorOpen) CalendarEditor(state, editing, busy, words, onDismiss = { editorOpen = false }, onSave = {
         model.save(it) { editorOpen = false }
     })
+    if (plannerOpen) CalendarPlannerDialog(state, busy, strings, onCancel = {
+        model.cancelPlanner(); plannerOpen = false
+    }, onPreview = model::previewPlanner, onApply = { model.applyPlanner { plannerOpen = false } })
     deleting?.let { row ->
         AlertDialog(onDismissRequest = { if (!busy) deleting = null }, title = { Text(words[14]) },
             text = { Text(words[15]) }, confirmButton = {
@@ -163,6 +172,88 @@ private fun CalendarEditor(state: CalendarUiState, row: CalendarScheduleEntity?,
             if (edit == null) invalid = true else { invalid = false; onSave(edit) }
         }, enabled = !busy && day != null) { Text(words[22]) }
     }, dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text(words[16]) } })
+}
+
+@Composable
+private fun CalendarPlannerDialog(state: CalendarUiState, busy: Boolean, strings: Resources,
+    onCancel: () -> Unit, onPreview: (NativeCalendarPlanner.Settings) -> Unit, onApply: () -> Unit) {
+    val colors = LocalTrainPilotColors.current
+    val initial = state.plannerSettings
+    var programId by remember { mutableStateOf(initial?.programId ?: state.programs.firstOrNull()?.program?.id.orEmpty()) }
+    var date by remember { mutableStateOf((initial?.start ?: state.day).toString()) }
+    var time by remember { mutableStateOf(initial?.time?.toString() ?: "18:00") }
+    var weeks by remember { mutableStateOf((initial?.weeks ?: 4).toString()) }
+    var minutes by remember { mutableStateOf((initial?.minutes ?: 45).toString()) }
+    var first by remember { mutableStateOf(initial?.firstIndex ?: 0) }
+    var mode by remember { mutableStateOf(initial?.mode ?: "alternate") }
+    var weekdays by remember { mutableStateOf(initial?.weekdays ?: setOf(1, 3, 5)) }
+    var invalid by remember { mutableStateOf(false) }
+    val program = state.programs.firstOrNull { it.program.id == programId }
+    val days = program?.days.orEmpty().sortedBy { it.sortOrder }
+    fun input(): NativeCalendarPlanner.Settings = NativeCalendarPlanner.Settings(programId, LocalDate.parse(date),
+        LocalTime.parse(time), minutes.toInt(), weeks.toInt(), first, mode, weekdays)
+    val preview = state.plannerPreview?.takeIf { runCatching { input() == it.settings }.getOrDefault(false) }
+    AlertDialog(onDismissRequest = { if (!busy) onCancel() }, title = { Text(strings.getString(R.string.calendar_planner_title)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()).testTag("calendar_planner_form"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                state.programs.forEach { p ->
+                    TextButton(onClick = { programId = p.program.id; first = 0 }, enabled = !busy,
+                        modifier = Modifier.heightIn(min = 48.dp)) { Text((if (programId == p.program.id) "✓ " else "") + p.program.nameHu) }
+                }
+                listOf("alternate" to R.string.calendar_planner_alternate, "daily" to R.string.calendar_planner_daily,
+                    "weekly" to R.string.calendar_planner_weekly).forEach { (value, label) ->
+                    TextButton(onClick = { mode = value }, enabled = !busy,
+                        modifier = Modifier.heightIn(min = 48.dp).testTag("calendar_planner_mode_$value")) {
+                        Text((if (mode == value) "✓ " else "") + strings.getString(label))
+                    }
+                }
+                if (mode == "weekly") (1..7).forEach { n ->
+                    val value = n % 7
+                    Row {
+                        Checkbox(checked = value in weekdays, enabled = !busy, onCheckedChange = {
+                            weekdays = if (it) weekdays + value else weekdays - value
+                        })
+                        Text(java.time.DayOfWeek.of(n).getDisplayName(java.time.format.TextStyle.FULL, Locale.forLanguageTag(state.language)))
+                    }
+                }
+                @Composable fun field(value: String, label: Int, tag: String, change: (String) -> Unit) {
+                    OutlinedTextField(value, change, label = { Text(strings.getString(label)) }, enabled = !busy,
+                        modifier = Modifier.fillMaxWidth().testTag(tag), singleLine = true)
+                }
+                field(date, R.string.calendar_planner_date, "calendar_planner_date") { date = it }
+                field(time, R.string.calendar_planner_time, "calendar_planner_time") { time = it }
+                field(minutes, R.string.calendar_planner_minutes, "calendar_planner_minutes") { minutes = it }
+                field(weeks, R.string.calendar_planner_weeks, "calendar_planner_weeks") { weeks = it }
+                Text(strings.getString(R.string.calendar_planner_first), color = colors.text)
+                days.forEachIndexed { index, day ->
+                    TextButton(onClick = { first = index }, enabled = !busy, modifier = Modifier.heightIn(min = 48.dp)) {
+                        Text((if (first == index) "✓ " else "") + when (state.language) {
+                            "en" -> day.nameEn; "de" -> day.nameDe; "ro" -> day.nameRo; else -> day.nameHu
+                        })
+                    }
+                }
+                if (invalid) Text(strings.getString(R.string.calendar_planner_invalid), color = colors.dangerText)
+                preview?.let { value ->
+                    Text(strings.getString(R.string.calendar_planner_preview, value.plan.slots.size, value.plan.removed.size),
+                        color = colors.text, modifier = Modifier.testTag("calendar_planner_preview"))
+                    value.plan.slots.forEach { slot -> Text("${slot.date} · ${value.settings.time} · ${slot.dayId}", color = colors.text) }
+                }
+            }
+        }, confirmButton = {
+            if (preview != null) TextButton(onClick = onApply, enabled = !busy && preview.plan.slots.isNotEmpty(),
+                modifier = Modifier.heightIn(min = 48.dp).testTag("calendar_planner_save")) { Text(strings.getString(R.string.calendar_planner_save)) }
+            else TextButton(onClick = {
+                val value = runCatching { input().also {
+                    require(it.weeks in 1..12 && it.minutes in 10..240 && it.firstIndex in days.indices)
+                    require(it.mode != "weekly" || it.weekdays.isNotEmpty())
+                } }.getOrNull()
+                invalid = value == null
+                if (value != null) onPreview(value)
+            }, enabled = !busy, modifier = Modifier.heightIn(min = 48.dp).testTag("calendar_planner_generate")) {
+                Text(strings.getString(R.string.calendar_planner_generate))
+            }
+        }, dismissButton = { TextButton(onClick = onCancel, enabled = !busy,
+            modifier = Modifier.heightIn(min = 48.dp).testTag("calendar_planner_cancel")) { Text(strings.getString(R.string.calendar_planner_cancel)) } })
 }
 
 private fun calendarWords(strings: Resources): List<String> = listOf(

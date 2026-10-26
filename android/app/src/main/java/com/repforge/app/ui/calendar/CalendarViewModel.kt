@@ -24,6 +24,8 @@ internal data class CalendarUiState(
     val month: YearMonth = YearMonth.now(), val day: LocalDate = LocalDate.now(),
     val plans: List<CalendarScheduleEntity> = emptyList(), val history: List<CalendarHistorySummary> = emptyList(),
     val programs: List<ProgramWithDays> = emptyList(), val language: String = "hu",
+    val plannerSettings: NativeCalendarPlanner.Settings? = null,
+    val plannerPreview: NativeCalendarRepository.Preview? = null,
     val busy: Boolean = false, val error: Boolean = false, val loaded: Boolean = false
 )
 
@@ -32,7 +34,32 @@ internal class CalendarViewModel(application: Application) : AndroidViewModel(ap
     private val app = application.applicationContext
     private val db = TrainPilotDatabase.getInstance(app)
     private val repository = NativeCalendarRepository(db) {
-        com.repforge.app.ActiveWorkoutStore.current(app)?.takeIf { it.optBoolean("active") }?.optString("scheduleId")
+        com.repforge.app.ActiveWorkoutStore.current(app)?.takeIf { it.optBoolean("active") || it.optBoolean("workoutPaused") || it.optBoolean("finalizationPending") }?.optString("scheduleId")
+    }
+    private var plannerContinuation: com.repforge.app.NativeDataReplacement.Continuation? = null
+    private var plannerSettingsIdentity: String? = null
+    fun cancelPlanner() { _state.update { it.copy(plannerPreview = null) }; plannerContinuation = null }
+    fun previewPlanner(settings: NativeCalendarPlanner.Settings) = mutate {
+        val continuation = com.repforge.app.NativeDataReplacement.continuationForCurrentData(app)
+        val identity = TrainPilotSettingsStore(app).current().toString()
+        val preview = repository.preview(settings)
+        withContext(Dispatchers.Main) {
+            plannerContinuation = continuation; plannerSettingsIdentity = identity
+            _state.update { it.copy(plannerPreview = preview) }
+        }
+    }
+    fun applyPlanner(saved: () -> Unit) {
+        val preview = _state.value.plannerPreview ?: return
+        val continuation = plannerContinuation ?: return
+        mutate {
+            continuation.requireCurrent(app)
+            check(TrainPilotSettingsStore(app).current().toString() == plannerSettingsIdentity) { "calendarChanged" }
+            repository.applyPreview(preview)
+            withContext(Dispatchers.Main) {
+                _state.update { it.copy(plannerPreview = null, plannerSettings = preview.settings) }
+                saved()
+            }
+        }
     }
     private val month = MutableStateFlow(YearMonth.now())
     private val queryRevision = MutableStateFlow(0)
@@ -40,6 +67,10 @@ internal class CalendarViewModel(application: Application) : AndroidViewModel(ap
     val state = _state.asStateFlow()
 
     init {
+        viewModelScope.launch {
+            val value = withContext(Dispatchers.IO) { repository.plannerSettings() }
+            _state.update { it.copy(plannerSettings = value) }
+        }
         viewModelScope.launch {
             TrainPilotSettingsStore(app).settingsFlow.collect { settings ->
                 _state.update { it.copy(language = settings.language) }

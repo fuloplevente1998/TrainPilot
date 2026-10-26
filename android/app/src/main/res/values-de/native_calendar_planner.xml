@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calendar_planner_title">Mehrere Wochen planen</string>
+    <string name="calendar_planner_alternate">Jeden zweiten Tag</string>
+    <string name="calendar_planner_daily">Jeden Tag</string>
+    <string name="calendar_planner_weekly">Gewählte Wochentage</string>
+    <string name="calendar_planner_date">Startdatum (YYYY-MM-DD)</string>
+    <string name="calendar_planner_time">Uhrzeit (HH:mm)</string>
+    <string name="calendar_planner_minutes">Dauer (10–240 Minuten)</string>
+    <string name="calendar_planner_weeks">Wochen (1–12)</string>
+    <string name="calendar_planner_first">Erster Programmtag</string>
+    <string name="calendar_planner_invalid">Eingaben prüfen.</string>
+    <string name="calendar_planner_preview">%1$d Termine, %2$d Pläne absagen</string>
+    <string name="calendar_planner_save">Plan bestätigen</string>
+    <string name="calendar_planner_generate">Vorschau</string>
+    <string name="calendar_planner_cancel">Abbrechen</string>
+</resources>
