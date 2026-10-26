@@ -330,10 +330,19 @@ class TrainPilotSettingsStore(private val context: Context) {
         return NativeDataReplacement.mutate(context) {
             // Also protect paused sessions, ownership transfer and native execution
             // that may not be visible to the currently displayed UI.
-            val activeUi = com.repforge.app.ActiveWorkoutStore.current(context)?.optBoolean("active") == true
-            val activeExecution = com.repforge.app.PhoneWorkoutExecution.store(context)
-                .snapshot()?.optBoolean("active") == true
-            check(!activeUi && !activeExecution) { "Finish the active workout before changing training modes" }
+            val noActiveWorkout = withContext(kotlinx.coroutines.Dispatchers.Main.immediate) {
+                // PhoneWorkoutExecution.store is explicitly main-looper only.
+                // Run this short, synchronous admission while holding metadata lease,
+                // then leave the DataStore edit on its normal suspending IO path.
+                val activeUi = com.repforge.app.ActiveWorkoutStore.current(context)
+                    ?.optBoolean("active") == true
+                val execution = com.repforge.app.PhoneWorkoutExecution.store(context)
+                check(!execution.restoreBlocked() && !execution.commandsSuspended()) {
+                    "Native workout execution is temporarily unavailable"
+                }
+                !activeUi && execution.snapshot()?.optBoolean("active") != true
+            }
+            check(noActiveWorkout) { "Finish the active workout before changing training modes" }
             var updated = false
             context.trainPilotDataStore.edit { prefs ->
                 if (prefs[KEY_TRAINING_MODES_197] == expectedRaw &&
