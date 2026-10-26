@@ -19,6 +19,7 @@ Friss közös3297/40404547333 artifact XML Root által kiértékelve:1327JVM/0fa
 111phone=105PASS/6FAIL, mind4GPSPASS,52rawPNG.6hiba:2intervalpanel,customdelete,
 2nav/Home és263után elavult recovery_unit locale-assertion. Nincs közös green.
 plans/NATIVE_UI_ENTRY_GATE.md rögzíti a sorrendet és a6konkrét esetet.
+94114204localepróba javítva az új No-data source+— value szerződésre; runtimeUNRUN.
 UI6.1Medium csak a stabil közös baseline után P0/P1-re; most funkcionális/debug
 munka marad. G03/G04/G06legacyhook, G05/G07/G12jóváhagyott designbinding
 Rootfeladat; ezeket nem oldja meg puszta styling. A07globálisreset contract külön,

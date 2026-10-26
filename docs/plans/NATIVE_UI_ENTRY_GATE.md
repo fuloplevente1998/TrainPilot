@@ -39,6 +39,11 @@ Actions **40404547333**, exact **3297e82bd7f841dc7a64b60ea26981898f5272ea**:
 | Settings/editor elhagyás (`NativePhoneNavigationTest.openingSettingsKeepsTheCanonicalWorkoutAndStopwatchRunning`) | Home tab selected-re várva timeout | A valódi leave/pause/navigation receipt javítása; Settings alatt tovább futó stopper és identitás nem gyengíthető |
 | Főfülek és másodlagos utak (`NativePhoneNavigationTest.fiveTabsAndSecondaryPlanningEntriesUseActualNativeScreens`) | Health után Home selected-re várva timeout | Navigációs stack és valódi selected állapot; korábbi 162746c7 fix önmagában nem oldotta meg |
 
+A locale-esethez Root `94114204` tesztjavítást írt: a két valódi unit assertion
+megmarad, recovery-nél a négy nyelv tényleges No-data source feliratát ÉS a
+hiányzó pontszámot (`—`) ellenőrzi a törölt általános readiness-unit helyett.
+Ez **kódban javított / runtime újrafuttatásra vár**, nem már zöld hatodik eset.
+
 Ezt Root viszi **High / nehéz debugnál Extra High** ajánlással. Nem indítunk
 második írót e fájlokra. Ugyanarra a javított commitra közös zöld natív kapu kell.
 
