@@ -5,6 +5,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -44,11 +45,25 @@ internal class CalendarPlannerUiHarness(private val compose: ComposeTestRule) {
         scenario = null
     }
 
-    fun launch() {
+    fun launch(
+        plannerSettingsReadGate: (suspend () -> Unit)? = null,
+        previewReadGate: (suspend () -> Unit)? = null,
+        waitForReady: Boolean = true
+    ) {
         check(scenario == null) { "Close the previous activity before relaunching" }
         scenario = fixture.launch().also { current ->
             current.onActivity { activity ->
-                model = ViewModelProvider(activity)[CalendarViewModel::class.java]
+                val customFactory = object : ViewModelProvider.Factory {
+                    @Suppress("UNCHECKED_CAST")
+                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                        require(modelClass == CalendarViewModel::class.java)
+                        return CalendarViewModel(activity.application,
+                            plannerSettingsReadGate ?: {}, previewReadGate ?: {}) as T
+                    }
+                }
+                // Own key prevents reuse of a ViewModel installed by MainActivity navigation.
+                model = ViewModelProvider(activity, customFactory)
+                    ["calendar_planner_ui_isolated_model", CalendarViewModel::class.java]
                 // Replaces MainActivity's default composition; never mounts a second one.
                 activity.setContent {
                     TrainPilotTheme(TrainPilotUserSettings()) {
@@ -57,7 +72,16 @@ internal class CalendarPlannerUiHarness(private val compose: ComposeTestRule) {
                 }
             }
         }
-        awaitEnabled("calendar_planner_open")
+        compose.waitUntil(20_000) {
+            compose.onAllNodesWithTag("calendar_planner_open").fetchSemanticsNodes().isNotEmpty()
+        }
+        if (waitForReady) awaitEnabled("calendar_planner_open")
+    }
+
+    fun assertOpenDisabled() {
+        compose.onNodeWithTag("calendar_planner_open").assertIsNotEnabled()
+        assertTrue("Disabled planner must not show a dialog",
+            compose.onAllNodesWithTag("calendar_planner_weeks").fetchSemanticsNodes().isEmpty())
     }
 
     private fun awaitEnabled(tag: String) {
@@ -86,9 +110,13 @@ internal class CalendarPlannerUiHarness(private val compose: ComposeTestRule) {
         compose.onNodeWithTag(tag).performScrollTo().performTextReplacement(text)
     }
 
-    fun generate(): NativeCalendarRepository.Preview {
+    fun beginGenerate() {
         awaitEnabled("calendar_planner_generate")
         compose.onNodeWithTag("calendar_planner_generate").performClick()
+    }
+
+    fun generate(): NativeCalendarRepository.Preview {
+        beginGenerate()
         awaitEnabled("calendar_planner_save")
         return requireNotNull(model.state.value.plannerPreview).also {
             assertTrue("Preview must contain planned slots", it.plan.slots.isNotEmpty())
