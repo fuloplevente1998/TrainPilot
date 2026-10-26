@@ -13,4 +13,5 @@
     <string name="native_gps_recovery_cancel">Abbrechen</string>
     <string name="native_gps_recovery_stale">Das ursprüngliche Training oder der Satz wurde geändert. Die GPS-Messung wurde nicht gestartet.</string>
     <string name="native_gps_recovery_settings_unavailable">Die Standorteinstellungen konnten nicht geöffnet werden. Öffne sie manuell in den Telefoneinstellungen.</string>
+    <string name="native_gps_recovery_request_unavailable">Die Systemberechtigungsanfrage kann derzeit nicht geöffnet werden. Versuche es am Telefon erneut.</string>
 </resources>
