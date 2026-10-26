@@ -63,7 +63,7 @@ A policy self-check 7 esetet fed le.
 
 ## Már bizonyított
 
-Quick TrainPilot Validation:
+Quick TrainPilot Validation korábbi ellenőrzés:
 
 - run: `40395802353`
 - eredmény: SUCCESS
@@ -71,7 +71,23 @@ Quick TrainPilot Validation:
 - source-routing self-check: 7/7 PASS
 - legacy `quick` job: SKIPPED
 
-Ez bizonyítja, hogy natív source esetén a Quick már nem jut el a korábbi `setup-node` / missing lockfile hibáig.
+Aktuális verification head újrafuttatás:
+
+- Quick run: `40397329635` → SUCCESS
+- `app-target / classify`: SUCCESS
+- legacy `quick`: SKIPPED
+
+Phone Release Gate + TrainPilot APK verification:
+
+- run: `40397329677` → SUCCESS
+- `app-target / classify`: SUCCESS
+- Playwright Chromium cache job: SKIPPED
+- Chromium UI matrix job: SKIPPED
+- `release-gate`: SKIPPED
+
+A Phone workflowhoz a verification ágon ideiglenes `pull_request` trigger került kizárólag azért, hogy a connector PR-triggerelt runtime bizonyítékot vissza tudjon olvasni. Ezt a triggert tilos a migration ágba merge-elni.
+
+Ez bizonyítja, hogy natív source esetén sem a Quick, sem a Phone legacy útvonal nem jut el a korábbi `setup-node` / missing lockfile hibáig.
 
 ## Következő lépések – rögzített sorrend
 
