@@ -4,6 +4,30 @@ Frissítve: 2026-10-26. AGENTS.md + ez + WORK_HANDOFF.md teteje elég indulásko
 Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/exportot.
 
 
+## Két nagy külső chatcsomag – végigvitt saját QA, 2026-10-26
+
+User limit miatt2nagyobb, önállóan javító/tesztelő chatfeladatot kér, új Codex nélkül.
+Exactbase de1fe14062cfe6675ec2b3c12d13945b327683b6; promptok16515d7b:
+- plans/NATIVE_PHONE_UI_FINAL_CHAT_HANDOFF.md →fix/native-phone-ui-final-gate:
+  teljes Compose/phoneUI/fixture/screenshots+host gate+evidence parser.
+- plans/NATIVE_DATA_INTEGRITY_FINAL_CHAT_HANDOFF.md →fix/native-data-integrity-final-gate:
+  BackupRestoreManager/ArchiveIO/data-migration/nativeUpgrade/migration-seed/
+  signed-upgrade script, saját NativeDataIntegrity* tesztek. UI nem írható.
+A két dokumentum pontos diszjunkt fájlhatára az irányadó. Root e területeken nem
+fejleszt párhuzamosan; review/integráció marad. Indulásuk még nem igazolt.
+EZEKHEZ kifejezett eltérés: saját refen a regisztrált native-android.yml dispatch
+és saját workflow-másolat scoped QA-ra átírása engedélyezett. A workflow-delta NEM
+integrálandó roothoz. Minden app/test módosítás csak sajátágon/draftPR célmigration;
+main/migration írás/merge/force/close tilos. Csak statikus átadó nem befejezés:
+a saját valós kapukat javítsák zöldre, vagy konkrét külső blokkolóval jelöljék UNRUN.
+Rootnál továbbra szükséges összevont kapu és készülékes jóváhagyás; nem ígérhető
+előre, hogy csak ellenőrzés nélküli merge marad. Másik ág motorhibája patchként átadó.
+
+Friss CI40342319155/14513compileFAIL a Calendar UI harness split-line indexelésén;
+de1fe140 explicit ViewModelProvider.get(...) javítás benne a kiosztási baseline-ban.
+Nincs új sikeres Android futás erre. A14513GPS runner fix runtime továbbraUNRUN.
+Most nincs aktív rootCI, az új futások a két saját QA-ágon indulhatnak.
+
 ## GPS UI-runner izoláció – 2026-10-26
 
 Root14513da5 javítja az e12tesztfutás permission-revoke okozta UID-killjét.
