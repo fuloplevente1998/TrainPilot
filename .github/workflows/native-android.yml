@@ -374,7 +374,7 @@ jobs:
           set -euo pipefail
           python3 scripts/native/evidence-summary.py qa-input \
             --expected-commit "$GITHUB_SHA" \
-            --require-gate phone --require-gate jvm \
+            --require-gate phone --require-gate jvm --require-isolated-gps \
             --phone-apk qa-apks/phone/app-debug.apk \
             --phone-test-apk qa-apks/test/app-debug-androidTest.apk \
             --json-out qa-report/summary.json \
