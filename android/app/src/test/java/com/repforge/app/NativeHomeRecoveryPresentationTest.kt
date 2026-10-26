@@ -97,7 +97,7 @@ class NativeHomeRecoveryPresentationTest {
         val actual = NativeHomeRecoveryPresentation.select(rows, emptyList(), now, zone)
         assertEquals(NativeHomeRecoveryPresentation.Source.TRAINPILOT_ESTIMATE, actual.source)
         assertNotNull(actual.value)
-        assertTrue(actual.stale) // Older observations form the real baseline, never imply fresh data.
+        assertFalse(actual.stale) // Baseline history is not a stale current measurement.
     }
 
     @Test fun noSignalsCannotShowDefaultSeventyOrZero() {
