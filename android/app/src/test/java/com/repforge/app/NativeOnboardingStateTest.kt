@@ -35,9 +35,9 @@ class NativeOnboardingStateTest {
         assertEquals(p.SKIPPED, p.initialState(p.SKIPPED, true, "{}"))
         assertEquals(p.IN_PROGRESS, p.initialState(p.IN_PROGRESS, true, "{}"))
         assertEquals(p.COMPLETE, p.initialState("unexpected", false, "{}"))
-        assertEquals(p.Destination.WELCOME, p.destination("pending"))
-        assertEquals(p.Destination.PROFILE, p.destination(p.IN_PROGRESS))
-        assertEquals(p.Destination.HOME, p.destination(p.SKIPPED))
+        assertEquals(NativeOnboardingPolicy.Destination.WELCOME, p.destination("pending"))
+        assertEquals(NativeOnboardingPolicy.Destination.PROFILE, p.destination(p.IN_PROGRESS))
+        assertEquals(NativeOnboardingPolicy.Destination.HOME, p.destination(p.SKIPPED))
     }
 
     @Test fun ignoresSyntheticEmptyLegacyRawButRespectsRealOrUnknownData() {
