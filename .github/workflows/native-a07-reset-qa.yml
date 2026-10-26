@@ -1,0 +1,165 @@
+name: Native A07 catalog reset scoped QA
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'android/app/src/test/java/com/repforge/app/NativeProgramActionsTest.kt'
+      - 'android/app/src/test/java/com/repforge/app/NativeA07CatalogResetParityTest.kt'
+      - 'android/app/src/nativePhoneUiTest/java/com/repforge/app/NativeProgramActionsUiTest.kt'
+      - '.github/workflows/native-a07-reset-qa.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-a07-reset-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  a07-jvm:
+    name: A07 targeted JVM contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v4
+      - name: Install Android SDK platform
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Run A07 JVM classes
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon --stacktrace -PnativeTestDiagnostics :app:testDebugUnitTest \
+            --tests com.repforge.app.NativeProgramActionsTest \
+            --tests com.repforge.app.NativeProgramEditorTest \
+            --tests com.repforge.app.NativeBuiltinCatalogTest \
+            --tests com.repforge.app.NativeA07CatalogResetParityTest \
+            2>&1 | tee ../a07-jvm-gradle.log
+      - name: Summarize raw JVM XML
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import glob, os, xml.etree.ElementTree as ET
+          files=glob.glob("app/build/test-results/testDebugUnitTest/*.xml")
+          totals=dict(tests=0,failures=0,errors=0,skipped=0)
+          for path in files:
+              root=ET.parse(path).getroot()
+              for key in totals:
+                  totals[key]+=int(root.attrib.get(key,0))
+          line="A07_JVM_TOTALS " + " ".join(f"{k}={v}" for k,v in totals.items()) + f" xml_files={len(files)}"
+          print(line)
+          open("../a07-jvm-summary.txt","w",encoding="utf-8").write(line+"\n")
+          if not files:
+              print("A07_JVM_XML_MISSING")
+          PY
+      - name: Upload A07 JVM raw evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrainPilot-A07-JVM-${{ github.sha }}
+          path: |
+            a07-jvm-gradle.log
+            a07-jvm-summary.txt
+            android/app/build/test-results/testDebugUnitTest/
+            android/app/build/reports/tests/testDebugUnitTest/
+          if-no-files-found: error
+
+  a07-ui:
+    name: A07 API35 preview confirm stale migration
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v4
+      - name: Install Android SDK platform
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Run only NativeProgramActionsUiTest on API35
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 3072
+          script: |
+            set -u
+            OUT="$GITHUB_WORKSPACE/a07-ui-results"
+            mkdir -p "$OUT/screenshots" "$OUT/raw"
+            cd "$GITHUB_WORKSPACE/android"
+            set +e
+            set -o pipefail
+            ./gradlew --no-daemon --stacktrace -PnativePhoneUiTests \
+              -Pandroid.testInstrumentationRunnerArguments.class=com.repforge.app.NativeProgramActionsUiTest \
+              :app:connectedDebugAndroidTest 2>&1 | tee "$OUT/raw/connected-gradle.log"
+            STATUS=${PIPESTATUS[0]}
+            set +o pipefail
+
+            for name in preview-cancel confirmed stale-error migrated-preview; do
+              adb pull "/sdcard/Android/data/com.repforge.app/files/a07-${name}.png" \
+                "$OUT/screenshots/a07-${name}.png" >/dev/null 2>&1 || true
+            done
+
+            find app/build/outputs/androidTest-results -type f -name '*.xml' -exec cp --parents {} "$OUT/raw/" \; 2>/dev/null || true
+            find app/build/reports/androidTests -type f -exec cp --parents {} "$OUT/raw/" \; 2>/dev/null || true
+
+            python3 - "$OUT" <<'PY'
+            import glob, os, sys, xml.etree.ElementTree as ET
+            out=sys.argv[1]
+            files=glob.glob(os.path.join(out,"raw","**","*.xml"), recursive=True)
+            totals=dict(tests=0,failures=0,errors=0,skipped=0)
+            for path in files:
+                try:
+                    root=ET.parse(path).getroot()
+                except ET.ParseError:
+                    continue
+                if root.tag == "testsuites":
+                    suites=list(root)
+                else:
+                    suites=[root]
+                for suite in suites:
+                    for key in totals:
+                        totals[key]+=int(suite.attrib.get(key,0))
+            shots=glob.glob(os.path.join(out,"screenshots","*.png"))
+            line="A07_UI_TOTALS " + " ".join(f"{k}={v}" for k,v in totals.items()) + f" xml_files={len(files)} png={len(shots)}"
+            print(line)
+            open(os.path.join(out,"ui-summary.txt"),"w",encoding="utf-8").write(line+"\n")
+            PY
+
+            {
+              find app/build/outputs/apk/debug -type f -name '*.apk' -print0 2>/dev/null
+              find app/build/outputs/apk/androidTest/debug -type f -name '*.apk' -print0 2>/dev/null
+              find "$OUT/screenshots" -type f -name '*.png' -print0 2>/dev/null
+            } | xargs -0 -r sha256sum > "$OUT/SHA256SUMS.txt"
+
+            for required in preview-cancel confirmed stale-error migrated-preview; do
+              test -s "$OUT/screenshots/a07-${required}.png" || STATUS=1
+            done
+            test -s "$OUT/SHA256SUMS.txt" || STATUS=1
+            exit "$STATUS"
+      - name: Upload A07 API35 raw evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrainPilot-A07-UI-${{ github.sha }}
+          path: |
+            a07-ui-results/
+            android/app/build/outputs/apk/debug/app-debug.apk
+            android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+          if-no-files-found: error
