@@ -4,6 +4,24 @@ Frissítve: 2026-10-26. AGENTS.md + ez + WORK_HANDOFF.md teteje elég indulásko
 Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/exportot.
 
 
+## Összevont JVM bizonyíték és Home navigációs fix – 2026-10-26
+
+Actions40372076529 exact1d2be2a5 nativedebug/build/JVM/R8signer jobSUCCESS.
+Root letöltötte12673097812JUnitartifactot /tmp/tp1d2-tests alá és XML-ből számolta:
+app1145 /0failure/0error/0skip; Wear167 /0/0/0 =1312PASS.
+Phone/Wear/upgrade emulátoros kapuk még folyamatban a legutóbbi ellenőrzéskor;
+friss végsőeredményt GitHubról kérj, ne használd régi piros állapotot.
+
+Közben162746c7 forrásfix: explicitHome esetén nem restore-oljuk a roothoz
+mentett teljes navigációs backstacket, amely másik tab/secondary oldalt hozhatott
+vissza a Home fölé. Egyéb tabok restoreState-je változatlan. A régi261failure
+UI-fa Health képernyőt mutatott Home-shortcut várakozásakor. Meglévő fiveTabs...
+valós UI teszt lefedi a regressziós utat.1Kotlinlexical/diffPASS; Androidruntime
+UNRUN a162fixre, mert a futó4037201d2tesztforrás ezt MÉG NEM tartalmazza.
+Nem indult duplikált teljesCI, nem cancel-eltünk távolifutást. Következő:aktuális
+phoneartifact triage, maradékok batchjavítása, aztán új közös kapu a162utódján.
+Main/verzió/PRmerge/close nincs; közvetlen migration ágon Root folytat.
+
 ## Összevont UI-kapu fordítási javítás – 2026-10-26
 
 40371054137 exact79ab227a LEZÁRT FAIL:NativePhoneNavigationTest.kt:79
