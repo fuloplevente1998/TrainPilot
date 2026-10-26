@@ -59,6 +59,10 @@ class NativeGpsPermissionRecoveryDecisionTest {
     }
 
     @Test fun missingAndReplacedWorkoutOrGenerationRejectTheOldTarget() {
+        // Bundle recovery retains exact identity but never automatically executes it.
+        assertEquals(target, recovery.decodePending(recovery.encodePending(target)))
+        assertNull(recovery.decodePending("{invalid"))
+        assertNull(recovery.decodePending(""))
         assertFalse(recovery.targetIsCurrent(null, target, false))
         assertFalse(recovery.targetIsCurrent(frame().put("workoutId", "replacement"), target, false))
         assertFalse(recovery.targetIsCurrent(frame().put("generation", 18), target, false))
