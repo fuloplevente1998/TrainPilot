@@ -16,6 +16,14 @@ SUCCESS. Mindkét signed-upgrade és a három Wear UI job már SUCCESS;
 a telefonos UI/valódi képek job még fut (ellenőrizve12:02UTC).
 Ez nem teljes legfrissebb runtime-elfogadás és nem saját adatos install-engedély.
 
+CI-parser utóellenőrzés5b88e07e: phone-ui-gate.report a deklarált/egyedi lezárt
+esetszámot és végső OK-t is megköveteli, csonka futásból nincs PASS; multiline
+stack megmarad.5 stdlib Python regressziós próba és a valós hibás b286artifact
+helyi visszaellenőrzése PASS. Nincs app/SDK/tesztelvárás-változás. A futó40317771457
+még e28ab418 scriptet használ: a saját raw logját a szigorúbb parserrel is külön
+ellenőrizni kell; ez nem új GitHub-kapu eredménye. Külső evidence-summary munkás
+csak új külön scriptet ír, a gate módosítása továbbra Root-terület.
+
 40316447151 és40317244820 Root által CANCELLED, nem PASS. A tényleges utolsó
 elakadt eset az első run logjában NativeProfileDayHistory128Test.
 dayEvidenceAndReductionSurviveCanonicalBackupRoundTrip volt: #254 új commitkori
