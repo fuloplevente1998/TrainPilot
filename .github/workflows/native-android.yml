@@ -94,6 +94,110 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
+      - name: Prepare scoped G10 emulator runner
+        run: |
+          mkdir -p g10
+          cat > g10/scoped-ui.py <<'PY'
+          import hashlib
+          import importlib.util
+          import json
+          import os
+          from pathlib import Path
+          import re
+          import subprocess
+          import time
+          import xml.etree.ElementTree as ET
+          
+          out = Path("g10/results")
+          shots = out / "screenshots"
+          shots.mkdir(parents=True, exist_ok=True)
+          # upload-artifact can strip the shared directory prefix; find the
+          # unique exact debug filenames rather than guessing archive layout.
+          def unique(name):
+              files = list(Path("g10/apks").rglob(name))
+              if len(files) != 1:
+                  raise RuntimeError(f"Expected one {name} in downloaded APK artifact; found {files}")
+              return files[0]
+          apk = unique("app-debug.apk")
+          test_apk = unique("app-debug-androidTest.apk")
+          def sha(path):
+              return hashlib.sha256(path.read_bytes()).hexdigest()
+          def adb(*args, check=True):
+              return subprocess.run(["adb", *args], capture_output=True, check=check, timeout=35).stdout
+          
+          manifest = {
+              "sourceHead": os.environ["SOURCE_HEAD"],
+              "appSha256": sha(apk), "testApkSha256": sha(test_apk),
+              "api": adb("shell", "getprop", "ro.build.version.sdk").decode().strip(),
+              "imageOrigin": "unmodified-adb-exec-out-screencap-p",
+              "fixture": "isolated-synthetic-g10",
+              "screenshots": [], "result": "failed"
+          }
+          process = None
+          try:
+              adb("install", "-r", "-t", str(apk))
+              adb("install", "-r", "-t", str(test_apk))
+              for p in ("POST_NOTIFICATIONS", "ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"):
+                  adb("shell", "pm", "grant", "com.repforge.app", "android.permission."+p, check=False)
+              adb("shell", "rm", "-f", "/data/local/tmp/trainpilot-shot-request",
+                  "/data/local/tmp/trainpilot-shot-ack")
+              selector = ("com.repforge.app.NativeCardioProgressUiTest,"
+                          "com.repforge.app.NativeProgressPhotoRangeUiTest")
+              seen = set()
+              with (out / "instrumentation.txt").open("wb") as raw_file:
+                  process = subprocess.Popen(["adb", "shell", "am", "instrument", "-w", "-r",
+                      "-e", "class", selector,
+                      "com.repforge.app.test/androidx.test.runner.AndroidJUnitRunner"],
+                      stdout=raw_file, stderr=subprocess.STDOUT)
+                  deadline = time.monotonic() + 1500
+                  while process.poll() is None:
+                      if time.monotonic() >= deadline:
+                          process.kill()
+                          raise TimeoutError("G10 emulator test timed out")
+                      req = adb("shell", "cat", "/data/local/tmp/trainpilot-shot-request",
+                          check=False).decode(errors="replace").strip()
+                      if req.startswith("{"):
+                          try:
+                              data = json.loads(req)
+                          except json.JSONDecodeError:
+                              time.sleep(.2)
+                              continue
+                          name = data.get("name", "")
+                          if not re.fullmatch(r"[a-z0-9_]{1,120}", name):
+                              raise RuntimeError("invalid screenshot request name")
+                          if name not in seen:
+                              focus = adb("shell", "dumpsys", "window").decode(errors="replace")
+                              if "com.repforge.app/" not in focus:
+                                  raise RuntimeError("No foreground TrainPilot app for screenshot")
+                              png = adb("exec-out", "screencap", "-p")
+                              if not png.startswith(b"\x89PNG\r\n\x1a\n") or len(png) < 100:
+                                  raise RuntimeError("Not an unmodified PNG from adb")
+                              file = shots / (name + ".png")
+                              file.write_bytes(png)
+                              manifest["screenshots"].append({**data, "path": str(file),
+                                  "sha256": sha(file), "bytes": len(png)})
+                              seen.add(name)
+                              adb("shell", "sh", "-c",
+                                  "printf %s " + name + " > /data/local/tmp/trainpilot-shot-ack")
+                      time.sleep(.15)
+              log = (out / "instrumentation.txt").read_text(errors="replace")
+              spec = importlib.util.spec_from_file_location("gate", "scripts/native/phone-ui-gate.py")
+              gate = importlib.util.module_from_spec(spec)
+              spec.loader.exec_module(gate)
+              valid = gate.report(log, out / "instrumentation-derived.xml")
+              xml = ET.parse(out / "instrumentation-derived.xml").getroot()
+              if (not valid or process.returncode != 0 or
+                  int(xml.attrib["tests"]) != 6 or
+                  any(int(xml.attrib[x]) != 0 for x in ("failures", "errors", "skipped")) or
+                  len(manifest["screenshots"]) < 3):
+                  raise RuntimeError("6/6 terminal tests and >=3 real screenshots required")
+              manifest["result"] = "success"
+          finally:
+              if process is not None and process.poll() is None:
+                  process.kill()
+              (out / "manifest.json").write_text(json.dumps(manifest, indent=2))
+              (out / "logcat.txt").write_bytes(adb("logcat", "-d", "-t", "3000", check=False))
+          PY
       - name: Real targeted emulator instrumentation and unchanged screencaps
         uses: reactivecircus/android-emulator-runner@v2
         env:
@@ -107,108 +211,7 @@ jobs:
           disk-size: 6000M
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: |
-            python3 - <<'PY'
-            import hashlib
-            import importlib.util
-            import json
-            import os
-            from pathlib import Path
-            import re
-            import subprocess
-            import time
-            import xml.etree.ElementTree as ET
-
-            out = Path("g10/results")
-            shots = out / "screenshots"
-            shots.mkdir(parents=True, exist_ok=True)
-            # upload-artifact can strip the shared directory prefix; find the
-            # unique exact debug filenames rather than guessing archive layout.
-            def unique(name):
-                files = list(Path("g10/apks").rglob(name))
-                if len(files) != 1:
-                    raise RuntimeError(f"Expected one {name} in downloaded APK artifact; found {files}")
-                return files[0]
-            apk = unique("app-debug.apk")
-            test_apk = unique("app-debug-androidTest.apk")
-            def sha(path):
-                return hashlib.sha256(path.read_bytes()).hexdigest()
-            def adb(*args, check=True):
-                return subprocess.run(["adb", *args], capture_output=True, check=check, timeout=35).stdout
-
-            manifest = {
-                "sourceHead": os.environ["SOURCE_HEAD"],
-                "appSha256": sha(apk), "testApkSha256": sha(test_apk),
-                "api": adb("shell", "getprop", "ro.build.version.sdk").decode().strip(),
-                "imageOrigin": "unmodified-adb-exec-out-screencap-p",
-                "fixture": "isolated-synthetic-g10",
-                "screenshots": [], "result": "failed"
-            }
-            process = None
-            try:
-                adb("install", "-r", "-t", str(apk))
-                adb("install", "-r", "-t", str(test_apk))
-                for p in ("POST_NOTIFICATIONS", "ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"):
-                    adb("shell", "pm", "grant", "com.repforge.app", "android.permission."+p, check=False)
-                adb("shell", "rm", "-f", "/data/local/tmp/trainpilot-shot-request",
-                    "/data/local/tmp/trainpilot-shot-ack")
-                selector = ("com.repforge.app.NativeCardioProgressUiTest,"
-                            "com.repforge.app.NativeProgressPhotoRangeUiTest")
-                seen = set()
-                with (out / "instrumentation.txt").open("wb") as raw_file:
-                    process = subprocess.Popen(["adb", "shell", "am", "instrument", "-w", "-r",
-                        "-e", "class", selector,
-                        "com.repforge.app.test/androidx.test.runner.AndroidJUnitRunner"],
-                        stdout=raw_file, stderr=subprocess.STDOUT)
-                    deadline = time.monotonic() + 1500
-                    while process.poll() is None:
-                        if time.monotonic() >= deadline:
-                            process.kill()
-                            raise TimeoutError("G10 emulator test timed out")
-                        req = adb("shell", "cat", "/data/local/tmp/trainpilot-shot-request",
-                            check=False).decode(errors="replace").strip()
-                        if req.startswith("{"):
-                            try:
-                                data = json.loads(req)
-                            except json.JSONDecodeError:
-                                time.sleep(.2)
-                                continue
-                            name = data.get("name", "")
-                            if not re.fullmatch(r"[a-z0-9_]{1,120}", name):
-                                raise RuntimeError("invalid screenshot request name")
-                            if name not in seen:
-                                focus = adb("shell", "dumpsys", "window").decode(errors="replace")
-                                if "com.repforge.app/" not in focus:
-                                    raise RuntimeError("No foreground TrainPilot app for screenshot")
-                                png = adb("exec-out", "screencap", "-p")
-                                if not png.startswith(b"\x89PNG\r\n\x1a\n") or len(png) < 100:
-                                    raise RuntimeError("Not an unmodified PNG from adb")
-                                file = shots / (name + ".png")
-                                file.write_bytes(png)
-                                manifest["screenshots"].append({**data, "path": str(file),
-                                    "sha256": sha(file), "bytes": len(png)})
-                                seen.add(name)
-                                adb("shell", "sh", "-c",
-                                    "printf %s " + name + " > /data/local/tmp/trainpilot-shot-ack")
-                        time.sleep(.15)
-                log = (out / "instrumentation.txt").read_text(errors="replace")
-                spec = importlib.util.spec_from_file_location("gate", "scripts/native/phone-ui-gate.py")
-                gate = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(gate)
-                valid = gate.report(log, out / "instrumentation-derived.xml")
-                xml = ET.parse(out / "instrumentation-derived.xml").getroot()
-                if (not valid or process.returncode != 0 or
-                    int(xml.attrib["tests"]) != 6 or
-                    any(int(xml.attrib[x]) != 0 for x in ("failures", "errors", "skipped")) or
-                    len(manifest["screenshots"]) < 3):
-                    raise RuntimeError("6/6 terminal tests and >=3 real screenshots required")
-                manifest["result"] = "success"
-            finally:
-                if process is not None and process.poll() is None:
-                    process.kill()
-                (out / "manifest.json").write_text(json.dumps(manifest, indent=2))
-                (out / "logcat.txt").write_bytes(adb("logcat", "-d", "-t", "3000", check=False))
-            PY
+          script: python3 g10/scoped-ui.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
