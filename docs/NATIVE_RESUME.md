@@ -4,6 +4,21 @@ Frissítve: 2026-10-26. AGENTS.md + ez + WORK_HANDOFF.md teteje elég indulásko
 Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/exportot.
 
 
+## Friss UI-bizonyíték és PR238 tisztázás – 2026-10-26
+
+Root letöltötte40372076529/1d2be2a5phoneartifact12674041803-at /tmp/tp1d2-phone alá.
+Valósrawlog100main=95PASS/5FAIL +4isolatedGPS=4PASS, együtt99/104PASS,
+nincs processcrash,47PNG. Nem a régi91/98. Hátra5eset:2intervalmező,
+customExerciseDelete(valódi invalidfield error), Settingsleave pause/nav és
+fiveTabs/secondary nav.162746c7Homefix nincs ebben a futásban.
+PR238teljes leírását Root újraírta aktuális egységes checklistre; több régi
+ellentmondópending/FAILblokk eltávolítva, történet aGitben/docsban megmarad.
+Külön szerepel funkcionálisQAlezárás,263/264scopedQA, G/A07triage,
+a MÉG MEGVALÓSÍTANDÓ teljes P0–P6dizájn és a végsőkészülékes/APKelfogadás.
+Usernek ne mondd, hogy csak pár apróság van a teljes végleges appig:
+a funkcionális migráció előrehaladott, a vizuális spec kész, az új UI még feladat.
+263/264munkaterületek továbbra foglaltak, maint/verziót nem változtatunk.
+
 ## Két új chatbekötés, G01/G10 – 2026-10-26
 
 User két további elkülönített chatfeladatot kér. Exactbase30e087646298fb0191f5ffa0e7e157b14519d669;
