@@ -19,6 +19,19 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
   High kód; Medium vizuális dizájn előtt jelezni; Extra High komoly végső debug előtt.
   Kevés lényegi magyar output, nincs belső subagent külön kérés nélkül. PR238 követőlap.
 
+## #251 Health sync review és integráció – 2026-10-26
+
+A felhasználó #250-et visszaadta a külön audit chatnek, a két riport foglalt.
+#251 exact91fb333 (app01bf93da) review után **4b1711b1**-ben integrálva;
+14fájl byteazonos a külső forrással.30nap/full/HC change/deletions/dirty és
+Samsung30/2, privát checkpoint/generation+revision és stale daily védelem.
+10Kotlin lexical/4locale11key/diff static PASS;29JVM+1UI tesztkód runtime UNRUN.
+Review/ismertkorlát: reviews/NATIVE_PR251_INTEGRATION.md; külső átadó exactcopy
+reviews/NATIVE_HEALTH_SYNC_COMPLETION.md.500page/530dirty budget és partial-
+grant utáni konzervatív checkpoint viselkedés külön ellenőrzendő.
+Új közös CI indítandó ezen az appforráson, korábbi40276384595 CANCELLED nem zöld.
+Main/version/package/élő install és külső PR-zárás nem történt.
+
 ## #249 integrálva; #250 folytatás vissza a Plus chatnek – 2026-10-26
 
 #249224999b → **654c016c**: kontraszt Oklab/alpha alapú token deriváció,

@@ -146,6 +146,11 @@ következik; statikus ellenőrzés és Node validator PASS nem natív runtime.
 
 ## Aktuális új kiosztás – 2026-10-26
 
+- #25191fb333 Health-sync kódja review után integrálva4b1711b1; korábbi
+  Health-fájlfoglalás feloldva. Ne alkalmazd újra a régi diffet.29JVM+1UI
+  új kód nem futott; reviewkorlátok NATIVE_PR251_INTEGRATION.md-ben. #250
+  továbbra külön chatben javítás alatt, két auditfájlját Root nem írja.
+
 - Új állapot: #249224999b integrálva654c016c; #250a360a5a audit byteazonosan
   importálva be5e2642. A felhasználó a #250 audit két fájlját ugyanabban a
   Plus chatben folytatja; Root ne írja párhuzamosan. Új teljes prompt
