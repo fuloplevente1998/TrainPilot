@@ -957,18 +957,37 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
         viewModelScope.launch {
             try {
                 val saved = withContext(Dispatchers.IO) {
-                    val frame = ActiveWorkoutStore.current(context) ?: return@withContext null
-                    if (!NativeTrainingModeProposal.permitted(frame, ticket) ||
-                        settingsStore.current().trainingModes197Json != ticket.settingsRaw) return@withContext null
-                    val computed = modeCoachRow(frame) ?: return@withContext null
-                    if (computed.second != ticket.settingsRaw ||
-                        computed.first.sourceFingerprint != ticket.sourceFingerprint ||
-                        computed.first.advice.action != "increase" ||
-                        computed.first.modePreview?.proposedWeight != ticket.approvedWeight) return@withContext null
-                    val current = ActiveWorkoutStore.current(context) ?: return@withContext null
-                    if (!NativeTrainingModeProposal.permitted(current, ticket)) return@withContext null
-                    val edited = NativeTrainingModeProposal.editedFrame(current, ticket)
-                    NativeWorkoutEditing.commitEdit(context, edited)
+                    // Retain the metadata replacement lease over history/readiness
+                    // recomputation AND the canonical commit. It prevents a backup
+                    // replacement from invalidating the data behind the proposal.
+                    com.repforge.app.NativeDataReplacement.mutate(context) {
+                        val frame = ActiveWorkoutStore.current(context)
+                        if (frame == null || !NativeTrainingModeProposal.permitted(frame, ticket) ||
+                            settingsStore.current().trainingModes197Json != ticket.settingsRaw) {
+                            null
+                        } else {
+                            val computed = modeCoachRow(frame)
+                            if (computed == null || computed.second != ticket.settingsRaw ||
+                                computed.first.sourceFingerprint != ticket.sourceFingerprint ||
+                                computed.first.advice.action != "increase" ||
+                                computed.first.modePreview?.proposedWeight != ticket.approvedWeight) {
+                                null
+                            } else {
+                                // PhoneWorkoutExecution.store / NativeWorkoutEditing are
+                                // main-looper only. After IO recomputation, re-check
+                                // settings and the live frame on Main immediately before
+                                // the synchronous, single canonical editor commit.
+                                withContext(Dispatchers.Main.immediate) {
+                                    val currentSettings = settingsStore.current().trainingModes197Json
+                                    val current = ActiveWorkoutStore.current(context)
+                                    if (currentSettings != ticket.settingsRaw || current == null ||
+                                        !NativeTrainingModeProposal.permitted(current, ticket)) null
+                                    else NativeWorkoutEditing.commitEdit(context,
+                                        NativeTrainingModeProposal.editedFrame(current, ticket))
+                                }
+                            }
+                        }
+                    }
                 }
                 if (saved != null) {
                     runCatching { WearSyncRepository.publishActiveWorkoutSnapshot(context, saved) }
