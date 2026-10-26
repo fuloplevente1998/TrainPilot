@@ -4,6 +4,28 @@ Frissítve: **2026-10-26**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## PR267 második review és PR269 állapot — 2026-10-26
+
+267exact7aece643 még NEM integrált: main Quick végső override10909/inline/GPSwrapper15252
+kimaradt; régi10266plannedrejection nem végső szabály. G06mainindex.html2118tileProvider,
+2297zoom/tileLayer,2380onlineconsent bizonyít opcionális online map funkciót; nem nevezhető
+feltétel nélkül újfeature-nek. G04Wearowned19021remoteág és G07/G11wrapperek is pontosítandók.
+Pontos második visszaadás plans/NATIVE_PR267_REVIEW_FOLLOWUP.md tetején, ugyanazon1report/ág.
+
+269A07Chat4 ténylegesen elindult, sajátfix/native-a07-catalog-reset-parity.
+Root b32ab7c6 scoped40407333901 JVMartifact12692430345XML-t letöltötte:
+33teszt/1failure/0error/0skip; újA07három esetPASS, meglévőNativeProgramActionsTest
+repeatCopy... activeProgramId home-basic helyett custom maradt. ÚjA07teszt cleanup
+nem állította vissza aDataStore-t. Külsőchat3766db14-ben home-basiccleanupot tett hozzá;
+friss269HEADbd792560 (screenshotpersistentfixeket is tartalmaz), újscoped40408886805
+utolsólekérdezéskorPENDING. Ez MÉG NEM zöld elfogadás; nem integráltunk269app/test/workflow-t.
+Productionappdelta nincs, globalreset nyilvános/adatmegőrzési szerződése Rootfeladat,
+a main veszélyes customexercise-törlése nem másolandó automatikusan.
+
+Közös40404547333/3297e82b lezártFAIL csakphoneUIjobon; debug/JVM/signing,
+2signedupgrade és3WearUIjobSUCCESS. Friss rawphoneXML/darabszám triage még hátra,
+a korábbi99/104nem tekinthető ezen újfutás eredményének. Main/verzió/PRclose változatlan.
+
 ## PR267 audit első rootreview – 2026-10-26
 
 Chat5átadott267exact0f8cae57060a4b1b8fd7bee673a5ef6741641041, docs-only1file.
