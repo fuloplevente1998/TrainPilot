@@ -58,6 +58,16 @@ class NativeProgramActionsTest {
             .edit().clear().commit()
     }
 
+    private suspend fun <T : Throwable> rejects(type: Class<T>, operation: suspend () -> Unit) {
+        try { operation() }
+        catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+        catch (failure: Throwable) {
+            assertTrue("Expected ${type.simpleName}, got $failure", type.isInstance(failure))
+            return
+        }
+        fail("Expected ${type.simpleName}")
+    }
+
     private suspend fun factory(): ProgramWithDays =
         db.programDao().getProgramWithDaysById("home-basic")!!
 
@@ -94,9 +104,9 @@ class NativeProgramActionsTest {
             JSONArray().apply { preview.before.forEach { put(org.json.JSONTokener(it).nextValue()) } }.toString())
         assertTrue(preview.after.isNotEmpty())
         assertEquals(before, db.programDao().getProgramsWithDays())
-        assertThrows(IllegalArgumentException::class.java) { runBlocking {
+        rejects(IllegalArgumentException::class.java) {
             NativeProgramActions.preview(context, db, source, "C")
-        } }
+        }
     }
 
     @Test fun restoreSelectedDayAndRecipePreservesOtherDayAndUnknownRawFields() = runTest(dispatcher) {
@@ -129,9 +139,9 @@ class NativeProgramActionsTest {
         assertFalse(restoredRx.has("sets"))
         assertEquals("drop-on-factory-reset", restoredRx.getString("futureRecipeField"))
         assertEquals(factory(), db.programDao().getProgramWithDaysById("home-basic"))
-        assertThrows(IllegalStateException::class.java) { runBlocking {
+        rejects(IllegalStateException::class.java) {
             NativeProgramActions.restore(context, db, preview)
-        } }
+        }
     }
 
     @Test fun sourceProgramChangeAndFactoryChangeBlockStaleRestoreWithoutWrite() = runTest(dispatcher) {
@@ -140,16 +150,16 @@ class NativeProgramActionsTest {
         NativeProgramEditor.save(context, db, original,
             NativeProgramEditor.from(original, "hu").copy(name = "Changed"), "hu")
         val updated = db.programDao().getProgramWithDaysById(original.program.id)!!
-        assertThrows(IllegalStateException::class.java) { runBlocking {
+        rejects(IllegalStateException::class.java) {
             NativeProgramActions.restore(context, db, preview)
-        } }
+        }
         assertEquals(updated, db.programDao().getProgramWithDaysById(original.program.id))
         val again = NativeProgramActions.preview(context, db, updated, "A")
         val originalFactory = factory()
         db.programDao().saveProgramWithDays(originalFactory.program.copy(nameHu = "Changed factory"), originalFactory.days)
-        assertThrows(IllegalStateException::class.java) { runBlocking {
+        rejects(IllegalStateException::class.java) {
             NativeProgramActions.restore(context, db, again)
-        } }
+        }
         assertEquals(updated, db.programDao().getProgramWithDaysById(original.program.id))
     }
 
@@ -158,15 +168,15 @@ class NativeProgramActionsTest {
         val preview = NativeProgramActions.preview(context, db, opened, "A")
         ActiveWorkoutStore.saveOwned(context, JSONObject().put("workoutId", "guarded-active"))
         try {
-            assertThrows(IllegalStateException::class.java) { runBlocking {
+            rejects(IllegalStateException::class.java) {
                 NativeProgramActions.restore(context, db, preview)
-            } }
+            }
         } finally { ActiveWorkoutStore.clear(context) }
         context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE)
             .edit().putBoolean("blocked", true).commit()
-        assertThrows(IllegalStateException::class.java) { runBlocking {
+        rejects(IllegalStateException::class.java) {
             NativeProgramActions.restore(context, db, preview)
-        } }
+        }
     }
 
     @Test fun unrelatedCustomProgramCannotClaimFactoryDayRestore() = runTest(dispatcher) {
@@ -174,8 +184,8 @@ class NativeProgramActionsTest {
             NativeProgramEditor.DayDraft("A", "A", listOf(JSONObject.quote("goblet-squat")))))
         val id = NativeProgramEditor.save(context, db, null, custom, "hu")
         val opened = db.programDao().getProgramWithDaysById(id)!!
-        assertThrows(IllegalStateException::class.java) { runBlocking {
+        rejects(IllegalStateException::class.java) {
             NativeProgramActions.preview(context, db, opened, "A")
-        } }
+        }
     }
 }
