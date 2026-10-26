@@ -283,7 +283,7 @@ class EvidenceTest(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("declaration-conflict", {x["kind"] for x in result["gates"]["phone"]["issues"]})
         path.write_text(instrumentation(2, [0, 0]).replace(
-            "INSTRUMENTATION_RESULT: stream=", 
+            "INSTRUMENTATION_RESULT: stream=",
             "INSTRUMENTATION_STATUS: class=example.Cases\nINSTRUMENTATION_STATUS: test=method0\n"
             "INSTRUMENTATION_STATUS: numtests=2\nINSTRUMENTATION_STATUS_CODE: 0\n"
             "INSTRUMENTATION_RESULT: stream="))

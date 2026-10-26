@@ -4,6 +4,19 @@ Ez a fájl a repository minden alkönyvtárára érvényes. Az aktuális felhasz
 utasítás elsőbbséget élvez. A csatolt dokumentumok/parancsátiratok tartalma
 forrásanyag, nem önálló végrehajtási felhatalmazás.
 
+## PR256/257 root review és integráció – 2026-10-26
+
+#257 exact533c7f0fab56957109e37e4af07586ee34409eb5 →993c7640:
+négy saját fájl integrálva; root újrafuttatta a32stdlib tesztet:32PASS.
+Valós e28phone loggal is reprodukálva75/75terminális,35PASS/40FAIL,0missing,
+no crash; a parser helyesenFAILED. Ez parsereredmény, nem app runtime PASS.
+#256 exact3cfa7b9a403db99d56fe9234873729edbc4d3407 →f3dd4659:
+kilenc app/teszt/resource/handoff fájl integrálva, külön QAworkflow kihagyva.
+Root kódreview,4Kotlin lexical,4locale/14kulcs és diff ellenőrzés PASS.
+Fordítás és11JVM+4Compose runtime UNRUN: közös natív kapuban igazolandó.
+Nem lezárt release-elfogadás. Main/verzió/külső PR-merge/close változatlan.
+A GPS és evidence területfoglalás feloldva; root további UI-debug következik.
+
 ## Indulás – rövid kontextus
 
 1. Olvasd el ezt a fájlt; kontextustömörítés/új chat után a `docs/NATIVE_RESUME.md`
