@@ -150,8 +150,10 @@ jobs:
                                       shot = output / "host-captures" / (name + ".png")
                                       shot.write_bytes(data)
                                       seen.add(name)
-                                      adb("shell", "sh", "-c",
-                                          "printf '%s' '" + name + "' > /data/local/tmp/trainpilot-shot-ack")
+                                      # Match the repository's canonical phone-ui-gate.py:
+                                      # adb shell receives the whole redirection command remotely.
+                                      adb("shell", "printf '%s' '" + name +
+                                          "' > /data/local/tmp/trainpilot-shot-ack")
                           time.sleep(.15)
                       return proc.returncode, seen
                   finally:
