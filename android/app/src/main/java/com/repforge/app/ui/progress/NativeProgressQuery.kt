@@ -86,7 +86,7 @@ internal object NativeProgressQuery {
     fun invalidations(db: TrainPilotDatabase) = callbackFlow<Unit> {
         val observer = object : InvalidationTracker.Observer(
             "workout_history", "workout_history_exercises", "workout_history_sets",
-            "history_tombstones", "exercise_library"
+            "history_tombstones", "exercise_library", "workout_photos"
         ) {
             override fun onInvalidated(tables: Set<String>) { trySend(Unit) }
         }
