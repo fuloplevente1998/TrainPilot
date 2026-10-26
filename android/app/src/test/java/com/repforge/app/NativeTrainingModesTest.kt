@@ -77,6 +77,28 @@ class NativeTrainingModesTest {
             NativeTrainingModes.resolve(config().put("byProgram", "invalid"), "q").source)
     }
 
+    @Test fun globalPickerNeverReadsActiveProgramOverride() {
+        val saved = config(global = true, style = "normal", progression = "double")
+        saved.getJSONObject("byProgram").put("p", JSONObject()
+            .put("explicitChoice", true).put("trainingStyle", "hit")
+            .put("progressionMode", "rir"))
+        val global = NativeTrainingModes.globalChoice(saved.toString())
+        assertEquals("global", global.source)
+        assertNull(global.programId)
+        assertEquals("normal", global.trainingStyle)
+        assertEquals("double", global.progressionMode)
+        assertEquals("hit", NativeTrainingModes.resolve(saved, "p").trainingStyle)
+        assertEquals("rir", NativeTrainingModes.resolve(saved, "p").progressionMode)
+        // Even an inactive global choice displays stored defaults without opting in.
+        saved.put("explicitChoice", false)
+        val unapproved = NativeTrainingModes.globalChoice(saved.toString())
+        assertFalse(unapproved.explicitChoice)
+        assertEquals("normal", unapproved.trainingStyle)
+        assertEquals("double", unapproved.progressionMode)
+        assertEquals("legacy", unapproved.source)
+        assertEquals("normal", NativeTrainingModes.globalChoice("malformed").trainingStyle)
+    }
+
     @Test fun readingNeverMutatesConfigOrUnknownFields() {
         val saved = config().put("opaqueExtension", JSONObject().put("future", 42))
             .put("revision", 7)
