@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_health_sync_now">Sync now</string>
+    <string name="native_health_sync_full">Read all 30 days</string>
+    <string name="native_health_sync_cancel">Cancel sync</string>
+    <string name="native_health_sync_retry">Retry</string>
+    <string name="native_health_sync_preparing">Checking access…</string>
+    <string name="native_health_sync_changes">Change pages applied: %1$d</string>
+    <string name="native_health_sync_days">Days processed: %1$d / %2$d</string>
+    <string name="native_health_sync_partial">Partial sync. Received data is saved; previous values are retained for missing fields. Check permissions and retry.</string>
+    <string name="native_health_sync_failed">Sync failed. Check provider access and retry.</string>
+    <string name="native_health_sync_cancelled">Sync cancelled. Saved data is retained; the next sync resumes safely.</string>
+    <string name="native_health_sync_last">Last successful sync: %1$s</string>
+</resources>

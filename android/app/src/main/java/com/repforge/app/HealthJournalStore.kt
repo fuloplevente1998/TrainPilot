@@ -332,6 +332,28 @@ internal class HealthJournalStore(context: Context) :
         }
     }
 
+    internal fun nativeChangeRevision(expectedGeneration: Long): Long = synchronized(LOCK) {
+        writable(readableDatabase, expectedGeneration)
+        meta(readableDatabase, "hc_change_revision", "0").toLong()
+    }
+
+    /** Atomic local epoch check + local write. No provider IPC is allowed in writer. */
+    internal fun nativePublishAtChangeRevision(expectedGeneration: Long, revision: Long, writer: () -> Unit) {
+        synchronized(LOCK) {
+            check(nativeChangeRevision(expectedGeneration) == revision) { "Health changes superseded this daily read" }
+            writer()
+        }
+    }
+
+    private fun affectedSyncDays(days: MutableSet<String>, start: Long, end: Long, day: String) {
+        days.add(day)
+        val zone = java.time.ZoneId.systemDefault()
+        var cursor = Instant.ofEpochMilli(start).atZone(zone).toLocalDate()
+        val last = Instant.ofEpochMilli(end).atZone(zone).toLocalDate()
+        check(java.time.temporal.ChronoUnit.DAYS.between(cursor, last) <= 530) { "Health interval exceeds sync budget" }
+        while (cursor <= last) { days.add(cursor.toString()); cursor = cursor.plusDays(1) }
+    }
+
     @Throws(Exception::class)
     fun applyChanges(records: JSONArray, deleted: JSONArray, generation: Long): JSONArray {
         return transaction { db ->
@@ -341,8 +363,8 @@ internal class HealthJournalStore(context: Context) :
                 val d = deleted.getJSONObject(i)
                 val id = text(d, "recordId", 200)
                 val at = time(d, "deletedMs")
-                db.rawQuery("SELECT day FROM records WHERE channel=? AND record_id=?", arrayOf(HC, id)).use { c ->
-                    while (c.moveToNext()) dirty.add(c.getString(0))
+                db.rawQuery("SELECT day,start_ms,end_ms FROM records WHERE channel=? AND record_id=?", arrayOf(HC, id)).use { c ->
+                    while (c.moveToNext()) affectedSyncDays(dirty, c.getLong(1), c.getLong(2), c.getString(0))
                 }
                 val v = ContentValues().apply {
                     put("record_id", id)
@@ -355,18 +377,21 @@ internal class HealthJournalStore(context: Context) :
             for (i in 0 until records.length()) {
                 val r = records.getJSONObject(i)
                 db.rawQuery(
-                    "SELECT day FROM records WHERE channel=? AND type=? AND record_id=?",
+                    "SELECT day,start_ms,end_ms FROM records WHERE channel=? AND type=? AND record_id=?",
                     arrayOf(HC, r.getString("type"), r.getString("recordId"))
                 ).use { c ->
-                    if (c.moveToFirst()) dirty.add(c.getString(0))
+                    if (c.moveToFirst()) affectedSyncDays(dirty, c.getLong(1), c.getLong(2), c.getString(0))
                 }
                 upsert(db, r)
-                dirty.add(r.getString("day"))
+                affectedSyncDays(dirty, r.getLong("startMs"), r.getLong("endMs"), r.getString("day"))
             }
             for (dayStr in dirty) {
                 db.delete("days", "day=? AND channel=? AND source<>'@aggregate'", arrayOf(dayStr, HC))
                 val v = ContentValues().apply { put("day", dayStr) }
                 db.insertWithOnConflict("dirty_days", null, v, SQLiteDatabase.CONFLICT_IGNORE)
+            }
+            if (records.length() > 0 || deleted.length() > 0) {
+                putMeta(db, "hc_change_revision", (meta(db, "hc_change_revision", "0").toLong() + 1).toString())
             }
             JSONArray(dirty)
         }
@@ -623,6 +648,59 @@ internal class HealthJournalStore(context: Context) :
             if (sourceChanged) {
                 db.execSQL("INSERT OR IGNORE INTO dirty_days SELECT day FROM days WHERE channel='health_connect' AND source='@aggregate'")
             }
+            null
+        }
+    }
+
+    internal fun nativeSyncDirtyDays(): Set<java.time.LocalDate> = synchronized(LOCK) {
+        val days = sortedSetOf<java.time.LocalDate>()
+        readableDatabase.rawQuery("SELECT day FROM dirty_days ORDER BY day LIMIT 531", null).use { c ->
+            while (c.moveToNext()) days.add(java.time.LocalDate.parse(c.getString(0)))
+        }
+        check(days.size <= 530) { "Health dirty days exceed foreground budget" }
+        days
+    }
+
+    internal fun nativeSyncLastSuccess(): String = synchronized(LOCK) {
+        meta(readableDatabase, "lastSyncAt", "—")
+    }
+
+    /** Only this private key contains SDK tokens. Export/projection use explicit whitelists. */
+    private fun nativeSyncKey(provider: String): String {
+        require(provider == HC || provider == SAMSUNG)
+        return "native_sync_private_" + provider
+    }
+
+    internal fun nativeSyncState(provider: String, expectedGeneration: Long): NativeHealthSync.Checkpoint = synchronized(LOCK) {
+        writable(readableDatabase, expectedGeneration)
+        val value = JSONObject(meta(readableDatabase, nativeSyncKey(provider), "{}"))
+        if (value.optLong("epoch", -1) != expectedGeneration) NativeHealthSync.Checkpoint()
+        else NativeHealthSync.Checkpoint(value.optString("scope"), value.optString("token"),
+            value.optBoolean("initialized"), value.optLong("revision"))
+    }
+
+    /** Generation AND revision CAS: an old SDK response cannot resurrect a restore's token. */
+    internal fun nativeSyncCheckpoint(
+        provider: String, expectedGeneration: Long, expectedRevision: Long,
+        checkpoint: NativeHealthSync.Checkpoint, full: Boolean, at: String
+    ) {
+        transaction { db ->
+            writable(db, expectedGeneration)
+            val current = nativeSyncState(provider, expectedGeneration)
+            check(current.revision == expectedRevision) { "Obsolete Health sync checkpoint" }
+            putMeta(db, nativeSyncKey(provider), JSONObject().put("epoch", expectedGeneration)
+                .put("revision", expectedRevision + 1).put("scope", checkpoint.scope)
+                .put("token", checkpoint.token).put("initialized", true).toString())
+            putMeta(db, "lastSyncAt", at)
+            if (full) putMeta(db, "lastFullSyncAt", at)
+            null
+        }
+    }
+
+    internal fun nativeSyncAttempt(expectedGeneration: Long, at: String) {
+        transaction { db ->
+            writable(db, expectedGeneration)
+            putMeta(db, "lastAttemptAt", at)
             null
         }
     }

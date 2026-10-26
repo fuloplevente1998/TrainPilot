@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_health_sync_now">Szinkronizálás most</string>
+    <string name="native_health_sync_full">Teljes 30 nap újraolvasása</string>
+    <string name="native_health_sync_cancel">Szinkron megszakítása</string>
+    <string name="native_health_sync_retry">Újrapróba</string>
+    <string name="native_health_sync_preparing">Hozzáférés ellenőrzése…</string>
+    <string name="native_health_sync_changes">Feldolgozott változásoldalak: %1$d</string>
+    <string name="native_health_sync_days">Feldolgozott napok: %1$d / %2$d</string>
+    <string name="native_health_sync_partial">Részleges szinkron. A beérkezett adatok mentve; a hiányzó mezők korábbi értéke megmaradt. Ellenőrizd az engedélyeket, majd próbáld újra.</string>
+    <string name="native_health_sync_failed">A szinkron nem sikerült. Ellenőrizd a szolgáltató hozzáférését, majd próbáld újra.</string>
+    <string name="native_health_sync_cancelled">Szinkron megszakítva. A mentett adatok megmaradnak; a következő szinkron biztonságosan folytatja.</string>
+    <string name="native_health_sync_last">Utolsó sikeres szinkron: %1$s</string>
+</resources>

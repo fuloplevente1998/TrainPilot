@@ -55,6 +55,9 @@ import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import androidx.lifecycle.withResumed
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.Lifecycle
@@ -127,8 +130,25 @@ fun HealthDashboardScreen(
     LaunchedEffect(detailType) {
         viewModel.healthRecordDetailChanged(detailType != null)
     }
+    var pendingFullSync by rememberSaveable { mutableStateOf<Boolean?>(null) }
+    val permissionScope = rememberCoroutineScope()
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-        viewModel.refresh(activity)
+        val full = pendingFullSync
+        pendingFullSync = null
+        permissionScope.launch {
+            screenLifecycle.lifecycle.withResumed {
+                viewModel.healthScreenVisible(activity)
+                if (full == null) viewModel.refresh(activity) else viewModel.syncHealth(activity, full)
+            }
+        }
+    }
+    fun startSync(full: Boolean) {
+        val permissions = HealthConnectRepository.ALL_RUNTIME_PERMISSIONS
+        if (state.provider == "health_connect" && Build.VERSION.SDK_INT >= 34 &&
+            permissions.none { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED }) {
+            pendingFullSync = full
+            permissionLauncher.launch(permissions)
+        } else viewModel.syncHealth(activity, full)
     }
     val backgroundPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) viewModel.toggleHcBackground(true) else viewModel.refreshBackgroundStatus()
@@ -190,6 +210,10 @@ fun HealthDashboardScreen(
                 onToday = viewModel::historyToday,
                 onOpenRecords = { detailType = it },
                 onDailySource = viewModel::setDailySourcePreference,
+                onSync = { startSync(false) },
+                onFullSync = { startSync(true) },
+                onCancelSync = viewModel::cancelHealthSync,
+                onRetrySync = { startSync(state.syncRetryFull) },
                 onRefresh = {
                     val permissions = HealthConnectRepository.READ_PERMS.map { "android.permission.health.$it" }.toTypedArray()
                     if (state.provider == "health_connect" && Build.VERSION.SDK_INT >= 34 &&
@@ -238,7 +262,11 @@ fun HealthJournalTabContent(
     onChannel: (String) -> Unit,
     onToday: () -> Unit,
     onOpenRecords: (String) -> Unit,
-    onDailySource: (String) -> Unit
+    onDailySource: (String) -> Unit,
+    onSync: () -> Unit = {},
+    onFullSync: () -> Unit = {},
+    onCancelSync: () -> Unit = {},
+    onRetrySync: () -> Unit = {}
 ) {
     val colors = LocalTrainPilotColors.current
     val context = LocalContext.current
@@ -293,7 +321,7 @@ fun HealthJournalTabContent(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(strings.getString(R.string.native_health_source), color = colors.text, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                        IconButton(onClick = onRefresh, modifier = Modifier.size(32.dp)) {
+                        IconButton(onClick = onRefresh, enabled = !state.healthRefreshing, modifier = Modifier.size(32.dp)) {
                             Icon(Icons.Default.Refresh, contentDescription = strings.getString(R.string.native_health_refresh), tint = colors.accent)
                         }
                     }
@@ -380,12 +408,40 @@ fun HealthJournalTabContent(
                         )
                     )
                 }
-                if (state.healthRefreshing) Text(
-                    strings.getString(R.string.native_health_auto_refresh_running),
-                    color = colors.muted, fontSize = 11.sp,
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp)
-                        .testTag("health_auto_refresh_running")
-                )
+                Column(Modifier.padding(horizontal = 14.dp, vertical = 4.dp)) {
+                    Text(strings.getString(R.string.native_health_sync_last, state.lastSyncAt),
+                        color = colors.muted, fontSize = 11.sp, modifier = Modifier.testTag("health_sync_last"))
+                    if (state.healthRefreshing) {
+                        Text(strings.getString(R.string.native_health_auto_refresh_running),
+                            color = colors.muted, modifier = Modifier.testTag("health_auto_refresh_running"))
+                        val progressText = when (state.syncStage) {
+                            "CHANGES" -> strings.getString(R.string.native_health_sync_changes, state.syncPages)
+                            "DAYS", "COMPLETE" -> strings.getString(R.string.native_health_sync_days, state.syncCompleted, state.syncTotal)
+                            else -> strings.getString(R.string.native_health_sync_preparing)
+                        }
+                        Text(progressText, color = colors.muted, modifier = Modifier.testTag("health_sync_progress"))
+                        TextButton(onClick = onCancelSync, modifier = Modifier.testTag("health_sync_cancel")) {
+                            Text(strings.getString(R.string.native_health_sync_cancel))
+                        }
+                    } else {
+                        TextButton(onClick = onSync, modifier = Modifier.testTag("health_sync_now")) {
+                            Text(strings.getString(R.string.native_health_sync_now))
+                        }
+                        TextButton(onClick = onFullSync, modifier = Modifier.testTag("health_sync_full")) {
+                            Text(strings.getString(R.string.native_health_sync_full))
+                        }
+                    }
+                    if (state.syncFailed || state.syncPartial || state.syncCancelled) {
+                        Text(strings.getString(when {
+                            state.syncCancelled -> R.string.native_health_sync_cancelled
+                            state.syncPartial -> R.string.native_health_sync_partial
+                            else -> R.string.native_health_sync_failed
+                        }), color = colors.dangerText, modifier = Modifier.testTag("health_sync_failure"))
+                        if (!state.healthRefreshing) TextButton(onClick = onRetrySync, modifier = Modifier.testTag("health_sync_retry")) {
+                            Text(strings.getString(R.string.native_health_sync_retry))
+                        }
+                    }
+                }
             }
         }
 

@@ -125,6 +125,31 @@ object SamsungHealthRepository {
     }
 
     /** Real SDK read. Never substitute an empty/fresh day for unavailable data. */
+    private fun grantScope(reader: SamsungSdkReader.Reader): Set<String> {
+        val types = listOf(
+            com.samsung.android.sdk.health.data.data.DataTypes.STEPS,
+            com.samsung.android.sdk.health.data.data.DataTypes.ACTIVITY_SUMMARY,
+            com.samsung.android.sdk.health.data.data.DataTypes.ACTIVITY_SUMMARY,
+            com.samsung.android.sdk.health.data.data.DataTypes.ACTIVITY_SUMMARY,
+            com.samsung.android.sdk.health.data.data.DataTypes.EXERCISE,
+            com.samsung.android.sdk.health.data.data.DataTypes.HEART_RATE,
+            com.samsung.android.sdk.health.data.data.DataTypes.SLEEP,
+            com.samsung.android.sdk.health.data.data.DataTypes.BODY_COMPOSITION,
+            com.samsung.android.sdk.health.data.data.DataTypes.BODY_COMPOSITION,
+            com.samsung.android.sdk.health.data.data.DataTypes.BLOOD_OXYGEN,
+            com.samsung.android.sdk.health.data.data.DataTypes.ENERGY_SCORE
+        )
+        return PERMISSION_KEYS.zip(types).filter { (_, type) -> reader.allowed(type) }.map { it.first }.toSet()
+    }
+
+    /** Permission-only SDK IPC. Call outside every journal/metadata lock. */
+    internal suspend fun readGrantScope(context: Context, guard: () -> Unit): Set<String> = withContext(Dispatchers.IO) {
+        guard()
+        grantScope(SamsungSdkReader.open(context) { guard() }).also {
+            check(it.isNotEmpty()) { "Samsung Health read permission required" }
+        }
+    }
+
     suspend fun readHealthDay(
         context: Context,
         startIso: String,
@@ -133,6 +158,13 @@ object SamsungHealthRepository {
         requireForegroundGuard: () -> Unit,
         expectedGeneration: Long? = null,
         readCommit: ((() -> Unit) -> Unit) = { writer -> writer() }
+    ): Result<JSONObject> = readHealthDayScoped(context, startIso, endIso, dayKey,
+        requireForegroundGuard, expectedGeneration, readCommit, null)
+
+    internal suspend fun readHealthDayScoped(
+        context: Context, startIso: String, endIso: String, dayKey: String,
+        requireForegroundGuard: () -> Unit, expectedGeneration: Long?,
+        readCommit: ((() -> Unit) -> Unit), expectedGrantScope: Set<String>?
     ): Result<JSONObject> = withContext(Dispatchers.IO) {
         try {
             requireForegroundGuard()
@@ -144,6 +176,7 @@ object SamsungHealthRepository {
             val generation = expectedGeneration ?: journal.generation()
             val reader = SamsungSdkReader.open(context) { requireForegroundGuard() }
             check(reader.granted.isNotEmpty()) { "Samsung Health olvasási engedély szükséges." }
+            check(expectedGrantScope == null || grantScope(reader) == expectedGrantScope) { "Samsung read permissions changed" }
             val result = reader.daily(range[0], range[1]).put("day", day)
             // Missing grants must not erase prior values in the canonical Samsung daily row.
             // Use the existing journal failedFields merge, without changing the store schema.
