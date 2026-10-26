@@ -42,6 +42,16 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
 - Ne küldj GitHub-kommentet vagy másoknak üzenetet külön kérés nélkül.
   A kért nyomonkövetéshez issue/PR leírását és állapotát frissítheted.
 
+## Új három külső feladat – 2026-10-26, 32547e8a
+
+Pinned e28ab418. Átadva: plans/NATIVE_GOOGLE_MAINTENANCE_CODEX_HANDOFF.md
+(GoogleRepo maintenance+Settings UI/VM), NATIVE_GPS_RECOVERY_PLUS_HANDOFF.md
+(ActiveWorkout phone GPS permission/retry), NATIVE_CI_EVIDENCE_PLUS_HANDOFF.md
+(új offline evidence summary script/tests). Pontos diszjunkt fájlhatárok az MD-kben;
+területek most ezeknek foglaltak, indulás külön még nem igazolt. Saját ági célzott
+próba/teszt-APK kérhető, de közös teljes CI Rootnál. Nincs belső subagent,
+main/merge/verzió/élőadat-művelet. Root nav/CI-debug/integrátor marad.
+
 ## Új aktuális integráció – 2026-10-26
 
 #252936e5df/#2533d45d3ae/#254c6366826 Rootnál integrálva f208617c/acd6927c/624aaf01,

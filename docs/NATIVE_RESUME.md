@@ -19,21 +19,36 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
   High kód; Medium vizuális dizájn előtt jelezni; Extra High komoly végső debug előtt.
   Kevés lényegi magyar output, nincs belső subagent külön kérés nélkül. PR238 követőlap.
 
-## Legutóbbi kapu – onboarding teszt-compiler fix, 2026-10-26
+## Aktuális közös kapu és új külső kiosztás – 2026-10-26
 
-Checkout/teszt **771d90a9e1033f647fc17f84f0eb687d0640d19c**, appkód továbbra f72c9cb0.
-A40315675080 run telefon/Wear debug +phone UI-test APK fordítása PASS, a JVM-teszt
-fordítás NativeOnboardingStateTest három `p.Destination` hivatkozásán FAIL. Kotlin
-nested enumot a típuson kell címezni, nem az objecthez rendelt lokális változón:
-771d90a9 csak `NativeOnboardingPolicy.Destination`-ra javítja, assert/motor változatlan.
-Ez a run nem futtatott új JVM/UI/R8/upgrade elfogadást.
+Aktuális checkout/teszt **e28ab41887a976ee380f63f465dbdcb51f494329**, appkód f72c9cb0.
+**Egyetlen aktív canonical run40317771457:**
+https://github.com/fuloplevente1998/TrainPilot/actions/runs/40317771457
+Valós letöltött XML artifact12647857246: **telefon1120/0fail/0skip, Wear167/0/0**.
+#252 Calendar11, #253 Onboarding7 és #254 Program6 új JVM-esete mind PASS.
+Debug+phone UI-test APK fordítás, R8 release/original signer/package/verzió gate
+SUCCESS. Telefonos UI/valódi képek, Wear UI és két signed-upgrade job még fut.
+Ez nem teljes legfrissebb runtime-elfogadás és nem saját adatos install-engedély.
 
-**Aktuális egyetlen run40316447151**, exact checkout771d90a9:
-https://github.com/fuloplevente1998/TrainPilot/actions/runs/40316447151
-Indításkor IN_PROGRESS. Ezt ellenőrizd, ne a lentebbi korábbi futást és ne indíts
-másolatot. A1120 várt új JVM-eset nem futási eredmény: csak a kapu/XML alapján
-jelenthető. Main/package/version változatlan, PR252–254 integrálva, külső draftok
-nyitva; új code delta csak az átadott exact SHA-k óta. Élő adat fölé install STOP.
+40316447151 és40317244820 Root által CANCELLED, nem PASS. A tényleges utolsó
+elakadt eset az első run logjában NativeProfileDayHistory128Test.
+dayEvidenceAndReductionSurviveCanonicalBackupRoundTrip volt: #254 új commitkori
+Main guardja régi runBlocking tesztben. A program action nested runBlocking-ek
+külön szintén hibásak voltak. b2536516 és e28ab418 megőrzi a produkciós guardot,
+StandardTestDispatcher/runTest Rule és suspending típusellenőrző assert kerül a
+régi öt program/profil tesztosztályba is. Mind1120teszt már végigfutott zölden.
+
+Felhasználó új3munkát kér, linkek/leírások átadva **32547e8a**, pinned e28ab418:
+- Codex: plans/NATIVE_GOOGLE_MAINTENANCE_CODEX_HANDOFF.md, feat/native-google-maintenance-ui.
+  GoogleRepo maintenance routing +Settings UI/VM, saját locale/teszt. Terület foglalt.
+- Plus1: plans/NATIVE_GPS_RECOVERY_PLUS_HANDOFF.md, feat/native-gps-permission-recovery.
+  Phone ActiveWorkout GPS permission/retry +új helper/dialog, nem motor/Wear. Foglalt.
+- Plus2: plans/NATIVE_CI_EVIDENCE_PLUS_HANDOFF.md, test/native-ci-evidence-summary.
+  Új offline Python evidence-summary +stdlib teszt; meglévő gate/CI nem írható.
+Indulást még nem igazolt külön, átadók fenntartva. Saját ági célzott teszt/teszt-APK
+megengedett, branch/SHA/artifact egyértelmű jelöléssel; teljes kaput Root koordinál.
+Helyben nincs Gradle/emulátor. Root nav/tesztdebug/integráció, nincs belső subagent.
+Main/verzió/csomag változatlan. PR252–254 nyitott draft, kódjuk integrálva.
 
 ## PR252–254 integrálva; UI-debug és új közös kapu – 2026-10-26
 

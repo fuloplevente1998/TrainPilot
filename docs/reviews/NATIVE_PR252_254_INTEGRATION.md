@@ -78,3 +78,17 @@ NativeOnboardingStateTest három p.Destination hivatkozása nem oldható fel.
 771d90a9 csak teljes NativeOnboardingPolicy.Destination típusnevet használ,
 assert és appforrás változatlan. Új egyetlen40316447151 checkout771d90a9,
 indításkor IN_PROGRESS; az új24JVM/6UI még nem igazolt elfogadás.
+
+## Futással igazolt közös JVM eredmény
+
+40316447151 cancellation log tényleges utolsó eset: NativeProfileDayHistory128Test.
+dayEvidenceAndReductionSurviveCanonicalBackupRoundTrip (nem a még el nem ért
+ProgramActions osztály). A #254 commitkori második Main guard régi teszteket is
+érintett. b2536516 eltávolítja a programtesztek nested blokkolását; e28ab418 öt
+korábbi program/profil osztályba közös StandardTestDispatcher/runTest rule-t és
+felfüggeszthető, pontos kivételtípust ellenőrző assertet tesz. Produkciós védelem
+megmaradt.40317244820 saját elavult futás szintén cancel; nincs PASS-ként számolva.
+
+Új40317771457, exact e28ab418, valós XML12647857246: telefon1120/0/0, Wear167/0/0,
+Calendar11/Onboarding7/Program6 mind PASS. Debug+test-APK, R8/signing/metadata kapu
+SUCCESS. UI/Wear/upgrade futás még folyamatban az ellenőrzés pillanatában.
