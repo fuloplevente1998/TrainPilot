@@ -84,7 +84,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         loading = viewModelScope.launch {
             _uiState.update { it.copy(loading = true, loadFailed = false) }
             try {
-                val result = withContext(Dispatchers.IO) {
+                val (result, admission) = withContext(Dispatchers.IO) {
                     NativeDataReplacement.mutate(context) {
                         val settings = settingsStore.current()
                         val now = Instant.now(); val zone = ZoneId.systemDefault()
@@ -93,9 +93,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                         val liveHealth = WearLiveHealthStore.current(context)
                         HomeUiState(recommendedProgram = snapshot.program, nextTarget = snapshot.target,
                             nextDayExercisesCount = snapshot.exerciseCount, loading = false, todayMetrics = metrics,
-                            watchConnected = liveHealth != null, watchState = liveHealth?.optString("state").orEmpty())
+                            watchConnected = liveHealth != null, watchState = liveHealth?.optString("state").orEmpty()) to
+                            NativeDataReplacement.continuationForCurrentData(context)
                     }
                 }
+                admission.requireCurrent(context)
                 if (readEpoch.isCurrent(epoch)) {
                     _uiState.update { result.copy(hasImportedDraft = it.hasImportedDraft) }
                 }
