@@ -78,7 +78,7 @@ internal class NativeLocalizationEmulatorFixture {
         require(language in listOf("hu", "en", "de", "ro"))
         val tag = "settings_language_$language"
         compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag(tag))
-        compose.onNodeWithTag(tag).performClick()
+        compose.onNodeWithTag(tag).performScrollTo().assertIsDisplayed().performClick()
         compose.waitUntil(15_000) { selectedLanguage() == language }
         compose.onNodeWithTag(tag).assertIsSelected()
     }

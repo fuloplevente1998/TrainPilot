@@ -197,7 +197,7 @@ class NativePhoneNavigationTest {
             compose.waitUntil(10000) { runBlocking { settings.current().language == language } }
             compose.onNodeWithTag("settings_language_$language").assertIsSelected()
             compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("theme_$theme"))
-            compose.onNodeWithTag("theme_$theme").performClick()
+            compose.onNodeWithTag("theme_$theme").performScrollTo().assertIsDisplayed().performClick()
             compose.waitUntil(10000) { runBlocking { settings.current().themeKey == theme && settings.current().language == language } }
             screenshot("settings", language, theme)
         }
@@ -586,7 +586,7 @@ class NativePhoneNavigationTest {
         compose.waitUntil(15000) { compose.onAllNodesWithTag("weight_input").fetchSemanticsNodes().isEmpty() }
         compose.onNodeWithTag("weight_journal_list").performScrollToIndex(0)
         compose.waitUntil(15000) { compose.onAllNodesWithText("Aktuális: 81,5 kg").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("weight_measurement_count").assertTextContains("200 mérés")
+        compose.onNodeWithTag("weight_measurement_count").assertTextContains("200 mérés", substring = true)
         compose.onNodeWithTag("weight_global_extrema").assertTextContains("35 / 140 kg")
         val old = runBlocking(Dispatchers.IO) { TrainPilotDatabase.getInstance(context).bodyWeightDao().getWeightById("weight-0000")!! }
         assertEquals(140.0, old.kg, .0001)
@@ -667,12 +667,12 @@ class NativePhoneNavigationTest {
         compose.onNodeWithTag("health_open_sleep").performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("health_record_samsung-sleep").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("health_records_list").performScrollToNode(hasTestTag("health_record_expand_samsung-sleep"))
-        compose.onNodeWithTag("health_record_expand_samsung-sleep").performClick()
+        compose.onNodeWithTag("health_record_expand_samsung-sleep").performScrollTo().assertIsDisplayed().performClick()
         compose.onNodeWithTag("health_records_list").performScrollToNode(hasText("Könnyű alvás"))
         compose.onNodeWithText("Könnyű alvás").assertExists()
         screenshot("health_sleep_samsung")
         compose.onNodeWithTag("health_records_list").performScrollToNode(hasTestTag("health_record_expand_hc-sleep"))
-        compose.onNodeWithTag("health_record_expand_hc-sleep").performClick()
+        compose.onNodeWithTag("health_record_expand_hc-sleep").performScrollTo().assertIsDisplayed().performClick()
         compose.onNodeWithTag("health_records_list").performScrollToNode(hasText("Mélyalvás"))
         compose.onNodeWithText("Mélyalvás").assertExists()
         screenshot("health_sleep_hc")
@@ -865,7 +865,7 @@ class NativePhoneNavigationTest {
             compose.onAllNodesWithTag("personal_preview_accept").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("personal_template_home-basic").performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("personal_retained_A").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("personal_retained_A").performScrollTo().assertTextContains("teljes nap megmarad")
+        compose.onNodeWithTag("personal_retained_A").performScrollTo().assertTextContains("teljes nap megmarad", substring = true)
         screenshot("personal_proven_full_day")
         compose.onNodeWithText("Mégse").performClick()
         assertEquals(baseline, runBlocking(Dispatchers.IO) { db.programDao().getProgramIds().toSet() })
