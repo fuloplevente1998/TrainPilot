@@ -793,7 +793,7 @@
     {
       "featureId": "C01",
       "feature": "Teljes edzésnapló, keresés, hónap/dátum/időszak és meglévő szűrők",
-      "mainEntry": "www/index.html:L1040 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L11950 (tp236HistoryMore; app-part-059.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "journal",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/journal/JournalScreen.kt:L66",
       "callerChain": "journal_search → setSearch → pages",
@@ -804,12 +804,20 @@
       "status": "IMPLEMENTED_UNVERIFIED",
       "severity": "P1",
       "gap": "Execution, real data, main final JS override and UI acceptance not independently verified",
-      "acceptanceScenario": "From journal, perform Teljes edzésnapló, keresés, hónap/dátum/időszak és meglévő szűrők, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From journal, perform Teljes edzésnapló, keresés, hónap/dátum/időszak és meglévő szűrők, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "tp236HistoryMore",
+        "originalLine": 11950,
+        "rawFile": "app-part-059.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "1776ed03257b8b5f127613f071e9049b6985ebc689d5e3a85e0384345a05eeef",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "C02",
       "feature": "Naplózott edzés gyakorlat-/sorozat-/idő-/távadatai és meglévő szerkesztés/törlés",
-      "mainEntry": "www/index.html:L1007 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L1418 (var editHistoryWorkout; app-part-009.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "journal/details",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/journal/JournalScreen.kt:L216",
       "callerChain": "journal_edit → saveEditor → save",
@@ -820,12 +828,20 @@
       "status": "IMPLEMENTED_UNVERIFIED",
       "severity": "P1",
       "gap": "Execution, real data, main final JS override and UI acceptance not independently verified",
-      "acceptanceScenario": "Edit saved workout time/exercise/set and reopen verifying exact ID"
+      "acceptanceScenario": "Edit saved workout time/exercise/set and reopen verifying exact ID",
+      "mainEvidence": {
+        "symbolToken": "var editHistoryWorkout",
+        "originalLine": 1418,
+        "rawFile": "app-part-009.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "8101ac1a58f0dd8505ab3ba5413fce1a310dc78002969bd04ded3b76b4cc5e6a",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "C03",
       "feature": "Edzés-visszajelzés utólagos megadása/javítása, mainben engedett módosítások",
-      "mainEntry": "www/index.html:L1045 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L16878 (function accept(expected,f; app-part-080.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "journal/details",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/journal/JournalScreen.kt:L178",
       "callerChain": "feedback → openDetails → untraced underlying result",
@@ -836,12 +852,20 @@
       "status": "PARTIAL",
       "severity": "P2",
       "gap": "Post-hoc feedback edit callback not proven",
-      "acceptanceScenario": "From journal/details, perform Edzés-visszajelzés utólagos megadása/javítása, mainben engedett módosítások, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From journal/details, perform Edzés-visszajelzés utólagos megadása/javítása, mainben engedett módosítások, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "function accept(expected,f",
+        "originalLine": 16878,
+        "rawFile": "app-part-080.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "5ba7d9f30ead0a6fc2b3b2c6b836adb25483bf85b43dcf5797eb8242c90b533e",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "C04",
       "feature": "Edzés egészségadatai és forrásai, külön közvetlen TrainPilot óra és HC/Samsung adatok",
-      "mainEntry": "www/index.html:L1041 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L1140 (var healthFromHistory; app-part-007.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "journal/source",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/journal/JournalScreen.kt:L147",
       "callerChain": "journal_tab_ → refreshWorkoutHealth → untraced underlying result",
@@ -852,12 +876,20 @@
       "status": "PLATFORM_DEVICE_PENDING",
       "severity": "P1",
       "gap": "OWNED_BY_OTHER: current health-sync incremental/30d task; real SDK pending",
-      "acceptanceScenario": "From journal/source, perform Edzés egészségadatai és forrásai, külön közvetlen TrainPilot óra és HC/Samsung adatok, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From journal/source, perform Edzés egészségadatai és forrásai, külön közvetlen TrainPilot óra és HC/Samsung adatok, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "var healthFromHistory",
+        "originalLine": 1140,
+        "rawFile": "app-part-007.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "95711dd5493ca21b316b95348e1a9f961220788c30c438d86a94175efefc3380",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "C05",
       "feature": "Fotó készítése/galériás hozzáadás, lista/nézet/törlés és privát tárolás",
-      "mainEntry": "www/index.html:L1045 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L5800 (photo; app-part-027.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "active_workout/photos",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt:L129",
       "callerChain": "cameraLauncher → onPhotoCaptured → untraced underlying result",
@@ -868,12 +900,20 @@
       "status": "PLATFORM_DEVICE_PENDING",
       "severity": "P1",
       "gap": "Private photos/cloud late delete/ZIP restoration not device-gated",
-      "acceptanceScenario": "From active_workout/photos, perform Fotó készítése/galériás hozzáadás, lista/nézet/törlés és privát tárolás, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From active_workout/photos, perform Fotó készítése/galériás hozzáadás, lista/nézet/törlés és privát tárolás, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "photo",
+        "originalLine": 5800,
+        "rawFile": "app-part-027.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "4cb45b9a3c1e7845edb5cf2f0d9b6f684a310973e618f8453e32e94f709b51ba",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "C06",
       "feature": "Mentett útvonal megtekintése, pont-/szakasz-/távadatok",
-      "mainEntry": "www/index.html:L1044 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L19547 (function existing(wanted); app-part-089.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "journal/route",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/journal/JournalScreen.kt:L197",
       "callerChain": "journal_open_route → openRouteMap → untraced underlying result",
@@ -884,12 +924,20 @@
       "status": "PARTIAL",
       "severity": "P2",
       "gap": "Execution, real data, main final JS override and UI acceptance not independently verified",
-      "acceptanceScenario": "From journal/route, perform Mentett útvonal megtekintése, pont-/szakasz-/távadatok, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From journal/route, perform Mentett útvonal megtekintése, pont-/szakasz-/távadatok, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "function existing(wanted)",
+        "originalLine": 19547,
+        "rawFile": "app-part-089.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "0936cf7a94e2c9effe61c0add61ff12faa96b05734ec6d2d62aefb3fe9f51210",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "C07",
       "feature": "PR-jelvények és rekordrészletek",
-      "mainEntry": "www/index.html:L1045 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L20440 (function recordsFor; app-part-093.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "journal/progress",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/journal/JournalScreen.kt:L179",
       "callerChain": "prRecords → parsePrRecords → untraced underlying result",
@@ -900,12 +948,20 @@
       "status": "IMPLEMENTED_UNVERIFIED",
       "severity": "P2",
       "gap": "Execution, real data, main final JS override and UI acceptance not independently verified",
-      "acceptanceScenario": "From journal/progress, perform PR-jelvények és rekordrészletek, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From journal/progress, perform PR-jelvények és rekordrészletek, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "function recordsFor",
+        "originalLine": 20440,
+        "rawFile": "app-part-093.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "ae1c382e768babd1ed00d8e78a630f0a1ce8df5bf1996d50949a2a162b1da3fb",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "C08",
       "feature": "Gyakorlatonkénti előzmény, 1RM, volumen/ismétlés/teljesítmény és időszakos grafikonok",
-      "mainEntry": "www/index.html:L1707 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L13896 (progress; app-part-065.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "progress",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/progress/ProgressScreen.kt:L188",
       "callerChain": "progress_exercise_choices → selectExercise → trend",
@@ -916,12 +972,20 @@
       "status": "IMPLEMENTED_UNVERIFIED",
       "severity": "P2",
       "gap": "Execution, real data, main final JS override and UI acceptance not independently verified",
-      "acceptanceScenario": "From progress, perform Gyakorlatonkénti előzmény, 1RM, volumen/ismétlés/teljesítmény és időszakos grafikonok, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From progress, perform Gyakorlatonkénti előzmény, 1RM, volumen/ismétlés/teljesítmény és időszakos grafikonok, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "progress",
+        "originalLine": 13896,
+        "rawFile": "app-part-065.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "1e4cd7e5f151fc390aa639e8fa1702b5e63f927b504bf899c0d85ce5ef6fb40f",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "C09",
       "feature": "Izomcsoportterhelés/eloszlás, meglévő összesített statisztikák",
-      "mainEntry": "www/index.html:L1707 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L13944 (muscle; app-part-065.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "progress",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/progress/ProgressScreen.kt:L139",
       "callerChain": "muscle → loadProgressData → muscle",
@@ -932,12 +996,20 @@
       "status": "IMPLEMENTED_UNVERIFIED",
       "severity": "P2",
       "gap": "Execution, real data, main final JS override and UI acceptance not independently verified",
-      "acceptanceScenario": "From progress, perform Izomcsoportterhelés/eloszlás, meglévő összesített statisztikák, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From progress, perform Izomcsoportterhelés/eloszlás, meglévő összesített statisztikák, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "muscle",
+        "originalLine": 13944,
+        "rawFile": "app-part-065.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "1e4cd7e5f151fc390aa639e8fa1702b5e63f927b504bf899c0d85ce5ef6fb40f",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "C10",
       "feature": "Testsúlytrend, korábbi testtömeg és haladásfotók kapcsolata",
-      "mainEntry": "www/index.html:L214 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L2791 (var rf215WeightScreen; app-part-014.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "progress/weight_journal",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/progress/ProgressScreen.kt:L62",
       "callerChain": "onWeightJournal → loadProgressData → untraced underlying result",
@@ -948,12 +1020,20 @@
       "status": "PARTIAL",
       "severity": "P2",
       "gap": "Progress→weight works; full photo linked trend unverified",
-      "acceptanceScenario": "From progress/weight_journal, perform Testsúlytrend, korábbi testtömeg és haladásfotók kapcsolata, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From progress/weight_journal, perform Testsúlytrend, korábbi testtömeg és haladásfotók kapcsolata, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "var rf215WeightScreen",
+        "originalLine": 2791,
+        "rawFile": "app-part-014.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "2ec2015c346cdcb8a30045dad6587e476e88f13d602eeacbcfd8675823e296ce",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "C11",
       "feature": "Coach készenlét, tényezők, adatfrissesség és Samsung/saját/korlátozott pontszám",
-      "mainEntry": "www/index.html:L60 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L3507 (var rf233Decision; app-part-017.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "coach/home/health",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/coach/CoachScreen.kt:L56",
       "callerChain": "coach_ready → reload → calculate",
@@ -964,12 +1044,20 @@
       "status": "PLATFORM_DEVICE_PENDING",
       "severity": "P1",
       "gap": "Execution, real data, main final JS override and UI acceptance not independently verified",
-      "acceptanceScenario": "From coach/home/health, perform Coach készenlét, tényezők, adatfrissesség és Samsung/saját/korlátozott pontszám, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From coach/home/health, perform Coach készenlét, tényezők, adatfrissesség és Samsung/saját/korlátozott pontszám, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "var rf233Decision",
+        "originalLine": 3507,
+        "rawFile": "app-part-017.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "6783f3d9ecf1dabd1fd4408333896704d45661b0a6810cb1580f130892e784ec",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "C12",
       "feature": "Gyakorlatonkénti tanács, előzmény és terhelési/progressziós indokok",
-      "mainEntry": "www/index.html:L2006 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L3514 (rf233ExerciseAdvice; app-part-017.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "coach",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/coach/CoachScreen.kt:L105",
       "callerChain": "coach_advice_ → reload → untraced underlying result",
@@ -980,12 +1068,20 @@
       "status": "IMPLEMENTED_UNVERIFIED",
       "severity": "P2",
       "gap": "Execution, real data, main final JS override and UI acceptance not independently verified",
-      "acceptanceScenario": "From coach, perform Gyakorlatonkénti tanács, előzmény és terhelési/progressziós indokok, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From coach, perform Gyakorlatonkénti tanács, előzmény és terhelési/progressziós indokok, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "rf233ExerciseAdvice",
+        "originalLine": 3514,
+        "rawFile": "app-part-017.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "6783f3d9ecf1dabd1fd4408333896704d45661b0a6810cb1580f130892e784ec",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "C13",
       "feature": "Következő programnap kiválasztása, ajánlott edzés indítása/naptár megnyitása",
-      "mainEntry": "www/index.html:L1998 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L3495 (var rf233TargetWorkout; app-part-017.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "coach/calendar",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/coach/CoachScreen.kt:L94",
       "callerChain": "target.upcoming → reload → untraced underlying result",
@@ -996,12 +1092,20 @@
       "status": "IMPLEMENTED_UNVERIFIED",
       "severity": "P2",
       "gap": "Execution, real data, main final JS override and UI acceptance not independently verified",
-      "acceptanceScenario": "From coach/calendar, perform Következő programnap kiválasztása, ajánlott edzés indítása/naptár megnyitása, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From coach/calendar, perform Következő programnap kiválasztása, ajánlott edzés indítása/naptár megnyitása, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "var rf233TargetWorkout",
+        "originalLine": 3495,
+        "rawFile": "app-part-017.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "6783f3d9ecf1dabd1fd4408333896704d45661b0a6810cb1580f130892e784ec",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "C14",
       "feature": "Mainben meglévő edzésstílus/progressziós módok, előnézet, megerősítés, visszaállítás",
-      "mainEntry": "www/index.html:L1192 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L19989 (tp197UiRequestSave; app-part-091.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "settings/programs",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/settings/SettingsScreen.kt:L124",
       "callerChain": "NativeTrainingModePicker → approveTrainingMode → approve",
@@ -1012,7 +1116,15 @@
       "status": "IMPLEMENTED_UNVERIFIED",
       "severity": "P1",
       "gap": "Execution, real data, main final JS override and UI acceptance not independently verified",
-      "acceptanceScenario": "From settings/programs, perform Mainben meglévő edzésstílus/progressziós módok, előnézet, megerősítés, visszaállítás, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From settings/programs, perform Mainben meglévő edzésstílus/progressziós módok, előnézet, megerősítés, visszaállítás, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "tp197UiRequestSave",
+        "originalLine": 19989,
+        "rawFile": "app-part-091.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "d03302bc76d0a6ada801dbffd5e57f813812b9f274263001512134ff3f60f66d",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "D01",
@@ -2143,6 +2255,10 @@
     },
     "B": {
       "resolved": 18,
+      "unresolved": []
+    },
+    "C": {
+      "resolved": 14,
       "unresolved": []
     }
   }
