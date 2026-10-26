@@ -70,7 +70,17 @@ class NativePhoneNavigationTest {
         compose.waitUntil(30000) { compose.onAllNodesWithTag("navigation_home").fetchSemanticsNodes().isNotEmpty() }
         compose.waitForIdle()
     }
-    private fun tab(route: String) { compose.onNodeWithTag("navigation_$route").performClick(); compose.waitForIdle() }
+    private fun tab(route: String) {
+        compose.onNodeWithTag("navigation_$route").performClick()
+        // A click is not an admission receipt: await actual selected destination
+        // before starting the next screen's work/screenshot.
+        compose.waitUntil(15_000) {
+            compose.onAllNodesWithTag("navigation_$route").fetchSemanticsNodes().any {
+                it.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.Selected) == true
+            }
+        }
+        compose.waitForIdle()
+    }
     private fun snapshot(): JSONObject? {
         var result: JSONObject? = null
         instrumentation.runOnMainSync { result = ActiveWorkoutStore.current(context) }
