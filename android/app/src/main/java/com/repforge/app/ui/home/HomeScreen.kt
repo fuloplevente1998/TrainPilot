@@ -55,6 +55,10 @@ import com.repforge.app.ui.text.nativeLocalizedName
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.remember
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import com.repforge.app.ui.navigation.NativePlanningShortcuts
 import com.repforge.app.ui.theme.LocalTrainPilotColors
 
@@ -258,19 +262,36 @@ fun TodayMetricsGrid(metrics: TodayMetricsUiModel, language: String = "hu") {
     val colors = LocalTrainPilotColors.current
     val context = LocalContext.current
     val strings = remember(context, language) { nativeResources(context, language) }
+    val source = when (metrics.recovery.source) {
+        NativeHomeRecoveryPresentation.Source.SAMSUNG -> strings.getString(R.string.native_home_recovery_samsung)
+        NativeHomeRecoveryPresentation.Source.TRAINPILOT_ESTIMATE -> strings.getString(R.string.native_home_recovery_estimate)
+        NativeHomeRecoveryPresentation.Source.NONE -> strings.getString(R.string.native_home_recovery_no_data)
+    }
+    val formattedTime = metrics.recovery.timestamp?.let { stamp ->
+        val localTime = runCatching { Instant.parse(stamp).atZone(ZoneId.systemDefault()).toLocalTime() }.getOrNull()
+            ?: runCatching { LocalDateTime.parse(stamp).toLocalTime() }.getOrNull()
+        localTime?.format(DateTimeFormatter.ofPattern("HH:mm"))
+    }
+    val recoveryDetail = if (formattedTime != null) "$source · $formattedTime" else source
+    val recoveryNotices = listOfNotNull(
+        strings.getString(R.string.native_home_recovery_partial).takeIf { metrics.recovery.partial },
+        strings.getString(R.string.native_home_recovery_stale).takeIf { metrics.recovery.stale },
+        strings.getString(R.string.native_home_recovery_read_error).takeIf { metrics.recovery.refreshFailed }
+    ).joinToString(" · ")
     val items = listOf(
         HomeMetric("sleep", strings.getString(R.string.native_home_sleep), metrics.sleepText),
         HomeMetric("calories", strings.getString(R.string.native_home_active_calories), metrics.caloriesText),
         HomeMetric("pulse", strings.getString(R.string.native_home_pulse), metrics.pulseText),
         HomeMetric("steps", strings.getString(R.string.native_home_steps), metrics.stepsText, strings.getString(R.string.native_home_unit_steps)),
         HomeMetric("workouts", strings.getString(R.string.native_home_today_workout), metrics.workoutCountText, strings.getString(R.string.native_home_unit_workouts)),
-        HomeMetric("recovery", strings.getString(R.string.native_home_recovery), metrics.recoveryText, strings.getString(R.string.native_home_unit_readiness))
+        HomeMetric("recovery", strings.getString(R.string.native_home_recovery), metrics.recoveryText,
+            detail = recoveryDetail, notice = recoveryNotices)
     )
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         for (row in items.chunked(3)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                for ((key, label, value, unit) in row) {
+                for ((key, label, value, unit, detail, notice) in row) {
                     Card(
                         modifier = Modifier.weight(1f).testTag("home_metric_$key"),
                         shape = RoundedCornerShape(12.dp),
@@ -281,7 +302,7 @@ fun TodayMetricsGrid(metrics: TodayMetricsUiModel, language: String = "hu") {
                             modifier = Modifier.padding(10.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text(text = label, color = colors.muted, fontSize = 10.sp, maxLines = 1)
+                            Text(text = label, color = colors.muted, fontSize = 10.sp, maxLines = 2)
                             Spacer(Modifier.height(4.dp))
                             Text(
                                 text = value,
@@ -293,6 +314,10 @@ fun TodayMetricsGrid(metrics: TodayMetricsUiModel, language: String = "hu") {
                             )
                             if (unit != null) Text(unit, color = colors.muted, fontSize = 10.sp,
                                 modifier = Modifier.testTag("home_metric_${key}_unit"))
+                            if (detail != null) Text(detail, color = colors.muted, fontSize = 10.sp,
+                                maxLines = 3, modifier = Modifier.testTag("home_metric_${key}_source"))
+                            if (!notice.isNullOrEmpty()) Text(notice, color = colors.muted, fontSize = 10.sp,
+                                maxLines = 3, modifier = Modifier.testTag("home_metric_${key}_status"))
                         }
                     }
                 }
@@ -301,7 +326,8 @@ fun TodayMetricsGrid(metrics: TodayMetricsUiModel, language: String = "hu") {
     }
 }
 
-private data class HomeMetric(val key: String, val label: String, val value: String, val unit: String? = null)
+private data class HomeMetric(val key: String, val label: String, val value: String,
+    val unit: String? = null, val detail: String? = null, val notice: String? = null)
 
 @Composable
 fun QuickActionButton(
