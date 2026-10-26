@@ -726,7 +726,8 @@ class NativePhoneNavigationTest {
         store.healthDay(day, JSONObject().put("source", "@aggregate").put("steps", 123), store.generation())
         launch(); tab("health")
         compose.waitUntil(15000) { compose.onAllNodesWithTag("health_journal_list").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_daily_origin.alpha"))
+        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_daily_priority"))
+        compose.onNodeWithTag("health_daily_sources_row").performScrollToNode(hasTestTag("health_daily_origin.alpha"))
         compose.onNodeWithTag("health_daily_origin.alpha").performClick()
         compose.waitUntil(15000) { store.preferences().optString("hcDailySource") == "origin.alpha" &&
             compose.onAllNodesWithTag("health_daily_partial").fetchSemanticsNodes().isNotEmpty() }
