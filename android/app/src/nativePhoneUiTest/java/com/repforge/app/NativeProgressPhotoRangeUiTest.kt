@@ -157,7 +157,12 @@ class NativeProgressPhotoRangeUiTest {
         compose.onNodeWithTag("progress_photo_detail").assertDoesNotExist()
         compose.onNodeWithTag("progress_photo_choices")
             .performScrollToNode(hasTestTag("progress_photo_${missingId}"))
-        compose.waitUntil(30_000) { exists("progress_photo_error") }
+        // The clickable thumbnail merges its child semantics. Inspect the real
+        // error node in the unmerged tree rather than treating it as absent.
+        compose.waitUntil(30_000) {
+            compose.onAllNodesWithTag("progress_photo_error", useUnmergedTree = true)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
     }
 
     @Test fun strengthRangeRemainsIndependentAcrossLanguageAndTheme() {
