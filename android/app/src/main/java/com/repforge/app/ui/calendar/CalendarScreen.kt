@@ -182,14 +182,17 @@ private fun CalendarPlannerDialog(state: CalendarUiState, busy: Boolean, strings
     val colors = LocalTrainPilotColors.current
     val initial = state.plannerSettings
     val usablePrograms = state.programs.filter { it.days.isNotEmpty() }
-    val initialProgramId = initial?.programId?.takeIf { saved -> usablePrograms.any { it.program.id == saved } }
-        ?: usablePrograms.firstOrNull()?.program?.id.orEmpty()
+    val storedProgram = usablePrograms.firstOrNull { it.program.id == initial?.programId }
+    val initialProgramId = (storedProgram ?: usablePrograms.firstOrNull())?.program?.id.orEmpty()
     var programId by remember { mutableStateOf(initialProgramId) }
     var date by remember { mutableStateOf((initial?.start ?: state.day).toString()) }
     var time by remember { mutableStateOf(initial?.time?.toString() ?: "18:00") }
     var weeks by remember { mutableStateOf((initial?.weeks ?: 4).toString()) }
     var minutes by remember { mutableStateOf((initial?.minutes ?: 45).toString()) }
-    var first by remember { mutableStateOf(initial?.firstIndex ?: 0) }
+    // A removed/shortened saved program must not leave the form on an invalid day index.
+    var first by remember { mutableStateOf(storedProgram?.let {
+        (initial?.firstIndex ?: 0).coerceIn(0, it.days.lastIndex)
+    } ?: 0) }
     var mode by remember { mutableStateOf(initial?.mode ?: "alternate") }
     var weekdays by remember { mutableStateOf(initial?.weekdays ?: setOf(1, 3, 5)) }
     var invalid by remember { mutableStateOf(false) }
