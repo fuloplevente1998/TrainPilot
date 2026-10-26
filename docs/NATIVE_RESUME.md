@@ -19,6 +19,23 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
   High kód; Medium vizuális dizájn előtt jelezni; Extra High komoly végső debug előtt.
   Kevés lényegi magyar output, nincs belső subagent külön kérés nélkül. PR238 követőlap.
 
+## PR255 integrálva; PR256–257 vissza QA-ra – 2026-10-26
+
+#255 exacta671e50e2f7c875b00bdd1931e58b3973a0fd34f →b96b94e8.
+Google maintenance meglévő consent/account/operation/epoch útba integrálva;
+rootd735dbb5 javítja a disconnect pause-vesztését: identity törlődik, globális és
+szolgáltatásonkénti explicit pause/override megmarad.1új célzott JVM a külső11mellé,
+3Compose forrás; runtime UNRUN.7Kotlin lexical +4locale13kulcs/diff staticPASS.
+Nincs valódi Google RPC/delete/revoke, main/verzió/külső PR-merge/close nincs.
+
+Felhasználó #256a3ee639c és #2570ae38c3c félkész eredményét ugyanazon saját ágakon
+visszaadja audit/javítás/tesztelésre. Root egyiket sem integrálta. Promptok4e12b9df:
+plans/NATIVE_PR256_QA_FOLLOWUP.md (saját célzott Android QA workflow_dispatch-only
+engedélyezett, main/migration/canonical workflow írás nincs) és
+plans/NATIVE_PR257_QA_FOLLOWUP.md (offline stdlib ellenaudit, új valós75/40artifact).
+Munkások csak saját branch/PR; root review és közös integráció marad. Az eredeti
+14parser PASS nem natív UI PASS; GPS11JVM/4UI runtime még hiányzik.
+
 ## Telefonos UI eredmény és aktív root-javítás – 2026-10-26
 
 40317771457 e28ab418 telefonos UI **lezárt FAIL**,75/75 terminális esetből35PASS/

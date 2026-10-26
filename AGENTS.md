@@ -42,6 +42,17 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
 - Ne küldj GitHub-kommentet vagy másoknak üzenetet külön kérés nélkül.
   A kért nyomonkövetéshez issue/PR leírását és állapotát frissítheted.
 
+## Aktuális QA visszaadás – PR256/257
+
+#255a671e50e Rootnál integrálva b96b94e8 +d735dbb5 disconnect pause fix;
+Google/Settings foglalás feloldva. #256 GPS és #257 evidence summary még saját
+ágon, nem integrált: a user visszaadja ellenőrzésre és tesztelésre.
+plans/NATIVE_PR256_QA_FOLLOWUP.md és NATIVE_PR257_QA_FOLLOWUP.md az aktuális
+kiegészítő szerződés4e12b9df-ben. #256 saját manual-only scoped QA workflow most
+megengedett; canonical/main/migration írás továbbra tiltott a munkásnak.
+#257 nincs Android CI/APK, csak offline teszt és valós artifact-ellenőrzés.
+Root várja az új exact HEAD-et, a régi deltát ne integrálja vakon. Main merge nincs.
+
 ## Új három külső feladat – 2026-10-26, 32547e8a
 
 Pinned e28ab418. Átadva: plans/NATIVE_GOOGLE_MAINTENANCE_CODEX_HANDOFF.md
