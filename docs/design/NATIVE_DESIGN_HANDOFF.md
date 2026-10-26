@@ -17,6 +17,17 @@ Külön Codex előbb ütközésmentes specifikációt készíthet; production UI
 mostani telefonos QA-terület feloldása után. Részletes munkaszerződés:
 [Native final UI/UX Codex handoff](../plans/NATIVE_FINAL_UI_UX_CODEX_HANDOFF.md).
 
+### Az új mockupok és a WebView-elemek kapcsolata
+
+A felhasználó megerősítette: az új, ötfüles alsó navigációjú mockupok legyenek
+az elsődleges vizuális referencia. Modern, részletgazdag, mégis áttekinthető
+felület a cél. A WebView-os main bevált kártyái, adatmegjelenítései, vezérlői,
+feliratai és ismerős interakciói indokoltan átvehetők, az új dizájnba illesztve.
+Képernyőnként jelölni kell, mely bevált elem marad meg és hogyan illeszkedik
+az új mockup felépítéséhez. A teljes funkciómegőrzés mellett a használatban már
+bevált megoldások folytonossága is tervezési követelmény. Az ötfüles navigáció
+és az új grafit/arany vizuális rendszer marad az alap; a további témák is megmaradnak.
+
 ## Közös felépítés
 
 - Öt alsó fül: **Kezdőlap, Edzés, Napló, Fejlődés, Egészség**.

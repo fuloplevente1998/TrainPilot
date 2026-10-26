@@ -23,6 +23,17 @@ ritmus, adat-hierarchia, kártyák, ikonok, állapotszínek, beviteli és hibaje
 és a főműveletek kis kijelzőn is áttekinthetők és elérhetők legyenek.
 A valódi funkciót ne cseréld díszítő demo-kártyára vagy kitalált mérési adatra.
 
+### Az új mockupok és a WebView-elemek kapcsolata
+
+A felhasználó megerősítette: az új, ötfüles alsó navigációjú mockupok legyenek
+az elsődleges vizuális referencia. Modern, részletgazdag, mégis áttekinthető
+felület a cél. A WebView-os main bevált kártyái, adatmegjelenítései, vezérlői,
+feliratai és ismerős interakciói indokoltan átvehetők, az új dizájnba illesztve.
+Képernyőnként jelölni kell, mely bevált elem marad meg és hogyan illeszkedik
+az új mockup felépítéséhez. A teljes funkciómegőrzés mellett a használatban már
+bevált megoldások folytonossága is tervezési követelmény. Az ötfüles navigáció
+és az új grafit/arany vizuális rendszer marad az alap; a további témák is megmaradnak.
+
 ## Kötelező vizuális források
 
 - docs/design/mockups/01-main-pages-and-planning.png
