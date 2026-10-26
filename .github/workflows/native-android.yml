@@ -106,7 +106,6 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
-            set -euo pipefail
             mkdir -p phone-ui/results/raw
             find phone-ui/apk -type f -name '*.apk' -print
             test -s "$(find phone-ui/apk -type f -name 'app-debug.apk' -print -quit)"
@@ -114,37 +113,64 @@ jobs:
             adb install -r "$(find phone-ui/apk -type f -name 'app-debug.apk' -print -quit)"
             adb install -r "$(find phone-ui/apk -type f -name 'app-debug-androidTest.apk' -print -quit)"
             adb shell am instrument -w -r -e class com.repforge.app.NativeHomeRecoveryUiTest com.repforge.app.test/androidx.test.runner.AndroidJUnitRunner | tee phone-ui/results/instrumentation.txt
-            python3 - <<'PY'
-            import re, xml.etree.ElementTree as ET, pathlib
-            raw=pathlib.Path('phone-ui/results/instrumentation.txt').read_text()
-            blocks=re.findall(r'INSTRUMENTATION_STATUS: test=(.*?)\r?\n(?:.*?\n)*?INSTRUMENTATION_STATUS_CODE: (-?\d+)', raw)
-            passed=[name for name,code in blocks if code=='0']
-            failing=[(name,code) for name,code in blocks if code in ('-2','-3','-4')]
-            names=set(passed)
-            expected={'verifiedSamsungOnRealHomeAndRawScreenshot','realHomeDisplaysTrainPilotFallbackNotFabricatedSamsung','emptyJournalDisplaysDashAndNoData','localeChangesPreserveEnergyIdentityAndRenderHuEnDeRoLabels'}
-            suite=ET.Element('testsuite',name='NativeHomeRecoveryUiTest',tests=str(len(passed)+len(failing)),failures=str(len(failing)),skipped='0')
-            for name in passed: ET.SubElement(suite,'testcase',classname='NativeHomeRecoveryUiTest',name=name)
-            for name,code in failing:
-              case=ET.SubElement(suite,'testcase',classname='NativeHomeRecoveryUiTest',name=name)
-              ET.SubElement(case,'failure',message=code).text=raw[-5000:]
-            ET.ElementTree(suite).write('phone-ui/results/native-home-junit.xml',encoding='utf-8',xml_declaration=True)
-            print('terminal PASS',len(passed),'FAIL/SKIP',failing,'found',names)
-            if set(passed)!=expected or failing or 'INSTRUMENTATION_CODE: -1' not in raw:
-              raise SystemExit('Home UI terminal gate failed')
-            PY
-            # One existing Home navigation/state regression, without rerunning the full phone suite.
             adb shell am instrument -w -r -e class 'com.repforge.app.NativePhoneNavigationTest#homeTracksPlanSettingsProgramAndHistoryChangesAndStartsTheDisplayedSchedule' com.repforge.app.test/androidx.test.runner.AndroidJUnitRunner | tee phone-ui/results/existing-home-instrumentation.txt
-            python3 - <<'PY'
-            import pathlib, re
-            s=pathlib.Path('phone-ui/results/existing-home-instrumentation.txt').read_text()
-            statuses=re.findall(r'INSTRUMENTATION_STATUS_CODE: (-?\d+)',s)
-            assert statuses.count('0')==1 and not any(x in statuses for x in ['-2','-3','-4']) and 'INSTRUMENTATION_CODE: -1' in s, statuses
-            PY
-            for name in samsung fallback none locale-hu locale-en locale-de locale-ro; do
-              adb pull "/sdcard/Download/native-home-$name.png" "phone-ui/results/raw/native-home-$name.png"
-              test -s "phone-ui/results/raw/native-home-$name.png"
-            done
-            (cd phone-ui/results && sha256sum instrumentation.txt existing-home-instrumentation.txt native-home-junit.xml raw/*.png > SHA256SUMS.txt)
+            adb pull /sdcard/Download/native-home-samsung.png phone-ui/results/raw/native-home-samsung.png
+            adb pull /sdcard/Download/native-home-fallback.png phone-ui/results/raw/native-home-fallback.png
+            adb pull /sdcard/Download/native-home-none.png phone-ui/results/raw/native-home-none.png
+            adb pull /sdcard/Download/native-home-locale-hu.png phone-ui/results/raw/native-home-locale-hu.png
+            adb pull /sdcard/Download/native-home-locale-en.png phone-ui/results/raw/native-home-locale-en.png
+            adb pull /sdcard/Download/native-home-locale-de.png phone-ui/results/raw/native-home-locale-de.png
+            adb pull /sdcard/Download/native-home-locale-ro.png phone-ui/results/raw/native-home-locale-ro.png
+      - name: Validate real UI terminal results, original PNGs, and evidence hash
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import pathlib
+          import re
+          import xml.etree.ElementTree as ET
+          from collections import Counter
+          results = pathlib.Path('phone-ui/results')
+          expected = {
+              'verifiedSamsungOnRealHomeAndRawScreenshot',
+              'realHomeDisplaysTrainPilotFallbackNotFabricatedSamsung',
+              'emptyJournalDisplaysDashAndNoData',
+              'localeChangesPreserveEnergyIdentityAndRenderHuEnDeRoLabels',
+          }
+          def terminal(file):
+              source = (results / file).read_text(errors='replace')
+              names, actual, selected = [], [], None
+              for line in source.splitlines():
+                  if line.startswith('INSTRUMENTATION_STATUS: test='):
+                      selected = line.split('=', 1)[1].strip()
+                  if line.startswith('INSTRUMENTATION_STATUS_CODE:'):
+                      code = int(line.split(':', 1)[1].strip())
+                      if code <= 0:
+                          actual.append((selected, code))
+                          names.append(selected)
+              assert 'INSTRUMENTATION_CODE: -1' in source, 'Runner did not finish: ' + file
+              assert names and not any(name is None for name in names), 'Missing case: ' + file
+              return actual
+          new = terminal('instrumentation.txt')
+          old = terminal('existing-home-instrumentation.txt')
+          passed = [name for name, code in new if code == 0]
+          failures = [(name, code) for name, code in new if code != 0]
+          suite = ET.Element('testsuite', name='NativeHomeRecoveryUiTest',
+                             tests=str(len(new)), failures=str(len(failures)), errors='0', skipped='0')
+          for name, code in new:
+              case = ET.SubElement(suite, 'testcase', classname='NativeHomeRecoveryUiTest', name=name)
+              if code != 0:
+                  ET.SubElement(case, 'failure', message=str(code))
+          ET.ElementTree(suite).write(results / 'native-home-junit.xml', encoding='utf-8', xml_declaration=True)
+          print('Home tests', new, 'existing Home regression', old)
+          assert not failures and set(passed) == expected and len(passed) == 4, 'Home new UI cases did not all pass'
+          assert len(old) == 1 and old[0][1] == 0 and 'homeTracksPlanSettings' in old[0][0], 'Existing Home UI failed'
+          shots = ['samsung','fallback','none','locale-hu','locale-en','locale-de','locale-ro']
+          for name in shots:
+              shot = results / 'raw' / ('native-home-' + name + '.png')
+              assert shot.stat().st_size > 512 and shot.read_bytes()[:8] == bytes((137,80,78,71,13,10,26,10)), shot
+          PY
+          (cd phone-ui/results && sha256sum instrumentation.txt existing-home-instrumentation.txt native-home-junit.xml raw/*.png > SHA256SUMS.txt)
       - name: Upload unmodified PNG + raw runner log + parsed XML + SHA256
         if: always()
         uses: actions/upload-artifact@v4
