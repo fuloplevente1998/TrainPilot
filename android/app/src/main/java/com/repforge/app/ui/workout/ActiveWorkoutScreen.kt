@@ -3,6 +3,7 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import androidx.lifecycle.viewModelScope
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.key
 import com.repforge.app.NativeWorkoutTarget
 import com.repforge.app.NativeTimerTarget
@@ -849,7 +850,7 @@ private fun IntervalOptions(
     val context = LocalContext.current
     val text = remember(context, language) { com.repforge.app.ui.text.nativeResources(context, language) }
     val identity = "${state.workoutId}:${state.generation}:${exercise.sets.firstOrNull()?.setId}"
-    var expanded by remember(identity) { mutableStateOf(false) }
+    var expanded by rememberSaveable(identity) { mutableStateOf(false) }
     var work by remember(identity, state.intervalWork) { mutableStateOf(state.intervalWork.toString()) }
     var rest by remember(identity, state.intervalRest) { mutableStateOf(state.intervalRest.toString()) }
     var rounds by remember(identity, state.intervalRounds) { mutableStateOf(state.intervalRounds.toString()) }
