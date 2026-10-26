@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
@@ -25,7 +24,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import com.repforge.app.ActiveWorkoutStore
+import com.repforge.app.NativeDataReplacement
+import com.repforge.app.PhoneOwnership193
+import com.repforge.app.PhoneWorkoutExecution
 import com.repforge.app.NativeWorkoutTarget
 import com.repforge.app.R
 import com.repforge.app.ui.text.nativeResources
@@ -73,6 +74,19 @@ internal object NativeGpsPermissionRecovery {
         return decide(precise, approximate, gpsEnabled, requestedBefore, rationale)
     }
 
+    /** Saved in the Activity's instance state, not persisted to a workout or replayed on resume. */
+    fun encodePending(target: NativeWorkoutTarget): String =
+        JSONObject().put("w", target.workoutId).put("g", target.generation)
+            .put("e", target.exerciseId).put("s", target.setId).toString()
+
+    fun decodePending(value: String): NativeWorkoutTarget? =
+        runCatching {
+            val json = JSONObject(value)
+            NativeWorkoutTarget(json.getString("w"), json.getLong("g"),
+                json.getString("e"), json.getString("s"))
+        }.getOrNull()?.takeIf { it.workoutId.isNotBlank() && it.generation > 0 &&
+            it.exerciseId.isNotBlank() && it.setId.isNotBlank() }
+
     /** Read-only admission: the original workout, generation, exercise and set must still exist. */
     fun targetIsCurrent(frame: JSONObject?, target: NativeWorkoutTarget, isFinishing: Boolean): Boolean =
         if (frame == null || isFinishing || !frame.optBoolean("active") ||
@@ -83,6 +97,15 @@ internal object NativeGpsPermissionRecovery {
             val resolved = target.resolve(frame)
             resolved.exerciseIndex == frame.optInt("currentExercise") &&
                 !resolved.set.optBoolean("done")
+        }.getOrDefault(false)
+
+    /** Fresh phone-owner, replacement and writer admission; no GPS service side effect. */
+    fun mayStart(context: Context, frame: JSONObject?, target: NativeWorkoutTarget, isFinishing: Boolean): Boolean =
+        targetIsCurrent(frame, target, isFinishing) && runCatching {
+            !NativeDataReplacement.blocked(context) &&
+                !PhoneWorkoutExecution.store(context).restoreBlocked() &&
+                !PhoneWorkoutExecution.store(context).commandsSuspended() &&
+                PhoneOwnership193.phoneAllowed(context, target.workoutId)
         }.getOrDefault(false)
 
     fun settingsIntent(context: Context, blocker: NativeGpsPermissionBlocker): Intent? = when (blocker) {
