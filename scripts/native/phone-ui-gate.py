@@ -20,19 +20,32 @@ def digest(path):
 
 
 def report(raw, destination):
-    cases, current = [], {}
+    cases, current, declared = [], {}, 0
+    stack_continues = False
     for line in raw.splitlines():
         if line.startswith("INSTRUMENTATION_STATUS: "):
             key, separator, value = line.removeprefix("INSTRUMENTATION_STATUS: ").partition("=")
+            stack_continues = key == "stack"
             if separator:
                 current[key] = value
+                if key == "numtests" and value.isdigit():
+                    declared = max(declared, int(value))
         elif line.startswith("INSTRUMENTATION_STATUS_CODE: "):
             code = int(line.rsplit(":", 1)[1])
             if code != 1 and current.get("test"):
                 cases.append((current.copy(), code))
             current = {}
+            stack_continues = False
+        elif line.startswith("INSTRUMENTATION_"):
+            stack_continues = False
+        elif stack_continues:
+            current["stack"] += "\n" + line
     failed = "FAILURES!!!" in raw or "INSTRUMENTATION_FAILED" in raw or "shortMsg=" in raw
-    if not cases or failed and all(code == 0 for _, code in cases):
+    identities = [(case.get("class"), case.get("test")) for case, _ in cases]
+    complete = declared > 0 and len(cases) == declared and len(set(identities)) == declared
+    final = re.search(r"OK \((\d+) tests?\)", raw)
+    complete = complete and final is not None and int(final.group(1)) == declared
+    if not cases or (failed or not complete) and all(code == 0 for _, code in cases):
         cases.append(({"class": "runner", "test": "instrumentation_execution", "stack": raw[-8000:]}, -1))
     root = ET.Element("testsuite", name="native-phone-adb-derived", tests=str(len(cases)),
                       failures=str(sum(code == -2 for _, code in cases)),
@@ -46,7 +59,7 @@ def report(raw, destination):
             tag = "failure" if code == -2 else "skipped" if code in (-3, -4) else "error"
             ET.SubElement(element, tag).text = case.get("stack", "Instrumentation status " + str(code))
     ET.ElementTree(root).write(destination, encoding="utf-8", xml_declaration=True)
-    return all(code == 0 for _, code in cases)
+    return complete and not failed and all(code == 0 for _, code in cases)
 
 
 def main():
