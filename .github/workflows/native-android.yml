@@ -316,25 +316,45 @@ jobs:
             adb logcat -c
             adb shell am instrument -w -r -e class "com.repforge.app.NativeDataIntegrityArchiveTest#${DATA_METHOD}" com.repforge.app.test/androidx.test.runner.AndroidJUnitRunner > "data-qa/results/${DATA_METHOD}.raw.txt" 2>&1 || true
             adb logcat -d > "data-qa/results/${DATA_METHOD}.logcat.txt"
-            python3 - "${DATA_METHOD}" "data-qa/results/${DATA_METHOD}.raw.txt" "data-qa/results/${DATA_METHOD}.xml" "data-qa/results/${DATA_METHOD}.logcat.txt" <<'PY'
-            import pathlib, re, sys, xml.etree.ElementTree as ET
-            method, raw_path, xml_path, log_path = sys.argv[1:]
-            raw = pathlib.Path(raw_path).read_text(errors='replace')
-            log = pathlib.Path(log_path).read_text(errors='replace')
-            codes = re.findall(r'^INSTRUMENTATION_STATUS_CODE: (-?\d+)\s*$', raw, re.M)
-            tests = re.findall(r'^INSTRUMENTATION_STATUS: test=([^\r\n]+)', raw, re.M)
-            success = codes == ['1', '0'] and tests == [method, method] and 'INSTRUMENTATION_CODE: -1' in raw
-            marker = ('sample=' if method.startswith('jsonRoundTrip') or method.startswith('zipPhoto') else 'faults=')
-            evidence = [line for line in log.splitlines() if 'NativeDataIntegrity' in line and marker in line and 'status=PASS' in line]
-            success = success and len(evidence) == 1
-            suite = ET.Element('testsuite', name='NativeDataIntegrityArchiveTest', tests='1', failures='0' if success else '1', errors='0')
-            case = ET.SubElement(suite, 'testcase', classname='com.repforge.app.NativeDataIntegrityArchiveTest', name=method)
-            if not success:
-                ET.SubElement(case, 'failure', message='Missing, failed, duplicated, or crashed instrumentation/evidence').text = raw[-30000:] + '\n' + '\n'.join(evidence)
-            ET.ElementTree(suite).write(xml_path, encoding='utf-8', xml_declaration=True)
-            print('SCOPED_DATA_QA', method, 'PASS' if success else 'FAIL', 'statusCodes=', codes, 'tests=', tests, 'evidence=', evidence)
-            sys.exit(0 if success else 1)
-            PY
+      - name: Verify exact instrumentation and synthesize strict scoped JUnit XML
+        if: always()
+        shell: bash
+        env:
+          DATA_METHOD: ${{ matrix.method }}
+          EXPECTED_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          python3 - "${DATA_METHOD}" "data-qa/results/${DATA_METHOD}.raw.txt" "data-qa/results/${DATA_METHOD}.xml" "data-qa/results/${DATA_METHOD}.logcat.txt" <<'PY'
+          import pathlib, re, sys, xml.etree.ElementTree as ET
+          method, raw_path, xml_path, log_path = sys.argv[1:]
+          raw = pathlib.Path(raw_path).read_text(errors='replace') if pathlib.Path(raw_path).is_file() else ''
+          log = pathlib.Path(log_path).read_text(errors='replace') if pathlib.Path(log_path).is_file() else ''
+          codes = re.findall(r'^INSTRUMENTATION_STATUS_CODE: (-?\d+)\s*
+        if: always()
+        run: |
+          mkdir -p data-qa/results
+          sha256sum data-qa/results/* 2>/dev/null > data-qa/results/artifact-sha256.txt || true
+      - name: Upload scoped data integrity evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrainPilot-Scoped-Data-${{ matrix.method }}-${{ github.sha }}
+          path: data-qa/results/
+          if-no-files-found: error
+, raw, re.M)
+          tests = re.findall(r'^INSTRUMENTATION_STATUS: test=([^\r\n]+)', raw, re.M)
+          success = codes == ['1', '0'] and tests == [method, method] and 'INSTRUMENTATION_CODE: -1' in raw
+          marker = ('sample=' if method.startswith('jsonRoundTrip') or method.startswith('zipPhoto') else 'faults=')
+          evidence = [line for line in log.splitlines() if 'NativeDataIntegrity' in line and marker in line and 'status=PASS' in line]
+          source = pathlib.Path('data-qa/results/source-sha.txt')
+          success = success and len(evidence) == 1 and source.is_file() and source.read_text().strip() == __import__('os').environ['EXPECTED_SOURCE_SHA']
+          suite = ET.Element('testsuite', name='NativeDataIntegrityArchiveTest', tests='1', failures='0' if success else '1', errors='0')
+          case = ET.SubElement(suite, 'testcase', classname='com.repforge.app.NativeDataIntegrityArchiveTest', name=method)
+          if not success:
+              ET.SubElement(case, 'failure', message='Missing, failed, duplicated, or crashed instrumentation/evidence').text = raw[-30000:] + '\n' + '\n'.join(evidence)
+          ET.ElementTree(suite).write(xml_path, encoding='utf-8', xml_declaration=True)
+          print('SCOPED_DATA_QA', method, 'PASS' if success else 'FAIL', 'statusCodes=', codes, 'tests=', tests, 'evidence=', evidence)
+          sys.exit(0 if success else 1)
+          PY
       - name: Preserve exact raw, strict XML and fixture hashes
         if: always()
         run: |
