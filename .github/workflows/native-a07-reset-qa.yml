@@ -84,6 +84,20 @@ jobs:
       - uses: android-actions/setup-android@v4
       - name: Install Android SDK platform
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Preinstall API35 emulator image with clean retry
+        shell: bash
+        run: |
+          set -euo pipefail
+          IMAGE_DIR="$ANDROID_HOME/system-images/android-35/google_apis/x86_64"
+          for attempt in 1 2 3; do
+            rm -rf "$IMAGE_DIR"
+            if sdkmanager "system-images;android-35;google_apis;x86_64"; then
+              test -f "$IMAGE_DIR/package.xml"
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -147,6 +161,8 @@ jobs:
               find app/build/outputs/apk/androidTest/debug -type f -name '*.apk' -print0 2>/dev/null
               find "$OUT/screenshots" -type f -name '*.png' -print0 2>/dev/null
             } | xargs -0 -r sha256sum > "$OUT/SHA256SUMS.txt"
+            echo "A07_SHA256_MANIFEST"
+            cat "$OUT/SHA256SUMS.txt"
 
             for required in preview-cancel confirmed stale-error migrated-preview; do
               test -s "$OUT/screenshots/a07-${required}.png" || STATUS=1
