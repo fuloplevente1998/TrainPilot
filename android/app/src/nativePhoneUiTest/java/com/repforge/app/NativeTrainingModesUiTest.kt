@@ -156,9 +156,14 @@ class NativeTrainingModesUiTest {
         select("training_modes_program_progression", "rir")
         compose.onNodeWithTag("training_modes_program_preview").performClick()
         assertEquals("global", NativeTrainingModes.resolveSavedJson(current().trainingModes197Json, programId).source)
-        compose.waitUntil(30_000) {
-            compose.onAllNodesWithTag("training_modes_program_approve").fetchSemanticsNodes()
-                .any { it.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.Disabled) == null }
+        try {
+            compose.waitUntil(30_000) {
+                compose.onAllNodesWithTag("training_modes_program_approve").fetchSemanticsNodes()
+                    .any { it.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.Disabled) == null }
+            }
+        } catch (failure: Exception) {
+            throw AssertionError("Program mode comparison: " +
+                compose.onRoot(useUnmergedTree = true).printToString().take(8500), failure)
         }
         compose.onNodeWithTag("training_modes_program_comparison_0").assertExists()
         compose.onNodeWithTag("training_modes_program_approve").assertIsEnabled().performClick()
