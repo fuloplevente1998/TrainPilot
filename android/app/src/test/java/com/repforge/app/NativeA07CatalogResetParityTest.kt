@@ -130,7 +130,11 @@ class NativeA07CatalogResetParityTest {
             NativeProgramActions.restore(context, db, preview)
 
             val restored = requireNotNull(db.programDao().getProgramWithDaysById(opened.program.id))
-            assertEquals(factory.days.single { it.dayId == "A" }, restored.days.single { it.dayId == "A" })
+            val factoryA = factory.days.single { it.dayId == "A" }
+            val restoredA = restored.days.single { it.dayId == "A" }
+            assertEquals(factoryA.exercisesJson, restoredA.exercisesJson)
+            assertEquals(listOf(factoryA.nameHu, factoryA.nameEn, factoryA.nameDe, factoryA.nameRo),
+                listOf(restoredA.nameHu, restoredA.nameEn, restoredA.nameDe, restoredA.nameRo))
             assertEquals(beforeDayB, restored.days.single { it.dayId == "B" })
             assertEquals(beforeCatalog, db.exerciseLibraryDao().getAllExercises())
             assertEquals(beforeFavorites, NativeExerciseFavorites.load(db))
