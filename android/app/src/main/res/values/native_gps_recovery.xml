@@ -13,4 +13,5 @@
     <string name="native_gps_recovery_cancel">Mégse</string>
     <string name="native_gps_recovery_stale">A GPS eredeti edzése vagy sorozata időközben megváltozott. A mérés nem indult el.</string>
     <string name="native_gps_recovery_settings_unavailable">A rendszer helybeállításai nem nyithatók meg. Nyisd meg őket kézzel a telefon beállításaiból.</string>
+    <string name="native_gps_recovery_request_unavailable">A rendszer engedélykérése most nem nyitható meg. Próbáld újra a telefonon.</string>
 </resources>
