@@ -1072,9 +1072,16 @@ class NativePhoneNavigationTest {
         compose.onNodeWithTag("custom_exercise_edit").performClick()
         compose.onNodeWithTag("custom_exercise_delete").performClick()
         compose.onNodeWithTag("custom_exercise_confirm_delete").performClick()
-        compose.waitUntil(15000) { runBlocking(Dispatchers.IO) {
-            db.exerciseLibraryDao().getAllExercises().none { it.custom && it.nameHu == "Saját UI javítva" }
-        } }
+        try {
+            compose.waitUntil(15000) { runBlocking(Dispatchers.IO) {
+                db.exerciseLibraryDao().getAllExercises().none { it.custom && it.nameHu == "Saját UI javítva" }
+            } }
+        } catch (failure: Throwable) {
+            val saved = runBlocking(Dispatchers.IO) { db.exerciseLibraryDao().getAllExercises()
+                .filter { it.custom }.map { it.id + ":" + it.nameHu } }
+            throw AssertionError("Real custom exercise deletion did not persist: $saved; UI=" +
+                compose.onRoot(useUnmergedTree = true).printToString().take(8500), failure)
+        }
         assertFalse(ActiveWorkoutStore.current(context)?.optBoolean("active") == true)
     }
 
