@@ -108,7 +108,9 @@ class NativeProgramActionsTest {
         val raw = JSONObject(saved.program.rawJson)
         assertTrue(raw.getJSONObject("unknownProgramField").getBoolean("future"))
         assertEquals("keep", raw.getJSONArray("days").getJSONObject(0).getString("unknownDayField"))
-        assertFalse(raw.getJSONObject("prescriptions").has(sourceId))
+        val restoredRx = raw.getJSONObject("prescriptions").getJSONObject(sourceId)
+        assertFalse(restoredRx.has("sets"))
+        assertEquals("drop-on-factory-reset", restoredRx.getString("futureRecipeField"))
         assertEquals(factory(), db.programDao().getProgramWithDaysById("home-basic"))
         assertThrows(IllegalStateException::class.java) { runBlocking {
             NativeProgramActions.restore(context, db, preview)
