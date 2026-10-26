@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - feat/native-android-migration
+      # Own-branch QA only; omit this trigger when integrating the app changes.
+      - fix/native-phone-ui-final-gate
     paths:
       - 'android/**'
       - '.github/workflows/native-android.yml'
