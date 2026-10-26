@@ -38,7 +38,7 @@ data class TrainPilotExtendedColors(
     val onAccent2: Color = NativeThemeTokens.onFill(accent2),
     val accentText: Color = NativeThemeTokens.readableAccent(accent),
     val selectedSurface: Color = Card2Color,
-    val selectedBorder: Color = LineColor,
+    val selectedBorder: Color = NativeThemeTokens.readableControlAccent(accent, selectedSurface),
     val emphasisBorder: Color = LineColor,
     val danger: Color = DangerColor,
     val dangerText: Color = DangerTextColor,
