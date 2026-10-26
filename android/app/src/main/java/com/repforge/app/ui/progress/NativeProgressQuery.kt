@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import java.time.ZoneId
 import kotlin.math.max
 
 /** Progress-only projections: one exercise at a time; no full journal graphs, photos or GPS. */
@@ -38,17 +39,25 @@ internal object NativeProgressQuery {
         }
     }
 
-    suspend fun trend(dao: WorkoutHistoryDao, exerciseId: String): List<Exercise1RmPointUiModel> {
+    suspend fun trend(
+        dao: WorkoutHistoryDao, exerciseId: String,
+        range: NativeStrengthRange = NativeStrengthRange.ALL,
+        nowEpochMs: Long = System.currentTimeMillis(),
+        zone: ZoneId = ZoneId.systemDefault()
+    ): List<Exercise1RmPointUiModel> {
         if (exerciseId.isBlank()) return emptyList()
         var beforeEpoch: Long? = null
         var beforeWorkout = ""
         var beforeSet = Long.MAX_VALUE
+        val lower = range.startEpochMs(nowEpochMs, zone) ?: Long.MIN_VALUE
         val best = LinkedHashMap<String, Exercise1RmPointUiModel>()
         do {
             currentCoroutineContext().ensureActive()
             val page = dao.pageProgressExerciseSets(exerciseId, beforeEpoch, beforeWorkout, beforeSet, PAGE)
             if (page.isEmpty()) break
             for (row in page) {
+                if (row.startedEpochMs < lower) break // descending keyset: all later pages are too old
+                if (!range.contains(row.startedEpochMs, nowEpochMs, zone)) continue
                 val reps = row.reps.toIntOrNull() ?: continue
                 if (reps <= 0 || !row.weightKg.isFinite() || row.weightKg <= 0.0) continue
                 val result = row.weightKg * (1.0 + reps / 30.0)
@@ -63,6 +72,7 @@ internal object NativeProgressQuery {
             beforeEpoch = last.startedEpochMs
             beforeWorkout = last.workoutId
             beforeSet = last.setRowId
+            if (last.startedEpochMs < lower) break
         } while (page.size == PAGE)
         return best.values.reversed()
     }
