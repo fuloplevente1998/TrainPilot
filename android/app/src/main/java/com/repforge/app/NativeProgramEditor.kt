@@ -97,9 +97,19 @@ internal object NativeProgramEditor {
     }
 
     private suspend fun assertNoActiveWorkout(context: Context) = withContext(Dispatchers.Main.immediate) {
-        check(ActiveWorkoutStore.current(context)?.optBoolean("active") != true &&
-            PhoneWorkoutExecution.store(context).snapshot()?.optBoolean("active") != true) {
-            "Finish the active workout before modifying programs"
+        // Admission is checked again at commit, not merely when a preview is displayed.
+        synchronized(PhoneOwnership193.journal(context)) {
+            synchronized(ActiveWorkoutStore) {
+                val execution = PhoneWorkoutExecution.store(context)
+                val ownership = PhoneOwnership193.journal(context).read()
+                check(ActiveWorkoutStore.current(context)?.optBoolean("active") != true &&
+                    execution.snapshot()?.optBoolean("active") != true &&
+                    !execution.commandsSuspended() && !execution.restoreBlocked() &&
+                    ownership.optJSONObject("snapshot")?.optBoolean("active", true) != true &&
+                    ownership.optString("stage") !in setOf(
+                        "requested", "offered", "incoming", "accepted", "committed", "installed"
+                    )) { "Finish the active or transferring workout before modifying programs" }
+            }
         }
     }
 
@@ -112,8 +122,17 @@ internal object NativeProgramEditor {
     }
 
     suspend fun save(context: Context, db: TrainPilotDatabase, opened: ProgramWithDays?,
-        draft: Draft, language: String, personalMetadata: JSONObject? = null, clone: Boolean = false): String = NativeDataReplacement.mutate(context) {
+        draft: Draft, language: String, personalMetadata: JSONObject? = null, clone: Boolean = false,
+        actionToken: String? = null, restoreProgram: ProgramWithDays? = null,
+        restoreDayId: String? = null, restorePrescriptionIds: Set<String> = emptySet()
+    ): String = NativeDataReplacement.mutate(context) {
         require(language in langs)
+        require(actionToken == null || (actionToken.length in 8..80 && actionToken.all {
+            it.isLetterOrDigit() || it == '-'
+        }))
+        require((restoreProgram == null && restoreDayId == null && restorePrescriptionIds.isEmpty()) ||
+            (restoreProgram != null && restoreDayId != null && personalMetadata == null && !clone &&
+                opened?.program?.builtin == false && restoreDayId in opened.days.map { it.dayId }))
         assertNoActiveWorkout(context)
         val d = checked(draft)
         if (personalMetadata != null) {
@@ -162,6 +181,21 @@ internal object NativeProgramEditor {
         db.withTransaction {
             val original = opened?.let { db.programDao().getProgramWithDaysById(it.program.id) }
             if (opened != null) assertUnchanged(opened, original)
+            if (restoreProgram != null) {
+                val factory = db.programDao().getProgramWithDaysById(restoreProgram.program.id)
+                assertUnchanged(restoreProgram, factory)
+                check(factory!!.program.builtin && factory.program.id == "home-basic" &&
+                    original!!.program.sourceTemplateId == factory.program.id &&
+                    restoreDayId in setOf("A", "B")) { "Factory day no longer matches; reopen preview" }
+                val factoryDay = factory.days.single { it.dayId == restoreDayId }
+                val restored = d.days.single { it.id == restoreDayId }
+                check(restored.entries == (0 until JSONArray(factoryDay.exercisesJson).length()).map { ix ->
+                    encodeEntry(JSONArray(factoryDay.exercisesJson).get(ix))
+                }) { "Factory preview changed; reopen preview" }
+                check(restorePrescriptionIds == restored.entries.map(::exerciseId).toSet()) {
+                    "Factory recipe preview changed; reopen preview"
+                }
+            }
             if (personalMetadata != null) {
                 // Rebuild from canonical catalog/profile inside the write transaction.
                 // UI JSON and a historical lineage hash do not prove current eligibility.
@@ -181,6 +215,12 @@ internal object NativeProgramEditor {
             }
             // Built-in templates must be cloned, never overwritten.
             val fork = clone || opened == null || opened.program.builtin
+            if (fork && actionToken != null) {
+                val previous = db.programDao().getProgramsWithDays().firstOrNull {
+                    JSONObject(it.program.rawJson).optString("nativeActionToken") == actionToken
+                }
+                if (previous != null) return@withTransaction previous.program.id
+            }
             val id = if (fork) "custom-program-${UUID.randomUUID()}" else opened!!.program.id
             check(id !in db.programDao().getProgramIds() || !fork) { "Program ID collision" }
             val oldDays = if (fork) opened?.days.orEmpty() else original?.days.orEmpty()
@@ -204,6 +244,13 @@ internal object NativeProgramEditor {
             val originalProgram = opened?.program
             val originalJson = originalProgram?.rawJson?.let { JSONObject(it) } ?: JSONObject()
             val prescriptions = originalJson.optJSONObject("prescriptions")?.let { JSONObject(it.toString()) } ?: JSONObject()
+            if (restoreProgram != null) {
+                val sourceRx = JSONObject(restoreProgram.program.rawJson).optJSONObject("prescriptions")
+                for (exerciseId in restorePrescriptionIds) {
+                    prescriptions.remove(exerciseId)
+                    sourceRx?.optJSONObject(exerciseId)?.let { prescriptions.put(exerciseId, JSONObject(it.toString())) }
+                }
+            }
             val entriesByExercise = d.days.flatMap { it.entries }.groupBy(::exerciseId)
             for ((editedId, edit) in d.prescriptionEdits) {
                 val source = requireNotNull(db.exerciseLibraryDao().getExerciseById(editedId)) { "Unknown exercise" }
@@ -231,10 +278,11 @@ internal object NativeProgramEditor {
             }
             val dayEntities = d.days.mapIndexed { index, day ->
                 val previous = originalRows[day.id]
-                val hu = if (language == "hu" || previous == null) day.name else previous.nameHu
-                val en = if (language == "en" || previous == null) day.name else previous.nameEn
-                val de = if (language == "de" || previous == null) day.name else previous.nameDe
-                val ro = if (language == "ro" || previous == null) day.name else previous.nameRo
+                val factoryDay = if (day.id == restoreDayId) restoreProgram?.days?.single { it.dayId == day.id } else null
+                val hu = factoryDay?.nameHu ?: if (language == "hu" || previous == null) day.name else previous.nameHu
+                val en = factoryDay?.nameEn ?: if (language == "en" || previous == null) day.name else previous.nameEn
+                val de = factoryDay?.nameDe ?: if (language == "de" || previous == null) day.name else previous.nameDe
+                val ro = factoryDay?.nameRo ?: if (language == "ro" || previous == null) day.name else previous.nameRo
                 ProgramDayEntity("$id:${day.id}", id, day.id, hu, en, de, ro, index,
                     JSONArray().apply { day.entries.forEach { entry ->
                         put(NativeProgramPrescription.applyToInline(entry,
@@ -257,7 +305,8 @@ internal object NativeProgramEditor {
                 .put("builtin", false).put("generated", personalMetadata != null)
                 .put("sourceType", if (personalMetadata == null) "own" else "profile-template")
                 .put("days", jsonDays).put("updatedAt", System.currentTimeMillis())
-            if (d.prescriptionEdits.isNotEmpty()) raw.put("prescriptions", prescriptions)
+            if (d.prescriptionEdits.isNotEmpty() || restoreProgram != null)
+                raw.put("prescriptions", prescriptions)
             if (personalMetadata != null) {
                 raw.put("sourceTemplateId", opened!!.program.id).put("templateVersion", 2)
                     .put("estimatedMinutes", NativeProfileProgramPreview.estimatedMinutes(d.days, personalMetadata.getJSONObject("prescriptions")))
@@ -267,14 +316,22 @@ internal object NativeProgramEditor {
                     raw.put("history128", JSONObject(history.toString()))
                 }
             }
-            // Generated plan references are kept only on existing edits; new clones own their data.
-            if (fork && personalMetadata == null) raw.remove("sourceTemplateId")
+            // A direct built-in copy retains its factory lineage; this never points to history.
+            // An unrelated custom-program clone does not claim to be a factory template.
+            if (fork && personalMetadata == null) {
+                if (opened?.program?.builtin == true) raw.put("sourceTemplateId", opened.program.id)
+                else raw.remove("sourceTemplateId")
+                raw.remove("history128")
+            }
+            if (fork && actionToken != null) raw.put("nativeActionToken", actionToken)
             val entity = ProgramEntity(id, names.getValue("hu"), names.getValue("en"),
                 names.getValue("de"), names.getValue("ro"),
                 originalProgram?.location ?: "Otthon", originalProgram?.level ?: "Kezdő",
                 d.description, false, personalMetadata != null,
                 if (personalMetadata == null) "own" else "profile-template",
-                if (personalMetadata != null) opened!!.program.id else if (fork) null else originalProgram?.sourceTemplateId,
+                if (personalMetadata != null) opened!!.program.id
+                else if (fork) originalProgram?.id?.takeIf { originalProgram.builtin }
+                else originalProgram?.sourceTemplateId,
                 if (personalMetadata != null) 2 else originalProgram?.templateVersion ?: 1, originalProgram?.accentHex ?: "#4d8fbe",
                 if (fork) db.programDao().getProgramIds().size else originalProgram!!.sortOrder,
                 System.currentTimeMillis(), raw.toString())
