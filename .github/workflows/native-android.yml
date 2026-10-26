@@ -408,3 +408,15 @@ jobs:
           name: TrainPilot-Native-Phone-Offline-Report-${{ github.sha }}
           path: qa-report/
           if-no-files-found: ignore
+
+  evidence-parser-unit:
+    name: Fail-closed native screenshot and GPS parser regressions
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run host gate and evidence parser unit tests
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tests/native -p 'test_phone_ui_gate_report.py' -v
+          python3 -m unittest discover -s tests/native -p 'test_evidence_summary.py' -v
