@@ -55,6 +55,9 @@ import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import androidx.lifecycle.withResumed
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.Lifecycle
@@ -128,10 +131,16 @@ fun HealthDashboardScreen(
         viewModel.healthRecordDetailChanged(detailType != null)
     }
     var pendingFullSync by rememberSaveable { mutableStateOf<Boolean?>(null) }
+    val permissionScope = rememberCoroutineScope()
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         val full = pendingFullSync
         pendingFullSync = null
-        if (full == null) viewModel.refresh(activity) else viewModel.syncHealth(activity, full)
+        permissionScope.launch {
+            screenLifecycle.lifecycle.withResumed {
+                viewModel.healthScreenVisible(activity)
+                if (full == null) viewModel.refresh(activity) else viewModel.syncHealth(activity, full)
+            }
+        }
     }
     fun startSync(full: Boolean) {
         val permissions = HealthConnectRepository.ALL_RUNTIME_PERMISSIONS

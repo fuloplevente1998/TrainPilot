@@ -190,6 +190,22 @@ class NativeHealthSyncTest {
         assertEquals(30, values.last().completed)
     }
 
+    @Test fun historySelectionChangeInvalidatesFlightWithoutOverwritingTheNewQuery() = runTest {
+        val f = Fake()
+        val selected = today.minusDays(50)
+        val initial = com.repforge.app.ui.health.NativeHealthQuery(selected,
+            java.time.YearMonth.from(selected), "health_connect")
+        var query = initial
+        f.onRead = {
+            query = query.copy(day = selected.minusDays(1), channel = "journal")
+            true
+        }
+        assertTrue(runCatching { sync(f, guard = { check(query == initial) }) }.isFailure)
+        assertEquals(selected.minusDays(1), query.day)
+        assertEquals("journal", query.channel)
+        assertEquals(0, f.commits)
+    }
+
     @Test fun productionGateSharesAutoManualFlightUntilCancelledSdkHasUnwound() {
         val gate = NativeHealthAutoRefreshGate()
         val snapshot = NativeHealthAutoRefreshGate.Snapshot("health_connect", today.toString(), 4, 2)
