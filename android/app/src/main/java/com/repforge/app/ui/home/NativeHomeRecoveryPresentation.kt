@@ -85,3 +85,10 @@ object NativeHomeRecoveryPresentation {
         return Model(Source.NONE, null, null, null, partial, older || unverifiedEnergy, refreshFailed)
     }
 }
+
+/** Exact-result admission across cancel/reload/locale/date/zone and restore invalidations. */
+internal class NativeHomeRecoveryLoadGate {
+    private val generation = java.util.concurrent.atomic.AtomicLong()
+    fun next(): Long = generation.incrementAndGet()
+    fun isCurrent(ticket: Long): Boolean = ticket == generation.get()
+}
