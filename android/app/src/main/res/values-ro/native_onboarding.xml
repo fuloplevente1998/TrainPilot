@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_onboarding_welcome">Bine ai venit la TrainPilot!</string>
+    <string name="native_onboarding_intro">Configurează profilul de antrenament pentru o experiență personalizată. Poți face asta și mai târziu; antrenamentele existente nu sunt modificate.</string>
+    <string name="native_onboarding_begin">Începe</string>
+    <string name="native_onboarding_skip">Omite deocamdată</string>
+    <string name="native_onboarding_profile">Configurează profilul de antrenament</string>
+    <string name="native_onboarding_profile_intro">Obiectivele, echipamentul și limitările sunt păstrate în același profil ca în Setări.</string>
+    <string name="native_onboarding_edit">Editează profilul</string>
+    <string name="native_onboarding_resume_info">Poți continua aici după repornirea aplicației.</string>
+    <string name="native_onboarding_error">Salvarea a eșuat. Datele s-ar putea să se fi schimbat; încearcă din nou.</string>
+    <string name="native_onboarding_resume">Continuă configurarea profilului</string>
+</resources>
