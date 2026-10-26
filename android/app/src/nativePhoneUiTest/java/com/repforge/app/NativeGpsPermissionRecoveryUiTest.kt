@@ -174,7 +174,21 @@ class NativeGpsPermissionRecoveryUiTest {
         requirePermissions(precise = false, approximate = false)
         startDistanceWorkout()
         startGpsFromUi() // Actual RequestMultiplePermissions launcher.
-        shell("input keyevent 4") // Cancel Android runtime permission prompt.
+        // Back must dismiss the Android permission sheet, not the app behind it.
+        // Observe the platform foreground dialog before sending Back.
+        val device = UiDevice.getInstance(instrumentation)
+        val deadline = System.nanoTime() + 15_000_000_000L
+        var permissionSheetShown = false
+        while (System.nanoTime() < deadline) {
+            val focus = device.executeShellCommand("dumpsys window | grep mCurrentFocus")
+            if (focus.contains("permissioncontroller", ignoreCase = true)) {
+                permissionSheetShown = true
+                break
+            }
+            Thread.sleep(100)
+        }
+        assertTrue("Android runtime permission sheet never reached foreground", permissionSheetShown)
+        shell("input keyevent 4") // Cancel the observed permission sheet.
         waitDialog()
         assertNotStarted()
         compose.onNodeWithTag("gps_recovery_cancel").performClick()
@@ -192,6 +206,12 @@ class NativeGpsPermissionRecoveryUiTest {
         compose.waitUntil(15_000) {
             compose.onAllNodesWithTag("gps_recovery_dialog").fetchSemanticsNodes().isEmpty()
         }
-        assertNull(snapshot())
+        // clear() intentionally retains a non-active tombstone to block stale restore;
+        // null is not the persistence contract. Neither a current session nor a
+        // previously prepared GPS measurement is allowed to be resurrected.
+        val cleared = snapshot()
+        assertFalse(cleared?.optBoolean("active") == true)
+        assertTrue(cleared?.optJSONObject(NativeGpsMeasurement.FIELD)?.optString("state").orEmpty() !in
+            listOf("prepared", "running", "explicitStopped", "recorded"))
     }
 }
