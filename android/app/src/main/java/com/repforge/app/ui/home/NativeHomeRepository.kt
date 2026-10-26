@@ -21,7 +21,10 @@ internal class NativeHomeRepository(private val db: TrainPilotDatabase) {
 
     suspend fun read(activeProgramId: String, language: String, now: Instant, zone: ZoneId): Snapshot = db.withTransaction {
         val today = now.atZone(zone).toLocalDate()
-        val programs = db.programDao().getProgramsWithDays()
+        val daysByProgram = db.programDao().getProgramDaysForSnapshot().groupBy { it.programId }
+        val programs = db.programDao().getProgramRowsForSnapshot().map { program ->
+            ProgramWithDays(program, daysByProgram[program.id].orEmpty())
+        }
         val selected = NativeCoachTargets(db).select(activeProgramId, language, now, zone, programs)
         val program = selected?.let { target -> programs.single { it.program.id == target.programId } }
         val day = selected?.let { target -> program!!.days.single { it.dayId == target.dayId } }

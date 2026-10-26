@@ -39,9 +39,14 @@ class NativePlannerExclusionSafetyTest {
 
     @Test fun rejectsAnUnfillableProfileWithOnlyRealExerciseIds() {
         val profile = caseProfile("main-plan-4")
-        val allIds = TrainPilotDatabase.defaultExercises().map { it.id }
-        assertTrue(allIds.isNotEmpty())
-        profile.put("excluded", JSONArray(allIds))
+        // The full catalog contains 106 IDs, while valid profiles allow at most 100.
+        // Exclude all currently eligible movements, so the generator rather than the
+        // profile array-size validator must reject this genuinely unfillable plan.
+        val eligibleIds = TrainPilotDatabase.defaultExercises()
+            .filter { NativeProfileProgramPreview.variationRejection(it, profile).isEmpty() }.map { it.id }
+        assertTrue(eligibleIds.isNotEmpty()); assertTrue(eligibleIds.size <= 100)
+        profile.put("excluded", JSONArray(eligibleIds))
+        NativeTrainingProfile.verified(profile)
         val error = assertThrows(IllegalArgumentException::class.java) { preview(profile) }
         assertTrue(error.message.orEmpty().contains("Fewer than three eligible exercises"))
     }

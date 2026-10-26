@@ -26,7 +26,14 @@ class NativeThemeTokensTest {
         assertEquals(Card2Color, basic.selectedSurface)
         assertEquals(LineColor, basic.emphasisBorder)
         assertNotEquals(basic.selectedSurface, vivid.selectedSurface)
-        assertNotEquals(basic.selectedBorder, vivid.selectedBorder)
+        assertNotEquals(basic.emphasisBorder, vivid.emphasisBorder)
+        // An already readable palette paint can be the same outline in both families.
+        // Family distinction lives in the selected fill/emphasis, never lower contrast.
+        for (colors in listOf(basic, vivid)) {
+            assertTrue(NativeThemeTokens.contrast(colors.selectedBorder, colors.selectedSurface) >= 3f)
+            assertTrue(NativeThemeTokens.contrast(colors.selectedBorder, colors.card) >= 3f)
+            assertTrue(NativeThemeTokens.contrast(colors.selectedBorder, colors.card2) >= 3f)
+        }
         assertEquals(basic.danger, vivid.danger)
         assertEquals(basic.dangerText, vivid.dangerText)
     }

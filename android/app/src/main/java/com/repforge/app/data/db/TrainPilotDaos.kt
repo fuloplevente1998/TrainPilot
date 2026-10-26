@@ -17,6 +17,14 @@ interface ProgramDao {
     @Query("SELECT * FROM programs ORDER BY sortOrder ASC, id ASC")
     suspend fun getProgramsWithDays(): List<ProgramWithDays>
 
+    // Flat reads for the Home snapshot: Room's @Relation cursor mapping can replay
+    // its parent SELECT. Two flat lists avoid that second catalog read entirely.
+    @Query("SELECT * FROM programs ORDER BY sortOrder ASC, id ASC")
+    suspend fun getProgramRowsForSnapshot(): List<ProgramEntity>
+
+    @Query("SELECT * FROM program_days ORDER BY programId ASC, sortOrder ASC, dayId ASC")
+    suspend fun getProgramDaysForSnapshot(): List<ProgramDayEntity>
+
     @Transaction
     @Query("SELECT * FROM programs WHERE id = :programId LIMIT 1")
     suspend fun getProgramWithDaysById(programId: String): ProgramWithDays?

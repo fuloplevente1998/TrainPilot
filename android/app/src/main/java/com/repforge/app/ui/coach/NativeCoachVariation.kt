@@ -98,7 +98,9 @@ internal class NativeCoachVariation(private val context: Context, private val db
             raw.put("prescriptions", recipes).put("generated", true).put("sourceType", "coach")
                 .put("parentProgramId", fresh.source.program.id)
             raw.optJSONObject("history128")?.optJSONObject("entries")?.remove(fresh.exerciseId)
-            db.programDao().upsertProgram(saved.program.copy(generated = true, sourceType = "coach", rawJson = raw.toString()))
+            // REPLACE deletes the parent row and cascades to program_days. Republish the
+            // existing days with the metadata in the same transaction instead of losing them.
+            db.programDao().saveProgramWithDays(saved.program.copy(generated = true, sourceType = "coach", rawJson = raw.toString()), saved.days)
             id
         }
     }
