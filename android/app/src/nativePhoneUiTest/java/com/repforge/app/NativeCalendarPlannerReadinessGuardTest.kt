@@ -85,6 +85,19 @@ class NativeCalendarPlannerReadinessGuardTest {
         harness.cancel()
     }
 
+    @Test fun plannerOpenDisabledUntilProgramsLoadedThenClickOpens() {
+        val allowProgramRead = CompletableDeferred<Unit>()
+        harness.launch(programsReadGate = { allowProgramRead.await() }, waitForReady = false)
+        compose.waitUntil(20_000) { harness.model.state.value.plannerLoaded }
+        assertTrue("No programs published before the delayed Room subscription",
+            harness.model.state.value.programs.isEmpty())
+        harness.assertOpenDisabled()
+        allowProgramRead.complete(Unit)
+        harness.openPlanner()
+        assertTrue(harness.model.state.value.programs.any { it.days.isNotEmpty() })
+        harness.cancel()
+    }
+
     @Test fun cancelDuringRepositoryPreviewReadDropsLateResultAndContinuation() {
         val target = LocalDate.now().plusYears(6).withDayOfMonth(1)
         val beforeSettings = harness.storedSettings()
