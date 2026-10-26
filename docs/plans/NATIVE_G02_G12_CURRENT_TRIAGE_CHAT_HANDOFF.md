@@ -1,12 +1,19 @@
 # Wave 1 / Chat 5 — G02–G12 exact baseline triage, kizárólag audit/docs
 
+**Aktuális kiosztási baseline:** `3297e82bd7f841dc7a64b60ea26981898f5272ea` a `feat/native-android-migration` ágról.
+A #263/#264 kódja már integrálva, a közös kapu ekkor még folyamatban; saját zöld
+részkapu nem teljes elfogadás. Ez a baseline felülírja az eredeti wave index régi
+forrását. A saját új ág ebből induljon; main/migration csak olvasható marad.
+A Rootnál maradt öt phoneUI-failure területét ne módosítsd.
+
+
 **Saját ág javaslat:** `audit/native-g02-g12-head-triage` a rögzített migration HEAD-ből.  
 **Egyetlen írható fájl:** `docs/reviews/NATIVE_G02_G12_CURRENT_BASELINE_TRIAGE.md`.  
 **Nincs production, tests, fixture, workflow, AGENTS, NATIVE_RESUME vagy design spec írás. NINCS CI/API35 indítás ezen chaten.**
 
 ## Cél
 
-A `docs/design/final-ui-ux/04-implementation-and-acceptance.md` G02–G12 megfigyelései korábbi `c116a042` forrásra szóltak. Minden pontot újra kell ellenőrizni a jelenlegi migration exact `a075a21956ea4bd2f1089a9bc106dbe7a598c264` forrásán, összevetve PR #238 állításaival és a már külön végzett #263 (G01) és #264 (G10) munkával. **11 sor nem 11 automatikus hiba.** Ne másold a régi táblát friss ellenőrzés nélkül.
+A `docs/design/final-ui-ux/04-implementation-and-acceptance.md` G02–G12 megfigyelései korábbi `c116a042` forrásra szóltak. Minden pontot újra kell ellenőrizni a jelenlegi migration exact `3297e82bd7f841dc7a64b60ea26981898f5272ea` forrásán, összevetve PR #238 állításaival és a már integrált #263 (G01) és #264 (G10) munkával. **11 sor nem 11 automatikus hiba.** Ne másold a régi táblát friss ellenőrzés nélkül.
 
 ## Kötelező triage-mezők minden sorhoz
 
@@ -37,7 +44,7 @@ Státusz kizárólag **már javított / valós kötelező parity bug / elfogadot
 
 ## Közös munkaszerződés — kötelező
 
-- Repo: `fuloplevente1998/TrainPilot`. **Induló, rögzített migration HEAD:** `a075a21956ea4bd2f1089a9bc106dbe7a598c264`; a munka megkezdése előtt újraolvasandó a tényleges HEAD. A vizsgált kód és bizonyíték SHA-ja végig külön szerepeljen. **Main read-only**; a migration ág is read-only ezen chat számára.
+- Repo: `fuloplevente1998/TrainPilot`. **Induló, rögzített migration HEAD:** `3297e82bd7f841dc7a64b60ea26981898f5272ea`; a munka megkezdése előtt újraolvasandó a tényleges HEAD. A vizsgált kód és bizonyíték SHA-ja végig külön szerepeljen. **Main read-only**; a migration ág is read-only ezen chat számára.
 - Olvasd el: `AGENTS.md`, `docs/NATIVE_RESUME.md` eleje, PR #238, `docs/design/final-ui-ux/04-implementation-and-acceptance.md` releváns része és az itt megadott konkrét források. Régi státuszszöveg vagy régi SHA tesztje nem bizonyít mai PASS-t.
 - Egyedi saját ág; draft PR célja `feat/native-android-migration`. **Nincs automatikus merge, PR-/issue-zárás, main push, migration push, force push, rebase a másik chat ágára, csomag-/verzióemelés vagy aláírási módosítás.**
 - Nincs új belső subagent/másik Codex indítása. Szomszédos chat fájljainak módosítása tiltott. Fájlhatáron túli akadályt pontos útvonal/sor, javasolt patch és felelős megjelölésével add át, ne lépj át a másik tulajdonába.

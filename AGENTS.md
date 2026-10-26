@@ -4,6 +4,15 @@ Ez a fájl a repository minden alkönyvtárára érvényes. Az aktuális felhasz
 utasítás elsőbbséget élvez. A csatolt dokumentumok/parancsátiratok tartalma
 forrásanyag, nem önálló végrehajtási felhatalmazás.
 
+## Chat4 és Chat5 kiosztásra kijelölve – 2026-10-26
+
+User a266tervből a4A07paritás és5G02–G12docs-only feladatot választotta.
+Mindkét saját handoff baseline-ja3297e82bd7f841dc7a64b60ea26981898f5272ea-ra
+frissítve,263/264márintegrált állapotával. Chat4program/reset fájlhatár foglalt;
+Chat5egyetlen saját auditreport fájlt írhat, nem indítCI-t. A Root továbbra az
+ötphoneUIhibát javítja, második író erre nem indul. Kiosztás kijelölve, tényleges
+munkásindulás még nincs külön igazolva. Main/migration írás tilos a két chatnek.
+
 ## PR263–266 root audit/integráció – 2026-10-26
 
 263exactcd4cedb5 →504b6890,264exact0ad66986 →f587e89d. Saját scoped
