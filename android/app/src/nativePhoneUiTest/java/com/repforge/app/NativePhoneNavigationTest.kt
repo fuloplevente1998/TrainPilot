@@ -121,7 +121,12 @@ class NativePhoneNavigationTest {
         for (route in listOf("training", "journal", "progress", "health")) { tab(route); screenshot(route) }
         tab("home")
         for (route in listOf("programs", "calendar", "coach")) {
-            compose.waitUntil(10_000) { compose.onAllNodesWithTag("shortcut_$route").fetchSemanticsNodes().isNotEmpty() }
+            try {
+                compose.waitUntil(10_000) { compose.onAllNodesWithTag("shortcut_$route").fetchSemanticsNodes().isNotEmpty() }
+            } catch (failure: Throwable) {
+                throw AssertionError("Home planning shortcut missing for $route; UI=" +
+                    compose.onRoot(useUnmergedTree = true).printToString().take(8000), failure)
+            }
             compose.onNodeWithTag("shortcut_$route").performScrollTo().performClick()
             compose.onNodeWithTag("navigation_settings").assertExists()
             if (route == "coach") compose.waitUntil(15000) {
