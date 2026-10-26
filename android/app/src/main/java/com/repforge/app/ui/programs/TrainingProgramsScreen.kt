@@ -40,6 +40,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.Alignment
@@ -320,8 +321,9 @@ fun ProgramCardItem(
     val colors = LocalTrainPilotColors.current
     val context = LocalContext.current
     val strings = remember(context, language) { nativeResources(context, language) }
-    var expanded by remember { mutableStateOf(isActive) }
     val prog = programWithDays.program
+    // LazyColumn may evict an expanded offscreen card while the user scrolls to its day action.
+    var expanded by rememberSaveable(prog.id) { mutableStateOf(isActive) }
     fun name(hu: String, en: String, de: String, ro: String) = when (language) {
         "en" -> en; "de" -> de; "ro" -> ro; else -> hu
     }.ifBlank { hu }
