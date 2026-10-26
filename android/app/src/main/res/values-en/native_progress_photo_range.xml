@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_progress_photo_title">Workout photos</string>
+    <string name="native_progress_photo_empty">No private workout photos recorded yet.</string>
+    <string name="native_progress_photo_loading">Loading photo…</string>
+    <string name="native_progress_photo_unavailable">Photo missing or damaged.</string>
+    <string name="native_progress_photo_close">Close</string>
+    <string name="native_progress_photo_workout">Workout</string>
+    <string name="native_progress_photo_before">Before</string>
+    <string name="native_progress_photo_after">After</string>
+    <string name="native_progress_strength_30">30 days</string>
+    <string name="native_progress_strength_90">90 days</string>
+    <string name="native_progress_strength_year">1 year</string>
+    <string name="native_progress_strength_all">All</string>
+    <string name="native_progress_strength_loading">Loading strength data…</string>
+    <string name="native_progress_strength_empty">No strength measurements in this period.</string>
+</resources>

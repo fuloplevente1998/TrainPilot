@@ -5,6 +5,8 @@ import androidx.room.Room
 import com.repforge.app.data.db.*
 import com.repforge.app.ui.progress.NativeProgressQuery
 import kotlinx.coroutines.runBlocking
+import java.time.LocalDate
+import java.time.ZoneId
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -110,4 +112,37 @@ class NativeProgressQueryTest {
         }
         assertEquals("Beine", NativeProgressQuery.muscle(raw, "de").last().label)
     }
+    @Test fun selectedWindowFiltersBoundaryDaysAndFutureBadDatesWithoutChangingFormula() = runBlocking {
+        val zone = ZoneId.of("Europe/Budapest")
+        val day = LocalDate.of(2026, 10, 26)
+        val now = day.atTime(12, 0).atZone(zone).toInstant().toEpochMilli()
+        val first30 = day.minusDays(29).atStartOfDay(zone).toInstant().toEpochMilli()
+        insert(1, 30.0, "10", epoch = first30)
+        insert(2, 50.0, "10", epoch = first30 - 1)
+        insert(3, 60.0, "10", epoch = now + 60_000)
+        insert(4, 70.0, "10", epoch = now - 60_000)
+        val thirty = NativeProgressQuery.trend(db.workoutHistoryDao(),
+            "goblet-squat", com.repforge.app.ui.progress.NativeStrengthRange.DAYS_30, now, zone)
+        assertEquals(2, thirty.size)
+        assertEquals(listOf(30.0, 70.0), thirty.map { it.weightKg })
+        val all = NativeProgressQuery.trend(db.workoutHistoryDao(),
+            "goblet-squat", com.repforge.app.ui.progress.NativeStrengthRange.ALL, now, zone)
+        assertEquals(3, all.size) // one future measurement is excluded even for ALL
+        assertEquals(70.0 * (1 + 10.0 / 30.0), thirty.last().e1rmKg, 0.000001)
+    }
+
+    @Test fun twoHundredRecentSetsRemainedVisibleWhenThirteenHundredOlderSetsExist() = runBlocking {
+        val zone = ZoneId.of("Europe/Budapest")
+        val now = LocalDate.of(2026, 10, 26).atTime(12, 0)
+            .atZone(zone).toInstant().toEpochMilli()
+        for (i in 1..1500) {
+            val epoch = if (i <= 200) now - i * 10_000L
+                        else now - 150L * 86_400_000L - i * 1000L
+            insert(i, 25.0, "5", epoch = epoch)
+        }
+        val filtered = NativeProgressQuery.trend(db.workoutHistoryDao(),
+            "goblet-squat", com.repforge.app.ui.progress.NativeStrengthRange.DAYS_90, now, zone)
+        assertEquals(200, filtered.size)
+    }
+
 }
