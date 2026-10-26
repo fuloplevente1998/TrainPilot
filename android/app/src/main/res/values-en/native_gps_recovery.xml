@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_gps_recovery_title">Restore GPS access</string>
+    <string name="native_gps_recovery_ready">Precise location permission and the phone\'s GPS are available. Tracking starts only when you retry.</string>
+    <string name="native_gps_recovery_denied">GPS distance tracking needs precise location. Allow it in the next system prompt.</string>
+    <string name="native_gps_recovery_approximate">Only approximate location is allowed. Enable Use precise location for TrainPilot in app settings to measure distance.</string>
+    <string name="native_gps_recovery_permanent">Location permission cannot be requested again here. Open app permissions and enable precise location.</string>
+    <string name="native_gps_recovery_location_off">Your phone\'s GPS location service is off. Turn it on in system location settings. App permission alone is not enough.</string>
+    <string name="native_gps_recovery_location_settings">Phone location settings</string>
+    <string name="native_gps_recovery_app_settings">Open app permissions</string>
+    <string name="native_gps_recovery_retry">Retry GPS start</string>
+    <string name="native_gps_recovery_request">Request location permission</string>
+    <string name="native_gps_recovery_cancel">Cancel</string>
+    <string name="native_gps_recovery_stale">The original workout or set has changed. GPS tracking was not started.</string>
+    <string name="native_gps_recovery_settings_unavailable">Could not open system location settings. Open them manually in your phone\'s settings.</string>
+    <string name="native_gps_recovery_request_unavailable">The system permission request cannot be opened right now. Try again on your phone.</string>
+</resources>

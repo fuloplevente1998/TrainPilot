@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_gps_recovery_title">GPS-Zugriff wiederherstellen</string>
+    <string name="native_gps_recovery_ready">Genauer Standortzugriff und das GPS des Telefons sind verfügbar. Die Messung startet erst nach erneutem Versuch.</string>
+    <string name="native_gps_recovery_denied">Die GPS-Distanzmessung benötigt den genauen Standort. Erlaube ihn bei der nächsten Systemabfrage.</string>
+    <string name="native_gps_recovery_approximate">Nur ungefährer Standort ist erlaubt. Aktiviere in den App-Einstellungen für TrainPilot „Genauen Standort verwenden“.</string>
+    <string name="native_gps_recovery_permanent">Die Standortberechtigung kann hier nicht erneut angefordert werden. Öffne die App-Berechtigungen und aktiviere den genauen Standort.</string>
+    <string name="native_gps_recovery_location_off">Der GPS-Standortdienst des Telefons ist ausgeschaltet. Aktiviere ihn in den Systemeinstellungen. Die App-Berechtigung allein reicht nicht.</string>
+    <string name="native_gps_recovery_location_settings">Standorteinstellungen des Telefons</string>
+    <string name="native_gps_recovery_app_settings">App-Berechtigungen öffnen</string>
+    <string name="native_gps_recovery_retry">GPS-Start erneut versuchen</string>
+    <string name="native_gps_recovery_request">Standortberechtigung anfordern</string>
+    <string name="native_gps_recovery_cancel">Abbrechen</string>
+    <string name="native_gps_recovery_stale">Das ursprüngliche Training oder der Satz wurde geändert. Die GPS-Messung wurde nicht gestartet.</string>
+    <string name="native_gps_recovery_settings_unavailable">Die Standorteinstellungen konnten nicht geöffnet werden. Öffne sie manuell in den Telefoneinstellungen.</string>
+    <string name="native_gps_recovery_request_unavailable">Die Systemberechtigungsanfrage kann derzeit nicht geöffnet werden. Versuche es am Telefon erneut.</string>
+</resources>

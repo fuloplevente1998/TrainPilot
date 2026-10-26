@@ -12,6 +12,9 @@ import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.repforge.app.ActiveWorkoutStore
 
 import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -109,12 +112,15 @@ fun ActiveWorkoutScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val colors = LocalTrainPilotColors.current
     val context = LocalContext.current
-    val activity = context as? Activity
+    val activity = NativeGpsPermissionRecovery.findActivity(context)
     val strings = remember(context, language) { nativeResources(context, language) }
     val photoRepo = remember { WorkoutPhotoRepository(context) }
+    // Only a user action may start a GPS measurement. A Settings return updates the prompt, never starts it.
+    var gpsRecovery by remember { mutableStateOf<NativeGpsRecoveryPrompt?>(null) }
+    var requestedGpsPermission by rememberSaveable { mutableStateOf(false) }
     val renderedWorkoutId = state.workoutId
     val renderedGeneration = state.generation
-    BackHandler {
+    BackHandler(enabled = gpsRecovery == null) {
         if (!state.isFinishing) viewModel.leaveWorkout(renderedWorkoutId, renderedGeneration) { navController.popBackStack() }
     }
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -143,21 +149,76 @@ fun ActiveWorkoutScreen(
         }
     }
 
-    var pendingGpsPermission by remember { mutableStateOf<NativeWorkoutTarget?>(null) }
+    // Bundle-saveable identity survives configuration changes without persisting a GPS command.
+    var pendingGpsPermissionJson by rememberSaveable { mutableStateOf("") }
+    var gpsPermissionRequestInFlight by rememberSaveable { mutableStateOf(false) }
     val locationPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
-        val target = pendingGpsPermission
-        pendingGpsPermission = null
-        if (result[Manifest.permission.ACCESS_FINE_LOCATION] == true && target != null) viewModel.toggleGpsTracking(target)
-        else viewModel.showStatus(strings.getString(R.string.native_workout_gps_permission))
+        val target = NativeGpsPermissionRecovery.decodePending(pendingGpsPermissionJson)
+        pendingGpsPermissionJson = ""
+        gpsPermissionRequestInFlight = false
+        if (target != null) {
+            if (!NativeGpsPermissionRecovery.mayStart(context, ActiveWorkoutStore.current(context), target, state.isFinishing)) {
+                gpsRecovery = null
+                viewModel.showStatus(strings.getString(R.string.native_gps_recovery_stale))
+            } else {
+                val blocker = NativeGpsPermissionRecovery.read(context, activity, requestedGpsPermission)
+                if (result[Manifest.permission.ACCESS_FINE_LOCATION] == true &&
+                    blocker == NativeGpsPermissionBlocker.READY) {
+                    gpsRecovery = null
+                    viewModel.toggleGpsTracking(target)
+                } else {
+                    // Approximate is not precise; a denied or disabled service never writes a GPS start.
+                    gpsRecovery = NativeGpsRecoveryPrompt(target, blocker)
+                }
+            }
+        }
     }
     fun requestGps(target: NativeWorkoutTarget, measurementId: String?) {
         if (measurementId != null) { viewModel.toggleGpsTracking(target, measurementId); return }
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+        if (!NativeGpsPermissionRecovery.mayStart(context, ActiveWorkoutStore.current(context), target, state.isFinishing)) {
+            gpsRecovery = null
+            viewModel.showStatus(strings.getString(R.string.native_gps_recovery_stale))
+            return
+        }
+        if (gpsPermissionRequestInFlight) return // Only one Android launcher/callback for this screen.
+        val blocker = NativeGpsPermissionRecovery.read(context, activity, requestedGpsPermission)
+        if (blocker == NativeGpsPermissionBlocker.READY) {
+            gpsRecovery = null
             viewModel.toggleGpsTracking(target)
         } else {
-            pendingGpsPermission = target // Preserve the rendered identity across the permission dialog.
-            locationPermissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+            gpsRecovery = NativeGpsRecoveryPrompt(target, blocker)
+            if (blocker == NativeGpsPermissionBlocker.DENIED && activity != null) {
+                pendingGpsPermissionJson = NativeGpsPermissionRecovery.encodePending(target)
+                gpsPermissionRequestInFlight = true
+                requestedGpsPermission = true
+                try {
+                    locationPermissionLauncher.launch(arrayOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+                } catch (_: RuntimeException) {
+                    pendingGpsPermissionJson = ""
+                    gpsPermissionRequestInFlight = false
+                    viewModel.showStatus(strings.getString(R.string.native_gps_recovery_request_unavailable))
+                }
+            } else if (blocker == NativeGpsPermissionBlocker.DENIED) {
+                viewModel.showStatus(strings.getString(R.string.native_gps_recovery_request_unavailable))
+            }
         }
+    }
+
+    // ON_RESUME reflects both independent Android switches without replaying an old GPS request.
+    val latestRecovery by rememberUpdatedState(gpsRecovery)
+    val latestRequestedBefore by rememberUpdatedState(requestedGpsPermission)
+    DisposableEffect(lifecycleOwner, context, activity) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                latestRecovery?.let { prompt ->
+                    gpsRecovery = prompt.copy(blocker =
+                        NativeGpsPermissionRecovery.read(context, activity, latestRequestedBefore))
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     // Consume before waiting/permission: cancellation and recreation never replay an old start.
@@ -165,6 +226,31 @@ fun ActiveWorkoutScreen(
         val target = launchGps
         onLaunchGpsConsumed()
         if (target != null && viewModel.awaitLaunchGps(target)) requestGps(target, null)
+    }
+
+    gpsRecovery?.let { recovery ->
+        NativeGpsPermissionRecoveryDialog(
+            blocker = recovery.blocker,
+            language = language,
+            onRetry = { requestGps(recovery.target, null) },
+            onSettings = {
+                NativeGpsPermissionRecovery.settingsIntent(context, recovery.blocker)?.let { intent ->
+                    try {
+                        if (activity == null) throw IllegalStateException("no activity")
+                        activity.startActivity(intent)
+                    } catch (_: Exception) {
+                        viewModel.showStatus(strings.getString(R.string.native_gps_recovery_settings_unavailable))
+                    }
+                }
+            },
+            onDismiss = {
+                // Cancellation invalidates any saved launcher callback; it cannot start GPS later.
+                pendingGpsPermissionJson = ""
+                // Do not release the launcher lease until the old result arrives;
+                // otherwise a late callback could consume a newer pending target.
+                gpsRecovery = null
+            }
+        )
     }
 
     Box(modifier = Modifier.fillMaxSize().background(colors.bg)) {
