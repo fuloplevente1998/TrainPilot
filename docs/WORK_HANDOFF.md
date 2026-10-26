@@ -4,6 +4,15 @@ Frissítve: **2026-10-26**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Közös natív CI elindítva – 2026-10-26
+
+Actions **40275657585**: https://github.com/fuloplevente1998/TrainPilot/actions/runs/40275657585
+Workflow native-android.yml, manual dispatch, checkout71f16cde1d7182f2d1964a219f50e7c44052527c;
+alkalmazásforrás e344fed5, a checkout óta csak docs. Állapot indításkor IN_PROGRESS,
+siker/tesztszám/APK/upgrade még nem igazolt. Ne indíts párhuzamos másolatot vagy
+runtime watch-loopot; ugyanennek a futásnak job/XML eredményét vizsgáld legközelebb.
+Komoly hibakeresés előtt jelezni Extra High-ra váltást, a felhasználó állítja.
+
 ## #245 / #247 / #248 integrálva – 2026-10-26
 
 A felhasználó új külső eredményeket jelzett; két új PR valójában #247 és #248.
