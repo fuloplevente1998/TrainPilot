@@ -82,13 +82,19 @@ internal class TrainingProgramsViewModel(application: Application) : AndroidView
         preview: NativeTrainingModeChange.Preview,
         snapshot: NativeTrainingModeComparison.Snapshot
     ) = changeTrainingMode(R.string.native_modes_saved) {
+        commitComparedTrainingMode(preview, snapshot)
+    }
+
+    /** Suspended seam for deterministic admission/race tests; one metadata lease. */
+    internal suspend fun commitComparedTrainingMode(
+        preview: NativeTrainingModeChange.Preview,
+        snapshot: NativeTrainingModeComparison.Snapshot
+    ): Boolean = com.repforge.app.NativeDataReplacement.mutate(context) {
         // ProgramEditor.save/delete/restore use this same metadata lease. Keep
-        // the read-only program/epoch revalidation and the existing admitted
-        // settings CAS in one reentrant operation; never introduce a writer.
-        com.repforge.app.NativeDataReplacement.mutate(context) {
-            NativeTrainingModeComparison.isCurrent(context, preview, snapshot) &&
-                NativeTrainingModeChange.approve(settingsStore, preview)
-        }
+        // read-only program/epoch revalidation and existing settings CAS in one
+        // reentrant operation; never introduce a writer or an extra mutex.
+        NativeTrainingModeComparison.isCurrent(context, preview, snapshot) &&
+            NativeTrainingModeChange.approve(settingsStore, preview)
     }
 
     fun undoTrainingMode(programId: String) = changeTrainingMode(R.string.native_modes_reverted) {
