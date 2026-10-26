@@ -80,10 +80,13 @@ fun SettingsScreen(
     val colors = LocalTrainPilotColors.current
     val context = LocalContext.current
     val strings = remember(context, state.settings.language) { nativeResources(context, state.settings.language) }
+    val activity = context as? Activity
+    val maintenancePreview by viewModel.maintenancePreview.collectAsStateWithLifecycle()
+    NativeGoogleMaintenanceConfirmation(maintenancePreview, state.settings.language, state.maintenanceBusy,
+        viewModel::cancelGoogleMaintenance, { activity?.let(viewModel::confirmGoogleMaintenance) })
     val googleConsent by viewModel.googleConsent.collectAsStateWithLifecycle()
     NativeGoogleConsentLauncher(googleConsent, viewModel::takeGoogleConsent,
         viewModel::completeGoogleConsent, viewModel::failGoogleConsent)
-    val activity = context as? Activity
     var profileOpen by remember { mutableStateOf(false) }
     var openedProfileJson by remember { mutableStateOf("{}") }
     var openedTimerJson by remember { mutableStateOf<String?>(null) }
@@ -218,6 +221,8 @@ fun SettingsScreen(
                             }
                         }
                         Spacer(Modifier.height(8.dp))
+                        NativeGoogleMaintenanceControls(state.settings.language, state.maintenanceBusy || gs.isBusy || state.replacementBusy,
+                            viewModel::openGoogleMaintenance)
                         TextButton(onClick = { viewModel.disconnectGoogle() }, enabled = !gs.isBusy && !state.replacementBusy) {
                             Text(strings.getString(R.string.native_settings_disconnect), color = colors.dangerText, fontSize = 11.sp)
                         }
@@ -233,6 +238,7 @@ fun SettingsScreen(
                             Text(strings.getString(R.string.native_settings_google_login), color = colors.onAccent, fontWeight = FontWeight.Bold)
                         }
                     }
+                    NativeGoogleMaintenanceFeedback(state.settings.language, state.maintenanceOutcome, state.maintenanceCompleted)
                     if (gs.isBusy) {
                         Spacer(Modifier.height(6.dp))
                         Text(gs.stageMessage, color = colors.accent2, fontSize = 11.sp)

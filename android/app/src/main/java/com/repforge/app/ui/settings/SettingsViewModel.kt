@@ -43,6 +43,9 @@ data class SettingsUiState(
     val profileWriteFailed: Boolean = false,
     val profileSavedSequence: Int = 0,
     val modeSaving: Boolean = false,
+    val maintenanceBusy: Boolean = false,
+    val maintenanceOutcome: String = "",
+    val maintenanceCompleted: Int = 0,
     val timerSaving: Boolean = false,
     val timerWriteFailed: Boolean = false,
     val timerSavedSequence: Int = 0
@@ -57,6 +60,46 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val googleConsentBridge = NativeGoogleConsentBridge()
     internal val googleConsent = googleConsentBridge.prompt
     private var googleRequestRunning = false
+    private val _maintenancePreview = MutableStateFlow<NativeGoogleMaintenance.Request?>(null)
+    internal val maintenancePreview = _maintenancePreview.asStateFlow()
+
+    internal fun openGoogleMaintenance(kind: NativeGoogleMaintenance.Kind) {
+        if (googleRequestRunning || _uiState.value.replacementBusy || _uiState.value.maintenanceBusy) return
+        _uiState.value = _uiState.value.copy(maintenanceBusy = true, maintenanceOutcome = "")
+        viewModelScope.launch {
+            try { _maintenancePreview.value = googleRepo.previewMaintenance(kind) }
+            catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (_: Exception) { _uiState.value = _uiState.value.copy(maintenanceOutcome = "failed") }
+            finally { _uiState.value = _uiState.value.copy(maintenanceBusy = false) }
+        }
+    }
+    internal fun cancelGoogleMaintenance() { _maintenancePreview.value = null }
+    internal fun confirmGoogleMaintenance(activity: Activity) {
+        val request = _maintenancePreview.value ?: return
+        if (googleRequestRunning || _uiState.value.replacementBusy || _uiState.value.maintenanceBusy) return
+        _maintenancePreview.value = null // One confirmation cannot be replayed by a repeated tap.
+        googleRequestRunning = true
+        _uiState.value = _uiState.value.copy(maintenanceBusy = true, maintenanceOutcome = "")
+        viewModelScope.launch {
+            try {
+                val action = when (request.kind) {
+                    NativeGoogleMaintenance.Kind.REVOKE -> GoogleSyncAction.CONNECT
+                    NativeGoogleMaintenance.Kind.DRIVE -> GoogleSyncAction.DRIVE
+                    NativeGoogleMaintenance.Kind.CALENDAR -> GoogleSyncAction.CALENDAR
+                }
+                val result = googleRepo.authorizeAndRun(activity, action, googleConsentBridge::resolve, maintenance = request)
+                val report = result.getOrNull()?.maintenance
+                _uiState.value = _uiState.value.copy(maintenanceCompleted = report?.completed ?: 0,
+                    maintenanceOutcome = when {
+                        report?.complete == true -> "done"
+                        report != null -> "partial"
+                        else -> "failed"
+                    })
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (_: Exception) { _uiState.value = _uiState.value.copy(maintenanceOutcome = "failed") }
+            finally { googleRequestRunning = false; _uiState.value = _uiState.value.copy(maintenanceBusy = false) }
+        }
+    }
     private var timerEdit: Pair<String, NativeDataReplacement.Continuation>? = null
 
     internal fun takeGoogleConsent(id: String) = googleConsentBridge.takeForLaunch(id)
@@ -195,7 +238,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun syncCalendarCloud(activity: Activity) = runGoogleAction(activity, GoogleSyncAction.CALENDAR)
 
     private fun runGoogleAction(activity: Activity, action: GoogleSyncAction) {
-        if (_uiState.value.replacementBusy || googleRequestRunning) return
+        if (_uiState.value.replacementBusy || googleRequestRunning || _uiState.value.maintenanceBusy) return
         googleRequestRunning = true
         val recoverEarlier = _uiState.value.recoverEarlierBackupsChecked
         viewModelScope.launch {
