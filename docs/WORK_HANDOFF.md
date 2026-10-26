@@ -4,6 +4,27 @@ Frissítve: **2026-10-26**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Samsung SDK fordítási fix és JVM-diagnosztika – 2026-10-26
+
+40284818902 FAIL compileDebugKotlin: #251 grantScope Kotlin listájában nem létező
+SDK DataTypes-hivatkozás és következményes típusinferenciás hibák. **cfa113be**
+eltávolítja a második elevenelemű SDK-listát; SamsungSdkReader.Reader.grantedKeys
+ugyanazt a már Java-adapterben létező types() mappinget használja, a Kotlin scope
+csak ezt hívja. Három új valós SDK-permission object JVM-case megírva (all/energy/
+empty), nem futott. A wrapper fizikai provider-sikert nem szimulál.
+
+A meglévő canonical workflow unit lépése -PnativeTestDiagnostics kapcsolót kap:
+app teszt start/end class+method+status (nincs useradat/token). Csak ebben a CI-
+módban12perc Test-task felső korlát, a korábbi31perces csendes elakadás helyének
+megtalálására. Nincs tesztkihagyás, új dependency vagy workflow. Normál build
+viselkedése változatlan, a hibatűrés/assertszerződés nem lazult.
+
+Új run **40285918450**, checkout/appcfa113be0383c5bb84f8ce7c6324e8dbbafdb1ef:
+https://github.com/fuloplevente1998/TrainPilot/actions/runs/40285918450
+Indításkor IN_PROGRESS. Kotlin/Java/diff static check nem helyettesít compile/JVM/
+UI/R8/upgrade sikert. Ugyanezt a run-t ellenőrizd legközelebb, ne indíts másolatot.
+#250 audit továbbra a külön chatben; Root egyik auditfájlt sem módosította.
+
 ## #251 utáni közös kapu – 2026-10-26
 
 Új canonical run **40284818902**, checkout1da7a3fde75ae19662b6e8552366ff8f963bf241,
