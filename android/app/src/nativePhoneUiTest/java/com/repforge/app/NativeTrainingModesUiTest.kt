@@ -74,6 +74,47 @@ class NativeTrainingModesUiTest {
         assertEquals("legacy", NativeTrainingModes.resolveSavedJson(current().trainingModes197Json, "p").source)
     }
 
+    @Test fun globalPickerWithProgramHitRirChangesOnlyGlobalProgressionThroughRealSettingsVm() {
+        val programId = runBlocking(Dispatchers.IO) {
+            fixture.database.programDao().getProgramsWithDays().first().program.id
+        }
+        val initial = JSONObject()
+            .put("schemaVersion", 1).put("explicitChoice", true)
+            .put("defaults", JSONObject().put("trainingStyle", "normal")
+                .put("progressionMode", "double"))
+            .put("byProgram", JSONObject().put(programId, JSONObject()
+                .put("trainingStyle", "hit").put("progressionMode", "rir")
+                .put("explicitChoice", true)))
+        runBlocking(Dispatchers.IO) {
+            fixture.settings.setActiveProgramId(programId)
+            fixture.settings.importPortableSettings(JSONObject().put("settings",
+                JSONObject().put("trainingModes197", initial)))
+        }
+        launch()
+        settings()
+        // Only change progress, not style. Before the fix the global style
+        // inherited the selected program's HIT override and got saved as HIT.
+        compose.onNodeWithTag("training_modes_global_style").assertTextContains("Normál")
+        select("training_modes_global_progression", "linear")
+        compose.onNodeWithTag("training_modes_global_preview").performClick()
+        compose.waitUntil(30_000) {
+            compose.onAllNodesWithTag("training_modes_global_approve").fetchSemanticsNodes()
+                .any { it.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.Disabled) == null }
+        }
+        compose.onNodeWithTag("training_modes_global_approve").performClick()
+        compose.waitUntil(15_000) {
+            JSONObject(current().trainingModes197Json!!).getJSONObject("defaults")
+                .optString("progressionMode") == "linear"
+        }
+        val applied = JSONObject(current().trainingModes197Json!!)
+        assertEquals("normal", applied.getJSONObject("defaults").getString("trainingStyle"))
+        assertEquals("linear", applied.getJSONObject("defaults").getString("progressionMode"))
+        assertEquals("hit", applied.getJSONObject("byProgram")
+            .getJSONObject(programId).getString("trainingStyle"))
+        assertEquals("rir", applied.getJSONObject("byProgram")
+            .getJSONObject(programId).getString("progressionMode"))
+    }
+
     @Test fun modePickerShowsSelectedLanguageInAllFourNativeLocalizations() {
         launch()
         settings()
