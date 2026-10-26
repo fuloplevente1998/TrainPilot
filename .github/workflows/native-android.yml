@@ -328,19 +328,7 @@ jobs:
           method, raw_path, xml_path, log_path = sys.argv[1:]
           raw = pathlib.Path(raw_path).read_text(errors='replace') if pathlib.Path(raw_path).is_file() else ''
           log = pathlib.Path(log_path).read_text(errors='replace') if pathlib.Path(log_path).is_file() else ''
-          codes = re.findall(r'^INSTRUMENTATION_STATUS_CODE: (-?\d+)\s*
-        if: always()
-        run: |
-          mkdir -p data-qa/results
-          sha256sum data-qa/results/* 2>/dev/null > data-qa/results/artifact-sha256.txt || true
-      - name: Upload scoped data integrity evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: TrainPilot-Scoped-Data-${{ matrix.method }}-${{ github.sha }}
-          path: data-qa/results/
-          if-no-files-found: error
-, raw, re.M)
+          codes = re.findall(r'^INSTRUMENTATION_STATUS_CODE: (-?\d+)\s*$', raw, re.M)
           tests = re.findall(r'^INSTRUMENTATION_STATUS: test=([^\r\n]+)', raw, re.M)
           success = codes == ['1', '0'] and tests == [method, method] and 'INSTRUMENTATION_CODE: -1' in raw
           marker = ('sample=' if method.startswith('jsonRoundTrip') or method.startswith('zipPhoto') else 'faults=')
