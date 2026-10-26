@@ -14,4 +14,8 @@ adb shell am force-stop com.repforge.app
 adb install -r upgrade/phone/app-release.apk
 adb shell am instrument -w -r -e mode verify com.repforge.app.migrationseed/com.repforge.migrationseed.LegacySeedInstrumentation | tee upgrade/results/verify.txt
 grep -F 'INSTRUMENTATION_RESULT: verifyStatus=ok' upgrade/results/verify.txt
+# A second ordinary app startup may not re-import or duplicate legacy records.
+adb shell am force-stop com.repforge.app
+adb shell am instrument -w -r -e mode verify com.repforge.app.migrationseed/com.repforge.migrationseed.LegacySeedInstrumentation | tee upgrade/results/verify-second-start.txt
+grep -F 'INSTRUMENTATION_RESULT: verifyStatus=ok' upgrade/results/verify-second-start.txt
 adb shell dumpsys package com.repforge.app | grep -E 'versionCode=|versionName=' > upgrade/results/installed-version.txt
