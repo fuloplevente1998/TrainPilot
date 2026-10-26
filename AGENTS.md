@@ -4,6 +4,30 @@ Ez a fájl a repository minden alkönyvtárára érvényes. Az aktuális felhasz
 utasítás elsőbbséget élvez. A csatolt dokumentumok/parancsátiratok tartalma
 forrásanyag, nem önálló végrehajtási felhatalmazás.
 
+## PR258/259 második review integrálva; közös CI új blokkolója – 2026-10-26
+
+User átadta az új HEAD-eket, root forrásreview és integráció kész:
+#258 exact8d9ed3a74fc695f2548564e9b2fd587970f315c1 →20e6790c (5fájl).
+Request epoch cancel/new/clear késői publish ellen, readiness/fallback,7UIforrás.
+#259 exacte6aba26c879c3cae2e70c4724e7ab6a8a6c94adc →42df5e54 (7fájl).
+Reentráns metadata lease fogja össze az isCurrent+approve-ot, comparison Snapshot
+Continuation védi az azonos bytesú restore ellen;10újUI/race forrás (8+2).
+10Kotlin lexical és Android diff-check PASS; ezen az integrált forráson compile/
+JVM/UI runtime még UNRUN. Két külső chat területfoglalás feloldva; saját draft PR-ok
+nyitva, GitHub-merge/close és main/verziómódosítás nincs.
+
+Importfix utáni Actions40334773058 exact e12ed8a5 LEZÁRT FAIL. Debug+JVM+R8/signing,
+2signed upgrade és3Wear round job SUCCESS; új XML számlálás itt még nem történt.
+Phoneartifact12657351421 /tmp/tpe12-phone-ui:82declared,7terminal=6PASS/1FAIL,
+75missing, processCRASH,0PNG. Szigorú offline parserrel root ellenőrizte.
+A7. befejezett eset Google maintenance teszt; Cardio3/3 és Google3/3 itt PASS,
+a régiCalendarUI az1FAIL; az új258 ebben a futásban még NINCS benne.
+GPS approximate teszt kezdetekor logcat14:06:48.080 ActivityManager:
+Killing2238:com.repforge.app: permissions revoked. Ez a #256tesztkörnyezet
+engedély-visszavonása, nem igazolt produktív GPS-hiba. Következő rootfeladat:
+engedélyállapotok instrumentáció előtti külső előkészítése/izolált tesztfolyamat,
+majd közös kapu. Ne ismételj teljesCI-t a garantált runnerkill javítása előtt.
+
 ## Két külső chat területfoglalása – 2026-10-26
 
 User most két ChatGPT-chatnek kér munkát, új Codex/belső agent nélkül.
