@@ -36,6 +36,7 @@ internal class CalendarViewModel @JvmOverloads constructor(
     application: Application,
     // Optional suspension points used by scoped instrumentation; real repository/Room remain in use.
     private val beforePlannerSettingsRead: suspend () -> Unit = {},
+    private val beforeProgramsObserve: suspend () -> Unit = {},
     private val afterPlannerPreviewRead: suspend () -> Unit = {}
 ) : AndroidViewModel(application) {
     private val app = application.applicationContext
@@ -116,9 +117,12 @@ internal class CalendarViewModel @JvmOverloads constructor(
                 _state.update { it.copy(language = settings.language) }
             }
         }
-        viewModelScope.launch { db.programDao().observeProgramsWithDays().collect { programs ->
+        viewModelScope.launch {
+            beforeProgramsObserve()
+            db.programDao().observeProgramsWithDays().collect { programs ->
             _state.update { it.copy(programs = programs) }
-        } }
+            }
+        }
         viewModelScope.launch {
             combine(month, queryRevision) { selected, _ -> selected }.flatMapLatest { selected ->
                 val zone = ZoneId.systemDefault()
