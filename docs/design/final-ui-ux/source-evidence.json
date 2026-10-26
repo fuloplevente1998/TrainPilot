@@ -1,0 +1,1532 @@
+{
+  "schema": 1,
+  "scope": "phase-1-specification-only",
+  "nativeCommit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+  "mainCommit": "7473b30f387eda54186c1e31830304ca12bd104f",
+  "mainBlob": "b5567576bed9a8f93608a6bf1ed8db1dee4723f4",
+  "mainSha256": "47750fd38905860aa5910a14ff52a46421a3c78e19059c34cc5025da2538106d",
+  "mockups": {
+    "date": "2026-10-24",
+    "status": "redesigned-review-version",
+    "type": "generated-design-mockups",
+    "actualAppScreenshots": false,
+    "screenCount": 24,
+    "boards": [
+      {
+        "file": "01-main-pages-and-planning.png",
+        "sha256": "9cce817d7c158c0e81ee1117eed5f965d4afaa7eff02794620d396f9f4d4ee87",
+        "width": 1024,
+        "height": 1536
+      },
+      {
+        "file": "02-workouts-and-measurement.png",
+        "sha256": "89fc888fb731f1fade7577ab7d7b69c6380d13795f9bb00f98b00951111a1d98",
+        "width": 1024,
+        "height": 1536
+      },
+      {
+        "file": "03-journal-maps-and-health.png",
+        "sha256": "50de2e9abbdce370a968fc9228ad105e4a90684a7138c40cfba24119535c6fe7",
+        "width": 1024,
+        "height": 1536
+      },
+      {
+        "file": "04-editing-and-settings.png",
+        "sha256": "3b927da28ad69edad53264e60f9d1e74a0012de2c68205aef09bb6d9c2a2ad3b",
+        "width": 1024,
+        "height": 1536
+      }
+    ]
+  },
+  "nativeRefs": {
+    "nav": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/navigation/TrainPilotNavigation.kt",
+      "line": 92,
+      "symbol": "fun TrainPilotAppScaffold(",
+      "sha256": "a59af311eff2cd408ff9737a570aea36088f8217ff4a0d806482cbf273c0fac4",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/navigation/TrainPilotNavigation.kt#L92"
+    },
+    "navguard": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/navigation/TrainPilotNavigation.kt",
+      "line": 237,
+      "symbol": "fun canNavigate(",
+      "sha256": "a59af311eff2cd408ff9737a570aea36088f8217ff4a0d806482cbf273c0fac4",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/navigation/TrainPilotNavigation.kt#L237"
+    },
+    "header": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/navigation/NativeMainHeader.kt",
+      "line": 19,
+      "symbol": "internal fun NativeMainHeader(",
+      "sha256": "328274a48ef838ab48cbceef38b37e46b0c899930061ce2bee12ee744c5668dc",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/navigation/NativeMainHeader.kt#L19"
+    },
+    "bottom": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/navigation/NativeMainHeader.kt",
+      "line": 43,
+      "symbol": "internal fun NativeBottomNavigation(",
+      "sha256": "328274a48ef838ab48cbceef38b37e46b0c899930061ce2bee12ee744c5668dc",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/navigation/NativeMainHeader.kt#L43"
+    },
+    "home": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/home/HomeScreen.kt",
+      "line": 62,
+      "symbol": "fun HomeScreen(",
+      "sha256": "58f8fa983fb69f7aca233a2c01ef244d557b195f26d4700f1bc646afd1bef0b3",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/home/HomeScreen.kt#L62"
+    },
+    "homestate": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/home/HomeViewModel.kt",
+      "line": 36,
+      "symbol": "data class HomeUiState(",
+      "sha256": "ce0b7b5b4f1c02b8c0bd4596c9b76aced480a4735af2ff1829402f6996eeb193",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/home/HomeViewModel.kt#L36"
+    },
+    "homeenergy": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/home/HomeViewModel.kt",
+      "line": 117,
+      "symbol": "val energyScore =",
+      "sha256": "ce0b7b5b4f1c02b8c0bd4596c9b76aced480a4735af2ff1829402f6996eeb193",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/home/HomeViewModel.kt#L117"
+    },
+    "homequery": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/home/NativeHomeRepository.kt",
+      "line": 18,
+      "symbol": "internal class NativeHomeRepository",
+      "sha256": "efc4f84b9b45c8d14afc24ad0f2b01a265c193209c683f3b2598731bcdc7d76f",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/home/NativeHomeRepository.kt#L18"
+    },
+    "training": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/programs/TrainingLandingScreen.kt",
+      "line": 23,
+      "symbol": "internal fun TrainingLandingScreen(",
+      "sha256": "9659ffb1ebd05be11fb22754567dedeed7709e9fd561a78259a6ef60211d2587",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/programs/TrainingLandingScreen.kt#L23"
+    },
+    "programs": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/programs/TrainingProgramsScreen.kt",
+      "line": 63,
+      "symbol": "internal fun TrainingProgramsScreen(",
+      "sha256": "26644b39536adf1f1e105abae3bd9f05789dad1d2f226932697dfc4b8ecca681",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/programs/TrainingProgramsScreen.kt#L63"
+    },
+    "programvm": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/programs/TrainingProgramsViewModel.kt",
+      "line": 138,
+      "symbol": "fun saveProgram(",
+      "sha256": "a918bf730a415fd35e7428a7416eb32dd6a06e00f9c7ae9dacc7997224235a98",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/programs/TrainingProgramsViewModel.kt#L138"
+    },
+    "programeditor": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/programs/ProgramEditorDialog.kt",
+      "line": 72,
+      "symbol": "internal fun ProgramEditorDialog(",
+      "sha256": "0e15f0a32f0e9dca2b8187167f814e62a16c736e866370e857b2a3e985096e89",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/programs/ProgramEditorDialog.kt#L72"
+    },
+    "rx": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/programs/ProgramPrescriptionDialog.kt",
+      "line": 32,
+      "symbol": "fun ProgramPrescriptionDialog(",
+      "sha256": "e7e740201bfd2072f44dc6862ef6816b22c953d04519a7f5433636d4314dfba0",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/programs/ProgramPrescriptionDialog.kt#L32"
+    },
+    "library": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/programs/ExerciseLibraryScreen.kt",
+      "line": 115,
+      "symbol": "internal fun ExerciseLibraryScreen(",
+      "sha256": "e37b5a7fdfc9e695077429e67762036a1ae501cf02f2633ce7a0688180cfdc03",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/programs/ExerciseLibraryScreen.kt#L115"
+    },
+    "librarydetail": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/programs/ExerciseLibraryScreen.kt",
+      "line": 165,
+      "symbol": "else if (selected != null)",
+      "sha256": "e37b5a7fdfc9e695077429e67762036a1ae501cf02f2633ce7a0688180cfdc03",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/programs/ExerciseLibraryScreen.kt#L165"
+    },
+    "favorites": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/programs/ExerciseLibraryViewModel.kt",
+      "line": 95,
+      "symbol": "fun toggleFavorite(",
+      "sha256": "94c6659d6ce543d5c4679ac81b3f1c7c53464790d74575c97c6d526ecb5d86a6",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/programs/ExerciseLibraryViewModel.kt#L95"
+    },
+    "custom": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/programs/CustomExerciseDialog.kt",
+      "line": 57,
+      "symbol": "fun CustomExerciseDialog(",
+      "sha256": "053f36e858524519b6c289b43cfdd1330fca2977fd3e68b3d5026aea5a0e0707",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/programs/CustomExerciseDialog.kt#L57"
+    },
+    "calendar": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/calendar/CalendarScreen.kt",
+      "line": 28,
+      "symbol": "internal fun CalendarScreen(",
+      "sha256": "4bb0bb1c2619706f625abb295cfb376ea987b051f59b6fdcffd68af55e6b72ea",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/calendar/CalendarScreen.kt#L28"
+    },
+    "calendarvm": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/calendar/CalendarViewModel.kt",
+      "line": 35,
+      "symbol": "internal class CalendarViewModel",
+      "sha256": "c03093ad1b29627db8c1ceab77483f813b6e8041a97f2240efad48ee53894017",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/calendar/CalendarViewModel.kt#L35"
+    },
+    "calendarplanner": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/calendar/CalendarScreen.kt",
+      "line": 196,
+      "symbol": "fun CalendarPlannerDialog(",
+      "sha256": "4bb0bb1c2619706f625abb295cfb376ea987b051f59b6fdcffd68af55e6b72ea",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/calendar/CalendarScreen.kt#L196"
+    },
+    "workout": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt",
+      "line": 105,
+      "symbol": "fun ActiveWorkoutScreen(",
+      "sha256": "2949d6eeb76dc80212b11a33853408ffd01278413331b404893bed18f75a3509",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt#L105"
+    },
+    "workoutstate": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutViewModel.kt",
+      "line": 96,
+      "symbol": "data class ActiveWorkoutUiState(",
+      "sha256": "0a598a501e19bc43950e030ed795ce7ebcb165d8e0df8bd2cc2226d4fc6c4d70",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutViewModel.kt#L96"
+    },
+    "setcard": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt",
+      "line": 717,
+      "symbol": "fun ExerciseCardItem(",
+      "sha256": "2949d6eeb76dc80212b11a33853408ffd01278413331b404893bed18f75a3509",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt#L717"
+    },
+    "timer": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt",
+      "line": 921,
+      "symbol": "fun LowerSetStopwatch(",
+      "sha256": "2949d6eeb76dc80212b11a33853408ffd01278413331b404893bed18f75a3509",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt#L921"
+    },
+    "interval": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt",
+      "line": 838,
+      "symbol": "fun IntervalOptions(",
+      "sha256": "2949d6eeb76dc80212b11a33853408ffd01278413331b404893bed18f75a3509",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt#L838"
+    },
+    "rest": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt",
+      "line": 1078,
+      "symbol": "fun RestTimerFloatingBar(",
+      "sha256": "2949d6eeb76dc80212b11a33853408ffd01278413331b404893bed18f75a3509",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt#L1078"
+    },
+    "distance": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt",
+      "line": 808,
+      "symbol": "fun DistanceMeasurementPanel(",
+      "sha256": "2949d6eeb76dc80212b11a33853408ffd01278413331b404893bed18f75a3509",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt#L808"
+    },
+    "finish": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt",
+      "line": 1128,
+      "symbol": "fun FinishWorkoutDialog(",
+      "sha256": "2949d6eeb76dc80212b11a33853408ffd01278413331b404893bed18f75a3509",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt#L1128"
+    },
+    "finishwriter": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutViewModel.kt",
+      "line": 1005,
+      "symbol": "fun finishWorkout(",
+      "sha256": "0a598a501e19bc43950e030ed795ce7ebcb165d8e0df8bd2cc2226d4fc6c4d70",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutViewModel.kt#L1005"
+    },
+    "leave": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutViewModel.kt",
+      "line": 683,
+      "symbol": "fun leaveWorkout(",
+      "sha256": "0a598a501e19bc43950e030ed795ce7ebcb165d8e0df8bd2cc2226d4fc6c4d70",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutViewModel.kt#L683"
+    },
+    "ownership": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutViewModel.kt",
+      "line": 805,
+      "symbol": "fun requestOwnershipBackFromWatch(",
+      "sha256": "0a598a501e19bc43950e030ed795ce7ebcb165d8e0df8bd2cc2226d4fc6c4d70",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutViewModel.kt#L805"
+    },
+    "activephotos": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt",
+      "line": 418,
+      "symbol": "if (state.attachedPhotos.isNotEmpty())",
+      "sha256": "2949d6eeb76dc80212b11a33853408ffd01278413331b404893bed18f75a3509",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt#L418"
+    },
+    "journal": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/journal/JournalScreen.kt",
+      "line": 55,
+      "symbol": "fun JournalScreen(",
+      "sha256": "14172dd03e978916f985c5212358664a77c46ec4e1a8879c53d006972ba25dcf",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/journal/JournalScreen.kt#L55"
+    },
+    "detail": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/journal/JournalScreen.kt",
+      "line": 121,
+      "symbol": "fun JournalDetailDialog(",
+      "sha256": "14172dd03e978916f985c5212358664a77c46ec4e1a8879c53d006972ba25dcf",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/journal/JournalScreen.kt#L121"
+    },
+    "journalvm": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/journal/JournalViewModel.kt",
+      "line": 65,
+      "symbol": "class JournalViewModel(",
+      "sha256": "8eac74c653a3e694ae72f261036fc3f58e744832a321cceaa7c3022eea60e43d",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/journal/JournalViewModel.kt#L65"
+    },
+    "journaledit": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/journal/JournalEditorDialog.kt",
+      "line": 33,
+      "symbol": "fun JournalEditorDialog(",
+      "sha256": "ec6fe149c3a4bd8c3dff0cea3aa0781cd9a1ad16adef573c1e345e278824769a",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/journal/JournalEditorDialog.kt#L33"
+    },
+    "sources": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/journal/JournalHealthPanel.kt",
+      "line": 23,
+      "symbol": "fun JournalHealthPanel(",
+      "sha256": "610402fcd856b4147feda2d652939c57a5783484cad5738959780652484073f9",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/journal/JournalHealthPanel.kt#L23"
+    },
+    "map": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/journal/WorkoutRouteMapDialog.kt",
+      "line": 48,
+      "symbol": "fun WorkoutRouteMapDialog(",
+      "sha256": "b4fdc9f955751ef1614ceb40015346895cb35e9b317d1ea1c7629352fe780aa5",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/journal/WorkoutRouteMapDialog.kt#L48"
+    },
+    "mapcanvas": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/journal/WorkoutRouteMapDialog.kt",
+      "line": 79,
+      "symbol": "fun MercatorRouteCanvas(",
+      "sha256": "b4fdc9f955751ef1614ceb40015346895cb35e9b317d1ea1c7629352fe780aa5",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/journal/WorkoutRouteMapDialog.kt#L79"
+    },
+    "photo": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/journal/JournalScreen.kt",
+      "line": 257,
+      "symbol": "fun PrivateJournalPhoto(",
+      "sha256": "14172dd03e978916f985c5212358664a77c46ec4e1a8879c53d006972ba25dcf",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/journal/JournalScreen.kt#L257"
+    },
+    "progress": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/progress/ProgressScreen.kt",
+      "line": 61,
+      "symbol": "fun ProgressScreen(",
+      "sha256": "6c6bcf0f8f7c271a4659a47ec17960affa4f81010521ca64c18f22b6e3f174f3",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/progress/ProgressScreen.kt#L61"
+    },
+    "progressstate": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/progress/ProgressViewModel.kt",
+      "line": 40,
+      "symbol": "data class ProgressUiState(",
+      "sha256": "897a8b326e8722adb88bb57b57b3090b857e76a671d3d4579ad3b34f2199665f",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/progress/ProgressViewModel.kt#L40"
+    },
+    "cardio": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/progress/NativeCardioProgressPanel.kt",
+      "line": 35,
+      "symbol": "fun NativeCardioProgressPanel(",
+      "sha256": "b26640e7b7d196aaa216d67b8b67679657a6264814f71abf291874b74097cef9",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/progress/NativeCardioProgressPanel.kt#L35"
+    },
+    "weight": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/progress/WeightJournalScreen.kt",
+      "line": 48,
+      "symbol": "fun WeightJournalScreen(",
+      "sha256": "75a1d3f5a28db75bc07926f95af6f6fa509feebf4992b1e378941005e8ff31a7",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/progress/WeightJournalScreen.kt#L48"
+    },
+    "weightvm": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/progress/WeightJournalViewModel.kt",
+      "line": 40,
+      "symbol": "class WeightJournalViewModel(",
+      "sha256": "cec45aa58f965bb064d82c7e6c9ebf961a3586e57f8af427940843b2c6efba76",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/progress/WeightJournalViewModel.kt#L40"
+    },
+    "health": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/health/HealthDashboardScreen.kt",
+      "line": 99,
+      "symbol": "fun HealthDashboardScreen(",
+      "sha256": "a7d3fff6fcfdcf4aeaad9dec42841d53c9b978271dd568a04f5a4ac07a2d6e84",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/health/HealthDashboardScreen.kt#L99"
+    },
+    "healthvm": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/health/HealthDashboardViewModel.kt",
+      "line": 89,
+      "symbol": "class HealthDashboardViewModel(",
+      "sha256": "37cdcf0fe846f79c94568f2d583b2f4253f0c0a47f783cb582a6ee8a66bc3a5a",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/health/HealthDashboardViewModel.kt#L89"
+    },
+    "metrics": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/health/NativeHealthMetrics.kt",
+      "line": 10,
+      "symbol": "object NativeHealthMetrics",
+      "sha256": "a5803d387cc69ddfb55051eb42b0ab565c80c745360a6837da9c678264d45749",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/health/NativeHealthMetrics.kt#L10"
+    },
+    "records": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/health/HealthRecordBrowser.kt",
+      "line": 63,
+      "symbol": "fun HealthRecordBrowser(",
+      "sha256": "df9067e8b0c9259b5b5e64ab9d1a5f94b11b5257af7df7938a99a1e892b3a5f4",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/health/HealthRecordBrowser.kt#L63"
+    },
+    "coach": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/coach/CoachScreen.kt",
+      "line": 23,
+      "symbol": "fun CoachScreen(",
+      "sha256": "ff2d0025b926c89b44c1a601bdfa2b2dcd13f0a9dc4dc118e3f0e9d9f74a4233",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/coach/CoachScreen.kt#L23"
+    },
+    "readiness": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/coach/NativeCoachReadiness.kt",
+      "line": 14,
+      "symbol": "object NativeCoachReadiness",
+      "sha256": "d2170f971fe9b25e71675461201030b76373841d2de5b8f012d8089c5dcd90d5",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/coach/NativeCoachReadiness.kt#L14"
+    },
+    "coachvm": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/coach/CoachViewModel.kt",
+      "line": 26,
+      "symbol": "class CoachViewModel(",
+      "sha256": "628fd5e51dcb25cf3be875b94b564fa87708c121a2466d6f5cf10e7499045ee5",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/coach/CoachViewModel.kt#L26"
+    },
+    "settings": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/settings/SettingsScreen.kt",
+      "line": 74,
+      "symbol": "fun SettingsScreen(",
+      "sha256": "051a7a4780916e03cf16454bfac94e0ad969a0084990630443af7c1191a99dca",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/settings/SettingsScreen.kt#L74"
+    },
+    "settingsvm": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/settings/SettingsViewModel.kt",
+      "line": 54,
+      "symbol": "class SettingsViewModel(",
+      "sha256": "0be7be136ea26d18c19adfd0fb44f38523065bb00b3e740a889e86d11dadbebc",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/settings/SettingsViewModel.kt#L54"
+    },
+    "theme": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/theme/TrainPilotTheme.kt",
+      "line": 28,
+      "symbol": "data class TrainPilotExtendedColors(",
+      "sha256": "13745ae111bc49f71df8cb5c352b9821e226c47ccdcb74eb2d68d57c9f43e3a7",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/theme/TrainPilotTheme.kt#L28"
+    },
+    "typography": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/theme/TrainPilotTheme.kt",
+      "line": 55,
+      "symbol": "val TrainPilotTypography",
+      "sha256": "13745ae111bc49f71df8cb5c352b9821e226c47ccdcb74eb2d68d57c9f43e3a7",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/theme/TrainPilotTheme.kt#L55"
+    },
+    "tokens": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/theme/NativeThemeTokens.kt",
+      "line": 10,
+      "symbol": "object NativeThemeTokens",
+      "sha256": "f1aa4efa2f3a0dd08b795d7564a918f925672663bdac768f7beeaf055e83b13c",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/theme/NativeThemeTokens.kt#L10"
+    },
+    "themepicker": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/settings/NativeThemePicker.kt",
+      "line": 31,
+      "symbol": "fun NativeThemePicker(",
+      "sha256": "92c2ed55683fad8529ed738f8f57f3d657f1792b4a5a3d4de97a5d4f841afd7d",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/settings/NativeThemePicker.kt#L31"
+    },
+    "lang": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/settings/NativeLanguagePicker.kt",
+      "line": 32,
+      "symbol": "fun NativeLanguagePicker(",
+      "sha256": "508ea0da6ccc0e6baaf3650f9fd910254ec60767270c75c57d82fedceccaed1e",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/settings/NativeLanguagePicker.kt#L32"
+    },
+    "timerdefaults": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/settings/NativeTimerDefaultsDialog.kt",
+      "line": 35,
+      "symbol": "fun NativeTimerDefaultsDialog(",
+      "sha256": "9d4a2d546afd8dd1d7d8d068b03969df110bf54bf894f7abe176ed1f0e78e3dc",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/settings/NativeTimerDefaultsDialog.kt#L35"
+    },
+    "recovery": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/settings/ReplacementRecoveryPanel.kt",
+      "line": 19,
+      "symbol": "fun ReplacementRecoveryPanel(",
+      "sha256": "01d4bc520786618553585099b59945173c4f50d4d8741b0aff17897aba38730d",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/settings/ReplacementRecoveryPanel.kt#L19"
+    },
+    "gpspermission": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/workout/NativeGpsPermissionRecovery.kt",
+      "line": 48,
+      "symbol": "object NativeGpsPermissionRecovery",
+      "sha256": "23ee7e0afaf80588f33b57bcb59803c5e1f92ebbecf328d09c69ee5c560d49a2",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/workout/NativeGpsPermissionRecovery.kt#L48"
+    },
+    "google": {
+      "path": "android/app/src/main/java/com/repforge/app/ui/settings/NativeGoogleMaintenanceUi.kt",
+      "line": 26,
+      "symbol": "fun NativeGoogleMaintenanceControls(",
+      "sha256": "b0ad3cee84e6f13595c015776a57f3aeb6b88b4b66970252e5969a4d7a5b281e",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/ui/settings/NativeGoogleMaintenanceUi.kt#L26"
+    },
+    "palettes": {
+      "path": "android/app/src/main/java/com/repforge/app/data/store/TrainPilotSettingsStore.kt",
+      "line": 113,
+      "symbol": "val AVAILABLE_THEMES =",
+      "sha256": "a1c90fcc717ee40c0461218ebd79c7e660db2f2273e5255a7e7f5057af9f5226",
+      "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/data/store/TrainPilotSettingsStore.kt#L113"
+    }
+  },
+  "mainAnchors": {
+    "nextPlan": {
+      "line": 12585,
+      "needle": " nextPlanned=function()",
+      "allMatchingLines": [
+        12585
+      ],
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/7473b30f387eda54186c1e31830304ca12bd104f/www/app.js#L12585"
+    },
+    "planner": {
+      "line": 13043,
+      "needle": " rf2211Planner=function()",
+      "allMatchingLines": [
+        12808,
+        13043
+      ],
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/7473b30f387eda54186c1e31830304ca12bd104f/www/app.js#L13043"
+    },
+    "planCaller": {
+      "line": 13063,
+      "needle": " rf2211PlanWeeks=function()",
+      "allMatchingLines": [
+        12814,
+        13063
+      ],
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/7473b30f387eda54186c1e31830304ca12bd104f/www/app.js#L13063"
+    },
+    "planMotor": {
+      "line": 15651,
+      "needle": " function planWeeks(rows,logs,options)",
+      "allMatchingLines": [
+        15651
+      ],
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/7473b30f387eda54186c1e31830304ca12bd104f/www/app.js#L15651"
+    },
+    "maintenance": {
+      "line": 14998,
+      "needle": "var tp105ManageData=",
+      "allMatchingLines": [
+        14998
+      ],
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/7473b30f387eda54186c1e31830304ca12bd104f/www/app.js#L14998"
+    },
+    "homeCoach": {
+      "line": 13758,
+      "needle": " window.tp166HomeCoachMarkup=function",
+      "allMatchingLines": [
+        13656,
+        13758
+      ],
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/7473b30f387eda54186c1e31830304ca12bd104f/www/app.js#L13758"
+    },
+    "panelWrapper": {
+      "line": 16140,
+      "needle": "  const refreshBase=window.tp155R4RefreshPanel;",
+      "allMatchingLines": [
+        12858,
+        16140
+      ],
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/7473b30f387eda54186c1e31830304ca12bd104f/www/app.js#L16140"
+    },
+    "healthWrapper": {
+      "line": 16140,
+      "needle": "  const refreshBase=window.tp155R4RefreshPanel;window.tp155R4RefreshPanel=function(){const result=refreshBase.apply(this,arguments);if(root())void load();return result;};",
+      "allMatchingLines": [
+        16140
+      ],
+      "url": "https://github.com/fuloplevente1998/TrainPilot/blob/7473b30f387eda54186c1e31830304ca12bd104f/www/app.js#L16140"
+    }
+  },
+  "mainSections": [
+    {
+      "name": "startup.js",
+      "start": 33,
+      "end": 125
+    },
+    {
+      "name": "backup.js",
+      "start": 126,
+      "end": 262
+    },
+    {
+      "name": "demos.js",
+      "start": 263,
+      "end": 317
+    },
+    {
+      "name": "cloud.js",
+      "start": 318,
+      "end": 424
+    },
+    {
+      "name": "app.js",
+      "start": 425,
+      "end": 810
+    },
+    {
+      "name": "v12.js",
+      "start": 811,
+      "end": 1036
+    },
+    {
+      "name": "catalog131.js",
+      "start": 1037,
+      "end": 1063
+    },
+    {
+      "name": "v13.js",
+      "start": 1064,
+      "end": 1192
+    },
+    {
+      "name": "library131.js",
+      "start": 1193,
+      "end": 1211
+    },
+    {
+      "name": "onboarding132.js",
+      "start": 1212,
+      "end": 1252
+    },
+    {
+      "name": "v14.js",
+      "start": 1253,
+      "end": 1309
+    },
+    {
+      "name": "v141.js",
+      "start": 1310,
+      "end": 1396
+    },
+    {
+      "name": "v142.js",
+      "start": 1397,
+      "end": 1500
+    },
+    {
+      "name": "v143.js",
+      "start": 1501,
+      "end": 1538
+    },
+    {
+      "name": "v144.js",
+      "start": 1539,
+      "end": 1559
+    },
+    {
+      "name": "v145.js",
+      "start": 1560,
+      "end": 1666
+    },
+    {
+      "name": "v146.js",
+      "start": 1667,
+      "end": 1716
+    },
+    {
+      "name": "v150.js",
+      "start": 1717,
+      "end": 1751
+    },
+    {
+      "name": "v151.js",
+      "start": 1752,
+      "end": 1824
+    },
+    {
+      "name": "v152.js",
+      "start": 1825,
+      "end": 1904
+    },
+    {
+      "name": "v153.js",
+      "start": 1905,
+      "end": 1959
+    },
+    {
+      "name": "v154.js",
+      "start": 1960,
+      "end": 2014
+    },
+    {
+      "name": "v155.js",
+      "start": 2015,
+      "end": 2098
+    },
+    {
+      "name": "v200.js",
+      "start": 2099,
+      "end": 2137
+    },
+    {
+      "name": "v201.js",
+      "start": 2138,
+      "end": 2176
+    },
+    {
+      "name": "v202.js",
+      "start": 2177,
+      "end": 2203
+    },
+    {
+      "name": "v203.js",
+      "start": 2204,
+      "end": 2238
+    },
+    {
+      "name": "v204.js",
+      "start": 2239,
+      "end": 2270
+    },
+    {
+      "name": "v205.js",
+      "start": 2271,
+      "end": 2306
+    },
+    {
+      "name": "v206.js",
+      "start": 2307,
+      "end": 2326
+    },
+    {
+      "name": "v207.js",
+      "start": 2327,
+      "end": 2382
+    },
+    {
+      "name": "v208.js",
+      "start": 2383,
+      "end": 2429
+    },
+    {
+      "name": "v209.js",
+      "start": 2430,
+      "end": 2480
+    },
+    {
+      "name": "v210.js",
+      "start": 2481,
+      "end": 2494
+    },
+    {
+      "name": "v211.js",
+      "start": 2495,
+      "end": 2534
+    },
+    {
+      "name": "v212.js",
+      "start": 2535,
+      "end": 2650
+    },
+    {
+      "name": "v213.js",
+      "start": 2651,
+      "end": 2731
+    },
+    {
+      "name": "v214.js",
+      "start": 2732,
+      "end": 2779
+    },
+    {
+      "name": "v215.js",
+      "start": 2780,
+      "end": 2811
+    },
+    {
+      "name": "v220.js",
+      "start": 2812,
+      "end": 2858
+    },
+    {
+      "name": "v221.js",
+      "start": 2859,
+      "end": 2876
+    },
+    {
+      "name": "v222.js",
+      "start": 2877,
+      "end": 2909
+    },
+    {
+      "name": "v223.js",
+      "start": 2910,
+      "end": 2933
+    },
+    {
+      "name": "v224.js",
+      "start": 2934,
+      "end": 2969
+    },
+    {
+      "name": "v225.js",
+      "start": 2970,
+      "end": 3103
+    },
+    {
+      "name": "v227.js",
+      "start": 3104,
+      "end": 3126
+    },
+    {
+      "name": "v228.js",
+      "start": 3127,
+      "end": 3199
+    },
+    {
+      "name": "v228a.js",
+      "start": 3200,
+      "end": 3212
+    },
+    {
+      "name": "v228b.js",
+      "start": 3213,
+      "end": 3279
+    },
+    {
+      "name": "v228c.js",
+      "start": 3280,
+      "end": 3319
+    },
+    {
+      "name": "v229.js",
+      "start": 3320,
+      "end": 3417
+    },
+    {
+      "name": "v232.js",
+      "start": 3418,
+      "end": 3488
+    },
+    {
+      "name": "v233.js",
+      "start": 3489,
+      "end": 3575
+    },
+    {
+      "name": "v234.js",
+      "start": 3576,
+      "end": 3603
+    },
+    {
+      "name": "v235.js",
+      "start": 3604,
+      "end": 3664
+    },
+    {
+      "name": "v240.js",
+      "start": 3665,
+      "end": 3741
+    },
+    {
+      "name": "v241.js",
+      "start": 3742,
+      "end": 3828
+    },
+    {
+      "name": "v242.js",
+      "start": 3829,
+      "end": 3896
+    },
+    {
+      "name": "v243.js",
+      "start": 3897,
+      "end": 3962
+    },
+    {
+      "name": "v244.js",
+      "start": 3963,
+      "end": 4002
+    },
+    {
+      "name": "v245.js",
+      "start": 4003,
+      "end": 4274
+    },
+    {
+      "name": "v250.js",
+      "start": 4275,
+      "end": 4473
+    },
+    {
+      "name": "v251.js",
+      "start": 4474,
+      "end": 4572
+    },
+    {
+      "name": "v252.js",
+      "start": 4573,
+      "end": 4633
+    },
+    {
+      "name": "v253.js",
+      "start": 4634,
+      "end": 4745
+    },
+    {
+      "name": "v260.js",
+      "start": 4746,
+      "end": 5189
+    },
+    {
+      "name": "v263.js",
+      "start": 5190,
+      "end": 5483
+    },
+    {
+      "name": "trainpilot-110.js",
+      "start": 5484,
+      "end": 5619
+    },
+    {
+      "name": "trainpilot-120-clean-runtime.js",
+      "start": 5620,
+      "end": 5799
+    },
+    {
+      "name": "trainpilot-130-workout-photos.js",
+      "start": 5800,
+      "end": 5872
+    },
+    {
+      "name": "trainpilot-140-progression-2.js",
+      "start": 5873,
+      "end": 6026
+    },
+    {
+      "name": "trainpilot-141-coach-entry.js",
+      "start": 6027,
+      "end": 6091
+    },
+    {
+      "name": "trainpilot-142-photo-stopwatch-ui.js",
+      "start": 6092,
+      "end": 6136
+    },
+    {
+      "name": "trainpilot-143-gallery-picker.js",
+      "start": 6137,
+      "end": 6143
+    },
+    {
+      "name": "trainpilot-144-capacitor-camera.js",
+      "start": 6144,
+      "end": 6308
+    },
+    {
+      "name": "trainpilot-146-inline-compact.js",
+      "start": 6309,
+      "end": 6397
+    },
+    {
+      "name": "trainpilot-146-layout-hotfix.js",
+      "start": 6398,
+      "end": 6459
+    },
+    {
+      "name": "trainpilot-148-adaptive-planner.js",
+      "start": 6460,
+      "end": 6889
+    },
+    {
+      "name": "trainpilot-1481-resume-hotfix.js",
+      "start": 6890,
+      "end": 6896
+    },
+    {
+      "name": "trainpilot-1481-per-side-stopwatch.js",
+      "start": 6897,
+      "end": 7045
+    },
+    {
+      "name": "trainpilot-1481-home-coach-overflow.js",
+      "start": 7046,
+      "end": 7087
+    },
+    {
+      "name": "trainpilot-149-complete-i18n.js",
+      "start": 7088,
+      "end": 8379
+    },
+    {
+      "name": "trainpilot-149-calendar-history-i18n.js",
+      "start": 8380,
+      "end": 8553
+    },
+    {
+      "name": "trainpilot-149-health-coach-i18n.js",
+      "start": 8554,
+      "end": 8758
+    },
+    {
+      "name": "trainpilot-149-workout-progression-i18n.js",
+      "start": 8759,
+      "end": 8997
+    },
+    {
+      "name": "trainpilot-149-cloud-calendar-i18n.js",
+      "start": 8998,
+      "end": 9250
+    },
+    {
+      "name": "trainpilot-149-dialog-i18n.js",
+      "start": 9251,
+      "end": 9460
+    },
+    {
+      "name": "trainpilot-149-weight-i18n.js",
+      "start": 9461,
+      "end": 9521
+    },
+    {
+      "name": "trainpilot-149-settings-backup-i18n.js",
+      "start": 9522,
+      "end": 9636
+    },
+    {
+      "name": "trainpilot-149-shell-i18n.js",
+      "start": 9637,
+      "end": 9687
+    },
+    {
+      "name": "trainpilot-149-photo-i18n.js",
+      "start": 9688,
+      "end": 9795
+    },
+    {
+      "name": "trainpilot-149-video-modal-i18n.js",
+      "start": 9796,
+      "end": 9833
+    },
+    {
+      "name": "trainpilot-149-home-program-editor-i18n.js",
+      "start": 9834,
+      "end": 10042
+    },
+    {
+      "name": "trainpilot-149-settings-language-parity-hotfix.js",
+      "start": 10043,
+      "end": 10060
+    },
+    {
+      "name": "trainpilot-149-per-side-stopwatch-i18n-hotfix.js",
+      "start": 10061,
+      "end": 10153
+    },
+    {
+      "name": "trainpilot-149-narrow-i18n-layout-hotfix.js",
+      "start": 10154,
+      "end": 10163
+    },
+    {
+      "name": "trainpilot-150-quick-workout.js",
+      "start": 10164,
+      "end": 10401
+    },
+    {
+      "name": "trainpilot-149-home-coach-repaint-hotfix.js",
+      "start": 10402,
+      "end": 10425
+    },
+    {
+      "name": "trainpilot-150-compact-ui-performance.js",
+      "start": 10426,
+      "end": 10591
+    },
+    {
+      "name": "trainpilot-151-unified-design.js",
+      "start": 10592,
+      "end": 10703
+    },
+    {
+      "name": "trainpilot-1511-ui-polish.js",
+      "start": 10704,
+      "end": 10808
+    },
+    {
+      "name": "trainpilot-152-ux-hierarchy.js",
+      "start": 10809,
+      "end": 11052
+    },
+    {
+      "name": "trainpilot-152-audit-refinements.js",
+      "start": 11053,
+      "end": 11108
+    },
+    {
+      "name": "trainpilot-152-device-polish.js",
+      "start": 11109,
+      "end": 11220
+    },
+    {
+      "name": "trainpilot-152-next-ui-functional.js",
+      "start": 11221,
+      "end": 11377
+    },
+    {
+      "name": "trainpilot-154-mobile-nav-polish.js",
+      "start": 11378,
+      "end": 11450
+    },
+    {
+      "name": "trainpilot-155-nav-consistency.js",
+      "start": 11451,
+      "end": 11482
+    },
+    {
+      "name": "trainpilot-155-coach-health-polish.js",
+      "start": 11483,
+      "end": 11563
+    },
+    {
+      "name": "trainpilot-155-home-calendar-round2.js",
+      "start": 11564,
+      "end": 11655
+    },
+    {
+      "name": "trainpilot-155-theme-family-polish.js",
+      "start": 11656,
+      "end": 11704
+    },
+    {
+      "name": "trainpilot-155-round3-ui-polish.js",
+      "start": 11705,
+      "end": 11861
+    },
+    {
+      "name": "trainpilot-155-round3-journal-range.js",
+      "start": 11862,
+      "end": 11984
+    },
+    {
+      "name": "trainpilot-155-round3-highlight-surfaces.js",
+      "start": 11985,
+      "end": 12061
+    },
+    {
+      "name": "trainpilot-155-round3-panel-navigation.js",
+      "start": 12062,
+      "end": 12429
+    },
+    {
+      "name": "trainpilot-160-light-navigation-motion.js",
+      "start": 12430,
+      "end": 12461
+    },
+    {
+      "name": "trainpilot-155-round3-stopwatch-layout.js",
+      "start": 12462,
+      "end": 12506
+    },
+    {
+      "name": "trainpilot-155-round3-panel-select-anchor.js",
+      "start": 12507,
+      "end": 12568
+    },
+    {
+      "name": "trainpilot-155-round3-home-calendar-priority.js",
+      "start": 12569,
+      "end": 12605
+    },
+    {
+      "name": "trainpilot-155-next-12-mods.js",
+      "start": 12606,
+      "end": 12764
+    },
+    {
+      "name": "trainpilot-155-phone-round4-fixes.js",
+      "start": 12765,
+      "end": 12880
+    },
+    {
+      "name": "trainpilot-155-quick-filter-cleanup.js",
+      "start": 12881,
+      "end": 12946
+    },
+    {
+      "name": "trainpilot-155-main-panel-continuity.js",
+      "start": 12947,
+      "end": 12965
+    },
+    {
+      "name": "trainpilot-155-panel-close-system.js",
+      "start": 12966,
+      "end": 12984
+    },
+    {
+      "name": "trainpilot-155-exercise-library-layout.js",
+      "start": 12985,
+      "end": 13003
+    },
+    {
+      "name": "trainpilot-155-settings-controls.js",
+      "start": 13004,
+      "end": 13038
+    },
+    {
+      "name": "trainpilot-155-calendar-planner-compact.js",
+      "start": 13039,
+      "end": 13080
+    },
+    {
+      "name": "trainpilot-155-workout-settings-compact.js",
+      "start": 13081,
+      "end": 13102
+    },
+    {
+      "name": "repforge-160-phone-release-polish.js",
+      "start": 13103,
+      "end": 13126
+    },
+    {
+      "name": "trainpilot-161-minor-fixes.js",
+      "start": 13127,
+      "end": 13251
+    },
+    {
+      "name": "trainpilot-162-minor-ui.js",
+      "start": 13252,
+      "end": 13321
+    },
+    {
+      "name": "trainpilot-162-followup.js",
+      "start": 13322,
+      "end": 13460
+    },
+    {
+      "name": "trainpilot-164-issue12-side-set-fields.js",
+      "start": 13461,
+      "end": 13585
+    },
+    {
+      "name": "trainpilot-165-journal-data-recovery.js",
+      "start": 13586,
+      "end": 13649
+    },
+    {
+      "name": "trainpilot-166-issue13-home-coach-card.js",
+      "start": 13650,
+      "end": 13750
+    },
+    {
+      "name": "trainpilot-167-issues22-24-gui-journal.js",
+      "start": 13751,
+      "end": 13895
+    },
+    {
+      "name": "trainpilot-177-progress-model.js",
+      "start": 13896,
+      "end": 14067
+    },
+    {
+      "name": "trainpilot-177-progress-ui.js",
+      "start": 14068,
+      "end": 14466
+    },
+    {
+      "name": "issue63-section-icons.js",
+      "start": 14467,
+      "end": 14489
+    },
+    {
+      "name": "issue67-fixes.js",
+      "start": 14490,
+      "end": 14586
+    },
+    {
+      "name": "home-draft-compact.js",
+      "start": 14587,
+      "end": 14629
+    },
+    {
+      "name": "issue79-health-active-intervals.js",
+      "start": 14630,
+      "end": 14729
+    },
+    {
+      "name": "issue80-video-source-safety.js",
+      "start": 14730,
+      "end": 14850
+    },
+    {
+      "name": "publication-105.js",
+      "start": 14851,
+      "end": 15037
+    },
+    {
+      "name": "custom-exercise-distance-106.js",
+      "start": 15038,
+      "end": 15350
+    },
+    {
+      "name": "training-107.js",
+      "start": 15351,
+      "end": 15576
+    },
+    {
+      "name": "features-110.js",
+      "start": 15577,
+      "end": 15873
+    },
+    {
+      "name": "ble-discovery-111.js",
+      "start": 15874,
+      "end": 16035
+    },
+    {
+      "name": "health-journal-120.js",
+      "start": 16036,
+      "end": 16146
+    },
+    {
+      "name": "samsung-health-provider.js",
+      "start": 16147,
+      "end": 16274
+    },
+    {
+      "name": "health-details.js",
+      "start": 16275,
+      "end": 16371
+    },
+    {
+      "name": "cardio-daily.js",
+      "start": 16372,
+      "end": 16471
+    },
+    {
+      "name": "profile-training-128.js",
+      "start": 16472,
+      "end": 16980
+    },
+    {
+      "name": "navigation-motion-137.js",
+      "start": 16981,
+      "end": 17112
+    },
+    {
+      "name": "automatic-time-162.js",
+      "start": 17113,
+      "end": 17168
+    },
+    {
+      "name": "phone-execution-162.js",
+      "start": 17169,
+      "end": 17462
+    },
+    {
+      "name": "workout-undo-188.js",
+      "start": 17463,
+      "end": 17502
+    },
+    {
+      "name": "wear-sync.js",
+      "start": 17503,
+      "end": 18378
+    },
+    {
+      "name": "history-duplicate-repair.js",
+      "start": 18379,
+      "end": 18439
+    },
+    {
+      "name": "wear-health-details-129.js",
+      "start": 18440,
+      "end": 18450
+    },
+    {
+      "name": "wear-journal-sources-160.js",
+      "start": 18451,
+      "end": 18576
+    },
+    {
+      "name": "wear-measurement-165.js",
+      "start": 18577,
+      "end": 18626
+    },
+    {
+      "name": "intervals-162.js",
+      "start": 18627,
+      "end": 18767
+    },
+    {
+      "name": "automatic-workout-162.js",
+      "start": 18768,
+      "end": 18929
+    },
+    {
+      "name": "wear-automatic-162.js",
+      "start": 18930,
+      "end": 19041
+    },
+    {
+      "name": "workout-pause-201.js",
+      "start": 19042,
+      "end": 19112
+    },
+    {
+      "name": "workout-ownership-193.js",
+      "start": 19113,
+      "end": 19327
+    },
+    {
+      "name": "workout-ownership-ui-193.js",
+      "start": 19328,
+      "end": 19438
+    },
+    {
+      "name": "phone-recording-162.js",
+      "start": 19439,
+      "end": 19471
+    },
+    {
+      "name": "phone-undo-188.js",
+      "start": 19472,
+      "end": 19528
+    },
+    {
+      "name": "wear-gps-route-193.js",
+      "start": 19529,
+      "end": 19606
+    },
+    {
+      "name": "distance-activity-flow-220.js",
+      "start": 19607,
+      "end": 19697
+    },
+    {
+      "name": "training-modes-197.js",
+      "start": 19698,
+      "end": 19735
+    },
+    {
+      "name": "progression-modes-197.js",
+      "start": 19736,
+      "end": 19833
+    },
+    {
+      "name": "training-modes-ui-197.js",
+      "start": 19834,
+      "end": 19983
+    },
+    {
+      "name": "training-mode-confirm-197.js",
+      "start": 19984,
+      "end": 20097
+    },
+    {
+      "name": "training-coach-197.js",
+      "start": 20098,
+      "end": 20207
+    },
+    {
+      "name": "training-actual-rir-197.js",
+      "start": 20208,
+      "end": 20305
+    },
+    {
+      "name": "samsung-energy-access-184.js",
+      "start": 20306,
+      "end": 20398
+    },
+    {
+      "name": "workout-records-226.js",
+      "start": 20399,
+      "end": 20531
+    },
+    {
+      "name": "set-haptic-227.js",
+      "start": 20532,
+      "end": 20587
+    },
+    {
+      "name": "ready.js",
+      "start": 20588,
+      "end": 20599
+    }
+  ]
+}

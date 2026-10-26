@@ -1,0 +1,497 @@
+{
+  "schema": 1,
+  "nativeReadReference": "c116a042229f61b86babbbeb23c5d2c360486e20",
+  "status": "PLANNED_NOT_RUN",
+  "globalCases": [
+    "G-AC01",
+    "G-AC02",
+    "G-AC03",
+    "G-AC04",
+    "G-AC05",
+    "G-AC06",
+    "G-AC07",
+    "G-AC08"
+  ],
+  "views": [
+    {
+      "id": "V01",
+      "name": "Kezdőlap",
+      "globalCases": [
+        "G-AC01",
+        "G-AC02",
+        "G-AC03",
+        "G-AC04",
+        "G-AC05",
+        "G-AC06",
+        "G-AC07",
+        "G-AC08"
+      ],
+      "scenarioSource": "02-screen-contracts.md",
+      "currentResult": "NOT_RUN",
+      "beforeCommit": null,
+      "afterCommit": null,
+      "fixtureId": null,
+      "pngArtifacts": []
+    },
+    {
+      "id": "V02",
+      "name": "Edzésválasztó",
+      "globalCases": [
+        "G-AC01",
+        "G-AC02",
+        "G-AC03",
+        "G-AC04",
+        "G-AC05",
+        "G-AC06",
+        "G-AC07",
+        "G-AC08"
+      ],
+      "scenarioSource": "02-screen-contracts.md",
+      "currentResult": "NOT_RUN",
+      "beforeCommit": null,
+      "afterCommit": null,
+      "fixtureId": null,
+      "pngArtifacts": []
+    },
+    {
+      "id": "V03",
+      "name": "Programok",
+      "globalCases": [
+        "G-AC01",
+        "G-AC02",
+        "G-AC03",
+        "G-AC04",
+        "G-AC05",
+        "G-AC06",
+        "G-AC07",
+        "G-AC08"
+      ],
+      "scenarioSource": "02-screen-contracts.md",
+      "currentResult": "NOT_RUN",
+      "beforeCommit": null,
+      "afterCommit": null,
+      "fixtureId": null,
+      "pngArtifacts": []
+    },
+    {
+      "id": "V04",
+      "name": "Naptár",
+      "globalCases": [
+        "G-AC01",
+        "G-AC02",
+        "G-AC03",
+        "G-AC04",
+        "G-AC05",
+        "G-AC06",
+        "G-AC07",
+        "G-AC08"
+      ],
+      "scenarioSource": "02-screen-contracts.md",
+      "currentResult": "NOT_RUN",
+      "beforeCommit": null,
+      "afterCommit": null,
+      "fixtureId": null,
+      "pngArtifacts": []
+    },
+    {
+      "id": "V05",
+      "name": "Gyakorlatkönyvtár",
+      "globalCases": [
+        "G-AC01",
+        "G-AC02",
+        "G-AC03",
+        "G-AC04",
+        "G-AC05",
+        "G-AC06",
+        "G-AC07",
+        "G-AC08"
+      ],
+      "scenarioSource": "02-screen-contracts.md",
+      "currentResult": "NOT_RUN",
+      "beforeCommit": null,
+      "afterCommit": null,
+      "fixtureId": null,
+      "pngArtifacts": []
+    },
+    {
+      "id": "V06",
+      "name": "Gyakorlat részletei",
+      "globalCases": [
+        "G-AC01",
+        "G-AC02",
+        "G-AC03",
+        "G-AC04",
+        "G-AC05",
+        "G-AC06",
+        "G-AC07",
+        "G-AC08"
+      ],
+      "scenarioSource": "02-screen-contracts.md",
+      "currentResult": "NOT_RUN",
+      "beforeCommit": null,
+      "afterCommit": null,
+      "fixtureId": null,
+      "pngArtifacts": []
+    },
+    {
+      "id": "V07",
+      "name": "Súlyzós aktív edzés",
+      "globalCases": [
+        "G-AC01",
+        "G-AC02",
+        "G-AC03",
+        "G-AC04",
+        "G-AC05",
+        "G-AC06",
+        "G-AC07",
+        "G-AC08"
+      ],
+      "scenarioSource": "02-screen-contracts.md",
+      "currentResult": "NOT_RUN",
+      "beforeCommit": null,
+      "afterCommit": null,
+      "fixtureId": null,
+      "pngArtifacts": []
+    },
+    {
+      "id": "V08",
+      "name": "Egyoldali időalapú edzés",
+      "globalCases": [
+        "G-AC01",
+        "G-AC02",
+        "G-AC03",
+        "G-AC04",
+        "G-AC05",
+        "G-AC06",
+        "G-AC07",
+        "G-AC08"
+      ],
+      "scenarioSource": "02-screen-contracts.md",
+      "currentResult": "NOT_RUN",
+      "beforeCommit": null,
+      "afterCommit": null,
+      "fixtureId": null,
+      "pngArtifacts": []
+    },
+    {
+      "id": "V09",
+      "name": "Kétoldali időmérés",
+      "globalCases": [
+        "G-AC01",
+        "G-AC02",
+        "G-AC03",
+        "G-AC04",
+        "G-AC05",
+        "G-AC06",
+        "G-AC07",
+        "G-AC08"
+      ],
+      "scenarioSource": "02-screen-contracts.md",
+      "currentResult": "NOT_RUN",
+      "beforeCommit": null,
+      "afterCommit": null,
+      "fixtureId": null,
+      "pngArtifacts": []
+    },
+    {
+      "id": "V10",
+      "name": "Kültéri/GPS mérés",
+      "globalCases": [
+        "G-AC01",
+        "G-AC02",
+        "G-AC03",
+        "G-AC04",
+        "G-AC05",
+        "G-AC06",
+        "G-AC07",
+        "G-AC08"
+      ],
+      "scenarioSource": "02-screen-contracts.md",
+      "currentResult": "NOT_RUN",
+      "beforeCommit": null,
+      "afterCommit": null,
+      "fixtureId": null,
+      "pngArtifacts": []
+    },
+    {
+      "id": "V11",
+      "name": "Intervallum beállítása",
+      "globalCases": [
+        "G-AC01",
+        "G-AC02",
+        "G-AC03",
+        "G-AC04",
+        "G-AC05",
+        "G-AC06",
+        "G-AC07",
+        "G-AC08"
+      ],
+      "scenarioSource": "02-screen-contracts.md",
+      "currentResult": "NOT_RUN",
+      "beforeCommit": null,
+      "afterCommit": null,
+      "fixtureId": null,
+      "pngArtifacts": []
+    },
+    {
+      "id": "V12",
+      "name": "Edzés befejezése",
+      "globalCases": [
+        "G-AC01",
+        "G-AC02",
+        "G-AC03",
+        "G-AC04",
+        "G-AC05",
+        "G-AC06",
+        "G-AC07",
+        "G-AC08"
+      ],
+      "scenarioSource": "02-screen-contracts.md",
+      "currentResult": "NOT_RUN",
+      "beforeCommit": null,
+      "afterCommit": null,
+      "fixtureId": null,
+      "pngArtifacts": []
+    },
+    {
+      "id": "V13",
+      "name": "Napló",
+      "globalCases": [
+        "G-AC01",
+        "G-AC02",
+        "G-AC03",
+        "G-AC04",
+        "G-AC05",
+        "G-AC06",
+        "G-AC07",
+        "G-AC08"
+      ],
+      "scenarioSource": "02-screen-contracts.md",
+      "currentResult": "NOT_RUN",
+      "beforeCommit": null,
+      "afterCommit": null,
+      "fixtureId": null,
+      "pngArtifacts": []
+    },
+    {
+      "id": "V14",
+      "name": "Naplózott edzés részletei",
+      "globalCases": [
+        "G-AC01",
+        "G-AC02",
+        "G-AC03",
+        "G-AC04",
+        "G-AC05",
+        "G-AC06",
+        "G-AC07",
+        "G-AC08"
+      ],
+      "scenarioSource": "02-screen-contracts.md",
+      "currentResult": "NOT_RUN",
+      "beforeCommit": null,
+      "afterCommit": null,
+      "fixtureId": null,
+      "pngArtifacts": []
+    },
+    {
+      "id": "V15",
+      "name": "Privát útvonaltérkép",
+      "globalCases": [
+        "G-AC01",
+        "G-AC02",
+        "G-AC03",
+        "G-AC04",
+        "G-AC05",
+        "G-AC06",
+        "G-AC07",
+        "G-AC08"
+      ],
+      "scenarioSource": "02-screen-contracts.md",
+      "currentResult": "NOT_RUN",
+      "beforeCommit": null,
+      "afterCommit": null,
+      "fixtureId": null,
+      "pngArtifacts": []
+    },
+    {
+      "id": "V16",
+      "name": "Fejlődés",
+      "globalCases": [
+        "G-AC01",
+        "G-AC02",
+        "G-AC03",
+        "G-AC04",
+        "G-AC05",
+        "G-AC06",
+        "G-AC07",
+        "G-AC08"
+      ],
+      "scenarioSource": "02-screen-contracts.md",
+      "currentResult": "NOT_RUN",
+      "beforeCommit": null,
+      "afterCommit": null,
+      "fixtureId": null,
+      "pngArtifacts": []
+    },
+    {
+      "id": "V17",
+      "name": "Egészség és részletes napló",
+      "globalCases": [
+        "G-AC01",
+        "G-AC02",
+        "G-AC03",
+        "G-AC04",
+        "G-AC05",
+        "G-AC06",
+        "G-AC07",
+        "G-AC08"
+      ],
+      "scenarioSource": "02-screen-contracts.md",
+      "currentResult": "NOT_RUN",
+      "beforeCommit": null,
+      "afterCommit": null,
+      "fixtureId": null,
+      "pngArtifacts": []
+    },
+    {
+      "id": "V18",
+      "name": "Coach",
+      "globalCases": [
+        "G-AC01",
+        "G-AC02",
+        "G-AC03",
+        "G-AC04",
+        "G-AC05",
+        "G-AC06",
+        "G-AC07",
+        "G-AC08"
+      ],
+      "scenarioSource": "02-screen-contracts.md",
+      "currentResult": "NOT_RUN",
+      "beforeCommit": null,
+      "afterCommit": null,
+      "fixtureId": null,
+      "pngArtifacts": []
+    },
+    {
+      "id": "V19",
+      "name": "Beállítások",
+      "globalCases": [
+        "G-AC01",
+        "G-AC02",
+        "G-AC03",
+        "G-AC04",
+        "G-AC05",
+        "G-AC06",
+        "G-AC07",
+        "G-AC08"
+      ],
+      "scenarioSource": "02-screen-contracts.md",
+      "currentResult": "NOT_RUN",
+      "beforeCommit": null,
+      "afterCommit": null,
+      "fixtureId": null,
+      "pngArtifacts": []
+    },
+    {
+      "id": "V20",
+      "name": "Óra és szinkron",
+      "globalCases": [
+        "G-AC01",
+        "G-AC02",
+        "G-AC03",
+        "G-AC04",
+        "G-AC05",
+        "G-AC06",
+        "G-AC07",
+        "G-AC08"
+      ],
+      "scenarioSource": "02-screen-contracts.md",
+      "currentResult": "NOT_RUN",
+      "beforeCommit": null,
+      "afterCommit": null,
+      "fixtureId": null,
+      "pngArtifacts": []
+    },
+    {
+      "id": "V21",
+      "name": "Mentés és visszaállítás",
+      "globalCases": [
+        "G-AC01",
+        "G-AC02",
+        "G-AC03",
+        "G-AC04",
+        "G-AC05",
+        "G-AC06",
+        "G-AC07",
+        "G-AC08"
+      ],
+      "scenarioSource": "02-screen-contracts.md",
+      "currentResult": "NOT_RUN",
+      "beforeCommit": null,
+      "afterCommit": null,
+      "fixtureId": null,
+      "pngArtifacts": []
+    },
+    {
+      "id": "V22",
+      "name": "Engedélyek",
+      "globalCases": [
+        "G-AC01",
+        "G-AC02",
+        "G-AC03",
+        "G-AC04",
+        "G-AC05",
+        "G-AC06",
+        "G-AC07",
+        "G-AC08"
+      ],
+      "scenarioSource": "02-screen-contracts.md",
+      "currentResult": "NOT_RUN",
+      "beforeCommit": null,
+      "afterCommit": null,
+      "fixtureId": null,
+      "pngArtifacts": []
+    },
+    {
+      "id": "V23",
+      "name": "Privát edzésfotók",
+      "globalCases": [
+        "G-AC01",
+        "G-AC02",
+        "G-AC03",
+        "G-AC04",
+        "G-AC05",
+        "G-AC06",
+        "G-AC07",
+        "G-AC08"
+      ],
+      "scenarioSource": "02-screen-contracts.md",
+      "currentResult": "NOT_RUN",
+      "beforeCommit": null,
+      "afterCommit": null,
+      "fixtureId": null,
+      "pngArtifacts": []
+    },
+    {
+      "id": "V24",
+      "name": "Program szerkesztése",
+      "globalCases": [
+        "G-AC01",
+        "G-AC02",
+        "G-AC03",
+        "G-AC04",
+        "G-AC05",
+        "G-AC06",
+        "G-AC07",
+        "G-AC08"
+      ],
+      "scenarioSource": "02-screen-contracts.md",
+      "currentResult": "NOT_RUN",
+      "beforeCommit": null,
+      "afterCommit": null,
+      "fixtureId": null,
+      "pngArtifacts": []
+    }
+  ]
+}

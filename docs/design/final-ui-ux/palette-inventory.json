@@ -1,0 +1,295 @@
+{
+  "nativeCommit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+  "source": {
+    "path": "android/app/src/main/java/com/repforge/app/data/store/TrainPilotSettingsStore.kt",
+    "line": 113,
+    "symbol": "val AVAILABLE_THEMES =",
+    "sha256": "a1c90fcc717ee40c0461218ebd79c7e660db2f2273e5255a7e7f5057af9f5226",
+    "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+    "url": "https://github.com/fuloplevente1998/TrainPilot/blob/c116a042229f61b86babbbeb23c5d2c360486e20/android/app/src/main/java/com/repforge/app/data/store/TrainPilotSettingsStore.kt#L113"
+  },
+  "palettes": [
+    {
+      "key": "classicBlue",
+      "hu": "Kék",
+      "en": "Blue",
+      "accent": "#4d8fbe",
+      "accent2": "#7cb4d6",
+      "family": "basic",
+      "mainEffectiveAssignmentLine": 11720
+    },
+    {
+      "key": "classicGreen",
+      "hu": "Zöld",
+      "en": "Green",
+      "accent": "#4d946a",
+      "accent2": "#7ab18d",
+      "family": "basic",
+      "mainEffectiveAssignmentLine": 11721
+    },
+    {
+      "key": "classicRed",
+      "hu": "Piros",
+      "en": "Red",
+      "accent": "#b95f63",
+      "accent2": "#d58a8d",
+      "family": "basic",
+      "mainEffectiveAssignmentLine": 11722
+    },
+    {
+      "key": "classicOrange",
+      "hu": "Narancs",
+      "en": "Orange",
+      "accent": "#c07d45",
+      "accent2": "#d9a06e",
+      "family": "basic",
+      "mainEffectiveAssignmentLine": 11723
+    },
+    {
+      "key": "classicPurple",
+      "hu": "Lila",
+      "en": "Purple",
+      "accent": "#8567b1",
+      "accent2": "#a58cc9",
+      "family": "basic",
+      "mainEffectiveAssignmentLine": 11724
+    },
+    {
+      "key": "graphite",
+      "hu": "Grafit",
+      "en": "Graphite",
+      "accent": "#687989",
+      "accent2": "#96a4b1",
+      "family": "basic",
+      "mainEffectiveAssignmentLine": 11725
+    },
+    {
+      "key": "classicTeal",
+      "hu": "Türkiz",
+      "en": "Teal",
+      "accent": "#3f918a",
+      "accent2": "#75b6b1",
+      "family": "basic",
+      "mainEffectiveAssignmentLine": 11726
+    },
+    {
+      "key": "classicRose",
+      "hu": "Rózsaszín",
+      "en": "Rose",
+      "accent": "#b45f82",
+      "accent2": "#d38aa5",
+      "family": "basic",
+      "mainEffectiveAssignmentLine": 11727
+    },
+    {
+      "key": "classicAmber",
+      "hu": "Arany",
+      "en": "Amber",
+      "accent": "#ae843c",
+      "accent2": "#cca45f",
+      "family": "basic",
+      "mainEffectiveAssignmentLine": 11728
+    },
+    {
+      "key": "classicCyan",
+      "hu": "Cián",
+      "en": "Cyan",
+      "accent": "#4c8fa5",
+      "accent2": "#77b0c0",
+      "family": "basic",
+      "mainEffectiveAssignmentLine": 11729
+    },
+    {
+      "key": "yellow",
+      "hu": "Sárga",
+      "en": "Yellow",
+      "accent": "#f2bd45",
+      "accent2": "#ffd975",
+      "family": "vivid",
+      "mainEffectiveAssignmentLine": 2108
+    },
+    {
+      "key": "blue",
+      "hu": "Kék",
+      "en": "Blue",
+      "accent": "#5ca8ff",
+      "accent2": "#8bc4ff",
+      "family": "vivid",
+      "mainEffectiveAssignmentLine": 2109
+    },
+    {
+      "key": "green",
+      "hu": "Zöld",
+      "en": "Green",
+      "accent": "#62d08a",
+      "accent2": "#92e6ad",
+      "family": "vivid",
+      "mainEffectiveAssignmentLine": 2110
+    },
+    {
+      "key": "purple",
+      "hu": "Lila",
+      "en": "Purple",
+      "accent": "#a98cff",
+      "accent2": "#c6b5ff",
+      "family": "vivid",
+      "mainEffectiveAssignmentLine": 2111
+    },
+    {
+      "key": "orange",
+      "hu": "Narancs",
+      "en": "Orange",
+      "accent": "#ff9b54",
+      "accent2": "#ffbd8d",
+      "family": "vivid",
+      "mainEffectiveAssignmentLine": 2112
+    },
+    {
+      "key": "cyan",
+      "hu": "Cián",
+      "en": "Cyan",
+      "accent": "#48c6ef",
+      "accent2": "#83dcf6",
+      "family": "vivid",
+      "mainEffectiveAssignmentLine": 2113
+    },
+    {
+      "key": "teal",
+      "hu": "Türkiz",
+      "en": "Teal",
+      "accent": "#45c6b2",
+      "accent2": "#7de0d1",
+      "family": "vivid",
+      "mainEffectiveAssignmentLine": 2114
+    },
+    {
+      "key": "pink",
+      "hu": "Rózsaszín",
+      "en": "Pink",
+      "accent": "#ff78b9",
+      "accent2": "#ffa6d0",
+      "family": "vivid",
+      "mainEffectiveAssignmentLine": 2115
+    },
+    {
+      "key": "indigo",
+      "hu": "Indigó",
+      "en": "Indigo",
+      "accent": "#7f96ff",
+      "accent2": "#a8b8ff",
+      "family": "vivid",
+      "mainEffectiveAssignmentLine": 2116
+    },
+    {
+      "key": "lime",
+      "hu": "Lime",
+      "en": "Lime",
+      "accent": "#a8d75f",
+      "accent2": "#c7ea8b",
+      "family": "vivid",
+      "mainEffectiveAssignmentLine": 2117
+    },
+    {
+      "key": "red",
+      "hu": "Piros",
+      "en": "Red",
+      "accent": "#ff6b6b",
+      "accent2": "#ff9b9b",
+      "family": "vivid",
+      "mainEffectiveAssignmentLine": 2118
+    },
+    {
+      "key": "magenta",
+      "hu": "Magenta",
+      "en": "Magenta",
+      "accent": "#e66cff",
+      "accent2": "#f1a0ff",
+      "family": "vivid",
+      "mainEffectiveAssignmentLine": 2119
+    },
+    {
+      "key": "lavender",
+      "hu": "Levendula",
+      "en": "Lavender",
+      "accent": "#9a86ff",
+      "accent2": "#c0b4ff",
+      "family": "vivid",
+      "mainEffectiveAssignmentLine": 2120
+    },
+    {
+      "key": "sky",
+      "hu": "Égkék",
+      "en": "Sky",
+      "accent": "#66c7ff",
+      "accent2": "#9adfff",
+      "family": "vivid",
+      "mainEffectiveAssignmentLine": 2121
+    },
+    {
+      "key": "mint",
+      "hu": "Menta",
+      "en": "Mint",
+      "accent": "#63d9b1",
+      "accent2": "#96ead0",
+      "family": "vivid",
+      "mainEffectiveAssignmentLine": 2122
+    },
+    {
+      "key": "coral",
+      "hu": "Korall",
+      "en": "Coral",
+      "accent": "#ff7f72",
+      "accent2": "#ffaaa0",
+      "family": "vivid",
+      "mainEffectiveAssignmentLine": 2123
+    },
+    {
+      "key": "amberGold",
+      "hu": "Arany (natív)",
+      "en": "Amber Gold (native)",
+      "accent": "#f2bd45",
+      "accent2": "#ffd97d",
+      "family": "basic"
+    },
+    {
+      "key": "emerald",
+      "hu": "Smaragd (natív)",
+      "en": "Emerald (native)",
+      "accent": "#3ca87d",
+      "accent2": "#7fd4ba",
+      "family": "basic"
+    },
+    {
+      "key": "slateCoral",
+      "hu": "Korall (natív)",
+      "en": "Coral (native)",
+      "accent": "#d46a6a",
+      "accent2": "#f09c9c",
+      "family": "basic"
+    },
+    {
+      "key": "vividCyan",
+      "hu": "Élénk cián (natív)",
+      "en": "Vivid cyan (native)",
+      "accent": "#26b6d4",
+      "accent2": "#6ee7ff",
+      "family": "vivid"
+    },
+    {
+      "key": "vividGold",
+      "hu": "Élénk arany (natív)",
+      "en": "Vivid gold (native)",
+      "accent": "#f3c545",
+      "accent2": "#fff1a0",
+      "family": "vivid"
+    },
+    {
+      "key": "vividEmerald",
+      "hu": "Élénk smaragd (natív)",
+      "en": "Vivid emerald (native)",
+      "accent": "#2dd48f",
+      "accent2": "#7bf1b8",
+      "family": "vivid"
+    }
+  ]
+}
