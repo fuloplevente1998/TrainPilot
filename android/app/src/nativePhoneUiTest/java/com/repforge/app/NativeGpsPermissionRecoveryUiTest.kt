@@ -57,6 +57,11 @@ class NativeGpsPermissionRecoveryUiTest {
 
     private fun setGpsEnabled(on: Boolean) {
         shell("cmd location set-location-enabled ${if (on) "true" else "false"}")
+        // Android broadcasts the provider state asynchronously even after cmd exits.
+        repeat(30) {
+            if (gpsEnabled() == on) return
+            Thread.sleep(100)
+        }
         assertEquals("emulator location switch", on, gpsEnabled())
     }
 
