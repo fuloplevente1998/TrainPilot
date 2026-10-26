@@ -54,6 +54,18 @@ class NativeTrainingModeCommitUiTest {
             installed.set(NativeWorkoutSession.installPrepared(fixture.context, candidate))
         }
         val initial = installed.get()
+        val forbiddenModeChange = NativeTrainingModeChange.prepare(
+            settings.trainingModes197Json, settings.activeProgramId,
+            "global", null, "hit", "rir")
+        // The same IO-entry admission must deny an active native workout,
+        // not silently write a settings change during a running session.
+        assertTrue(runCatching {
+            runBlocking(Dispatchers.IO) {
+                NativeTrainingModeChange.approve(fixture.settings, forbiddenModeChange)
+            }
+        }.isFailure)
+        assertEquals(settings.trainingModes197Json,
+            runBlocking(Dispatchers.IO) { fixture.settings.current().trainingModes197Json })
         val ticket = NativeTrainingModeProposal.ticket(initial, "goblet-squat",
             2.5, "checked-history-and-readiness", settings.trainingModes197Json)
         assertNotNull(ticket)
