@@ -19,6 +19,27 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
   High kód; Medium vizuális dizájn előtt jelezni; Extra High komoly végső debug előtt.
   Kevés lényegi magyar output, nincs belső subagent külön kérés nélkül. PR238 követőlap.
 
+## Telefonos UI eredmény és aktív root-javítás – 2026-10-26
+
+40317771457 e28ab418 telefonos UI **lezárt FAIL**,75/75 terminális esetből35PASS/
+40FAIL,0screenshot. A régi nav process crash megszűnt, a teljes suite végigért.
+1120phone/167Wear JVM, R8/signing, Wear round és2signed-upgrade zöld marad ezen
+az appforráson. Artifact12649155506, kibontva /tmp/tpe28-phone-ui; teljes hibák
+instrumentation.txt-ben. Nem minden UI-failure termékhiba: sok screenshot-ack timeout.
+
+Root19de9112: UiAutomation screenshot-request most executeShellCommandRw tee stdin
+streamből íródik (nem shellként feltételezett printf/redirection); ack cat felesleges
+redirection nélkül. Programs UI-tesztek a valódi home shortcutot nyitják az öt tab
+mellett nem létező navigation_programs helyett; theme-picker lazy scroll javítva.
+Két Kotlin lexical/diff PASS, új GitHub compile/UI még UNRUN. Ne pipáld zöldnek.
+5b88e07e gate-parser5Python+valós hibás artifact ellenőrzés PASS, app változatlan.
+
+Következő root-lépés: a maradék75/40 UI hibák célzott triage és batch javítása,
+majd egy közös új kapu. Többek közt Calendar planner readiness/mező, locale/theme
+wait, interval field scroll, text-substring és Health sleep címke ellenőrzendő.
+A három új külső munka diszjunkt ágon megy; Settings/Google és GPS recovery
+területüket ne módosítsuk párhuzamosan. Main/verzió/élő telepítés változatlan.
+
 ## Aktuális közös kapu és új külső kiosztás – 2026-10-26
 
 Aktuális checkout/teszt **e28ab41887a976ee380f63f465dbdcb51f494329**, appkód f72c9cb0.
