@@ -1,5 +1,7 @@
 package com.repforge.app
 
+import androidx.room.withTransaction
+import com.repforge.app.ui.settings.NativeGoogleMaintenance
 import android.accounts.Account
 import android.app.Activity
 import android.app.PendingIntent
@@ -58,7 +60,7 @@ data class GoogleSyncUiState(
 )
 
 internal enum class GoogleSyncAction(val key: String) { CONNECT("connect"), DRIVE("drive"), CALENDAR("calendar") }
-internal data class GoogleSyncCompletion(val action: GoogleSyncAction, val syncedAt: String? = null, val count: Int? = null)
+internal data class GoogleSyncCompletion(val action: GoogleSyncAction, val syncedAt: String? = null, val count: Int? = null, val maintenance: NativeGoogleMaintenance.Report? = null)
 
 /**
  * Native replacement of GoogleSyncPlugin + #18 multi-device Drive merge engine.
@@ -70,6 +72,7 @@ class GoogleSyncRepository internal constructor(context: Context, private val op
     companion object {
         private const val PREFS_NAME = "repforge-google"
         private val processOperations = NativeGoogleOperationGate()
+        private val accountEpoch = java.util.concurrent.atomic.AtomicLong(0)
         private const val LIMIT = 20 * 1024 * 1024
         private const val PHOTO_LIMIT = 6 * 1024 * 1024
         private const val MANAGED_CALENDAR_DESC = "RepForge managed workout calendar v1"
@@ -134,8 +137,11 @@ class GoogleSyncRepository internal constructor(context: Context, private val op
             operations.run {
                 // Drive sync stages a snapshot/merge outside the replacement mutex.
                 // An unattended Health read must not race this cloud backup window.
-                if (op == GoogleSyncAction.DRIVE.key) NativeHealthBackupGate.begin()
+                if (op == GoogleSyncAction.DRIVE.key || op == "authorize-drive") NativeHealthBackupGate.begin()
                 try {
+                    check(op !in setOf("drive", "calendar") || !prefs().getBoolean("maintenancePaused:$op", prefs().getBoolean("maintenancePaused", false))) {
+                        "Cloud synchronization is paused after maintenance; explicitly authorize sync again"
+                    }
                     refreshProfileState()
                     _uiState.update { it.copy(isBusy = true, activeOperation = op, stageMessage = stage, errorMessage = null) }
                     currentCoroutineContext().ensureActive()
@@ -149,7 +155,7 @@ class GoogleSyncRepository internal constructor(context: Context, private val op
                     Result.failure(Exception(message, e))
                 } finally {
                     _uiState.update { it.copy(isBusy = false, activeOperation = "", stageMessage = "") }
-                    if (op == GoogleSyncAction.DRIVE.key) NativeHealthBackupGate.end()
+                    if (op == GoogleSyncAction.DRIVE.key || op == "authorize-drive") NativeHealthBackupGate.end()
                 }
             }
         } catch (busy: NativeGoogleOperationGate.Busy) { Result.failure(busy) }
@@ -162,17 +168,21 @@ class GoogleSyncRepository internal constructor(context: Context, private val op
         activity: Activity,
         action: GoogleSyncAction,
         resolve: suspend (PendingIntent) -> Intent?,
-        recoverEarlier: Boolean = false
+        recoverEarlier: Boolean = false,
+        maintenance: NativeGoogleMaintenance.Request? = null
     ): Result<GoogleSyncCompletion> = withContext(Dispatchers.IO) {
         val language = settingsStore.current().language
         val strings = com.repforge.app.ui.text.nativeResources(appContext, language)
-        runGoogleOperation(action.key, strings.getString(R.string.native_google_authorizing)) {
-            val dataTicket = NativeDataReplacement.continuationForCurrentData(appContext)
+        runGoogleOperation(maintenance?.kind?.key ?: "authorize-${action.key}", strings.getString(R.string.native_google_authorizing)) {
+            val dataTicket = maintenance?.dataset ?: NativeDataReplacement.continuationForCurrentData(appContext)
+            if (maintenance != null) requireMaintenance(maintenance)
             val email = prefs().getString("email", "").orEmpty()
             if (action != GoogleSyncAction.CONNECT)
                 NativeGoogleAccountPolicy.requireConnected(prefs().getString("sub", "").orEmpty(), email)
             val authorization = withContext(Dispatchers.Main) {
-                val builder = AuthorizationRequest.builder().setRequestedScopes(scopesForOperation(action.key))
+                val builder = AuthorizationRequest.builder().setRequestedScopes(scopesForOperation(maintenance?.kind?.key ?: action.key) +
+                    if (maintenance?.kind == NativeGoogleMaintenance.Kind.REVOKE)
+                        scopesForOperation("drive") + scopesForOperation("calendar") else emptyList())
                 if (email.isNotBlank()) builder.setAccount(Account(email, "com.google"))
                 Identity.getAuthorizationClient(activity).authorize(builder.build()).await()
             }
@@ -187,14 +197,27 @@ class GoogleSyncRepository internal constructor(context: Context, private val op
                 ?: throw IOException(strings.getString(R.string.native_google_no_token))
             currentCoroutineContext().ensureActive()
             dataTicket.requireCurrent(appContext)
-            when (action) {
-                GoogleSyncAction.CONNECT -> {
-                    connectWithTokenInternal(token, dataTicket)
-                    GoogleSyncCompletion(action)
+            if (maintenance != null) {
+                requireMaintenance(maintenance)
+                verifyAndFetchProfile(token)
+                requireMaintenance(maintenance)
+                val report = performMaintenance(activity, token, maintenance)
+                GoogleSyncCompletion(action, maintenance = report)
+            } else {
+                if (action != GoogleSyncAction.CONNECT) {
+                    verifyAndFetchProfile(token)
+                    dataTicket.requireCurrent(appContext)
+                    check(prefs().edit().putBoolean("maintenancePaused:${action.key}", false).commit())
                 }
-                GoogleSyncAction.DRIVE -> GoogleSyncCompletion(action,
-                    syncedAt = syncDriveCloudInternal(token, false, recoverEarlier, true))
-                GoogleSyncAction.CALENDAR -> GoogleSyncCompletion(action, count = syncCalendarCloudInternal(token, dataTicket))
+                when (action) {
+                    GoogleSyncAction.CONNECT -> {
+                        connectWithTokenInternal(token, dataTicket)
+                        GoogleSyncCompletion(action)
+                    }
+                    GoogleSyncAction.DRIVE -> GoogleSyncCompletion(action,
+                        syncedAt = syncDriveCloudInternal(token, false, recoverEarlier, true))
+                    GoogleSyncAction.CALENDAR -> GoogleSyncCompletion(action, count = syncCalendarCloudInternal(token, dataTicket))
+                }
             }
         }
     }
@@ -217,6 +240,7 @@ class GoogleSyncRepository internal constructor(context: Context, private val op
                 .putString("email", safe.getString("email")).putString("sub", safe.getString("sub"))
             if (prefs().getString("sub", "") != safe.getString("sub")) editor.remove("calendar")
             check(editor.commit()) { "A Google-fiók nem menthető." }
+            accountEpoch.incrementAndGet()
             refreshProfileState()
             safe
         }
@@ -225,29 +249,88 @@ class GoogleSyncRepository internal constructor(context: Context, private val op
     fun disconnect(): Result<Unit> = try {
         operations.runNow {
             check(prefs().edit().clear().commit()) { "A Google-fiók lekapcsolása nem menthető." }
+            accountEpoch.incrementAndGet()
             _uiState.value = loadInitialUiState()
             Result.success(Unit)
         }
     } catch (e: Exception) { Result.failure(e) }
 
-    suspend fun revokeAccess(activity: Activity): Result<Unit> = withContext(Dispatchers.Main) {
-        runGoogleOperation("revoke", "Google-engedély visszavonása…") {
-            val email = prefs().getString("email", "").orEmpty()
-            NativeGoogleAccountPolicy.requireConnected(prefs().getString("sub", "").orEmpty(), email)
-            val scopes = listOf(
-                Scope("openid"), Scope("https://www.googleapis.com/auth/userinfo.email"),
-                Scope("https://www.googleapis.com/auth/userinfo.profile"),
-                Scope("https://www.googleapis.com/auth/drive.appdata"),
-                Scope("https://www.googleapis.com/auth/calendar.app.created"),
-                Scope("https://www.googleapis.com/auth/calendar.calendarlist.readonly")
-            )
-            Identity.getAuthorizationClient(activity).revokeAccess(
-                RevokeAccessRequest.builder().setAccount(Account(email, "com.google")).setScopes(scopes).build()
-            ).await()
-            currentCoroutineContext().ensureActive()
-            check(prefs().edit().clear().commit()) { "A Google-fiók lekapcsolása nem menthető." }
+    suspend fun revokeAccess(activity: Activity): Result<Unit> = withContext(Dispatchers.IO) {
+        runGoogleOperation("revoke", "Google maintenance") {
+            val request = captureMaintenance(NativeGoogleMaintenance.Kind.REVOKE)
+            prepareMaintenance(request)
+            revokeAccessInternal(activity, request)
+        }
+    }
+
+    internal suspend fun previewMaintenance(kind: NativeGoogleMaintenance.Kind): NativeGoogleMaintenance.Request =
+        withContext(Dispatchers.IO) { operations.run { captureMaintenance(kind) } }
+
+    private suspend fun captureMaintenance(kind: NativeGoogleMaintenance.Kind): NativeGoogleMaintenance.Request {
+        val sub = prefs().getString("sub", "").orEmpty()
+        val email = prefs().getString("email", "").orEmpty()
+        NativeGoogleAccountPolicy.requireConnected(sub, email)
+        NativeGoogleMaintenance.requireSafe(appContext)
+        return NativeGoogleMaintenance.Request(kind, sub, email,
+            NativeDataReplacement.continuationForCurrentData(appContext), accountEpoch.get())
+    }
+
+    private suspend fun requireMaintenance(request: NativeGoogleMaintenance.Request) {
+        currentCoroutineContext().ensureActive()
+        request.requireAccount(prefs().getString("sub", "").orEmpty(), prefs().getString("email", "").orEmpty(), accountEpoch.get())
+        request.dataset.requireCurrent(appContext)
+        NativeGoogleMaintenance.requireSafe(appContext)
+    }
+
+    private suspend fun prepareMaintenance(request: NativeGoogleMaintenance.Request) {
+        requireMaintenance(request) // Main-only admission before the metadata lease.
+        NativeDataReplacement.mutate(appContext) {
+            request.dataset.requireCurrent(appContext)
+            request.requireAccount(prefs().getString("sub", "").orEmpty(), prefs().getString("email", "").orEmpty(), accountEpoch.get())
+            check(com.repforge.app.ui.health.NativeHealthForegroundAdmission.safeOffMain(appContext))
+            // Persist fail-closed before any remote deletion. Local history is never touched.
+            check(prefs().edit().putBoolean("maintenancePaused", true)
+                .putBoolean("maintenancePaused:drive", true).putBoolean("maintenancePaused:calendar", true).commit())
+            database.withTransaction {
+                val dao = database.keyValueDocumentDao()
+                for (prefix in listOf("cloudBase:", "cloudHeads:", "cloudCalendarSent:")) dao.deleteDocument(prefix + request.sub)
+                val stamp = System.currentTimeMillis()
+                dao.putDocument(KeyValueDocumentEntity("cloudPrefs", JSONObject().put("drive", false).put("calendar", false).toString(), stamp))
+                dao.putDocument(KeyValueDocumentEntity("cloudStatus", "{}", stamp))
+            }
+        }
+    }
+
+    private suspend fun revokeAccessInternal(activity: Activity, request: NativeGoogleMaintenance.Request) {
+        requireMaintenance(request)
+        withContext(Dispatchers.Main) {
+            Identity.getAuthorizationClient(activity).revokeAccess(RevokeAccessRequest.builder()
+                .setAccount(Account(request.email, "com.google"))
+                .setScopes((scopesForOperation("drive") + scopesForOperation("calendar")).distinct()).build()).await()
+        }
+        requireMaintenance(request)
+        NativeDataReplacement.mutate(appContext) {
+            request.dataset.requireCurrent(appContext)
+            request.requireAccount(prefs().getString("sub", "").orEmpty(), prefs().getString("email", "").orEmpty(), accountEpoch.get())
+            check(prefs().edit().clear().putBoolean("maintenancePaused", true).commit())
+            accountEpoch.incrementAndGet()
             refreshProfileState()
         }
+    }
+
+    private suspend fun performMaintenance(activity: Activity?, token: String, request: NativeGoogleMaintenance.Request): NativeGoogleMaintenance.Report {
+        prepareMaintenance(request)
+        return try {
+            when (request.kind) {
+                NativeGoogleMaintenance.Kind.REVOKE -> {
+                    revokeAccessInternal(requireNotNull(activity), request)
+                    NativeGoogleMaintenance.Report(1, true)
+                }
+                NativeGoogleMaintenance.Kind.DRIVE -> deleteDriveInternal(token, request)
+                NativeGoogleMaintenance.Kind.CALENDAR -> deleteCalendarsInternal(token, request)
+            }
+        } catch (cancelled: CancellationException) { throw cancelled }
+        catch (_: Exception) { NativeGoogleMaintenance.Report(0, false, true) }
     }
 
     /**
@@ -422,57 +505,63 @@ class GoogleSyncRepository internal constructor(context: Context, private val op
     }
 
     suspend fun deleteAllDriveAppData(accessToken: String): Result<Int> = withContext(Dispatchers.IO) {
-        runGoogleOperation("drive-delete", "Felhőadatok törlése…") {
+        runGoogleOperation("drive-delete", "Google maintenance") {
+            val ticket = captureMaintenance(NativeGoogleMaintenance.Kind.DRIVE)
             verifyAndFetchProfile(accessToken)
-            val files = appFiles(accessToken, "name contains 'repforge-sync-' or name contains 'trainpilot-photo-'")
-            var count = 0
-            for (i in 0 until files.length()) {
-                currentCoroutineContext().ensureActive()
-                val f = files.getJSONObject(i)
-                if (!APP_FILE_REGEX.matches(f.optString("name"))) continue
-                request(accessToken, "DELETE", "https://www.googleapis.com/drive/v3/files/${enc(f.getString("id"))}", null)
-                count++
-            }
-            count
+            val report = performMaintenance(null, accessToken, ticket)
+            check(report.complete) { "Partial Google deletion: ${report.completed}; remote outcome uncertain" }
+            report.completed
         }
     }
 
     suspend fun deleteManagedCalendars(accessToken: String): Result<Int> = withContext(Dispatchers.IO) {
-        runGoogleOperation("calendar-delete", "Edzésnaptárak törlése…") {
+        runGoogleOperation("calendar-delete", "Google maintenance") {
+            val ticket = captureMaintenance(NativeGoogleMaintenance.Kind.CALENDAR)
             verifyAndFetchProfile(accessToken)
-            var page = ""
-            val ids = ArrayList<String>()
-            do {
-                val r = request(
-                    accessToken,
-                    "GET",
-                    "https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=250" +
-                        if (page.isEmpty()) "" else "&pageToken=${enc(page)}",
-                    null
-                )
-                val a = r.optJSONArray("items")
-                if (a != null) {
-                    for (i in 0 until a.length()) {
-                        val x = a.getJSONObject(i)
-                        if (MANAGED_CALENDAR_DESC == x.optString("description") && "owner" == x.optString("accessRole")) {
-                            ids.add(x.getString("id"))
-                        }
-                    }
-                }
-                page = r.optString("nextPageToken")
-            } while (page.isNotEmpty())
-
-            for (id in ids) {
-                currentCoroutineContext().ensureActive()
-                try {
-                    request(accessToken, "DELETE", "https://www.googleapis.com/calendar/v3/calendars/${enc(id)}", null)
-                } catch (e: ApiError) {
-                    if (e.code != 404 && e.code != 410) throw e
-                }
-            }
-            check(prefs().edit().remove("calendar").commit()) { "A Google-naptár törlése nem menthető." }
-            ids.size
+            val report = performMaintenance(null, accessToken, ticket)
+            check(report.complete) { "Partial Google deletion: ${report.completed}; remote outcome uncertain" }
+            report.completed
         }
+    }
+
+    private suspend fun deleteDriveInternal(token: String, ticket: NativeGoogleMaintenance.Request): NativeGoogleMaintenance.Report {
+        requireMaintenance(ticket)
+        val files = appFiles(token, "name contains 'repforge-sync-' or name contains 'trainpilot-photo-'")
+        val ids = (0 until files.length()).map { files.getJSONObject(it) }
+            .filter { APP_FILE_REGEX.matches(it.optString("name")) }.map { it.getString("id") }
+        return NativeGoogleMaintenance.deleteSequentially(ids, { requireMaintenance(ticket) }) { id ->
+            try { request(token, "DELETE", "https://www.googleapis.com/drive/v3/files/${enc(id)}", null) }
+            catch (e: ApiError) { if (e.code != 404 && e.code != 410) throw e }
+        }
+    }
+
+    private suspend fun deleteCalendarsInternal(token: String, ticket: NativeGoogleMaintenance.Request): NativeGoogleMaintenance.Report {
+        var page = ""
+        val ids = ArrayList<String>()
+        do {
+            requireMaintenance(ticket)
+            val response = request(token, "GET", "https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=250" +
+                if (page.isEmpty()) "" else "&pageToken=${enc(page)}", null)
+            val rows = response.optJSONArray("items") ?: JSONArray()
+            for (i in 0 until rows.length()) {
+                val row = rows.getJSONObject(i)
+                if (row.optString("description") == MANAGED_CALENDAR_DESC && row.optString("accessRole") == "owner") ids.add(row.getString("id"))
+            }
+            page = response.optString("nextPageToken")
+        } while (page.isNotEmpty())
+        val report = NativeGoogleMaintenance.deleteSequentially(ids, { requireMaintenance(ticket) }) { id ->
+            try { request(token, "DELETE", "https://www.googleapis.com/calendar/v3/calendars/${enc(id)}", null) }
+            catch (e: ApiError) { if (e.code != 404 && e.code != 410) throw e }
+        }
+        try {
+            requireMaintenance(ticket)
+            NativeDataReplacement.mutate(appContext) {
+                ticket.dataset.requireCurrent(appContext)
+                check(prefs().edit().remove("calendar").commit())
+            }
+        } catch (cancelled: CancellationException) { throw cancelled }
+        catch (_: Exception) { return report.copy(complete = false) }
+        return report
     }
 
     // =========================================================================
