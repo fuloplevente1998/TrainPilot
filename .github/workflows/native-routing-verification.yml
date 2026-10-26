@@ -1,0 +1,22 @@
+name: Native Actions routing verification
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - feat/native-android-migration
+    paths:
+      - '.github/workflows/**'
+      - 'scripts/verify-native-actions-routing.py'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-routing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify all legacy setup-node jobs are source-routed
+        run: python3 scripts/verify-native-actions-routing.py
