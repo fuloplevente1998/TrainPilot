@@ -82,10 +82,16 @@ class NativePhoneNavigationTest {
         require(Regex("[a-z0-9_]{1,120}").matches(name))
         val request = JSONObject().put("name", name).put("language", language).put("theme", theme)
             .put("screen", screen).put("data", "isolated-emulator-test-fixture").toString()
-        device.executeShellCommand("printf '%s' '$request' > /data/local/tmp/trainpilot-shot-request")
+        // UiAutomation executes a command, not shell redirection. Stream the request
+        // through stdin so the host actually receives a file before waiting for its ack.
+        val pipes = instrumentation.uiAutomation.executeShellCommandRw("tee /data/local/tmp/trainpilot-shot-request")
+        android.os.ParcelFileDescriptor.AutoCloseOutputStream(pipes[1]).use {
+            it.write(request.toByteArray(Charsets.UTF_8))
+        }
+        android.os.ParcelFileDescriptor.AutoCloseInputStream(pipes[0]).use { it.readBytes() }
         val deadline = System.nanoTime() + 15_000_000_000L
         while (System.nanoTime() < deadline) {
-            if (device.executeShellCommand("cat /data/local/tmp/trainpilot-shot-ack 2>/dev/null").trim() == name) return
+            if (device.executeShellCommand("cat /data/local/tmp/trainpilot-shot-ack").trim() == name) return
             Thread.sleep(100)
         }
         fail("Host did not capture raw adb screenshot: $name")
@@ -190,7 +196,8 @@ class NativePhoneNavigationTest {
             compose.onNodeWithTag("settings_language_$language").performClick()
             compose.waitUntil(10000) { runBlocking { settings.current().language == language } }
             compose.onNodeWithTag("settings_language_$language").assertIsSelected()
-            compose.onNodeWithTag("theme_$theme").performScrollTo().performClick()
+            compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("theme_$theme"))
+            compose.onNodeWithTag("theme_$theme").performClick()
             compose.waitUntil(10000) { runBlocking { settings.current().themeKey == theme && settings.current().language == language } }
             screenshot("settings", language, theme)
         }

@@ -29,9 +29,9 @@ class NativeProgramActionsUiTest {
     private fun launchPrograms() {
         scenario = fixture.launch()
         compose.waitUntil(30_000) {
-            compose.onAllNodesWithTag("navigation_programs").fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithTag("navigation_home").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithTag("navigation_programs").performClick()
+        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
         compose.waitUntil(15_000) {
             compose.onAllNodesWithTag("program_list").fetchSemanticsNodes().isNotEmpty()
         }
