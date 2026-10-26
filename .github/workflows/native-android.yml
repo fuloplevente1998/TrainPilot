@@ -1,51 +1,38 @@
-name: Native Android and Wear OS APK
+# G10-only own-branch QA workflow. NOT TO BE MERGED into migration.
+name: Native G10 progress/photo scoped QA
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - feat/native-android-migration
-    paths:
-      - 'android/**'
-      - '.github/workflows/native-android.yml'
-      - 'scripts/run-native-wear-ui.sh'
-      - 'scripts/run-native-signed-upgrade.sh'
   pull_request:
+    branches: [feat/native-android-migration]
     paths:
       - 'android/**'
       - '.github/workflows/native-android.yml'
-      - 'scripts/run-native-wear-ui.sh'
-      - 'scripts/run-native-signed-upgrade.sh'
 
 permissions:
   contents: read
 
 concurrency:
-  group: native-android-${{ github.ref }}
-  cancel-in-progress: true
+  group: native-g10-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   native-debug:
-    name: Build phone and Wear OS debug APKs
+    name: G10 debug APK and targeted JVM
     runs-on: ubuntu-latest
     timeout-minutes: 35
     defaults:
       run:
         working-directory: android
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Set up Java 21
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
-      # Preserve resolved dependencies even when a later regression test fails.
-      # setup-java's post cache only saves a successful job, which made each fix
-      # download the same Kotlin/Android toolchain again.
-      - name: Restore native Gradle dependencies
-        id: gradle-cache
-        uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@v4
         with:
           path: |
             ~/.gradle/caches
@@ -54,288 +41,170 @@ jobs:
           restore-keys: |
             native-gradle-v2-${{ runner.os }}-${{ hashFiles('android/**/*.gradle', 'android/**/*.gradle.kts', 'android/gradle.properties', 'android/gradle/wrapper/gradle-wrapper.properties') }}-
             native-gradle-v2-${{ runner.os }}-
-            native-gradle-v1-${{ runner.os }}-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v4
-      - name: Install Android SDK platform
-        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
-      - name: Validate Gradle wrapper
+      - uses: android-actions/setup-android@v4
+      - name: Install Android SDK and build G10 APK pair
         run: |
-          test -f gradlew
-          test -f gradle/wrapper/gradle-wrapper.jar
+          sdkmanager "platforms;android-36" "build-tools;36.0.0"
           chmod +x gradlew
-      - name: Build native phone and watch debug APKs
-        run: ./gradlew --continue --no-daemon --stacktrace -PnativePhoneUiTests :app:assembleDebug :app:assembleDebugAndroidTest :wear:assembleDebug
-
-      - name: Run native unit tests
-        run: ./gradlew --continue --no-daemon --stacktrace -PnativeTestDiagnostics :app:testDebugUnitTest :wear:testDebugUnitTest :shared:testDebugUnitTest
-
-      - name: Prepare existing release keystore
-        shell: bash
-        env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ./gradlew --no-daemon --stacktrace -PnativePhoneUiTests :app:assembleDebug :app:assembleDebugAndroidTest
+      - name: Run targeted G10 JVM tests (includes historical projections)
         run: |
-          set -euo pipefail
-          test -n "$ANDROID_KEYSTORE_BASE64"
-          test -n "$ANDROID_STORE_PASSWORD"
-          test -n "$ANDROID_KEY_ALIAS"
-          test -n "$ANDROID_KEY_PASSWORD"
-          KEYSTORE="$RUNNER_TEMP/trainpilot-native-release.jks"
-          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE"
-          chmod 600 "$KEYSTORE"
-          echo "ANDROID_KEYSTORE_PATH=$KEYSTORE" >> "$GITHUB_ENV"
-      - name: Build same-key signed native updates
-        env:
-          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ./gradlew --no-daemon --stacktrace -PnativeTestDiagnostics :app:testDebugUnitTest \
+            --tests 'com.repforge.app.NativeProgressQueryTest' \
+            --tests 'com.repforge.app.NativeProgressPhotoRangeTest'
+      - name: Hash exact debug APKs
         run: |
-          ./gradlew --no-daemon :wear:dependencyInsight --configuration releaseRuntimeClasspath --dependency androidx.fragment > wear-fragment-dependencies.txt
-          ./gradlew --no-daemon --stacktrace -PnativeUpgradeTests :app:assembleRelease :wear:assembleRelease :wear:assembleDebugAndroidTest :migration-seed:assembleRelease
-      - name: Verify update package version and signer continuity
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          PHONE="app/build/outputs/apk/release/app-release.apk"
-          WEAR="wear/build/outputs/apk/release/wear-release.apk"
-          test -s "$PHONE"
-          test -s "$WEAR"
-          AAPT="$(ls "$ANDROID_HOME"/build-tools/*/aapt | sort -V | tail -1)"
-          SIGNER="$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)"
-          "$AAPT" dump badging "$PHONE" > phone-native-badging.txt
-          "$AAPT" dump badging "$WEAR" > wear-native-badging.txt
-          grep -q "package: name='com.repforge.app'" phone-native-badging.txt
-          grep -q "package: name='com.repforge.app'" wear-native-badging.txt
-          grep -q "versionCode='2736'" phone-native-badging.txt
-          grep -q "versionCode='2736'" wear-native-badging.txt
-          grep -q "versionName='1.3.71-native-test'" phone-native-badging.txt
-          grep -q "versionName='1.3.71-native-test'" wear-native-badging.txt
-          "$SIGNER" verify --verbose "$PHONE"
-          "$SIGNER" verify --verbose "$WEAR"
-          mkdir -p "$RUNNER_TEMP/native-signer-baseline"
-          gh release download v1.0.0 --repo "$GITHUB_REPOSITORY" --pattern 'TrainPilot-1.0.0.apk' --dir "$RUNNER_TEMP/native-signer-baseline"
-          OLD="$RUNNER_TEMP/native-signer-baseline/TrainPilot-1.0.0.apk"
-          echo "485817d3c33b0623b030ad919fb5e07af27d5e5890a3f67fb8e4dbe4b729f22a  $OLD" | sha256sum --check --
-          ORIGINAL="$(python3 ../scripts/apk_signer_cert.py "$OLD")"
-          test -n "$ORIGINAL"
-          test "$ORIGINAL" = "$(python3 ../scripts/apk_signer_cert.py "$PHONE")"
-          test "$ORIGINAL" = "$(python3 ../scripts/apk_signer_cert.py "$WEAR")"
-          SEED_APK="migration-seed/build/outputs/apk/release/migration-seed-release.apk"
-          "$SIGNER" verify --verbose "$SEED_APK"
-          test "$ORIGINAL" = "$(python3 ../scripts/apk_signer_cert.py "$SEED_APK")"
-          echo "Original release signing identity verified."
-          sha256sum "$PHONE" "$WEAR" > native-apk-sha256.txt
-      - name: Upload independent old-release seed runner
-        uses: actions/upload-artifact@v4
-        with:
-          name: TrainPilot-Native-Migration-Seed
-          path: android/migration-seed/build/outputs/apk/release/*.apk
-          if-no-files-found: error
-      - name: Upload Wear UI test APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: TrainPilot-Native-Wear-UI-Test
-          path: android/wear/build/outputs/apk/androidTest/debug/*.apk
-          if-no-files-found: error
-      - name: Remove temporary signing keystore
-        if: always()
-        run: rm -f "$RUNNER_TEMP/trainpilot-native-release.jks"
-      - name: Upload signed phone update
-        uses: actions/upload-artifact@v4
-        with:
-          name: TrainPilot-Native-Phone-Signed-Update
-          path: android/app/build/outputs/apk/release/app-release.apk
-          if-no-files-found: error
-      - name: Upload signed Wear update
-        uses: actions/upload-artifact@v4
-        with:
-          name: TrainPilot-Native-Wear-Signed-Update
-          path: android/wear/build/outputs/apk/release/wear-release.apk
-          if-no-files-found: error
-      - name: Upload APK verification metadata
-        uses: actions/upload-artifact@v4
-        with:
-          name: TrainPilot-Native-Update-Verification
-          path: |
-            android/*-native-badging.txt
-            android/native-apk-sha256.txt
-            android/wear-fragment-dependencies.txt
-          if-no-files-found: error
-      - name: Upload native test reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: TrainPilot-Native-Tests-${{ github.sha }}
-          path: |
-            android/**/build/test-results/
-            android/**/build/reports/tests/
-          if-no-files-found: ignore
-      - name: Upload phone debug APK
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: TrainPilot-Native-Phone-Debug
-          path: android/app/build/outputs/apk/debug/*.apk
-          if-no-files-found: ignore
-      - name: Upload native phone UI test APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: TrainPilot-Native-Phone-UI-Test
-          path: android/app/build/outputs/apk/androidTest/debug/*.apk
-          if-no-files-found: error
-      - name: Upload Wear OS debug APK
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: TrainPilot-Native-Wear-Debug
-          path: android/wear/build/outputs/apk/debug/*.apk
-          if-no-files-found: ignore
-      - name: Preserve native Gradle dependencies
-        if: always() && steps.gradle-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ steps.gradle-cache.outputs.cache-primary-key }}
-
-  signed-upgrade:
-    name: Signed ${{ matrix.baseline.tag }} to native data upgrade
-    needs: native-debug
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        baseline:
-          - tag: v1.3.71
-            sha256: f3fc054d9e2142fc7919b0e7beee8c2db35527de2fcb85406c23ab23141e5e68
-          - tag: v1.3.71-perf-20261022
-            sha256: 850b5e1e597e574dbf5cf55cf82721a3f77879447db9852fa056d2b889d50570
-    steps:
-      - uses: actions/checkout@v4
-      - uses: android-actions/setup-android@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: TrainPilot-Native-Phone-Signed-Update
-          path: upgrade/phone
-      - uses: actions/download-artifact@v4
-        with:
-          name: TrainPilot-Native-Migration-Seed
-          path: upgrade/seed
-      - name: Download verified original release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          BASELINE_TAG: ${{ matrix.baseline.tag }}
-          BASELINE_SHA256: ${{ matrix.baseline.sha256 }}
-        run: |
-          gh release download "$BASELINE_TAG" --repo "$GITHUB_REPOSITORY" --pattern 'TrainPilot-1.3.71.apk' --dir upgrade/original
-          echo "$BASELINE_SHA256  upgrade/original/TrainPilot-1.3.71.apk" | sha256sum --check --
-      - name: Enable KVM
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-      - name: Install original, seed, and update without uninstalling
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 35
-          target: google_apis
-          arch: x86_64
-          profile: pixel_2
-          disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 2048
-          script: bash scripts/run-native-signed-upgrade.sh
+          sha256sum app/build/outputs/apk/debug/app-debug.apk \
+            app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk > g10-apk-sha256.txt
+          echo "${{ github.event.pull_request.head.sha || github.sha }}" > g10-source-head.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: TrainPilot-Native-Signed-Upgrade-Results-${{ matrix.baseline.tag }}-${{ github.sha }}
-          path: upgrade/results/
-          if-no-files-found: error
-
-  wear-ui:
-    name: Preserved native Wear round UI
-    needs: native-debug
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [0, 1, 2]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: android-actions/setup-android@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: TrainPilot-Native-Wear-Debug
-          path: wear-ui/app
-      - uses: actions/download-artifact@v4
-        with:
-          name: TrainPilot-Native-Wear-UI-Test
-          path: wear-ui/test
-      - name: Enable KVM
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-      - uses: reactivecircus/android-emulator-runner@v2
-        env:
-          WEAR_SHARD: ${{ matrix.shard }}
-        with:
-          api-level: 30
-          target: android-wear
-          arch: x86
-          profile: wearos_small_round
-          disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 2048
-          script: bash scripts/run-native-wear-ui.sh
+          name: Native-G10-JVM-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            android/app/build/test-results/testDebugUnitTest/
+            android/app/build/reports/tests/testDebugUnitTest/
+            android/g10-apk-sha256.txt
+            android/g10-source-head.txt
+          if-no-files-found: warn
       - uses: actions/upload-artifact@v4
-        if: always()
         with:
-          name: TrainPilot-Native-Wear-UI-Results-${{ github.sha }}-${{ matrix.shard }}
-          path: wear-ui/results/
+          name: Native-G10-Debug-APKs
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
           if-no-files-found: error
 
   phone-ui:
-    name: Native phone Compose UI and unmodified screenshots
+    name: G10 + 3 existing Cardio Progress UI tests / API35
     needs: native-debug
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: android-actions/setup-android@v4
       - uses: actions/download-artifact@v4
         with:
-          name: TrainPilot-Native-Phone-Debug
-          path: phone-ui/app
-      - uses: actions/download-artifact@v4
-        with:
-          name: TrainPilot-Native-Phone-UI-Test
-          path: phone-ui/test
+          name: Native-G10-Debug-APKs
+          path: g10/apks
       - name: Enable KVM
         run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - uses: reactivecircus/android-emulator-runner@v2
+      - name: Real targeted emulator instrumentation and unchanged screencaps
+        uses: reactivecircus/android-emulator-runner@v2
+        env:
+          SOURCE_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
         with:
           api-level: 35
           target: google_apis
           arch: x86_64
+          profile: pixel_2
           ram-size: 3072M
           disk-size: 6000M
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: python3 scripts/native/phone-ui-gate.py --app phone-ui/app/app-debug.apk --tests phone-ui/test/app-debug-androidTest.apk --output phone-ui/results --commit "$GITHUB_SHA"
-      - name: Upload raw phone UI evidence and screenshots
+          script: |
+            python3 - <<'PY'
+            import hashlib
+            import importlib.util
+            import json
+            import os
+            from pathlib import Path
+            import re
+            import subprocess
+            import time
+            import xml.etree.ElementTree as ET
+
+            out = Path("g10/results")
+            shots = out / "screenshots"
+            shots.mkdir(parents=True, exist_ok=True)
+            apk = Path("g10/apks/app/build/outputs/apk/debug/app-debug.apk")
+            test_apk = Path("g10/apks/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk")
+            def sha(path):
+                return hashlib.sha256(path.read_bytes()).hexdigest()
+            def adb(*args, check=True):
+                return subprocess.run(["adb", *args], capture_output=True, check=check, timeout=35).stdout
+
+            manifest = {
+                "sourceHead": os.environ["SOURCE_HEAD"],
+                "appSha256": sha(apk), "testApkSha256": sha(test_apk),
+                "api": adb("shell", "getprop", "ro.build.version.sdk").decode().strip(),
+                "imageOrigin": "unmodified-adb-exec-out-screencap-p",
+                "fixture": "isolated-synthetic-g10",
+                "screenshots": [], "result": "failed"
+            }
+            process = None
+            try:
+                adb("install", "-r", "-t", str(apk))
+                adb("install", "-r", "-t", str(test_apk))
+                for p in ("POST_NOTIFICATIONS", "ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"):
+                    adb("shell", "pm", "grant", "com.repforge.app", "android.permission."+p, check=False)
+                adb("shell", "rm", "-f", "/data/local/tmp/trainpilot-shot-request",
+                    "/data/local/tmp/trainpilot-shot-ack")
+                selector = ("com.repforge.app.NativeCardioProgressUiTest,"
+                            "com.repforge.app.NativeProgressPhotoRangeUiTest")
+                seen = set()
+                with (out / "instrumentation.txt").open("wb") as raw_file:
+                    process = subprocess.Popen(["adb", "shell", "am", "instrument", "-w", "-r",
+                        "-e", "class", selector,
+                        "com.repforge.app.test/androidx.test.runner.AndroidJUnitRunner"],
+                        stdout=raw_file, stderr=subprocess.STDOUT)
+                    deadline = time.monotonic() + 1500
+                    while process.poll() is None:
+                        if time.monotonic() >= deadline:
+                            process.kill()
+                            raise TimeoutError("G10 emulator test timed out")
+                        req = adb("shell", "cat", "/data/local/tmp/trainpilot-shot-request",
+                            check=False).decode(errors="replace").strip()
+                        if req.startswith("{"):
+                            try:
+                                data = json.loads(req)
+                            except json.JSONDecodeError:
+                                time.sleep(.2)
+                                continue
+                            name = data.get("name", "")
+                            if not re.fullmatch(r"[a-z0-9_]{1,120}", name):
+                                raise RuntimeError("invalid screenshot request name")
+                            if name not in seen:
+                                focus = adb("shell", "dumpsys", "window").decode(errors="replace")
+                                if "com.repforge.app/" not in focus:
+                                    raise RuntimeError("No foreground TrainPilot app for screenshot")
+                                png = adb("exec-out", "screencap", "-p")
+                                if not png.startswith(b"\x89PNG\r\n\x1a\n") or len(png) < 100:
+                                    raise RuntimeError("Not an unmodified PNG from adb")
+                                file = shots / (name + ".png")
+                                file.write_bytes(png)
+                                manifest["screenshots"].append({**data, "path": str(file),
+                                    "sha256": sha(file), "bytes": len(png)})
+                                seen.add(name)
+                                adb("shell", "sh", "-c",
+                                    "printf %s " + name + " > /data/local/tmp/trainpilot-shot-ack")
+                        time.sleep(.15)
+                log = (out / "instrumentation.txt").read_text(errors="replace")
+                spec = importlib.util.spec_from_file_location("gate", "scripts/native/phone-ui-gate.py")
+                gate = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(gate)
+                valid = gate.report(log, out / "instrumentation-derived.xml")
+                xml = ET.parse(out / "instrumentation-derived.xml").getroot()
+                if (not valid or process.returncode != 0 or
+                    int(xml.attrib["tests"]) != 6 or
+                    any(int(xml.attrib[x]) != 0 for x in ("failures", "errors", "skipped")) or
+                    len(manifest["screenshots"]) < 3):
+                    raise RuntimeError("6/6 terminal tests and >=3 real screenshots required")
+                manifest["result"] = "success"
+            finally:
+                if process is not None and process.poll() is None:
+                    process.kill()
+                (out / "manifest.json").write_text(json.dumps(manifest, indent=2))
+                (out / "logcat.txt").write_bytes(adb("logcat", "-d", "-t", "3000", check=False))
+            PY
+      - uses: actions/upload-artifact@v4
         if: always()
-        uses: actions/upload-artifact@v4
         with:
-          name: TrainPilot-Native-Phone-UI-Evidence
-          path: phone-ui/results/
-          if-no-files-found: error
+          name: Native-G10-Phone-Evidence-${{ github.event.pull_request.head.sha || github.sha }}
+          path: g10/results/
+          if-no-files-found: warn
