@@ -12,7 +12,8 @@ https://github.com/fuloplevente1998/TrainPilot/actions/runs/40317771457
 Valós letöltött XML artifact12647857246: **telefon1120/0fail/0skip, Wear167/0/0**.
 #252 Calendar11, #253 Onboarding7 és #254 Program6 új JVM-esete mind PASS.
 Debug+phone UI-test APK fordítás, R8 release/original signer/package/verzió gate
-SUCCESS. Telefonos UI/valódi képek, Wear UI és két signed-upgrade job még fut.
+SUCCESS. Mindkét signed-upgrade és a három Wear UI job már SUCCESS;
+a telefonos UI/valódi képek job még fut (ellenőrizve12:02UTC).
 Ez nem teljes legfrissebb runtime-elfogadás és nem saját adatos install-engedély.
 
 40316447151 és40317244820 Root által CANCELLED, nem PASS. A tényleges utolsó
