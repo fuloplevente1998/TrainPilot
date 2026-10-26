@@ -57,7 +57,10 @@ class NativeProgramActionsUiTest {
         val path = "/sdcard/a07-$name.png"
         device.executeShellCommand("rm -f $path")
         device.executeShellCommand("screencap -p $path")
-        assertEquals("ok", device.executeShellCommand("test -s $path && echo ok").trim())
+        // UiAutomation starts a command, not a shell: &&/echo are not evaluated.
+        val bytes = device.executeShellCommand("stat -c %s $path").trim().toLongOrNull()
+        assertTrue("Expected nonempty raw screenshot at $path, bytes=$bytes",
+            bytes != null && bytes > 8L)
     }
 
     private fun importLegacyCustomExercise(id: String) = runBlocking(Dispatchers.IO) {

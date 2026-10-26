@@ -54,6 +54,9 @@ class NativeA07CatalogResetParityTest {
             db.programDao().saveProgramWithDays(program, days.filter { it.programId == program.id })
         }
         settings = TrainPilotSettingsStore(context)
+        // DataStore outlives an individual Robolectric test application/context.
+        // Establish this test's input as well as restoring it in cleanup.
+        settings.setActiveProgramId("home-basic")
     }
 
     @After fun cleanup() {

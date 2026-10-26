@@ -193,3 +193,27 @@ API35:
 At the time this report file was first created: **NOT_RUN**. Run/job/artifact/XML/hash evidence is appended only after GitHub Actions completes; no pending run is counted as PASS.
 
 Full restore/migration, signed-upgrade and combined phone UI acceptance remain Root-owned and are **not** implied by this scoped gate.
+
+## Root takeover and integration corrections — 2026-10-26
+
+Imported from PR269 exact `bd792560770de78a566d002a7ce16a1d11ac1a0a`;
+branch-only `native-a07-reset-qa.yml` was deliberately excluded. No production
+reset operation was added. The safe A/B preview/confirm path is preserved.
+
+Verified external scoped run `40408886805`: JVM job success; API35 failure.
+The preceding JVM artifact `12692430345` had 33 tests / 1 failure / 0 errors /
+0 skipped: new A07 test left activeProgramId in the process-shared DataStore.
+External `3766db14` restores it in cleanup; Root additionally initializes it
+at setup to make the test's input independent of preceding classes.
+
+The latest API35 job `121874505060` ran all 4 cases: 3 failures / 0 skipped.
+All three stop at the screenshot helper's `expected ok but was empty`, because
+UiDevice.executeShellCommand does not evaluate `test ... && echo ok` as a shell.
+Root replaces that compound command with direct `stat -c %s` and a positive-size
+assertion; screenshot generation remains raw shell screencap. No assertion about
+restore, cancel, migration, stale preview or user data was removed or weakened.
+
+Root integrated runtime verification is pending on the corrected source. The
+old own-branch failure is retained as historical evidence, not labelled green.
+Common phone failures outside A07 and final physical-device acceptance remain
+separate. This report does not authorize global destructive catalog reset.
