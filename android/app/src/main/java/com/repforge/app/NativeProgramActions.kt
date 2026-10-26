@@ -47,7 +47,10 @@ internal object NativeProgramActions {
             }
             val ids = entries(factoryDay.exercisesJson).map(NativeProgramEditor::exerciseId).toSet()
             val prescriptions = JSONObject(fresh.program.rawJson).optJSONObject("prescriptions")
-            val touched = ids.filter { prescriptions?.has(it) == true }.toSet()
+            val editableKeys = setOf("sets", "reps", "weight", "rest", "trial")
+            val touched = ids.filter { id ->
+                prescriptions?.optJSONObject(id)?.keys()?.asSequence()?.any { it in editableKeys } == true
+            }.toSet()
             val affected = fresh.days.filter { it.dayId != dayId &&
                 (0 until JSONArray(it.exercisesJson).length()).any { index ->
                     val arr = JSONArray(it.exercisesJson)
@@ -58,7 +61,7 @@ internal object NativeProgramActions {
             }.map { it.dayId }
             ticket.requireCurrent(context)
             RestorePreview(fresh, factory, dayId, entries(existingDay.exercisesJson),
-                entries(factoryDay.exercisesJson), ids, affected, ticket)
+                entries(factoryDay.exercisesJson), touched, affected, ticket)
         }
     }
 
