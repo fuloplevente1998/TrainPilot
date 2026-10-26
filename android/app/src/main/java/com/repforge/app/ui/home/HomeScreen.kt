@@ -272,7 +272,14 @@ fun TodayMetricsGrid(metrics: TodayMetricsUiModel, language: String = "hu") {
             ?: runCatching { LocalDateTime.parse(stamp).toLocalTime() }.getOrNull()
         localTime?.format(DateTimeFormatter.ofPattern("HH:mm"))
     }
-    val recoveryDetail = if (formattedTime != null) "$source · $formattedTime" else source
+    val calculatedTime = metrics.recovery.calculatedAt
+        ?.atZone(ZoneId.systemDefault())?.toLocalTime()
+        ?.format(DateTimeFormatter.ofPattern("HH:mm"))
+    val recoveryDetail = when {
+        formattedTime != null -> "$source · $formattedTime"
+        calculatedTime != null -> "$source · ${strings.getString(R.string.native_home_recovery_calculated)} $calculatedTime"
+        else -> source
+    }
     val recoveryNotices = listOfNotNull(
         strings.getString(R.string.native_home_recovery_partial).takeIf { metrics.recovery.partial },
         strings.getString(R.string.native_home_recovery_stale).takeIf { metrics.recovery.stale },
