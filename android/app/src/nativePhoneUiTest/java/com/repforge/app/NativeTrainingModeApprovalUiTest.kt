@@ -60,7 +60,7 @@ class NativeTrainingModeApprovalUiTest {
                     compose.onAllNodesWithTag("training_modes_program_comparison_0")
                         .fetchSemanticsNodes().isNotEmpty()
             }
-        } catch (failure: Exception) {
+        } catch (failure: Throwable) {
             throw AssertionError("Program picker after preview: " +
                 compose.onRoot(useUnmergedTree = true).printToString().take(8500), failure)
         }
@@ -88,7 +88,8 @@ class NativeTrainingModeApprovalUiTest {
         openProgramPicker()
         select("training_modes_program_style", "hit")
         select("training_modes_program_progression", "rir")
-        compose.onNodeWithTag("training_modes_program_preview").performClick()
+        compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("training_modes_program_preview"))
+        compose.onNodeWithTag("training_modes_program_preview").performScrollTo().performClick()
         awaitReady()
     }
 
@@ -130,13 +131,14 @@ class NativeTrainingModeApprovalUiTest {
         val raw = current().trainingModes197Json
         openProgramPicker()
         select("training_modes_program_style", "hit")
-        compose.onNodeWithTag("training_modes_program_preview").performClick()
+        compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("training_modes_program_preview"))
+        compose.onNodeWithTag("training_modes_program_preview").performScrollTo().performClick()
         try {
             compose.waitUntil(30_000) {
                 compose.onAllNodesWithTag("training_modes_program_comparison_error")
                     .fetchSemanticsNodes().isNotEmpty()
             }
-        } catch (failure: Exception) {
+        } catch (failure: Throwable) {
             throw AssertionError("Empty program comparison dialog: " +
                 compose.onRoot(useUnmergedTree = true).printToString().take(8500), failure)
         }
@@ -251,7 +253,8 @@ class NativeTrainingModeApprovalUiTest {
         openProgramPicker()
         select("training_modes_program_style", "hit")
         select("training_modes_program_progression", "rir")
-        compose.onNodeWithTag("training_modes_program_preview").performClick()
+        compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("training_modes_program_preview"))
+        compose.onNodeWithTag("training_modes_program_preview").performScrollTo().performClick()
         awaitReady()
         assertEquals(initial, current().trainingModes197Json)
         compose.onNodeWithTag("training_modes_program_cancel").performClick()
@@ -278,7 +281,8 @@ class NativeTrainingModeApprovalUiTest {
         openProgramPicker()
         select("training_modes_program_style", "hit")
         select("training_modes_program_progression", "rir")
-        compose.onNodeWithTag("training_modes_program_preview").performClick()
+        compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("training_modes_program_preview"))
+        compose.onNodeWithTag("training_modes_program_preview").performScrollTo().performClick()
         awaitReady()
         val competing = JSONObject(initial.toString()).put("revision", 2)
         runBlocking(Dispatchers.IO) {
