@@ -2,6 +2,7 @@ package com.repforge.app.data.store
 
 import com.repforge.app.NativeDataReplacement
 import com.repforge.app.NativeTrainingProfile
+import com.repforge.app.ui.onboarding.NativeOnboardingPolicy
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -297,6 +298,59 @@ class TrainPilotSettingsStore(private val context: Context) {
         }
     }
 
+    /**
+     * Called only after a successful legacy extraction/import, before migration
+     * is marked complete. Existing native settings and imported profiles win.
+     * Do not infer a new user from the synthetic legacyStorageRaw entry.
+     */
+    internal suspend fun initializeOnboardingForMigration(legacyEvidence: Boolean) {
+        NativeDataReplacement.mutate(context) {
+            context.trainPilotDataStore.edit { prefs ->
+                val existing = prefs[KEY_ONBOARDING_128]
+                val status = NativeOnboardingPolicy.initialState(
+                    existing, legacyEvidence, prefs[KEY_TRAINING_PROFILE] ?: "{}"
+                )
+                prefs[KEY_ONBOARDING_128] = status
+            }
+        }
+    }
+
+    /** Compare-and-set under the same replacement lease as restore/erase. */
+    internal suspend fun transitionOnboarding(expected: String, next: String,
+        ticket: NativeDataReplacement.Continuation): Boolean {
+        require(NativeOnboardingPolicy.canTransition(expected, next))
+        return NativeDataReplacement.mutate(context) {
+            ticket.requireCurrent(context)
+            var changed = false
+            context.trainPilotDataStore.edit { prefs ->
+                if ((prefs[KEY_ONBOARDING_128] ?: "complete") == expected) {
+                    prefs[KEY_ONBOARDING_128] = next
+                    changed = true
+                }
+            }
+            changed
+        }
+    }
+
+    /** One atomic profile+completion write; never starts a program or touches a draft. */
+    internal suspend fun completeOnboarding(expectedProfileJson: String, fields: Map<String, String>,
+        ticket: NativeDataReplacement.Continuation): Boolean {
+        val checked = NativeTrainingProfile.edit(JSONObject(expectedProfileJson), fields)
+        return NativeDataReplacement.mutate(context) {
+            ticket.requireCurrent(context)
+            var changed = false
+            context.trainPilotDataStore.edit { prefs ->
+                if (prefs[KEY_ONBOARDING_128] == NativeOnboardingPolicy.IN_PROGRESS &&
+                    (prefs[KEY_TRAINING_PROFILE] ?: "{}") == expectedProfileJson) {
+                    prefs[KEY_TRAINING_PROFILE] = checked.toString()
+                    prefs[KEY_ONBOARDING_128] = NativeOnboardingPolicy.COMPLETE
+                    changed = true
+                }
+            }
+            changed
+        }
+    }
+
     suspend fun markMigrationComplete() {
         NativeDataReplacement.mutate(context) {
             context.trainPilotDataStore.edit { it[KEY_MIGRATION_V1371_COMPLETE] = true }
@@ -421,7 +475,11 @@ class TrainPilotSettingsStore(private val context: Context) {
             if (source.has("healthBackupConsent")) prefs[KEY_HEALTH_BACKUP_CONSENT] = source.optBoolean("healthBackupConsent")
             if (source.has("autoWriteWorkoutToHealthConnect")) prefs[KEY_AUTO_WRITE_HC] = source.optBoolean("autoWriteWorkoutToHealthConnect")
             if (source.has("weightRange")) prefs[KEY_WEIGHT_RANGE] = source.optString("weightRange", "30")
-            if (source.has("onboarding128")) prefs[KEY_ONBOARDING_128] = source.optString("onboarding128", "complete")
+            if (source.has("onboarding128")) prefs[KEY_ONBOARDING_128] =
+                NativeOnboardingPolicy.normalizedImportedState(
+                    source.optString("onboarding128", "complete"),
+                    data.has("draft") && !data.isNull("draft"))
+            else if (replaceTrainingModesOnMissing) prefs[KEY_ONBOARDING_128] = NativeOnboardingPolicy.COMPLETE
             // Main #128 profile is a separate document under portable settings,
             // not Google account identity. An explicit empty object clears it.
             if (source.has("profile")) {
@@ -444,6 +502,7 @@ class TrainPilotSettingsStore(private val context: Context) {
             context.trainPilotDataStore.edit { prefs ->
             prefs.clear()
             prefs[KEY_MIGRATION_V1371_COMPLETE] = true
+            prefs[KEY_ONBOARDING_128] = NativeOnboardingPolicy.WELCOME
         }
         }
     }
