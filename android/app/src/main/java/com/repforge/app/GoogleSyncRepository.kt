@@ -248,7 +248,14 @@ class GoogleSyncRepository internal constructor(context: Context, private val op
 
     fun disconnect(): Result<Unit> = try {
         operations.runNow {
-            check(prefs().edit().clear().commit()) { "A Google-fiók lekapcsolása nem menthető." }
+            // Disconnect clears identity, not a fail-closed maintenance pause. Otherwise
+            // reconnecting could silently resurrect deleted cloud data before explicit sync.
+            val previous = prefs()
+            val pauses = listOf("maintenancePaused", "maintenancePaused:drive", "maintenancePaused:calendar")
+                .filter { previous.contains(it) }.associateWith { previous.getBoolean(it, true) }
+            val editor = previous.edit().clear()
+            pauses.forEach { (key, value) -> editor.putBoolean(key, value) }
+            check(editor.commit()) { "A Google-fiók lekapcsolása nem menthető." }
             accountEpoch.incrementAndGet()
             _uiState.value = loadInitialUiState()
             Result.success(Unit)

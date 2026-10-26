@@ -104,4 +104,20 @@ class NativeGoogleMaintenanceTest {
             assertTrue(prefs.getBoolean("maintenancePaused", false))
         } finally { prefs.edit().clear().commit() }
     }
+
+    @Test fun disconnectClearsIdentityButPreservesServicePauseAndExplicitResumeOverride() = runTest {
+        val prefs = context.getSharedPreferences("repforge-google", Context.MODE_PRIVATE)
+        prefs.edit().putString("sub", "isolated-owner").putString("email", "owner@example.invalid")
+            .putBoolean("maintenancePaused", true).putBoolean("maintenancePaused:drive", false)
+            .putBoolean("maintenancePaused:calendar", true).commit()
+        try {
+            val repo = GoogleSyncRepository(context, NativeGoogleOperationGate())
+            assertTrue(repo.disconnect().isSuccess)
+            assertFalse(prefs.contains("sub")); assertFalse(prefs.contains("email"))
+            assertTrue(prefs.getBoolean("maintenancePaused", false))
+            assertFalse(prefs.getBoolean("maintenancePaused:drive", true))
+            assertTrue(prefs.getBoolean("maintenancePaused:calendar", false))
+            assertTrue(repo.syncCalendarCloud("must-not-leave-test").isFailure)
+        } finally { prefs.edit().clear().commit() }
+    }
 }
