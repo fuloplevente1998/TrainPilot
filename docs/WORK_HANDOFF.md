@@ -4,6 +4,54 @@ Frissítve: **2026-10-26**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## #250 javított audit, új UI-bekötések és közös kapu – 2026-10-26
+
+#250 exact **fb64307** két riportja byteazonosan beemelve **85f09350**.107 ID/sorrend
+megmaradt;77 IMPLEMENTED_UNVERIFIED /9 PARTIAL /21 PLATFORM_DEVICE_PENDING,
+0 runtime VERIFIED. A korábbi nyers UNRESOLVED problémák javítva, a bizonytalan
+A07/A12/C10/E15/E19 caller-igazolások továbbra külön kezelendők. #251 későbbi
+Health-integrációja felülírja az audit régi OWNED_BY_OTHER állapotát.
+Review: reviews/NATIVE_PR250_INTEGRATION.md.
+
+**7043fc7d**: B08/E17 globális időzítő Settings→VM→Store hatmezős editor, négy
+nyelv, validáció/24h limit, explicit Save/Cancel. CAS+replacement epoch megőrzi
+az újabb beállítást; aktív timer/frame érintetlen.4 új JVM **ténylegesen PASS**,
+2 UI csak lefordult, még nem futott.
+**bc18d019**: C03 utólagos hatfokozatú napló-feedback a meglévő editoron; explicit
+mentés, eredeti ID/epoch/tombstone/detail CAS, applied-program feedback zárolva.
+Unknown feedback/telemetry/photo mezők megmaradnak; régi suggestion törlődik,
+nincs automatikus progression/finalizer replay.3 új JVM+1 UI forrás, UNRUN.
+
+Közös40289777728 app7043fc7d **FAIL**: telefon/Wear debug és telefonos UI test-APK
+fordult; valós XML telefon1093/4fail, Wear167/0fail. #25118+11 és Samsung grant3
+új JVM PASS. A run javított Coach-harnesssel már végigért ~2perces unit lépésben,
+nem akadt el. R8/signer/UI/upgrade jobok még nem futottak.
+
+**b28672bf** javítja a négy hibát: Coach metadata REPLACE lenullázta a programnapokat
+(FK cascade), most meglévő saveProgramWithDays atomikus republish; Home @Relation
+trace két root catalog SELECT-et mutatott, most két flat program/day read ugyanazon
+snapshot-tranzakcióban (a one-root/0-200-1500 assert változatlan); planner safety
+fixture106elemes kizárása a100as validációs limit előtt bukott, most minden tényleg
+eligible, valós,≤100ID kizárásával a safety guardot teszteli; témaassert a két
+család vizuális fill/emphasis különbségét és mindkettő≥3 outline kontrasztját kéri,
+nem szükségtelenül eltérő, már olvasható határvonalat.
+
+Új canonical **40291546367**, checkout/appb28672bffe574506ed6c808c88d6b7a42c4ecd70:
+https://github.com/fuloplevente1998/TrainPilot/actions/runs/40291546367
+Indításkor IN_PROGRESS. Ezt ellenőrizd, ne indíts párhuzamos másolatot.
+
+## Három új külső fejlesztési átadó – kiosztás előkészítve
+
+Felhasználó további párhuzamos munkát kért; az átadók GitHubon **9dfb155a**,
+kiinduló app **7043fc7d5fac91383f583332fd8fc0e9397f4a1c**, mind saját új ággal,
+draft PR célmigration, központi CI/integráció. Indulásukat még nem igazolta.
+- Codex: plans/NATIVE_CALENDAR_MULTIWEEK_HANDOFF.md – E02, csak Calendar/új planner.
+- Plus1: plans/NATIVE_ONBOARDING_HANDOFF.md – A01, Home/nav +onboarding store-only.
+- Plus2: plans/NATIVE_PROGRAM_ACTIONS_HANDOFF.md – A07, forrásigazolt copy/reset.
+Pontos fájlhatár/új saját locale XML/teszt és no-build szerződés az átadókban.
+Ezeket ne írjuk párhuzamosan; Root Journal/Health/szinkron/CI marad. Nincs belső
+subagent, main/verzió/csomag/élő adatos install/PR-close változtatás.
+
 ## Samsung SDK fordítási fix és JVM-diagnosztika – 2026-10-26
 
 40284818902 FAIL compileDebugKotlin: #251 grantScope Kotlin listájában nem létező

@@ -51,3 +51,18 @@ termékkódbeli main-thread guard, forrásbizonyíték és tesztassert megmaradt
 Az új közös CI igazolja vagy cáfolja a javítást, nincs tesztkihagyás.
 
 Main/verzió/csomag változatlan, nincs PR-zárás vagy élő adatos telepítés.
+
+## C03 – utólagos napló-feedback bekötése
+
+`bc18d019`: az eredeti JournalEditor draft/mentési úthoz hat explicit visszajelzés
+és a Statisztikák fülről is szerkesztőgomb került. Mégse nem ír. Mentés az eredeti
+workout/sync/key azonosítót tartja; a már alkalmazott program-feedback nem írható
+át (main accept applied guard paritás). A main kompatibilis effort/1–5 vagy null
+score/rating/source/updatedAt mezők frissülnek. Régi skipped/suggestion kikerül,
+ismeretlen feedback kiterjesztés megmarad. Nincs új finalizálás vagy programemelés.
+Megírt 3 JVM+1 valódi editor→VM→Room UI teszt még nem futott.
+
+Közös40289777728 valós XML: telefon1093/4fail, Wear167/0fail. TimerDefaults4,
+HealthSync18+11 és SamsungGrantScope3 PASS. A négy hiba és b28672bf javítása az
+aktuális NATIVE_RESUME-ban. Új közös40291546367 indításkor IN_PROGRESS, a post-hoc
+feedback és a négy javítás új tesztelfogadása ebből következhet, régi runból nem.

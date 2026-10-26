@@ -42,6 +42,19 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
 - Ne küldj GitHub-kommentet vagy másoknak üzenetet külön kérés nélkül.
   A kért nyomonkövetéshez issue/PR leírását és állapotát frissítheted.
 
+## Aktuális külső kiosztás – 2026-10-26, PR250 után
+
+Három új átadó elkészült9dfb155a-ban, pinned app7043fc7d; indulás még nem igazolt:
+plans/NATIVE_CALENDAR_MULTIWEEK_HANDOFF.md (Codex), NATIVE_ONBOARDING_HANDOFF.md
+(Plus1), NATIVE_PROGRAM_ACTIONS_HANDOFF.md (Plus2). Fájlhatár az átadókban, saját
+új ág/draft célmigration, nincs munkás oldali teljes build/CI/main-merge.
+Home/onboarding/nav/onboarding-only Store, Calendar/new planner és Program actions
+területeket most fenntartjuk ezeknek. Root Journal/Health/sync/review/közös CI.
+Nem belső subagent felhatalmazás. A későbbi rootb28672bf Coach/Home flat-query
+javítás beemeléskor megőrzendő, a munkások ne reseteljenek a pinned bázisra.
+#250fb64307 audit integrálva85f09350; aktuális alkalmazás/runtime/CI mindig a
+NATIVE_RESUME tetején, történeti lentebbi SHA/státusz nem mai állapot.
+
 ## Jóváhagyott párhuzamos lokalizáció (2026-10-25)
 
 - A felhasználó külön ChatGPT-beszélgetésnek adja a telefonos UI megmaradt
