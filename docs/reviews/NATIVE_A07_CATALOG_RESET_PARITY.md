@@ -217,3 +217,28 @@ Root integrated runtime verification is pending on the corrected source. The
 old own-branch failure is retained as historical evidence, not labelled green.
 Common phone failures outside A07 and final physical-device acceptance remain
 separate. This report does not authorize global destructive catalog reset.
+
+## Verified corrected scoped gate — Root, 2026-10-26
+
+Run [40410654465](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40410654465),
+exact tested source **dc82e6206d25323e0a98c2ff1fa5ca4e3bbc75c5**: **SUCCESS, both jobs**.
+
+- JVM artifact12692434672: raw XML **33 tests /0failure/0error/0skip**
+  (Actions6, Editor17, BuiltinCatalog7, new A07 parity3).
+  ZIP SHA256 `6cb32673ec0f795d256d39a5aecb5e9adbfc0baca46dd3fdd9690684d53aa67a`.
+- API35 artifact12693158213: raw XML **4 tests /0failure/0error/0skip**.
+  ZIP SHA256 `01f17d2381d04d451c185ac1611d622e96336f07e9499dc9630c9f83f8919d48`.
+- Four raw 1080x1920 screencaps: preview/cancel, confirmed, stale-error,
+  migrated-preview. Root checked PNG structure and all six SHA256 manifest
+  entries (app APK, test APK, four PNGs), and visually inspected preview/error.
+- Preview and migrated-preview images legitimately have identical pixels:
+  the custom exercise's preservation is asserted in Room, not fabricated on the dialog.
+- Production app/Wear/shared source trees, active Gradle files and both A07 test
+  files match the Root integrated source byte-for-byte at verification time.
+  Later report-only commits do not change this tested source.
+
+This accepts the narrowly scoped A07 regression package, not the whole phone
+suite: common3297 had six unrelated phone failures, and the new localized Home
+source assertion at Root94114204 is written but not rerun yet. The global
+Settings reset contract, final visual/a11y work (including readable localized
+error presentation) and physical-device acceptance remain separate work.
