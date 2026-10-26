@@ -13,4 +13,5 @@
     <string name="native_gps_recovery_cancel">Cancel</string>
     <string name="native_gps_recovery_stale">The original workout or set has changed. GPS tracking was not started.</string>
     <string name="native_gps_recovery_settings_unavailable">Could not open system location settings. Open them manually in your phone\'s settings.</string>
+    <string name="native_gps_recovery_request_unavailable">The system permission request cannot be opened right now. Try again on your phone.</string>
 </resources>
