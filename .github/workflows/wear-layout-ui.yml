@@ -20,7 +20,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  app-target:
+    uses: ./.github/workflows/classify-app-source.yml
+
   round-display:
+    needs: app-target
+    if: ${{ needs.app-target.outputs.legacy == 'true' }}
     name: Round UI (shard ${{ matrix.shard }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -81,8 +86,8 @@ jobs:
 
   round-display-complete:
     name: Check complete round UI coverage
-    needs: round-display
-    if: ${{ always() }}
+    needs: [app-target, round-display]
+    if: ${{ needs.app-target.outputs.legacy == 'true' && (always()) }}
     runs-on: ubuntu-latest
     steps:
       - name: Require all emulator shards successful
