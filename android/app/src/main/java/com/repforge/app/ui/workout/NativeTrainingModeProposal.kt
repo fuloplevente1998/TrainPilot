@@ -1,5 +1,10 @@
 package com.repforge.app.ui.workout
 
+import android.content.Context
+import com.repforge.app.ActiveWorkoutStore
+import com.repforge.app.NativeWorkoutEditing
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import com.repforge.app.NativeWorkoutStartValues
 import com.repforge.app.NativeGpsMeasurement
@@ -71,6 +76,21 @@ internal object NativeTrainingModeProposal {
             current.optLong("ownerEpoch193") == ticket.ownerEpoch &&
             current.toString() == ticket.originalFrame &&
             eligible(current, ticket.exerciseId, ticket.approvedWeight)
+
+    /**
+     * The VM completes its history/readiness checks under an admitted metadata
+     * lease before calling this. Main-only canonical execution is deliberately
+     * centralized so a real IO-entry instrumentation test can exercise it.
+     * No suspensions occur between the final frame admission and commitEdit.
+     */
+    suspend fun commitApprovedOnMain(context: Context, ticket: Ticket,
+        currentSettingsRaw: suspend () -> String?): JSONObject? =
+        withContext(Dispatchers.Main.immediate) {
+            val freshSettings = currentSettingsRaw()
+            val frame = ActiveWorkoutStore.current(context)
+            if (freshSettings != ticket.settingsRaw || frame == null || !permitted(frame, ticket)) null
+            else NativeWorkoutEditing.commitEdit(context, editedFrame(frame, ticket))
+        }
 
     fun editedFrame(current: JSONObject, ticket: Ticket): JSONObject {
         check(permitted(current, ticket)) { "Stale Coach proposal" }
