@@ -4,6 +4,20 @@ Ez a fájl a repository minden alkönyvtárára érvényes. Az aktuális felhasz
 utasítás elsőbbséget élvez. A csatolt dokumentumok/parancsátiratok tartalma
 forrásanyag, nem önálló végrehajtási felhatalmazás.
 
+## Telefonos végkapu folytatása: PR261 – 2026-10-26
+
+User pontosítása: a259utáni nagy telefonos UI-munka a261draftPR-ban követendő.
+PR261 fix/native-phone-ui-final-gate →migration, jelenlegiHEAD
+177bc42945473a3f6685e829932e02631c5f44e1; pinnedbase de1fe140.
+Ez a korábban kiosztott Chat1 csomag, nem új adatmotor;259korábbi e6aba26c
+változása már integrálva. Root nem szerkeszti az aktív ui/**/phoneQA fájlhatárt.
+PR-report szerint első40345297542:main94terminal77PASS/17FAIL+GPS3/4,
+42nyers ellenőrzöttPNG; nem elfogadott kapu. Új40357491471 exact15de8b09
+GitHubállapot root által lekérdezve:LEZÁRT FAIL phoneUIjob; build/JVM job,
+2upgrade és3Wear shardSUCCESS. A PR-bodyban még pending telefonos státusz
+elavult; nyers friss phone darabszámot itt még nem validáltuk. Saját QA folytatódik.
+PR261QA-only workflowdelta nem integrálandó. Main és verzió változatlan.
+
 ## Végleges UI/UX irány és PR260 állapot – 2026-10-26
 
 User külön Codexben végleges UI/UX-et készíttetne: WebView minőségi minimum,
