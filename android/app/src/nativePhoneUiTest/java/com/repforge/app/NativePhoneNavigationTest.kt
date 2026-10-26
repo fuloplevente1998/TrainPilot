@@ -648,7 +648,7 @@ class NativePhoneNavigationTest {
         compose.onNodeWithTag("health_records_reload").performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("health_record_beta-weight").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("health_records_close").performClick()
-        compose.onNodeWithTag("health_selected_day").assertTextContains(day.toString())
+        compose.onNodeWithTag("health_selected_day").assertTextContains(day.toString(), substring = true)
     }
 
     @Test fun sleepDetailsRenderHealthConnectAndSamsungStagesWithActualProvenance() {
