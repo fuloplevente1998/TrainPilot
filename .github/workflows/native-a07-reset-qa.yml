@@ -121,7 +121,7 @@ jobs:
           set +o pipefail
 
           for name in preview-cancel confirmed stale-error migrated-preview; do
-            adb pull "/sdcard/Android/data/com.repforge.app/files/a07-${name}.png" \
+            adb pull "/sdcard/a07-${name}.png" \
               "$OUT/screenshots/a07-${name}.png" >/dev/null 2>&1 || true
           done
 
