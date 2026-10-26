@@ -49,7 +49,8 @@ internal fun NativeTrainingModePicker(
     val ctx = LocalContext.current
     val strings = remember(ctx, language) { nativeResources(ctx, language) }
     val effective = remember(raw, scope, programId, activeProgramId) {
-        NativeTrainingModes.resolveSavedJson(raw, if (scope == "global") activeProgramId else programId)
+        if (scope == "global") NativeTrainingModes.globalChoice(raw)
+        else NativeTrainingModes.resolveSavedJson(raw, programId)
     }
     var style by remember(raw, scope, programId, activeProgramId) { mutableStateOf(effective.trainingStyle) }
     var progression by remember(raw, scope, programId, activeProgramId) { mutableStateOf(effective.progressionMode) }
