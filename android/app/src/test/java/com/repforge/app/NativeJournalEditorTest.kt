@@ -128,6 +128,54 @@ class NativeJournalEditorTest {
         assertEquals(before.workout.health240Json, saved.workout.health240Json)
     }
 
+    @Test fun allSixFeedbackChoicesUpdateTheSameRowWithoutReapplyingProgramsOrDroppingTelemetry() = runTest(dispatcher) {
+        var before = seed()
+        val ids = listOf(before.workout.id, before.workout.syncId, before.workout.workoutKey)
+        val programs = db.programDao().getProgramsWithDays()
+        for ((index, effort) in listOf("easy", "light", "good", "challenging", "hard", "pain").withIndex()) {
+            val draft = NativeJournalEditor.from(before).copy(feedbackEffort = effort)
+            NativeJournalEditor.save(context, db, NativeJournalEditor.open(context, before), draft)
+            val saved = db.workoutHistoryDao().getWorkoutWithDetailsById(before.workout.id)!!
+            assertEquals(effort, saved.workout.effortFeedback)
+            assertEquals(ids, listOf(saved.workout.id, saved.workout.syncId, saved.workout.workoutKey))
+            assertEquals(1, db.workoutHistoryDao().getWorkoutCount())
+            assertEquals(before.photos, saved.photos)
+            assertEquals(before.workout.health240Json, saved.workout.health240Json)
+            assertEquals(before.workout.wearMetricsJson, saved.workout.wearMetricsJson)
+            val raw = JSONObject(saved.workout.rawJson)
+            val feedback = raw.getJSONObject("feedback")
+            assertEquals("keep", feedback.getString("futureFeedback"))
+            assertEquals("phone", feedback.getString("source"))
+            assertTrue(feedback.getLong("updatedAt") > 0)
+            if (effort == "pain") assertTrue(feedback.isNull("effortScore"))
+            else assertEquals(index + 1, feedback.getInt("effortScore"))
+            assertEquals(when (effort) { "pain" -> "pain"; "hard", "challenging" -> "hard"; "good" -> "right"; else -> "easy" },
+                feedback.getString("rating"))
+            assertEquals("stable-set", raw.getJSONArray("exercises").getJSONObject(0).getJSONArray("sets").getJSONObject(0).getString("setId"))
+            assertEquals(programs, db.programDao().getProgramsWithDays())
+            before = saved
+        }
+    }
+
+    @Test fun invalidAndAlreadyAppliedFeedbackCannotChangeTheWorkout() = runTest(dispatcher) {
+        val before = seed(history().put("feedback", JSONObject().put("effort", "good").put("applied", true)))
+        val opened = NativeJournalEditor.open(context, before)
+        for (effort in listOf("unknown", "hard", "pain")) {
+            reject { NativeJournalEditor.save(context, db, opened, NativeJournalEditor.from(before).copy(feedbackEffort = effort)) }
+            assertEquals(before, db.workoutHistoryDao().getWorkoutWithDetailsById(before.workout.id))
+        }
+    }
+
+    @Test fun changingSkippedFeedbackRemovesOnlyStaleAnswerMetadata() = runTest(dispatcher) {
+        val before = seed(history().put("feedback", JSONObject().put("skipped", true).put("source", "watch")
+            .put("future", "keep").put("suggestion", JSONObject().put("action", "increase"))))
+        val draft = NativeJournalEditor.from(before).copy(feedbackEffort = "pain")
+        NativeJournalEditor.save(context, db, NativeJournalEditor.open(context, before), draft)
+        val feedback = JSONObject(db.workoutHistoryDao().getWorkoutWithDetailsById(before.workout.id)!!.workout.rawJson).getJSONObject("feedback")
+        assertFalse(feedback.has("skipped")); assertFalse(feedback.has("suggestion"))
+        assertEquals("keep", feedback.getString("future")); assertEquals("pain", feedback.getString("effort"))
+    }
+
     @Test fun concurrentRawOrPhotoRelationEditCannotBeOverwritten() = runTest(dispatcher) {
         val before = seed()
         val opened = NativeJournalEditor.open(context, before)

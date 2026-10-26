@@ -176,6 +176,10 @@ private fun JournalDetailDialog(state: JournalUiState, text: Resources, language
                                         "hard" -> R.string.journal_effort_hard; "pain" -> R.string.journal_effort_pain; else -> R.string.journal_no_data
                                     }
                                     Text("${text.getString(R.string.journal_feedback)}: ${text.getString(effort)}")
+                                    OutlinedButton(onClick = model::openEditor, enabled = !state.deleting,
+                                        modifier = Modifier.fillMaxWidth().testTag("journal_edit_feedback")) {
+                                        Text(text.getString(R.string.journal_feedback_edit))
+                                    }
                                     for (record in model.parsePrRecords(workout.prRecordsJson226)) {
                                         Text("${text.getString(R.string.journal_pr)} · ${record.exerciseName}: ${record.value}")
                                         Text(text.getString(R.string.journal_previous_record, record.previous), color = colors.muted)

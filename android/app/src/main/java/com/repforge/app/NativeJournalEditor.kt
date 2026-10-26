@@ -18,7 +18,8 @@ import java.util.UUID
 /** An isolated edit of one existing journal row, never an active-workout replay. */
 internal object NativeJournalEditor {
     data class Opened(val detail: WorkoutHistoryWithDetails, val ticket: NativeDataReplacement.Continuation)
-    data class Draft(val started: String, val finished: String, val exercises: List<Exercise>)
+    data class Draft(val started: String, val finished: String, val exercises: List<Exercise>,
+        val feedbackEffort: String? = null)
     data class Units(val loadType: String, val repUnit: String, val measurementType: String)
     data class Exercise(val originalIndex: Int?, val id: String, val sets: List<Set>, val catalogUnits: Units? = null)
     data class Set(val originalIndex: Int?, val weight: String, val reps: String, val done: Boolean,
@@ -42,7 +43,7 @@ internal object NativeJournalEditor {
                 Set(i, value("weight"), value("reps"), set.optBoolean("done"),
                     value("leftSeconds"), value("rightSeconds"), value("distanceMeters"), value("actualRir"))
             })
-        })
+        }, detail.workout.effortFeedback)
     }
 
     fun addExercise(draft: Draft, source: ExerciseLibraryEntity): Draft {
@@ -157,6 +158,23 @@ internal object NativeJournalEditor {
         raw.put("exercises", exercises).put("started", start.toString()).put("finished", finish.toString())
             .put("durationSeconds", if (timesChanged) duration.seconds.toInt() else detail.workout.durationSeconds)
             .put("editedAt", Instant.ofEpochMilli(now).toString())
+        if (draft.feedbackEffort != detail.workout.effortFeedback) {
+            val effort = draft.feedbackEffort
+            val scores = listOf("easy", "light", "good", "challenging", "hard")
+            require(effort in scores || effort == "pain") { "Invalid workout feedback" }
+            val feedback = raw.optJSONObject("feedback")?.let { JSONObject(it.toString()) } ?: JSONObject()
+            check(!feedback.optBoolean("applied")) { "Feedback already applied to a program" }
+            feedback.put("effort", effort).put("effortScore",
+                if (effort == "pain") JSONObject.NULL else scores.indexOf(effort) + 1)
+                .put("rating", when (effort) { "pain" -> "pain"; "challenging", "hard" -> "hard"; "good" -> "right"; else -> "easy" })
+                .put("source", "phone").put("updatedAt", now)
+            feedback.remove("skipped")
+            // Old translated suggestions describe the previous answer. Coach reads this saved
+            // evidence afresh; editing a journal never applies progression a second time.
+            feedback.remove("suggestion")
+            raw.put("feedback", feedback)
+            if (raw.has("effortFeedback")) raw.put("effortFeedback", effort)
+        }
         if (timesChanged) {
             // Measured telemetry retains its real measurement window; it is never silently relabelled.
             raw.put("nativeHealthWindowStale", true)

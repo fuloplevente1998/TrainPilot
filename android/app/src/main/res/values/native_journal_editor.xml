@@ -20,4 +20,6 @@
     <string name="journal_edit_invalid">Ellenőrizd a dátumokat és az időzóna eltolását.</string>
     <string name="journal_edit_failed">Nem sikerült menteni. Ellenőrizd az értékeket: a befejezés a kezdés után legyen, legfeljebb 24 órán belül és ne a jövőben; a kész sorozatokhoz pozitív mért érték kell. Ha az edzés időközben módosult, zárd be és nyisd újra a szerkesztőt.</string>
     <string name="journal_edit_stale">Az edzés időpontja módosult. A megőrzött egészségmérések az eredeti mérési időszakhoz tartoznak.</string>
+    <string name="journal_feedback_edit">Edzésvisszajelzés szerkesztése</string>
+    <string name="journal_feedback_locked">A visszajelzést már alkalmaztad egy programra, ezért nem módosítható.</string>
 </resources>

@@ -20,4 +20,6 @@
     <string name="journal_edit_invalid">Prüfe Datum und Zeitzonenversatz.</string>
     <string name="journal_edit_failed">Speichern fehlgeschlagen. Prüfe die Werte: Das Ende muss nach dem Beginn, innerhalb von 24 Stunden und nicht in der Zukunft liegen; abgeschlossene Sätze benötigen positive Messwerte. Wurde das Training inzwischen geändert, schließe und öffne den Editor erneut.</string>
     <string name="journal_edit_stale">Die Trainingszeiten wurden geändert. Beibehaltene Gesundheitsmessungen gehören zum ursprünglichen Messzeitraum.</string>
+    <string name="journal_feedback_edit">Trainingsfeedback bearbeiten</string>
+    <string name="journal_feedback_locked">Dieses Feedback wurde bereits auf ein Programm angewendet und kann nicht geändert werden.</string>
 </resources>

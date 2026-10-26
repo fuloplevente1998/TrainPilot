@@ -35,6 +35,9 @@ internal fun JournalEditorDialog(state: JournalEditState, language: String,
     val text = journalResources(LocalContext.current, language)
     val colors = LocalTrainPilotColors.current
     val draft = state.draft
+    val feedbackLocked = remember(state.opened) {
+        LegacyWebViewMigrator.workoutJson(state.opened.detail).optJSONObject("feedback")?.optBoolean("applied") == true
+    }
     val original = remember(state.opened) { LegacyWebViewMigrator.workoutJson(state.opened.detail).getJSONArray("exercises") }
     val format = remember { DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss XXX")
         .withResolverStyle(java.time.format.ResolverStyle.STRICT) }
@@ -85,6 +88,20 @@ internal fun JournalEditorDialog(state: JournalEditState, language: String,
                                 "journal_editor_started", !state.saving, KeyboardType.Text)
                             JournalEditField(finished, { finished = it; invalid = false }, text.getString(R.string.journal_edit_finished),
                                 "journal_editor_finished", !state.saving, KeyboardType.Text)
+                        }
+                        item {
+                            Text(text.getString(R.string.journal_feedback), style = MaterialTheme.typography.titleMedium)
+                            if (feedbackLocked) Text(text.getString(R.string.journal_feedback_locked), color = colors.muted)
+                            val choices = listOf("easy" to R.string.journal_effort_easy, "light" to R.string.journal_effort_light,
+                                "good" to R.string.journal_effort_good, "challenging" to R.string.journal_effort_challenging,
+                                "hard" to R.string.journal_effort_hard, "pain" to R.string.journal_effort_pain)
+                            choices.forEach { (effort, label) ->
+                                FilterChip(selected = draft.feedbackEffort == effort,
+                                    onClick = { onChange(draft.copy(feedbackEffort = effort)) },
+                                    enabled = !state.saving && !feedbackLocked,
+                                    label = { Text(text.getString(label)) },
+                                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("journal_editor_feedback_$effort"))
+                            }
                         }
                         draft.exercises.forEachIndexed { e, exercise ->
                             val source = exercise.originalIndex?.let { original.getJSONObject(it) }
