@@ -335,6 +335,9 @@ internal object NativeProgramEditor {
                 if (personalMetadata != null) 2 else originalProgram?.templateVersion ?: 1, originalProgram?.accentHex ?: "#4d8fbe",
                 if (fork) db.programDao().getProgramIds().size else originalProgram!!.sortOrder,
                 System.currentTimeMillis(), raw.toString())
+            // Recheck execution/ownership on Main while the exact program CAS and
+            // Room replacement are still inside this single transaction.
+            assertNoActiveWorkout(context)
             db.programDao().saveProgramWithDays(entity, dayEntities)
             id
         }
@@ -351,6 +354,7 @@ internal object NativeProgramEditor {
             check(!db.programDao().hasWorkoutHistory(id) && !db.programDao().hasScheduledEntries(id)) {
                 "Program is referenced in history or calendar"
             }
+            assertNoActiveWorkout(context)
             db.programDao().deleteCustomProgram(id)
         }
     }
