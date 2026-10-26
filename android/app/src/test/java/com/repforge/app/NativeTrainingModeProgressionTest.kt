@@ -74,7 +74,8 @@ class NativeTrainingModeProgressionTest {
         assertEquals("hold", preview("rir", listOf(occurrence(rir = 5))).action)
         assertEquals("increase", preview("rir", List(2) { occurrence(rir = 5) }).action)
     }
-    @Test fun pureRirPrescriptionWithoutRepRangeUsesActualObservationsOnly() {
+    /** Pinned main tp197ComputePreview: a pure-RIR target is not a repetition target. */
+    @Test fun pureRirPrescriptionWithoutRepRangeFailsClosedAsInMain() {
         val pureRir = NativeCoachExerciseAdvice.Target("rir", rirMin = 1.0, rirMax = 2.0,
             sets = 3, text = "1-2 RIR")
         fun observed(rir: Int?): NativeCoachExerciseAdvice.Occurrence {
@@ -90,17 +91,14 @@ class NativeTrainingModeProgressionTest {
                 .put("effort", "good").put("setRir229", true)
             return NativeCoachExerciseAdvice.occurrence(JSONObject(), ex, pureRir)
         }
-        val unknown = NativeTrainingModeProgression.compute(mode("rir"), library(),
-            pureRir, listOf(observed(null)), readiness, 2.5)!!
-        assertEquals("rir-feedback-missing", unknown.reason)
-        val zero = NativeTrainingModeProgression.compute(mode("rir"), library(),
-            pureRir, listOf(observed(0)), readiness, 2.5)!!
-        assertEquals("rir-overexertion", zero.reason)
-        val stable = NativeTrainingModeProgression.compute(mode("rir"), library(),
-            pureRir, listOf(observed(5), observed(5)), readiness, 2.5)!!
-        assertEquals("increase", stable.action)
-        assertEquals(12.5, stable.proposedWeight, 0.0)
-        assertFalse(stable.autoApply)
+        for (rir in listOf(null, 0, 5)) {
+            val preview = NativeTrainingModeProgression.compute(mode("rir"), library(),
+                pureRir, listOf(observed(rir), observed(rir)), readiness, 2.5)!!
+            assertEquals("hold", preview.action)
+            assertEquals("non-strength-activity", preview.reason)
+            assertEquals(10.0, preview.proposedWeight, 0.0)
+            assertFalse(preview.autoApply)
+        }
     }
 
     @Test fun painPoorReadinessAndIncompleteBlockIncreases() {
