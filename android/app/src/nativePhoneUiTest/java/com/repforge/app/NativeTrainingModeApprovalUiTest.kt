@@ -8,6 +8,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.repforge.app.data.store.NativeTrainingModes
 import com.repforge.app.data.store.NativeTrainingModeChange
+import com.repforge.app.NativeDataReplacement
 import com.repforge.app.ui.settings.NativeTrainingModeComparison
 import com.repforge.app.ui.text.nativeResources
 import kotlinx.coroutines.Dispatchers
@@ -59,6 +60,128 @@ class NativeTrainingModeApprovalUiTest {
                     .fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithTag("training_modes_program_approve").assertIsEnabled()
+    }
+
+    private fun selectedGlobal() = JSONObject().put("schemaVersion", 1)
+        .put("explicitChoice", true).put("revision", 1)
+        .put("defaults", JSONObject().put("trainingStyle", "normal")
+            .put("progressionMode", "double"))
+        .put("byProgram", JSONObject())
+
+    private fun editableProgram(): String = runBlocking(Dispatchers.IO) {
+        val builtin = fixture.database.programDao().getProgramsWithDays()
+            .first { it.program.builtin }
+        val copied = NativeProgramEditor.save(fixture.context, fixture.database, builtin,
+            NativeProgramEditor.from(builtin, "hu"), "hu")
+        fixture.settings.setActiveProgramId(copied)
+        fixture.settings.importPortableSettings(JSONObject().put("settings",
+            JSONObject().put("trainingModes197", selectedGlobal())))
+        copied
+    }
+
+    private fun previewHitRir() {
+        openProgramPicker()
+        select("training_modes_program_style", "hit")
+        select("training_modes_program_progression", "rir")
+        compose.onNodeWithTag("training_modes_program_preview").performClick()
+        awaitReady()
+    }
+
+    private fun awaitRejected() {
+        val label = nativeResources(fixture.context, current().language)
+            .getString(R.string.native_modes_error)
+        compose.waitUntil(15_000) {
+            compose.onAllNodesWithText(label).fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
+    /** Genuine program editor save, never direct Room writes or an approved-mode shortcut. */
+    private fun editProgram(programId: String, changeDayRecipes: Boolean): String =
+        runBlocking(Dispatchers.IO) {
+            val original = fixture.database.programDao().getProgramWithDaysById(programId)!!
+            val draft = NativeProgramEditor.from(original, "hu")
+            val edited = if (changeDayRecipes) {
+                val day = draft.days.first { it.entries.isNotEmpty() }
+                draft.copy(days = draft.days.map {
+                    if (it.id == day.id) it.copy(entries = it.entries.dropLast(1)) else it
+                })
+            } else {
+                draft.copy(description = draft.description + " revision")
+            }
+            assertEquals(programId, NativeProgramEditor.save(fixture.context, fixture.database,
+                original, edited, "hu"))
+            fixture.database.programDao().getProgramWithDaysById(programId)!!.program.rawJson
+        }
+
+    @Test fun uiApprovalRejectsProgramRawChangeAfterShownComparison() {
+        val pid = editableProgram()
+        previewHitRir()
+        val expectedSettings = current().trainingModes197Json
+        val savedRecipe = editProgram(pid, false)
+        compose.onNodeWithTag("training_modes_program_approve").performClick()
+        awaitRejected()
+        assertEquals(expectedSettings, current().trainingModes197Json)
+        assertEquals(savedRecipe, runBlocking(Dispatchers.IO) {
+            fixture.database.programDao().getProgramWithDaysById(pid)!!.program.rawJson
+        })
+        assertEquals("global", NativeTrainingModes.resolveSavedJson(current().trainingModes197Json, pid).source)
+    }
+
+    @Test fun uiApprovalRejectsProgramDayRecipeChangeAfterShownComparison() {
+        val pid = editableProgram()
+        previewHitRir()
+        val expectedSettings = current().trainingModes197Json
+        val originalDay = runBlocking(Dispatchers.IO) {
+            fixture.database.programDao().getProgramWithDaysById(pid)!!.days
+                .first { org.json.JSONArray(it.exercisesJson).length() > 0 }.exercisesJson
+        }
+        val savedRecipe = editProgram(pid, true)
+        val changedDay = runBlocking(Dispatchers.IO) {
+            fixture.database.programDao().getProgramWithDaysById(pid)!!.days
+                .first { it.dayId == fixture.database.programDao()
+                    .getProgramWithDaysById(pid)!!.days.first().dayId }.exercisesJson
+        }
+        // A real editor save changed the day, and approval must not undo it.
+        assertNotEquals(originalDay, changedDay)
+        compose.onNodeWithTag("training_modes_program_approve").performClick()
+        awaitRejected()
+        assertEquals(expectedSettings, current().trainingModes197Json)
+        assertEquals(savedRecipe, runBlocking(Dispatchers.IO) {
+            fixture.database.programDao().getProgramWithDaysById(pid)!!.program.rawJson
+        })
+    }
+
+    @Test fun uiApprovalRejectsSameBytesAfterReplacementGenerationChanges() {
+        editableProgram()
+        previewHitRir()
+        val raw = current().trainingModes197Json
+        runBlocking(Dispatchers.IO) {
+            // An empty successful replacement lease advances the actual epoch.
+            // This specifically tests ABA: all persisted bytes stay identical.
+            NativeDataReplacement.exclusively(fixture.context) {
+                assertEquals(raw, fixture.settings.current().trainingModes197Json)
+            }
+        }
+        assertEquals(raw, current().trainingModes197Json)
+        compose.onNodeWithTag("training_modes_program_approve").performClick()
+        awaitRejected()
+        assertEquals(raw, current().trainingModes197Json)
+    }
+
+    @Test fun doubleClickCannotApproveProgramTwice() {
+        val pid = editableProgram()
+        previewHitRir()
+        compose.onNodeWithTag("training_modes_program_approve").performClick()
+        compose.onAllNodesWithTag("training_modes_program_approve").assertCountEquals(0)
+        compose.waitUntil(15_000) {
+            NativeTrainingModes.resolveSavedJson(current().trainingModes197Json, pid).source == "program"
+        }
+        val approved = current().trainingModes197Json
+        val revision = JSONObject(approved!!).getLong("revision")
+        assertEquals(2L, revision)
+        // No second confirm surface remains; no second settings write occurs.
+        compose.onAllNodesWithTag("training_modes_program_approve").assertCountEquals(0)
+        assertEquals(approved, current().trainingModes197Json)
     }
 
     @Test fun hitRirProgramComparisonUsesRealRoomRowsWithoutMutatingSettings() {
