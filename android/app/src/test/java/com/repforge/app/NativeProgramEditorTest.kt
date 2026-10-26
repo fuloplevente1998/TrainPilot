@@ -6,6 +6,7 @@ import com.repforge.app.data.db.*
 import com.repforge.app.data.migration.LegacyWebViewMigrator
 import com.repforge.app.data.store.TrainPilotSettingsStore
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After
@@ -20,6 +21,7 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33], manifest = Config.NONE)
 class NativeProgramEditorTest {
+    @get:org.junit.Rule val mainDispatcherRule = NativeMainDispatcherRule()
     private lateinit var context: Context
     private lateinit var db: TrainPilotDatabase
     private lateinit var settings: TrainPilotSettingsStore
@@ -58,7 +60,7 @@ class NativeProgramEditorTest {
                 NativeProgramPrescription.Fields("4", "6–8", "22,5", "75"), source.loadType).toString(),
                 NativeProgramPrescription.source(source))))
 
-    @Test fun prescriptionEditPersistsAcrossAllDaysAndPreservesGlobalAndInlineExtensions() = runBlocking {
+    @Test fun prescriptionEditPersistsAcrossAllDaysAndPreservesGlobalAndInlineExtensions() = runTest(mainDispatcherRule.dispatcher) {
         val first = targeted()
         val extra = NativeProgramEditor.addDay(NativeProgramEditor.from(first, "hu"), "B")
         val withRows = extra.copy(days = extra.days.mapIndexed { index, day ->
@@ -90,31 +92,31 @@ class NativeProgramEditorTest {
         assertEquals(0, db.workoutHistoryDao().getWorkoutCount())
     }
 
-    @Test fun malformedPrescriptionCannotPartiallySaveProgramNameOrDayChanges() = runBlocking {
+    @Test fun malformedPrescriptionCannotPartiallySaveProgramNameOrDayChanges() = runTest(mainDispatcherRule.dispatcher) {
         val opened = targeted()
         val source = db.exerciseLibraryDao().getExerciseById("goblet-squat")!!
         val valid = edited(opened, source)
         val malformed = JSONObject(valid.prescriptionEdits.getValue(source.id).patch).put("sets", 1.5)
         val draft = valid.copy(name = "Must not persist", prescriptionEdits = mapOf(source.id to
             NativeProgramPrescription.Edit(malformed.toString(), NativeProgramPrescription.source(source))))
-        assertThrows(IllegalArgumentException::class.java) { runBlocking {
+        assertNativeSuspendThrows(IllegalArgumentException::class.java) {
             NativeProgramEditor.save(context, db, opened, draft, "hu")
-        } }
+        }
         assertEquals(opened, db.programDao().getProgramWithDaysById(opened.program.id))
     }
 
-    @Test fun exerciseUnitChangeAfterOpeningRejectsPrescriptionWithoutWritingAnything() = runBlocking {
+    @Test fun exerciseUnitChangeAfterOpeningRejectsPrescriptionWithoutWritingAnything() = runTest(mainDispatcherRule.dispatcher) {
         val opened = targeted()
         val source = db.exerciseLibraryDao().getExerciseById("goblet-squat")!!
         val draft = edited(opened, source)
         db.exerciseLibraryDao().upsertExercise(source.copy(loadType = "bodyweight"))
-        assertThrows(IllegalStateException::class.java) { runBlocking {
+        assertNativeSuspendThrows(IllegalStateException::class.java) {
             NativeProgramEditor.save(context, db, opened, draft, "hu")
-        } }
+        }
         assertEquals(opened, db.programDao().getProgramWithDaysById(opened.program.id))
     }
 
-    @Test fun builtinPrescriptionEditingCreatesACloneAndLeavesTheTemplateUntouched() = runBlocking {
+    @Test fun builtinPrescriptionEditingCreatesACloneAndLeavesTheTemplateUntouched() = runTest(mainDispatcherRule.dispatcher) {
         db.exerciseLibraryDao().upsertExercises(TrainPilotDatabase.defaultExercises())
         val (programs, days) = TrainPilotDatabase.defaultPrograms()
         val template = programs.first { it.id == "home-basic" }
@@ -132,7 +134,7 @@ class NativeProgramEditorTest {
             .getJSONObject("prescriptions").getJSONObject(id).getInt("sets"))
     }
 
-    @Test fun editedPrescriptionsSurvivePortableExportAndReimport() = runBlocking {
+    @Test fun editedPrescriptionsSurvivePortableExportAndReimport() = runTest(mainDispatcherRule.dispatcher) {
         val opened = targeted()
         val source = db.exerciseLibraryDao().getExerciseById("goblet-squat")!!
         NativeProgramEditor.save(context, db, opened, edited(opened, source), "hu")
@@ -148,7 +150,7 @@ class NativeProgramEditorTest {
             com.repforge.shared.LegacySyncIdentity18.canonical(actual))
     }
 
-    @Test fun newProgramCreatesStableIdAndMainCompatibleBackup() = runBlocking {
+    @Test fun newProgramCreatesStableIdAndMainCompatibleBackup() = runTest(mainDispatcherRule.dispatcher) {
         seedExercise()
         val id = create()
         assertTrue(id.startsWith("custom-program-"))
@@ -163,7 +165,7 @@ class NativeProgramEditorTest {
         assertEquals(id, backup.getJSONArray("programs").getJSONObject(0).getString("id"))
     }
 
-    @Test fun addRemoveAndReorderExercisesPreservesTheirIdentifiers() = runBlocking {
+    @Test fun addRemoveAndReorderExercisesPreservesTheirIdentifiers() = runTest(mainDispatcherRule.dispatcher) {
         seedExercise()
         val id = create()
         val opened = db.programDao().getProgramWithDaysById(id)!!
@@ -182,7 +184,7 @@ class NativeProgramEditorTest {
         assertEquals(listOf("x", "y", "z"), NativeProgramEditor.move(listOf("x", "z", "y"), 2, -1))
     }
 
-    @Test fun copyOfBuiltinHasDifferentIdAndLeavesReferenceUntouched() = runBlocking {
+    @Test fun copyOfBuiltinHasDifferentIdAndLeavesReferenceUntouched() = runTest(mainDispatcherRule.dispatcher) {
         seedExercise()
         val source = TrainPilotDatabase.defaultPrograms()
         val template = source.first.first { it.id == "home-basic" }
@@ -196,18 +198,18 @@ class NativeProgramEditorTest {
             db.programDao().getProgramWithDaysById(template.id)!!.days.map { it.exercisesJson })
     }
 
-    @Test fun concurrentChangeBlocksStaleSaveAndDelete() = runBlocking {
+    @Test fun concurrentChangeBlocksStaleSaveAndDelete() = runTest(mainDispatcherRule.dispatcher) {
         val id = create()
         val opened = db.programDao().getProgramWithDaysById(id)!!
         NativeProgramEditor.save(context, db, opened, initial().copy(name = "Friss név"), "hu")
-        assertThrows(IllegalStateException::class.java) { runBlocking {
-            NativeProgramEditor.save(context, db, opened, initial().copy(name = "Elavult"), "hu") } }
-        assertThrows(IllegalStateException::class.java) { runBlocking {
-            NativeProgramEditor.delete(context, db, opened, settings) } }
+        assertNativeSuspendThrows(IllegalStateException::class.java) {
+            NativeProgramEditor.save(context, db, opened, initial().copy(name = "Elavult"), "hu") }
+        assertNativeSuspendThrows(IllegalStateException::class.java) {
+            NativeProgramEditor.delete(context, db, opened, settings) }
         assertEquals("Friss név", db.programDao().getProgramWithDaysById(id)!!.program.nameHu)
     }
 
-    @Test fun removingScheduledDayIsRejectedWithoutLosingTheOtherDay() = runBlocking {
+    @Test fun removingScheduledDayIsRejectedWithoutLosingTheOtherDay() = runTest(mainDispatcherRule.dispatcher) {
         val id = create()
         val opened = db.programDao().getProgramWithDaysById(id)!!
         val second = NativeProgramEditor.addDay(NativeProgramEditor.from(opened, "hu"), "B")
@@ -219,26 +221,26 @@ class NativeProgramEditorTest {
             "Day", "planned", 1, "{}"))
         val draft = NativeProgramEditor.from(before, "hu").copy(days = listOf(
             NativeProgramEditor.from(before, "hu").days.last()))
-        assertThrows(IllegalStateException::class.java) { runBlocking {
-            NativeProgramEditor.save(context, db, before, draft, "hu") } }
+        assertNativeSuspendThrows(IllegalStateException::class.java) {
+            NativeProgramEditor.save(context, db, before, draft, "hu") }
         assertEquals(2, db.programDao().getProgramWithDaysById(id)!!.days.size)
     }
 
-    @Test fun activeOrReferencedProgramCannotBeDeleted() = runBlocking {
+    @Test fun activeOrReferencedProgramCannotBeDeleted() = runTest(mainDispatcherRule.dispatcher) {
         val id = create()
         val opened = db.programDao().getProgramWithDaysById(id)!!
         settings.setActiveProgramId(id)
-        assertThrows(IllegalStateException::class.java) { runBlocking {
-            NativeProgramEditor.delete(context, db, opened, settings) } }
+        assertNativeSuspendThrows(IllegalStateException::class.java) {
+            NativeProgramEditor.delete(context, db, opened, settings) }
         settings.setActiveProgramId("home-basic")
         val history = JournalTestFixtures.row(4).copy(programId = id)
         db.workoutHistoryDao().insertWorkout(history)
-        assertThrows(IllegalStateException::class.java) { runBlocking {
-            NativeProgramEditor.delete(context, db, opened, settings) } }
+        assertNativeSuspendThrows(IllegalStateException::class.java) {
+            NativeProgramEditor.delete(context, db, opened, settings) }
         assertNotNull(db.programDao().getProgramWithDaysById(id))
     }
 
-    @Test fun deleteUnusedProgramDoesNotAlterWorkoutHistoryOrExercises() = runBlocking {
+    @Test fun deleteUnusedProgramDoesNotAlterWorkoutHistoryOrExercises() = runTest(mainDispatcherRule.dispatcher) {
         seedExercise()
         val id = create()
         val opened = db.programDao().getProgramWithDaysById(id)!!
@@ -247,7 +249,7 @@ class NativeProgramEditorTest {
         assertNotNull(db.exerciseLibraryDao().getExerciseById("goblet-squat"))
     }
 
-    @Test fun legacyDayMetadataAndOtherLanguageNamesArePreservedOnEdit() = runBlocking {
+    @Test fun legacyDayMetadataAndOtherLanguageNamesArePreservedOnEdit() = runTest(mainDispatcherRule.dispatcher) {
         val id = create()
         val opened = db.programDao().getProgramWithDaysById(id)!!
         val previous = opened.days.single()
@@ -275,22 +277,22 @@ class NativeProgramEditorTest {
         assertEquals(55, portable.getInt("specialRestSeconds"))
     }
 
-    @Test fun scheduledProgramCannotBeDeletedEvenWhenInactive() = runBlocking {
+    @Test fun scheduledProgramCannotBeDeletedEvenWhenInactive() = runTest(mainDispatcherRule.dispatcher) {
         val id = create()
         val opened = db.programDao().getProgramWithDaysById(id)!!
         db.calendarScheduleDao().upsertEntry(CalendarScheduleEntity("scheduled-plan-2", "event", "2026-11-01",
             "2026-11-01T08:00:00Z", "2026-11-01T09:00:00Z", id, "Plan",
             opened.days.first().dayId, "Day", "planned", 1, "{}"))
-        assertThrows(IllegalStateException::class.java) { runBlocking {
-            NativeProgramEditor.delete(context, db, opened, settings) } }
+        assertNativeSuspendThrows(IllegalStateException::class.java) {
+            NativeProgramEditor.delete(context, db, opened, settings) }
         assertNotNull(db.programDao().getProgramWithDaysById(id))
     }
 
-    @Test fun replacementFenceRejectsProgramWrites() = runBlocking {
+    @Test fun replacementFenceRejectsProgramWrites() = runTest(mainDispatcherRule.dispatcher) {
         context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE)
             .edit().putBoolean("blocked", true).commit()
         try {
-            assertThrows(IllegalStateException::class.java) { runBlocking { create() } }
+            assertNativeSuspendThrows(IllegalStateException::class.java) { create() }
             assertTrue(db.programDao().getProgramIds().isEmpty())
         } finally {
             context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE)
@@ -298,16 +300,16 @@ class NativeProgramEditorTest {
         }
     }
 
-    @Test fun invalidExercisesFailBeforeAnyProgramIsWritten() = runBlocking {
+    @Test fun invalidExercisesFailBeforeAnyProgramIsWritten() = runTest(mainDispatcherRule.dispatcher) {
         val invalid = initial().copy(days = initial().days.map {
             NativeProgramEditor.addExercise(it, "unknown")
         })
-        assertThrows(IllegalArgumentException::class.java) { runBlocking {
-            NativeProgramEditor.save(context, db, null, invalid, "hu") } }
+        assertNativeSuspendThrows(IllegalArgumentException::class.java) {
+            NativeProgramEditor.save(context, db, null, invalid, "hu") }
         assertTrue(db.programDao().getProgramIds().isEmpty())
     }
 
-    @Test fun embeddedExercisePrescriptionsAreNotFlattenedOnEdit() = runBlocking {
+    @Test fun embeddedExercisePrescriptionsAreNotFlattenedOnEdit() = runTest(mainDispatcherRule.dispatcher) {
         seedExercise()
         val id = create()
         val opened = db.programDao().getProgramWithDaysById(id)!!

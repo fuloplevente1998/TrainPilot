@@ -9,6 +9,7 @@ import com.repforge.app.ui.coach.NativeCoachAdviceRepository
 import com.repforge.app.ui.coach.NativeCoachExerciseAdvice
 import com.repforge.app.ui.coach.NativeCoachReadiness
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After
@@ -25,6 +26,7 @@ import java.time.Duration
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33], manifest = Config.NONE)
 class NativeProfileHistory128Test {
+    @get:org.junit.Rule val mainDispatcherRule = NativeMainDispatcherRule()
     private lateinit var context: Context
     private lateinit var db: TrainPilotDatabase
     private lateinit var store: TrainPilotSettingsStore
@@ -87,7 +89,7 @@ class NativeProfileHistory128Test {
             .put("started", end.minusSeconds(3600).toString()).put("finished", end.toString())
             .put("exercises", JSONArray().put(exercise)))
     }
-    @Test fun weightedBodyweightMovementInheritsItsExplicitDumbbellLoadAndVariation() = runBlocking {
+    @Test fun weightedBodyweightMovementInheritsItsExplicitDumbbellLoadAndVariation() = runTest(mainDispatcherRule.dispatcher) {
         val (programs, days) = TrainPilotDatabase.defaultPrograms()
         val level2 = programs.first { it.id == "home-level2" }
         db.programDao().saveProgramWithDays(level2, days.filter { it.programId == level2.id })
@@ -108,7 +110,7 @@ class NativeProfileHistory128Test {
             .getJSONArray("sources").getJSONObject(0).getString("key"))
     }
 
-    @Test fun inheritsLastCompletedWeightAndBoundedExplicitLineage() = runBlocking {
+    @Test fun inheritsLastCompletedWeightAndBoundedExplicitLineage() = runTest(mainDispatcherRule.dispatcher) {
         workout("old-first", 4, weight = 5.0)
         workout("old-second", 2, weight = 12.5)
         val p = preview()
@@ -127,14 +129,14 @@ class NativeProfileHistory128Test {
         assertTrue(basis.getString("evidenceHash").length == 64)
     }
 
-    @Test fun preservesSeparatePerHandAndTotalUnitsWithoutWeightMultiplication() = runBlocking {
+    @Test fun preservesSeparatePerHandAndTotalUnitsWithoutWeightMultiplication() = runTest(mainDispatcherRule.dispatcher) {
         workout("unit", weight = 5.0, loadType = "total")
         assertTrue(preview().prescriptions.getJSONObject(id).getBoolean("trial"))
         workout("valid", weight = 5.0)
         assertEquals(5.0, preview().prescriptions.getJSONObject(id).getDouble("weight"), 0.001)
     }
 
-    @Test fun unsafeOrIncompleteRecordsNeverProvideStartingWeight() = runBlocking {
+    @Test fun unsafeOrIncompleteRecordsNeverProvideStartingWeight() = runTest(mainDispatcherRule.dispatcher) {
         workout("partial", ageDays = 1, done = false)
         workout("pain", ageDays = 2, effort = "pain")
         workout("wrong-variation", ageDays = 3, variation = "weighted")
@@ -145,14 +147,14 @@ class NativeProfileHistory128Test {
         assertEquals(0, p.history128.getJSONObject("entries").length())
     }
 
-    @Test fun newerPainOrPartialSessionBlocksOlderOtherwiseValidLoad() = runBlocking {
+    @Test fun newerPainOrPartialSessionBlocksOlderOtherwiseValidLoad() = runTest(mainDispatcherRule.dispatcher) {
         workout("old-good", ageDays = 3, weight = 5.0)
         workout("newer-pain", ageDays = 1, weight = 5.0, effort = "pain")
         assertTrue(preview().prescriptions.getJSONObject(id).getBoolean("trial"))
         assertEquals(0, preview().history128.getJSONObject("entries").length())
     }
 
-    @Test fun oldFutureAndTombstonedSourcesNeverInherit() = runBlocking {
+    @Test fun oldFutureAndTombstonedSourcesNeverInherit() = runTest(mainDispatcherRule.dispatcher) {
         workout("stale", ageDays = 91)
         workout("future", ageDays = -1)
         workout("deleted", ageDays = 1)
@@ -161,13 +163,13 @@ class NativeProfileHistory128Test {
         assertEquals(0, preview().history128.getJSONObject("entries").length())
     }
 
-    @Test fun unrelatedProgramAndMismatchedDayCannotBecomeInheritedSources() = runBlocking {
+    @Test fun unrelatedProgramAndMismatchedDayCannotBecomeInheritedSources() = runTest(mainDispatcherRule.dispatcher) {
         workout("unrelated", pid = "gym-ab")
         workout("wrong-day", day = "D")
         assertEquals(0, preview().history128.getJSONObject("entries").length())
     }
 
-    @Test fun atMostFourConcreteSourceReferencesWithNoDuplicateWorkouts() = runBlocking {
+    @Test fun atMostFourConcreteSourceReferencesWithNoDuplicateWorkouts() = runTest(mainDispatcherRule.dispatcher) {
         for (i in 1..7) workout("match-$i", ageDays = i.toLong())
         val p = preview()
         val sources = p.history128.getJSONObject("entries").getJSONObject(id).getJSONArray("sources")
@@ -176,7 +178,7 @@ class NativeProfileHistory128Test {
             (0 until sources.length()).map { sources.getJSONObject(it).getString("key") })
     }
 
-    @Test fun approvedLineageCarriesContinuityIntoNewProgramButNotUnrelatedWorkouts() = runBlocking {
+    @Test fun approvedLineageCarriesContinuityIntoNewProgramButNotUnrelatedWorkouts() = runTest(mainDispatcherRule.dispatcher) {
         workout("approved", weight = 5.0)
         workout("unrelated", pid = "gym-ab", weight = 20.0)
         val p = preview()
@@ -197,7 +199,7 @@ class NativeProfileHistory128Test {
         assertEquals("approved", seen.single().first.getString("id"))
     }
 
-    @Test fun threeInheritedStableTopSessionsOnlySuggestIncreaseNeverChangeSavedWeight() = runBlocking {
+    @Test fun threeInheritedStableTopSessionsOnlySuggestIncreaseNeverChangeSavedWeight() = runTest(mainDispatcherRule.dispatcher) {
         workout("approved-1", ageDays = 1, weight = 5.0,
             reps = listOf("15", "15", "15"))
         workout("approved-2", ageDays = 3, weight = 5.0,
@@ -234,7 +236,7 @@ class NativeProfileHistory128Test {
         assertFalse(onlyTwo.autoApply)
     }
 
-    @Test fun portableBackupRoundTripsFourSourceLineageWithoutRewritingHistory() = runBlocking {
+    @Test fun portableBackupRoundTripsFourSourceLineageWithoutRewritingHistory() = runTest(mainDispatcherRule.dispatcher) {
         for (i in 1..4) workout("reference-$i", i.toLong())
         val p = preview()
         store.saveTrainingProfile(profile())
@@ -250,7 +252,7 @@ class NativeProfileHistory128Test {
         assertEquals(4, db.workoutHistoryDao().getWorkoutCount())
     }
 
-    @Test fun invalidDuplicateHistorySourcesRejectRestoreBeforeDeletingExistingProgram() = runBlocking {
+    @Test fun invalidDuplicateHistorySourcesRejectRestoreBeforeDeletingExistingProgram() = runTest(mainDispatcherRule.dispatcher) {
         val row = JSONObject().put("id", "imported")
             .put("history128", JSONObject().put("entries",
                 JSONObject().put(id, JSONObject().put("metric", "reps")
@@ -259,13 +261,13 @@ class NativeProfileHistory128Test {
                         .put(JSONObject().put("programId", old).put("key", "same"))))))
         val backup = JSONObject().put("programs", JSONArray().put(row))
         val before = db.programDao().getProgramIds().toSet()
-        assertThrows(IllegalArgumentException::class.java) { runBlocking {
+        assertNativeSuspendThrows(IllegalArgumentException::class.java) {
             importer.importBackupJson(backup, true)
-        } }
+        }
         assertEquals(before, db.programDao().getProgramIds().toSet())
     }
 
-    @Test fun changedHistoryInvalidatesPreviewWithoutPublishingNewProgram() = runBlocking {
+    @Test fun changedHistoryInvalidatesPreviewWithoutPublishingNewProgram() = runTest(mainDispatcherRule.dispatcher) {
         workout("approved", weight = 5.0)
         val p = preview()
         store.saveTrainingProfile(profile())
@@ -276,10 +278,10 @@ class NativeProfileHistory128Test {
             .getJSONObject(0).put("reps", "10")
         db.workoutHistoryDao().insertWorkout(changed.copy(rawJson = edit.toString()))
         val before = db.programDao().getProgramIds().toSet()
-        assertThrows(IllegalArgumentException::class.java) { runBlocking {
+        assertNativeSuspendThrows(IllegalArgumentException::class.java) {
             NativeProgramEditor.save(context, db, p.source, p.draft, "hu",
                 NativeProfileProgramPreview.metadata(p))
-        } }
+        }
         assertEquals(before, db.programDao().getProgramIds().toSet())
     }
 }

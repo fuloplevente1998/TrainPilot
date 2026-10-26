@@ -6,6 +6,7 @@ import com.repforge.app.data.db.*
 import com.repforge.app.data.migration.LegacyWebViewMigrator
 import com.repforge.app.data.store.TrainPilotSettingsStore
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.*
@@ -20,6 +21,7 @@ import java.time.Duration
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33], manifest = Config.NONE)
 class NativeProfileDayHistory128Test {
+    @get:org.junit.Rule val mainDispatcherRule = NativeMainDispatcherRule()
     private lateinit var context: Context
     private lateinit var db: TrainPilotDatabase
     private lateinit var store: TrainPilotSettingsStore
@@ -85,7 +87,7 @@ class NativeProfileDayHistory128Test {
         assertNotNull(error)
     }
 
-    @Test fun measuredAndEstimatedFitRetainsSevenExercisesInsteadOfStaticFour() = runBlocking {
+    @Test fun measuredAndEstimatedFitRetainsSevenExercisesInsteadOfStaticFour() = runTest(mainDispatcherRule.dispatcher) {
         workout()
         val before = db.programDao().getProgramWithDaysById(active)
         val p = result()
@@ -95,7 +97,7 @@ class NativeProfileDayHistory128Test {
         assertTrue(p.estimateMinutes <= 40)
         assertEquals(before, db.programDao().getProgramWithDaysById(active))
     }
-    @Test fun slowLatestCompleteDayCannotFallBackToAnOlderFastDay() = runBlocking {
+    @Test fun slowLatestCompleteDayCannotFallBackToAnOlderFastDay() = runTest(mainDispatcherRule.dispatcher) {
         workout("older", end = time.minus(Duration.ofDays(2)))
         workout("slow", minutes = 50)
         val p = result()
@@ -107,48 +109,48 @@ class NativeProfileDayHistory128Test {
         assertEquals(14, reduction.getInt("fromSets")); assertEquals(8, reduction.getInt("toSets"))
         assertEquals("time", reduction.getString("reason"))
     }
-    @Test fun measuredSpeedAloneCannotOverrideAnOverBudgetPrescriptionEstimate() = runBlocking {
+    @Test fun measuredSpeedAloneCannotOverrideAnOverBudgetPrescriptionEstimate() = runTest(mainDispatcherRule.dispatcher) {
         workout(minutes = 10)
         val p = result(25)
         assertFalse(retained(p)); assertEquals(3, p.draft.days.first { it.id == "A" }.entries.size)
     }
-    @Test fun newPartialDayBlocksOlderCompleteDay() = runBlocking {
+    @Test fun newPartialDayBlocksOlderCompleteDay() = runTest(mainDispatcherRule.dispatcher) {
         workout("older", end = time.minus(Duration.ofDays(2)))
         workout("partial", complete = false)
         assertFalse(retained(result()))
     }
-    @Test fun newPainfulDayBlocksOlderCompleteDay() = runBlocking {
+    @Test fun newPainfulDayBlocksOlderCompleteDay() = runTest(mainDispatcherRule.dispatcher) {
         workout("older", end = time.minus(Duration.ofDays(2)))
         workout("pain", pain = true)
         assertFalse(retained(result()))
     }
-    @Test fun workoutLevelPainFeedbackAlsoBlocksRetention() = runBlocking {
+    @Test fun workoutLevelPainFeedbackAlsoBlocksRetention() = runTest(mainDispatcherRule.dispatcher) {
         workout("older", end = time.minus(Duration.ofDays(2)))
         workout("pain-feedback", feedbackEffort = "pain")
         assertFalse(retained(result()))
     }
-    @Test fun missingExerciseInLatestDayIsNotACompleteFullDay() = runBlocking {
+    @Test fun missingExerciseInLatestDayIsNotACompleteFullDay() = runTest(mainDispatcherRule.dispatcher) {
         workout("older", end = time.minus(Duration.ofDays(2)))
         workout("missing", missingLast = true)
         assertFalse(retained(result()))
     }
-    @Test fun otherProgramAndOtherDayDoNotAuthorizeRetention() = runBlocking {
+    @Test fun otherProgramAndOtherDayDoNotAuthorizeRetention() = runTest(mainDispatcherRule.dispatcher) {
         workout("other-program", pid = "unrelated")
         workout("other-day", dayId = "B")
         assertFalse(retained(result()))
     }
-    @Test fun futureAndOlderThanNinetyDaysDoNotAuthorizeRetention() = runBlocking {
+    @Test fun futureAndOlderThanNinetyDaysDoNotAuthorizeRetention() = runTest(mainDispatcherRule.dispatcher) {
         workout("old", end = time.minus(Duration.ofDays(91)))
         workout("future", end = time.plus(Duration.ofDays(1)))
         assertFalse(retained(result()))
     }
-    @Test fun deletedEvidenceStopsAuthorizingRetention() = runBlocking {
+    @Test fun deletedEvidenceStopsAuthorizingRetention() = runTest(mainDispatcherRule.dispatcher) {
         workout()
         assertTrue(retained(result()))
         db.workoutHistoryDao().deleteWorkoutByIdOrKey("complete")
         assertFalse(retained(result()))
     }
-    @Test fun tombstonedEvidenceDoesNotAuthorizeRetentionEvenWhenItsRowRemains() = runBlocking {
+    @Test fun tombstonedEvidenceDoesNotAuthorizeRetentionEvenWhenItsRowRemains() = runTest(mainDispatcherRule.dispatcher) {
         workout()
         val row = db.workoutHistoryDao().getWorkoutWithDetails("complete")!!.workout
         db.workoutHistoryDao().upsertTombstone(HistoryTombstoneEntity(row.id, row.workoutKey,
@@ -156,14 +158,14 @@ class NativeProfileDayHistory128Test {
         assertNotNull(db.workoutHistoryDao().getWorkoutWithDetails("complete"))
         assertFalse(retained(result()))
     }
-    @Test fun tiedTimestampsPagePastThirtyTwoPartialRowsForPriorCountsOnly() = runBlocking {
+    @Test fun tiedTimestampsPagePastThirtyTwoPartialRowsForPriorCountsOnly() = runTest(mainDispatcherRule.dispatcher) {
         workout("a-prior")
         for (i in 0 until 45) workout("p-${i.toString().padStart(2, '0')}", complete = false)
         val p = result()
         assertFalse(retained(p))
         assertEquals(46, p.history128.getJSONObject("days").getJSONObject("A").getInt("sampled"))
     }
-    @Test fun newlyArrivingWorkoutAfterPreviewTimestampInvalidatesApproval() = runBlocking {
+    @Test fun newlyArrivingWorkoutAfterPreviewTimestampInvalidatesApproval() = runTest(mainDispatcherRule.dispatcher) {
         workout()
         val p = result()
         val before = db.programDao().getProgramIds()
@@ -171,13 +173,13 @@ class NativeProfileDayHistory128Test {
         reject { NativeProgramEditor.save(context, db, source, p.draft, "hu", NativeProfileProgramPreview.metadata(p)) }
         assertEquals(before, db.programDao().getProgramIds())
     }
-    @Test fun changingActiveProgramInvalidatesApproval() = runBlocking {
+    @Test fun changingActiveProgramInvalidatesApproval() = runTest(mainDispatcherRule.dispatcher) {
         workout()
         val p = result()
         store.setActiveProgramId("home-basic")
         reject { NativeProgramEditor.save(context, db, source, p.draft, "hu", NativeProfileProgramPreview.metadata(p)) }
     }
-    @Test fun dayEvidenceAndReductionSurviveCanonicalBackupRoundTrip() = runBlocking {
+    @Test fun dayEvidenceAndReductionSurviveCanonicalBackupRoundTrip() = runTest(mainDispatcherRule.dispatcher) {
         workout()
         workout("b-slow", dayId = "B", minutes = 50)
         val p = result()
@@ -189,7 +191,7 @@ class NativeProfileDayHistory128Test {
         assertEquals("complete", history.getJSONObject("days").getJSONObject("A").getString("key"))
         assertTrue(history.getJSONArray("reductions").length() > 0)
     }
-    @Test fun malformedDayCountIsRejectedBeforeReplacingRoomData() = runBlocking {
+    @Test fun malformedDayCountIsRejectedBeforeReplacingRoomData() = runTest(mainDispatcherRule.dispatcher) {
         workout()
         val program = JSONObject(source.program.rawJson).put("history128", result().history128)
         program.getJSONObject("history128").getJSONObject("days").getJSONObject("A").put("sampled", "many")

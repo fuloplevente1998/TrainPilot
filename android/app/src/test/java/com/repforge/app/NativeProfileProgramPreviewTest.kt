@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.repforge.app.data.db.*
 import com.repforge.app.data.store.TrainPilotSettingsStore
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After
@@ -19,6 +20,7 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33], manifest = Config.NONE)
 class NativeProfileProgramPreviewTest {
+    @get:org.junit.Rule val mainDispatcherRule = NativeMainDispatcherRule()
     private lateinit var context: Context
     private lateinit var db: TrainPilotDatabase
     private lateinit var store: TrainPilotSettingsStore
@@ -214,7 +216,7 @@ class NativeProfileProgramPreviewTest {
         assertFalse("decline-pushup" in selected)
     }
 
-    @Test fun catalogChangeAfterOpeningPreviewRejectsApprovalWithoutCreatingProgram() = runBlocking {
+    @Test fun catalogChangeAfterOpeningPreviewRejectsApprovalWithoutCreatingProgram() = runTest(mainDispatcherRule.dispatcher) {
         db.exerciseLibraryDao().insertMissingExercises(exercises())
         val source = template()
         db.programDao().saveProgramWithDays(source.program, source.days)
@@ -234,7 +236,7 @@ class NativeProfileProgramPreviewTest {
         assertEquals(source, db.programDao().getProgramWithDaysById(source.program.id))
     }
 
-    @Test fun alteredPrescriptionWithoutCanonicalEvidenceCannotBeApproved() = runBlocking {
+    @Test fun alteredPrescriptionWithoutCanonicalEvidenceCannotBeApproved() = runTest(mainDispatcherRule.dispatcher) {
         db.exerciseLibraryDao().insertMissingExercises(exercises())
         val source = template()
         db.programDao().saveProgramWithDays(source.program, source.days)
@@ -272,7 +274,7 @@ class NativeProfileProgramPreviewTest {
         }
     }
 
-    @Test fun approvedPreviewPersistsProfileAndTrialPrescriptionsButLeavesBuiltinUntouched() = runBlocking {
+    @Test fun approvedPreviewPersistsProfileAndTrialPrescriptionsButLeavesBuiltinUntouched() = runTest(mainDispatcherRule.dispatcher) {
         db.exerciseLibraryDao().insertMissingExercises(exercises())
         val source = template()
         db.programDao().saveProgramWithDays(source.program, source.days)
@@ -293,7 +295,7 @@ class NativeProfileProgramPreviewTest {
         assertEquals("home-basic", store.current().activeProgramId)
     }
 
-    @Test fun staleProfileStopsGenerationBeforeAnyProgramIsWritten() = runBlocking {
+    @Test fun staleProfileStopsGenerationBeforeAnyProgramIsWritten() = runTest(mainDispatcherRule.dispatcher) {
         db.exerciseLibraryDao().insertMissingExercises(exercises())
         val source = template()
         db.programDao().saveProgramWithDays(source.program, source.days)
@@ -301,10 +303,10 @@ class NativeProfileProgramPreviewTest {
         store.saveTrainingProfile(original)
         val p = preview(original)
         store.saveTrainingProfile(profile(minutes = 30))
-        assertThrows(IllegalStateException::class.java) { runBlocking {
+        assertNativeSuspendThrows(IllegalStateException::class.java) {
             NativeProgramEditor.save(context, db, source, p.draft, "hu",
                 NativeProfileProgramPreview.metadata(p))
-        } }
+        }
         assertEquals(listOf("home-basic"), db.programDao().getProgramIds())
     }
 }

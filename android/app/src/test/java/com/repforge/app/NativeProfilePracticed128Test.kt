@@ -6,6 +6,7 @@ import com.repforge.app.data.db.*
 import com.repforge.app.data.migration.LegacyWebViewMigrator
 import com.repforge.app.data.store.TrainPilotSettingsStore
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.*
@@ -20,6 +21,7 @@ import java.time.Duration
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33], manifest = Config.NONE)
 class NativeProfilePracticed128Test {
+    @get:org.junit.Rule val mainDispatcherRule = NativeMainDispatcherRule()
     private lateinit var context: Context
     private lateinit var db: TrainPilotDatabase
     private lateinit var settings: TrainPilotSettingsStore
@@ -70,7 +72,7 @@ class NativeProfilePracticed128Test {
         assertTrue("Expected stale/invalid preview to be rejected", caught)
     }
 
-    @Test fun provenCompletionFromAnotherProgramPermitsExerciseWithoutInheritingItsWeight() = runBlocking {
+    @Test fun provenCompletionFromAnotherProgramPermitsExerciseWithoutInheritingItsWeight() = runTest(mainDispatcherRule.dispatcher) {
         assertFalse(includes(preview()))
         workout()
         val before = db.programDao().getProgramWithDaysById("home-basic")
@@ -83,11 +85,11 @@ class NativeProfilePracticed128Test {
         assertEquals(0.0, p.prescriptions.getJSONObject(exerciseId).getDouble("weight"), 0.0)
         assertEquals(before, db.programDao().getProgramWithDaysById("home-basic"))
     }
-    @Test fun newerPartialOccurrenceBlocksOlderSuccess() = runBlocking {
+    @Test fun newerPartialOccurrenceBlocksOlderSuccess() = runTest(mainDispatcherRule.dispatcher) {
         workout("older", time.minusSeconds(172800)); workout("partial", done = false)
         assertFalse(includes(preview()))
     }
-    @Test fun anyCurrentPainSignalBlocksOlderSuccess() = runBlocking {
+    @Test fun anyCurrentPainSignalBlocksOlderSuccess() = runTest(mainDispatcherRule.dispatcher) {
         workout("older", time.minusSeconds(172800))
         for ((effort, feedback) in listOf("pain" to JSONObject(), "good" to JSONObject().put("rating", "pain"),
             "good" to JSONObject().put("effort", "pain"))) {
@@ -95,24 +97,24 @@ class NativeProfilePracticed128Test {
             assertFalse(includes(preview()))
         }
     }
-    @Test fun mismatchedUnitsLoadOrVariationCannotProveTheBaseMovement() = runBlocking {
+    @Test fun mismatchedUnitsLoadOrVariationCannotProveTheBaseMovement() = runTest(mainDispatcherRule.dispatcher) {
         for ((unit, load, variation) in listOf(Triple("mp", "total", ""), Triple("ism.", "per_hand", ""),
             Triple("ism.", "total", "paused"))) {
             workout(unit = unit, load = load, variation = variation)
             assertFalse(includes(preview()))
         }
     }
-    @Test fun invalidOrUnknownSetValuesNeverProveExperience() = runBlocking {
+    @Test fun invalidOrUnknownSetValuesNeverProveExperience() = runTest(mainDispatcherRule.dispatcher) {
         for (value in listOf(JSONObject.NULL, "", "NaN", -1)) {
             workout(weight = value)
             assertFalse(includes(preview()))
         }
     }
-    @Test fun oldAndFutureRecordsDoNotAuthorizeBeginnerException() = runBlocking {
+    @Test fun oldAndFutureRecordsDoNotAuthorizeBeginnerException() = runTest(mainDispatcherRule.dispatcher) {
         workout("old", time.minus(Duration.ofDays(91))); workout("future", time.plusSeconds(86400))
         assertFalse(includes(preview()))
     }
-    @Test fun deletedAndTombstonedProofsAreExcluded() = runBlocking {
+    @Test fun deletedAndTombstonedProofsAreExcluded() = runTest(mainDispatcherRule.dispatcher) {
         workout(); assertTrue(includes(preview()))
         db.workoutHistoryDao().deleteWorkoutByIdOrKey("practiced")
         assertFalse(includes(preview()))
@@ -122,33 +124,33 @@ class NativeProfilePracticed128Test {
             JSONArray().put(row.id).toString(), System.currentTimeMillis()))
         assertFalse(includes(preview()))
     }
-    @Test fun proofDoesNotOverrideMissingEquipmentExclusionsOrAvoidedAreas() = runBlocking {
+    @Test fun proofDoesNotOverrideMissingEquipmentExclusionsOrAvoidedAreas() = runTest(mainDispatcherRule.dispatcher) {
         workout()
         for (p in listOf(profile().put("gear", JSONArray(listOf("dumbbells", "bench"))),
             profile().put("excluded", JSONArray().put(exerciseId)), profile().put("avoidAreas", JSONArray().put("back")))) {
             assertFalse(includes(preview(p)))
         }
     }
-    @Test fun deletingEvidenceAfterOpeningPreviewRejectsSaveWithoutCreatingProgram() = runBlocking {
+    @Test fun deletingEvidenceAfterOpeningPreviewRejectsSaveWithoutCreatingProgram() = runTest(mainDispatcherRule.dispatcher) {
         workout(); val p = preview(); val before = db.programDao().getProgramIds()
         db.workoutHistoryDao().deleteWorkoutByIdOrKey("practiced")
         rejected { NativeProgramEditor.save(context, db, source, p.draft, "hu", NativeProfileProgramPreview.metadata(p)) }
         assertEquals(before, db.programDao().getProgramIds())
     }
-    @Test fun painArrivingAfterPreviewTimestampRejectsApproval() = runBlocking {
+    @Test fun painArrivingAfterPreviewTimestampRejectsApproval() = runTest(mainDispatcherRule.dispatcher) {
         workout(); val p = preview(); val before = db.programDao().getProgramIds()
         workout("new-pain", time.plusSeconds(1), effort = "pain")
         rejected { NativeProgramEditor.save(context, db, source, p.draft, "hu", NativeProfileProgramPreview.metadata(p)) }
         assertEquals(before, db.programDao().getProgramIds())
     }
-    @Test fun acceptedProofSurvivesCanonicalBackupRoundTrip() = runBlocking {
+    @Test fun acceptedProofSurvivesCanonicalBackupRoundTrip() = runTest(mainDispatcherRule.dispatcher) {
         workout(); val p = preview()
         val id = NativeProgramEditor.save(context, db, source, p.draft, "hu", NativeProfileProgramPreview.metadata(p))
         val backup = importer.exportBackupJson(false); importer.importBackupJson(backup, false)
         val history = JSONObject(db.programDao().getProgramWithDaysById(id)!!.program.rawJson).getJSONObject("history128")
         assertEquals(p.history128.getJSONObject("practiced").toString(), history.getJSONObject("practiced").toString())
     }
-    @Test fun malformedPortableProofIsRejectedBeforeReplacingRoomData() = runBlocking {
+    @Test fun malformedPortableProofIsRejectedBeforeReplacingRoomData() = runTest(mainDispatcherRule.dispatcher) {
         workout(); val p = preview(); val before = db.programDao().getProgramIds()
         p.history128.getJSONObject("practiced").getJSONObject(exerciseId).put("evidenceHash", "invalid")
         rejected { importer.importBackupJson(JSONObject().put("programs", JSONArray().put(
@@ -156,7 +158,7 @@ class NativeProfilePracticed128Test {
         assertEquals(before, db.programDao().getProgramIds())
         assertNotNull(db.workoutHistoryDao().getWorkoutWithDetails("practiced"))
     }
-    @Test fun fabricatedEligibilityInUiMetadataIsNotTrustedAtAcceptance() = runBlocking {
+    @Test fun fabricatedEligibilityInUiMetadataIsNotTrustedAtAcceptance() = runTest(mainDispatcherRule.dispatcher) {
         val p = preview()
         p.history128.getJSONObject("practiced").put(exerciseId, JSONObject().put("programId", "unrelated-workout")
             .put("key", "fake").put("evidenceHash", "a".repeat(64)))
@@ -164,7 +166,7 @@ class NativeProfilePracticed128Test {
         rejected { NativeProgramEditor.save(context, db, source, p.draft, "hu", NativeProfileProgramPreview.metadata(p)) }
         assertEquals(before, db.programDao().getProgramIds())
     }
-    @Test fun pinnedMainPracticedFixturesAgreeThroughTheActualRoomPreviewPath() = runBlocking {
+    @Test fun pinnedMainPracticedFixturesAgreeThroughTheActualRoomPreviewPath() = runTest(mainDispatcherRule.dispatcher) {
         val fixture = JSONObject(requireNotNull(javaClass.getResourceAsStream("/native-practiced-main-7473.json"))
             .bufferedReader().use { it.readText() })
         assertEquals("b5567576bed9a8f93608a6bf1ed8db1dee4723f4", fixture.getString("blob"))
