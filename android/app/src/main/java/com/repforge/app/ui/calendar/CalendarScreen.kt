@@ -65,7 +65,7 @@ internal fun CalendarScreen(starting: Boolean, onStart: (CalendarScheduleEntity)
                 Text(state.day.format(dateFormat), color = colors.text)
                 Button(onClick = { editing = null; editorOpen = true }, enabled = !busy && state.programs.isNotEmpty(),
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(words[3]) }
-                OutlinedButton(onClick = { plannerOpen = true }, enabled = !busy && state.programs.isNotEmpty(),
+                OutlinedButton(onClick = { plannerOpen = true }, enabled = !busy && state.plannerLoaded && state.programs.isNotEmpty(),
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("calendar_planner_open")) {
                     Text(strings.getString(R.string.calendar_planner_title))
                 }

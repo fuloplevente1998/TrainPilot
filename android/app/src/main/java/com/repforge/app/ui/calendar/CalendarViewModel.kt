@@ -24,6 +24,7 @@ internal data class CalendarUiState(
     val month: YearMonth = YearMonth.now(), val day: LocalDate = LocalDate.now(),
     val plans: List<CalendarScheduleEntity> = emptyList(), val history: List<CalendarHistorySummary> = emptyList(),
     val programs: List<ProgramWithDays> = emptyList(), val language: String = "hu",
+    val plannerLoaded: Boolean = false,
     val plannerSettings: NativeCalendarPlanner.Settings? = null,
     val plannerPreview: NativeCalendarRepository.Preview? = null,
     val busy: Boolean = false, val error: Boolean = false, val loaded: Boolean = false
@@ -69,7 +70,7 @@ internal class CalendarViewModel(application: Application) : AndroidViewModel(ap
     init {
         viewModelScope.launch {
             val value = withContext(Dispatchers.IO) { repository.plannerSettings() }
-            _state.update { it.copy(plannerSettings = value) }
+            _state.update { it.copy(plannerSettings = value, plannerLoaded = true) }
         }
         viewModelScope.launch {
             TrainPilotSettingsStore(app).settingsFlow.collect { settings ->
