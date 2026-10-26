@@ -76,12 +76,13 @@ class NativePhoneNavigationTest {
         instrumentation.runOnMainSync { result = ActiveWorkoutStore.current(context) }
         return result
     }
-    private fun screenshot(screen: String, language: String = "hu", theme: String = "classicBlue") {
+    private fun screenshot(screen: String, language: String = "hu", theme: String = "classicBlue",
+        data: String = "isolated-emulator-test-fixture") {
         compose.waitForIdle()
         val name = "${javaClass.simpleName.lowercase()}_${testIdentity.methodName.hashCode().toUInt().toString(16)}_${screen}_${language}_${theme.lowercase()}_${++shot}"
         require(Regex("[a-z0-9_]{1,120}").matches(name))
         val request = JSONObject().put("name", name).put("language", language).put("theme", theme)
-            .put("screen", screen).put("data", "isolated-emulator-test-fixture").toString()
+            .put("screen", screen).put("data", data).toString()
         // UiAutomation executes a command, not shell redirection. Stream the request
         // through stdin so the host actually receives a file before waiting for its ack.
         val pipes = instrumentation.uiAutomation.executeShellCommandRw("tee /data/local/tmp/trainpilot-shot-request")
@@ -406,6 +407,56 @@ class NativePhoneNavigationTest {
         screenshot("home_scheduled_target_started")
         compose.waitUntil(15_000) { compose.onAllNodesWithTag("workout_discard").fetchSemanticsNodes().isNotEmpty() }
         screenshot("active_strength") // Real programmed goblet-squat workout UI, emulator fixture.
+    }
+
+    @Test fun syntheticGpsRouteOpensOriginalJournalMapWithoutClaimingDeviceMeasurement() {
+        // Synthetic route is written through the existing private route-store fixture.
+        // The screen and modal are the actual MainActivity -> Journal -> Route UI.
+        val db = TrainPilotDatabase.getInstance(context)
+        val routeKey = "native-phone-ui-synthetic-route"
+        val epoch = System.currentTimeMillis() - 90_000L
+        val route = GpsRouteStore(context.noBackupFilesDir)
+        route.append(routeKey, 1, GpsRouteTrace.Point(46.902, 18.078, 5.0, 1_000L, epoch))
+        route.append(routeKey, 1, GpsRouteTrace.Point(46.903, 18.080, 5.0, 2_000L, epoch + 1_000L))
+        route.append(routeKey, 1, GpsRouteTrace.Point(46.904, 18.082, 5.0, 3_000L, epoch + 2_000L))
+        assertEquals(3, route.read(routeKey).pointCount)
+
+        val end = java.time.Instant.now().minusSeconds(60)
+        val exercise = runBlocking(Dispatchers.IO) {
+            db.exerciseLibraryDao().getAllExercises().first {
+                it.measurementType == "distance" || it.repUnit.trim().lowercase() in setOf("m", "km")
+            }
+        }
+        runBlocking(Dispatchers.IO) {
+            com.repforge.app.data.migration.LegacyWebViewMigrator(context, db, settings)
+                .saveWorkoutJsonToRoom(JSONObject()
+                    .put("id", "native-synthetic-route-ui")
+                    .put("started", end.minusSeconds(600).toString())
+                    .put("finished", end.toString())
+                    .put("programId", "home-basic")
+                    .put("dayName", "Szintetikus GPS-útvonal")
+                    .put("exercises", org.json.JSONArray().put(JSONObject()
+                        .put("id", exercise.id)
+                        .put("hu", exercise.nameHu)
+                        .put("loadType", exercise.loadType)
+                        .put("repUnit", exercise.repUnit)
+                        .put("sets", org.json.JSONArray().put(JSONObject()
+                            .put("setId", "native-route-set")
+                            .put("set", 1).put("reps", "600").put("distanceMeters", 400.0)
+                            .put("done", true).put("gpsRouteKey163", routeKey)))))
+        }
+        launch(); tab("journal")
+        compose.waitUntil(15_000) {
+            compose.onAllNodesWithTag("journal_workout_native-synthetic-route-ui")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("journal_workout_native-synthetic-route-ui").performClick()
+        compose.onNodeWithTag("journal_details_list")
+            .performScrollToNode(hasTestTag("journal_open_route"))
+        compose.onNodeWithTag("journal_open_route").performClick()
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("route_close").fetchSemanticsNodes().isNotEmpty() }
+        screenshot("route_synthetic_gps", data = "synthetic-gps-emulator-fixture-not-a-device-measurement")
+        compose.onNodeWithTag("route_close").performClick()
     }
 
     @Test fun journalEditorCancelInvalidSaveAndRealSavePreserveTheExistingWorkout() {
