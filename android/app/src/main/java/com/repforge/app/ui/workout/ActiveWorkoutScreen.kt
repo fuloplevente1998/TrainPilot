@@ -149,12 +149,15 @@ fun ActiveWorkoutScreen(
         }
     }
 
-    var pendingGpsPermission by remember { mutableStateOf<NativeWorkoutTarget?>(null) }
+    // Bundle-saveable identity survives configuration changes without persisting a GPS command.
+    var pendingGpsPermissionJson by rememberSaveable { mutableStateOf("") }
+    var gpsPermissionRequestInFlight by rememberSaveable { mutableStateOf(false) }
     val locationPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
-        val target = pendingGpsPermission
-        pendingGpsPermission = null
+        val target = NativeGpsPermissionRecovery.decodePending(pendingGpsPermissionJson)
+        pendingGpsPermissionJson = ""
+        gpsPermissionRequestInFlight = false
         if (target != null) {
-            if (!NativeGpsPermissionRecovery.targetIsCurrent(ActiveWorkoutStore.current(context), target, state.isFinishing)) {
+            if (!NativeGpsPermissionRecovery.mayStart(context, ActiveWorkoutStore.current(context), target, state.isFinishing)) {
                 gpsRecovery = null
                 viewModel.showStatus(strings.getString(R.string.native_gps_recovery_stale))
             } else {
@@ -172,22 +175,32 @@ fun ActiveWorkoutScreen(
     }
     fun requestGps(target: NativeWorkoutTarget, measurementId: String?) {
         if (measurementId != null) { viewModel.toggleGpsTracking(target, measurementId); return }
-        if (!NativeGpsPermissionRecovery.targetIsCurrent(ActiveWorkoutStore.current(context), target, state.isFinishing)) {
+        if (!NativeGpsPermissionRecovery.mayStart(context, ActiveWorkoutStore.current(context), target, state.isFinishing)) {
             gpsRecovery = null
             viewModel.showStatus(strings.getString(R.string.native_gps_recovery_stale))
             return
         }
+        if (gpsPermissionRequestInFlight) return // Only one Android launcher/callback for this screen.
         val blocker = NativeGpsPermissionRecovery.read(context, activity, requestedGpsPermission)
         if (blocker == NativeGpsPermissionBlocker.READY) {
             gpsRecovery = null
             viewModel.toggleGpsTracking(target)
         } else {
             gpsRecovery = NativeGpsRecoveryPrompt(target, blocker)
-            if (blocker == NativeGpsPermissionBlocker.DENIED) {
-                pendingGpsPermission = target
+            if (blocker == NativeGpsPermissionBlocker.DENIED && activity != null) {
+                pendingGpsPermissionJson = NativeGpsPermissionRecovery.encodePending(target)
+                gpsPermissionRequestInFlight = true
                 requestedGpsPermission = true
-                locationPermissionLauncher.launch(arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+                try {
+                    locationPermissionLauncher.launch(arrayOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+                } catch (_: RuntimeException) {
+                    pendingGpsPermissionJson = ""
+                    gpsPermissionRequestInFlight = false
+                    viewModel.showStatus(strings.getString(R.string.native_gps_recovery_request_unavailable))
+                }
+            } else if (blocker == NativeGpsPermissionBlocker.DENIED) {
+                viewModel.showStatus(strings.getString(R.string.native_gps_recovery_request_unavailable))
             }
         }
     }
@@ -222,13 +235,20 @@ fun ActiveWorkoutScreen(
             onRetry = { requestGps(recovery.target, null) },
             onSettings = {
                 NativeGpsPermissionRecovery.settingsIntent(context, recovery.blocker)?.let { intent ->
-                    try { context.startActivity(intent) }
-                    catch (_: Exception) {
+                    try {
+                        if (activity == null) throw IllegalStateException("no activity")
+                        activity.startActivity(intent)
+                    } catch (_: Exception) {
                         viewModel.showStatus(strings.getString(R.string.native_gps_recovery_settings_unavailable))
                     }
                 }
             },
-            onDismiss = { gpsRecovery = null }
+            onDismiss = {
+                // Cancellation invalidates any saved launcher callback; it cannot start GPS later.
+                pendingGpsPermissionJson = ""
+                gpsPermissionRequestInFlight = false
+                gpsRecovery = null
+            }
         )
     }
 
