@@ -29,13 +29,16 @@ def issue(issues, kind, detail):
 
 
 def relative(path, roots):
-    for root in roots:
+    """A bounded, non-sensitive evidence locator, never an absolute user path."""
+    for index, root in enumerate(roots, 1):
         try:
-            p = path.resolve().relative_to(root.resolve())
-            return (root.name + "/" + p.as_posix())[:240]
+            parts = path.resolve().relative_to(root.resolve()).parts
         except ValueError:
-            pass
-    return path.name[:120]
+            continue
+        if any(not re.fullmatch(r"[A-Za-z0-9_.-]{1,100}", part) for part in parts):
+            return f"input-{index}/[redacted-path]"
+        return (f"input-{index}/" + "/".join(parts))[:240]
+    return "[external-file]"
 
 
 def safe_case(value):
@@ -51,14 +54,14 @@ def sha256(path):
 
 
 def png_ok(path):
-    """Validate PNG chunk order/CRC, zlib stream and terminal IEND (no Pillow)."""
+    """Bounded structural PNG/scanline validation; no image renderer or new deps."""
     try:
         if path.stat().st_size > 32 * 1024 * 1024:
             return False
         data = path.read_bytes()
         if not data.startswith(b"\x89PNG\r\n\x1a\n"):
             return False
-        pos, chunks, payload = 8, [], bytearray()
+        pos, seen, payload, header, idat_ended, palette = 8, [], bytearray(), None, False, False
         while pos + 12 <= len(data):
             count = struct.unpack_from(">I", data, pos)[0]
             if count > 32 * 1024 * 1024 or pos + 12 + count > len(data):
@@ -66,56 +69,85 @@ def png_ok(path):
             kind = data[pos + 4:pos + 8]
             chunk = data[pos + 8:pos + 8 + count]
             crc = struct.unpack_from(">I", data, pos + 8 + count)[0]
-            if zlib.crc32(kind + chunk) & 0xffffffff != crc:
+            if not re.fullmatch(rb"[A-Za-z]{4}", kind) or zlib.crc32(kind + chunk) & 0xffffffff != crc:
                 return False
-            if not chunks and (kind != b"IHDR" or count != 13):
+            if not seen and (kind != b"IHDR" or count != 13):
                 return False
             if kind == b"IHDR":
-                if chunks or not all(struct.unpack_from(">II", chunk)[:2]):
+                if seen or count != 13:
                     return False
-            if kind == b"IDAT":
+                width, height, depth, colour, compression, filtering, interlace = struct.unpack(">IIBBBBB", chunk)
+                legal = {0: (1, 2, 4, 8, 16), 2: (8, 16), 3: (1, 2, 4, 8),
+                         4: (8, 16), 6: (8, 16)}
+                if (not width or not height or depth not in legal.get(colour, ()) or
+                        compression or filtering or interlace or width * height > 16_000_000):
+                    return False  # unsupported interlaced images are conservatively rejected
+                channels = {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}[colour]
+                stride = (width * channels * depth + 7) // 8
+                expected = height * (stride + 1)
+                if expected > 64 * 1024 * 1024:
+                    return False
+                header = (height, stride, expected, colour)
+            elif kind == b"PLTE":
+                if palette or b"IDAT" in seen or count == 0 or count > 768 or count % 3:
+                    return False
+                palette = True
+            elif kind == b"IDAT":
+                if idat_ended or (header and header[3] == 3 and not palette):
+                    return False
                 payload.extend(chunk)
-            if kind == b"IEND":
-                return count == 0 and pos + 12 == len(data) and bool(payload) and _inflate_ok(payload)
-            chunks.append(kind)
+                if len(payload) > 32 * 1024 * 1024:
+                    return False
+            elif kind == b"IEND":
+                return (count == 0 and pos + 12 == len(data) and b"IDAT" in seen and
+                        bool(payload) and _inflate_ok(payload, *header[:3]))
+            elif kind[0] & 0x20 == 0:  # unknown critical chunk
+                return False
+            if kind != b"IDAT" and b"IDAT" in seen:
+                idat_ended = True
+            seen.append(kind)
             pos += 12 + count
         return False
     except (OSError, ValueError, struct.error, zlib.error):
         return False
 
 
-def _inflate_ok(payload):
-    decompressor = zlib.decompressobj()
-    total = 0
+def _inflate_ok(payload, rows, stride, expected):
+    decoder = zlib.decompressobj()
+    expanded = bytearray()
     for offset in range(0, len(payload), 65536):
         part = payload[offset:offset + 65536]
         while part:
-            expanded = decompressor.decompress(part, 8 * 1024 * 1024 - total + 1)
-            total += len(expanded)
-            if total > 8 * 1024 * 1024:
+            data = decoder.decompress(part, expected - len(expanded) + 1)
+            expanded.extend(data)
+            if len(expanded) > expected:
                 return False
-            part = decompressor.unconsumed_tail
-    return decompressor.eof and not decompressor.unused_data and total > 0
+            part = decoder.unconsumed_tail
+    if not decoder.eof or decoder.unused_data or len(expanded) != expected:
+        return False
+    return all(expanded[index * (stride + 1)] <= 4 for index in range(rows))
 
 
 def instrument(path, roots):
-    raw = path.read_text(encoding="utf-8", errors="replace")
+    raw = path.read_text(encoding="utf-8")  # malformed UTF-8 must not yield PASS
     declared, cases, started, failures, problems = set(), {}, set(), [], []
-    current, final_code = {}, None
+    current, final_codes = {}, []
     for line in raw.splitlines():
         if line.startswith("INSTRUMENTATION_STATUS: "):
-            key, sep, value = line[24:].partition("=")
+            key, sep, value = line.removeprefix("INSTRUMENTATION_STATUS: ").partition("=")
             if sep:
                 current[key] = value
                 if key == "numtests":
-                    if value.isdigit():
+                    if value.isdigit() and int(value) > 0:
                         declared.add(int(value))
                     else:
-                        issue(problems, "invalid-declaration", "Non-numeric numtests")
+                        issue(problems, "invalid-declaration", "Invalid numtests")
         elif CODE.match(line):
             code = int(CODE.match(line).group(1))
             cls, method = current.get("class", ""), current.get("test", "")
-            if cls and method:
+            if not cls or not method:
+                issue(problems, "missing-identity", "Instrumentation event without class/method")
+            else:
                 identity = (cls, method)
                 if code == 1:
                     if identity in started or identity in cases:
@@ -126,17 +158,15 @@ def instrument(path, roots):
                         issue(problems, "duplicate-terminal", "Repeated terminal case")
                     cases[identity] = code
                     if code != 0:
-                        reason = "failure" if code == -2 else "skip" if code in (-3, -4) else "error"
-                        exception = re.search(r"([A-Za-z][A-Za-z0-9_.]*(?:Exception|Error))\b", current.get("stack", ""))
+                        kind = "failure" if code == -2 else "skip" if code in (-3, -4) else "error"
+                        # Exception/stack message is deliberately not echoed (may contain secrets).
                         failures.append({"case": safe_case(cls) + "#" + safe_case(method),
-                                         "kind": reason, "excerpt": exception.group(1) if exception else "runner-status-" + str(code),
+                                         "kind": kind, "excerpt": "instrumentation-status-" + str(code),
                                          "raw": relative(path, roots)})
-            elif code != 1:
-                issue(problems, "missing-identity", "Terminal without class/method")
             current = {}
         elif line.startswith("INSTRUMENTATION_CODE: "):
             try:
-                final_code = int(line.partition(":")[2].strip())
+                final_codes.append(int(line.partition(":")[2].strip()))
             except ValueError:
                 issue(problems, "invalid-final-code", "Invalid runner final code")
     declared_count = next(iter(declared)) if len(declared) == 1 else None
@@ -149,26 +179,33 @@ def instrument(path, roots):
     errors = total - successes - failed - skipped
     missing = max(0, declared_count - total) if declared_count is not None else None
     crash = bool(re.search(r"INSTRUMENTATION_RESULT:\s*shortMsg=|INSTRUMENTATION_FAILED|Process crashed|FATAL EXCEPTION", raw, re.I))
-    ok = [int(x) for x in SUMMARY.findall(raw)]
-    complete = (declared_count is not None and total == declared_count and
-                not (started - cases.keys()) and final_code == -1 and
-                len(ok) == 1 and ok[0] == total and not crash)
-    if missing == 0 and declared_count is not None and len(started) < total:
-        issue(problems, "missing-start", "Terminal case lacks start event")
-        complete = False
-    if missing is not None and missing < 0:
-        complete = False
+    failed_summary = bool(re.search(r"(?m)^FAILURES!!!\s*$|^Tests run:\s*\d+,\s*Failures:\s*[1-9]\d*", raw))
+    # The runner's summary must be in the final INSTRUMENTATION_RESULT block,
+    # not a forged 'OK' appearing inside a testcase stack or arbitrary record.
+    summaries = re.findall(r"(?m)^INSTRUMENTATION_RESULT: stream=(?:[^\n]*\n)(?:[\s\S]*?)^OK \((\d+) tests?\)\s*$", raw)
+    inline = re.findall(r"(?m)^INSTRUMENTATION_RESULT: stream=OK \((\d+) tests?\)\s*$", raw)
+    summaries.extend(inline)
+    stream_headers = len(re.findall(r"(?m)^INSTRUMENTATION_RESULT: stream=", raw))
+    consistent = (not problems and stream_headers == 1 and not (started - cases.keys()) and
+                  started == set(cases))
+    complete = (declared_count is not None and total == declared_count and total > 0 and
+                consistent and final_codes == [-1] and len(summaries) == 1 and
+                int(summaries[0]) == total and not crash and not failed_summary and
+                not failed and not errors and not skipped)
     if crash:
         issue(problems, "process-crash", "Instrumentation process crashed")
+    if failed_summary:
+        issue(problems, "runner-failures", "Runner reports a failed execution")
+    if declared_count is not None and total > declared_count:
+        issue(problems, "over-count", "More unique terminal cases than declared")
     if not complete:
         issue(problems, "incomplete-run", "Runner lacks consistent complete terminal summary")
-    bad = failed + errors > 0 or crash or final_code not in (-1, None)
-    result_status = "FAILED" if bad or any(x["kind"] in ("duplicate-terminal", "duplicate-start") for x in problems) else "INCOMPLETE" if not complete else "PASS"
-    if not cases:
-        result_status = "FAILED" if crash else "INCOMPLETE"
-    if declared_count is not None and total > declared_count:
-        result_status = "FAILED"
-        issue(problems, "over-count", "More executed cases than declared")
+    contradiction = {"duplicate-terminal", "duplicate-start", "missing-identity", "invalid-declaration",
+                     "declaration-conflict", "invalid-final-code", "over-count"}
+    result_status = ("FAILED" if failed or errors or crash or failed_summary or
+                     any(x["kind"] in contradiction for x in problems) or any(c != -1 for c in final_codes)
+                     or len(final_codes) > 1 or stream_headers > 1
+                     else "INCOMPLETE" if not complete or skipped else "PASS")
     return {"status": result_status, "declared": declared_count, "executed": total,
             "passed": successes, "failed": failed, "errors": errors, "skipped": skipped,
             "missing": missing, "crashed": crash, "complete": complete,
@@ -186,31 +223,45 @@ def jvm_summary(directory, roots):
             issue(problems, "unknown-module", "Unrecognized JVM module")
             continue
         try:
+            if path.stat().st_size > 32 * 1024 * 1024:
+                raise ValueError("Oversized JVM XML")
             root = ET.parse(path).getroot()
             if root.tag not in ("testsuite", "testsuites"):
-                raise ValueError("unexpected XML root")
-            suites = [root] if root.tag == "testsuite" else list(root.findall("testsuite"))
+                raise ValueError("Unexpected JVM XML root")
+            suites = [root] if root.tag == "testsuite" else list(root)
+            if not suites or any(suite.tag != "testsuite" for suite in suites):
+                raise ValueError("Unexpected XML suites collection")
+            file_counts = [0, 0, 0, 0]
             for suite in suites:
-                cases = list(suite.iter("testcase"))
+                if suite.findall("testsuite"):
+                    raise ValueError("Nested JVM suites are ambiguous")
+                cases = suite.findall("testcase")
                 counts = [len(cases), 0, 0, 0]
                 for case in cases:
                     key = (module, case.get("classname"), case.get("name"))
                     if not all(key[1:]) or key in seen:
-                        raise ValueError("duplicate or anonymous JVM testcase")
+                        raise ValueError("Duplicate or anonymous JVM testcase")
                     seen.add(key)
-                    counts[1] += bool(case.findall("failure"))
-                    counts[2] += bool(case.findall("error"))
-                    counts[3] += bool(case.findall("skipped"))
+                    outcomes = [child.tag for child in case if child.tag in ("failure", "error", "skipped")]
+                    if len(outcomes) > 1:
+                        raise ValueError("Multiple outcomes for one JVM testcase")
+                    if outcomes:
+                        counts[{"failure": 1, "error": 2, "skipped": 3}[outcomes[0]]] += 1
                 attr = [int(suite.attrib[k]) for k in ("tests", "failures", "errors", "skipped")]
                 if counts != attr or min(attr) < 0 or sum(attr[1:]) > attr[0]:
                     raise ValueError("JVM suite totals contradict testcases")
-                totals[module] = [a + b for a, b in zip(totals[module], counts)]
-        except (ET.ParseError, ValueError, KeyError) as exc:
+                file_counts = [a + b for a, b in zip(file_counts, counts)]
+            if root.tag == "testsuites" and any(k in root.attrib for k in ("tests", "failures", "errors", "skipped")):
+                outer = [int(root.attrib[k]) for k in ("tests", "failures", "errors", "skipped")]
+                if outer != file_counts:
+                    raise ValueError("JVM root totals contradict child suites")
+            totals[module] = [a + b for a, b in zip(totals[module], file_counts)]
+        except (ET.ParseError, ValueError, KeyError, UnicodeError, OSError):
             issue(problems, "malformed-xml", "Invalid JVM XML at " + relative(path, roots))
     n = sum(v[0] for v in totals.values())
     failures = sum(v[1] + v[2] for v in totals.values())
     skipped = sum(v[3] for v in totals.values())
-    return {"status": "FAILED" if problems or failures or skipped else "PASS" if n else "INCOMPLETE",
+    return {"status": "FAILED" if problems or failures else "INCOMPLETE" if skipped or not n else "PASS",
             "modules": dict(zip(totals, (dict(zip(("tests", "failures", "errors", "skips"), v)) for v in totals.values()))),
             "tests": n, "failures": failures, "skips": skipped,
             "xml_files": len(xmls), "issues": problems}
@@ -221,13 +272,14 @@ def find_sources(roots):
     for root in roots:
         dirs = [root] + [p for p in root.rglob("*") if p.is_dir() and not p.is_symlink()]
         for folder in dirs:
-            if (folder / "manifest.json").is_file() and (folder / "instrumentation.txt").is_file():
+            # Recognize partially downloaded artifacts instead of silently ignoring them.
+            if folder.name == "TrainPilot-Native-Phone-UI-Evidence" or (folder / "manifest.json").is_file():
                 phone.append(folder)
-            if (folder / "native-apk-sha256.txt").is_file():
+            if folder.name == "TrainPilot-Native-Update-Verification" or (folder / "native-apk-sha256.txt").is_file():
                 meta.append(folder)
             if JVM.fullmatch(folder.name):
                 jvm.append(folder)
-            if WEAR.fullmatch(folder.name) and (folder / "instrumentation.txt").is_file():
+            if WEAR.fullmatch(folder.name):
                 wear.append(folder)
     return phone, jvm, wear, meta
 
@@ -240,7 +292,10 @@ def analyse_phone(folder, args, roots):
             raise ValueError("manifest is not an object")
     except (OSError, json.JSONDecodeError, ValueError):
         return {"status": "FAILED", "issues": [{"kind": "invalid-manifest", "detail": "Cannot parse phone manifest"}]}
-    run = instrument(folder / "instrumentation.txt", roots)
+    try:
+        run = instrument(folder / "instrumentation.txt", roots)
+    except (OSError, UnicodeError):
+        return {"status": "FAILED", "issues": [{"kind": "invalid-instrumentation", "detail": "Missing or invalid phone log"}]}
     sha = manifest.get("commit")
     if sha != args.expected_commit:
         issue(problems, "mixed-source", "Phone manifest commit does not match expected commit")
@@ -267,12 +322,15 @@ def analyse_phone(folder, args, roots):
         if rel.is_absolute() or not target.is_relative_to(folder.resolve()) or target.suffix.lower() != ".png":
             issue(problems, "unsafe-screenshot-path", "Screenshot path escapes evidence root")
             continue
+        if (entry.get("name") != rel.stem or not re.fullmatch(r"[a-z0-9_]{1,120}", rel.stem) or
+                len(rel.parts) != 2 or rel.parts[0] != "screenshots"):
+            issue(problems, "invalid-screenshot-entry", "Screenshot name/path mismatch")
         if entry["file"] in shot_names:
             issue(problems, "duplicate-screenshot", "Repeated screenshot manifest entry")
         shot_names.add(entry["file"])
         if not target.is_file() or not png_ok(target):
             issue(problems, "bad-png", "Missing or invalid screenshot PNG")
-        elif not isinstance(entry.get("sha256"), str) or sha256(target) != entry["sha256"]:
+        elif not isinstance(entry.get("sha256"), str) or not HASH.fullmatch(entry["sha256"]) or sha256(target) != entry["sha256"]:
             issue(problems, "png-hash-mismatch", "Screenshot hash mismatch")
         elif entry.get("bytes") != target.stat().st_size:
             issue(problems, "png-size-mismatch", "Screenshot size mismatch")
@@ -302,7 +360,13 @@ def analyse_wear(folders, args, roots):
         if index in indices or index >= args.wear_shards:
             issue(problems, "duplicate-or-invalid-shard", "Duplicate or out-of-range Wear shard")
         indices.add(index)
-        result = instrument(folder / "instrumentation.txt", roots)
+        try:
+            result = instrument(folder / "instrumentation.txt", roots)
+        except (OSError, UnicodeError):
+            result = {"status": "FAILED", "declared": None, "executed": 0, "passed": 0,
+                      "failed": 0, "errors": 0, "skipped": 0, "missing": None,
+                      "case_ids": set(), "issues": [{"kind": "invalid-instrumentation", "detail": "Missing or invalid Wear log"}],
+                      "raw": relative(folder / "instrumentation.txt", roots)}
         repeated = all_cases & result["case_ids"]
         if repeated:
             issue(problems, "duplicate-case", "Case appears in more than one Wear shard")
@@ -331,7 +395,11 @@ def analyse_wear(folders, args, roots):
 
 def analyse_apk(folder, args, roots):
     problems, records = [], {}
-    text = (folder / "native-apk-sha256.txt").read_text(encoding="utf-8", errors="replace")
+    try:
+        text = (folder / "native-apk-sha256.txt").read_text(encoding="utf-8")
+    except (OSError, UnicodeError):
+        return {"status": "FAILED", "records": 0, "verified": 0,
+                "issues": [{"kind": "invalid-apk-metadata", "detail": "Missing or invalid APK checksum file"}]}
     for line in text.splitlines():
         match = re.fullmatch(r"([0-9a-f]{64})\s+(.+\.apk)", line)
         if not match or match.group(2) in records:
@@ -343,8 +411,8 @@ def analyse_apk(folder, args, roots):
             issue(problems, "apk-hash-mismatch", "APK verification hash mismatch")
     if not records:
         issue(problems, "missing-hashes", "No APK checksum records")
-    if not args.apk_file:
-        issue(problems, "unverified-apk", "APK checksum file without independently checked APK bytes")
+    if not args.apk_file or set(records) - set(args.apk_file):
+        issue(problems, "unverified-apk", "Not every APK checksum record has independently checked bytes")
     return {"status": "FAILED" if any(i["kind"] in ("bad-hash-record", "apk-hash-mismatch") for i in problems)
             else "INCOMPLETE" if problems else "PASS", "records": len(records), "verified": len(args.apk_file),
             "issues": problems, "raw": relative(folder / "native-apk-sha256.txt", roots)}
@@ -354,7 +422,7 @@ def summarize(args):
     roots = [p.resolve() for p in args.roots]
     for path in roots:
         if not path.is_dir():
-            raise ValueError("Not an extracted artifact directory: " + str(path))
+            raise ValueError("Input is not an extracted artifact directory")
     phone_dirs, jvm_dirs, wear_dirs, apk_dirs = find_sources(roots)
     gates = {}
     if phone_dirs:
@@ -371,7 +439,14 @@ def summarize(args):
     if apk_dirs:
         gates["apk"] = analyse_apk(apk_dirs[0], args, roots) if len(apk_dirs) == 1 else {
             "status": "FAILED", "issues": [{"kind": "duplicate-apk-meta", "detail": "Multiple checksum artifacts"}]}
-    for gate in args.require_gate:
+    required = set(args.require_gate)
+    if args.require_screenshot or args.phone_apk or args.phone_test_apk:
+        required.add("phone")
+    if args.wear_total is not None:
+        required.add("wear")
+    if args.apk_file:
+        required.add("apk")
+    for gate in required:
         if gate not in gates:
             gates[gate] = {"status": "INCOMPLETE", "issues": [{"kind": "missing-gate", "detail": "Required evidence absent"}]}
     overall = status(*(value["status"] for value in gates.values()))
@@ -393,7 +468,7 @@ def markdown(report):
         if name == "jvm":
             counts = ", ".join(f"{m} {v['tests']} / {v['failures']} fail / {v['errors']} error / {v['skips']} skip"
                                for m, v in value.get("modules", {}).items())
-        elif name == "wear":
+        elif name == "wear" and "shards" in value:
             counts = f"{value['passed']}/{value['executed']} pass; {value['unique_cases']} unique; {len(value['shards'])}/{value['expected_shards']} shards"
         elif name == "phone" and "executed" in value:
             counts = f"{value['passed']} pass, {value['failed']} fail, {value['errors']} error, {value['skipped']} skip; {value['executed']}/{value['declared']} terminal, {value['missing']} missing; {value['screenshots']} shots"
@@ -435,6 +510,8 @@ def main(argv=None):
     args.apk_file = mappings
     if args.json_out.resolve() == args.markdown_out.resolve():
         parser.error("JSON and Markdown destinations must differ")
+    if any(not re.fullmatch(r"[a-z0-9_]{1,120}", name) for name in args.require_screenshot):
+        parser.error("Invalid required screenshot checkpoint")
     try:
         report = summarize(args)
         for destination in (args.json_out, args.markdown_out):
@@ -444,8 +521,8 @@ def main(argv=None):
                                  (args.markdown_out, markdown(report))):
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(contents, encoding="utf-8")
-    except (OSError, ValueError) as exc:
-        parser.error(str(exc))
+    except (OSError, ValueError, UnicodeError):
+        parser.error("Cannot process evidence or write reports; check inputs and permissions")
     print(f"{report['status']}: " + ", ".join(f"{name}={v['status']}" for name, v in report["gates"].items()))
     return 0 if report["status"] == "PASS" else 1 if report["status"] == "FAILED" else 2
 

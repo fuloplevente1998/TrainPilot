@@ -256,5 +256,209 @@ class EvidenceTest(unittest.TestCase):
                            "--json-out", str(self.out), "--markdown-out", str(self.md)])
 
 
+    def test_normal_failed_runner_75_terminal_35_pass_40_fail_is_not_success(self):
+        folder, app, test = self.phone(declared=75, states=[0] * 35 + [-2] * 40, shots=False)
+        code, result = self.run_summary(*self.apk_options(app, test), "--require-gate", "phone")
+        self.assertEqual(code, 1)
+        phone = result["gates"]["phone"]
+        self.assertEqual((phone["declared"], phone["executed"], phone["passed"], phone["failed"]),
+                         (75, 75, 35, 40))
+        self.assertEqual(phone["status"], "FAILED")
+        self.assertFalse(phone["complete"])
+
+    def test_forged_ok_in_stack_cannot_replace_runner_summary(self):
+        folder, app, test = self.phone(declared=2, states=[0, 0])
+        raw = instrumentation(2, [0, 0], complete=False)
+        raw += "INSTRUMENTATION_STATUS: stack=private\nOK (2 tests)\nINSTRUMENTATION_CODE: -1\n"
+        (folder / "instrumentation.txt").write_text(raw)
+        code, result = self.run_summary(*self.apk_options(app, test))
+        self.assertEqual(code, 2)
+        self.assertEqual(result["gates"]["phone"]["status"], "INCOMPLETE")
+
+    def test_conflicting_numtests_and_duplicate_terminal_are_failed(self):
+        folder, app, test = self.phone(declared=2, states=[0, 0])
+        path = folder / "instrumentation.txt"
+        path.write_text(path.read_text().replace("numtests=2", "numtests=3", 1))
+        code, result = self.run_summary(*self.apk_options(app, test))
+        self.assertEqual(code, 1)
+        self.assertIn("declaration-conflict", {x["kind"] for x in result["gates"]["phone"]["issues"]})
+        path.write_text(instrumentation(2, [0, 0]).replace(
+            "INSTRUMENTATION_RESULT: stream=", 
+            "INSTRUMENTATION_STATUS: class=example.Cases\nINSTRUMENTATION_STATUS: test=method0\n"
+            "INSTRUMENTATION_STATUS: numtests=2\nINSTRUMENTATION_STATUS_CODE: 0\n"
+            "INSTRUMENTATION_RESULT: stream="))
+        code, result = self.run_summary(*self.apk_options(app, test))
+        self.assertEqual(code, 1)
+        self.assertIn("duplicate-terminal", {x["kind"] for x in result["gates"]["phone"]["issues"]})
+
+    def test_skip_assumption_and_incomplete_terminal_are_not_pass(self):
+        folder, app, test = self.phone(declared=2, states=[0, -3])
+        code, result = self.run_summary(*self.apk_options(app, test))
+        self.assertEqual(code, 2)
+        self.assertEqual(result["gates"]["phone"]["skipped"], 1)
+        (folder / "instrumentation.txt").write_text(instrumentation(2, [0], complete=False))
+        code, result = self.run_summary(*self.apk_options(app, test))
+        self.assertEqual(code, 2)
+        self.assertEqual(result["gates"]["phone"]["missing"], 1)
+
+    def test_failed_summary_without_failed_codes_is_not_pass(self):
+        folder, app, test = self.phone(declared=2, states=[0, 0])
+        raw = (folder / "instrumentation.txt").read_text()
+        raw = raw.replace("INSTRUMENTATION_CODE: -1",
+                          "FAILURES!!!\nTests run: 2, Failures: 1\nINSTRUMENTATION_CODE: -1")
+        (folder / "instrumentation.txt").write_text(raw)
+        code, result = self.run_summary(*self.apk_options(app, test))
+        self.assertEqual(code, 1)
+        self.assertIn("runner-failures", {x["kind"] for x in result["gates"]["phone"]["issues"]})
+
+    def test_jvm_testsuites_root_totals_cannot_contradict_child(self):
+        self.jvm(app=2, wear=0)
+        path = next((self.inputs / f"TrainPilot-Native-Tests-{SHA}" / "app").rglob("TEST-*.xml"))
+        existing = ET.parse(path).getroot()
+        outer = ET.Element("testsuites", tests="999", failures="0", errors="0", skipped="0")
+        outer.append(existing)
+        path.write_bytes(ET.tostring(outer))
+        code, result = self.run_summary("--require-gate", "jvm")
+        self.assertEqual(code, 1)
+        self.assertIn("malformed-xml", {x["kind"] for x in result["gates"]["jvm"]["issues"]})
+
+    def test_jvm_rejects_multiple_outcomes_and_invalid_utf8(self):
+        self.jvm(app=2, wear=0)
+        path = next((self.inputs / f"TrainPilot-Native-Tests-{SHA}" / "app").rglob("TEST-*.xml"))
+        root = ET.parse(path).getroot()
+        ET.SubElement(root.find("testcase"), "failure")
+        root.set("failures", "1")
+        ET.SubElement(root.find("testcase"), "skipped")
+        root.set("skipped", "1")
+        path.write_bytes(ET.tostring(root))
+        code, result = self.run_summary("--require-gate", "jvm")
+        self.assertEqual(code, 1)
+        path.write_bytes(b"<?xml version='1.0'?><testsuite>\xff</testsuite>")
+        code, result = self.run_summary("--require-gate", "jvm")
+        self.assertEqual(code, 1)
+
+    def test_jvm_parameterized_case_identities_are_distinct(self):
+        self.jvm(app=2, wear=0)
+        path = next((self.inputs / f"TrainPilot-Native-Tests-{SHA}" / "app").rglob("TEST-*.xml"))
+        root = ET.parse(path).getroot()
+        cases = root.findall("testcase")
+        cases[0].set("name", "parameter[0]")
+        cases[1].set("name", "parameter[1]")
+        path.write_bytes(ET.tostring(root))
+        code, result = self.run_summary("--require-gate", "jvm")
+        self.assertEqual(code, 0)
+        self.assertEqual(result["gates"]["jvm"]["tests"], 2)
+
+    def test_png_valid_crc_but_wrong_dimensions_or_scanline_is_rejected(self):
+        folder, app, test = self.phone(declared=1, states=[0])
+        shot = folder / "screenshots/home.png"
+        data = png()
+        ihdr = struct.pack(">IIBBBBB", 2, 1, 8, 2, 0, 0, 0)
+        corrupted = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr) + data[33:]
+        shot.write_bytes(corrupted)
+        manifest = json.loads((folder / "manifest.json").read_text())
+        manifest["screenshots"][0].update(sha256=checksum(corrupted), bytes=len(corrupted))
+        (folder / "manifest.json").write_text(json.dumps(manifest))
+        code, result = self.run_summary(*self.apk_options(app, test))
+        self.assertEqual(code, 1)
+        self.assertIn("bad-png", {x["kind"] for x in result["gates"]["phone"]["issues"]})
+
+    def test_png_invalid_filters_and_noncontiguous_idat_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "shot.png"
+            img = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0))
+            target.write_bytes(img + chunk(b"IDAT", zlib.compress(b"\x05\x00\x00\x00")) + chunk(b"IEND", b""))
+            self.assertFalse(evidence.png_ok(target))
+            compressed = zlib.compress(b"\x00\x00\x00\x00")
+            target.write_bytes(img + chunk(b"IDAT", compressed[:4]) +
+                               chunk(b"tEXt", b"hi\x00x") + chunk(b"IDAT", compressed[4:]) +
+                               chunk(b"IEND", b""))
+            self.assertFalse(evidence.png_ok(target))
+            self.assertTrue(evidence.png_ok(Path(self.phone(declared=1, states=[0])[0] / "screenshots/home.png")))
+
+    def test_apk_metadata_partial_hash_verification_is_incomplete(self):
+        folder = self.inputs / "TrainPilot-Native-Update-Verification"
+        folder.mkdir()
+        app, wear = self.root / "phone.apk", self.root / "wear.apk"
+        app.write_bytes(b"phone")
+        wear.write_bytes(b"wear")
+        logical1, logical2 = "app/phone.apk", "wear/watch.apk"
+        (folder / "native-apk-sha256.txt").write_text(
+            checksum(app.read_bytes()) + "  " + logical1 + "\n" +
+            checksum(wear.read_bytes()) + "  " + logical2 + "\n")
+        code, result = self.run_summary("--require-gate", "apk", "--apk-file", logical1 + "=" + str(app))
+        self.assertEqual(code, 2)
+        self.assertEqual(result["gates"]["apk"]["status"], "INCOMPLETE")
+        code, result = self.run_summary("--apk-file", logical1 + "=" + str(app),
+                                        "--apk-file", logical2 + "=" + str(wear))
+        self.assertEqual(code, 0)
+
+    def test_partial_phone_artifact_cannot_hide_behind_green_jvm(self):
+        self.jvm(app=2, wear=0)
+        folder = self.inputs / "TrainPilot-Native-Phone-UI-Evidence"
+        folder.mkdir()
+        (folder / "instrumentation.txt").write_text(instrumentation(2, [0, 0]))
+        code, result = self.run_summary("--require-gate", "jvm", "--require-gate", "phone")
+        self.assertEqual(code, 1)
+        self.assertEqual(result["gates"]["phone"]["status"], "FAILED")
+
+    def test_bad_utf8_log_is_failed_not_pass(self):
+        folder, app, test = self.phone(declared=1, states=[0])
+        (folder / "instrumentation.txt").write_bytes(b"\xff\xfe")
+        code, result = self.run_summary(*self.apk_options(app, test))
+        self.assertEqual(code, 1)
+        self.assertIn("invalid-instrumentation", {x["kind"] for x in result["gates"]["phone"]["issues"]})
+
+    def test_private_multiline_failures_never_enter_reports(self):
+        folder, app, test = self.phone(declared=1, states=[-2])
+        raw = (folder / "instrumentation.txt").read_text()
+        raw = raw.replace("INSTRUMENTATION_STATUS_CODE: -2",
+                          "INSTRUMENTATION_STATUS: stack=https://secrets.invalid/t?token=ABCD\n"
+                          "record a@example.com GPS 46.123,18.234\nINSTRUMENTATION_STATUS_CODE: -2")
+        (folder / "instrumentation.txt").write_text(raw)
+        code, result = self.run_summary(*self.apk_options(app, test))
+        self.assertEqual(code, 1)
+        all_report = self.out.read_text() + self.md.read_text()
+        for secret in ("https://", "ABCD", "a@example.com", "46.123", "18.234"):
+            self.assertNotIn(secret, all_report)
+
+    def test_required_gate_inferred_from_wear_total_and_screenshot(self):
+        self.jvm(app=2, wear=0)
+        code, result = self.run_summary("--wear-total", "183", "--require-screenshot", "home")
+        self.assertEqual(code, 2)
+        self.assertEqual(result["gates"]["phone"]["status"], "INCOMPLETE")
+        self.assertEqual(result["gates"]["wear"]["status"], "INCOMPLETE")
+
+    def test_missing_wear_instrumentation_is_failed(self):
+        self.wear()
+        (self.inputs / f"TrainPilot-Native-Wear-UI-Results-{SHA}-1/instrumentation.txt").unlink()
+        code, result = self.run_summary("--wear-total", "183")
+        self.assertEqual(code, 1)
+        self.assertIn("invalid-instrumentation", {x["kind"] for x in result["gates"]["wear"]["shards"][1]["issues"]})
+
+    def test_duplicate_runner_stream_header_not_success(self):
+        folder, app, test = self.phone(declared=1, states=[0])
+        log = folder / "instrumentation.txt"
+        log.write_text(log.read_text().replace("INSTRUMENTATION_CODE: -1",
+                       "INSTRUMENTATION_RESULT: stream=OK (1 test)\nINSTRUMENTATION_CODE: -1"))
+        code, result = self.run_summary(*self.apk_options(app, test))
+        self.assertEqual(code, 1)
+        self.assertEqual(result["gates"]["phone"]["status"], "FAILED")
+
+    def test_malformed_manifest_and_mismatched_screenshot_name_rejected(self):
+        folder, app, test = self.phone(declared=1, states=[0])
+        manifest = folder / "manifest.json"
+        original = json.loads(manifest.read_text())
+        manifest.write_text("{bad json")
+        code, result = self.run_summary(*self.apk_options(app, test))
+        self.assertEqual(code, 1)
+        self.assertIn("invalid-manifest", {x["kind"] for x in result["gates"]["phone"]["issues"]})
+        original["screenshots"][0]["name"] = "wrong"
+        manifest.write_text(json.dumps(original))
+        code, result = self.run_summary(*self.apk_options(app, test))
+        self.assertEqual(code, 1)
+        self.assertIn("invalid-screenshot-entry", {x["kind"] for x in result["gates"]["phone"]["issues"]})
+
+
 if __name__ == "__main__":
     unittest.main()

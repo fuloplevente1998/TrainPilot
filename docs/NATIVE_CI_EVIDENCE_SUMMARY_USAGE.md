@@ -42,3 +42,43 @@ Gyors szintetikus regresszió:
 ```bash
 python3 -m unittest discover -s tests/native -p 'test_evidence_summary.py' -v
 ```
+
+## PR257 QA — szigorított értelmezés (2026-10-26)
+
+A QA során az instrumentation PASS feltétele az **egyedi, elkezdett és terminális**
+`class#method` esetek, az egyetlen `numtests`, az egyetlen `INSTRUMENTATION_RESULT: stream`
+összesítő, a `OK (N tests)` és az egyetlen sikeres végső runner-kód egyezése.
+`FAILURES!!!`, duplikált eset, ellentmondó számláló, hibás UTF-8 vagy csonka
+bizonylat nem zöld. `skipped`/`assumption` esetek nem teljes PASS-ok.
+A `complete` csak hiba- és skip-mentes, teljesen lezárt futásnál igaz.
+
+JUnit esetén a `<testsuites>` felső totals mezőit is ellenőrzi, ha vannak;
+ugyanazon teszt több terminális eredménye, illetve a testcase/suite számlálók
+ellentmondása hibás forrás. A különböző paraméterindexű testcase-nevek
+önálló tesztek. A PNG-ellenőrzés a CRC mellett a szabványos IHDR beállításait,
+IDAT sorrendet, teljes zlib- és sorhossz-adatot, szűrőbájtokat és IEND/trailing
+adatot is vizsgálja. A jelenlegi konzervatív ellenőrzés az interlaced PNG-t
+nem támogatja: ez *nem* szabad átengedés, hanem sérült/nem támogatható evidencia.
+
+A hash-lista csak akkor PASS, ha **minden** rekordhoz külön megadott APK-fájl
+byte-jai egyeznek; részellenőrzés `INCOMPLETE`. A Wear/JVM artifactok nevében
+szereplő SHA csupán *filename attribution*, nem független kriptográfiai
+commit-bizonyíték. A raw failure szöveget (stack, URL, token, felhasználói rekord,
+GPS) nem írja a JSON/Markdown kivonatba. A `--wear-total` implicit Wear-kérést,
+a `--require-screenshot` és a phone APK argumentumok implicit phone-kérést jelentenek.
+
+QA-referencia, **valós, de csak offline feldolgozott** Actions 40317771457,
+artifactok: phone 12649155506, JVM 12647857246, Wear index0/1/2:
+12647683976/12647489630/12648950089. Kibontás után az eredeti
+`TrainPilot-Native-*` könyvtárneveket megőrizve:
+
+```bash
+python3 scripts/native/evidence-summary.py /path/to/unpacked-40317771457 \
+  --expected-commit e28ab41887a976ee380f63f465dbdcb51f494329 \
+  --require-gate phone --require-gate jvm --require-gate wear --wear-total 183 \
+  --json-out /tmp/pr257-qa.json --markdown-out /tmp/pr257-qa.md
+```
+
+Elvárt exit: `1` / `FAILED` (telefon: 75/75 terminális, 35 PASS, 40 FAIL,
+0 screenshot, *nem* process-crash; JVM app1120/Wear167 PASS; Wear három shard
+183 egyedi PASS). **Nem** új Android/CI futás vagy telefonos UI PASS.

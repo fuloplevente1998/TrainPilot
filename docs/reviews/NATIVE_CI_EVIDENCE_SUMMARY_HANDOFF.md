@@ -30,3 +30,62 @@ Dátum: 2026-10-26. Pinned kiindulás: `e28ab41887a976ee380f63f465dbdcb51f494329
 - A teljes natív CI és készülékes elfogadás Root feladata. A teszt-parser local PASS-ja nem native testsuite PASS.
 - A valós hibás telefonos artifactban nincs screenshot és a folyamat crash miatt hiányos; nincs kitalált 51 eset.
 - Valódi felhasználói adatot, titkot, GPS-koordinátát, token/URL-t a generált kimenetbe nem írunk.
+
+## PR257 célzott QA-follow-up — 2026-10-26
+
+Kiinduló saját HEAD: `0ae38c3c555bdc226458b44e8c9a6b288052786b`.
+A `docs/plans/NATIVE_PR257_QA_FOLLOWUP.md` kérésére ugyanazon saját ágon, #257
+draft PR-on javítottam a parser fail-closed és provenance viselkedését.
+A main és `feat/native-android-migration` csak olvasható; merge/rebase/force-push,
+CI-indítás vagy -újrafuttatás, app/Gradle/workflow módosítás nincs.
+
+### QA során ténylegesen bizonyított hibák és javítások
+
+- Android instrumentation: fals/stack-ben szereplő `OK`, duplikált/ellentmondó
+  `numtests` vagy terminális testcase, runner `FAILURES!!!`, többszörös végső
+  státusz, skip/assumption esetek most nem adhatnak teljes zöldet. A `complete`
+  korábban hibás, de terminálisan lezárt esetnél is igaz lehetett, ezt javítottam.
+  Hiányzó/hibás UTF-8 raw log nem futhat át összeomlás nélkül, hibaként jelenik meg.
+- JUnit XML: az eddig mellőzött `<testsuites>` root-számlálók és az egy testcase-re
+  jutó több eredmény is ellenőrzött; hibás/ambivalens XML elutasítva, paraméterezett
+  `case[0]` és `case[1]` megkülönböztetve.
+- PNG: az előző CRC+zlib ellenőrzés mellett IHDR méret/típus/scanline, IDAT
+  sorrend és IEND/trailing is fail-closed. Hibás, de újrahash-elt PNG sem PASS.
+- APK: részben (egy rekordig) hitelesített többrekordos SHA-lista többé nem PASS.
+  Filename eredet és valódi APK-byte hash külön szerepel a dokumentációban.
+- Hiányzó/hiányos phone/Wear artifact nem tűnhet el forrásfelderítéskor;
+  kötelező kapu implicit flag alapján is ellenőrzött. Korábban hiányzó wear gate
+  mellett a Markdown `KeyError`-ral leállt, ezt kijavítottam.
+- Kimeneti higiénia: nyers exception, token, URI/GPS/record nem kerül a failure
+  excerptbe, hibánál a CLI nem echozza vissza a felhasználói útvonalat.
+
+### Tényleges futtatás, azonos végső forrásból
+
+```bash
+python3 -m py_compile scripts/native/evidence-summary.py tests/native/test_evidence_summary.py
+python3 -m unittest discover -s tests/native -p 'test_evidence_summary.py' -v
+python3 scripts/native/evidence-summary.py /path/to/unpacked-40317771457 \
+  --expected-commit e28ab41887a976ee380f63f465dbdcb51f494329 \
+  --require-gate phone --require-gate jvm --require-gate wear --wear-total 183 \
+  --json-out /tmp/pr257-new.json --markdown-out /tmp/pr257-new.md
+```
+
+- **py_compile PASS**, **32/32 stdlib unittest PASS**. Ezek parser-egységpróbák.
+- Új valós Actions [40317771457](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40317771457):
+  phone artifact **12649155506**, JVM **12647857246**, Wear index0 **12647683976**,
+  index1 **12647489630**, index2 **12648950089**. Read-only kibontott bemenet;
+  **exit 1 / FAILED**: phone **75 terminális /35 PASS /40 FAIL**, 0 screenshot,
+  normal failure closure (nem process crash); app JVM **1120/0/0/0**, Wear JVM
+  **167/0/0/0**; Wear UI **68+56+59=183/183 unique PASS**, három teljes azonos SHA nevű
+  shard. A telefon nem runtime PASS, összesített kapu FAILED.
+- Régi valós [40291546367](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40291546367)
+  ugyanazon új parserrel: **exit 1 / FAILED**, phone **69 declared /18 terminal
+  /12 PASS /6 FAIL/51 missing**, crash, 0 screenshot. JVM **1096+167 PASS**,
+  Wear **183 PASS**, ellenőrizetlen APK checksum-lista **INCOMPLETE**.
+
+### Maradó korlátok
+
+Nem történt új emulátoros/Android kódteszt vagy új Actions futás. Az offline
+artifactnévben lévő SHA nem autentikált commit-attesztáció; az APK-k és képek
+eredetéhez külön, független forrásbizonyíték kell. Interlaced PNG nem támogatott;
+mint minden hiányzó/invalid evidence, nem PASS. Készülékes elfogadás Rootnál.
