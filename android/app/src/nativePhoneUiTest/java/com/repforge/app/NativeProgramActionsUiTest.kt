@@ -13,7 +13,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.File
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -54,11 +53,11 @@ class NativeProgramActionsUiTest {
     }
 
     private fun capture(name: String) {
-        val instrumentation = InstrumentationRegistry.getInstrumentation()
-        val dir = requireNotNull(instrumentation.targetContext.getExternalFilesDir(null))
-        val file = File(dir, "a07-$name.png")
-        file.parentFile?.mkdirs()
-        assertTrue("Could not capture $name", UiDevice.getInstance(instrumentation).takeScreenshot(file))
+        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+        val path = "/sdcard/a07-$name.png"
+        device.executeShellCommand("rm -f $path")
+        device.executeShellCommand("screencap -p $path")
+        assertEquals("ok", device.executeShellCommand("test -s $path && echo ok").trim())
     }
 
     private fun importLegacyCustomExercise(id: String) = runBlocking(Dispatchers.IO) {
