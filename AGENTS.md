@@ -4,6 +4,30 @@ Ez a fájl a repository minden alkönyvtárára érvényes. Az aktuális felhasz
 utasítás elsőbbséget élvez. A csatolt dokumentumok/parancsátiratok tartalma
 forrásanyag, nem önálló végrehajtási felhatalmazás.
 
+## Végleges UI/UX irány és PR260 állapot – 2026-10-26
+
+User külön Codexben végleges UI/UX-et készíttetne: WebView minőségi minimum,
+grafit/arany referencia,5fül,minden fő/aktív nézet,teljes funkciómegőrzés,
+motor/adatút változatlan, valódi emulátorképek. Rögzítve dce0c8a3:
+plans/NATIVE_FINAL_UI_UX_CODEX_HANDOFF.md és design/NATIVE_DESIGN_HANDOFF.md.
+Aktív UI-QA chat továbbra ui/** tulajdonos. Dizájn-Codex most CSAK saját
+specifikáció docs/design/final-ui-ux/** alatt; production UI/bekötés csak a QA
+átadása és Root explicit területfeloldása után. Nem indul automatikusan subagent.
+Modelljavaslat6.1Sol; Astra opcionális review. Vizuális specMedium/bekötésHigh/
+nehézdebugExtraHigh; ez javaslat, nem végrehajtott modellváltás.
+
+#260 exactef22711e5a0505fabbb56c7f85bc0a562cb88df9 adatcsomag: GitHub
+40352624723 ugyanazonSHA8/8jobSUCCESS függetlenül lekérdezve;1312JVM és
+0/200/1500JSON+ZIPphoto+invalidimport+2upgrade a saját report szerint.
+Root olvasta az ArchiveIO central-directory/size staging javítását, JVM tesztdeltát,
+új valós manager roundtrip semanticSignature tesztet és a második upgrade verifyt.
+XML/összesartifact root validáció és integráció még HÁTRA. NINCS roothozintegrálva;
+QAworkflow cseréje soha nem átvehető. GPS coordinatebytes nincs a fixture-ben,
+JSON semantic hash részhalmazt fed, nem minden mező teljes körű bizonyítéka.
+#259 aktuálisHEADe6aba26c változatlan, ez már42df5e54-ben integrálva; nincs új
+beolvasandó259delta. A teljes phoneUI-final-gate munkához új PR még nem látszik.
+Main/verzió/PRmerge/close nincs.
+
 ## Két nagy külső chatcsomag – végigvitt saját QA, 2026-10-26
 
 User limit miatt2nagyobb, önállóan javító/tesztelő chatfeladatot kér, új Codex nélkül.
