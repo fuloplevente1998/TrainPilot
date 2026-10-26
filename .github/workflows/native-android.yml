@@ -94,6 +94,95 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
+      - name: Prepare screenshot-handshake host for existing Home regression
+        shell: bash
+        run: |
+          mkdir -p phone-ui/results/raw phone-ui/results/host-captures
+          cat > phone-ui/home-test-host.py <<'PY'
+          import hashlib
+          import json
+          import pathlib
+          import re
+          import subprocess
+          import time
+
+          output = pathlib.Path("phone-ui/results")
+          app = next(pathlib.Path("phone-ui/apk").rglob("app-debug.apk"))
+          tests = next(pathlib.Path("phone-ui/apk").rglob("app-debug-androidTest.apk"))
+          def adb(*args, timeout=15, check=True):
+              return subprocess.run(("adb", *args), stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, timeout=timeout, check=check).stdout
+          def run_suite(selector, log_name, checkpoint=False):
+              adb("shell", "rm", "-f", "/data/local/tmp/trainpilot-shot-request",
+                  "/data/local/tmp/trainpilot-shot-ack")
+              seen = set()
+              with (output / log_name).open("wb") as log:
+                  cmd = ["adb", "shell", "am", "instrument", "-w", "-r",
+                         "-e", "class", selector,
+                         "com.repforge.app.test/androidx.test.runner.AndroidJUnitRunner"]
+                  proc = subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT)
+                  try:
+                      deadline = time.monotonic() + 420
+                      while proc.poll() is None:
+                          if time.monotonic() > deadline:
+                              raise TimeoutError("Home UI instrumentation exceeded deadline")
+                          if checkpoint:
+                              response = adb("shell", "cat", "/data/local/tmp/trainpilot-shot-request",
+                                             check=False).decode(errors="replace").strip()
+                              if response.startswith("{"):
+                                  try:
+                                      request = json.loads(response)
+                                  except json.JSONDecodeError:
+                                      time.sleep(.1)
+                                      continue
+                                  name = request.get("name", "")
+                                  if not re.fullmatch("[a-z0-9_]{1,120}", name):
+                                      raise ValueError("Invalid screenshot checkpoint: " + name)
+                                  if name not in seen:
+                                      focus = next((line.strip() for line in
+                                          adb("shell", "dumpsys", "window").decode(errors="replace").splitlines()
+                                          if "mCurrentFocus=" in line), "")
+                                      if "com.repforge.app/" not in focus:
+                                          raise RuntimeError("Home screenshot not foreground: " + focus)
+                                      data = adb("exec-out", "screencap", "-p", timeout=12)
+                                      if not data.startswith(bytes((137,80,78,71,13,10,26,10))) or len(data) < 512:
+                                          raise RuntimeError("Missing raw framebuffer image")
+                                      shot = output / "host-captures" / (name + ".png")
+                                      shot.write_bytes(data)
+                                      seen.add(name)
+                                      adb("shell", "sh", "-c",
+                                          "printf '%s' '" + name + "' > /data/local/tmp/trainpilot-shot-ack")
+                          time.sleep(.15)
+                      return proc.returncode, seen
+                  finally:
+                      if proc.poll() is None:
+                          proc.terminate()
+                          try:
+                              proc.wait(timeout=10)
+                          except subprocess.TimeoutExpired:
+                              proc.kill()
+                              proc.wait(timeout=5)
+
+          adb("install", "-r", str(app), timeout=90)
+          adb("install", "-r", str(tests), timeout=90)
+          results = []
+          cases = [
+              ("com.repforge.app.NativeHomeRecoveryUiTest", "instrumentation.txt", False),
+              ("com.repforge.app.NativePhoneNavigationTest#homeTracksPlanSettingsProgramAndHistoryChangesAndStartsTheDisplayedSchedule",
+               "existing-home-instrumentation.txt", True)
+          ]
+          for cls, filename, checkpoint in cases:
+              code, shots = run_suite(cls, filename, checkpoint)
+              results.append({"testClass": cls, "adbExitCode": code,
+                              "hostScreenshotCount": len(shots)})
+          for name in ("samsung", "fallback", "none", "locale-hu", "locale-en", "locale-de", "locale-ro"):
+              target = output / "raw" / ("native-home-" + name + ".png")
+              target.write_bytes(adb("exec-out", "cat", "/sdcard/Download/native-home-" + name + ".png", timeout=30))
+              if target.stat().st_size < 512:
+                  raise RuntimeError("PNG capture missing: " + name)
+          (output / "host-result.json").write_text(json.dumps(results, indent=2))
+          print("Scoped host tests:", results)
+          PY
       - name: Run isolated Home UI tests on disposable API35 emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -105,22 +194,7 @@ jobs:
           disk-size: 6000M
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: |
-            mkdir -p phone-ui/results/raw
-            find phone-ui/apk -type f -name '*.apk' -print
-            test -s "$(find phone-ui/apk -type f -name 'app-debug.apk' -print -quit)"
-            test -s "$(find phone-ui/apk -type f -name 'app-debug-androidTest.apk' -print -quit)"
-            adb install -r "$(find phone-ui/apk -type f -name 'app-debug.apk' -print -quit)"
-            adb install -r "$(find phone-ui/apk -type f -name 'app-debug-androidTest.apk' -print -quit)"
-            adb shell am instrument -w -r -e class com.repforge.app.NativeHomeRecoveryUiTest com.repforge.app.test/androidx.test.runner.AndroidJUnitRunner | tee phone-ui/results/instrumentation.txt
-            adb shell am instrument -w -r -e class 'com.repforge.app.NativePhoneNavigationTest#homeTracksPlanSettingsProgramAndHistoryChangesAndStartsTheDisplayedSchedule' com.repforge.app.test/androidx.test.runner.AndroidJUnitRunner | tee phone-ui/results/existing-home-instrumentation.txt
-            adb pull /sdcard/Download/native-home-samsung.png phone-ui/results/raw/native-home-samsung.png
-            adb pull /sdcard/Download/native-home-fallback.png phone-ui/results/raw/native-home-fallback.png
-            adb pull /sdcard/Download/native-home-none.png phone-ui/results/raw/native-home-none.png
-            adb pull /sdcard/Download/native-home-locale-hu.png phone-ui/results/raw/native-home-locale-hu.png
-            adb pull /sdcard/Download/native-home-locale-en.png phone-ui/results/raw/native-home-locale-en.png
-            adb pull /sdcard/Download/native-home-locale-de.png phone-ui/results/raw/native-home-locale-de.png
-            adb pull /sdcard/Download/native-home-locale-ro.png phone-ui/results/raw/native-home-locale-ro.png
+          script: python3 phone-ui/home-test-host.py
       - name: Validate real UI terminal results, original PNGs, and evidence hash
         shell: bash
         run: |
@@ -129,7 +203,6 @@ jobs:
           import pathlib
           import re
           import xml.etree.ElementTree as ET
-          from collections import Counter
           results = pathlib.Path('phone-ui/results')
           expected = {
               'verifiedSamsungOnRealHomeAndRawScreenshot',
@@ -165,12 +238,17 @@ jobs:
           print('Home tests', new, 'existing Home regression', old)
           assert not failures and set(passed) == expected and len(passed) == 4, 'Home new UI cases did not all pass'
           assert len(old) == 1 and old[0][1] == 0 and 'homeTracksPlanSettings' in old[0][0], 'Existing Home UI failed'
+          import json
+          host = json.loads((results / 'host-result.json').read_text())
+          assert len(host) == 2 and all(x['adbExitCode'] == 0 for x in host), host
+          assert host[1]['hostScreenshotCount'] >= 2, 'Existing Home screenshots missing'
+          assert len(list((results / 'host-captures').glob('*.png'))) >= 2, 'No raw host screenshots'
           shots = ['samsung','fallback','none','locale-hu','locale-en','locale-de','locale-ro']
           for name in shots:
               shot = results / 'raw' / ('native-home-' + name + '.png')
               assert shot.stat().st_size > 512 and shot.read_bytes()[:8] == bytes((137,80,78,71,13,10,26,10)), shot
           PY
-          (cd phone-ui/results && sha256sum instrumentation.txt existing-home-instrumentation.txt native-home-junit.xml raw/*.png > SHA256SUMS.txt)
+          (cd phone-ui/results && sha256sum instrumentation.txt existing-home-instrumentation.txt native-home-junit.xml host-result.json raw/*.png host-captures/*.png > SHA256SUMS.txt)
       - name: Upload unmodified PNG + raw runner log + parsed XML + SHA256
         if: always()
         uses: actions/upload-artifact@v4
