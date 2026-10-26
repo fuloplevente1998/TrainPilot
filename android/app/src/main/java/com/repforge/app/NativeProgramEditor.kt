@@ -192,7 +192,13 @@ internal object NativeProgramEditor {
                 check(restored.entries == (0 until JSONArray(factoryDay.exercisesJson).length()).map { ix ->
                     encodeEntry(JSONArray(factoryDay.exercisesJson).get(ix))
                 }) { "Factory preview changed; reopen preview" }
-                check(restorePrescriptionIds == restored.entries.map(::exerciseId).toSet()) {
+                val factoryIds = restored.entries.map(::exerciseId).toSet()
+                val storedRx = JSONObject(original.program.rawJson).optJSONObject("prescriptions")
+                val editableKeys = setOf("sets", "reps", "weight", "rest", "trial")
+                val actualChanges = factoryIds.filter { id ->
+                    storedRx?.optJSONObject(id)?.keys()?.asSequence()?.any { it in editableKeys } == true
+                }.toSet()
+                check(restorePrescriptionIds == actualChanges) {
                     "Factory recipe preview changed; reopen preview"
                 }
             }
@@ -245,10 +251,19 @@ internal object NativeProgramEditor {
             val originalJson = originalProgram?.rawJson?.let { JSONObject(it) } ?: JSONObject()
             val prescriptions = originalJson.optJSONObject("prescriptions")?.let { JSONObject(it.toString()) } ?: JSONObject()
             if (restoreProgram != null) {
-                val sourceRx = JSONObject(restoreProgram.program.rawJson).optJSONObject("prescriptions")
+                val factoryRx = JSONObject(restoreProgram.program.rawJson).optJSONObject("prescriptions")
+                val editableKeys = setOf("sets", "reps", "weight", "rest", "trial")
                 for (exerciseId in restorePrescriptionIds) {
-                    prescriptions.remove(exerciseId)
-                    sourceRx?.optJSONObject(exerciseId)?.let { prescriptions.put(exerciseId, JSONObject(it.toString())) }
+                    // Reset only the editable recipe fields. Keep unknown raw extensions
+                    // (e.g. future schema fields, variation, RIR, user lineage) untouched.
+                    val merged = JSONObject(prescriptions.getJSONObject(exerciseId).toString())
+                    val defaults = factoryRx?.optJSONObject(exerciseId)
+                    for (key in editableKeys) {
+                        if (defaults?.has(key) == true) merged.put(key, defaults.get(key))
+                        else merged.remove(key)
+                    }
+                    if (merged.length() == 0) prescriptions.remove(exerciseId)
+                    else prescriptions.put(exerciseId, merged)
                 }
             }
             val entriesByExercise = d.days.flatMap { it.entries }.groupBy(::exerciseId)
