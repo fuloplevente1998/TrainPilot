@@ -4,11 +4,16 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.UiDevice
 import com.repforge.app.data.db.ProgramWithDays
+import com.repforge.app.data.migration.LegacyWebViewMigrator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
+import org.json.JSONObject
+import java.io.File
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -46,6 +51,25 @@ class NativeProgramActionsUiTest {
         NativeProgramEditor.save(fixture.context, fixture.database,
             source, NativeProgramEditor.from(source, "hu"), "hu",
             actionToken = "ui-restore-case-${java.util.UUID.randomUUID()}")
+    }
+
+    private fun capture(name: String) {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val dir = requireNotNull(instrumentation.targetContext.getExternalFilesDir(null))
+        val file = File(dir, "a07-$name.png")
+        file.parentFile?.mkdirs()
+        assertTrue("Could not capture $name", UiDevice.getInstance(instrumentation).takeScreenshot(file))
+    }
+
+    private fun importLegacyCustomExercise(id: String) = runBlocking(Dispatchers.IO) {
+        val custom = JSONObject()
+            .put("id", id).put("custom", true)
+            .put("hu", "Örökölt saját").put("en", "Legacy custom")
+            .put("de", "Importierte eigene Übung").put("ro", "Exercițiu importat")
+            .put("notesDe", "A07").put("loadType", "total").put("repUnit", "ism.")
+            .put("measurementType", "reps").put("sets", 3).put("reps", "8").put("weight", 12)
+        LegacyWebViewMigrator(fixture.context, fixture.database, fixture.settings)
+            .importBackupJson(JSONObject().put("exercises", JSONArray().put(custom)), false)
     }
 
     private fun changeDayA(id: String) = runBlocking(Dispatchers.IO) {
@@ -104,6 +128,7 @@ class NativeProgramActionsUiTest {
         val factory = program("home-basic")
         launchPrograms()
         openDayRestore(copyId)
+        capture("preview-cancel")
         compose.onNodeWithTag("program_restore_cancel").performClick()
         assertEquals(before, program(copyId))
         openDayRestore(copyId)
@@ -112,9 +137,33 @@ class NativeProgramActionsUiTest {
             program(copyId).days.single { it.dayId == "A" }.exercisesJson ==
                 factory.days.single { it.dayId == "A" }.exercisesJson
         }
+        capture("confirmed")
         val saved = program(copyId)
         assertEquals(before.days.single { it.dayId == "B" }, saved.days.single { it.dayId == "B" })
         assertEquals(factory, program("home-basic"))
+    }
+
+    @Test fun migratedCustomCatalogRowSurvivesConfirmedFactoryDayRestore() {
+        val importedId = "legacy-a07-ui-custom"
+        importLegacyCustomExercise(importedId)
+        val importedBefore = runBlocking(Dispatchers.IO) {
+            fixture.database.exerciseLibraryDao().getExerciseById(importedId)!!
+        }
+        val copyId = newFactoryCopy()
+        changeDayA(copyId)
+        launchPrograms()
+        openDayRestore(copyId)
+        capture("migrated-preview")
+        compose.onNodeWithTag("program_restore_confirm").performClick()
+        compose.waitUntil(15_000) {
+            program(copyId).days.single { it.dayId == "A" }.exercisesJson ==
+                program("home-basic").days.single { it.dayId == "A" }.exercisesJson
+        }
+        val importedAfter = runBlocking(Dispatchers.IO) {
+            fixture.database.exerciseLibraryDao().getExerciseById(importedId)!!
+        }
+        assertEquals(importedBefore, importedAfter)
+        assertTrue(importedAfter.custom)
     }
 
     @Test fun staleProgramAfterPreviewIsRejectedAndLeavesLaterEditUntouched() {
@@ -131,6 +180,7 @@ class NativeProgramActionsUiTest {
         compose.waitUntil(15_000) {
             compose.onAllNodesWithTag("program_restore_error").fetchSemanticsNodes().isNotEmpty()
         }
+        capture("stale-error")
         assertEquals("Changed after preview", program(copyId).program.nameHu)
         assertEquals(late.days.single { it.dayId == "A" }.exercisesJson,
             program(copyId).days.single { it.dayId == "A" }.exercisesJson)
