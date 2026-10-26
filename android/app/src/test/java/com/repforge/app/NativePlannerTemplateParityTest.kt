@@ -26,9 +26,12 @@ class NativePlannerTemplateParityTest(private val name: String, private val data
         val (programs, days) = TrainPilotDatabase.defaultPrograms()
         val source = ProgramWithDays(programs.first { it.id == id }, days.filter { it.programId == id })
         if (data.optBoolean("rejected")) {
-            assertThrows(IllegalArgumentException::class.java) {
+            val error = assertThrows(IllegalArgumentException::class.java) {
                 NativeProfileProgramPreview.preview(source, profile.toString(), TrainPilotDatabase.defaultExercises(), "en")
             }
+            // main-plan-7 is rejected by final main's exclusion-ID validation,
+            // not merely by any later empty-day or time-budget guard.
+            if (name == "main-plan-7") assertEquals("Invalid exercise exclusion", error.message)
             return
         }
         val result = NativeProfileProgramPreview.preview(source, profile.toString(), TrainPilotDatabase.defaultExercises(), "en")

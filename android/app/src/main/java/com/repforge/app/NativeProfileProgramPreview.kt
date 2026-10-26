@@ -70,6 +70,13 @@ internal object NativeProfileProgramPreview {
         val areas = avoidedMuscles(keys(profile, "avoidAreas"))
         val beginner = profile.optString("experience") == "beginner"
         val catalogById = catalog.associateBy { it.id }
+        // Final main validateProfile rejects unknown exclusion IDs before generating a plan.
+        // Never silently ignore a typo/removed exercise and prescribe a substitute instead.
+        profile.optJSONArray("excluded")?.let { entries ->
+            require((0 until entries.length()).all { catalogById.containsKey(entries.getString(it)) }) {
+                "Invalid exercise exclusion"
+            }
+        }
         fun exclusionReason(id: String, ex: ExerciseLibraryEntity?): String = when {
             ex == null -> "missing"
             id in excluded -> "excluded"
