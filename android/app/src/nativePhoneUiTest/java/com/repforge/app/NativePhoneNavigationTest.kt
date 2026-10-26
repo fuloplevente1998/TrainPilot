@@ -260,7 +260,11 @@ class NativePhoneNavigationTest {
     @Test fun intervalConfigurationIsWorkoutScopedUntilGlobalDefaultIsExplicitlyChosen() {
         runBlocking { NativeWorkoutSession.startQuickWorkout(context, "plank", false) }
         launch(); tab("training")
+        compose.onNodeWithTag("active_workout_exercises")
+            .performScrollToNode(hasTestTag("interval_options"))
         compose.onNodeWithTag("interval_options").performScrollTo().performClick()
+        compose.onNodeWithTag("active_workout_exercises")
+            .performScrollToNode(hasTestTag("interval_auto_advance"))
         compose.onNodeWithTag("interval_auto_advance").performScrollTo().performClick()
         compose.onNodeWithTag("interval_save").performScrollTo().performClick()
         compose.waitUntil(10000) { snapshot()?.optJSONObject("timerConfig")?.optBoolean("autoAdvance", true) == false }
