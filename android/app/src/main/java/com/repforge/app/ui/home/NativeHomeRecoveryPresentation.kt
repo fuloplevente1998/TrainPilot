@@ -12,7 +12,7 @@ import java.time.ZoneId
  * load or pain; the Home energy tile must never display that capped Coach score.
  * No persisted data is changed and no synthetic provider reading is produced.
  */
-internal object NativeHomeRecoveryPresentation {
+object NativeHomeRecoveryPresentation {
     enum class Source { SAMSUNG, TRAINPILOT_ESTIMATE, NONE }
 
     data class Model(
@@ -67,7 +67,7 @@ internal object NativeHomeRecoveryPresentation {
                 is String -> raw.trim().toDoubleOrNull()
                 else -> null
             }
-            if (numeric != 0.0 || !numeric.isFinite()) continue
+            if (numeric == null || !numeric.isFinite() || numeric != 0.0) continue
             val probe = JSONObject(record.toString()).put("energyScore", 1.0)
             val verification = NativeCoachReadiness.calculate(
                 signals.recovery, signals.daily, history, now, zone,
