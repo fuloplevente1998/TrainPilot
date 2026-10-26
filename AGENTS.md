@@ -144,6 +144,20 @@ következik; statikus ellenőrzés és Node validator PASS nem natív runtime.
   párhuzamosan. Root közös integráció/gate és maradék leltár. Nem belső agent-
   felhatalmazás. Új teljes CI és main merge továbbra központilag koordinált.
 
+## Aktuális új kiosztás – 2026-10-26
+
+- Felhasználói módosítás: NINCS Gemini feladat; egy külön Codex implementál,
+  két Plus chat GitHub-hozzáféréssel dolgozik, Root mindent review-z/integrál.
+- Pinned e9278a99 bázis. Teljes szerződések:
+  docs/plans/NATIVE_HEALTH_SYNC_COMPLETION_CODEX_HANDOFF.md (Health sync30nap/
+  changes; meglévő Health/JournalStore/Refresh/Dashboard/gates írható);
+  docs/plans/NATIVE_FINAL_FEATURE_INVENTORY_PLUS_HANDOFF.md (csak két auditriport);
+  docs/plans/NATIVE_THEME_CONTRAST_PLUS_HANDOFF.md (themeTokens/TrainPilotTheme/
+  NativeThemePicker és külön saját teszt/resource/riport). Store/mapper theme chatnek readonly.
+- Átadásra kész, indulás még nem igazolt. Az írási területek foglaltak; Root nem
+  kezd párhuzamos feature-implementációt. Közös CI és szükséges integrációs fix
+  Rootnál, külön koordinációval. Nem belső subagent-felhatalmazás.
+
 ## Felhasználói thinking-fázisok (2026-10-24)
 
 - Kódolás, funkciók és meglévő blokkok bekötése: a felhasználó **High** módot használ.

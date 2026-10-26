@@ -4,6 +4,27 @@ Frissítve: **2026-10-26**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Új munkamegosztás: 1 Codex +2 Plus chat – 2026-10-26
+
+A felhasználó felülírta a Gemini/AI Studio kiosztást: Gemini most nem kap munkát.
+A fő munkás integrátor/reviewer és a közös CI gazdája marad. Három teljes standalone
+prompt pinned e9278a9905629d30d012083e8dd3a4c76051a464 bázison (app3d45a324):
+- plans/NATIVE_HEALTH_SYNC_COMPLETION_CODEX_HANDOFF.md: külön Codex nagyobb
+  Health30nap/full/incremental implementáció, saját feat/native-health-sync-completion.
+  Health repos/JournalStore sync API/Refresh/HealthDashboard/gate fájlok foglaltak.
+- plans/NATIVE_FINAL_FEATURE_INVENTORY_PLUS_HANDOFF.md: PlusA teljes main→natív
+  funkció/UI/test/bizonyíték matrix, csak két saját riport írható, audit/native-final-feature-inventory.
+- plans/NATIVE_THEME_CONTRAST_PLUS_HANDOFF.md: PlusB teljes katalógus/numerikus
+  kontraszt és minimális token/picker javítás, fix/native-theme-contrast-parity;
+  theme2fájl+NativeThemePicker és új saját teszt/resource/report, store/mapper readonly.
+
+Mindhárom saját draft PR célmigration; main/version/schema/workflow/élő install
+változatlan, nincs új belső subagent. Indulás még nem visszaigazolt, átadott írási
+területeket Root ne írja párhuzamosan, kivéve igazolt szükséges közös CI-fix külön
+koordinációval. Más meglévő fájlra csak külön patchjavaslat. Minden promptban
+exact raw linkek, kötelező fájllista és DONE/BLOCKED/bizonyíték szerződés.
+Közös40276384595 CI továbbra integrátornál; kiosztás miatt új kapu nem indult.
+
 ## CI-import javítás és tényleges hátralévő kapuk – 2026-10-26
 
 A40275657585 futás FAIL: compileDebugAndroidTestKotlin, NativeTrainingModesUiTest
