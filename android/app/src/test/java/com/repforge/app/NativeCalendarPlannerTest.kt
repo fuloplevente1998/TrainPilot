@@ -91,4 +91,31 @@ class NativeCalendarPlannerTest {
         assertEquals(completed, db.calendarScheduleDao().getEntry(completed.id))
         assertEquals(active, db.calendarScheduleDao().getEntry(active.id))
     }
+    @Test fun changedPlannerDocumentRejectsStalePreview() = runTest {
+        val preview = repo.preview(settings())
+        db.keyValueDocumentDao().putDocument(com.repforge.app.data.db.KeyValueDocumentEntity("plannerSettings", "{}", 1))
+        assertTrue(runCatching { repo.applyPreview(preview) }.isFailure)
+        assertTrue(db.calendarScheduleDao().getAllEntries().isEmpty())
+    }
+    @Test fun changedProgramRejectsStalePreview() = runTest {
+        val preview = repo.preview(settings())
+        db.programDao().upsertProgram(preview.program.program.copy(updatedAt = preview.program.program.updatedAt + 1))
+        assertTrue(runCatching { repo.applyPreview(preview) }.isFailure)
+        assertNull(repo.plannerSettings())
+    }
+    @Test fun reducingPlanKeepsIdentitiesAndCreatesCancellationTombstones() = runTest {
+        val initial = settings()
+        val before = repo.applyPreview(repo.preview(initial))
+        val after = repo.applyPreview(repo.preview(initial.copy(mode = "alternate")))
+        assertEquals(14, after.size)
+        after.forEach { row -> assertEquals(before.single { it.date == row.date }.googleEventId, row.googleEventId) }
+        val all = db.calendarScheduleDao().getAllEntries()
+        assertEquals(14, all.count { NativeCalendarRepository.cancelled(it) })
+        assertEquals(before.map { it.id }.toSet(), all.map { it.id }.toSet())
+    }
+    @Test fun springDstGapRejectsWholePreview() = runTest {
+        val value = settings().copy(start = LocalDate.of(2026, 3, 29), time = LocalTime.of(2, 30), weeks = 1)
+        assertTrue(runCatching { repo.preview(value, ZoneId.of("Europe/Budapest")) }.isFailure)
+        assertTrue(db.calendarScheduleDao().getAllEntries().isEmpty())
+    }
 }
