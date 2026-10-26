@@ -2,6 +2,7 @@ name: Native Android and Wear OS APK
 
 on:
   workflow_dispatch:
+  # Own-branch runtime QA iteration 2: all phone cases + four isolated GPS cases.
   push:
     branches:
       - feat/native-android-migration
