@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_program_actions_restore">Gyári A/B nap</string>
+    <string name="native_program_actions_title">%1$s nap gyári visszaállítása</string>
+    <string name="native_program_actions_scope">Csak a kiválasztott nap és az érintett programrecept-módosítások változnak. A napló, fotók, GPS, Health és a többi program megmarad.</string>
+    <string name="native_program_actions_before">Jelenlegi gyakorlatsor</string>
+    <string name="native_program_actions_after">Gyári gyakorlatsor</string>
+    <string name="native_program_actions_recipe">Gyári receptre visszaálló gyakorlat-azonosítók: %1$s</string>
+    <string name="native_program_actions_shared">Figyelem: a közös recept a következő másik programnapot is érintheti: %1$s</string>
+    <string name="native_program_actions_confirm">Visszaállítás</string>
+    <string name="native_program_actions_cancel">Mégse</string>
+</resources>
