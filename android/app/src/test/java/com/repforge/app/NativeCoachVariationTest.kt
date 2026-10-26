@@ -7,6 +7,13 @@ import com.repforge.app.data.migration.LegacyWebViewMigrator
 import com.repforge.app.data.store.TrainPilotSettingsStore
 import com.repforge.app.ui.coach.*
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.*
@@ -18,9 +25,11 @@ import org.robolectric.annotation.Config
 import java.time.Instant
 import java.time.Duration
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33], manifest = Config.NONE)
 class NativeCoachVariationTest {
+    private val dispatcher = StandardTestDispatcher()
     private lateinit var context: Context
     private lateinit var db: TrainPilotDatabase
     private lateinit var settings: TrainPilotSettingsStore
@@ -31,6 +40,7 @@ class NativeCoachVariationTest {
     private val profile get() = JSONObject().put("minutes", 60).put("gear", JSONArray().put("bench"))
         .put("experience", "intermediate").put("goal", "fitness").put("activity", "office")
     @Before fun open() = runBlocking {
+        Dispatchers.setMain(dispatcher)
         context = RuntimeEnvironment.getApplication()
         context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE).edit().clear().commit()
         ActiveWorkoutStore.clear(context)
@@ -52,7 +62,10 @@ class NativeCoachVariationTest {
         variations = NativeCoachVariation(context, db)
         for (i in 1..3) workout("w-$i", i)
     }
-    @After fun close() { db.close() }
+    @After fun close() {
+        db.close()
+        Dispatchers.resetMain()
+    }
     private suspend fun workout(id: String, days: Int, effort: String = "good") {
         val end = clock.minus(Duration.ofDays(days.toLong()))
         val sets = JSONArray((0..1).map { i -> JSONObject().put("setId", "$id-$i").put("done", true).put("reps", "15").put("weight", 0) })
@@ -66,7 +79,7 @@ class NativeCoachVariationTest {
         try { block() } catch (error: Exception) { failure = error }
         assertNotNull(failure)
     }
-    @Test fun stableThreeSessionsOfferReadOnlyPreviewWithoutChangingAnyProgram() = runBlocking {
+    @Test fun stableThreeSessionsOfferReadOnlyPreviewWithoutChangingAnyProgram() = runTest(dispatcher) {
         val source = db.programDao().getProgramWithDaysById("p")
         val p = variations.preview(target, "pushup")
         assertEquals("decline-pushup", p.next.exerciseId)
@@ -74,9 +87,16 @@ class NativeCoachVariationTest {
         assertEquals(listOf("p"), db.programDao().getProgramIds())
         assertEquals("p", settings.current().activeProgramId)
     }
-    @Test fun confirmationCreatesSeparateCoachProgramEvenForAnOwnSourceProgram() = runBlocking {
+    @Test fun confirmationCreatesSeparateCoachProgramEvenForAnOwnSourceProgram() = runTest(dispatcher) {
         val source = db.programDao().getProgramWithDaysById("p")
-        val id = variations.save(variations.preview(target, "pushup"))
+        // Room's transaction executes on its own thread and must return to the real
+        // main-confined execution snapshot. runTest pumps that dispatcher instead
+        // of blocking Robolectric's paused main looper (CI previously hung here).
+        val opened = variations.preview(target, "pushup")
+        val id = withContext(Dispatchers.IO) {
+            assertNotEquals(android.os.Looper.getMainLooper(), android.os.Looper.myLooper())
+            variations.save(opened)
+        }
         assertNotEquals("p", id)
         assertEquals(source, db.programDao().getProgramWithDaysById("p"))
         val copy = db.programDao().getProgramWithDaysById(id)!!
@@ -87,40 +107,40 @@ class NativeCoachVariationTest {
         assertEquals("p", settings.current().activeProgramId) // Activation is explicitly separate in this UI.
         for (i in 1..3) assertNotNull(db.workoutHistoryDao().getWorkoutWithDetails("w-$i"))
     }
-    @Test fun twoSessionsCannotAuthorizeVariation() = runBlocking {
+    @Test fun twoSessionsCannotAuthorizeVariation() = runTest(dispatcher) {
         db.workoutHistoryDao().deleteWorkoutByIdOrKey("w-3")
         rejects { variations.preview(target, "pushup") }
     }
-    @Test fun freshPainBlocksVariationAndOldPreviewApproval() = runBlocking {
+    @Test fun freshPainBlocksVariationAndOldPreviewApproval() = runTest(dispatcher) {
         val opened = variations.preview(target, "pushup")
         workout("w-1", 1, "pain")
         rejects { variations.preview(target, "pushup") }
         rejects { variations.save(opened) }
         assertEquals(listOf("p"), db.programDao().getProgramIds())
     }
-    @Test fun changedProfileInvalidatesPreviewEvenWhenSuggestionIsStillValid() = runBlocking {
+    @Test fun changedProfileInvalidatesPreviewEvenWhenSuggestionIsStillValid() = runTest(dispatcher) {
         val opened = variations.preview(target, "pushup")
         settings.saveTrainingProfile(profile.put("minutes", 90))
         rejects { variations.save(opened) }
         assertEquals(listOf("p"), db.programDao().getProgramIds())
     }
-    @Test fun missingBenchUsesPausedOriginalInsteadOfUnavailableVariation() = runBlocking {
+    @Test fun missingBenchUsesPausedOriginalInsteadOfUnavailableVariation() = runTest(dispatcher) {
         settings.saveTrainingProfile(profile.put("gear", JSONArray()))
         val p = variations.preview(target, "pushup")
         assertEquals("pushup", p.next.exerciseId); assertEquals("paused", p.next.name)
     }
-    @Test fun excludedCurrentMovementCannotBeProgressed() = runBlocking {
+    @Test fun excludedCurrentMovementCannotBeProgressed() = runTest(dispatcher) {
         settings.saveTrainingProfile(profile.put("excluded", JSONArray().put("pushup")))
         rejects { variations.preview(target, "pushup") }
     }
-    @Test fun sourceProgramChangeRejectsAnAlreadyOpenedPreview() = runBlocking {
+    @Test fun sourceProgramChangeRejectsAnAlreadyOpenedPreview() = runTest(dispatcher) {
         val p = variations.preview(target, "pushup")
         val row = db.programDao().getProgramWithDaysById("p")!!.program
         db.programDao().upsertProgram(row.copy(nameHu = "Changed"))
         rejects { variations.save(p) }
         assertEquals(listOf("p"), db.programDao().getProgramIds())
     }
-    @Test fun restoreFenceBlocksPreviewAndApproval() = runBlocking {
+    @Test fun restoreFenceBlocksPreviewAndApproval() = runTest(dispatcher) {
         val p = variations.preview(target, "pushup")
         context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE).edit().putBoolean("blocked", true).commit()
         try { rejects { variations.preview(target, "pushup") }; rejects { variations.save(p) } }
