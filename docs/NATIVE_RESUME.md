@@ -19,6 +19,22 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
   High kód; Medium vizuális dizájn előtt jelezni; Extra High komoly végső debug előtt.
   Kevés lényegi magyar output, nincs belső subagent külön kérés nélkül. PR238 követőlap.
 
+## Legutóbbi kapu – onboarding teszt-compiler fix, 2026-10-26
+
+Checkout/teszt **771d90a9e1033f647fc17f84f0eb687d0640d19c**, appkód továbbra f72c9cb0.
+A40315675080 run telefon/Wear debug +phone UI-test APK fordítása PASS, a JVM-teszt
+fordítás NativeOnboardingStateTest három `p.Destination` hivatkozásán FAIL. Kotlin
+nested enumot a típuson kell címezni, nem az objecthez rendelt lokális változón:
+771d90a9 csak `NativeOnboardingPolicy.Destination`-ra javítja, assert/motor változatlan.
+Ez a run nem futtatott új JVM/UI/R8/upgrade elfogadást.
+
+**Aktuális egyetlen run40316447151**, exact checkout771d90a9:
+https://github.com/fuloplevente1998/TrainPilot/actions/runs/40316447151
+Indításkor IN_PROGRESS. Ezt ellenőrizd, ne a lentebbi korábbi futást és ne indíts
+másolatot. A1120 várt új JVM-eset nem futási eredmény: csak a kapu/XML alapján
+jelenthető. Main/package/version változatlan, PR252–254 integrálva, külső draftok
+nyitva; új code delta csak az átadott exact SHA-k óta. Élő adat fölé install STOP.
+
 ## PR252–254 integrálva; UI-debug és új közös kapu – 2026-10-26
 
 Legfrissebb app/teszt **f72c9cb0c8e336ab6cc4073d3005e7d30b3ed7fd**.

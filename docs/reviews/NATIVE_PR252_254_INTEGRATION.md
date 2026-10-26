@@ -70,3 +70,11 @@ Raw evidence: artifact12636867224, instrumentation/logcat/manifest. Hibák:
 https://github.com/fuloplevente1998/TrainPilot/actions/runs/40315675080
 Indításkor IN_PROGRESS. Ne indíts második teljes kaput. Main/verzió/élő adatok
 változatlanok; emulátoros upgrade PASS nem általános saját adatos install-engedély.
+
+## Követő compiler-javítás
+
+40315675080 debug/app+phone UI-test APK fordult, de compileDebugUnitTestKotlin
+NativeOnboardingStateTest három p.Destination hivatkozása nem oldható fel.
+771d90a9 csak teljes NativeOnboardingPolicy.Destination típusnevet használ,
+assert és appforrás változatlan. Új egyetlen40316447151 checkout771d90a9,
+indításkor IN_PROGRESS; az új24JVM/6UI még nem igazolt elfogadás.
