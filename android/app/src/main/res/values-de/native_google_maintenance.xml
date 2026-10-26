@@ -11,6 +11,6 @@
     <string name="google_maintenance_confirm">Bestätigen</string>
     <string name="google_maintenance_cancel">Abbrechen</string>
     <string name="google_maintenance_done">Abgeschlossen: %1$d Vorgänge. Lokale Daten erhalten.</string>
-    <string name="google_maintenance_partial">Mindestens %1$d Löschungen bestätigt. Vorgang unvollständig; Ergebnis der letzten Anfrage eventuell ungewiss. Konto prüfen. Zum Wiederholen erneut öffnen und bestätigen.</string>
+    <string name="google_maintenance_partial">Mindestens %1$d Fernvorgänge bestätigt. Vorgang unvollständig; Ergebnis der letzten Anfrage eventuell ungewiss. Konto prüfen. Zum Wiederholen erneut öffnen und bestätigen.</string>
     <string name="google_maintenance_failed">Vorgang fehlgeschlagen. Konto, Berechtigungen und Trainings-/Sync-Status prüfen. Wiederholen erfordert eine neue Bestätigung.</string>
 </resources>

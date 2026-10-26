@@ -55,7 +55,7 @@ class NativeGoogleMaintenanceUiTest {
                 TrainPilotTheme(TrainPilotUserSettings()) { NativeGoogleMaintenanceFeedback("en", "partial", 2) }
             } }
         }
-        compose.onNodeWithTag("google_maintenance_result").assertTextContains("At least 2 deletions confirmed", substring = true)
+        compose.onNodeWithTag("google_maintenance_result").assertTextContains("At least 2 remote operations confirmed", substring = true)
         compose.onNodeWithTag("google_maintenance_result").assertTextContains("incomplete", substring = true)
     }
     @Test fun actualSettingsConfirmationFailsBeforeOauthWhenBackupStartsAfterPreview() {

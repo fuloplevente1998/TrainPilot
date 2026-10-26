@@ -11,6 +11,6 @@
     <string name="google_maintenance_confirm">Confirm</string>
     <string name="google_maintenance_cancel">Cancel</string>
     <string name="google_maintenance_done">Completed: %1$d operations. Local data retained.</string>
-    <string name="google_maintenance_partial">At least %1$d deletions confirmed. The operation is incomplete; the last remote request may have an uncertain result. Check the account. Open and confirm again to retry.</string>
+    <string name="google_maintenance_partial">At least %1$d remote operations confirmed. The operation is incomplete; the last remote request may have an uncertain result. Check the account. Open and confirm again to retry.</string>
     <string name="google_maintenance_failed">Operation failed. Check the account, permissions and workout/sync status. Retrying requires separate confirmation.</string>
 </resources>

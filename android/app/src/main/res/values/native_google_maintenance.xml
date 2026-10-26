@@ -11,6 +11,6 @@
     <string name="google_maintenance_confirm">Megerősítem</string>
     <string name="google_maintenance_cancel">Mégse</string>
     <string name="google_maintenance_done">Befejezve: %1$d művelet. A helyi adatok megmaradtak.</string>
-    <string name="google_maintenance_partial">Legalább %1$d törlés visszaigazolva. A művelet nem fejeződött be; az utolsó kérés távoli eredménye bizonytalan lehet. Ellenőrizd a fiókot. Újrapróbáláshoz nyisd meg újra és erősítsd meg.</string>
+    <string name="google_maintenance_partial">Legalább %1$d távoli művelet visszaigazolva. A művelet nem fejeződött be; az utolsó kérés távoli eredménye bizonytalan lehet. Ellenőrizd a fiókot. Újrapróbáláshoz nyisd meg újra és erősítsd meg.</string>
     <string name="google_maintenance_failed">Nem sikerült végrehajtani. Ellenőrizd a fiókot, jogosultságot és az edzés/szinkron állapotát. Újrapróbáláshoz külön megerősítés kell.</string>
 </resources>

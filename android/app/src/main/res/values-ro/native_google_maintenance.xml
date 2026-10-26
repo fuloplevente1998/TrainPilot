@@ -11,6 +11,6 @@
     <string name="google_maintenance_confirm">Confirmă</string>
     <string name="google_maintenance_cancel">Anulează</string>
     <string name="google_maintenance_done">Finalizat: %1$d operațiuni. Datele locale sunt păstrate.</string>
-    <string name="google_maintenance_partial">Cel puțin %1$d ștergeri confirmate. Operațiune incompletă; rezultatul ultimei cereri poate fi incert. Verifică acest cont. Redeschide și confirmă pentru a reîncerca.</string>
+    <string name="google_maintenance_partial">Cel puțin %1$d operațiuni la distanță confirmate. Operațiune incompletă; rezultatul ultimei cereri poate fi incert. Verifică acest cont. Redeschide și confirmă pentru a reîncerca.</string>
     <string name="google_maintenance_failed">Operațiunea a eșuat. Verifică acest cont, permisiunile și starea antrenamentului/sincronizării. Reîncercarea necesită confirmare separată.</string>
 </resources>
