@@ -223,7 +223,12 @@ class NativePhoneNavigationTest {
         assertFalse(snapshot()!!.optBoolean("workoutPaused"))
         screenshot("active_timed")
         tab("home")
-        compose.waitUntil(10_000) { snapshot()?.optBoolean("workoutPaused") == true }
+        try {
+            compose.waitUntil(10_000) { snapshot()?.optBoolean("workoutPaused") == true }
+        } catch (failure: Throwable) {
+            throw AssertionError("Leaving native editor did not persist workout pause: " +
+                snapshot()?.toString()?.take(2500), failure)
+        }
         assertTrue(snapshot()!!.optBoolean("workoutPaused"))
     }
     @Test fun failedDiscardStaysInEditorAndExplicitRetryClosesTheSameWorkout() {
