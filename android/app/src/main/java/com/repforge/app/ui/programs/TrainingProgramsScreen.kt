@@ -362,6 +362,7 @@ fun ProgramCardItem(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .testTag("program_expand_${prog.id}")
                     .clickable { expanded = !expanded },
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
