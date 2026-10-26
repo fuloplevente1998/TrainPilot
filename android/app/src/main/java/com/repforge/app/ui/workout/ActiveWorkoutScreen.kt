@@ -191,7 +191,11 @@ fun ActiveWorkoutScreen(
             gpsRecovery = null
             viewModel.toggleGpsTracking(target)
         } else {
-            gpsRecovery = NativeGpsRecoveryPrompt(target, blocker)
+            // Do not open the app AlertDialog *over* the Android permission sheet.
+            // The launcher result will show the recovery explanation only if the
+            // user actually dismisses/denies system permission. No GPS start here.
+            gpsRecovery = if (blocker == NativeGpsPermissionBlocker.DENIED && activity != null)
+                null else NativeGpsRecoveryPrompt(target, blocker)
             if (blocker == NativeGpsPermissionBlocker.DENIED && activity != null) {
                 pendingGpsPermissionJson = NativeGpsPermissionRecovery.encodePending(target)
                 gpsPermissionRequestInFlight = true
