@@ -13,4 +13,5 @@
     <string name="native_gps_recovery_cancel">Anulează</string>
     <string name="native_gps_recovery_stale">Antrenamentul sau seria inițială s-a schimbat. Măsurarea GPS nu a pornit.</string>
     <string name="native_gps_recovery_settings_unavailable">Setările de localizare nu s-au putut deschide. Deschide-le manual din setările telefonului.</string>
+    <string name="native_gps_recovery_request_unavailable">Solicitarea permisiunii de sistem nu poate fi deschisă acum. Încearcă din nou pe telefon.</string>
 </resources>
