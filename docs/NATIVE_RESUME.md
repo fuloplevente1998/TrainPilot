@@ -3,6 +3,21 @@
 Frissítve: 2026-10-26. AGENTS.md + ez + WORK_HANDOFF.md teteje elég induláskor.
 Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/exportot.
 
+## Aktív közös CI és további root UI-delta – 2026-10-26
+
+Actions40333452302 elindítva workflow_dispatch-kal, exact checkout
+07835db5c527a9f5b24b77a474417b60a1fd8585:
+https://github.com/fuloplevente1998/TrainPilot/actions/runs/40333452302
+Build folyamatban, eredmény még nincs.255/256 új tesztjei ezen a forráson vannak.
+Közben új2a1bf290 root-only tesztdelta: valós e28failurelog alapján további
+feliratos értékek substring assertje, Coach lazy-list konténerrel célkeresés,
+Health origin várakozásnál létező listára várás, majd célzott lazy görgetés.
+Ezek nem érintik a foglalt Calendar/mode területeket.1Kotlin lexical/diff PASS;
+a már futó07835CI ezt az új2a1bf deltát NEM tartalmazza. Ne rendelj hozzá PASS-t.
+A legutóbbi40UIhibából21screenshot-handshake,19egyéb; ezek között nem kizárólag
+termékhibák vannak. Interval-rest/auto-advance hiányzó node még vizsgálandó,
+a mostani futás nem tekinthető előre teljesen zöldnek. Nincs második teljesCI.
+
 ## Root UI-javítás, két chat mellett – 2026-10-26
 
 User a két új chatfeladatot átadta. Indulásuk most felhasználó által igazolt;
