@@ -42,9 +42,9 @@ class NativeOnboardingUiTest {
 
     @After fun close() { scenario?.close() }
 
-    private fun launch() {
+    private fun launch(expected: String = "onboarding_screen") {
         scenario = ActivityScenario.launch(MainActivity::class.java)
-        waitFor("onboarding_screen")
+        waitFor(expected)
     }
 
     private fun waitFor(tag: String) {
@@ -60,7 +60,7 @@ class NativeOnboardingUiTest {
         waitFor("navigation_home")
         assertEquals("skipped", runBlocking(Dispatchers.IO) { store.current().onboarding128 })
         scenario?.close()
-        launch()
+        launch("navigation_home")
         compose.onNodeWithTag("onboarding_screen").assertDoesNotExist()
         compose.onNodeWithTag("home_resume_onboarding").performClick()
         waitFor("onboarding_welcome")
