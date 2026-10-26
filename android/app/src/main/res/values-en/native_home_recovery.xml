@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_home_recovery_samsung">Samsung Energy Score</string>
+    <string name="native_home_recovery_estimate">TrainPilot estimate</string>
+    <string name="native_home_recovery_no_data">No data</string>
+    <string name="native_home_recovery_partial">Partial data</string>
+    <string name="native_home_recovery_stale">Older or unverified data</string>
+    <string name="native_home_recovery_calculated">Calculated:</string>
+    <string name="native_home_recovery_read_error">Unable to refresh data</string>
+</resources>
