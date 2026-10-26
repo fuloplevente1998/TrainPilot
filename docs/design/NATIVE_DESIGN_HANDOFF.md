@@ -5,6 +5,18 @@ Frissítve: 2026-10-24. A felhasználó külön kérte a korábbi négy mockup
 a vizuális irány elfogadott, az új képek külön felhasználói áttekintésre várnak.
 A képek generált látványtervek, a végső átadás futó emulátorból készített képeket igényel.
 
+
+## Aktuális termékirány – felhasználói pontosítás, 2026-10-26
+
+A WebView-app a minőségi minimum; a natív app egyértelmű használhatósági és
+vizuális előrelépés legyen. A jóváhagyott grafit/arany referencia, az ötfüles
+navigáció, mindegyik főoldal és aktív edzés teljes kidolgozása kötelező.
+Az edzésmotorhoz/adatmegőrzéshez vizuális átalakítás címén nem nyúlunk.
+Az elfogadás alapja valódi, futó appból származó emulátorkép és folyamatellenőrzés.
+Külön Codex előbb ütközésmentes specifikációt készíthet; production UI csak a
+mostani telefonos QA-terület feloldása után. Részletes munkaszerződés:
+[Native final UI/UX Codex handoff](../plans/NATIVE_FINAL_UI_UX_CODEX_HANDOFF.md).
+
 ## Közös felépítés
 
 - Öt alsó fül: **Kezdőlap, Edzés, Napló, Fejlődés, Egészség**.
