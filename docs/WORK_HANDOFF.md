@@ -4,6 +4,19 @@ Frissítve: **2026-10-26**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## #251 utáni közös kapu – 2026-10-26
+
+Új canonical run **40284818902**, checkout1da7a3fde75ae19662b6e8552366ff8f963bf241,
+app4b1711b1 (utána docs): https://github.com/fuloplevente1998/TrainPilot/actions/runs/40284818902
+Indításkor IN_PROGRESS. Új JVM/UI/signer/upgrade siker még nincs. Nincs duplikált
+kapu indítandó; a következő kör e futás compiler/job/XML kimenetét olvassa.
+
+A korábbi40276384595 logja: app:testDebugUnitTest05:53:34 után06:25:30 cancellation,
+nincs telefonos XML vagy per-case progress. Az artifact12631797090 csak a Wear
+28osztály XML-jét tartalmazta, összesen167/0fail. Ez nem telefonos tesztsiker.
+Hosszú JVM-lépés lehetséges elakadását külön diagnosztikával kell ellenőrizni,
+nem timeout vak növelésével/tesztkipipálással. Komolydebug előtt ExtraHigh jelzés.
+
 ## #251 Health sync review és integráció – 2026-10-26
 
 A felhasználó #250-et visszaadta a külön audit chatnek, a két riport foglalt.
