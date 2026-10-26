@@ -128,6 +128,11 @@ javítás még nincs távol, ezért nem integrált. A lentebbi korábbi „javí
 
 ## Új elkülönített baseline feladatok – 2026-10-26
 
+**Új aktuális:** #245305b560 integrálva7d773190, #24720b7ddb→6a5b6588,
+#248aa01f3b→e344fed5. #244/#246 is bent. A régi függő SHA/fájlfoglalások
+feloldva; új külső delta mindig innen review. Appforrás e344fed5, közös CI
+következik; statikus ellenőrzés és Node validator PASS nem natív runtime.
+
 - #244b062e3d integrálva4eae08c8-ben, #246cf1db70b megmarad. Ne alkalmazd újra
   a régi appdeltákat. Új közös CI nincs; #245 javított SHA még függőben.
 - Felhasználó két új külső chathez kért promptot. Pinned bázis4eae08c8:

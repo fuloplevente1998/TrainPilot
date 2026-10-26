@@ -4,6 +4,26 @@ Frissítve: **2026-10-26**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## #245 / #247 / #248 integrálva – 2026-10-26
+
+A felhasználó új külső eredményeket jelzett; két új PR valójában #247 és #248.
+- #245305b560 → **7d773190**: mind az öt review-javítás ellenőrizve,28 appfájl
+  byteazonos a külső HEAD-del. Public/internal, IO→Main save/undo és canonical
+  commit, global scope és pure-RIR main-paritás rendezve;35 JVM+6 UI kód UNRUN.
+- #24720b7ddb → **6a5b6588**: három test-only fixture/scheduler/querytrace fix;
+  Home rootSELECT=1 megmarad, trace eredete csak az új futással dönthető el.
+- #248aa01f3b → **e344fed5**: valódi main validateProfile elutasítja a nem létező
+  squat/air-squat exclusionID-t. Native guard+3 regresszió; fixture nem gyengült.
+  Hash-ellenőrző Node referencia valóban futott Rootnál PASS; validator only,
+  nem teljes main generator/JVM. Git diff/Kotlin lexical/XML static PASS.
+
+**Aktuális appforrás e344fed5.** #2444eae08c8 és #246cf1db70b is bent.
+A régi „#245 új távoli SHA nincs” és „#247/#248 még nem indult” státusz történeti.
+Külső PR-ok nyitott draftok, nincs GitHubmerge/close/main/verzió/élő install.
+Következő a canonical native-android.yml közös integrált futása; a korábbi
+hat hiba egyikét sem jelöljük zöldnek az új XML nélkül. Teljes A–E/design/
+provider/backfill és fizikai elfogadás külön nyitott, ez integrációs kapu.
+
 ## #244 beépítve és két új külön chat átadó – 2026-10-26
 
 **Aktuális appforrás4eae08c8:** #244b062e3d javított23fájlos delta integrálva;
