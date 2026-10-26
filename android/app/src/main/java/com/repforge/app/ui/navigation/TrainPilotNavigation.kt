@@ -49,6 +49,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.repforge.app.ActiveWorkoutStore
+import com.repforge.app.NativeDataReplacement
+import com.repforge.app.data.store.TrainPilotSettingsStore
+import com.repforge.app.ui.onboarding.NativeOnboardingPolicy
+import com.repforge.app.ui.onboarding.NativeOnboardingScreen
+import androidx.compose.material3.CircularProgressIndicator
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.repforge.app.NativeProgramGpsChoice
 import com.repforge.app.NativeWorkoutSession
 import com.repforge.app.PhoneWorkoutExecution
@@ -91,6 +98,74 @@ fun TrainPilotAppScaffold(
     val colors = LocalTrainPilotColors.current
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
+    val onboardingStore = remember(context) { TrainPilotSettingsStore(context) }
+    var onboardingSaving by remember { mutableStateOf(false) }
+    var onboardingFailed by remember { mutableStateOf(false) }
+    var reopenedOnboarding by remember { mutableStateOf(false) }
+    fun writeOnboarding(onSaved: () -> Unit = {},
+        change: suspend (NativeDataReplacement.Continuation) -> Boolean) {
+        if (onboardingSaving) return
+        val ticket = try { NativeDataReplacement.continuationForCurrentData(context) }
+            catch (_: Exception) {
+                // Restore/erase admission is closed; leave profile and navigation unchanged.
+                onboardingFailed = true
+                return
+            }
+        onboardingSaving = true
+        onboardingFailed = false
+        scope.launch {
+            try {
+                val saved = withContext(Dispatchers.IO) { change(ticket) }
+                if (saved) onSaved() else onboardingFailed = true
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) { onboardingFailed = true }
+            finally { onboardingSaving = false }
+        }
+    }
+
+    // MigrationReady is set before the initial settings Flow emission. Never flash
+    // a usable Home screen while the stored onboarding decision is still loading.
+    if (!settings.migrationV1371Complete) {
+        LaunchedEffect(Unit) { onFirstFrameReady() }
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+    val firstLaunch = NativeOnboardingPolicy.destination(settings.onboarding128)
+    if (firstLaunch != NativeOnboardingPolicy.Destination.HOME || reopenedOnboarding) {
+        LaunchedEffect(Unit) { onFirstFrameReady() }
+        NativeOnboardingScreen(
+            settings = settings,
+            destination = if (reopenedOnboarding && firstLaunch == NativeOnboardingPolicy.Destination.HOME)
+                NativeOnboardingPolicy.Destination.WELCOME else firstLaunch,
+            saving = onboardingSaving, failed = onboardingFailed,
+            onBegin = {
+                writeOnboarding { ticket ->
+                    onboardingStore.transitionOnboarding(settings.onboarding128,
+                        NativeOnboardingPolicy.IN_PROGRESS, ticket)
+                }
+            },
+            onSkip = {
+                if (settings.onboarding128 == NativeOnboardingPolicy.SKIPPED) {
+                    reopenedOnboarding = false
+                } else writeOnboarding(onSaved = { reopenedOnboarding = false }) { ticket ->
+                    onboardingStore.transitionOnboarding(settings.onboarding128,
+                        NativeOnboardingPolicy.SKIPPED, ticket)
+                }
+            },
+            onProfileSave = { fields ->
+                writeOnboarding(onSaved = { reopenedOnboarding = false }) { ticket ->
+                    onboardingStore.completeOnboarding(settings.profileJson, fields, ticket)
+                }
+            },
+            onBack = {
+                if (settings.onboarding128 == NativeOnboardingPolicy.SKIPPED)
+                    reopenedOnboarding = false
+            }
+        )
+        return
+    }
     var starting by remember { mutableStateOf(false) }
     // Memory-only user start intent. Process recreation/navigation cannot silently start GPS.
     var launchGps by remember { mutableStateOf<NativeWorkoutTarget?>(null) }
@@ -255,6 +330,8 @@ fun TrainPilotAppScaffold(
                         },
                         onCalendar = { selectDestination("calendar") }, onCoach = { selectDestination("coach") },
                         onPrograms = { selectDestination("programs") }, language = settings.language, busy = navigationBlocked,
+                        offerOnboarding = settings.onboarding128 == NativeOnboardingPolicy.SKIPPED,
+                        onOnboarding = { if (!navigationBlocked && !hasActiveWorkout) reopenedOnboarding = true },
                         onResumeDraft = {
                             if (!starting) {
                                 starting = true

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_onboarding_welcome">Welcome to TrainPilot!</string>
+    <string name="native_onboarding_intro">Set up your training profile for a personalized experience. You can also do this later; existing workouts remain untouched.</string>
+    <string name="native_onboarding_begin">Get started</string>
+    <string name="native_onboarding_skip">Skip for now</string>
+    <string name="native_onboarding_profile">Set up your training profile</string>
+    <string name="native_onboarding_profile_intro">Your goals, equipment and limitations use the same profile as in Settings.</string>
+    <string name="native_onboarding_edit">Edit profile</string>
+    <string name="native_onboarding_resume_info">You can continue here after closing and reopening the app.</string>
+    <string name="native_onboarding_error">Save failed. Your data may have changed; please try again.</string>
+    <string name="native_onboarding_resume">Continue profile setup</string>
+</resources>

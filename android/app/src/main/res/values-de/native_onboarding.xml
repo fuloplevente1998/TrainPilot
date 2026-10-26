@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_onboarding_welcome">Willkommen bei TrainPilot!</string>
+    <string name="native_onboarding_intro">Richte dein Trainingsprofil für ein persönliches Erlebnis ein. Du kannst dies auch später tun; bestehende Trainings bleiben unverändert.</string>
+    <string name="native_onboarding_begin">Beginnen</string>
+    <string name="native_onboarding_skip">Jetzt überspringen</string>
+    <string name="native_onboarding_profile">Trainingsprofil einrichten</string>
+    <string name="native_onboarding_profile_intro">Ziele, Ausrüstung und Einschränkungen werden im selben Profil wie in den Einstellungen gespeichert.</string>
+    <string name="native_onboarding_edit">Profil bearbeiten</string>
+    <string name="native_onboarding_resume_info">Nach einem Neustart der App kannst du hier fortfahren.</string>
+    <string name="native_onboarding_error">Speichern fehlgeschlagen. Deine Daten wurden möglicherweise geändert. Bitte erneut versuchen.</string>
+    <string name="native_onboarding_resume">Profileinrichtung fortsetzen</string>
+</resources>

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -68,7 +69,9 @@ fun HomeScreen(
     onCoach: () -> Unit,
     onPrograms: () -> Unit,
     language: String,
-    busy: Boolean = false
+    busy: Boolean = false,
+    offerOnboarding: Boolean = false,
+    onOnboarding: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val colors = LocalTrainPilotColors.current
@@ -87,6 +90,12 @@ fun HomeScreen(
     ) {
         if (state.hasImportedDraft) Button(onClick = onResumeDraft, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
             Text(strings.getString(R.string.native_home_resume_draft))
+        }
+        if (offerOnboarding) OutlinedButton(
+            onClick = onOnboarding, enabled = !busy,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("home_resume_onboarding")
+        ) {
+            Text(strings.getString(R.string.native_onboarding_resume), color = colors.text)
         }
         NativePlanningShortcuts(language, !busy, onPrograms, onCalendar, onCoach)
         if (state.loading) LinearProgressIndicator(Modifier.fillMaxWidth().testTag("home_loading"))
