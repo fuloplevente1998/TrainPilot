@@ -14,7 +14,6 @@ import java.time.ZoneId
 class NativeHomeRecoveryPresentationTest {
     private val now = Instant.parse("2026-10-24T12:00:00Z")
     private val zone = ZoneId.of("UTC")
-    private val source = NativeHomeRecoveryPresentation.Source
 
     private fun energy(value: Any, date: String = "2026-10-24", time: String = "2026-10-24T06:00:00Z",
                        provider: String = "samsung_health") = JSONObject()
@@ -37,7 +36,7 @@ class NativeHomeRecoveryPresentationTest {
         val home = result(row, history = history)
         val signals = NativeCoachSignals.fromDays(listOf(row), now.atZone(zone).toLocalDate(), zone)
         val coach = NativeCoachReadiness.calculate(signals.recovery, signals.daily, history, now, zone)
-        assertEquals(source.SAMSUNG, home.source)
+        assertEquals(NativeHomeRecoveryPresentation.Source.SAMSUNG, home.source)
         assertEquals(99.0, home.value!!, 0.0)
         assertEquals("99%", home.displayValue)
         assertEquals("2026-10-24T06:00:00Z", home.timestamp)
@@ -47,7 +46,7 @@ class NativeHomeRecoveryPresentationTest {
     @Test fun zeroAndHundredAreValidSamsungScaleBoundaries() {
         for (value in listOf(0.0, 100.0)) {
             val actual = result(energy(value))
-            assertEquals(source.SAMSUNG, actual.source)
+            assertEquals(NativeHomeRecoveryPresentation.Source.SAMSUNG, actual.source)
             assertEquals(value, actual.value!!, 0.0)
             assertEquals("${value.toInt()}%", actual.displayValue)
         }
@@ -56,7 +55,7 @@ class NativeHomeRecoveryPresentationTest {
     @Test fun invalidNumbersAndProvenanceNeverBecomeVerifiedSamsung() {
         for (value in listOf(-1.0, 100.01, "NaN", "Infinity", "bogus", JSONObject.NULL)) {
             val actual = result(energy(value))
-            assertNotEquals(source.SAMSUNG, actual.source)
+            assertNotEquals(NativeHomeRecoveryPresentation.Source.SAMSUNG, actual.source)
             assertNull(actual.value)
         }
         for (row in listOf(
@@ -66,7 +65,7 @@ class NativeHomeRecoveryPresentationTest {
             energy(72.0, time = "2026-10-23T10:00:00Z"),
             energy(72.0, date = "2026-10-23", time = "2026-10-23T22:00:00Z")
         )) {
-            assertEquals(source.NONE, result(row).source)
+            assertEquals(NativeHomeRecoveryPresentation.Source.NONE, result(row).source)
         }
     }
 
@@ -75,13 +74,13 @@ class NativeHomeRecoveryPresentationTest {
     @Test fun staleYesterdayEnergyCannotBorrowThe36HourSleepWindow() {
         val yesterday = energy(91.0, date = "2026-10-23", time = "2026-10-23T20:00:00Z")
         val r = result(yesterday)
-        assertEquals(source.NONE, r.source)
+        assertEquals(NativeHomeRecoveryPresentation.Source.NONE, r.source)
         assertTrue(r.stale)
     }
 
     @Test fun sleepAndEffortEstimateIsExplicitlyTrainPilotNotSamsung() {
         val actual = result(sleepDay(), history = listOf(effort("challenging")))
-        assertEquals(source.TRAINPILOT_ESTIMATE, actual.source)
+        assertEquals(NativeHomeRecoveryPresentation.Source.TRAINPILOT_ESTIMATE, actual.source)
         assertNotNull(actual.value)
         assertNull(actual.timestamp)
         assertEquals(now, actual.calculatedAt)
@@ -96,14 +95,14 @@ class NativeHomeRecoveryPresentationTest {
             JSONObject().put("day","2026-10-21").put("hrvRmssdMs",55).put("hrvSource","hc")
         )
         val actual = NativeHomeRecoveryPresentation.select(rows, emptyList(), now, zone)
-        assertEquals(source.TRAINPILOT_ESTIMATE, actual.source)
+        assertEquals(NativeHomeRecoveryPresentation.Source.TRAINPILOT_ESTIMATE, actual.source)
         assertNotNull(actual.value)
         assertTrue(actual.stale) // Older observations form the real baseline, never imply fresh data.
     }
 
     @Test fun noSignalsCannotShowDefaultSeventyOrZero() {
         val actual = result(JSONObject().put("day","2026-10-24"))
-        assertEquals(source.NONE, actual.source)
+        assertEquals(NativeHomeRecoveryPresentation.Source.NONE, actual.source)
         assertNull(actual.value)
         assertEquals("—", actual.displayValue)
     }
@@ -111,7 +110,7 @@ class NativeHomeRecoveryPresentationTest {
     @Test fun partialAndReadFailureAreExplicitAndDoNotHideVerifiedSource() {
         val partial = energy(82.0).put("partial", true)
         val actual = NativeHomeRecoveryPresentation.select(listOf(partial), emptyList(), now, zone, true)
-        assertEquals(source.SAMSUNG, actual.source)
+        assertEquals(NativeHomeRecoveryPresentation.Source.SAMSUNG, actual.source)
         assertTrue(actual.partial)
         assertTrue(actual.refreshFailed)
     }
@@ -121,9 +120,9 @@ class NativeHomeRecoveryPresentationTest {
         val budapest = ZoneId.of("Europe/Budapest")
         val tokyo = ZoneId.of("Asia/Tokyo")
         val row = energy(91.0, date = "2026-10-25", time = "2026-10-24T23:00:00Z")
-        assertEquals(source.SAMSUNG, result(row, current = instant, place = budapest).source)
-        assertEquals(source.SAMSUNG, result(row, current = instant, place = tokyo).source)
-        assertEquals(source.NONE, result(row, current = instant, place = zone).source)
+        assertEquals(NativeHomeRecoveryPresentation.Source.SAMSUNG, result(row, current = instant, place = budapest).source)
+        assertEquals(NativeHomeRecoveryPresentation.Source.SAMSUNG, result(row, current = instant, place = tokyo).source)
+        assertEquals(NativeHomeRecoveryPresentation.Source.NONE, result(row, current = instant, place = zone).source)
     }
 
     @Test fun outdatedCallbackTicketIsRejectedAfterRepeatedLoads() {
