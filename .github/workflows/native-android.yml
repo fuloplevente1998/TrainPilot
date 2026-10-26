@@ -108,8 +108,11 @@ jobs:
           script: |
             set -euo pipefail
             mkdir -p phone-ui/results/raw
-            adb install -r phone-ui/apk/app-debug.apk
-            adb install -r phone-ui/apk/app-debug-androidTest.apk
+            find phone-ui/apk -type f -name '*.apk' -print
+            test -s "$(find phone-ui/apk -type f -name 'app-debug.apk' -print -quit)"
+            test -s "$(find phone-ui/apk -type f -name 'app-debug-androidTest.apk' -print -quit)"
+            adb install -r "$(find phone-ui/apk -type f -name 'app-debug.apk' -print -quit)"
+            adb install -r "$(find phone-ui/apk -type f -name 'app-debug-androidTest.apk' -print -quit)"
             adb shell am instrument -w -r -e class com.repforge.app.NativeHomeRecoveryUiTest com.repforge.app.test/androidx.test.runner.AndroidJUnitRunner | tee phone-ui/results/instrumentation.txt
             python3 - <<'PY'
             import re, xml.etree.ElementTree as ET, pathlib
