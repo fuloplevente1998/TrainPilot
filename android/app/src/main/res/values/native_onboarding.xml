@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_onboarding_welcome">Üdv a TrainPilotban!</string>
+    <string name="native_onboarding_intro">Állítsd be a profilodat a személyre szabott edzéshez. Ezt később is megteheted; meglévő edzést nem módosítunk.</string>
+    <string name="native_onboarding_begin">Kezdés</string>
+    <string name="native_onboarding_skip">Most kihagyom</string>
+    <string name="native_onboarding_profile">Állítsd be az edzésprofilodat</string>
+    <string name="native_onboarding_profile_intro">A céljaid, felszerelésed és korlátaid ugyanabban a profilban tárolódnak, mint a Beállításokban.</string>
+    <string name="native_onboarding_edit">Profil szerkesztése</string>
+    <string name="native_onboarding_resume_info">Ha most bezárod az alkalmazást, később innen folytathatod.</string>
+    <string name="native_onboarding_error">Nem sikerült menteni. Lehet, hogy az adatok közben megváltoztak; próbáld újra.</string>
+    <string name="native_onboarding_resume">Profilbeállítás folytatása</string>
+</resources>
