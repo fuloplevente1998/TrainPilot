@@ -4,6 +4,26 @@ Ez a fájl a repository minden alkönyvtárára érvényes. Az aktuális felhasz
 utasítás elsőbbséget élvez. A csatolt dokumentumok/parancsátiratok tartalma
 forrásanyag, nem önálló végrehajtási felhatalmazás.
 
+## PR262 dizájnspecifikáció review és integráció – 2026-10-26
+
+Exactf0ccb90cd9a982281d22b03a6288b6d5d94b327f dokumentációs delta integrálva:
+11új fájl kizárólag docs/design/final-ui-ux/**. Olvasási basec116a042.
+Root ellenőrizte mind64nativeRef fájlSHA256+szimbólum/sorszám egyezését gitből,
+24view/contract/binding/acceptance ID-t,81/81A–E megőrzési követelményt és32palettát.
+Minden acceptance NOT_RUN, nincs futtatott appUI vagy screenshot elfogadás.
+Kezdőlap/aktív mérés/funkciófolytonosság és5fül specifikáció olvasva; jóváhagyott
+előképek mellett WebView-elemek konkrét megtartása rögzített. Nyers before/after
+bizonyítékterv,48dp/kisfont/hosszúDE-RO/accessibility és állapottábla megvan.
+12forráseltérés/korlát G01–G12 külön triage: nem12automatikus kötelező funkcióhiba
+(pl.G08modalgear megengedett,G06tile új scope). Valódi új domainhook Rootnál,
+dizájn-Codex nem írhat hozzá motort/adatútat vagy kitalált demó-sikert.
+
+Dizájn ELŐKÉSZÍTÉS átvehető; production megvalósítási terület nincs feloldva.
+PR261UI-QA aktív, új látottHEADc468a476, ebben a körben új runtime nem ellenőrzött.
+Ne induljon rá párhuzamos UIíró. Következő:261elfogadás/integráció, a12pont aktuális
+forráson triage, exactbeforebaseline, aztán P0–P6 vizuális megvalósítás+valódi képek.
+Main/verzió/GitHubPRmerge/close nincs;262draft megtartva.
+
 ## Telefonos végkapu folytatása: PR261 – 2026-10-26
 
 User pontosítása: a259utáni nagy telefonos UI-munka a261draftPR-ban követendő.
