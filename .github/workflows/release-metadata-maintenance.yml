@@ -29,7 +29,12 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  app-target:
+    uses: ./.github/workflows/classify-app-source.yml
+
   validate:
+    needs: app-target
+    if: ${{ needs.app-target.outputs.legacy == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -40,8 +45,8 @@ jobs:
       - run: node --test scripts/release-metadata.test.cjs
       - run: node scripts/release-metadata.cjs --check
   apply:
-    needs: validate
-    if: github.repository == 'fuloplevente1998/TrainPilot' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.apply))
+    needs: [app-target, validate]
+    if: ${{ needs.app-target.outputs.legacy == 'true' && (github.repository == 'fuloplevente1998/TrainPilot' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.apply))) }}
     runs-on: ubuntu-latest
     timeout-minutes: 8
     permissions:
