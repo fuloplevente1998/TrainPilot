@@ -180,7 +180,8 @@ class NativeGpsPermissionRecoveryUiTest {
         val deadline = System.nanoTime() + 15_000_000_000L
         var permissionSheetShown = false
         while (System.nanoTime() < deadline) {
-            val focus = device.executeShellCommand("dumpsys window | grep mCurrentFocus")
+            val focus = device.executeShellCommand("dumpsys window").lineSequence()
+                .filter { it.contains("mCurrentFocus=") }.joinToString("\n")
             if (focus.contains("permissioncontroller", ignoreCase = true)) {
                 permissionSheetShown = true
                 break

@@ -15,7 +15,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.saveable.rememberSaveable
 import com.repforge.app.ActiveWorkoutStore
 
 import android.app.Activity
@@ -866,7 +865,7 @@ private fun IntervalOptions(
     val context = LocalContext.current
     val text = remember(context, language) { com.repforge.app.ui.text.nativeResources(context, language) }
     val identity = "${state.workoutId}:${state.generation}:${exercise.sets.firstOrNull()?.setId}"
-     var work by remember(identity, state.intervalWork) { mutableStateOf(state.intervalWork.toString()) }
+    var work by remember(identity, state.intervalWork) { mutableStateOf(state.intervalWork.toString()) }
     var rest by remember(identity, state.intervalRest) { mutableStateOf(state.intervalRest.toString()) }
     var rounds by remember(identity, state.intervalRounds) { mutableStateOf(state.intervalRounds.toString()) }
     var sound by remember(identity, state.intervalSound) { mutableStateOf(state.intervalSound) }

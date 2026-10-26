@@ -136,7 +136,7 @@ class NativePhoneNavigationTest {
                 compose.waitUntil(10_000) { compose.onAllNodesWithTag("shortcut_$route").fetchSemanticsNodes().isNotEmpty() }
             } catch (failure: Throwable) {
                 throw AssertionError("Home planning shortcut missing for $route; UI=" +
-                    compose.onRoot(useUnmergedTree = true).printToString().take(8000), failure)
+                    compose.onAllNodes(isRoot(), useUnmergedTree = true).printToString().take(8000), failure)
             }
             compose.onNodeWithTag("shortcut_$route").performScrollTo().performClick()
             compose.onNodeWithTag("navigation_settings").assertExists()

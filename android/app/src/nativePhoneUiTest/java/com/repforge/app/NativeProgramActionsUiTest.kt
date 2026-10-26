@@ -62,7 +62,7 @@ class NativeProgramActionsUiTest {
         // Cancel keeps the card expanded. A second toggle would collapse it,
         // making the original restore A button disappear despite valid Room rows.
         if (compose.onAllNodesWithTag("program_restore_${id}_A").fetchSemanticsNodes().isEmpty()) {
-            compose.onNodeWithTag("program_expand_$id").performClick()
+            compose.onNodeWithTag("program_expand_$id").performScrollTo().assertIsDisplayed().performClick()
         }
         try {
             compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("program_restore_${id}_A"))
@@ -70,7 +70,7 @@ class NativeProgramActionsUiTest {
             val stored = program(id)
             throw AssertionError("Restore day selector missing: sourceTemplateId=" +
                 stored.program.sourceTemplateId + ", days=" + stored.days.map { it.dayId } +
-                "; UI=" + compose.onRoot(useUnmergedTree = true).printToString().take(8500), failure)
+                "; UI=" + compose.onAllNodes(isRoot(), useUnmergedTree = true).printToString().take(8500), failure)
         }
         compose.onNodeWithTag("program_restore_${id}_A").performClick()
         compose.waitUntil(15_000) {
