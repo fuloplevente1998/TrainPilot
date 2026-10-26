@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_home_recovery_samsung">Samsung Energy Score</string>
+    <string name="native_home_recovery_estimate">TrainPilot-becslés</string>
+    <string name="native_home_recovery_no_data">Nincs adat</string>
+    <string name="native_home_recovery_partial">Részleges adatok</string>
+    <string name="native_home_recovery_stale">Korábbi vagy nem hitelesített adat</string>
+    <string name="native_home_recovery_calculated">Számítva:</string>
+    <string name="native_home_recovery_read_error">Adatolvasási hiba</string>
+</resources>
