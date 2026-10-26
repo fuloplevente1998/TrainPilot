@@ -9,9 +9,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -41,12 +46,14 @@ internal fun NativeThemePicker(settings: TrainPilotUserSettings, onSelect: (Them
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         for (theme in TrainPilotSettingsStore.AVAILABLE_THEMES.filter { it.family == family }) {
                             val selected = settings.themeKey == theme.key
+                            var focused by remember(theme.key) { mutableStateOf(false) }
                             Surface(shape = RoundedCornerShape(12.dp),
                                 color = if (selected) colors.selectedSurface else colors.card,
-                                border = BorderStroke(if (selected) 2.dp else 1.dp,
-                                    if (selected) colors.selectedBorder else colors.line)) {
+                                border = BorderStroke(if (selected || focused) 2.dp else 1.dp,
+                                    if (selected || focused) colors.selectedBorder else colors.line)) {
                                 Column(Modifier.widthIn(min = 112.dp, max = 200.dp).heightIn(min = 64.dp)
                                     .testTag("theme_${theme.key}")
+                                    .onFocusChanged { focused = it.isFocused }
                                     .selectable(selected = selected, role = Role.RadioButton, onClick = { onSelect(theme) })
                                     .padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp),
                                     horizontalAlignment = Alignment.Start) {
@@ -54,8 +61,9 @@ internal fun NativeThemePicker(settings: TrainPilotUserSettings, onSelect: (Them
                                         Box(Modifier.size(20.dp).clip(CircleShape).background(NativeThemeTokens.parseHex(theme.accent, colors.accent)))
                                         Box(Modifier.size(20.dp).clip(CircleShape).background(NativeThemeTokens.parseHex(theme.accent2, colors.accent2)))
                                     }
-                                    Text(theme.displayName(settings.language), color = if (selected) colors.accentText else colors.text,
-                                        style = MaterialTheme.typography.labelLarge)
+                                    Text(theme.displayName(settings.language), modifier = Modifier.fillMaxWidth(),
+                                        color = if (selected) colors.accentText else colors.text,
+                                        softWrap = true, style = MaterialTheme.typography.labelLarge)
                                 }
                             }
                         }
