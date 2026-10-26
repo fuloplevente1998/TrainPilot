@@ -1120,6 +1120,7 @@ class NativePhoneNavigationTest {
         compose.waitUntil(15000) { runBlocking(Dispatchers.IO) {
             db.exerciseLibraryDao().getAllExercises().any { it.custom && it.nameHu == "Saját UI próba" }
         } }
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("custom_exercise_save").fetchSemanticsNodes().isEmpty() }
         compose.waitUntil(15000) { compose.onAllNodesWithTag("custom_exercise_edit").fetchSemanticsNodes().isNotEmpty() }
         screenshot("custom_exercise_created")
         compose.onNodeWithTag("custom_exercise_edit").performClick()
@@ -1129,10 +1130,13 @@ class NativePhoneNavigationTest {
         compose.waitUntil(15000) { runBlocking(Dispatchers.IO) {
             db.exerciseLibraryDao().getAllExercises().any { it.custom && it.nameHu == "Saját UI javítva" }
         } }
-        compose.waitUntil(15000) { compose.onAllNodesWithTag("custom_exercise_edit").fetchSemanticsNodes().isNotEmpty() }
+        // Persisted DB change alone is insufficient: await completion of the actual
+        // ViewModel->dialog close path before opening the edited record again.
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("custom_exercise_save").fetchSemanticsNodes().isEmpty() }
         compose.onNodeWithTag("custom_exercise_edit").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("custom_exercise_delete").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("custom_exercise_delete").performClick()
-        compose.onNodeWithTag("custom_exercise_confirm_delete").performClick()
+        compose.onNodeWithTag("custom_exercise_confirm_delete").performScrollTo().performClick()
         try {
             compose.waitUntil(15000) { runBlocking(Dispatchers.IO) {
                 db.exerciseLibraryDao().getAllExercises().none { it.custom && it.nameHu == "Saját UI javítva" }
@@ -1140,8 +1144,10 @@ class NativePhoneNavigationTest {
         } catch (failure: Throwable) {
             val saved = runBlocking(Dispatchers.IO) { db.exerciseLibraryDao().getAllExercises()
                 .filter { it.custom }.map { it.id + ":" + it.nameHu } }
-            throw AssertionError("Real custom exercise deletion did not persist: $saved; UI=" +
-                compose.onRoot(useUnmergedTree = true).printToString().take(8500), failure)
+            val dialogErrors = compose.onAllNodesWithTag("custom_exercise_error", useUnmergedTree = true)
+                .fetchSemanticsNodes().map { it.config.toString() }
+            throw AssertionError("Real custom exercise deletion did not persist: $saved; " +
+                "visible dialog errors: $dialogErrors", failure)
         }
         assertFalse(ActiveWorkoutStore.current(context)?.optBoolean("active") == true)
     }
