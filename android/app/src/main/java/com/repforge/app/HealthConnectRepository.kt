@@ -125,11 +125,33 @@ object HealthConnectRepository {
 
     fun settingsIntent(): Intent = Intent("android.health.connect.action.HEALTH_CONNECT_SETTINGS")
 
+    private class ObsoleteReadPublication(cause: Throwable) : IllegalStateException("Health read publication invalidated", cause)
+
     class Access(
         context: Context,
         @JvmField val epoch: Long?,
         private val guard: Runnable
     ) {
+        /**
+         * Optional foreground publication fence. It surrounds local journal commits,
+         * never SDK IPC. The default preserves existing callers' write contract.
+         */
+        var readCommit: ((() -> Unit) -> Unit) = { writer -> writer() }
+
+        fun publishRead(writer: () -> Unit) {
+            requireForeground()
+            try {
+                readCommit {
+                    requireForeground()
+                    writer()
+                }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (failure: IllegalStateException) {
+                throw ObsoleteReadPublication(failure)
+            }
+        }
+
         private val appContext: Context = context.applicationContext
         @JvmField
         var origin: String = ""
@@ -169,10 +191,13 @@ object HealthConnectRepository {
         startIso: String,
         endIso: String,
         origin: String = "",
-        requireForegroundGuard: () -> Unit = {}
+        requireForegroundGuard: () -> Unit = {},
+        expectedGeneration: Long? = null,
+        readCommit: ((() -> Unit) -> Unit) = { writer -> writer() }
     ): JSONObject = withContext(Dispatchers.IO) {
-        val epoch = HealthJournalStore.get(context).generation()
+        val epoch = expectedGeneration ?: HealthJournalStore.get(context).generation()
         val access = Access(context, epoch, Runnable { requireForegroundGuard() })
+        access.readCommit = readCommit
         val params = JSONObject().put("start", startIso).put("end", endIso).put("origin", origin)
         Api34.readHealthDay(access, params)
     }
@@ -285,16 +310,24 @@ object HealthConnectRepository {
                 val result = records(p, m, type, time)
                 p.requireForeground()
                 if (p.epoch != null) {
-                    HealthJournalStore.get(p.getContext()).reconcileRecords(
-                        HealthConnectJournal.serialize(result, p.getContext().packageName),
-                        type.simpleName,
-                        requireNotNull(time.startTime) { "Journal requires a start boundary" }.toEpochMilli(),
-                        requireNotNull(time.endTime) { "Journal requires an end boundary" }.toEpochMilli(),
-                        readAt,
-                        p.epoch
-                    )
+                    // Serializing provider rows is CPU work, not an admitted metadata write.
+                    val serialized = HealthConnectJournal.serialize(result, p.getContext().packageName)
+                    p.publishRead {
+                        HealthJournalStore.get(p.getContext()).reconcileRecords(
+                            serialized,
+                            type.simpleName,
+                            requireNotNull(time.startTime) { "Journal requires a start boundary" }.toEpochMilli(),
+                            requireNotNull(time.endTime) { "Journal requires an end boundary" }.toEpochMilli(),
+                            readAt,
+                            p.epoch
+                        )
+                    }
                 }
                 if (p.origin.isEmpty()) result else result.filter { src(it) == p.origin }
+            } catch (obsolete: ObsoleteReadPublication) {
+                throw obsolete
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
             } catch (e: Exception) {
                 warnings.put("$perm: ${p.message(e)}")
                 emptyList()
@@ -665,6 +698,11 @@ object HealthConnectRepository {
             val time = filter(t)
             if (!p.anyReadAllowed()) throw SecurityException("Permission denied")
             val warnings = JSONArray()
+            // A revoked/partial grant is not a full replacement for existing daily metrics.
+            // HealthJournalStore merges missing fields from the previous aggregate when warned.
+            if (READ_PERMS.any { !p.allowed(it) }) {
+                warnings.put("Partial Health Connect read permission")
+            }
 
             val hrs = safe(p, m, HeartRateRecord::class.java, time, "READ_HEART_RATE", warnings)
             val resting = safe(p, m, RestingHeartRateRecord::class.java, time, "READ_RESTING_HEART_RATE", warnings)
@@ -803,11 +841,13 @@ object HealthConnectRepository {
             p.requireForeground()
             out.put("readAt", Instant.now().toString())
             if (p.epoch != null) {
-                HealthJournalStore.get(p.getContext()).healthDay(
-                    HealthJournalStore.day(t[0].toEpochMilli()),
-                    out,
-                    p.epoch
-                )
+                p.publishRead {
+                    HealthJournalStore.get(p.getContext()).healthDay(
+                        HealthJournalStore.day(t[0].toEpochMilli()),
+                        out,
+                        p.epoch
+                    )
+                }
             }
             return out
         }

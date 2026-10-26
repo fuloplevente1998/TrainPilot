@@ -130,7 +130,9 @@ object SamsungHealthRepository {
         startIso: String,
         endIso: String,
         dayKey: String = "",
-        requireForegroundGuard: () -> Unit
+        requireForegroundGuard: () -> Unit,
+        expectedGeneration: Long? = null,
+        readCommit: ((() -> Unit) -> Unit) = { writer -> writer() }
     ): Result<JSONObject> = withContext(Dispatchers.IO) {
         try {
             requireForegroundGuard()
@@ -139,12 +141,45 @@ object SamsungHealthRepository {
             val day = dayKey.ifEmpty { range[0].atZone(ZoneId.systemDefault()).toLocalDate().toString() }
             require(HealthJournalStore.validDay(day) && range[0].atZone(ZoneId.systemDefault()).toLocalDate().toString() == day)
             val journal = HealthJournalStore.get(context)
-            val generation = journal.generation()
+            val generation = expectedGeneration ?: journal.generation()
             val reader = SamsungSdkReader.open(context) { requireForegroundGuard() }
             check(reader.granted.isNotEmpty()) { "Samsung Health olvasási engedély szükséges." }
             val result = reader.daily(range[0], range[1]).put("day", day)
+            // Missing grants must not erase prior values in the canonical Samsung daily row.
+            // Use the existing journal failedFields merge, without changing the store schema.
+            val permissionState = result.optJSONObject("permissions") ?: JSONObject()
+            val deniedFields = mapOf(
+                "READ_STEPS" to listOf("steps"),
+                "READ_ACTIVE_CALORIES_BURNED" to listOf("activeCalories"),
+                "READ_TOTAL_CALORIES_BURNED" to listOf("totalCalories"),
+                "READ_DISTANCE" to listOf("distanceMeters"),
+                "READ_HEART_RATE" to listOf("averageHeartRate", "minHeartRate", "maxHeartRate", "heartRateSamples"),
+                "READ_SLEEP" to listOf("sleepSessions"),
+                "READ_WEIGHT" to listOf("weightKg", "weightTime", "weightSource", "bodyFatPercent", "bodyFatTime",
+                    "bodyFatSource", "bodyFatMassKg", "skeletalMuscleMassKg", "fatFreeMassKg",
+                    "totalBodyWaterLiters", "basalMetabolicRateKcal", "bodyMassIndex"),
+                "READ_OXYGEN_SATURATION" to listOf("oxygenSaturationPercent", "oxygenSaturationTime",
+                    "oxygenSaturationSource"),
+                "READ_ENERGY_SCORE" to listOf("energyScore", "energyScoreTime", "energyScoreSource")
+            )
+            val failures = result.optJSONArray("failedFields") ?: org.json.JSONArray().also {
+                result.put("failedFields", it)
+            }
+            val recorded = (0 until failures.length()).mapNotNull { failures.optString(it).takeIf(String::isNotBlank) }.toMutableSet()
+            for ((permission, fields) in deniedFields) {
+                if (!permissionState.optBoolean(permission, false)) {
+                    for (field in fields) if (recorded.add(field)) failures.put(field)
+                }
+            }
             requireForegroundGuard()
-            journal.samsungDay(day, result, reader.journal, generation)
+            // Permission probe is another SDK IPC, performed strictly outside metadata locks.
+            // A revoked or expanded grant invalidates the original read rather than publishing stale metrics.
+            val currentGrants = SamsungSdkReader.open(context) { requireForegroundGuard() }.granted
+            check(currentGrants == reader.granted) { "Samsung read permissions changed" }
+            readCommit {
+                requireForegroundGuard()
+                journal.samsungDay(day, result, reader.journal, generation)
+            }
             Result.success(result)
         } catch (cancelled: CancellationException) { throw cancelled }
         catch (failure: Exception) { Result.failure(failure) }

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_health_auto_refresh_title">Automatic health refresh</string>
+    <string name="native_health_auto_refresh_help">When enabled, refreshes from the provider on opening Health, at most once every 10 minutes. Never requests permission automatically.</string>
+    <string name="native_health_auto_refresh_save_error">Could not save the setting. Please try again.</string>
+    <string name="native_health_auto_refresh_running">Refreshing health measurements…</string>
+</resources>

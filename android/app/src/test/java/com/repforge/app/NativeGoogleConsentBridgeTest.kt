@@ -92,7 +92,13 @@ class NativeGoogleConsentBridgeTest {
         }
         val id = bridge.prompt.value!!.id
         bridge.takeForLaunch(id); assertTrue(bridge.fail(id, error))
-        assertNull(result.await()); assertSame(error, actual); assertNull(bridge.prompt.value)
+        assertNull(result.await())
+        // kotlinx.coroutines stack-trace recovery may wrap the identical original cause
+        // in a reconstructed IOException. Keep both the failure message and identity.
+        assertEquals(error.message, actual?.message)
+        assertTrue("The original SDK launcher error must remain the cause",
+            actual === error || actual?.cause === error)
+        assertNull(bridge.prompt.value)
     }
 
     @Test fun competingConsentRequestIsRejectedWithoutDisturbingTheFirst() = runTest {

@@ -116,6 +116,7 @@ class BackupRestoreManager(context: Context) {
 
     /** Exports JSON backup to a user-selected SAF Uri and verifies the written bytes by reading back. */
     suspend fun exportJsonBackupToUri(uri: Uri): Result<Pair<String, Int>> = withContext(Dispatchers.IO) {
+        NativeHealthBackupGate.begin()
         try {
             val settings = settingsStore.current()
             val healthSnapshot = if (settings.healthBackupConsent) {
@@ -136,13 +137,14 @@ class BackupRestoreManager(context: Context) {
                 throw IOException("A visszaolvasott fájl eltér vagy üres.")
             }
             Result.success(resolveDisplayName(uri, "repforge-backup.json") to actualBytes.size)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+        } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+        catch (e: Exception) { Result.failure(e) }
+        finally { NativeHealthBackupGate.end() }
     }
 
     /** Imports a JSON backup from a user-selected SAF Uri with full health & route reconciliation. */
     suspend fun importJsonBackupFromUri(uri: Uri, recoverInterrupted: Boolean = false): Result<Unit> = withContext(Dispatchers.IO) {
+        NativeHealthBackupGate.begin()
         try {
             val bytes = readUriBytes(uri, JSON_LIMIT)
             val parsed = JSONObject(String(bytes, StandardCharsets.UTF_8))
@@ -159,6 +161,7 @@ class BackupRestoreManager(context: Context) {
             Result.success(Unit)
         } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
         catch (error: Exception) { Result.failure(error) }
+        finally { NativeHealthBackupGate.end() }
     }
 
     /** Reuse the same staged redo path for an already merged Drive payload, under its caller's lease. */
@@ -258,6 +261,7 @@ class BackupRestoreManager(context: Context) {
 
     /** Exports a full ZIP archive (backup.json + photos/(image).jpg + manifest.json) and verifies SHA-256. */
     suspend fun exportZipArchiveToUri(uri: Uri): Result<Pair<String, Long>> = withContext(Dispatchers.IO) {
+        NativeHealthBackupGate.begin()
         var tmp: File? = null
         try {
             val settings = settingsStore.current()
@@ -330,18 +334,24 @@ class BackupRestoreManager(context: Context) {
                 throw IOException("Export verification failed.")
             }
             Result.success(resolveDisplayName(uri, "TrainPilot.zip") to tmp.length())
-        } catch (e: Exception) {
-            Result.failure(e)
-        } finally {
+        } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+        catch (e: Exception) { Result.failure(e) }
+        finally {
             tmp?.delete()
+            NativeHealthBackupGate.end()
         }
     }
 
     /** Extracts, verifies, and atomically installs a full ZIP archive from a user-selected SAF Uri. */
     suspend fun importZipArchiveFromUri(uri: Uri, recoverInterrupted: Boolean = false): Result<Unit> = withContext(Dispatchers.IO) {
-        val token = UUID.randomUUID().toString()
-        val dir = transactionDir(token)
+        NativeHealthBackupGate.begin()
+        var stagingDir: File? = null
         try {
+            // mkdir of archive_transactions may throw. Include *all* staging
+            // preparation after begin() under finally, not only the ZIP extraction.
+            val token = UUID.randomUUID().toString()
+            val dir = transactionDir(token)
+            stagingDir = dir
             mkdir(dir)
             val incoming = File(dir, "incoming")
             mkdir(incoming)
@@ -372,12 +382,20 @@ class BackupRestoreManager(context: Context) {
             if (recoverInterrupted) NativeDataReplacement.recover(appContext, operation)
             else NativeDataReplacement.exclusively(appContext, operation)
             Result.success(Unit)
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            throw cancelled
         } catch (e: Exception) {
             // Keep originals/journal if rollback itself failed; never erase recovery evidence.
-            if (!NativeReplacementJournal(appContext).exists() && !File(dir, "journal.json").isFile) {
+            // transactionDir may have failed *before* a staging directory existed.
+            val dir = stagingDir
+            if (dir != null && !NativeReplacementJournal(appContext).exists() &&
+                !File(dir, "journal.json").isFile
+            ) {
                 try { removeRecursive(dir) } catch (_: Exception) { }
             }
             Result.failure(e)
+        } finally {
+            NativeHealthBackupGate.end()
         }
     }
 

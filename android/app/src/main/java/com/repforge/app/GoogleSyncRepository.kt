@@ -132,9 +132,12 @@ class GoogleSyncRepository internal constructor(context: Context, private val op
     private suspend fun <T> runGoogleOperation(op: String, stage: String, operation: suspend () -> T): Result<T> {
         return try {
             operations.run {
-                refreshProfileState()
-                _uiState.update { it.copy(isBusy = true, activeOperation = op, stageMessage = stage, errorMessage = null) }
+                // Drive sync stages a snapshot/merge outside the replacement mutex.
+                // An unattended Health read must not race this cloud backup window.
+                if (op == GoogleSyncAction.DRIVE.key) NativeHealthBackupGate.begin()
                 try {
+                    refreshProfileState()
+                    _uiState.update { it.copy(isBusy = true, activeOperation = op, stageMessage = stage, errorMessage = null) }
                     currentCoroutineContext().ensureActive()
                     val value = operation()
                     currentCoroutineContext().ensureActive()
@@ -146,6 +149,7 @@ class GoogleSyncRepository internal constructor(context: Context, private val op
                     Result.failure(Exception(message, e))
                 } finally {
                     _uiState.update { it.copy(isBusy = false, activeOperation = "", stageMessage = "") }
+                    if (op == GoogleSyncAction.DRIVE.key) NativeHealthBackupGate.end()
                 }
             }
         } catch (busy: NativeGoogleOperationGate.Busy) { Result.failure(busy) }

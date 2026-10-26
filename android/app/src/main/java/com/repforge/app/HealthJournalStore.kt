@@ -413,9 +413,11 @@ internal class HealthJournalStore(context: Context) :
                             }
                         }
                     } else {
+                        // First read with only some permissions: retain the metrics genuinely
+                        // received, visibly marked partial. An absent metric stays absent, not
+                        // an invented zero or a discarded measurement.
                         val dirty = ContentValues().apply { put("day", day) }
                         db.insertWithOnConflict("dirty_days", null, dirty, SQLiteDatabase.CONFLICT_IGNORE)
-                        return@transaction null
                     }
                 }
             }

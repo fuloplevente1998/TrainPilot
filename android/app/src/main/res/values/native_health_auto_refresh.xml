@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_health_auto_refresh_title">Automatikus egészségfrissítés</string>
+    <string name="native_health_auto_refresh_help">Bekapcsolva az Egészség megnyitásakor frissít a szolgáltatóból, legfeljebb 10 percenként. Nem kér automatikusan engedélyt.</string>
+    <string name="native_health_auto_refresh_save_error">A beállítás nem menthető. Próbáld újra.</string>
+    <string name="native_health_auto_refresh_running">Egészségadatok frissítése…</string>
+</resources>
