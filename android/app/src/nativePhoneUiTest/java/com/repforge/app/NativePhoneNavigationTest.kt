@@ -121,7 +121,8 @@ class NativePhoneNavigationTest {
         for (route in listOf("training", "journal", "progress", "health")) { tab(route); screenshot(route) }
         tab("home")
         for (route in listOf("programs", "calendar", "coach")) {
-            compose.onNodeWithTag("shortcut_$route").performClick()
+            compose.waitUntil(10_000) { compose.onAllNodesWithTag("shortcut_$route").fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithTag("shortcut_$route").performScrollTo().performClick()
             compose.onNodeWithTag("navigation_settings").assertExists()
             if (route == "coach") compose.waitUntil(15000) {
                 compose.onAllNodesWithTag("coach_ready").fetchSemanticsNodes().isNotEmpty()
@@ -222,6 +223,7 @@ class NativePhoneNavigationTest {
         assertFalse(snapshot()!!.optBoolean("workoutPaused"))
         screenshot("active_timed")
         tab("home")
+        compose.waitUntil(10_000) { snapshot()?.optBoolean("workoutPaused") == true }
         assertTrue(snapshot()!!.optBoolean("workoutPaused"))
     }
     @Test fun failedDiscardStaysInEditorAndExplicitRetryClosesTheSameWorkout() {
