@@ -1,0 +1,187 @@
+ title:'Szybki trening',subtitle:'Wybierz ćwiczenie i zacznij od razu.',
+ cardTitle:'Szybki trening',cardHelp:'Wybierz ćwiczenie i zacznij od razu.',
+ start:'Rozpocznij szybki trening',already:'To ćwiczenie jest już w szybkim treningu. Przeniesiono do niego.',
+ replaceDraft:'Masz niedokończony trening. Nowy szybki trening zastąpi zapisany szkic. Kontynuować?',
+ replaceConfirm:'Nowy szybki trening',quickBadge:'SZYBKI TRENING'
+});
+
+var tp150CompactQuickCard=function tp150CompactQuickCard(){
+ return '<div class="card tp150-quick-entry tp150-quick-entry-compact"><div class="tp150-quick-copy"><span class="badge">'+esc(tp150qwT('quickBadge'))+'</span><h2>'+esc(tp150qwT('cardTitle'))+'</h2><p class="small muted">'+esc(tp150qwT('cardHelp'))+'</p></div><button class="btn block" onclick="tp150QuickPicker()">'+esc(tp150qwT('start'))+'</button></div>';
+};
+
+programsScreen=function(){
+ const custom=exercises().filter(function(e){return e.custom;});
+ const tools='<div class="tp150-program-tools"><button class="btn" onclick="createCustomProgram()">'+esc(tp149T('programs.create'))+'</button><button class="btn secondary" onclick="customExerciseScreen()">'+esc(tp149T('programs.createExercise'))+'</button><button class="btn secondary" onclick="muscleLibrary()">'+esc(tp149T('programs.library'))+'</button></div>';
+ const list='<section class="tp150-programs-frame"><div class="section tp150-programs-frame-title">'+esc(tp149T('programs.title'))+'</div>'+programCards()+'</section>';
+ const customRows=custom.length?'<div class="section">'+esc(tp149T('programs.customExercises'))+'</div>'+custom.map(function(e){return '<div class="custom-ex-row"><span>'+esc(tp149ExerciseName(e))+'</span><button class="btn danger" onclick="deleteCustomExercise14(\''+esc(e.id)+'\')">'+esc(tp149T('common.delete'))+'</button></div>';}).join(''):'';
+ return shell('<main class="tp150-programs-compact">'+tools+list+customRows+'</main>');
+};
+
+planScreen=function(){
+ const p=activeProgram(),quick=tp150CompactQuickCard();
+ if(!p)return shell('<main class="tp146-plan tp150-plan-compact">'+quick+'<div class="card tp150-active-program"><strong>'+esc(tp149T('program.noActive'))+'</strong><button class="btn secondary" onclick="go(\'programs\')">'+esc(tp149T('program.choose'))+'</button></div></main>');
+ const pName=tp149ProgramMeta(p,'name'),location=tp149ProgramMeta(p,'location'),level=tp149ProgramMeta(p,'level');
+ const active='<div class="card tp150-active-program"><div class="tp150-active-copy"><span class="badge">'+esc(tp149T('program.activeBadge'))+'</span><h2>'+esc(pName)+'</h2><div class="small muted">'+esc(location)+(level?' • '+esc(level):'')+' • '+esc(tp149T('program.cycle',{count:p.days?.length||0}))+'</div></div><button class="btn secondary tp150-change-program" onclick="go(\'programs\')">'+esc(tp149T('program.chooseAnother'))+'</button></div>';
+ const days=(p.days||[]).map(function(d){
+  return '<div class="card tp146-day-head"><div class="tp146-day-copy"><span class="badge">'+esc(tp149T('program.workoutDayBadge'))+'</span>'+rf148PlanDayHeading(p,d)+'<div class="small muted">'+esc(tp149T('program.tapDetails',{count:d.exercises?.length||0}))+'</div></div></div>'+
+   (d.exercises||[]).map(function(id,i){return rf201ExerciseRow(d.id,id,i);}).join('')+
+   '<button class="btn secondary block" onclick="rf154AddScreen(\''+esc(d.id)+'\')">+ '+esc(tp149T('program.addExercise'))+'</button><br><button class="btn block" onclick="startWorkout(\''+esc(d.id)+'\')">'+esc(tp149T('workout.start'))+'</button>';
+ }).join('<br>');
+ return shell('<main class="tp146-plan tp150-plan-compact">'+quick+active+days+'</main>');
+};
+
+historyScreen=function(){
+ const all=history(),filtered=rf263FilteredHistory(),from=rf263HistoryFilter.from,to=rf263HistoryFilter.to,active=!!(from||to);
+ const filter='<div class="card tp150-journal-filter"><div class="rf263-history-filter">'+rf263DateField('from',tp149T('journal.from'),from)+rf263DateField('to',tp149T('journal.to'),to)+'<button class="btn secondary rf263-clear-filter" onclick="rf263ClearHistoryFilter()" '+(active?'':'disabled')+'>'+esc(tp149T('journal.clearFilter'))+'</button></div><p class="small muted rf263-history-count">'+esc(tp149T('journal.count',{shown:filtered.length,total:all.length}))+'</p></div>';
+ const rows=filtered.length?filtered.map(function(row,i){return rf263HistoryItem(row.x,row.index,i);}).join(''):(window.TrainPilot110?window.TrainPilot110.empty('log',!!all.length):(all.length?'<div class="card muted">'+esc(tp149T('journal.noneRange'))+'</div>':'<div class="muted">'+esc(tp149T('journal.none'))+'</div>'));
+ return shell('<main class="tp150-journal-compact">'+filter+rows+'</main>');
+};
+
+/* The old bridge rebuilt user-protection lists and sorted the full phrase map for every
+ * text node. Prepare those values once per render instead. */
+var TP150_I18N_SORTED_KEYS=Object.create(null);
+var tp150PreparedTranslate=function tp150PreparedTranslate(input,lang,userValues,map,keys){
+ let source=String(input),protectedValues=[];
+ for(const value of userValues){
+  if(!value||!source.includes(value))continue;
+  const token='\uE000TPU'+protectedValues.length+'\uE001';
+  source=source.split(value).join(token);protectedValues.push([token,value]);
+ }
+ let out=source;
+ for(const k of keys)if(k&&out.includes(k))out=out.split(k).join(map[k]);
+ out=tp149Patterns(out,lang);
+ for(const pair of protectedValues)out=out.split(pair[0]).join(pair[1]);
+ return out;
+};
+tp149TranslateDom=function tp149TranslateDom(root=document){
+ const lang=rf212Lang();document.documentElement.lang=lang;
+ if(lang==='hu'||!root||typeof document.createTreeWalker!=='function'||typeof NodeFilter==='undefined')return;
+ const map=tp149Map(lang),keys=TP150_I18N_SORTED_KEYS[lang]||(TP150_I18N_SORTED_KEYS[lang]=Object.keys(map).sort(function(a,b){return b.length-a.length;}));
+ const userValues=tp149UserValues(),translate=function(value){return tp150PreparedTranslate(value,lang,userValues,map,keys);};
+ const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+ let node;
+ while((node=walker.nextNode())){
+  const p=node.parentElement;if(!p||/^(SCRIPT|STYLE|TEXTAREA)$/i.test(p.tagName))continue;
+  const old=node.nodeValue;if(!old||!old.trim())continue;
+  const translated=translate(old);if(translated!==old)node.nodeValue=translated;
+ }
+ root.querySelectorAll?.('[aria-label],[title],[placeholder]').forEach(function(el){
+  for(const a of ['aria-label','title','placeholder']){const v=el.getAttribute(a);if(v){const t=translate(v);if(t!==v)el.setAttribute(a,t);}}
+ });
+ const weekdayLabels={en:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],de:['Mo','Di','Mi','Do','Fr','Sa','So'],ro:['Lu','Ma','Mi','Jo','Vi','Sâ','Du']};
+ root.querySelectorAll?.('.cal-weekdays span').forEach(function(el,i){if(weekdayLabels[lang]?.[i])el.textContent=weekdayLabels[lang][i];});
+ root.querySelectorAll?.('.rf2211-weekdays label').forEach(function(el,i){const label=weekdayLabels[lang]?.[i];if(!label)return;for(const n of [...el.childNodes])if(n.nodeType===3&&n.nodeValue.trim())n.nodeValue=label;});
+ const list=typeof exercises==='function'?exercises():[],byName=new Map();
+ for(const e of list)if(e&&!e.custom){
+  for(const name of [e.hu,e.en,tp149ExerciseName(e,lang)])if(name)byName.set(String(name).trim(),e);
+ }
+ root.querySelectorAll?.('.exercise,.detail,.tp-library-card').forEach(function(card){
+  const name=card.querySelector?.('.ex-name')||card.querySelector?.('h2')||card.querySelector?.('h3'),en=card.querySelector?.('.en');if(!name)return;
+  const e=byName.get(String(name.textContent||'').trim())||byName.get(String(en?.textContent||'').trim());
+  if(e){name.textContent=tp149ExerciseName(e,lang);if(en)en.hidden=true;}
+ });
+};
+
+/* Keep the one-time delayed repaint needed for the old boot callback, but do not schedule
+ * another Coach replacement on every later Home render. */
+var tp150CoachSettledLang='';
+render=function(custom){
+ const out=tp149HomeCoachRepaintRenderBase.apply(this,arguments),lang=rf212Lang();
+ if(state.tab==='home'&&lang!=='hu'&&tp150CoachSettledLang!==lang&&document.querySelector('#rf220CoachCard')){
+  tp150CoachSettledLang=lang;setTimeout(tp149RepaintLocalizedHomeCoach,0);
+ }
+ return out;
+};
+
+(function tp150CompactUiCss(){
+ if(document.getElementById('tp150CompactUiCss'))return;
+ const style=document.createElement('style');style.id='tp150CompactUiCss';
+ style.textContent=
+  '.tp150-programs-compact,.tp150-plan-compact,.tp150-journal-compact{padding-top:10px}'+
+  '.tp150-program-tools{display:grid;grid-template-columns:1fr;gap:8px;margin:0 0 12px}'+
+  '.tp150-program-tools .btn{min-height:44px}'+
+  '.tp150-programs-frame{border:1px solid var(--line);border-radius:16px;padding:10px;margin:0 0 14px;background:color-mix(in srgb,var(--card) 72%,transparent)}'+
+  '.tp150-programs-frame-title{margin:0 0 8px!important;padding:0 2px!important}'+
+  '.tp150-programs-frame .program-card:last-child{margin-bottom:0}'+
+  '.tp150-quick-entry-compact{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px!important;margin-bottom:10px}'+
+  '.tp150-quick-entry-compact h2{margin:4px 0 2px;font-size:19px}.tp150-quick-entry-compact p{margin:0;line-height:1.3}'+
+  '.tp150-quick-entry-compact>.btn{width:auto;min-width:150px}'+
+  '.tp150-active-program{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px!important;margin-bottom:12px}'+
+  '.tp150-active-program h2{margin:5px 0 3px;font-size:20px}.tp150-active-program .small{line-height:1.3}'+
+  '.tp150-change-program{width:auto;min-width:132px}'+
+  '.tp150-journal-filter{margin-top:0!important}'+
+  'body.tp-home-view{overflow-y:auto!important;-webkit-overflow-scrolling:touch;overscroll-behavior-y:auto!important}'+
+  'body.tp-home-view main.rf221-home{height:auto!important;min-height:100dvh!important;max-height:none!important;overflow:visible!important;padding-bottom:max(112px,calc(88px + env(safe-area-inset-bottom,0px)))!important}'+
+  'body.tp-home-view main.rf221-home #rf220CoachCard{overflow:visible!important;flex:0 0 auto!important;margin-bottom:0!important}'+
+  '@media(min-width:430px){.tp150-program-tools{grid-template-columns:1.15fr 1fr 1.25fr}}'+
+  '@media(max-width:429px){.tp150-quick-entry-compact,.tp150-active-program{grid-template-columns:1fr}.tp150-quick-entry-compact>.btn,.tp150-change-program{width:100%;min-width:0}}';
+ document.head.appendChild(style);
+})();
+
+window.TrainPilot150Polish={
+ compactPrograms:true,compactWorkout:true,compactJournal:true,preparedI18n:true,homeCoachScroll:true
+};
+// @endsection trainpilot-150-compact-ui-performance.js
+
+// @section trainpilot-151-unified-design.js
+/* TrainPilot unified compact redesign: navigation, Quick Workout, Calendar, Health, Weight and Coach. */
+const TP151_TEXT={
+hu:{coach:'Coach',settings:'Beállítások',calendar:'Edzésnaptár',calendarHint:'Válassz egy napot az edzés részleteihez.',empty:'Erre a napra nincs edzés.',add:'Edzés hozzáadása',planned:'Tervezett',completed:'Teljesített',skipped:'Kihagyva',skip:'Kihagyás',restore:'Visszaállítás',start:'Indítás',move:'Áthelyezés',edit:'Módosítás',del:'Törlés',save:'Mentés',cancel:'Mégse',time:'Időpont',duration:'Időtartam (perc)',programDay:'Programnap',logged:'Naplózott edzés',openLog:'Napló megnyitása',healthHint:'A legfontosabb napi és Health Connect adatok.',permissions:'Engedélyek',permOpen:'Minden elérhető olvasási engedély megvan. Health Connect beállítások megnyitva.',permAsk:'Health Connect engedélykérés megnyitva.',today:'Mai állapot',body:'Test és fittség',more:'További adatok',recovery:'Regenerációs előzmények',pulse:'Pulzus',avg:'átlag',min:'min',max:'max',samples:'minta',weightLog:'Testsúlynapló',newWeight:'Új mérés',trend:'Trend',history:'Előzmények',todayAdvice:'Mai javaslat',why:'Mi alapján?',quickSetup:'Gyors edzés beállítása',sets:'Sorozatok',target:'Célismétlés / idő',weight:'Kezdősúly',quickStart:'Edzés indítása',quickAdd:'Hozzáadás',previous:'Az előző terhelés / TrainPilot ajánlás alapértékként szerepel.'},
+en:{coach:'Coach',settings:'Settings',calendar:'Workout calendar',calendarHint:'Select a day to see workout details.',empty:'No workout on this day.',add:'Add workout',planned:'Planned',completed:'Completed',skipped:'Skipped',skip:'Skip',restore:'Restore',start:'Start',move:'Move',edit:'Edit',del:'Delete',save:'Save',cancel:'Cancel',time:'Time',duration:'Duration (min)',programDay:'Program day',logged:'Logged workout',openLog:'Open log',healthHint:'Your key daily and Health Connect data.',permissions:'Permissions',permOpen:'All available read permissions are granted. Health Connect settings opened.',permAsk:'Health Connect permission request opened.',today:'Today',body:'Body & fitness',more:'More data',recovery:'Recovery history',pulse:'Heart rate',avg:'avg',min:'min',max:'max',samples:'samples',weightLog:'Body weight',newWeight:'New entry',trend:'Trend',history:'History',todayAdvice:"Today's recommendation",why:'Why?',quickSetup:'Quick Workout setup',sets:'Sets',target:'Target reps / time',weight:'Starting weight',quickStart:'Start workout',quickAdd:'Add',previous:'Previous load / TrainPilot recommendation is used as the default.'},
+de:{coach:'Coach',settings:'Einstellungen',calendar:'Trainingskalender',calendarHint:'Wähle einen Tag für Trainingsdetails.',empty:'Für diesen Tag gibt es kein Training.',add:'Training hinzufügen',planned:'Geplant',completed:'Abgeschlossen',skipped:'Übersprungen',skip:'Überspringen',restore:'Wiederherstellen',start:'Start',move:'Verschieben',edit:'Bearbeiten',del:'Löschen',save:'Speichern',cancel:'Abbrechen',time:'Uhrzeit',duration:'Dauer (Min.)',programDay:'Programmtag',logged:'Protokolliertes Training',openLog:'Protokoll öffnen',healthHint:'Die wichtigsten Tages- und Health-Connect-Daten.',permissions:'Berechtigungen',permOpen:'Alle verfügbaren Leseberechtigungen sind erteilt. Health-Connect-Einstellungen geöffnet.',permAsk:'Health-Connect-Berechtigungsabfrage geöffnet.',today:'Heute',body:'Körper & Fitness',more:'Weitere Daten',recovery:'Regenerationsverlauf',pulse:'Puls',avg:'Ø',min:'min',max:'max',samples:'Messungen',weightLog:'Körpergewicht',newWeight:'Neuer Eintrag',trend:'Trend',history:'Verlauf',todayAdvice:'Heutige Empfehlung',why:'Grundlage',quickSetup:'Schnelltraining einstellen',sets:'Sätze',target:'Ziel-Wdh. / Zeit',weight:'Startgewicht',quickStart:'Training starten',quickAdd:'Hinzufügen',previous:'Vorherige Belastung / TrainPilot-Empfehlung wird als Standard verwendet.'},
+ro:{coach:'Coach',settings:'Setări',calendar:'Calendar antrenamente',calendarHint:'Alege o zi pentru detaliile antrenamentului.',empty:'Nu există antrenament în această zi.',add:'Adaugă antrenament',planned:'Planificat',completed:'Finalizat',skipped:'Omis',skip:'Omite',restore:'Restabilește',start:'Pornește',move:'Mută',edit:'Modifică',del:'Șterge',save:'Salvează',cancel:'Anulează',time:'Ora',duration:'Durată (min)',programDay:'Zi de program',logged:'Antrenament în jurnal',openLog:'Deschide jurnalul',healthHint:'Datele zilnice și Health Connect esențiale.',permissions:'Permisiuni',permOpen:'Toate permisiunile de citire disponibile sunt acordate. Setările Health Connect au fost deschise.',permAsk:'Solicitarea permisiunilor Health Connect a fost deschisă.',today:'Starea de azi',body:'Corp și fitness',more:'Mai multe date',recovery:'Istoric recuperare',pulse:'Puls',avg:'medie',min:'min',max:'max',samples:'măsurători',weightLog:'Greutate corporală',newWeight:'Măsurare nouă',trend:'Tendință',history:'Istoric',todayAdvice:'Recomandarea de azi',why:'Pe ce se bazează?',quickSetup:'Configurare antrenament rapid',sets:'Serii',target:'Repetări / timp țintă',weight:'Greutate inițială',quickStart:'Pornește antrenamentul',quickAdd:'Adaugă',previous:'Încărcarea anterioară / recomandarea TrainPilot este folosită implicit.'}
+};
+var tp151T=function(k){const l=typeof rf212Lang==='function'?rf212Lang():'hu';return TP151_TEXT[l]?.[k]||TP151_TEXT.hu[k]||k};
+
+shell=function(content){
+ const active=id=>(state.tab===id||(id==='home'&&(state.tab==='stats'||state.tab==='profile')))?'active':'';
+ const nav=[['home','nav.home','⌂'],['plan','nav.workout','◫'],['calendar','nav.calendar','▦'],['programs','nav.programs','▤'],['history','nav.log','≡'],['health','nav.health','♡']];
+ const actions='<div class="tp151-top-actions"><button class="tp151-top-icon" aria-label="'+esc(tp151T('coach'))+'" onclick="rf233CoachScreen()">✦</button><button class="tp151-top-icon rf208-settings-btn" aria-label="'+esc(tp151T('settings'))+'" onclick="go(\'settings\')">⚙︎</button></div>';
+ const html='<div><div class="top tp151-top"><div class="rf208-brand-row"><div class="brand">TrainPilot</div>'+actions+'</div><div class="tag">'+esc(tp149T('brand.tagline'))+'</div><div class="tabs tabs6 rf208-tabs tp151-nav-dock">'+nav.map(x=>'<button class="tab tp151-nav-item '+active(x[0])+'" onclick="go(\''+x[0]+'\')" aria-label="'+esc(tp149T(x[1]))+'"><span class="tp151-nav-icon">'+x[2]+'</span><span class="tp151-nav-label">'+esc(tp149T(x[1]))+'</span></button>').join('')+'</div></div>'+String(content||'')+(state.session&&state.timer>0?timerHtml():'')+'</div>';
+ document.documentElement.lang=rf212Lang();return html.replaceAll('null/100','—').replaceAll('null ms','—');
+};
+
+var tp151QuickDefaults=function(id){const e=byId(id),item=tp150QuickExercise(id);if(!e||!item)return null;return {sets:item.sets.length,target:String(e.reps||''),weight:Number(item.sets?.[0]?.weight??e.weight??0),body:e.loadType==='bodyweight',unit:typeof tp149LoadLabel==='function'?tp149LoadLabel(e.loadType):loadLabel(e.loadType)}};
+// #228: Quick Workout target is only a goal; don't discard completed Journal
+// repetitions or collapse per-set historical weights while applying the form.
+var tp151QuickConfiguredSets=function(exercise,item,count,rawWeight){
+ const prior=Array.isArray(item?.sets)?item.sets:[];
+ const full=tp228PrefillSets(null,exercise,count,exercise.weight??0);
+ const original=Number(prior[0]?.weight??exercise.weight??0);
+ const selected=Number(String(rawWeight??original).replace(',','.'));
+ const changed=exercise.loadType!=='bodyweight'&&rawWeight!=null&&String(rawWeight).trim()!==''&&
+  Number.isFinite(selected)&&selected>=0&&selected!==original;
+ return Array.from({length:count},(_,i)=>{
+  const set=prior[i]||full[i]||{set:i+1,weight:exercise.weight??0,reps:'',done:false};
+  return {...set,set:i+1,...(changed?{weight:selected}:{})};
+ });
+};
+var tp151QuickConfig=function(id){
+ const e=byId(id),d=tp151QuickDefaults(id);if(!e||!d)return;state.tab='plan';const adding=typeof tp150IsQuick==='function'&&tp150IsQuick(),name=e.custom?String(e.hu||e.en||e.id):tp149ExerciseName(e);
+ const weight=d.body?'':'<label>'+esc(tp151T('weight'))+' <span class="small muted">('+esc(d.unit)+')</span><input id="tp151QuickWeight" class="field" inputmode="decimal" type="number" min="0" step="0.5" value="'+esc(d.weight)+'"></label>';
+ render(shell('<main class="tp151-quick-config"><button class="btn secondary" onclick="'+(adding?'renderWorkout()':'tp150QuickPicker()')+'">← '+esc(tp149T('common.back'))+'</button><div class="card tp151-quick-config-card"><span class="badge">'+esc(tp150qwT('quickBadge'))+'</span><h1>'+esc(name)+'</h1><p class="small muted">'+esc(tp151T('previous'))+'</p><div class="tp151-form-grid"><label>'+esc(tp151T('sets'))+'<select id="tp151QuickSets" class="field">'+Array.from({length:10},(_,i)=>i+1).map(n=>'<option value="'+n+'" '+(n===d.sets?'selected':'')+'>'+n+'</option>').join('')+'</select></label><label>'+esc(tp151T('target'))+'<input id="tp151QuickTarget" class="field" value="'+esc(d.target)+'"></label>'+weight+'</div><button class="btn block" onclick="tp151SaveQuick(\''+esc(id)+'\')">'+esc(adding?tp151T('quickAdd'):tp151T('quickStart'))+'</button></div></main>'));
+};
+var tp151BuildQuick=function(id){const e=byId(id),b=tp150QuickExercise(id);if(!e||!b)return null;const n=Math.max(1,Math.min(10,Number(document.getElementById('tp151QuickSets')?.value)||b.sets.length||3)),target=String(document.getElementById('tp151QuickTarget')?.value||e.reps||'').trim().slice(0,40),raw=document.getElementById('tp151QuickWeight')?.value,w=e.loadType==='bodyweight'?0:Math.max(0,Number(String(raw??b.sets?.[0]?.weight??0).replace(',','.'))||0);b.targetReps=target;b.plannedWeight=w;b.sets=tp151QuickConfiguredSets(e,b,n,raw);return b};
+var tp151SaveQuick=async function(id){
+ const fromWatch=window.TrainPilotWearSync?.isStartingFromWatch?.()===true;
+ const item=tp151BuildQuick(id);if(!item)return;
+ if(typeof tp150IsQuick==='function'&&tp150IsQuick()){const i=state.session.exercises.findIndex(x=>x.id===id);if(i>=0){state.session.exercises[i]=item;state.current=i}else{state.session.exercises.push(item);state.current=state.session.exercises.length-1}persistDraft();renderWorkout();window.scrollTo?.(0,0);return}
+ if(!(await tp150QuickConfirmReplace()))return;db.set('draft',null);stopTimer();state.tab='plan';state.workout='quick';state.current=0;state.session={type:'quick',quickWorkout:true,programId:null,programName:tp150qwT('title'),dayId:null,workout:'quick',started:new Date().toISOString(),exercises:[item]};persistDraft();renderWorkout();window.scrollTo?.(0,0);
+ window.TrainPilotWearSync?.phoneWorkoutStarted?.(state.session,{fromWatch});
+};
+tp150QuickAction=function(id){if(typeof tp150IsQuick==='function'&&tp150IsQuick()){const i=state.session.exercises.findIndex(x=>x.id===id);if(i>=0){state.current=i;renderWorkout();window.scrollTo?.(0,0);return}}return tp151QuickConfig(id)};
+tp150StartQuickWorkout=function(id){return tp151QuickConfig(id)};
+tp150AddQuickExercise=function(id){return tp151QuickConfig(id)};
+const tp151RenderWorkoutBase=renderWorkout;
+renderWorkout=function(){const out=tp151RenderWorkoutBase.apply(this,arguments);if(typeof tp150IsQuick==='function'&&tp150IsQuick()){const se=state.session?.exercises?.[state.current];if(se?.targetReps){const m=document.querySelector('main .detail .meta');if(m)m.textContent=tp151T('target')+': '+se.sets.length+' × '+se.targetReps;document.querySelectorAll('main .row input[inputmode="numeric"]').forEach(x=>x.placeholder=se.targetReps)}}return out};
+
+toggleCalendarDay=function(date){if(window.TrainPilotCalendarDay?.open(date,document.activeElement))return;state.rf2211CalendarDate=date;state.tp151EditingScheduleId=null;render()};
+var tp151DateTitle=d=>new Date(d+'T12:00').toLocaleDateString(typeof rf233Locale==='function'?rf233Locale():'hu-HU',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+var tp151EditCalendarItem=id=>{state.tp151EditingScheduleId=id;render()};
+var tp151CancelCalendarEdit=()=>{state.tp151EditingScheduleId=null;render()};
+var tp151SaveCalendarItem=function(id){
+ const rows=scheduled(),i=rows.findIndex(x=>x.id===id&&!x.cancelled);if(i<0)return;const x=rows[i],day=document.getElementById('tp151ScheduleDay')?.value||x.dayId||x.workout,time=document.getElementById('tp151ScheduleTime')?.value||new Date(x.start).toTimeString().slice(0,5),mins=Math.max(10,Math.min(240,Number(document.getElementById('tp151ScheduleMinutes')?.value)||Math.round((Date.parse(x.end)-Date.parse(x.start))/60000)||45)),date=localDateKey(new Date(x.start));
+ try{const st=dateAt(date,time);rows[i]={...x,dayId:day,workout:day,start:st.toISOString(),end:new Date(st.getTime()+mins*60000).toISOString(),updatedAt:Date.now()};db.set('scheduled',rows);state.tp151EditingScheduleId=null;if(typeof cloudChanged==='function')cloudChanged();render();tp153Toast(tp149T('settings.saved'),1800)}catch(e){alert(e?.message||'Invalid date')}
+};
+var tp151ScheduleCard=function(x){
+ const p=programById(x.programId||'home-basic'),d=programDay(p,x.dayId||x.workout),done=typeof rf209ScheduleDone==='function'?rf209ScheduleDone(x):false,skipped=x.status==='skipped';

@@ -1,0 +1,157 @@
+ const limit=value=>String(value||'').slice(0,80);
+ function protocolHint(device){
+  const services=new Set((Array.isArray(device?.advertisedServices)?device.advertisedServices:[]).map(uuid).filter(Boolean));
+  if(services.has('6e40ab01-b5a3-f393-e0a9-e50e24dcca9e'))return 'realtek';
+  if(services.has('0000ae00-0000-1000-8000-00805f9b34fb'))return 'jieli';
+  if(services.has('00002222-0000-1000-8000-00805f9b34fb')||services.has('00004444-0000-1000-8000-00805f9b34fb'))return 'mediatek';
+  if(services.has('0000180d-0000-1000-8000-00805f9b34fb'))return 'heartRate';
+  return null;
+ }
+ const deviceAddress=value=>/^[0-9a-f]{2}(:[0-9a-f]{2}){5}$/i.test(String(value||''))?String(value).toUpperCase():'';
+ function deviceInfo(device){
+  return {number:Number.isInteger(device?.number)&&device.number>=1&&device.number<=65535?device.number:null,name:limit(device?.name),rssi:Number.isInteger(device?.rssi)&&device.rssi>=-127&&device.rssi<=20?device.rssi:null,protocolHint:protocolHint(device),advertisedServices:(Array.isArray(device?.advertisedServices)?device.advertisedServices:[]).slice(0,128).map(uuid).filter(Boolean),manufacturers:(Array.isArray(device?.manufacturers)?device.manufacturers:[]).slice(0,64).map(m=>({companyId:Number(m.companyId)||0,length:Number(m.length)||0}))};
+ }
+ function diagnostic(snapshot,device,version='1.2.0',scanDevices=[]){
+  const list=(snapshot.services||[]).slice(0,128).filter(s=>uuid(s.uuid)).map(s=>({uuid:uuid(s.uuid),type:Number(s.type)||0,characteristics:(s.characteristics||[]).slice(0,128).filter(c=>uuid(c.uuid)).map(c=>({uuid:uuid(c.uuid),properties:Number(c.properties)||0,descriptors:(c.descriptors||[]).slice(0,64).map(uuid).filter(Boolean)}))}));
+  return {format:'TrainPilot-BLE-diagnostic',schemaVersion:1,appVersion:version,exportedAt:new Date().toISOString(),androidSdk:Number(snapshot.sdk)||null,mode:(snapshot.services||[]).length?'connection':'scan',device:deviceInfo({...device,name:snapshot.deviceName||device?.name}),scanDevices:(Array.isArray(scanDevices)?scanDevices:[]).slice(0,120).map(deviceInfo),connection:{state:limit(snapshot.state),code:limit(snapshot.code),gattStatus:Number(snapshot.gattStatus)||0},rdfitProbe:{supported:snapshot.probeSupported===true,status:['idle','running','complete','partial','failed'].includes(snapshot.rdfitProbe?.status)?snapshot.rdfitProbe.status:'idle',batteryReceived:snapshot.rdfitProbe?.batteryReceived===true,stepsReceived:snapshot.rdfitProbe?.stepsReceived===true,notifications:Math.max(0,Math.min(65,Number(snapshot.rdfitProbe?.notifications)||0)),requests:Math.max(0,Math.min(2,Number(snapshot.rdfitProbe?.requests)||0)),rejectedFrames:Math.max(0,Math.min(2048,Number(snapshot.rdfitProbe?.rejectedFrames)||0))},standardHeartRateAvailable:snapshot.heartSupported===true,services:list};
+ }
+ window.TrainPilotBleCore={diagnostic,uuid,protocolHint,deviceAddress};
+ let bridge=null,listener=null,opening=0,busy=false,timer=null,paintTimer=null,lastPaint=0,operationId=0;
+ let scanDeadline=0,retryTimer=null,retryAt=0,reconnectAttempts=0,allowReconnect=false;
+ let snapshot={state:'idle',code:'',services:[],heartSupported:false},selected=null,pulse=null,macFilter='',devices=new Map();
+ const root=()=>document.querySelector('#tp155R4PanelHost[data-panel="ble"] .tp111-ble');
+ const native=()=>isNative()?(bridge||(bridge=window.Capacitor?.Plugins?.BleDiscovery||window.Capacitor?.registerPlugin?.('BleDiscovery'))):null;
+ const escaped=value=>esc(String(value||''));
+ const button=(action,label)=>'<button type="button" class="btn secondary" data-ble-action="'+action+'" onclick="TrainPilotBle.'+action+'()">'+escaped(t(label))+'</button>';
+ function html(){
+  return '<main class="tp111-ble"><p>'+escaped(t('intro'))+'</p><p class="small muted">'+escaped(t('note'))+'</p><p class="small muted">'+escaped(t('hint'))+'</p><p data-ble-status role="status" aria-live="polite"></p><div data-ble-countdown hidden><p data-ble-countdown-text></p><progress data-ble-progress max="60" value="0"></progress></div><section class="card" data-ble-remembered hidden><h3>'+escaped(t('remembered'))+'</h3><p data-ble-remembered-name></p><p class="small muted">'+escaped(t('rememberNote'))+'</p><div class="tp111-actions">'+button('reconnect','reconnect')+button('forget','forget')+'</div></section><div class="tp111-actions">'+button('scan','scan')+button('stop','stop')+button('disconnect','disconnect')+'</div><section class="card"><h3>'+escaped(t('devices'))+'</h3><p class="small muted">'+escaped(t('identify'))+'</p><label class="tp111-filter">'+escaped(t('filter'))+'<input class="field" type="text" data-ble-filter value="'+escaped(macFilter)+'" placeholder="AA:BB:CC:DD:EE:FF" autocomplete="off" autocapitalize="characters" spellcheck="false" oninput="TrainPilotBle.filterMac(this.value)"></label><div data-ble-devices></div></section><section class="card"><div class="tp111-actions">'+button('exportReport','export')+'</div><p class="small muted">'+escaped(t('scanExport'))+' '+escaped(t('exportNote'))+'</p><p data-ble-export-status role="status"></p></section><section class="card tp111-result" data-ble-result hidden><h3 data-ble-name></h3><p data-ble-capability></p><div class="tp111-actions">'+button('heart','pulse')+button('remember','remember')+'</div><section data-ble-rdfit hidden><p class="small muted">'+escaped(t('probeNote'))+'</p>'+button('probe','probe')+'<div class="tp111-readings"><div><span>'+escaped(t('battery'))+'</span><strong data-ble-battery>—</strong></div><div><span>'+escaped(t('steps'))+'</span><strong data-ble-steps>—</strong></div></div></section><div data-ble-pulse hidden><h3>'+escaped(t('live'))+'</h3><strong data-ble-bpm>—</strong><p class="small muted" data-ble-pulse-note></p><p class="small muted">'+escaped(t('liveNote'))+'</p></div><details><summary>'+escaped(t('services'))+' <span class="tp-global-chevron" aria-hidden="true">›</span></summary><div data-ble-services></div></details></section></main>';
+ }
+ function setText(selector,value){const node=root()?.querySelector(selector);if(node&&node.textContent!==value)node.textContent=value;}
+ function paint(){
+  const node=root();if(!node)return;lastPaint=Date.now();
+  setText('[data-ble-status]',!native()?t('web'):[t(snapshot.state),snapshot.code?t(snapshot.code):''].filter(Boolean).join(' · '));
+  const active=['connecting','discovering','connected','subscribing','monitoring','probing'].includes(snapshot.state),scanning=snapshot.state==='scanning';
+  const unavailable=!native()||snapshot.supported===false;
+  node.querySelector('[data-ble-remembered]').hidden=!snapshot.rememberedWatch?.present;
+  setText('[data-ble-remembered-name]',limit(snapshot.rememberedWatch?.name)||t('unnamed'));
+  const remaining=scanning?Math.max(0,Math.min(60,Math.ceil((scanDeadline-Date.now())/1000))):0;
+  node.querySelector('[data-ble-countdown]').hidden=!scanning;
+  setText('[data-ble-countdown-text]',t('remaining')+': '+remaining+' '+t('seconds'));
+  node.querySelector('[data-ble-progress]').value=60-remaining;
+  if(retryTimer)setText('[data-ble-status]',t('retry')+' '+Math.max(0,Math.ceil((retryAt-Date.now())/1000))+' '+t('seconds'));
+  for(const [action,disabled] of [['scan',unavailable||busy||active||scanning],['stop',!scanning||busy],['disconnect',!active&&!retryTimer],['reconnect',unavailable||busy||active||scanning],['forget',unavailable||!snapshot.rememberedWatch?.present],['remember',busy||snapshot.state!=='connected'||(!snapshot.probeSupported&&!snapshot.heartSupported)],['heart',busy||!snapshot.heartSupported||snapshot.state!=='connected'],['probe',busy||!snapshot.probeSupported||snapshot.state!=='connected'],['exportReport',unavailable||busy||scanning||(!snapshot.services?.length&&!devices.size)]]){
+   const target=node.querySelector('[data-ble-action="'+action+'"]');if(target)target.disabled=disabled;
+  }
+  const query=macFilter.replace(/[:.\s-]/g,'').toUpperCase();
+  const rows=[...devices.values()].filter(d=>!query||d.displayAddress.replace(/:/g,'').includes(query)).sort((a,b)=>(b.remembered?1:0)-(a.remembered?1:0)||(/gt\s*4/i.test(b.name)?1:0)-(/gt\s*4/i.test(a.name)?1:0)||(['realtek','jieli','mediatek'].includes(protocolHint(b))?1:0)-(['realtek','jieli','mediatek'].includes(protocolHint(a))?1:0)||b.rssi-a.rssi);
+  const list=node.querySelector('[data-ble-devices]');
+  const content=rows.length?rows.map(d=>'<button type="button" class="tp111-device btn secondary" data-ble-device="'+escaped(d.id)+'" '+(busy||active?'disabled':'')+'><span>'+escaped(t('deviceNumber'))+' #'+d.number+' · '+escaped(d.name||t('unnamed'))+'</span><small>'+Number(d.rssi)+' dBm'+(d.displayAddress?' · '+escaped(t('macAddress'))+': '+escaped(d.displayAddress):'')+'</small>'+(protocolHint(d)?'<small>'+escaped(protocolHint(d)==='heartRate'?t('pulseService'):t('candidate')+': '+({realtek:'Realtek',jieli:'JieLi',mediatek:'MediaTek'}[protocolHint(d)]))+'</small>':'')+'<small>'+escaped(t('connect'))+'</small></button>').join(''):'<p class="muted">'+escaped(t('none'))+'</p>';
+  if(list.innerHTML!==content){list.innerHTML=content;list.querySelectorAll('[data-ble-device]').forEach(button=>button.onclick=()=>connect(button.dataset.bleDevice));}
+  const result=node.querySelector('[data-ble-result]');result.hidden=!snapshot.services?.length;
+  setText('[data-ble-name]',(selected?.number?t('deviceNumber')+' #'+selected.number+' · ':'')+(snapshot.deviceName||selected?.name||t('unnamed')));
+  setText('[data-ble-capability]',t(snapshot.heartSupported?'supportedHeart':'noHeart'));
+  node.querySelector('[data-ble-rdfit]').hidden=!snapshot.probeSupported;
+  const battery=snapshot.probeReadings?.battery,steps=snapshot.probeReadings?.steps;
+  setText('[data-ble-battery]',Number.isInteger(battery)&&battery>=0&&battery<=100?battery+'%':'—');
+  setText('[data-ble-steps]',Number.isInteger(steps)&&steps>=0&&steps<=1000000?String(steps):'—');
+  const services=node.querySelector('[data-ble-services]');
+  const serviceHtml=(snapshot.services||[]).map(s=>'<div class="tp111-service"><code>'+escaped(s.uuid)+'</code><small>'+s.characteristics?.length+'</small></div>').join('');
+  if(services.innerHTML!==serviceHtml)services.innerHTML=serviceHtml;
+  node.querySelector('[data-ble-pulse]').hidden=!['monitoring','subscribing'].includes(snapshot.state);
+  const fresh=pulse&&Date.now()-Date.parse(pulse.measuredAt)<=10000&&snapshot.state==='monitoring';
+  setText('[data-ble-bpm]',fresh?pulse.bpm+' bpm':'—');
+  setText('[data-ble-pulse-note]',fresh?tp149FormatDateTime(pulse.measuredAt):t(pulse?'stale':'waiting'));
+ }
+ function queuePaint(){if(paintTimer||!root())return;paintTimer=setTimeout(()=>{paintTimer=null;paint();},Math.max(0,300-(Date.now()-lastPaint)));}
+ function event(value){
+  if(!root())return;
+  if(value.kind==='device'&&value.device?.id&&snapshot.state==='scanning'){
+   const d=value.device;if(value.removedId)devices.delete(value.removedId);if(devices.has(d.id)||devices.size<120)devices.set(d.id,{...d,name:limit(d.name),number:devices.get(d.id)?.number||(Number.isInteger(d.number)&&d.number>0&&d.number<=65535?d.number:devices.size+1),displayAddress:deviceAddress(d.displayAddress)});queuePaint();
+  }else if(value.kind==='pulse'&&snapshot.state==='monitoring'){
+   const bpm=Number(value.bpm),at=Date.parse(value.measuredAt);if(Number.isInteger(bpm)&&bpm>0&&bpm<=65535&&Number.isFinite(at)&&at<=Date.now()+1000){pulse={bpm,measuredAt:value.measuredAt};queuePaint();}
+  }else if(value.kind==='state'){
+   if(value.state==='scanning'&&Number.isFinite(value.scanRemainingSeconds))scanDeadline=Date.now()+Math.min(60,value.scanRemainingSeconds)*1000;
+   snapshot={...snapshot,...value};if(!['monitoring','subscribing'].includes(snapshot.state))pulse=null;
+   if(value.code==='BACKGROUND'){cancelRetry();devices.clear();snapshot.probeReadings={};busy=false;}
+   paint();scheduleReconnect();
+  }
+ }
+ async function open(){
+  const epoch=++opening;busy=false;reconnectAttempts=0;allowReconnect=true;paint();const plugin=native();if(!plugin)return;
+  try{
+   if(listener)await listener.remove();listener=null;
+   const added=await plugin.addListener('bleEvent',event);
+   if(epoch!==opening||!root()){await added.remove();return;}listener=added;
+   const result=await plugin.getStatus();if(epoch!==opening||!root())return;snapshot={...snapshot,...result};if(snapshot.state==='scanning')scanDeadline=Date.now()+Math.min(60,result.scanRemainingSeconds||60)*1000;paint();
+   if(timer)clearInterval(timer);timer=setInterval(()=>{if(root()&&(snapshot.state==='monitoring'||snapshot.state==='scanning'||retryTimer))paint();},1000);
+   if(snapshot.rememberedWatch?.present&&!['connecting','discovering','connected','scanning','monitoring','probing'].includes(snapshot.state))void attemptReconnect();
+  }catch(error){if(epoch===opening&&root()){snapshot.code=error.code||'UNSUPPORTED';paint();}}
+ }
+ async function operation(method,args={},success,interrupt=false){
+  if(busy&&!interrupt||!root()||!native())return;const epoch=opening,token=++operationId;busy=true;paint();
+  try{const result=await native()[method](args);if(epoch!==opening||token!==operationId||!root())return;snapshot={...snapshot,...result};if(snapshot.state==='scanning')scanDeadline=Date.now()+Math.min(60,result.scanRemainingSeconds||60)*1000;success?.(result);}
+  catch(error){if(epoch===opening&&token===operationId&&root())snapshot.code=error.code||'CONNECTION_FAILED';}
+  finally{if(epoch===opening&&token===operationId&&root()){busy=false;paint();scheduleReconnect();}}
+ }
+ function scan(){
+  if(busy||['connecting','discovering','connected','subscribing','monitoring','probing','scanning'].includes(snapshot.state))return;
+  cancelRetry();allowReconnect=false;devices.clear();selected=null;pulse=null;snapshot.services=[];snapshot.heartSupported=false;snapshot.code='';return operation('startScan');
+ }
+ function filterMac(value){macFilter=String(value||'').slice(0,40);paint();}
+ function stop(){return operation('stopScan');}
+ function connect(id){if(busy||!devices.has(id))return;cancelRetry();allowReconnect=false;selected=devices.get(id);pulse=null;return operation('connect',{id});}
+ function cancelRetry(){if(retryTimer)clearTimeout(retryTimer);retryTimer=null;retryAt=0;}
+ function scheduleReconnect(){
+  if(!root()||busy||retryTimer||!allowReconnect||!snapshot.rememberedWatch?.present||reconnectAttempts>=3||document.hidden)return;
+  if(snapshot.state!=='disconnected'||!['CONNECTION_FAILED','CONNECTION_TIMEOUT','DISCONNECTED'].includes(snapshot.code))return;
+  const delay=[3000,8000,15000][Math.max(0,reconnectAttempts-1)];retryAt=Date.now()+delay;
+  retryTimer=setTimeout(()=>{retryTimer=null;retryAt=0;void attemptReconnect();},delay);paint();
+ }
+ function attemptReconnect(){
+  if(busy||!root()||!['idle','disconnected'].includes(snapshot.state)||!snapshot.rememberedWatch?.present||!allowReconnect||document.hidden||reconnectAttempts>=3)return;
+  selected=null;pulse=null;reconnectAttempts++;return operation('connectRemembered');
+ }
+ function reconnect(){cancelRetry();allowReconnect=true;reconnectAttempts=0;return attemptReconnect();}
+ function remember(){return operation('rememberWatch',{},()=>{allowReconnect=true;reconnectAttempts=0;snapshot.code='rememberSuccess';});}
+ function forget(){cancelRetry();allowReconnect=false;reconnectAttempts=0;return operation('forgetWatch',{},()=>{selected=null;devices.clear();snapshot.probeReadings={};},true);}
+ function heart(){pulse=null;return operation('startHeartRate');}
+ function probe(){pulse=null;return operation('readRdfitData');}
+ function disconnect(){cancelRetry();allowReconnect=false;pulse=null;return operation('disconnect',{},null,true);}
+ async function exportReport(){
+  if(busy||snapshot.state==='scanning'||(!snapshot.services?.length&&!devices.size))return;busy=true;paint();const epoch=opening;
+  try{
+   const data=JSON.stringify(diagnostic(snapshot,selected,TRAINPILOT_VERSION,[...devices.values()]),null,2),name='TrainPilot-BLE-'+new Date().toISOString().replace(/[:.]/g,'-')+'.json';
+   const result=await nativeFiles().save({name,data});if(result.cancelled)return;if(!result.verified)throw Error('verify');
+   if(epoch===opening&&root())window.TrainPilotFeedback?.success(t('saved'),root().querySelector('[data-ble-export-status]'));
+  }catch(_){if(epoch===opening&&root())setText('[data-ble-export-status]',t('saveFailed'));}
+  finally{if(epoch===opening&&root()){busy=false;paint();}}
+ }
+ function close(){
+  ++opening;++operationId;cancelRetry();allowReconnect=false;busy=false;pulse=null;macFilter='';devices.clear();if(timer)clearInterval(timer);timer=null;if(paintTimer)clearTimeout(paintTimer);paintTimer=null;
+  const plugin=bridge,old=listener;listener=null;if(old)void old.remove().catch(()=>{});
+  if(plugin)void plugin.disconnect().catch(()=>{});snapshot={...snapshot,state:'disconnected',code:'DISCONNECTED',probeReadings:{}};
+ }
+ function decorate(){/* Retained diagnostic code has no entry in the shipping UI. */}
+ window.TrainPilotBle={t,html,open,scan,stop,connect,heart,probe,disconnect,exportReport,decorate,filterMac,remember,forget,reconnect};
+ if(typeof document!=='undefined')document.addEventListener?.('visibilitychange',()=>{
+  if(document.hidden){cancelRetry();return;}
+  if(root()&&allowReconnect&&snapshot.rememberedWatch?.present&&!busy){reconnectAttempts=0;void attemptReconnect();}
+ });
+ window.addEventListener?.('DOMContentLoaded',()=>{
+  const baseOpen=window.tp155R4OpenPanel;window.tp155R4OpenPanel=function(type,trigger){
+   const previous=!!root();if(previous&&type!=='ble')close();const result=baseOpen.apply(this,arguments);if(result&&type==='ble'&&!previous)void open();return result;
+  };
+  const baseClose=window.tp155R4ClosePanel;window.tp155R4ClosePanel=function(){if(root())close();return baseClose.apply(this,arguments);};
+  decorate();
+ });
+})();
+// @endsection ble-discovery-111.js
+
+
+// @section health-journal-120.js
+(function(){
+ 'use strict';
+ const texts={
+  hu:{title:'Egészségnapló',all:'Minden forrás',hc:'Health Connect',watch:'Közvetlen óra',legacy:'Korábbi napló',from:'Ettől',to:'Eddig',source:'Adatforrás',primary:'Lépésszám elsődleges forrása',auto:'Health Connect frissítése appmegnyitáskor',logWatch:'Megjegyzett óra lépéseinek naplózása',autoNote:'Előtérben frissít, ha már van engedély. A háttérkapcsolat külön fejlesztési lépés.',watchNote:'Az óra aktuális lépésleolvasását mentjük a telefon dátumával. Kalória, távolság és alvás óráról még nincs igazolva.',refresh:'Frissítés',syncWatch:'Óra frissítése',next:'Következő oldal',empty:'Ebben az időszakban nincs naplózott adat.',loading:'Napló betöltése…',partial:'Részleges / korábbi adat',stale:'Korábbi leolvasás',observed:'Leolvasás a telefon ideje szerint',aggregate:'Health Connect összesítés · forrásprioritással',records:'Mérési rekordok',days:'Napi összesítések',samples:'minta',session:'Alvási session időtartama',saved:'Beállítás mentve',failed:'A napló nem frissült. A korábbi adatok megmaradtak.',native:'A tartós egészségnapló az Android alkalmazásban érhető el.',noWatch:'Előbb válassz és jegyezz meg egy órát a Bluetooth-próbában.',busy:'Várd meg a futó művelet végét.',settings:'Napló beállításai',unknown:'Ismeretlen eredet',active:'Aktív kalória',total:'Teljes kalória',steps:'Lépések',sleep:'Alvás',pulse:'Pulzus',resting:'Nyugalmi pulzus',distance:'Távolság',speed:'Sebesség',weight:'Testsúly',fat:'Testzsír',respiratory:'Légzésszám',glucose:'Vércukor',pressure:'Vérnyomás',exercise:'Edzés'},
+  en:{title:'Health journal',all:'All sources',hc:'Health Connect',watch:'Direct watch',legacy:'Previous journal',from:'From',to:'Until',source:'Data source',primary:'Preferred steps source',auto:'Refresh Health Connect when opening the app',logWatch:'Log steps from the remembered watch',autoNote:'Refreshes in the foreground with existing permissions. Background connection is a separate development phase.',watchNote:'Current watch step readings use the phone date. Watch calories, distance and sleep are not verified yet.',refresh:'Refresh',syncWatch:'Refresh watch',next:'Next page',empty:'No logged data in this period.',loading:'Loading journal…',partial:'Partial / previous data',stale:'Earlier reading',observed:'Reading using phone time',aggregate:'Health Connect aggregate · source priority',records:'Measurement records',days:'Daily summaries',samples:'samples',session:'Sleep session duration',saved:'Setting saved',failed:'Journal did not refresh. Previous data is retained.',native:'The persistent health journal is available in the Android app.',noWatch:'Choose and remember a watch in the Bluetooth trial first.',busy:'Wait for the current operation.',settings:'Journal settings',unknown:'Unknown origin',active:'Active calories',total:'Total calories',steps:'Steps',sleep:'Sleep',pulse:'Heart rate',resting:'Resting heart rate',distance:'Distance',speed:'Speed',weight:'Weight',fat:'Body fat',respiratory:'Respiratory rate',glucose:'Blood glucose',pressure:'Blood pressure',exercise:'Exercise'},
+  de:{title:'Gesundheitsjournal',all:'Alle Quellen',hc:'Health Connect',watch:'Direkte Uhr',legacy:'Bisheriges Journal',from:'Von',to:'Bis',source:'Datenquelle',primary:'Bevorzugte Schrittquelle',auto:'Health Connect beim Öffnen aktualisieren',logWatch:'Schritte der gespeicherten Uhr protokollieren',autoNote:'Aktualisiert im Vordergrund mit bestehenden Berechtigungen. Die Hintergrundverbindung folgt separat.',watchNote:'Aktuelle Schrittwerte werden mit dem Telefondatum gespeichert. Kalorien, Distanz und Schlaf der Uhr sind noch nicht bestätigt.',refresh:'Aktualisieren',syncWatch:'Uhr aktualisieren',next:'Nächste Seite',empty:'Keine Daten in diesem Zeitraum.',loading:'Journal wird geladen…',partial:'Teilweise / bisherige Daten',stale:'Frühere Messung',observed:'Ablesung nach Telefonzeit',aggregate:'Health Connect Summe · Quellenpriorität',records:'Messdatensätze',days:'Tagessummen',samples:'Messungen',session:'Dauer der Schlafsitzung',saved:'Einstellung gespeichert',failed:'Journal nicht aktualisiert. Bisherige Daten bleiben erhalten.',native:'Das dauerhafte Journal ist in der Android-App verfügbar.',noWatch:'Zuerst eine Uhr im Bluetooth-Test auswählen und speichern.',busy:'Warte auf den aktuellen Vorgang.',settings:'Journal-Einstellungen',unknown:'Unbekannte Herkunft',active:'Aktive Kalorien',total:'Gesamtkalorien',steps:'Schritte',sleep:'Schlaf',pulse:'Puls',resting:'Ruhepuls',distance:'Distanz',speed:'Geschwindigkeit',weight:'Gewicht',fat:'Körperfett',respiratory:'Atemfrequenz',glucose:'Blutzucker',pressure:'Blutdruck',exercise:'Training'},

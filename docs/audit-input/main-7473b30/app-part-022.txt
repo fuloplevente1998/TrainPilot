@@ -1,0 +1,304 @@
+ const body=`<main><div class="hero"><h1>Egészség</h1><div class="muted">Health Connect, óraadatok, regeneráció és Coach egy közös adatfolyamban.</div></div>${coach}<div class="card"><h2>Mai állapot</h2><div class="grid2">${rf244Stat('Alvás',rf244SleepText(rec.sleepMinutes),sleepSub)}${rf244Stat('HRV',rec.hrvRmssdMs==null?'—':Math.round(rec.hrvRmssdMs)+' ms')}${rf244Stat('Lépések',today.steps==null?'—':Math.round(today.steps).toLocaleString('hu-HU'))}${rf244Stat('Aktív energia',today.activeCalories==null?'—':Math.round(today.activeCalories)+' kcal')}${rf244Stat('Átlagpulzus',today.averageHeartRate==null?'—':Math.round(today.averageHeartRate)+' bpm')}${rf244Stat('Nyugalmi pulzus',today.restingHeartRate==null?'—':Math.round(today.restingHeartRate)+' bpm')}</div><button class="btn block" onclick="rf244UnifiedSync()">Minden támogatott Health-adat szinkronizálása</button><p class="small muted">Utolsó sikeres szinkron: ${esc(syncAt)}</p></div><div class="card"><h2>Test és fittség</h2><div class="grid2">${rf244Stat('Testsúly',rf250Fmt(w.weightKg,1,' kg'))}${rf244Stat('Testzsír',rf250Fmt(w.bodyFatPercent,1,' %'))}${rf244Stat('SpO₂',rf250Fmt(w.oxygenSaturationPercent,1,' %'))}${rf244Stat('VO₂max',rf250Fmt(w.vo2Max,1))}</div></div><details class="card"><summary><strong>További támogatott Health-adatok</strong></summary><div class="grid2">${rf244Stat('Vérnyomás',bp)}${rf244Stat('Vércukor',rf250Fmt(w.bloodGlucoseMmolL,1,' mmol/L'))}${rf244Stat('Légzésszám',rf250Fmt(w.respiratoryRate,1,' /perc'))}</div></details><details class="card"><summary><strong>Regenerációs előzmények</strong></summary>${rf244RecoveryRows()}</details><div class="grid2"><button class="btn secondary" onclick="go('history')">Edzésnapló</button><button class="btn secondary" onclick="healthScreen()">Health Connect kapcsolat</button></div></main>`;
+ render(shell(body));
+};
+/* TrainPilot 2.5.0: Health Sync 2.0 – stage-aware sleep, stable export IDs, per-type tokens and one sync UI. */
+const RF250_VERSION='2.5.0';
+const RF250_REPORT='healthSyncReport250';
+const RF250_CHANGE_TYPES=[
+ ['HeartRateRecord','READ_HEART_RATE'],['RestingHeartRateRecord','READ_RESTING_HEART_RATE'],
+ ['ActiveCaloriesBurnedRecord','READ_ACTIVE_CALORIES_BURNED'],['TotalCaloriesBurnedRecord','READ_TOTAL_CALORIES_BURNED'],
+ ['ExerciseSessionRecord','READ_EXERCISE'],['SleepSessionRecord','READ_SLEEP'],
+ ['HeartRateVariabilityRmssdRecord','READ_HEART_RATE_VARIABILITY'],['StepsRecord','READ_STEPS'],
+ ['WeightRecord','READ_WEIGHT'],['BodyFatRecord','READ_BODY_FAT'],['OxygenSaturationRecord','READ_OXYGEN_SATURATION'],
+ ['Vo2MaxRecord','READ_VO2_MAX'],['DistanceRecord','READ_DISTANCE'],['SpeedRecord','READ_SPEED'],
+ ['BloodPressureRecord','READ_BLOOD_PRESSURE'],['BloodGlucoseRecord','READ_BLOOD_GLUCOSE'],['RespiratoryRateRecord','READ_RESPIRATORY_RATE']
+];
+
+// 2.4.6 – restore the original five-step effort weights exactly.
+rf220EffortLoad=function(){
+ let score=100,n=0;const delta={easy:3,light:1,good:0,challenging:-4,hard:-8,pain:-20};
+ for(const h of rf245RecentHistory())for(const e of h.exercises||[]){const effort=e.effort||h.feedback?.effort;if(!effort)continue;n++;score+=delta[effort]||0}
+ return {score:Math.max(20,Math.min(100,score)),n};
+};
+
+// 2.4.7 – stage-aware sleep. Known asleep stages win; session duration is only a fallback.
+
+
+rf245Recovery=function(ledger){
+ const days=ledger.days||{},byDay={};
+ for(const s of rf240UniqueSleep(days)){
+  const day=rf240DayKey(s.end);if(!day)continue;(byDay[day]||(byDay[day]=[])).push(s);
+ }
+ const existing=rf229RecoveryHistory().filter(x=>!Object.hasOwn(days,x.day));
+ for(const day of Object.keys(days).sort()){
+  const d=days[day],sessions=byDay[day]||[];
+  const source=sessions.some(s=>s.source==='com.sec.android.app.shealth')?'com.sec.android.app.shealth':sessions.slice().sort((a,b)=>Date.parse(b.end)-Date.parse(a.end))[0]?.source;
+  const selected=sessions.filter(s=>s.source===source),stageBased=selected.some(s=>(s.stages||[]).some(x=>x?.isAsleep===true));
+  const merged=rf250MergeSpans(selected.flatMap(rf250SleepSpans));
+  const sleepMinutes=merged.length?merged.reduce((sum,[a,b])=>sum+(b-a)/60000,0):null;
+  existing.push({day,sleepMinutes,sleepStart:merged.length?new Date(merged[0][0]).toISOString():null,sleepEnd:merged.length?new Date(merged.at(-1)[1]).toISOString():null,sleepSource:source||null,sleepStageBased:stageBased,sleepStageCount:selected.reduce((n,s)=>n+(s.stages?.length||0),0),hrvRmssdMs:rf240Num(d.hrvRmssdMs),hrvTime:d.hrvTime||null,hrvSource:d.hrvSource||null,energyScore:rf240Num(d.energyScore),energyScoreTime:d.energyScoreTime||null,energyScoreSource:d.energyScoreSource||null,readAt:d.readAt||null});
+ }
+ existing.sort((a,b)=>b.day.localeCompare(a.day));db.set('recoveryHistory',existing);rf229ApplyLatestRecovery();
+};
+
+// 2.4.8 – stable export identity, independent from edited workout timestamps.
+
+
+// Extended wellness fields remain informational and do not feed readiness.
+rf240ApplyLedger=function(){
+ const ledger=rf240Ledger(),days=ledger.days||{},today=days[rf240DayKey(new Date())]||{};
+ const w={steps:rf240Num(today.steps),readAt:ledger.lastSyncAt||null};
+ for(const [key,time] of [['weightKg','weightTime'],['bodyFatPercent','bodyFatTime'],['oxygenSaturationPercent','oxygenSaturationTime'],['vo2Max','vo2MaxTime'],['bloodPressureSystolic','bloodPressureTime'],['bloodPressureDiastolic','bloodPressureTime'],['bloodGlucoseMmolL','bloodGlucoseTime'],['respiratoryRate','respiratoryRateTime']]){const x=rf240Latest(days,key,time);w[key]=x?.value??null;w[time]=x?.time||w[time]||null}
+ state.health=state.health||{};state.health.daily={...today};state.health.wellness=w;db.set('wellnessLatest',w);rf229ApplyLatestRecovery();return ledger;
+};
+
+
+let rf250Flight=null,rf250Tail=Promise.resolve(),rf250ActiveManual=false,rf250ManualFlight=null;
+
+
+// 2.4.9 / 2.5.0 – one complete pipeline with per-record-type change tokens.
+
+
+rf245Sync=rf250Sync;rf244UnifiedSync=()=>rf250Sync({manual:true});rf240SyncNow=rf244UnifiedSync;rf240FullSync=()=>rf250Sync({manual:true,full:true});
+readRecoveryHealth=rf244UnifiedSync;readWellnessHealth=rf244UnifiedSync;rf207ReadTodayHealth=rf244UnifiedSync;rf225ConnectHealth=rf244UnifiedSync;readHealthWorkout=rf244UnifiedSync;exportHealthWorkout=rf244UnifiedSync;rf241RefreshWorkoutHealth=rf244UnifiedSync;rf240RefreshSelectedWorkout=rf244UnifiedSync;rf142ReadHealthForWorkout=rf244UnifiedSync;
+rf240RunIncremental=(p,requestPermission=false)=>rf250Sync({plugin:p,manual:requestPermission});rf240RunFull=(p,days=30,requestPermission=false)=>rf250Sync({plugin:p,manual:requestPermission,full:true});
+
+// 2.5 UI – exactly one user-visible sync action, on the Health hub.
+
+
+rf206HealthHub=rf250HealthHub;
+
+const rf250CoachBase=rf245CoachScreen;
+rf233CoachScreen=function(){
+ rf245CoachVisible=true;const t=rf233L(),p=rf233CoachPlan(),r=p.readiness,target=p.target;
+ const action=target.kind==='today'?`<button class="btn block" onclick="rf233StartTarget()">${t.start}</button>`:target.kind==='next'?`<button class="btn secondary block" onclick="rf233StartTarget()">${t.calendar}</button>`:target.kind==='suggested'?`<button class="btn block" onclick="rf233StartTarget()">${t.start}</button>`:`<button class="btn secondary block" onclick="go('calendar')">${t.calendar}</button>`;
+ render(shell(`<main><button class="btn secondary" onclick="go('home')">←</button><div class="hero"><h1>${t.coach}</h1><div class="muted">${esc(p.decision.text)}</div></div><div class="card rf233-today"><div class="rf233-score"><div><small>${esc(rf220L().readiness)}</small><strong>${r.score==null?'—':r.score+'/100'}</strong></div><div><small>${esc(rf233TargetTitle(target))}</small><strong>${esc(target.day?.name||target.day?.id||'—')}</strong></div></div><p><b>${esc(p.decision.title)}</b></p><p class="small muted">${esc(rf233TargetSub(target))}</p>${action}</div><div class="card"><strong>${t.why}</strong><div class="rf233-signals">${rf233SignalHtml(p)}</div><br><button class="btn secondary block" onclick="go('health')">Egészség és szinkron megnyitása</button></div><div class="section">${t.exercisePlan}</div>${rf233ExerciseRows(p)}<p class="small muted">${t.approx}</p>${rf220ProgressHtml()}</main>`));
+};
+rf220CoachScreen=rf233CoachScreen;
+
+rf245ReportHtml=function(){const r=db.get(RF250_REPORT,db.get(RF245_REPORT,null));if(!r)return '';const label=s=>s==='ok'?'OK':s==='partial'?'Részleges':s==='skipped'?'Kihagyva':s;return `<details class="card" open><summary><strong>Szinkron eredménye • ${esc(label(r.status||'ok'))}</strong></summary>${(r.stages||[]).map(s=>`<p><b>${esc(s.name)}</b> • ${esc(label(s.status))}<br><span class="small muted">${esc(s.detail)}</span></p>`).join('')}${(r.errors||[]).map(e=>`<p class="small">${esc(e)}</p>`).join('')}</details>`};
+healthScreen=function(){rf245CoachVisible=false;state.tab='health';state.healthView=true;rf225HealthPage='details';render(shell(`<main><div class="hero"><h1>Health Connect kapcsolat</h1><p>Óra → Samsung Health → Health Connect → TrainPilot</p></div><div class="card"><p>A tényleges szinkron egyetlen helyről, az Egészség főoldaláról indítható. Itt csak a jogosultságokat lehet kezelni.</p><button class="btn secondary block" onclick="healthSettings()">Engedélyek kezelése</button><p role="status">${esc(state.health?.message||'')}</p></div><button class="btn secondary" onclick="go('health')">Vissza az Egészség oldalra</button></main>`))};
+
+const rf250ShellBase=shell;shell=function(content){let out=rf250ShellBase(String(content).replaceAll('2.4.5','2.5.0'));if(state.tab==='history')out=out.replaceAll('<button class="btn block" onclick="rf244UnifiedSync()">Mindent szinkronizál</button>','');return out.replaceAll('2.4.5','2.5.0')};
+
+rf250EnsureStableWorkoutIds();rf245Recovery(rf240Ledger());rf240ApplyLedger();render();
+
+
+// @endsection v250.js
+
+// @section v251.js
+var rf251RepairHomeCoach = function rf251RepairHomeCoach(){
+ if(state.tab!=='home')return;
+ const c=document.querySelector('#rf220CoachCard');if(!c)return;
+ const r=rf220Readiness(),t=rf220L();
+ const badge=c.querySelector('.badge');if(badge)badge.textContent=r.score==null?'—':r.score+'/100';
+ const line=c.querySelector('.rf221-coach-line');if(line){
+  const level=r.score==null?'Kevés friss adat':(t[r.level]||r.confidence||'');
+  const advice=r.score==null?'A Coach több friss Health-adat után ad napi készenléti pontszámot.':rf220CoachText(r);
+  line.textContent=[level,advice].filter(Boolean).join(' • ');
+ }
+};
+var rf251MissingPermissions = function rf251MissingPermissions(){const p=state.health?.permissions||{};return Object.entries(RF251_PERMISSION_NAMES).filter(([k])=>p[k]===false).map(([,v])=>v)};
+var rf251SyncMessage = function rf251SyncMessage(r){
+ if(!r)return '';
+ const n=(r.errors||[]).length,missing=rf251MissingPermissions();
+ if(r.status==='ok'&&!n)return 'A szinkron rendben befejeződött.';
+ if(missing.length)return `Részleges szinkron. Hiányzó Health Connect engedélyek: ${missing.join(', ')}.`;
+ if(n)return `Részleges szinkron: ${n} adatolvasási részfeladat nem frissült. A korábbi érvényes adatok megmaradtak.`;
+ return 'A szinkron részlegesen fejeződött be.';
+};
+var rf251DecorateHealthHub = function rf251DecorateHealthHub(){
+ const main=document.querySelector('main');if(!main||main.querySelector('#rf251WeightJournal'))return;
+ const target=[...main.querySelectorAll('.card')].find(c=>/Test és fittség/.test(c.textContent||''));
+ if(!target)return;
+ const b=document.createElement('button');b.id='rf251WeightJournal';b.className='btn secondary block rf251-weight-btn';b.textContent='Testsúly napló és grafikon';b.onclick=()=>rf215WeightScreen();target.appendChild(b);
+};
+/* TrainPilot 2.5.1: responsive UI hardening, friendly Health diagnostics, restored weight journal access. */
+const RF251_VERSION='2.5.1';
+
+// New installs use the green accent. Explicit user theme choices remain untouched.
+const rf251ThemeKeyBase=rf200ThemeKey;
+rf200ThemeKey=function(){
+ const stored=db.get('themeAccent',null);
+ return stored&&RF200_THEMES?.[stored]?stored:'green';
+};
+if(db.get('themeAccent',null)==null)rf200ApplyTheme('green');
+
+// The old compact-home layer assumed a fixed 122px header. On devices with larger
+// font/display scaling that caused cards to overlap. Let the page size itself and scroll.
+(function rf251ResponsiveCss(){
+ if(document.querySelector('#rf251Css'))return;
+ const s=document.createElement('style');s.id='rf251Css';s.textContent=`
+  html,body{max-width:100%;overflow-x:hidden}
+  body:has(main.rf221-home){overflow-y:auto!important;overflow-x:hidden!important}
+  main.rf221-home{height:auto!important;max-height:none!important;min-height:0!important;overflow:visible!important;display:flex!important;flex-direction:column!important;gap:10px!important;padding-bottom:104px!important}
+  main.rf221-home>.hero,main.rf221-home>.card{flex:0 0 auto!important}
+  #rf220CoachCard{margin-top:0!important}
+  .rf221-coach-line{white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
+  .card,.hero,.stat,.btn{min-width:0;max-width:100%;box-sizing:border-box}
+  .grid2>*{min-width:0}
+  .rf251-weight-btn{margin-top:10px}
+  .rf251-sync-summary p{overflow-wrap:anywhere;word-break:normal}
+  @media(max-width:380px){
+   main{padding-left:10px!important;padding-right:10px!important}
+   .hero,.card{border-radius:16px!important;padding:12px!important}
+   .rf221-coach-actions{grid-template-columns:1fr!important}
+  }
+  @media(max-height:760px){main.rf221-home{padding-bottom:88px!important}}
+ `;document.head.appendChild(s);
+})();
+
+
+const rf251CompactHomeBase=rf221CompactHome;
+rf221CompactHome=function(){rf251CompactHomeBase();setTimeout(rf251RepairHomeCoach,0)};
+
+// One sync entry point means no automatic background Health read without explicit
+// background permission. The existing scheduled v2.4 callback resolves to these no-op paths.
+rf240BackgroundSync=function(){};
+rf240RunIncremental=(p,requestPermission=false)=>requestPermission?rf250Sync({plugin:p,manual:true}):Promise.resolve({days:0,full:false,skipped:true});
+rf240RunFull=(p,days=30,requestPermission=false)=>requestPermission?rf250Sync({plugin:p,manual:true,full:true}):Promise.resolve({days:0,full:true,skipped:true});
+
+const RF251_PERMISSION_NAMES={
+ READ_HEART_RATE:'Pulzus',READ_RESTING_HEART_RATE:'Nyugalmi pulzus',READ_ACTIVE_CALORIES_BURNED:'Aktív energia',READ_TOTAL_CALORIES_BURNED:'Teljes energia',READ_EXERCISE:'Edzések',READ_SLEEP:'Alvás',READ_HEART_RATE_VARIABILITY:'HRV',READ_STEPS:'Lépések',READ_WEIGHT:'Testsúly',READ_BODY_FAT:'Testzsír',READ_OXYGEN_SATURATION:'SpO₂',READ_VO2_MAX:'VO₂max',READ_DISTANCE:'Távolság',READ_SPEED:'Sebesség',READ_BLOOD_PRESSURE:'Vérnyomás',READ_BLOOD_GLUCOSE:'Vércukor',READ_RESPIRATORY_RATE:'Légzésszám'
+};
+
+
+// Never expose Java/stack/permission exception text in the normal Health UI.
+rf245ReportHtml=function(){
+ const r=db.get(RF250_REPORT,db.get(RF245_REPORT,null));if(!r)return '';
+ const label=s=>s==='ok'?'OK':s==='partial'?'Részleges':s==='skipped'?'Kihagyva':'Hiba';
+ return `<details class="card rf251-sync-summary"><summary><strong>Szinkron állapota • ${esc(label(r.status||'ok'))}</strong></summary><p class="small muted">${esc(rf251SyncMessage(r))}</p>${(r.stages||[]).map(s=>`<p><b>${esc(s.name)}</b> • ${esc(label(s.status))}<br><span class="small muted">${esc(s.detail||'')}</span></p>`).join('')}${rf251MissingPermissions().length?'<button class="btn secondary block" onclick="healthSettings()">Engedélyek kezelése</button>':''}</details>`;
+};
+
+
+const rf251HealthHubBase=rf250HealthHub;
+rf250HealthHub=function(){const r=rf251HealthHubBase();rf251DecorateHealthHub();return r};
+rf206HealthHub=rf250HealthHub;
+
+// Ensure Health subpage routing still preserves the restored weight journal.
+const rf251RenderBase=render;
+render=function(custom){const r=rf251RenderBase(custom);if(!custom&&state.tab==='health'&&rf225HealthPage==='hub')rf251DecorateHealthHub();if(!custom&&state.tab==='home')setTimeout(rf251RepairHomeCoach,0);return r};
+
+
+rf251RepairHomeCoach();
+
+
+// @endsection v251.js
+
+// @section v252.js
+var rf252ButtonText = function rf252ButtonText(el){return String(el?.textContent||'').replace(/\s+/g,' ').trim()};
+var rf252IsSelection = function rf252IsSelection(el,oc){return !!(el?.closest?.('.rf232-effort')||RF252_SELECTION_ACTION.test(oc))};
+var rf252ButtonRole = function rf252ButtonRole(el){
+ if(!el?.classList?.contains('btn'))return '';
+ if(el.classList.contains('danger'))return 'danger';
+ const oc=String(el.getAttribute?.('onclick')||''),txt=rf252ButtonText(el);
+ if(rf252IsSelection(el,oc))return 'control';
+ // Navigation/calendar alternatives stay secondary even if they share a start handler.
+ if(/^(←|Vissza|Back|Zurück|Înapoi)/i.test(txt)||/Naptár|Calendar|Kalender|Calendarul/i.test(txt)&&/rf233StartTarget|go\(['"]calendar/.test(oc))return 'secondary';
+ if(RF252_PRIMARY_ACTION.test(oc))return 'primary';
+ if(/^(Mentés|Save|Speichern|Salvare)$/.test(txt))return 'primary';
+ if(/^(Kész|Done|Fertig|Gata)$/.test(txt))return 'primary';
+ if(/^(Edzés folytatása|Edzés indítása|Indítás|Következő gyakorlat|Edzés befejezése|Terv generálása|Edzések megtervezése|Terv mentése és aktiválása|Új saját program létrehozása|Gyakorlat mentése|Csere mentése|Hozzáadás|Módosítások mentése|Személyes terv összeállítása)$/i.test(txt))return 'primary';
+ if(/Minden támogatott Health-adat szinkronizálása|Mindent szinkronizál|Összes Health adat frissítése/i.test(txt))return 'primary';
+ if(RF252_EMPHASIS_ACTION.test(oc))return 'emphasis';
+ if(/Testsúly napló és grafikon|\+ Gyakorlat hozzáadása|\+ Sorozat hozzáadása|Hozzáadás saját programhoz|Naptár és tervező megnyitása/i.test(txt))return 'emphasis';
+ // Existing non-secondary .btn buttons are intentional primary actions in the older layers.
+ if(!el.classList.contains('secondary'))return 'primary';
+ return 'secondary';
+};
+var rf252ApplyButtonHierarchy = function rf252ApplyButtonHierarchy(root=document){
+ const buttons=root?.querySelectorAll?.('button.btn')||[];
+ buttons.forEach(el=>{
+  el.classList.remove('tp-primary','tp-emphasis');
+  const role=rf252ButtonRole(el);el.dataset&&(el.dataset.tpRole=role);
+  if(role==='primary')el.classList.add('tp-primary');
+  else if(role==='emphasis')el.classList.add('tp-emphasis');
+ });
+};
+var rf252ScheduleButtonPass = function rf252ScheduleButtonPass(){setTimeout(()=>rf252ApplyButtonHierarchy(),0)};
+/* TrainPilot 2.5.2: app-wide action hierarchy with theme-aware primary and emphasis actions. */
+const RF252_VERSION='2.5.2';
+
+(function rf252ButtonCss(){
+ if(document.querySelector('#rf252ButtonCss'))return;
+ const s=document.createElement('style');s.id='rf252ButtonCss';s.textContent=`
+  :root{--tp-primary:var(--accent);--tp-primary-soft:var(--accent2);--tp-primary-ink:#0b1710}
+  .btn.tp-primary{background:var(--tp-primary)!important;color:var(--tp-primary-ink)!important;border:1px solid var(--tp-primary)!important;box-shadow:0 5px 18px rgba(var(--accent-rgb),.16)}
+  .btn.tp-primary:active{filter:brightness(1.05) saturate(1.03)!important}
+  .btn.tp-emphasis{background:rgba(var(--accent-rgb),.10)!important;color:var(--tp-primary-soft)!important;border:1px solid rgba(var(--accent-rgb),.58)!important;box-shadow:inset 0 0 0 1px rgba(var(--accent-rgb),.04)}
+  .btn.tp-emphasis:active{background:rgba(var(--accent-rgb),.16)!important}
+  .btn.tp-primary:focus-visible,.btn.tp-emphasis:focus-visible{outline:3px solid rgba(var(--accent2-rgb),.42)!important;outline-offset:2px}
+  .btn.danger.tp-primary,.btn.danger.tp-emphasis{background:#472529!important;color:#ffd9dc!important;border-color:#744048!important;box-shadow:none!important}
+ `;document.head.appendChild(s);
+})();
+
+const RF252_SELECTION_ACTION=/rf152SetEffort|rf200SetTheme|rf215SetRange|toggleCalendarDay|rf2211AddDay|muscleLibrary|rf203ExerciseLibrary|gearPreset132|toggleSet|rf151ToggleDone/;
+const RF252_PRIMARY_ACTION=/resumeDraft\s*\(|startWorkout\s*\(|startScheduledById\s*\(|nextExercise\s*\(|saveSettings\s*\(|saveCustomExercise14\s*\(|saveLibraryPlacement\s*\(|acceptPersonalProgram\s*\(|createCustomProgram\s*\(|rf2211PlanWeeks\s*\(|generatePlanner\s*\(|createSchedule\s*\(|rf215Add\s*\(|rf151SaveHistory\(false\)|rf154Replace\s*\(|rf154Add\s*\(|applyProgression\s*\(|previewProfile\s*\(|connectGoogle\s*\(|rf244UnifiedSync\s*\(|rf225ConnectHealth\s*\(|healthPermission\s*\(|saveHistoryWorkoutTime\([^,]+,false\)/;
+const RF252_EMPHASIS_ACTION=/rf154AddScreen\s*\(|rf153Add\s*\(|rf151AddExercise\s*\(|rf151AddSet\s*\(|chooseLibraryPlacement\s*\(|customExerciseScreen\s*\(|rf215WeightScreen\s*\(/;
+
+
+const rf252RenderBase=render;
+render=function(custom){const r=rf252RenderBase(custom);rf252ScheduleButtonPass();return r};
+
+
+rf252ScheduleButtonPass();
+
+
+// @endsection v252.js
+
+// @section v253.js
+var rf253ActionCall = function rf253ActionCall(el){
+ const raw=String(el?.getAttribute?.('onclick')||'').trim();
+ const p=raw.indexOf('(');if(p<=0)return {name:'',args:''};
+ const name=raw.slice(0,p).trim();
+ return {name,args:raw.slice(p+1,raw.lastIndexOf(')')>=p?raw.lastIndexOf(')'):raw.length)};
+};
+var rf253ExplicitRole = function rf253ExplicitRole(el){
+ const role=String(el?.dataset?.tpRole||'').trim();
+ return RF253_ROLES.has(role)?role:'';
+};
+var rf253SemanticRole = function rf253SemanticRole(el){
+ if(!el?.classList?.contains('btn'))return '';
+ const explicit=rf253ExplicitRole(el);if(explicit)return explicit;
+ const {name,args}=rf253ActionCall(el);
+ if(el.classList.contains('danger')||RF253_DANGER_ACTIONS.has(name))return 'danger';
+ if(el.closest?.('.rf232-effort')||RF253_CONTROL_ACTIONS.has(name))return 'control';
+ if(name==='rf151SaveHistory')return /^\s*false\b/.test(args)?'primary':'secondary';
+ if(name==='saveHistoryWorkoutTime')return /,\s*false\s*$/.test(args)?'primary':'secondary';
+ if(RF253_PRIMARY_ACTIONS.has(name))return 'primary';
+ if(RF253_EMPHASIS_ACTIONS.has(name))return 'emphasis';
+ return el.classList.contains('secondary')?'secondary':'primary';
+};
+var rf253AfterRender = function rf253AfterRender(custom){
+ if(!custom&&state.tab==='health'&&rf225HealthPage==='hub'&&typeof rf251DecorateHealthHub==='function')rf251DecorateHealthHub();
+ if(!custom&&state.tab==='home'&&typeof rf251RepairHomeCoach==='function')rf251RepairHomeCoach();
+ rf252ScheduleButtonPass();
+};
+var tpNavigate = function tpNavigate(route){
+ const key=String(route||'home'),target=RF253_CORE_ROUTES[key]||key;
+ if(typeof rf245CoachVisible!=='undefined')rf245CoachVisible=false;
+ if(target==='health'&&typeof rf225HealthPage!=='undefined')rf225HealthPage='hub';
+ return rf253GoCore(target);
+};
+/* TrainPilot 2.5.3: semantic action roles + explicit core routes + consolidated final hooks. */
+const RF253_VERSION='2.5.3';
+
+const RF253_ROLES=new Set(['primary','emphasis','secondary','control','danger']);
+const RF253_PRIMARY_ACTIONS=new Set([
+ 'resumeDraft','startWorkout','startScheduledById','nextExercise','saveSettings',
+ 'saveCustomExercise14','saveLibraryPlacement','acceptPersonalProgram','createCustomProgram',
+ 'rf2211PlanWeeks','generatePlanner','createSchedule','rf215Add','rf154Replace','rf154Add',
+ 'applyProgression','previewProfile','connectGoogle','rf244UnifiedSync','rf225ConnectHealth',
+ 'healthPermission'
+]);
+const RF253_EMPHASIS_ACTIONS=new Set([
+ 'rf154AddScreen','rf153Add','rf151AddExercise','rf151AddSet','chooseLibraryPlacement',
+ 'customExerciseScreen','rf215WeightScreen'
+]);
+const RF253_CONTROL_ACTIONS=new Set([
+ 'rf152SetEffort','rf200SetTheme','rf215SetRange','toggleCalendarDay','rf2211AddDay',
+ 'muscleLibrary','rf203ExerciseLibrary','gearPreset132','toggleSet','rf151ToggleDone'
+]);
+const RF253_DANGER_ACTIONS=new Set([
+ 'deleteHistoryWorkout','deleteCustomExercise14','deleteCustomProgram','removeCustomExercise',
+ 'cancelSchedule','discardDraft143','resetPlan','resetStarter','rf151RemoveExercise','rf151RemoveSet',

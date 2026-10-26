@@ -1,0 +1,137 @@
+var rf234Text = function rf234Text(){const hu={title:'Kiegészítő Health Connect adatok',refresh:'Adatok frissítése',steps:'Mai lépésszám',weight:'Testsúly',fat:'Testzsír',oxygen:'SpO₂',vo2:'VO₂max',none:'Még nincs beolvasott kiegészítő adat.',saved:'Kiegészítő Health Connect adatok frissítve.',note:'A lépésszám aktivitási kontextus. A testsúly, testzsír, SpO₂ és VO₂max ebben a verzióban tájékoztató adat, és nem módosítja automatikusan a Coach readiness pontszámát.'};const en={title:'Additional Health Connect data',refresh:'Refresh data',steps:'Steps today',weight:'Weight',fat:'Body fat',oxygen:'SpO₂',vo2:'VO₂max',none:'No additional data has been read yet.',saved:'Additional Health Connect data refreshed.',note:'Steps are activity context. Weight, body fat, SpO₂ and VO₂max are informational in this version and do not automatically change Coach readiness.'};const de={title:'Zusätzliche Health Connect-Daten',refresh:'Daten aktualisieren',steps:'Schritte heute',weight:'Gewicht',fat:'Körperfett',oxygen:'SpO₂',vo2:'VO₂max',none:'Bisher keine zusätzlichen Daten eingelesen.',saved:'Zusätzliche Health Connect-Daten aktualisiert.',note:'Schritte dienen als Aktivitätskontext. Gewicht, Körperfett, SpO₂ und VO₂max sind Richtwerte und verändern den Coach-Wert nicht automatisch.'};const ro={title:'Date suplimentare Health Connect',refresh:'Actualizează datele',steps:'Pași azi',weight:'Greutate',fat:'Grăsime corporală',oxygen:'SpO₂',vo2:'VO₂max',none:'Încă nu au fost citite date suplimentare.',saved:'Date suplimentare Health Connect actualizate.',note:'Pașii reprezintă context de activitate. Greutatea, grăsimea corporală, SpO₂ și VO₂max sunt informative și nu modifică automat scorul Coach.'};const l=rf234Lang();return l==='hu'?hu:l==='de'?de:l==='ro'?ro:en;};
+var rf234Num = function rf234Num(v){return v==null||v===''?null:Number.isFinite(Number(v))?Number(v):null};
+var rf234Load = function rf234Load(){if(!state.health)state.health={};if(!state.health.wellness){const x=db.get('wellnessLatest',null);if(x&&typeof x==='object')state.health.wellness=x}return state.health.wellness||null};
+var rf234Range = function rf234Range(){const end=new Date(),start=new Date(end.getTime()-14*86400000),stepsStart=new Date();stepsStart.setHours(0,0,0,0);return {start:start.toISOString(),stepsStart:stepsStart.toISOString(),end:end.toISOString()}};
+var rf234Has = function rf234Has(w){return !!w&&['steps','weightKg','bodyFatPercent','oxygenSaturationPercent','vo2Max'].some(k=>rf234Num(w[k])!=null)};
+var rf234Read = async function rf234Read(p){if(!p||typeof p.readWellness!=='function')throw Error('TrainPilot 2.3.4 Health Connect bridge szükséges.');const r=await p.readWellness(rf234Range());const w={...r,readAt:new Date().toISOString()};state.health.wellness=w;if(r.permissions)state.health.permissions=r.permissions;db.set('wellnessLatest',w);return rf234Text().saved};
+var rf234Rows = function rf234Rows(compact=false){const t=rf234Text(),w=rf234Load();if(!rf234Has(w))return `<p class="small muted">${esc(t.none)}</p>`;const a=[[t.steps,rf234Num(w.steps)==null?'—':Math.round(w.steps).toLocaleString()],[t.weight,rf234Num(w.weightKg)==null?'—':rf234Num(w.weightKg).toFixed(1)+' kg'],[t.fat,rf234Num(w.bodyFatPercent)==null?'—':rf234Num(w.bodyFatPercent).toFixed(1)+'%'],[t.oxygen,rf234Num(w.oxygenSaturationPercent)==null?'—':rf234Num(w.oxygenSaturationPercent).toFixed(1)+'%'],[t.vo2,rf234Num(w.vo2Max)==null?'—':rf234Num(w.vo2Max).toFixed(1)+' ml/kg/min']];return compact?a.map(x=>`<div class="rf234-line"><span>${esc(x[0])}</span><b>${esc(x[1])}</b></div>`).join(''):`<div class="rf234-grid">${a.map(x=>`<div class="stat"><small>${esc(x[0])}</small><strong>${esc(x[1])}</strong></div>`).join('')}</div>`};
+var rf234Card = function rf234Card(coach=false){const t=rf234Text();return `<div class="card" id="${coach?'rf234CoachWellness':'rf234Wellness'}"><h2>${esc(t.title)}</h2>${rf234Rows(coach)}<p class="small muted">${esc(t.note)}</p><button class="btn secondary block" onclick="readWellnessHealth()${coach?'.then(()=>rf233CoachScreen())':''}">${esc(t.refresh)}</button></div>`};
+/* TrainPilot 2.3.4: additional Health Connect context. */
+const RF234_VERSION='2.3.4';
+
+
+readWellnessHealth=async function(){return healthAction(p=>rf234Read(p),'Kiegészítő Health Connect adatok frissítése…')}
+if(typeof rf225PermissionNames==='object')Object.assign(rf225PermissionNames,{READ_STEPS:'Lépésszám',READ_WEIGHT:'Testsúly',READ_BODY_FAT:'Testzsír',READ_OXYGEN_SATURATION:'SpO₂',READ_VO2_MAX:'VO₂max'});
+if(typeof rf225ConnectHealth==='function')rf225ConnectHealth=async function(){return healthAction(async p=>{const s=await p.requestRead();state.health.permissions=s.permissions||(await p.getStatus()).permissions;const m=[];for(const read of [rf225ReadDaily,rf225ReadRecovery,rf234Read])try{m.push(await read(p))}catch(e){m.push(e?.message||'Az adatolvasás nem sikerült.')}return m.join(' ')})}
+
+
+if(typeof rf206HealthHub==='function'){const baseHub=rf206HealthHub;rf206HealthHub=function(){rf234Load();const r=baseHub();if(typeof r==='string')return r.includes('rf234Wellness')?r:r.replace('</main>',rf234Card(false)+'</main>');const main=document.querySelector('main');if(main&&!main.querySelector('#rf234Wellness'))main.insertAdjacentHTML('beforeend',rf234Card(false));return r}}
+if(typeof rf233SignalHtml==='function'){const baseSignals=rf233SignalHtml;rf233SignalHtml=function(plan){const h=baseSignals(plan),s=rf234Num(rf234Load()?.steps);return h+(s==null?'':`<div class="rf233-signal">${esc(rf234Text().steps)}: ${Math.round(s).toLocaleString()}</div>`)}}
+if(typeof rf233CoachScreen==='function'){const baseCoach=rf233CoachScreen;rf233CoachScreen=function(){rf234Load();const r=baseCoach();const main=document.querySelector('main');if(main&&!main.querySelector('#rf234CoachWellness')){const section=main.querySelector('.section');if(section)section.insertAdjacentHTML('beforebegin',rf234Card(true));else main.insertAdjacentHTML('beforeend',rf234Card(true))}return r};if(typeof rf220CoachScreen==='function')rf220CoachScreen=rf233CoachScreen}
+(function(){if(document.querySelector('#rf234Css'))return;const s=document.createElement('style');s.id='rf234Css';s.textContent='.rf234-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.rf234-line{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.07)}@media(max-width:360px){.rf234-grid{grid-template-columns:1fr}}';document.head.appendChild(s)})();
+rf234Load();
+
+
+// @endsection v234.js
+
+// @section v235.js
+var rf235L = function rf235L(){const k=typeof rf212Lang==='function'?rf212Lang():'hu';return RF235_I18N[k]||RF235_I18N.hu};
+var rf235FmtSleep = function rf235FmtSleep(v){const n=Number(v);return Number.isFinite(n)?`${Math.round(n/6)/10} h`:'—'};
+var rf235FmtHrv = function rf235FmtHrv(v){const n=Number(v);return Number.isFinite(n)?`${Math.round(n)} ms`:'—'};
+var rf235FmtSteps = function rf235FmtSteps(v){const n=Number(v);return Number.isFinite(n)?Math.round(n).toLocaleString(typeof rf233Locale==='function'?rf233Locale():undefined):'—'};
+var rf235TargetName = function rf235TargetName(target){return target?.day?.name||target?.day?.id||rf235L().noTarget};
+var rf235HealthCoachCard = function rf235HealthCoachCard(){
+ const t=rf235L();
+ if(typeof rf233CoachPlan!=='function')return '';
+ const p=rf233CoachPlan(),r=p.readiness||{},w=typeof rf234Load==='function'?rf234Load():null;
+ const targetTitle=typeof rf233TargetTitle==='function'?rf233TargetTitle(p.target):'';
+ const targetSub=typeof rf233TargetSub==='function'?rf233TargetSub(p.target):'';
+ return `<div class="card rf235-health-coach" id="rf235HealthCoach"><div class="rf235-coach-head"><div><small>${esc(t.coach)}</small><strong>${r.score}/100 · ${esc(p.decision?.title||'')}</strong></div><span class="badge">${esc(targetTitle)}</span></div><div class="small muted rf235-target"><b>${esc(rf235TargetName(p.target))}</b>${targetSub?' • '+esc(targetSub):''}</div><div class="rf235-coach-signals"><span>${esc(t.sleep)} <b>${esc(rf235FmtSleep(r.sleep))}</b></span><span>${esc(t.hrv)} <b>${esc(rf235FmtHrv(r.hrv))}</b></span><span>${esc(t.steps)} <b>${esc(rf235FmtSteps(w?.steps))}</b></span></div><div class="small rf235-advice"><b>${esc(t.todayAdvice)}:</b> ${esc(p.decision?.title||'')}</div><button class="btn block" onclick="rf233CoachScreen()">${esc(t.open)}</button></div>`;
+};
+var rf235UsageTag = function rf235UsageTag(kind){const t=rf235L(),label=kind==='coach'?t.uses:kind==='context'?t.context:kind==='trend'?t.trend:t.info;return `<span class="rf235-use rf235-use-${kind}">${esc(label)}</span>`};
+var rf235UsageKind = function rf235UsageKind(label){
+ const x=String(label||'').trim().toLowerCase();
+ if(/^(alvás|sleep|schlaf|somn)$/.test(x)||/^hrv$/.test(x))return 'coach';
+ if(/lépé|steps|schritte|pași|pasi/.test(x))return 'context';
+ if(/testsúly|testzsír|weight|body fat|gewicht|körperfett|greutate|grăsime|grasime/.test(x))return 'trend';
+ if(/spo₂|spo2|vo₂|max|vo2|aktív energia|active energy|active calories|átlagpulzus|max\. pulzus|pulzusminták|heart rate|pulse|puls/.test(x))return 'info';
+ return '';
+};
+var rf235DecorateStats = function rf235DecorateStats(main){
+ for(const small of main.querySelectorAll('.stat small')){
+  if(small.querySelector('.rf235-use'))continue;
+  const kind=rf235UsageKind(small.textContent);if(!kind)continue;
+  small.insertAdjacentHTML('beforeend',rf235UsageTag(kind));
+ }
+};
+var rf235DecorateRecovery = function rf235DecorateRecovery(main){
+ const cards=[...main.querySelectorAll('.card')];
+ const card=cards.find(c=>/^(regeneráció|recovery|regeneration|recuperare)$/i.test(c.querySelector('h2')?.textContent?.trim()||''));
+ if(!card||card.querySelector('.rf235-recovery-usage'))return;
+ const row=document.createElement('div');row.className='rf235-recovery-usage';row.innerHTML=`<span>${esc(rf235L().sleep)} ${rf235UsageTag('coach')}</span><span>${esc(rf235L().hrv)} ${rf235UsageTag('coach')}</span>`;
+ const p=card.querySelector('p');if(p)p.insertAdjacentElement('afterend',row);else card.prepend(row);
+};
+var rf235DecorateHealthHub = function rf235DecorateHealthHub(){
+ const main=document.querySelector('main');if(!main)return;
+ if(!main.querySelector('#rf235HealthCoach')){const hero=main.querySelector('.hero'),box=document.createElement('div');box.innerHTML=rf235HealthCoachCard();const card=box.firstElementChild;if(card){if(hero)hero.insertAdjacentElement('afterend',card);else main.prepend(card)}}
+ rf235DecorateStats(main);rf235DecorateRecovery(main);
+};
+/* TrainPilot 2.3.5: compact Train Coach in Health + metric usage labels. */
+const RF235_VERSION='2.3.5';
+const RF235_I18N={
+ hu:{coach:'TrainPilot Coach',todayAdvice:'Mai javaslat',open:'Coach megnyitása',uses:'Coach használja',context:'Aktivitási kontextus',info:'Tájékoztató',trend:'Trendadat',sleep:'Alvás',hrv:'HRV',steps:'Lépések',noTarget:'Nincs tervezett edzés'},
+ en:{coach:'TrainPilot Coach',todayAdvice:"Today's recommendation",open:'Open Coach',uses:'Used by Coach',context:'Activity context',info:'Informational',trend:'Trend data',sleep:'Sleep',hrv:'HRV',steps:'Steps',noTarget:'No planned workout'},
+ de:{coach:'TrainPilot Coach',todayAdvice:'Heutige Empfehlung',open:'Coach öffnen',uses:'Vom Coach genutzt',context:'Aktivitätskontext',info:'Informativ',trend:'Trenddaten',sleep:'Schlaf',hrv:'HRV',steps:'Schritte',noTarget:'Kein Training geplant'},
+ ro:{coach:'TrainPilot Coach',todayAdvice:'Recomandarea de azi',open:'Deschide Coach',uses:'Folosit de Coach',context:'Context activitate',info:'Informativ',trend:'Date de tendință',sleep:'Somn',hrv:'HRV',steps:'Pași',noTarget:'Nu există antrenament planificat'}
+};
+
+
+if(typeof rf206HealthHub==='function'){
+ const rf235HubBase=rf206HealthHub;
+ rf206HealthHub=function(){const out=rf235HubBase();rf235DecorateHealthHub();return out};
+}
+(function rf235Css(){if(document.querySelector('#rf235Css'))return;const s=document.createElement('style');s.id='rf235Css';s.textContent='.rf235-health-coach{display:grid;gap:10px}.rf235-coach-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.rf235-coach-head>div{display:flex;flex-direction:column;gap:3px}.rf235-coach-head strong{font-size:1.08rem}.rf235-target{line-height:1.45}.rf235-coach-signals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.rf235-coach-signals span{display:flex;flex-direction:column;gap:2px;padding:8px;border:1px solid rgba(127,127,127,.18);border-radius:10px;font-size:.78rem}.rf235-coach-signals b{font-size:.92rem}.rf235-advice{padding-top:2px}.rf235-use{display:inline-block;margin-left:5px;padding:1px 6px;border:1px solid rgba(127,127,127,.22);border-radius:999px;font-size:.66rem;font-weight:600;line-height:1.45;vertical-align:middle;white-space:nowrap}.rf235-recovery-usage{display:flex;flex-wrap:wrap;gap:7px 12px;margin:8px 0 10px;font-size:.78rem}.rf235-recovery-usage>span{display:flex;align-items:center;gap:2px}@media(max-width:360px){.rf235-coach-signals{grid-template-columns:1fr}.rf235-coach-head{align-items:flex-start;flex-direction:column}}';document.head.appendChild(s)})();
+
+
+// @endsection v235.js
+
+// @section v240.js
+var rf240L = function rf240L(){const k=typeof rf212Lang==='function'?rf212Lang():'hu';return RF240_I18N[k]||RF240_I18N.hu};
+var rf240Num = function rf240Num(v){return v==null||v===''?null:Number.isFinite(Number(v))?Number(v):null};
+var rf240DayKey = function rf240DayKey(v){const d=v instanceof Date?v:new Date(v);if(!Number.isFinite(d.getTime()))return '';return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+var rf240DayBounds = function rf240DayBounds(day){const [y,m,d]=String(day).split('-').map(Number),start=new Date(y,m-1,d,0,0,0,0),next=new Date(y,m-1,d+1,0,0,0,0),now=new Date();return {start:start.toISOString(),end:(next>now?now:next).toISOString()}};
+var rf240RecentDays = function rf240RecentDays(n){const out=[],now=new Date();for(let i=0;i<n;i++){const d=new Date(now.getFullYear(),now.getMonth(),now.getDate()-i);out.push(rf240DayKey(d))}return out};
+var rf240Ledger = function rf240Ledger(){const x=db.get(RF240_LEDGER_KEY,null);return x&&x.version===1&&x.days&&typeof x.days==='object'?x:{version:1,days:{},lastSyncAt:null,lastFullSyncAt:null,warnings:[]}};
+var rf240SaveLedger = function rf240SaveLedger(x){db.set(RF240_LEDGER_KEY,x);return x};
+var rf240Meta = function rf240Meta(){const x=db.get(RF240_META_KEY,null);return x&&typeof x==='object'?x:{token:null,initialized:false,lastSyncAt:null,lastFullSyncAt:null}};
+var rf240SaveMeta = function rf240SaveMeta(x){db.set(RF240_META_KEY,x);return x};
+var rf240Native = function rf240Native(){try{return typeof isNative==='function'&&isNative()&&typeof healthPlugin==='function'?healthPlugin():null}catch(_){return null}};
+var rf240Fmt = function rf240Fmt(v,d=0){const n=rf240Num(v);return n==null?'—':n.toLocaleString(typeof rf233Locale==='function'?rf233Locale():undefined,{maximumFractionDigits:d,minimumFractionDigits:d})};
+var rf240Latest = function rf240Latest(days,key,timeKey){for(const day of Object.keys(days).sort().reverse()){const x=days[day];if(rf240Num(x?.[key])!=null)return {value:rf240Num(x[key]),time:x?.[timeKey]||null,source:x?.[timeKey?.replace('Time','Source')]||null,day}}return null};
+var rf240Median = function rf240Median(a){const v=a.map(rf240Num).filter(x=>x!=null).sort((a,b)=>a-b);if(!v.length)return null;const i=Math.floor(v.length/2);return v.length%2?v[i]:(v[i-1]+v[i])/2};
+var rf240UniqueSleep = function rf240UniqueSleep(days){const map=new Map();for(const x of Object.values(days))for(const s of x?.sleepSessions||[]){const key=s.id||`${s.start}|${s.end}|${s.source||''}`;if(!map.has(key))map.set(key,s)}return [...map.values()]};
+var rf240ApplyLedger = function rf240ApplyLedger(){
+ const ledger=rf240Ledger(),days=ledger.days||{},today=days[rf240DayKey(new Date())]||null;if(!state.health)state.health={};
+ const weight=rf240Latest(days,'weightKg','weightTime'),fat=rf240Latest(days,'bodyFatPercent','bodyFatTime'),oxygen=rf240Latest(days,'oxygenSaturationPercent','oxygenSaturationTime'),vo2=rf240Latest(days,'vo2Max','vo2MaxTime');
+ const wellness={steps:rf240Num(today?.steps),weightKg:weight?.value??null,weightTime:weight?.time||null,bodyFatPercent:fat?.value??null,bodyFatTime:fat?.time||null,oxygenSaturationPercent:oxygen?.value??null,oxygenSaturationTime:oxygen?.time||null,vo2Max:vo2?.value??null,vo2MaxTime:vo2?.time||null,readAt:ledger.lastSyncAt||null};
+ state.health.wellness=wellness;db.set('wellnessLatest',wellness);
+ const sleeps=rf240UniqueSleep(days).filter(s=>Number.isFinite(Date.parse(s.end))).sort((a,b)=>Date.parse(b.end)-Date.parse(a.end)),latestSleep=sleeps[0]||null;
+ const hrvRows=Object.keys(days).sort().reverse().map(day=>({day,value:rf240Num(days[day]?.hrvRmssdMs),time:days[day]?.hrvTime||null,source:days[day]?.hrvSource||null})).filter(x=>x.value!=null);
+ const latestHrv=hrvRows[0]||null,baseline=rf240Median(hrvRows.slice(0,7).map(x=>x.value));
+ if(latestSleep||latestHrv){const recovery={day:rf240DayKey(latestSleep?.end||latestHrv?.time||latestHrv?.day),sleepMinutes:latestSleep?rf240Num(latestSleep.durationMinutes):null,sleepStart:latestSleep?.start||null,sleepEnd:latestSleep?.end||null,sleepSource:latestSleep?.source||null,hrvRmssdMs:latestHrv?.value??null,hrvBaselineMs:baseline,hrvSource:latestHrv?.source||null,readAt:ledger.lastSyncAt||null};state.health.recovery=recovery;}
+ if(typeof rf229UpsertRecovery==='function'){
+   const sessions=rf240UniqueSleep(days),byEnd={};for(const s of sessions){const day=rf240DayKey(s.end);if(!day)continue;(byEnd[day]||(byEnd[day]=[])).push(s)}
+   for(const day of Object.keys(days)){const d=days[day],ss=byEnd[day]||[],sleepMinutes=ss.length?ss.reduce((a,s)=>a+(rf240Num(s.durationMinutes)||0),0):null,starts=ss.map(s=>s.start).filter(Boolean).sort(),ends=ss.map(s=>s.end).filter(Boolean).sort();const item={day,sleepMinutes,sleepStart:starts[0]||null,sleepEnd:ends.at(-1)||null,sleepSource:ss[0]?.source||null,hrvRmssdMs:rf240Num(d?.hrvRmssdMs),hrvSamples:rf240Num(d?.hrvRmssdMs)==null?0:1,hrvSource:d?.hrvSource||null,readAt:d?.readAt||ledger.lastSyncAt||new Date().toISOString()};if(item.sleepMinutes!=null||item.hrvRmssdMs!=null)rf229UpsertRecovery(item)}
+   if(typeof rf229ApplyLatestRecovery==='function')rf229ApplyLatestRecovery();
+ }
+ return ledger;
+};
+var rf240ReadDays = async function rf240ReadDays(p,dayKeys,ledger=rf240Ledger()){
+ const unique=[...new Set(dayKeys)].filter(Boolean).sort();let done=0;for(const day of unique){const w=rf240DayBounds(day);if(Date.parse(w.end)<=Date.parse(w.start))continue;try{const r=await p.readHealthDay(w);ledger.days[day]={...r,day,readAt:new Date().toISOString()};done++}catch(e){ledger.warnings=(ledger.warnings||[]).slice(-20);ledger.warnings.push(`${day}: ${e?.message||e}`)}}rf240SaveLedger(ledger);rf240ApplyLedger();return done
+};
+var rf240WorkoutKey = function rf240WorkoutKey(h){return typeof rf142WorkoutKey==='function'?rf142WorkoutKey(h):h?.id||`${h?.started||''}|${h?.programId||''}|${h?.dayId||h?.workout||''}`};
+var rf240ValidWorkout = function rf240ValidWorkout(h){const a=Date.parse(h?.started||''),b=Date.parse(h?.finished||'');return Number.isFinite(a)&&Number.isFinite(b)&&b>a&&b-a<=24*3600000};
+var rf240SaveWorkoutHealth = function rf240SaveWorkoutHealth(key,data){const rows=history(),i=rows.findIndex(x=>rf240WorkoutKey(x)===key);if(i<0)return false;rows[i]={...rows[i],health240:{...data,windowStart:rows[i].started,windowEnd:rows[i].finished,syncedAt:new Date().toISOString()}};db.set('history',rows);if(state.health?.workout===rows[i].started)state.health.summary=rows[i].health240;return true};
+var rf240SyncWorkout = async function rf240SyncWorkout(p,h,force=false){if(!rf240ValidWorkout(h))return false;const key=rf240WorkoutKey(h),old=h.health240;if(!force&&old?.windowStart===h.started&&old?.windowEnd===h.finished&&Date.now()-Date.parse(old.syncedAt||0)<6*3600000)return false;const r=await p.readTrainingWindow({start:h.started,end:h.finished});return rf240SaveWorkoutHealth(key,r)};
+var rf240AttachRecentWorkouts = async function rf240AttachRecentWorkouts(p,days=7,force=false){const cutoff=Date.now()-Math.max(1,days)*86400000,rows=history().filter(h=>rf240ValidWorkout(h)&&Date.parse(h.finished)>=cutoff).sort((a,b)=>Date.parse(a.finished)-Date.parse(b.finished));let n=0;for(const h of rows){try{if(await rf240SyncWorkout(p,h,force))n++}catch(_){}}return n};
+var rf240CreateToken = async function rf240CreateToken(p,meta){try{const r=await p.createChangeToken();meta.token=r.token||null}catch(_){meta.token=null}return meta};
+var rf240RunFull = async function rf240RunFull(p,days=30,requestPermission=false){
+ if(requestPermission&&typeof p.requestRead==='function')await p.requestRead();const ledger=rf240Ledger();ledger.warnings=[];const n=await rf240ReadDays(p,rf240RecentDays(Math.max(1,Math.min(30,days))),ledger);ledger.lastSyncAt=new Date().toISOString();ledger.lastFullSyncAt=ledger.lastSyncAt;rf240SaveLedger(ledger);let meta=rf240Meta();meta.initialized=true;meta.lastSyncAt=ledger.lastSyncAt;meta.lastFullSyncAt=ledger.lastFullSyncAt;meta=await rf240CreateToken(p,meta);rf240SaveMeta(meta);await rf240AttachRecentWorkouts(p,30,true);rf240ApplyLedger();return {days:n,workouts:history().filter(h=>h.health240).length,full:true}
+};
+var rf240RunIncremental = async function rf240RunIncremental(p,requestPermission=false){
+ if(requestPermission&&typeof p.requestRead==='function')await p.requestRead();let meta=rf240Meta();if(!meta.initialized||!meta.token)return rf240RunFull(p,30,false);let change=null,keys=[];try{change=await p.pollChanges({token:meta.token});if(Number(change.deletedCount)>0)return rf240RunFull(p,30,false);keys=(change.changedDays||[]).slice();meta.token=change.nextToken||meta.token}catch(_){keys=rf240RecentDays(3);meta=await rf240CreateToken(p,meta)}
+ keys.push(...rf240RecentDays(2));const ledger=rf240Ledger(),n=await rf240ReadDays(p,keys,ledger);ledger.lastSyncAt=new Date().toISOString();rf240SaveLedger(ledger);meta.initialized=true;meta.lastSyncAt=ledger.lastSyncAt;rf240SaveMeta(meta);await rf240AttachRecentWorkouts(p,7,false);rf240ApplyLedger();return {days:n,full:false,changedTypes:change?.changedTypes||[]}
+};
+var rf240SyncNow = async function rf240SyncNow(){return healthAction(async p=>{const r=await rf240RunIncremental(p,true);return `${rf240L().done} ${r.days} napi blokk frissítve.`},'Health Connect szinkron…')};
+var rf240FullSync = async function rf240FullSync(){return healthAction(async p=>{const r=await rf240RunFull(p,30,true);return `${rf240L().done} ${r.days} nap frissítve.`},'30 nap Health Connect adatainak beolvasása…')};
+var rf240BackgroundSync = function rf240BackgroundSync(){const p=rf240Native();if(!p)return;setTimeout(async()=>{try{const status=await p.getStatus();const perms=status?.permissions||{};if(!Object.values(perms).some(Boolean))return;const meta=rf240Meta();if(!meta.initialized)await rf240RunFull(p,30,false);else if(Date.now()-Date.parse(meta.lastSyncAt||0)>2*3600000)await rf240RunIncremental(p,false)}catch(_){}},1500)};

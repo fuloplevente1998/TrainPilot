@@ -1,0 +1,348 @@
+  <button class="btn secondary" onclick="rf203ExerciseLibrary()">← Gyakorlatkönyvtár</button>
+  <div class="hero"><h1>${esc(e.hu)}</h1><div class="en">${esc(e.en||'')}</div><div class="muted">${e.sets||''}${e.sets?' × ':''}${esc(e.reps||'')} ${e.weight?`• ${e.weight} ${esc(e.unit||'')}`:''}</div></div>
+  <div class="card detail"><span class="badge">${esc(e.target||'')}</span>${e.equipment?`<span class="badge">${esc(e.equipment)}</span>`:''}${typeof motionDemo==='function'?motionDemo(e.id):''}<p class="note">${esc(e.notes||'')}</p></div>
+ </main>`));
+};
+/* RepForge 2.0.3: megnyitható Gyakorlatkönyvtár a Programok fülről. */
+const RF203_VERSION='2.0.3';
+
+
+const rf203ProgramsScreen=programsScreen;
+programsScreen=function(){
+ let html=rf203ProgramsScreen();
+ html=html.replace(`<div class="section">Gyakorlatkönyvtár</div><div class="card"><strong>${exercises().length} gyakorlat</strong><p class="small muted">Otthoni és konditermi gyakorlatok közös könyvtára. A meglévő videók és technikai segítségek megmaradtak.</p></div>`,
+ `<div class="section">Gyakorlatkönyvtár</div><div class="card" role="button" tabindex="0" onclick="rf203ExerciseLibrary()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();rf203ExerciseLibrary();}" style="cursor:pointer"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><div><strong>${exercises().length} gyakorlat</strong><p class="small muted">Otthoni és konditermi gyakorlatok közös könyvtára. Koppints a teljes lista megnyitásához.</p></div><div class="chev">›</div></div></div>`);
+ return html;
+};
+
+
+render();
+
+
+// @endsection v203.js
+
+// @section v204.js
+
+/* RepForge 2.0.4: egyetlen gyakorlatkönyvtár + visszaállított testreszabás. */
+const RF204_VERSION='2.0.4';
+
+// A 2.0.2 Beállítások felülírta a 2.0.0 témaszín-panelt. Tegyük vissza úgy,
+// hogy a tisztított, felhasználóbarát szövegek megmaradjanak.
+const rf204SettingsScreen=settingsScreen;
+settingsScreen=function(){
+ let html=rf204SettingsScreen();
+ if(typeof rf200ThemePanel==='function' && !html.includes('<label>Témaszín</label>')){
+  html=html.replace('<div class="setting"><label>Pihenőidő',rf200ThemePanel()+'<div class="setting"><label>Pihenőidő');
+ }
+ return html;
+};
+
+// A Programok képernyőn ne jelenjen meg második, külön Gyakorlatkönyvtár-kártya.
+// A meglévő Izomcsoportok/Gyakorlatkönyvtár nézet marad az egyetlen hely a teljes
+// gyakorlatlistához, leírásokhoz és videókhoz.
+const rf204ProgramsScreen=programsScreen;
+programsScreen=function(){
+ let html=rf204ProgramsScreen();
+ html=html.replace(/<div class="section">Gyakorlatkönyvtár<\/div><div class="card" role="button"[\s\S]*?Koppints a teljes lista megnyitásához\.<\/p><\/div><div class="chev">›<\/div><\/div><\/div>/,'');
+ return html;
+};
+
+
+render();
+
+
+// @endsection v204.js
+
+// @section v205.js
+var rf205PrimaryMuscle = function rf205PrimaryMuscle(id){const g=muscleGroups(id);return g&&g.length?g[0]:null;};
+var libraryMatch = function libraryMatch(e,group,gear,q){
+ const normal=x=>String(x).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+ return (group==='all'||rf205PrimaryMuscle(e.id)===group) &&
+        (gear==='all'||libraryGear(e)===gear) &&
+        normal(e.hu+' '+e.en+' '+e.equipment).includes(normal(q.trim()));
+};
+/* RepForge 2.0.5: egyértelmű gyakorlatkönyvtár + elsődleges izomcsoport szerinti szűrés. */
+const RF205_VERSION='2.0.5';
+
+// A könyvtár szűrője elsődleges izomcsoport szerint működik. Így pl. egy RDL/farizom-domináns
+// gyakorlat nem jelenik meg a Hát szűrőben csak azért, mert a hát stabilizáló/segéd szerepet kap.
+
+
+// A Programok kártya neve írja le azt, ahová ténylegesen navigál: gyakorlatlista + izomcsoport szűrés.
+const rf205ProgramsScreen=programsScreen;
+programsScreen=function(){
+ let html=rf205ProgramsScreen();
+ return String(html).replaceAll('>Izomcsoportok<','>Gyakorlatok / Izomcsoportok<');
+};
+
+// A könyvtár fejlécét is egységesítjük, a meglévő leírások/videók változatlanok maradnak.
+const rf205MuscleLibrary=muscleLibrary;
+muscleLibrary=function(...args){
+ rf205MuscleLibrary(...args);
+ const h=document.querySelector('.hero h1');
+ if(h && (h.textContent==='Gyakorlatkönyvtár'||h.textContent==='Izomcsoportok')) h.textContent='Gyakorlatok / Izomcsoportok';
+};
+
+
+render();
+
+
+// @endsection v205.js
+
+// @section v206.js
+var rf206LatestWeight = function rf206LatestWeight(){const w=weights();return w.length?Number(w[0].kg):null;};
+var rf206WorkoutMinutes = function rf206WorkoutMinutes(h){const a=Date.parse(h?.started),b=Date.parse(h?.finished);return Number.isFinite(a)&&Number.isFinite(b)&&b>a?(b-a)/60000:0;};
+var rf206EffortScore = function rf206EffortScore(h){const xs=(h?.exercises||[]).map(e=>e.effort).filter(Boolean),m={easy:0.82,good:1,hard:1.18,pain:0.9};return xs.length?xs.reduce((a,x)=>a+(m[x]||1),0)/xs.length:1;};
+var rf206VolumeScore = function rf206VolumeScore(h){let v=0,n=0;for(const e of h?.exercises||[])for(const s of e.sets||[]){if(!s.done)continue;n++;v+=(Number(s.reps)||0)*(Number(s.weight)||0);}return n?Math.max(0.92,Math.min(1.08,1+(Math.log10(Math.max(1,v))-3)*0.035)):1;};
+var rf206EstimatedKcal = function rf206EstimatedKcal(h,kg=rf206LatestWeight()){const min=rf206WorkoutMinutes(h);if(!Number.isFinite(kg)||kg<=0||min<=0)return null;const met=Math.max(3,Math.min(6.5,4.6*rf206EffortScore(h)*rf206VolumeScore(h)));return Math.round(met*3.5*kg/200*min);};
+var rf206HealthTotals = function rf206HealthTotals(){const h=history(),kg=rf206LatestWeight();let kcal=0,count=0;for(const x of h){const k=rf206EstimatedKcal(x,kg);if(Number.isFinite(k)){kcal+=k;count++;}}return {kcal,count,last:h.length?rf206EstimatedKcal(h[0],kg):null};};
+var rf206HealthHub = function rf206HealthHub(){state.tab='health';const latest=rf206LatestWeight(),t=rf206HealthTotals(),rec=state.health?.recovery;render(shell(`<main><div class="hero"><h1>Egészség</h1><div class="muted">Testsúly, edzésenergia és Health Connect adatok egy helyen.</div></div><div class="grid2"><div class="stat" role="button" onclick="state.tab='weight';render()"><small>Legutóbbi testsúly</small><strong>${latest==null?'—':latest+' kg'}</strong></div><div class="stat"><small>Legutóbbi edzés</small><strong>${t.last==null?'—':'≈ '+t.last+' kcal'}</strong></div></div><div class="card"><h2>Edzésenergia</h2><p class="small muted">Becslés az edzés időtartamából, testsúlyból, rögzített sorozatokból és nehézség-visszajelzésből.</p><div class="grid2"><div class="stat"><small>Becsült összesen</small><strong>${t.count?'≈ '+t.kcal+' kcal':'—'}</strong></div><div class="stat"><small>Becsült edzések</small><strong>${t.count}</strong></div></div></div><div class="card"><h2>Health Connect</h2><p class="small muted">${rec?'Alvás/HRV adatok beolvasva.':'A támogatott egészségadatokat a meglévő Health Connect kapcsolaton keresztül frissítheted.'}</p><button class="btn block" onclick="healthScreen()">Health Connect és regeneráció</button></div><div class="grid2"><button class="btn secondary" onclick="state.tab='weight';render()">Testsúly napló</button><button class="btn secondary" onclick="go('history')">Edzésnapló</button></div></main>`));};
+/* RepForge 2.0.6 */
+const RF206_VERSION='2.0.6';
+
+
+const rf206Home=home;home=function(){let html=rf206Home();html=html.replace('<div class="stat"><small>Elvégzett edzések</small>','<div class="stat" role="button" onclick="go(\'history\')"><small>Elvégzett edzések</small>');html=html.replace('<div class="stat"><small>Legutóbbi testsúly</small>','<div class="stat" role="button" onclick="rf206HealthHub()"><small>Legutóbbi testsúly</small>');html=html.replace(/<div class="section">Gyors választás<\/div><div class="grid2">[\s\S]*?<\/div>/,'');return html;};
+const rf206Shell=shell;shell=function(content){let html=rf206Shell(content);html=html.replace(/<button class="tab [^"]*" onclick="go\('weight'\)">Testsúly<\/button>/,`<button class="tab ${state.tab==='health'?'active':''}" onclick="rf206HealthHub()">Egészség</button>`);return html.replace('<div class="tabs">','<div class="tabs" style="gap:6px"><style>.tab{min-height:46px;padding:10px 13px;font-size:15px}.stat[role=button]{cursor:pointer}</style>');};
+
+render();
+
+
+// @endsection v206.js
+
+// @section v207.js
+var rf207TodayRange = function rf207TodayRange(){
+ const now=new Date(),start=new Date(now);start.setHours(0,0,0,0);
+ return {start:start.toISOString(),end:now.toISOString()};
+};
+var rf207HealthDaily = function rf207HealthDaily(){return state.health?.daily||null;};
+var rf207SourceLabel = function rf207SourceLabel(d){
+ if(!d?.source)return 'Nincs kiválasztott adatforrás';
+ return d.sourceLabels?.[d.source]||d.source;
+};
+var rf207PickSource = function rf207PickSource(d){
+ const sources=Array.isArray(d?.sources)?d.sources:[];
+ if(!sources.length)return '';
+ const saved=state.health?.dailySource;
+ if(saved&&sources.includes(saved))return saved;
+ return sources.find(x=>/samsung/i.test((d.sourceLabels?.[x]||'')+' '+x))||sources[0];
+};
+var rf207ReadTodayHealth = async function rf207ReadTodayHealth(preferred=null){
+ await healthAction(async p=>{
+  state.health=state.health||{};
+  const range=rf207TodayRange();
+  let r=await p.readWorkout({...range,source:preferred||state.health.dailySource||''});
+  let source=preferred||r.source||rf207PickSource(r);
+  if(source&&r.source!==source)r=await p.readWorkout({...range,source});
+  if(source)state.health.dailySource=source;
+  state.health.daily={...r,source:source||r.source||'',readAt:new Date().toISOString()};
+  return source?'Mai Health Connect adatok frissítve.':'Nem találtunk megosztott mai aktivitásadatot. Ellenőrizd a Health Connect adatforrásait és engedélyeit.';
+ });
+ // healthAction refreshes the current Health view; do not navigate after awaiting.
+};
+var rf207ChangeSource = function rf207ChangeSource(v){state.health=state.health||{};state.health.dailySource=v||'';rf207ReadTodayHealth(v||null);};
+var rf207FmtNum = function rf207FmtNum(v,suffix=''){const n=Number(v);return Number.isFinite(n)?`${Math.round(n)}${suffix}`:'—';};
+var rf207DailyCard = function rf207DailyCard(){
+ const d=rf207HealthDaily();
+ if(!d)return `<div class="card"><h2>Mai aktivitás • Health Connect</h2><p class="small muted">Aktív kalória és pulzusadatok a telefonon megosztott adatforrásból. Ezek nem kerülnek Google Drive mentésbe.</p><button class="btn block" onclick="rf207ReadTodayHealth()">Mai adatok beolvasása</button></div>`;
+ const sources=Array.isArray(d.sources)?d.sources:[];
+ const options=sources.length>1?`<label class="small">Adatforrás<select class="field" onchange="rf207ChangeSource(this.value)">${sources.map(x=>`<option value="${esc(x)}" ${x===d.source?'selected':''}>${esc(d.sourceLabels?.[x]||x)}</option>`).join('')}</select></label>`:'';
+ return `<div class="card"><h2>Mai aktivitás • Health Connect</h2><p class="small muted">Forrás: ${esc(rf207SourceLabel(d))}${d.readAt?' • frissítve: '+esc(new Date(d.readAt).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'})):''}</p>${options}<div class="grid2"><div class="stat"><small>Aktív energia</small><strong>${d.activeCalories==null?'—':rf207FmtNum(d.activeCalories,' kcal')}</strong></div><div class="stat"><small>Átlagpulzus</small><strong>${d.averageHeartRate==null?'—':rf207FmtNum(d.averageHeartRate,' bpm')}</strong></div><div class="stat"><small>Max. pulzus</small><strong>${d.maxHeartRate==null?'—':rf207FmtNum(d.maxHeartRate,' bpm')}</strong></div><div class="stat"><small>Pulzusminták</small><strong>${rf207FmtNum(d.heartRateSamples)}</strong></div></div><p class="small muted">A Health Connectből származó aktív energia mérési/forrásadata külön jelenik meg az app saját ≈ kcal becslésétől.</p><button class="btn secondary block" onclick="rf207ReadTodayHealth()">Mai adatok frissítése</button></div>`;
+};
+/* RepForge 2.0.7: napi Health Connect összegzés az Egészség központban. */
+const RF207_VERSION='2.0.7';
+
+
+// A 2.0.6 Egészség-központ kiegészítése: a becslés és a mért Health Connect adat egymás mellett marad.
+rf206HealthHub=function(){
+ state.tab='health';
+ const latest=rf206LatestWeight(),t=rf206HealthTotals(),rec=state.health?.recovery;
+ render(shell(`<main><div class="hero"><h1>Egészség</h1><div class="muted">Testsúly, edzésenergia, pulzus és regeneráció egy helyen.</div></div><div class="grid2"><div class="stat" role="button" onclick="state.tab='weight';render()"><small>Legutóbbi testsúly</small><strong>${latest==null?'—':latest+' kg'}</strong></div><div class="stat"><small>Legutóbbi edzés • becslés</small><strong>${t.last==null?'—':'≈ '+t.last+' kcal'}</strong></div></div>${rf207DailyCard()}<div class="card"><h2>RepForge edzésenergia</h2><p class="small muted">Saját becslés az edzés időtartamából, testsúlyból, elvégzett sorozatokból és nehézség-visszajelzésből. Nem helyettesíti a viselhető eszköz mérését.</p><div class="grid2"><div class="stat"><small>Becsült összesen</small><strong>${t.count?'≈ '+t.kcal+' kcal':'—'}</strong></div><div class="stat"><small>Becsült edzések</small><strong>${t.count}</strong></div></div></div><div class="card"><h2>Regeneráció</h2><p class="small muted">${rec?'Alvás és HRV adatok beolvasva.':'Alvás és HRV még nincs beolvasva ebben a nézetben.'}</p>${typeof rf141RecoveryHtml==='function'?rf141RecoveryHtml():''}<button class="btn secondary block" onclick="readRecoveryHealth()">Alvás és HRV frissítése</button></div><div class="grid2"><button class="btn secondary" onclick="state.tab='weight';render()">Testsúly napló</button><button class="btn secondary" onclick="go('history')">Edzésnapló</button></div><br><button class="btn secondary block" onclick="healthScreen()">Health Connect beállítások és részletek</button></main>`));
+};
+
+
+render();
+
+
+// @endsection v207.js
+
+// @section v208.js
+
+/* RepForge 2.0.8: kezdőlap és felső navigáció javítása. */
+const RF208_VERSION='2.0.8';
+
+// A tényleges 1.2+ kezdőlap "Gyors elérés" blokkot használ, ezért ezt távolítjuk el.
+const rf208Home=home;
+home=function(){
+ let html=rf208Home();
+ html=html.replace(/<div class="section">Gyors elérés<\/div><div class="grid2">[\s\S]*?<\/div>(?=<\/main>)/,'');
+ html=html.replace(/<div class="section">Gyors választás<\/div><div class="grid2">[\s\S]*?<\/div>(?=<\/main>)/,'');
+ return html;
+};
+
+// Hat elsődleges fül marad: Kezdőlap, Edzés, Naptár, Programok, Napló, Egészség.
+// A Beállítások külön ikonként kerül a REPFORGE felirat jobb oldalára.
+const rf208Shell=shell;
+shell=function(content){
+ let html=rf208Shell(content);
+ const healthTab=`<button class="tab ${state.tab==='health'?'active':''}" onclick="rf206HealthHub()">Egészség</button>`;
+ if(!html.includes('onclick="rf206HealthHub()">Egészség</button>')){
+  html=html.replace(/(<button class="tab [^"]*" onclick="go\('history'\)">Napló<\/button>)/,`$1${healthTab}`);
+ }
+ html=html.replace(/<button class="tab[^"]*" onclick="go\('settings'\)">Beállítás(?:ok)?<\/button>/,'');
+ if(!html.includes('class="rf208-brand-row"')){
+  html=html.replace('<div class="brand">REPFORGE</div>',`<div class="rf208-brand-row"><div class="brand">REPFORGE</div><button class="rf208-settings-btn" aria-label="Beállítások" title="Beállítások" onclick="go('settings')">⚙︎</button></div>`);
+ }
+ html=html.replace('<div class="tabs tabs6">','<div class="tabs tabs6 rf208-tabs">');
+ if(!html.includes('id="rf208-nav-style"')){
+  html=html.replace('</div></div>'+content,`<style id="rf208-nav-style">
+   .rf208-brand-row{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%}
+   .rf208-settings-btn{width:38px;height:38px;min-width:38px;border:0;border-radius:11px;background:transparent;color:inherit;font-size:23px;line-height:1;display:grid;place-items:center;cursor:pointer}
+   .rf208-settings-btn:active{transform:scale(.96)}
+   .rf208-tabs{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;width:100%}
+   .rf208-tabs .tab{min-height:40px!important;min-width:0!important;padding:8px 6px!important;font-size:13.5px!important;line-height:1.15;flex:none!important}
+   @media (max-width:360px){.rf208-tabs .tab{font-size:12.5px!important;padding:7px 4px!important}}
+  </style></div></div>${content}`);
+ }
+ return html;
+};
+
+
+render();
+
+
+// @endsection v208.js
+
+// @section v209.js
+var rf209ScheduleDone = function rf209ScheduleDone(x){return x?.status==='completed'||history().some(h=>h.scheduleId===x?.id);};
+var rf209DeleteSchedule = function rf209DeleteSchedule(id){
+ const s=scheduled(),i=s.findIndex(x=>x.id===id);if(i<0)return;
+ const done=rf209ScheduleDone(s[i]);
+ const msg=done?'Törlöd ezt a tervezett alkalmat? Az edzésnapló bejegyzése megmarad.':'Törlöd ezt a tervezett edzést?';
+ tp2628Confirm(msg,{title:'Tervezett edzés törlése',confirmText:'Törlés',danger:true}).then(ok=>{if(!ok)return;const cur=scheduled(),j=cur.findIndex(x=>x.id===id);if(j<0)return;cur[j]={...cur[j],cancelled:true,status:'cancelled',updatedAt:Date.now()};db.set('scheduled',cur);render();window.TrainPilotFeedback?.deleted();});
+};
+var rf209NearestPlan = function rf209NearestPlan(dayId){
+ const pid=activeProgramId(),now=Date.now(),limit=36*60*60*1000;
+ return scheduled().filter(x=>!x.cancelled&&(x.status||'planned')==='planned'&&!history().some(h=>h.scheduleId===x.id)&&(x.programId||'home-basic')===pid&&(x.dayId||x.workout)===dayId)
+  .map(x=>({x,d:Math.abs(Date.parse(x.start)-now)})).filter(v=>Number.isFinite(v.d)&&v.d<=limit).sort((a,b)=>a.d-b.d)[0]?.x||null;
+};
+/* RepForge 2.0.9: tervezett edzések feloldása, törlése és automatikus összerendelése. */
+const RF209_VERSION='2.0.9';
+
+
+// A naptárnapra koppintva a már létező alkalom bármilyen állapotban eltávolítható.
+toggleCalendarDay=function(date){
+ const items=scheduleOnDate(date).filter(x=>!x.cancelled);
+ if(items.length){rf209DeleteSchedule(items[0].id);return;}
+ const s=plannerSettings(),p=activeProgram(),idx=nextCycleIndex(p.id),item=makeScheduleItem(p,date,s.time,s.minutes,cycleDay(p,idx).id);
+ addScheduleBatch([item]);render();
+};
+
+// A listában minden alkalom kap külön Törlés gombot, teljesített és kihagyott állapotban is.
+scheduleListHtml=function(){
+ const items=scheduled().filter(x=>!x.cancelled).sort((a,b)=>Date.parse(a.start)-Date.parse(b.start)).slice(-120);
+ return items.length?items.map(x=>{
+  const p=programById(x.programId||'home-basic'),d=programDay(p,x.dayId||x.workout),done=rf209ScheduleDone(x);
+  return `<div class="card schedule-card"><div><strong>${esc(p?.name||'Program')} • ${esc(d?.name||x.dayId||x.workout)}</strong><div class="small muted">${esc(fmtDate(x.start))} • ${done?'Teljesítve':x.status==='skipped'?'Kihagyva':'Tervezett'}</div></div><div class="schedule-actions">${!done?`<button class="btn" onclick="startScheduledById('${x.id}')">Indítás</button>`:''}<button class="btn secondary" onclick="editSchedulePrompt('${x.id}')">Áthelyezés</button><button class="btn secondary" onclick="skipSchedule('${x.id}')">${x.status==='skipped'?'Vissza':'Kihagyás'}</button><button class="btn danger" onclick="rf209DeleteSchedule('${x.id}')">Törlés</button></div></div>`;
+ }).join(''):'<div class="muted">Még nincs tervezett edzés.</div>';
+};
+
+// Ha ugyanazt a programnapot nem a tervezett kártyáról indítod, a közeli, még nyitott
+// tervezett alkalmat automatikusan ehhez az edzéshez kapcsoljuk. Így más időpontban
+// elvégzett edzés után nem marad bent tévesen "Tervezett" állapotban.
+
+const rf209StartWorkout=startWorkout;
+startWorkout=function(dayId,scheduleId=null,...rest){
+ let sid=scheduleId;
+ if(!sid){const candidate=rf209NearestPlan(dayId);if(candidate)sid=candidate.id;}
+ return rf209StartWorkout(dayId,sid,...rest);
+};
+
+
+render();
+
+
+// @endsection v209.js
+
+// @section v210.js
+
+/* RepForge 2.1.0 release layer: compact 3x2 navigation + header settings icon, keeping 2.0.9 calendar fixes. */
+const RF210_VERSION='2.1.0';
+
+// v2.1.0 intentionally keeps the latest compact navigation from v2.0.8 and the
+// schedule cleanup/autolink behavior from v2.0.9. This layer marks the release.
+
+
+render();
+
+
+// @endsection v210.js
+
+// @section v211.js
+var rf211BrandHtml = function rf211BrandHtml(html){
+ return String(html)
+  .replace(/REPFORGE/g,'TrainPilot')
+  .replace(/RepForge/g,'TrainPilot');
+};
+/* TrainPilot 2.1.1 UI branding layer. Keeps internal storage/package compatibility. */
+const RF211_VERSION='2.1.1';
+
+
+const rf211Shell=shell;
+shell=function(content){
+ let html=rf211BrandHtml(rf211Shell(content));
+ if(!html.includes('id="rf211-brand-style"')){
+  html=html.replace('</head>',`<style id="rf211-brand-style">
+   .rf208-settings-btn{
+    width:40px!important;height:40px!important;min-width:40px!important;
+    border:1px solid color-mix(in srgb,var(--accent) 65%,transparent)!important;
+    background:color-mix(in srgb,var(--accent) 18%,transparent)!important;
+    box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 12%,transparent),0 4px 12px rgba(0,0,0,.16)!important;
+    font-size:24px!important;font-weight:700!important;
+   }
+   .rf208-settings-btn:hover,.rf208-settings-btn:focus-visible{
+    background:color-mix(in srgb,var(--accent) 30%,transparent)!important;
+    outline:2px solid color-mix(in srgb,var(--accent) 55%,transparent)!important;
+    outline-offset:2px;
+   }
+  </style></head>`);
+ }
+ return html;
+};
+
+document.title='TrainPilot';
+
+
+render();
+
+
+// @endsection v211.js
+
+// @section v212.js
+var rf212SystemLang = function rf212SystemLang(){
+ const raw=((navigator.languages&&navigator.languages[0])||navigator.language||'en').toLowerCase();
+ const code=raw.split('-')[0];
+ return RF212_LANGS[code]?code:'en';
+};
+var rf212LangSetting = function rf212LangSetting(){const v=db.get('language','system');return RF212_LANGS[v]?v:'system';};
+var rf212Lang = function rf212Lang(){const v=rf212LangSetting();return v==='system'?rf212SystemLang():v;};
+var rf212SetLang = function rf212SetLang(v){if(!RF212_LANGS[v])return;db.set('language',v);document.documentElement.lang=rf212Lang();render();};
+var rf212Translate = function rf212Translate(html){
+ const lang=rf212Lang(); if(lang==='hu')return String(html);
+ const dict=RF212_TEXT[lang]||RF212_TEXT.en;
+ let out=String(html);
+ Object.keys(dict).sort((a,b)=>b.length-a.length).forEach(k=>{out=out.split(k).join(dict[k]);});
+ return out;
+};
+var rf212LanguagePanel = function rf212LanguagePanel(){
+ const current=rf212LangSetting();
+ const labels={system:{hu:'Rendszer nyelve',en:'System language',de:'Systemsprache',ro:'Limba sistemului'},hu:{hu:'Magyar',en:'Hungarian',de:'Ungarisch',ro:'Maghiară'},en:{hu:'English',en:'English',de:'English',ro:'English'},de:{hu:'Deutsch',en:'Deutsch',de:'Deutsch',ro:'Deutsch'},ro:{hu:'Română',en:'Română',de:'Română',ro:'Română'}};
+ const lang=rf212Lang();
+ return `<div class="setting rf212-language"><label>${lang==='hu'?'Nyelv':(RF212_TEXT[lang]?.['Nyelv']||'Language')}</label><p class="small muted">${lang==='hu'?'Alapértelmezésként a telefon rendszerének nyelvét használja. Bármikor felülírható.':lang==='de'?'Standardmäßig wird die Systemsprache des Telefons verwendet. Sie kann jederzeit geändert werden.':lang==='ro'?'Implicit se folosește limba sistemului telefonului. Poate fi schimbată oricând.':'By default, the phone system language is used. You can override it at any time.'}</p><select class="field" onchange="rf212SetLang(this.value)">${Object.keys(RF212_LANGS).map(k=>`<option value="${k}" ${current===k?'selected':''}>${labels[k][lang]||labels[k].en}</option>`).join('')}</select></div>`;
+};
+/* TrainPilot 2.1.2: lightweight i18n layer with system-language default. */
+const RF212_VERSION='2.1.2';
+const RF212_LANGS={
+ system:{name:'Rendszer nyelve'},
+ hu:{name:'Magyar'},
+ en:{name:'English'},
+ de:{name:'Deutsch'},

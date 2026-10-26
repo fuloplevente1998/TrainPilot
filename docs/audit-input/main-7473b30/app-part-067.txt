@@ -1,0 +1,345 @@
+   const done=(e.sets||[]).filter(s=>s&&s.done===true);if(!done.length)return '';
+   const unit=String(e.repUnit||'ism.'),timed=/mp|sec|second/i.test(unit);
+   const sets=done.map((s,i)=>{
+    const weight=model.number(s.weight),reps=model.number(s.reps),left=model.number(s.leftSeconds),right=model.number(s.rightSeconds);
+    const details=timed&&/oldal|side/i.test(unit)&&left&&right?
+     tr('left')+' '+fmt(left)+' mp · '+tr('right')+' '+fmt(right)+' mp':
+     timed?fmt(reps)+' '+unit:weight?fmt(weight,1)+' kg × '+fmt(reps):fmt(reps)+' '+unit;
+    return '<li>'+escapeHtml(String(i+1)+'. '+details)+'</li>';
+   }).join('');
+   return '<section class="tp177-detail-exercise"><h3>'+escapeHtml(typeof rf220ExerciseName==='function'?rf220ExerciseName(e.id):e.hu||e.en||e.id)+'</h3><ol>'+sets+'</ol></section>';
+  }).filter(Boolean).join('');
+  const name=w.source.programName||w.source.workout||'';
+  dialog(dateFmt(w.date),'<p class="tp177-detail-totals">'+(name?'<span>'+escapeHtml(name)+'</span><br>':'')+
+   '<strong>'+fmt(w.volume)+' kg</strong> · '+fmt(w.sets)+' '+escapeHtml(tr('setCount'))+'</p>'+
+   '<h3>'+escapeHtml(tr('exercises'))+'</h3>'+(exercises||'<p>'+escapeHtml(tr('noData'))+'</p>'),true);
+ };
+ window.tp177OpenCoach=function(){
+  if(typeof window.tp155R4TogglePanel==='function'){
+   const button=document.querySelector('.top .tp154-coach-action');
+   return window.tp155R4TogglePanel('coach',button||document.activeElement);
+  }
+  if(typeof go==='function')go('coach');
+ };
+ function decorateStats(){
+  const main=document.querySelector('#app main');
+  if(!main)return;
+  const nav=main.querySelector('nav.tp155-journal-tabs');
+  if(nav)nav.outerHTML=tabs('stats');
+  else main.insertAdjacentHTML('afterbegin',tabs('stats'));
+ }
+ const journalBase=historyScreen;
+ historyScreen=function(){
+  if(state.tp177JournalView==='progress')return shell(progressHtml());
+  if(state.tp177JournalView==='stats')return shell(tp107StatisticsHtml(tabs('stats')));
+  return replaceTabs(journalBase.apply(this,arguments),'log');
+ };
+ const statsBase=window.tp155OpenJournalStats;
+ if(typeof statsBase==='function'){
+  window.tp155OpenJournalStats=function(){
+   state.tp177JournalView='stats';
+   const out=statsBase.apply(this,arguments);decorateStats();
+   return out;
+  };
+  window.tp2627OpenStats=window.tp155OpenJournalStats;
+ }
+ window.tp177OpenStat=function(type){
+  if(type!=='sets'&&type!=='workouts')return;
+  const v=snapshot(),label=tr(type==='sets'?'sets':'workouts'),value=v.currentMetrics[type];
+  dialog(label,'<p class="tp177-detail-totals"><strong>'+fmt(value)+'</strong> · '+escapeHtml(dateFmt(v.start))+' – '+escapeHtml(dateFmt(model.addDays(v.end,-1)))+'</p>'+workoutRows(v.current));
+ };
+ let openingProgress=false;
+ const goBase=go;
+ go=function(route){
+  if(String(route)==='history'&&!openingProgress)state.tp177JournalView='log';
+  return goBase.apply(this,arguments);
+ };
+ window.TrainPilotNavigate=go;
+ window.tp177OpenProgress=function(){
+  openingProgress=true;state.tp177JournalView='progress';
+  try{return go('history')}finally{openingProgress=false}
+ };
+ window.tp177OpenStatistics=function(section){
+  window.tp155R4ClosePanel?.(false);
+  if(section==='records'||section==='cardio')state.tp107StatsSection=section;
+  openingProgress=true;state.tp177JournalView='stats';
+  try{return go('history')}finally{openingProgress=false}
+ };
+ document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.getElementById('tp177Dialog'))window.tp177BackDialog()});
+ window.TrainPilot177Progress={version:'1.7.7-issue60',snapshot,prepare:model.prepare,build:model.build};
+});
+// @endsection trainpilot-177-progress-ui.js
+
+// @section issue63-section-icons.js
+/* Small, decorative section marks retain the translated text and compact card layout. */
+const tp63HealthIcons=[
+ '<path d="M3 12h4l2-5 4 10 2-5h6"/>',
+ '<circle cx="12" cy="7" r="3"/><path d="M5 20v-2a7 7 0 0 1 14 0v2"/>',
+ '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+ '<path d="M4 19h16M6 16l4-4 3 2 5-7"/><path d="M15 7h3v3"/>'
+];
+const tp63HealthHubBase=rf263HealthHub;
+rf263HealthHub=function(){
+ const result=tp63HealthHubBase.apply(this,arguments);
+ const main=document.querySelector('main.rf263-health');
+ if(main){
+  const headings=[...main.querySelectorAll(':scope > .tp151-health-card > h2, :scope > details.tp151-details > summary > strong')];
+  headings.slice(0,4).forEach((heading,index)=>{
+   if(heading.querySelector('.tp63-group-icon'))return;
+   heading.insertAdjacentHTML('afterbegin','<svg class="tp63-group-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">'+tp63HealthIcons[index]+'</svg>');
+  });
+ }
+ return result;
+};
+// @endsection issue63-section-icons.js
+
+// @section issue67-fixes.js
+/* Issue #67: non-invasive 1.0.0 navigation bridge.
+ * Additive compatibility section in the canonical single-source app.
+ */
+(function(){
+ 'use strict';
+ const labels={
+  hu:{open:'Fejlődés megnyitása',all:'Teljes rekordlista',fullStats:'Részletes statisztikák',backToProgress:'Vissza a Fejlődéshez',weight:'Súly',reps:'Ismétlés',time:'Idő',left:'Bal oldal',right:'Jobb oldal',previous:'Korábbi',current:'Új',noRecords:'Még nincs személyes rekord.'},
+  en:{open:'Open Progress',all:'All-time records',fullStats:'Detailed statistics',backToProgress:'Back to Progress',weight:'Weight',reps:'Reps',time:'Time',left:'Left side',right:'Right side',previous:'Previous',current:'New',noRecords:'No personal records yet.'},
+  de:{open:'Fortschritt öffnen',all:'Alle Rekorde',fullStats:'Detaillierte Statistiken',backToProgress:'Zurück zum Fortschritt',weight:'Gewicht',reps:'Wiederholungen',time:'Zeit',left:'Links',right:'Rechts',previous:'Vorher',current:'Neu',noRecords:'Noch keine persönlichen Rekorde.'},
+  ro:{open:'Deschide Progresul',all:'Toate recordurile',fullStats:'Statistici detaliate',backToProgress:'Înapoi la Progres',weight:'Greutate',reps:'Repetări',time:'Timp',left:'Stânga',right:'Dreapta',previous:'Anterior',current:'Nou',noRecords:'Încă nu există recorduri personale.'},
+  sk:{open:'Otvoriť pokrok',all:'Všetky rekordy',fullStats:'Podrobné štatistiky',backToProgress:'Späť na Pokrok',noRecords:'Zatiaľ žiadne osobné rekordy.'},pl:{open:'Otwórz postępy',all:'Wszystkie rekordy',fullStats:'Szczegółowe statystyki',backToProgress:'Wróć do Postępów',noRecords:'Brak rekordów osobistych.'}
+ };
+ const lang=()=>typeof rf212Lang==='function'?rf212Lang():'hu';
+ const copy=()=>Object.assign({},labels.hu,labels[lang()]||{});
+ const locale=()=>({hu:'hu-HU',en:'en-US',de:'de-DE',ro:'ro-RO',sk:'sk-SK',pl:'pl-PL'}[lang()]||'hu-HU');
+ function updateAllTimePr(){
+  const panel=document.querySelector('#tp177MetricDetails'),trigger=document.querySelector('.tp177-metric[data-metric="pr"][aria-expanded="true"]');
+  if(!panel||panel.hidden||!trigger||!window.TrainPilot177Model||typeof history!=='function')return;
+  const model=window.TrainPilot177Model;
+  const all=model.prepare(history(),{isDeleted:x=>typeof window.tp3HistoryIsDeleted==='function'&&window.tp3HistoryIsDeleted(x)})
+   .flatMap(workout=>workout.pr||[]).sort((a,b)=>b.date-a.date);
+  const t=copy(),l=locale(),header=panel.querySelector('h2')?.textContent||'PR';
+  panel.replaceChildren();
+  const heading=document.createElement('h2');heading.textContent=header;panel.appendChild(heading);
+  const note=document.createElement('p');note.className='tp177-small';note.textContent=t.all+' · '+all.length;panel.appendChild(note);
+  if(!all.length){const none=document.createElement('p');none.className='tp177-small';none.textContent=t.noRecords||(lang()==='hu'?'Még nincs személyes rekord.':'No personal records yet.');panel.appendChild(none);return}
+  const list=document.createElement('div');list.className='tp177-inline-list';
+  const fmt=value=>Number(value||0).toLocaleString(l,{maximumFractionDigits:1});
+  for(const rec of all){
+   const row=document.createElement('div');row.className='tp177-inline-record';
+   const name=document.createElement('strong');name.textContent=typeof rf220ExerciseName==='function'?rf220ExerciseName(rec.id):rec.id;
+   const date=document.createElement('span');date.textContent=(t[rec.kind]||rec.kind)+' · '+new Intl.DateTimeFormat(l,{year:'numeric',month:'short',day:'numeric'}).format(rec.date);
+   const value=document.createElement('span');value.textContent=t.previous+': '+fmt(rec.previous)+' '+rec.unit+' → '+t.current+': '+fmt(rec.value)+' '+rec.unit;
+   row.append(name,date,value);list.appendChild(row);
+  }
+  panel.appendChild(list);
+ }
+ // Legacy entry points share the current Journal statistics route.
+ window.tp67OpenFullStats=function(){return window.tp177OpenStatistics('records')};
+ function decorateCoach(root){
+  if(!root||root.querySelector('.tp67-coach-progress'))return;
+  // Phase 7 renders a deferred placeholder before the old statistics card hydrates.
+  // Replace the placeholder immediately, so redundant statistics are never built.
+  const pending=root.querySelector('[data-tp7-coach-progress="pending"]');
+  const oldCard=[...root.querySelectorAll(':scope > .card')].reverse().find(card=>
+   /fejlőd|progress|fortschritt|progres|pokrok|postęp/i.test(card.querySelector(':scope > h2')?.textContent||'')
+  );
+  const target=pending||oldCard;
+  if(!target)return;
+  const button=document.createElement('button');button.type='button';button.className='btn secondary block tp67-coach-progress';button.textContent=copy().open;
+  button.addEventListener('click',()=>{
+   window.tp155R4ClosePanel?.(false);
+   window.tp177OpenProgress?.();
+  });
+  target.replaceWith(button);
+ }
+ window.addEventListener?.('DOMContentLoaded',()=>{
+  if(typeof historyScreen!=='function'||typeof render!=='function'||!window.TrainPilot177Progress)return;
+  window.tp155OpenJournalStats=function(){return window.tp177OpenStatistics('records')};
+  window.tp2627OpenStats=window.tp155OpenJournalStats;
+  const oldRender=render;
+  render=function(){
+   const result=oldRender.apply(this,arguments),main=document.querySelector('#app main');
+   if(main?.matches('main.tp151-coach'))decorateCoach(main);
+   if(main?.matches('main.tp177-progress'))updateAllTimePr();
+   return result;
+  };
+  window.render=render;
+  const oldGo=go;
+  go=function(route){
+   if(route==='stats')return window.tp177OpenStatistics();
+   if(route==='progress')return window.tp177OpenProgress();
+   return oldGo.apply(this,arguments);
+  };
+  window.TrainPilotNavigate=go;
+
+  const oldToggle=window.tp177ToggleMetric;
+  window.tp177ToggleMetric=function(key){
+   const result=oldToggle.apply(this,arguments);
+   if(key==='pr')updateAllTimePr();
+   return result;
+  };
+  if(typeof window.tp155R4RefreshPanel==='function'){
+   const oldRefresh=window.tp155R4RefreshPanel;
+   window.tp155R4RefreshPanel=function(){
+    const result=oldRefresh.apply(this,arguments);
+    decorateCoach(document.querySelector('#tp155R4PanelHost[data-panel="coach"] main.tp151-coach'));
+    return result;
+   };
+  }
+  window.TrainPilot67={version:'issue67-2695',threeJournalTabs:true,allTimePr:true,fullStatsRestored:true,statsPage:true,coachDeepLink:true,themedCheckboxes:true};
+ });
+})();
+
+// @endsection issue67-fixes.js
+
+// @section home-draft-compact.js
+/* Keep every Home card and its content visible while a workout draft adds a card. */
+(function tpHomeDraftCompact(){
+ const orderHomeCards=window.tp155OrderHomeCards;
+ window.tp155OrderHomeCards=function(){
+  const out=orderHomeCards?.apply(this,arguments);
+  const main=document.querySelector('main.rf221-home');
+  if(main)main.classList.toggle('tp-home-draft-compact',!!main.querySelector('button[onclick*="resumeDraft"]'));
+  return out;
+ };
+ const style=document.createElement('style');style.id='tpHomeDraftCompactCss';style.textContent=`
+  main.rf221-home.tp-home-draft-compact{gap:5px!important;padding-bottom:max(8px,env(safe-area-inset-bottom,0px))!important}
+  main.rf221-home.tp-home-draft-compact>.card,main.rf221-home.tp-home-draft-compact>.hero{margin:0!important;padding:6px 9px!important}
+  main.rf221-home.tp-home-draft-compact>.onboarding{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(112px,35%)!important;column-gap:8px!important;row-gap:2px!important;align-items:center!important}
+  main.rf221-home.tp-home-draft-compact>.onboarding h2{grid-column:1!important;font-size:16px!important}
+  main.rf221-home.tp-home-draft-compact>.onboarding p{grid-column:1!important;font-size:11px!important;line-height:1.18!important}
+  main.rf221-home.tp-home-draft-compact>.onboarding>.btn{grid-column:2!important;grid-row:1/span 2!important;min-height:40px!important;white-space:normal!important}
+  main.rf221-home.tp-home-draft-compact>.card:has(button[onclick*="resumeDraft"]){display:grid!important;gap:3px!important}
+  main.rf221-home.tp-home-draft-compact>.card:has(button[onclick*="resumeDraft"])>p{margin:0!important;line-height:1.18!important}
+  main.rf221-home.tp-home-draft-compact>.card:has(button[onclick*="resumeDraft"])>.grid2{margin:1px 0 0!important;gap:5px!important}
+  main.rf221-home.tp-home-draft-compact>.card:has(button[onclick*="resumeDraft"]) .btn{min-height:40px!important;padding:6px!important;white-space:normal!important;line-height:1.15!important}
+  main.rf221-home.tp-home-draft-compact>.hero.tp155-home-active-card{padding:6px 9px!important}
+  main.rf221-home.tp-home-draft-compact .tp155-home-active-grid{gap:7px!important}
+  main.rf221-home.tp-home-draft-compact .tp155-home-program-left h1{font-size:clamp(17px,4.8vw,23px)!important}
+  main.rf221-home.tp-home-draft-compact .tp155-home-program-right{padding-left:7px!important}
+  main.rf221-home.tp-home-draft-compact .tp155-home-program-right .tp146-next-title{font-size:14px!important}
+  main.rf221-home.tp-home-draft-compact>.hero>.btn{margin-top:4px!important;min-height:40px!important}
+  main.rf221-home.tp-home-draft-compact>.grid2{gap:5px!important}
+  main.rf221-home.tp-home-draft-compact>.grid2 .stat{padding:5px 8px!important}
+  main.rf221-home.tp-home-draft-compact #rf223Today{padding:6px 8px!important}
+  main.rf221-home.tp-home-draft-compact .rf223-title{margin-bottom:3px!important}
+  main.rf221-home.tp-home-draft-compact .rf223-stat{padding:5px 3px!important}
+  main.rf221-home.tp-home-draft-compact #rf220CoachCard.tp166-home-coach{padding:7px 9px!important}
+  main.rf221-home.tp-home-draft-compact #rf220CoachCard h2{font-size:16px!important;margin:1px 0 3px!important}
+  main.rf221-home.tp-home-draft-compact #rf220CoachCard .tp166-home-coach-copy p{font-size:12px!important;line-height:1.2!important}
+  main.rf221-home.tp-home-draft-compact #rf220CoachCard .tp166-home-coach-target{grid-template-columns:repeat(2,minmax(0,1fr))!important;margin:5px 0!important;gap:5px!important}
+  main.rf221-home.tp-home-draft-compact #rf220CoachCard .tp166-home-coach-target>span{padding:5px 7px!important;gap:1px!important}
+  main.rf221-home.tp-home-draft-compact #rf220CoachCard .tp166-home-coach-sub{margin-top:4px!important;font-size:11px!important}
+  @media(max-width:340px){main.rf221-home.tp-home-draft-compact>.onboarding{grid-template-columns:1fr!important}main.rf221-home.tp-home-draft-compact>.onboarding>.btn{grid-column:1!important;grid-row:auto!important}main.rf221-home.tp-home-draft-compact #rf220CoachCard .tp166-home-coach-target{grid-template-columns:1fr!important}}
+ `;document.head.appendChild(style);
+})();
+// @endsection home-draft-compact.js
+
+// @section issue79-health-active-intervals.js
+/* #79 — Health Connect: interrupted/resumed workouts use active intervals only. */
+(function(){
+'use strict';
+const MAX_WINDOW_MS=24*60*60*1000, TOLERANCE_MS=3*60*1000;
+function isoMs(v){const n=Date.parse(v||'');return Number.isFinite(n)?n:null}
+function intervals(h){
+ const raw=Array.isArray(h&&h.activeIntervals)?h.activeIntervals:[];
+ const finished=isoMs(h&&h.finished), out=[];
+ for(const x of raw){
+  const a=isoMs(x&&x.start),b=isoMs(x&&x.end);
+  if(a==null||b==null||b<=a||b-a>MAX_WINDOW_MS)continue;
+  const start=Math.max(a,isoMs(h&&h.started)??a),end=Math.min(b,finished??b);
+  if(end>start)out.push({start,end});
+ }
+ out.sort((a,b)=>a.start-b.start);
+ const merged=[];
+ for(const x of out){
+  const last=merged.at(-1);
+  if(last&&x.start<=last.end)last.end=Math.max(last.end,x.end);
+  else merged.push({...x});
+ }
+ return merged.map(x=>({start:new Date(x.start).toISOString(),end:new Date(x.end).toISOString(),ms:x.end-x.start}));
+}
+function hasMetric(x){return typeof rf242HasTrainingMetric==='function'?rf242HasTrainingMetric(x):!!x}
+async function readOne(p,w,activeOnly=false){
+ const read=args=>typeof p.readTrainingWindow==='function'?p.readTrainingWindow(args):p.readWorkout({...args,source:''});
+ const exact=await read({start:w.start,end:w.end});
+ if(activeOnly)return {...exact,sourceWindowStart:w.start,sourceWindowEnd:w.end,matchMode:'exact'};
+ if(hasMetric(exact))return {...exact,sourceWindowStart:w.start,sourceWindowEnd:w.end,matchMode:'exact'};
+ const start=new Date(Date.parse(w.start)-TOLERANCE_MS).toISOString(),end=new Date(Date.parse(w.end)+TOLERANCE_MS).toISOString();
+ const padded=await read({start,end});
+ const session=typeof rf242BestSession==='function'?rf242BestSession(padded,{started:w.start,finished:w.end}):null;
+ if(session){
+  try{const matched=await read({start:session.start,end:session.end});if(hasMetric(matched))return {...matched,sourceWindowStart:session.start,sourceWindowEnd:session.end,matchMode:'exercise-session'}}catch(_){}
+ }
+ return {...padded,sourceWindowStart:start,sourceWindowEnd:end,matchMode:hasMetric(padded)?'tolerance':'empty'};
+}
+function num(v){if(v==null||v==='')return null;const n=Number(v);return Number.isFinite(n)?n:null}
+function aggregate(parts,windows,errors){
+ const sum=k=>parts.reduce((s,p)=>s+(num(p[k])??0),0);
+ const present=k=>parts.some(p=>num(p[k])!=null);
+ const weighted=k=>{let n=0,d=0;parts.forEach((p,i)=>{const v=num(p[k]);if(v!=null){const samples=num(p[k==='averageHeartRate'?'heartRateSamples':'speedSamples']),w=samples>0?samples:windows[i]?.ms||1;n+=v*w;d+=w}});return d?n/d:null};
+ const max=k=>{const a=parts.map(p=>num(p[k])).filter(v=>v!=null);return a.length?Math.max(...a):null};
+ const min=k=>{const a=parts.map(p=>num(p[k])).filter(v=>v!=null);return a.length?Math.min(...a):null};
+ const sources=[...new Set(parts.flatMap(p=>Array.isArray(p.sources)?p.sources:[]))];
+ const labels=Object.assign({},...parts.map(p=>p.sourceLabels||{}));
+ const warnings=[...parts.flatMap(p=>Array.isArray(p.warnings)?p.warnings:[]),...errors.map(e=>e.message||String(e))];
+ const sessions=[...new Map(parts.flatMap(p=>Array.isArray(p.exerciseSessions)?p.exerciseSessions:[]).map(s=>[(s.source||'')+'|'+(s.id||s.start+'|'+s.end),s])).values()];
+ const spans=[];
+ for(const s of sessions)for(const w of windows){const a=Math.max(Date.parse(s.start),Date.parse(w.start)),b=Math.min(Date.parse(s.end),Date.parse(w.end));if(b>a)spans.push([a,b])}
+ spans.sort((a,b)=>a[0]-b[0]);const merged=[];for(const s of spans){const last=merged.at(-1);if(last&&s[0]<=last[1])last[1]=Math.max(last[1],s[1]);else merged.push(s)}
+ const sessionMinutes=merged.reduce((sum,s)=>sum+s[1]-s[0],0)/60000;
+ return {
+  averageHeartRate:weighted('averageHeartRate'),minHeartRate:min('minHeartRate'),maxHeartRate:max('maxHeartRate'),heartRateSamples:present('heartRateSamples')?sum('heartRateSamples'):null,
+  steps:!errors.length&&parts.every(p=>num(p.steps)!=null)?sum('steps'):null,
+  activeCalories:present('activeCalories')?sum('activeCalories'):null,totalCalories:present('totalCalories')?sum('totalCalories'):null,
+  workoutCalories:present('workoutCalories')?sum('workoutCalories'):null,
+  workoutEnergyVersion:parts.every(p=>p.workoutEnergyVersion===1)?1:null,
+  workoutEnergyCoverageMs:sum('workoutEnergyCoverageMs'),workoutEnergyProrated:parts.some(p=>p.workoutEnergyProrated===true),
+  workoutEnergySources:[...new Set(parts.flatMap(p=>p.workoutEnergySources||[]))],workoutEnergySourceLabels:Object.assign({},...parts.map(p=>p.workoutEnergySourceLabels||{})),
+  workoutEnergyTypes:[...new Set(parts.flatMap(p=>p.workoutEnergyTypes||[]))],workoutEnergyRecordIds:[...new Set(parts.flatMap(p=>p.workoutEnergyRecordIds||[]))],
+  distanceMeters:present('distanceMeters')?sum('distanceMeters'):null,averageSpeedMps:weighted('averageSpeedMps'),maxSpeedMps:max('maxSpeedMps'),
+  exerciseMinutes:sessions.length?sessionMinutes:present('exerciseMinutes')?sum('exerciseMinutes'):null,exerciseSessionCount:sessions.length||sum('exerciseSessionCount'),exerciseSessions:sessions,
+  sources,sourceLabels:labels,warnings,permissions:Object.assign({},...parts.map(p=>p.permissions||{})),
+  ...(parts.some(p=>p.provider==='samsung_health')?{provider:'samsung_health',metricProviders:Object.assign({},...parts.map(p=>p.metricProviders||{})),measurementProviders:[...new Set(parts.flatMap(p=>Array.isArray(p.measurementProviders)?p.measurementProviders:Object.values(p.metricProviders||{})))].filter(p=>p==='samsung_health'||p==='health_connect')}:{}),
+  matchMode:'active-intervals',activeIntervals:windows.map(({start,end})=>({start,end})),
+  activeDurationMs:windows.reduce((s,w)=>s+w.ms,0),sourceWindowStart:windows[0]?.start||null,sourceWindowEnd:windows.at(-1)?.end||null
+ };
+}
+const validBase=rf240ValidWorkout;
+rf240ValidWorkout=function(h){
+ const a=isoMs(h&&h.started),b=isoMs(h&&h.finished);if(a==null||b==null||b<=a)return false;
+ const ws=intervals(h);return ws.length?ws.every(w=>w.ms>0&&w.ms<=MAX_WINDOW_MS):validBase(h);
+};
+async function readWorkout(p,h){
+ const ws=intervals(h);
+ if(!ws.length)return readOne(p,{start:h.started,end:h.finished,ms:Date.parse(h.finished)-Date.parse(h.started)});
+ const parts=[],okWindows=[],errors=[];
+ for(const w of ws){try{parts.push(await readOne(p,w,true));okWindows.push(w)}catch(e){errors.push(e)}}
+ if(!parts.length)throw errors[0]||new Error('Health Connect: nincs olvasható aktív edzésszakasz.');
+ return aggregate(parts,okWindows,errors);
+}
+async function syncWorkout(p,h,force=false){
+ if(!rf240ValidWorkout(h))return false;
+ const key=rf240WorkoutKey(h),old=h.health240,ws=intervals(h);
+ if(!ws.length){
+  const exact=await readOne(p,{start:h.started,end:h.finished,ms:Date.parse(h.finished)-Date.parse(h.started)});
+  return rf242SaveMatchedWorkoutHealth(key,h,exact,{matchMode:exact.matchMode,sourceWindowStart:exact.sourceWindowStart,sourceWindowEnd:exact.sourceWindowEnd});
+ }
+ const signature=JSON.stringify(ws.map(w=>[w.start,w.end]));
+ if(!force&&old?.workoutEnergyVersion===1&&old?.activeIntervalSignature===signature&&Date.now()-Date.parse(old.syncedAt||0)<6*3600000&&hasMetric(old))return false;
+ const data=await readWorkout(p,h);
+ return rf242SaveMatchedWorkoutHealth(key,h,data,{matchMode:'active-intervals',activeIntervalSignature:signature,sourceWindowStart:data.sourceWindowStart,sourceWindowEnd:data.sourceWindowEnd});
+}
+rf240SyncWorkout=function(p,h,force=false){return typeof rf245Exclusive==='function'?rf245Exclusive(()=>syncWorkout(p,h,force)):syncWorkout(p,h,force)};
+window.TrainPilotIssue79={version:'79.2',intervals,readWorkout,syncWorkout};
+})();
+// @endsection issue79-health-active-intervals.js
+
+// @section issue80-video-source-safety.js
+/* #80: do not present AI, wrongly attributed or unverified clips as exercise instruction.
+   Preserve existing verified/credited demos and all other app/UI functionality. */
+(function(){
+'use strict';
+const officialRow='https://www.muscleandstrength.com/exercises/bent-over-barbell-row.html';
+const verifiedGuides={'barbell-row':officialRow,'goblet-squat':'https://www.muscleandstrength.com/exercises/dumbbell-goblet-squat','bulgarian-split-squat':'https://www.muscleandstrength.com/exercises/one-leg-dumbbell-squat-aka-bulgarian-squat.html'};
+const officialLibrary='https://www.nasm.org/resource-center/exercise-library';
+// Replace only the Zi/animation/generic clips; preserve the existing named demos.
+const verifiedVideos={

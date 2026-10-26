@@ -1,0 +1,309 @@
+ const style=document.createElement('style');style.id='tp149NarrowI18nLayoutCss';
+ style.textContent='.rf263-sync-card,.rf263-sync-actions{min-width:0}.rf263-sync-actions .btn{min-width:0;white-space:normal;overflow-wrap:anywhere}.rf263-sync-card p{overflow-wrap:anywhere}html[lang]:not([lang=hu]) .hero,html[lang]:not([lang=hu]) .hero>*,html[lang]:not([lang=hu]) .setting,html[lang]:not([lang=hu]) .setting>*{min-width:0;max-width:100%;box-sizing:border-box}html[lang]:not([lang=hu]) .hero h1,html[lang]:not([lang=hu]) .hero p,html[lang]:not([lang=hu]) .hero .muted,html[lang]:not([lang=hu]) .setting p,html[lang]:not([lang=hu]) .setting label,html[lang]:not([lang=hu]) .setting .btn{white-space:normal;overflow-wrap:anywhere}html[lang]:not([lang=hu]) .setting .field,html[lang]:not([lang=hu]) .setting .tp-select,html[lang]:not([lang=hu]) .setting .tp-select-trigger{width:100%;max-width:100%;min-width:0;box-sizing:border-box}@media(max-width:340px){.rf263-sync-actions{grid-template-columns:1fr!important}}';
+ document.head.appendChild(style);
+})();
+// @endsection trainpilot-149-narrow-i18n-layout-hotfix.js
+
+// @section trainpilot-150-quick-workout.js
+/* TrainPilot 1.5.0: Quick Workout / Szabad edzés.
+ * Uses the existing workout session, progression, stopwatch, Health, photo and journal pipeline.
+ */
+const TP150QW_VERSION='1.5.0';
+const TP150QW_TEXT={
+ hu:{
+  title:'Szabad edzés',subtitle:'Válassz egy gyakorlatot, kezdd el azonnal, majd adj hozzá továbbiakat menet közben.',
+  cardTitle:'Szabad edzés / Quick Workout',cardHelp:'Program nélkül is edzhetsz. A sorozatok, súlyok, ismétlések és időeredmények ugyanúgy bekerülnek a Naplóba.',
+  start:'Szabad edzés indítása',choose:'Gyakorlat választása',search:'Gyakorlat keresése…',
+  startExercise:'Gyakorlat indítása',startShort:'Indítás',addExercise:'+ Hozzáadás az edzéshez',addAnother:'+ Gyakorlat hozzáadása',
+  backWorkout:'← Vissza az edzéshez',backTraining:'← Vissza az Edzéshez',empty:'Nincs találat.',
+  already:'Ez a gyakorlat már benne van a Szabad edzésben. Oda léptem.',added:'Gyakorlat hozzáadva.',
+  plannedActive:'Jelenleg egy tervezett edzés van folyamatban. Előbb fejezd be vagy hagyd el azt.',
+  replaceDraft:'Van félbehagyott edzésed. Új Szabad edzés indításakor a mentett vázlat lecserélődik. Folytatod?',
+  replaceTitle:'Félbehagyott edzés lecserélése',replaceConfirm:'Új Szabad edzés',
+  exerciseCount:'{count} gyakorlat',quickBadge:'SZABAD EDZÉS'
+ },
+ en:{
+  title:'Quick Workout',subtitle:'Choose an exercise, start immediately, then add more exercises as you go.',
+  cardTitle:'Quick Workout',cardHelp:'Train without a program. Sets, weights, reps and timed results are logged exactly like a normal workout.',
+  start:'Start Quick Workout',choose:'Choose exercise',search:'Search exercises…',
+  startExercise:'Start exercise',startShort:'Start',addExercise:'+ Add to workout',addAnother:'+ Add exercise',
+  backWorkout:'← Back to workout',backTraining:'← Back to Workout',empty:'No results.',
+  already:'This exercise is already in the Quick Workout. I moved to it.',added:'Exercise added.',
+  plannedActive:'A planned workout is currently active. Finish or leave it first.',
+  replaceDraft:'You have an unfinished workout. Starting a new Quick Workout will replace the saved draft. Continue?',
+  replaceTitle:'Replace unfinished workout',replaceConfirm:'New Quick Workout',
+  exerciseCount:'{count} exercises',quickBadge:'QUICK WORKOUT'
+ },
+ de:{
+  title:'Freies Training',subtitle:'Wähle eine Übung, starte sofort und füge während des Trainings weitere Übungen hinzu.',
+  cardTitle:'Freies Training / Quick Workout',cardHelp:'Trainiere ohne Programm. Sätze, Gewichte, Wiederholungen und Zeitwerte werden wie bei einem normalen Training protokolliert.',
+  start:'Freies Training starten',choose:'Übung auswählen',search:'Übungen suchen…',
+  startExercise:'Übung starten',startShort:'Start',addExercise:'+ Zum Training hinzufügen',addAnother:'+ Übung hinzufügen',
+  backWorkout:'← Zurück zum Training',backTraining:'← Zurück zu Training',empty:'Keine Treffer.',
+  already:'Diese Übung ist bereits im freien Training. Ich habe dorthin gewechselt.',added:'Übung hinzugefügt.',
+  plannedActive:'Derzeit läuft ein geplantes Training. Beende oder verlasse es zuerst.',
+  replaceDraft:'Es gibt ein unvollständiges Training. Ein neues freies Training ersetzt den gespeicherten Entwurf. Fortfahren?',
+  replaceTitle:'Unvollständiges Training ersetzen',replaceConfirm:'Neues freies Training',
+  exerciseCount:'{count} Übungen',quickBadge:'FREIES TRAINING'
+ },
+ ro:{
+  title:'Antrenament liber',subtitle:'Alege un exercițiu, începe imediat și adaugă alte exerciții pe parcurs.',
+  cardTitle:'Antrenament liber / Quick Workout',cardHelp:'Te poți antrena fără program. Seturile, greutățile, repetările și timpii sunt jurnalizate la fel ca într-un antrenament normal.',
+  start:'Pornește antrenamentul liber',choose:'Alege exercițiul',search:'Caută exerciții…',
+  startExercise:'Pornește exercițiul',startShort:'Start',addExercise:'+ Adaugă la antrenament',addAnother:'+ Adaugă exercițiu',
+  backWorkout:'← Înapoi la antrenament',backTraining:'← Înapoi la Antrenament',empty:'Niciun rezultat.',
+  already:'Exercițiul este deja în antrenamentul liber. Am trecut la el.',added:'Exercițiu adăugat.',
+  plannedActive:'Există deja un antrenament planificat activ. Finalizează-l sau părăsește-l mai întâi.',
+  replaceDraft:'Ai un antrenament neterminat. Un antrenament liber nou va înlocui schița salvată. Continui?',
+  replaceTitle:'Înlocuiește antrenamentul neterminat',replaceConfirm:'Antrenament liber nou',
+  exerciseCount:'{count} exerciții',quickBadge:'ANTRENAMENT LIBER'
+ },
+ sk:{
+  title:'Voľný tréning',subtitle:'Vyber cvik, začni okamžite a počas tréningu pridávaj ďalšie cviky.',
+  cardTitle:'Voľný tréning / Quick Workout',cardHelp:'Trénuj bez programu. Série, váhy, opakovania aj časované výsledky sa zapíšu rovnako ako pri bežnom tréningu.',
+  start:'Spustiť voľný tréning',choose:'Vybrať cvik',search:'Hľadať cviky…',
+  startExercise:'Spustiť cvik',startShort:'Spustiť',addExercise:'+ Pridať do tréningu',addAnother:'+ Pridať cvik',
+  backWorkout:'← Späť na tréning',backTraining:'← Späť na Tréning',empty:'Žiadne výsledky.',
+  already:'Tento cvik už vo voľnom tréningu je. Presunul som sa naň.',added:'Cvik pridaný.',
+  plannedActive:'Práve prebieha plánovaný tréning. Najprv ho dokonči alebo opusť.',
+  replaceDraft:'Máš nedokončený tréning. Nový voľný tréning nahradí uložený koncept. Pokračovať?',
+  replaceTitle:'Nahradiť nedokončený tréning',replaceConfirm:'Nový voľný tréning',
+  exerciseCount:'{count} cvikov',quickBadge:'VOĽNÝ TRÉNING'
+ },
+ pl:{
+  title:'Trening swobodny',subtitle:'Wybierz ćwiczenie, zacznij od razu i dodawaj kolejne ćwiczenia w trakcie.',
+  cardTitle:'Trening swobodny / Quick Workout',cardHelp:'Ćwicz bez programu. Serie, ciężary, powtórzenia i wyniki czasowe zapisują się tak samo jak w zwykłym treningu.',
+  start:'Rozpocznij trening swobodny',choose:'Wybierz ćwiczenie',search:'Szukaj ćwiczeń…',
+  startExercise:'Rozpocznij ćwiczenie',startShort:'Start',addExercise:'+ Dodaj do treningu',addAnother:'+ Dodaj ćwiczenie',
+  backWorkout:'← Wróć do treningu',backTraining:'← Wróć do Treningu',empty:'Brak wyników.',
+  already:'To ćwiczenie jest już w treningu swobodnym. Przeniesiono do niego.',added:'Ćwiczenie dodane.',
+  plannedActive:'Trwa zaplanowany trening. Najpierw go zakończ lub opuść.',
+  replaceDraft:'Masz niedokończony trening. Nowy trening swobodny zastąpi zapisany szkic. Kontynuować?',
+  replaceTitle:'Zastąp niedokończony trening',replaceConfirm:'Nowy trening swobodny',
+  exerciseCount:'{count} ćwiczeń',quickBadge:'TRENING SWOBODNY'
+ }
+};
+var tp150qwLang=function tp150qwLang(){const k=typeof rf212Lang==='function'?rf212Lang():'hu';return TP150QW_TEXT[k]?k:'en'};
+var tp150qwT=function tp150qwT(key,vars){let s=String(TP150QW_TEXT[tp150qwLang()]?.[key]??TP150QW_TEXT.en[key]??key);for(const [k,v] of Object.entries(vars||{}))s=s.replaceAll('{'+k+'}',String(v));return s};
+var tp150IsQuick=function tp150IsQuick(s=state.session){return !!s&&(s.type==='quick'||s.quickWorkout===true)};
+var tp150QuickExercise=function tp150QuickExercise(id){
+ const e=byId(id);if(!e)return null;
+ const count=Math.max(1,Math.min(10,Number(e.sets)||3));
+ const out={id:e.id,hu:e.hu,en:e.en,loadType:e.loadType,repUnit:e.repUnit,
+  sets:tp228PrefillSets(null,e,count,e.weight??0)};
+ if(typeof rf152Recommendation==='function'){
+  const r=rf152Recommendation(id);out.rf152Recommendation=r;
+  if(r?.action==='increase'&&Number.isFinite(r.weight)&&!out.sets.some(set=>set.previousValues228))
+   for(const set of out.sets)set.weight=r.weight;
+ }
+ return out;
+};
+var tp150QuickConfirmReplace=async function tp150QuickConfirmReplace(){
+ if(!db.get('draft',null))return true;
+ if(typeof tp2628Confirm!=='function')return false;
+ return await tp2628Confirm(tp150qwT('replaceDraft'),{title:tp150qwT('replaceTitle'),confirmText:tp150qwT('replaceConfirm'),danger:true});
+};
+var tp150StartQuickWorkout=async function tp150StartQuickWorkout(id){
+ const fromWatch=window.TrainPilotWearSync?.isStartingFromWatch?.()===true;
+ const e=byId(id);if(!e)return;
+ if(state.session){
+  if(tp150IsQuick())return tp150AddQuickExercise(id);
+  alert(tp150qwT('plannedActive'));renderWorkout();return;
+ }
+ if(!(await tp150QuickConfirmReplace()))return;
+ db.set('draft',null);stopTimer();
+ const first=tp150QuickExercise(id);if(!first)return;
+ state.tab='plan';state.workout='quick';state.current=0;
+ state.session={type:'quick',quickWorkout:true,programId:null,programName:tp150qwT('title'),dayId:null,workout:'quick',started:new Date().toISOString(),exercises:[first]};
+ persistDraft();renderWorkout();window.scrollTo?.(0,0);
+ window.TrainPilotWearSync?.phoneWorkoutStarted?.(state.session,{fromWatch});
+};
+var tp150AddQuickExercise=function tp150AddQuickExercise(id){
+ if(!tp150IsQuick())return tp150StartQuickWorkout(id);
+ const existing=state.session.exercises.findIndex(e=>e.id===id);
+ if(existing>=0){state.current=existing;renderWorkout();window.scrollTo?.(0,0);return;}
+ const item=tp150QuickExercise(id);if(!item)return;
+ state.session.exercises.push(item);state.current=state.session.exercises.length-1;persistDraft();renderWorkout();window.scrollTo?.(0,0);
+};
+var tp150QuickAction=function tp150QuickAction(id){return tp150IsQuick()?tp150AddQuickExercise(id):tp150StartQuickWorkout(id)};
+var tp150QuickButtonLabel=function tp150QuickButtonLabel(){return tp150IsQuick()?tp150qwT('addExercise'):tp150qwT('startExercise')};
+var tp150QuickFilterText=function tp150QuickFilterText(e){
+ const custom=e?.custom?[e.hu,e.en,e.notes,e.equipment,e.target]:[
+  typeof tp149ExerciseName==='function'?tp149ExerciseName(e,'hu'):e.hu,
+  typeof tp149ExerciseName==='function'?tp149ExerciseName(e,'en'):e.en,
+  typeof tp149ExerciseName==='function'?tp149ExerciseName(e,'de'):'',
+  typeof tp149ExerciseName==='function'?tp149ExerciseName(e,'ro'):'',
+  e.equipment,e.target
+ ];
+ return custom.filter(Boolean).join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+};
+var tp150QuickResults=function tp150QuickResults(q=''){
+ const needle=String(q||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+ const list=exercises().filter(e=>!needle||tp150QuickFilterText(e).includes(needle));
+ if(!list.length)return window.TrainPilot110?window.TrainPilot110.empty('quick'):'<div class="card muted">'+esc(tp150qwT('empty'))+'</div>';
+ return list.map((e,i)=>{
+  const name=e.custom?String(e.hu||e.en||e.id):tp149ExerciseName(e),equipment=e.custom?String(e.equipment||''):tp149Equipment(e),target=e.custom?String(e.target||''):tp149Target(e);
+  return '<div class="exercise tp150-quick-row" data-exercise-id="'+esc(e.id)+'"><div class="num">'+(i+1)+'</div><div class="tp150-quick-copy" onclick="rf203ExerciseDetail(\''+esc(e.id)+'\')"><div class="ex-name">'+esc(name)+'</div><div class="meta">'+esc([target,equipment].filter(Boolean).join(' • '))+'</div></div><button type="button" class="btn tp150-quick-start" onclick="event.stopPropagation();tp150QuickAction(\''+esc(e.id)+'\')">'+esc(tp150QuickButtonLabel())+'</button></div>';
+ }).join('');
+};
+var tp150QuickFilter=function tp150QuickFilter(value){const host=document.getElementById('tp150QuickResults');if(host)host.innerHTML=tp150QuickResults(value)};
+var tp150QuickPicker=function tp150QuickPicker(){
+ state.tab='plan';
+ const back=tp150IsQuick()?'<button class="btn secondary" onclick="renderWorkout()">'+esc(tp150qwT('backWorkout'))+'</button>':'<button class="btn secondary" onclick="go(\'plan\')">'+esc(tp150qwT('backTraining'))+'</button>';
+ render(shell('<main class="tp150-quick-picker">'+back+'<div class="hero"><span class="badge">'+esc(tp150qwT('quickBadge'))+'</span><h1>'+esc(tp150qwT('choose'))+'</h1><div class="muted">'+esc(tp150qwT('subtitle'))+'</div></div><div class="setting"><input id="tp150QuickQuery" class="field" type="search" autocomplete="off" placeholder="'+esc(tp150qwT('search'))+'" oninput="tp150QuickFilter(this.value)"></div><div id="tp150QuickResults">'+tp150QuickResults('')+'</div></main>'));
+ document.getElementById('tp150QuickQuery')?.focus();
+};
+
+const tp150PlanScreenBase=planScreen;
+planScreen=function(){
+ let html=tp150PlanScreenBase();
+ if(state.session)return html;
+ const card='<div class="card tp150-quick-entry"><span class="badge">'+esc(tp150qwT('quickBadge'))+'</span><h2>'+esc(tp150qwT('cardTitle'))+'</h2><p class="small muted">'+esc(tp150qwT('cardHelp'))+'</p><button class="btn block" onclick="tp150QuickPicker()">'+esc(tp150qwT('start'))+'</button></div>';
+ return String(html).replace(/(<main(?:\s+class="[^"]*")?>)/,function(m){return m+card});
+};
+
+const tp150LibraryResultsBase=libraryResults;
+libraryResults=function(group,gear,q){
+ const es=exercises().filter(function(e){return libraryMatch(e,group,gear,q);});
+ const count=tp149T('exercise.resultCount',{shown:es.length,total:exercises().length});
+ return '<p class="muted">'+esc(count)+'</p>'+((es.map(function(e){
+  const groups=muscleGroups(e.id),secondary=groups.slice(1).map(function(x){return tp149MuscleGroupLabel(x);}).filter(Boolean).join(' / ');
+  const primary=groups[0]?tp149MuscleGroupLabel(groups[0]):tp149Target(e);
+  return '<details class="card tp-library-card"><summary><div class="tp-library-summary-main"><h3>'+esc(tp149ExerciseName(e))+'</h3><p class="small">'+esc(tp149Equipment(e))+' • '+esc(tp149T('exercise.primaryMuscle'))+': '+esc(primary)+'</p></div>'+rf260VideoButton(e.id)+'</summary><div class="tp-library-body"><p class="small muted">'+esc(tp149MovementLabel(e.movementPattern))+' • '+esc(tp149StyleText(e))+'</p>'+(secondary?'<p class="small muted">'+esc(tp149T('exercise.additionalMuscles'))+': '+esc(secondary)+'</p>':'')+'<p>'+esc(tp149ExerciseNote(e)||tp149T('exercise.noDescription'))+'</p><button class="btn block tp150-library-quick" onclick="tp150QuickAction(\''+esc(e.id)+'\')">'+esc(tp150QuickButtonLabel())+'</button><br><button class="btn secondary block" onclick="chooseLibraryPlacement(\''+esc(e.id)+'\')">'+esc(tp149T('exercise.addToProgram'))+'</button></div></details>';
+ }).join(''))||'<p>'+esc(tp149T('exercise.noResults'))+'</p>');
+};
+
+const tp150ExerciseLibraryBase=rf203ExerciseLibrary;
+rf203ExerciseLibrary=function(){
+ tp150ExerciseLibraryBase();
+ const list=exercises(),rows=[...document.querySelectorAll('main .exercise')];
+ rows.forEach((row,i)=>{
+  const e=list[i];if(!e||row.querySelector('.tp150-library-start'))return;
+  const host=row.querySelector('.tp-exercise-actions')||row;
+  const b=document.createElement('button');b.type='button';b.className='btn tp150-library-start';b.textContent=tp150qwT('startShort');b.dataset.exerciseId=e.id;b.setAttribute('aria-label',tp150qwT('startExercise')+' – '+(e.custom?String(e.hu||e.en||e.id):tp149ExerciseName(e)));
+  b.onclick=ev=>{ev.stopPropagation();tp150QuickAction(e.id)};host.prepend(b);
+ });
+};
+
+const tp150ExerciseDetailBase=rf203ExerciseDetail;
+rf203ExerciseDetail=function(id){
+ tp150ExerciseDetailBase(id);
+ const main=document.querySelector('main'),card=main?.querySelector('.card.detail');if(!card)return;
+ if(tp150IsQuick()){
+  const back=main.querySelector(':scope > button.btn.secondary');if(back){back.textContent=tp150qwT('backWorkout');back.onclick=()=>renderWorkout();}
+ }
+ if(card.querySelector('.tp150-detail-start'))return;
+ const b=document.createElement('button');b.type='button';b.className='btn block tp150-detail-start';b.textContent=tp150QuickButtonLabel();b.onclick=()=>tp150QuickAction(id);card.appendChild(b);
+};
+
+const tp150RenderWorkoutBase=renderWorkout;
+renderWorkout=function(){
+ const r=tp150RenderWorkoutBase();
+ if(!tp150IsQuick())return r;
+ const main=document.querySelector('main.tp149-workout')||document.querySelector('main');if(!main)return r;
+ const badge=main.querySelector('.hero .badge');if(badge)badge.textContent=tp150qwT('title');
+ const nav=main.querySelector('[data-tp-workout-next]');if(nav&&!main.querySelector('#tp150QuickAdd')){
+  const wrap=document.createElement('div');wrap.id='tp150QuickAdd';wrap.className='card tp150-quick-add';
+  wrap.innerHTML='<div class="tp150-quick-add-head"><strong>'+esc(tp150qwT('title'))+'</strong><span class="badge">'+esc(tp150qwT('exerciseCount',{count:state.session.exercises.length}))+'</span></div><button class="btn secondary block" onclick="tp150QuickPicker()">'+esc(tp150qwT('addAnother'))+'</button>';
+  nav.parentNode.insertBefore(wrap,nav);
+ }
+ return r;
+};
+
+if(typeof tp149HistoryTitle==='function'){
+ const tp150HistoryTitleBase=tp149HistoryTitle;
+ tp149HistoryTitle=function(x){return x&&(x.type==='quick'||x.quickWorkout===true)?tp150qwT('title'):tp150HistoryTitleBase(x)};
+}
+
+(function tp150QuickCss(){
+ if(document.getElementById('tp150QuickCss'))return;
+ const s=document.createElement('style');s.id='tp150QuickCss';
+ s.textContent='.tp150-quick-entry{margin-bottom:12px;border-color:color-mix(in srgb,var(--accent) 55%,var(--line))}'
+ +'.tp150-quick-entry h2{margin:8px 0 4px}.tp150-quick-entry p{margin:4px 0 12px}'
+ +'.tp150-quick-row{grid-template-columns:44px minmax(0,1fr) auto!important}.tp150-quick-copy{min-width:0;cursor:pointer}'
+ +'.tp150-quick-start,.tp150-library-start{padding:8px 10px!important;min-height:38px!important;white-space:nowrap}'
+ +'.tp150-library-quick{margin-top:10px}'
+ +'.tp150-detail-start{margin-top:12px}.tp150-quick-add{margin:12px 0;padding:11px!important}'
+ +'.tp150-quick-add-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}'
+ +'@media(max-width:420px){.tp150-quick-row{grid-template-columns:40px minmax(0,1fr)!important}.tp150-quick-row>.tp150-quick-start{grid-column:2;width:100%}.tp150-library-actions{grid-template-columns:1fr!important}.exercise:has(.tp150-library-start)>:nth-child(2){min-width:0;overflow-wrap:anywhere}.exercise:has(.tp150-library-start)>.tp-exercise-actions{display:grid!important;grid-template-columns:40px 16px!important;gap:4px!important;min-width:60px!important;align-items:center!important}.exercise:has(.tp150-library-start)>.tp-exercise-actions>.tp150-library-start{grid-column:1/-1;width:100%!important;min-width:0!important;padding:5px 3px!important;white-space:normal!important;line-height:1.05!important}.exercise:has(.tp150-library-start)>.tp-exercise-actions>.tp-play-btn{grid-column:1}.exercise:has(.tp150-library-start)>.tp-exercise-actions>.chev{grid-column:2}}';
+ document.head.appendChild(s);
+})();
+
+window.TrainPilotQuickWorkout={
+ version:TP150QW_VERSION,
+ isActive:()=>tp150IsQuick(),
+ start:tp150StartQuickWorkout,
+ add:tp150AddQuickExercise,
+ openPicker:tp150QuickPicker,
+ audit:function(){
+  const langs=['hu','en','de','ro','sk','pl'],keys=['title','start','choose','startExercise','startShort','addExercise','addAnother','plannedActive','replaceDraft'];
+  const missing={};for(const lang of langs){missing[lang]=keys.filter(k=>!TP150QW_TEXT[lang]?.[k])}return missing;
+ }
+};
+// @endsection trainpilot-150-quick-workout.js
+
+// @section trainpilot-149-home-coach-repaint-hotfix.js
+/* TrainPilot 1.4.9 integration hotfix:
+ * legacy v251 schedules a Home Coach repair callback before TP149 is installed.
+ * That queued callback can rewrite the already-localized Coach line back to Hungarian.
+ * Repaint the card from the TP149 source after the complete render chain settles.
+ */
+var tp149RepaintLocalizedHomeCoach=function tp149RepaintLocalizedHomeCoach(){
+ if(state.tab!=='home'||rf212Lang()==='hu')return;
+ const current=document.querySelector('#rf220CoachCard');if(!current)return;
+ const wrap=document.createElement('div');wrap.innerHTML=tp149HomeCoach();
+ const fresh=wrap.firstElementChild;if(!fresh)return;
+ current.replaceWith(fresh);
+ if(typeof rf252ApplyButtonHierarchy==='function')rf252ApplyButtonHierarchy(fresh);
+};
+const tp149HomeCoachRepaintRenderBase=render;
+render=function(custom){
+ const out=tp149HomeCoachRepaintRenderBase.apply(this,arguments);
+ if(state.tab==='home'&&rf212Lang()!=='hu')setTimeout(tp149RepaintLocalizedHomeCoach,0);
+ return out;
+};
+window.TrainPilotI18n=window.TrainPilotI18n||{};
+window.TrainPilotI18n.homeCoachRepaint=true;
+// @endsection trainpilot-149-home-coach-repaint-hotfix.js
+
+// @section trainpilot-150-compact-ui-performance.js
+/* TrainPilot 1.5.0 physical-device polish:
+ * - compact Programs / Workout / Journal pages
+ * - Quick Workout naming parity
+ * - reliable Home Coach bottom scrolling
+ * - one-pass prepared legacy translation for non-Hungarian renders
+ */
+
+/* Quick Workout is the product name in English; use the same concise concept in every language. */
+Object.assign(TP150QW_TEXT.hu,{
+ title:'Gyors edzés',subtitle:'Válassz egy gyakorlatot, és kezdd el.',
+ cardTitle:'Gyors edzés',cardHelp:'Válassz egy gyakorlatot, és kezdd el.',
+ start:'Gyors edzés indítása',already:'Ez a gyakorlat már benne van a Gyors edzésben. Oda léptem.',
+ replaceDraft:'Van félbehagyott edzésed. Új Gyors edzés indításakor a mentett vázlat lecserélődik. Folytatod?',
+ replaceConfirm:'Új Gyors edzés',quickBadge:'GYORS EDZÉS'
+});
+Object.assign(TP150QW_TEXT.en,{
+ subtitle:'Choose an exercise and start right away.',cardHelp:'Choose an exercise and start right away.'
+});
+Object.assign(TP150QW_TEXT.de,{
+ title:'Schnelltraining',subtitle:'Wähle eine Übung und starte direkt.',
+ cardTitle:'Schnelltraining',cardHelp:'Wähle eine Übung und starte direkt.',
+ start:'Schnelltraining starten',already:'Diese Übung ist bereits im Schnelltraining. Ich habe dorthin gewechselt.',
+ replaceDraft:'Du hast ein unvollständiges Training. Ein neues Schnelltraining ersetzt den gespeicherten Entwurf. Fortfahren?',
+ replaceConfirm:'Neues Schnelltraining',quickBadge:'SCHNELLTRAINING'
+});
+Object.assign(TP150QW_TEXT.ro,{
+ title:'Antrenament rapid',subtitle:'Alege un exercițiu și începe imediat.',
+ cardTitle:'Antrenament rapid',cardHelp:'Alege un exercițiu și începe imediat.',
+ start:'Pornește antrenamentul rapid',already:'Exercițiul este deja în antrenamentul rapid. Am trecut la el.',
+ replaceDraft:'Ai un antrenament neterminat. Un antrenament rapid nou va înlocui schița salvată. Continui?',
+ replaceConfirm:'Antrenament rapid nou',quickBadge:'ANTRENAMENT RAPID'
+});
+Object.assign(TP150QW_TEXT.sk,{
+ title:'Rýchly tréning',subtitle:'Vyber cvik a začni hneď.',
+ cardTitle:'Rýchly tréning',cardHelp:'Vyber cvik a začni hneď.',
+ start:'Spustiť rýchly tréning',already:'Tento cvik už v rýchlom tréningu je. Presunul som sa naň.',
+ replaceDraft:'Máš nedokončený tréning. Nový rýchly tréning nahradí uložený koncept. Pokračovať?',
+ replaceConfirm:'Nový rýchly tréning',quickBadge:'RÝCHLY TRÉNING'
+});
+Object.assign(TP150QW_TEXT.pl,{

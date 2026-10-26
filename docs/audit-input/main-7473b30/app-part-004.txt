@@ -1,0 +1,180 @@
+const DEFAULT_PLAN = {A:["db-squat","db-floor-press","one-arm-row","rdl","db-curl","plank"],B:["reverse-lunge","db-ohp","barbell-row","pushup","oh-triceps","crunch"]};
+const state={tab:"home",session:null,workout:null,current:0,timer:0,timerId:null};
+
+// The first DCL pass installs every final UI module before the first frame. Share
+// parsed storage values only for that bounded startup window; writes replace the
+// matching entry and restore recovery can invalidate the whole snapshot.
+const tpStartupReads=new Map();
+const tpStartupReadsActive=()=>!!window.TrainPilotBoot&&!window.TrainPilotBoot.finished&&!window.TrainPilotBoot.failed;
+window.TrainPilotInvalidateStartupReads=()=>tpStartupReads.clear();
+window.TrainPilotReleaseStartupReads=()=>tpStartupReads.clear();
+const db={
+ get(k,f){
+  const active=tpStartupReadsActive();
+  if(active&&tpStartupReads.has(k)){
+   const entry=tpStartupReads.get(k);return entry.valid&&entry.value!=null?entry.value:f;
+  }
+  try{
+   const value=JSON.parse(localStorage.getItem("repforge:"+k));
+   if(active)tpStartupReads.set(k,{valid:true,value});
+   return value??f;
+  }catch{
+   if(active)tpStartupReads.set(k,{valid:false,value:null});
+   return f;
+  }
+ },
+ set(k,v){
+  localStorage.setItem("repforge:"+k,JSON.stringify(v));
+  if(tpStartupReadsActive())tpStartupReads.set(k,{valid:true,value:v});
+  if(["history","weights","settings","plan","exercises","scheduled"].includes(k)&&typeof cloudChanged==="function")cloudChanged();
+ }
+};
+// Apply the user's corrected equipment to the saved plan once; history/drafts stay intact.
+
+migrateLunge114();
+
+
+const byId=id=>{const e=exercises().find(x=>x.id===id);return typeof rf13Exercise==='function'?rf13Exercise(e):e;};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+
+
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)tickRest()});
+
+
+render();
+
+if(!window.TrainPilotBoot?.loading)initCloud();
+
+
+// @endsection app.js
+
+// @section v12.js
+// @prefill228-start
+/* #228: Edit-friendly values from the latest valid *journal exercise*, even when the
+ * exercise was last performed on another day, in another program or as a quick workout.
+ * Never transfer completion, RIR, timer, GPS or owner/protocol metadata. */
+var tp228Strength=function(exercise){
+ const unit=String(exercise?.repUnit||'');
+ return !!exercise&&!['distance','time','gps'].includes(String(exercise.measurementType||'').toLowerCase())&&
+  ['', 'ism.','reps','/kar','/láb'].includes(unit);
+};
+var tp228SetValue=function(old){
+ if(!old||old.done!==true||Number(old.leftSeconds)>0||Number(old.rightSeconds)>0||
+  Number(old.distanceMeters)>0)return null;
+ const weight=String(old.weight??'').replace(',','.'),reps=String(old.reps??'');
+ if(!/^(?:\d+(?:\.\d+)?|\.\d+)$/.test(weight)||!Number.isFinite(Number(weight))||
+  Number(weight)>100000||!/^[0-9]+$/.test(reps)||Number(reps)<1||Number(reps)>10000)return null;
+ return {weight:Number(weight),reps};
+};
+var tp228ValidWorkouts=function(rows,isDeleted){
+ return (Array.isArray(rows)?rows:[]).filter(row=>{
+  if(!row||row.deletedAt||row.deleted===true||row.cancelled===true||row.status==='cancelled'||isDeleted?.(row))return false;
+  const start=Date.parse(row.started),end=Date.parse(row.finished);
+  return Number.isFinite(start)&&Number.isFinite(end)&&end>start&&end<=Date.now()&&Array.isArray(row.exercises);
+ }).sort((a,b)=>Date.parse(b.finished)-Date.parse(a.finished)||Date.parse(b.started)-Date.parse(a.started));
+};
+var tp228MatchesExercise=function(previous,exercise){
+ return tp228Strength(previous)&&previous.loadType===exercise.loadType&&String(previous.repUnit||'')===String(exercise.repUnit||'');
+};
+var tp228Index=function(rows,isDeleted){
+ const index=new Map();
+ for(const workout of tp228ValidWorkouts(rows,isDeleted)){
+  const counts=new Map();for(const exercise of workout.exercises)counts.set(exercise?.id,(counts.get(exercise?.id)||0)+1);
+  for(const exercise of workout.exercises){
+   if(!exercise?.id||counts.get(exercise.id)!==1||!tp228Strength(exercise))continue;
+   if(!index.has(exercise.id))index.set(exercise.id,[]);index.get(exercise.id).push({workout,exercise});
+  }
+ }
+ return index;
+};
+var tp228Candidates=function(rows,exercise,isDeleted){
+ if(!tp228Strength(exercise)||!exercise.id)return [];
+ return tp228ValidWorkouts(rows,isDeleted).flatMap(workout=>{
+  const found=workout.exercises.filter(e=>e?.id===exercise.id);
+  if(found.length!==1||!tp228MatchesExercise(found[0],exercise))return [];
+  return [{workout,exercise:found[0]}];
+ });
+};
+var tp228Latest=function(rows,exercise,isDeleted){
+ return tp228Candidates(rows,exercise,isDeleted).find(entry=>
+  entry.exercise.sets?.some(set=>tp228SetValue(set)))?.workout||null;
+};
+var tp228BuildSets=function(context,exercise,count,baseWeight,rows,options={}){
+ const strength=tp228Strength(exercise);
+ const candidates=!strength?[]:options.index instanceof Map?(options.index.get(exercise.id)||[]).filter(entry=>tp228MatchesExercise(entry.exercise,exercise)):tp228Candidates(rows,exercise,options.isDeleted);
+ return Array.from({length:Math.max(1,Math.min(10,Number(count)||1))},(_,index)=>{
+  const set={set:index+1,weight:baseWeight,reps:'',done:false};
+  if(strength&&!options.template)set.setId=crypto.randomUUID();
+  // A partial latest workout may not have a valid matching set. Use the most
+  // recent *completed valid* performance for each set position, never draft data.
+  const saved=candidates.map(entry=>tp228SetValue(entry.exercise.sets?.[index])).find(Boolean);
+  if(!saved)return set;
+  set.weight=exercise.loadType==='bodyweight'?0:saved.weight;set.reps=saved.reps;
+  if(!options.template)set.previousValues228={weight:set.weight,reps:set.reps};
+  return set;
+ });
+};
+var tp228PrefillSets=function(context,exercise,count,baseWeight,options={}){
+ return tp228BuildSets(context,exercise,count,baseWeight,Array.isArray(options.rows)?options.rows:(typeof history==='function'?history():[]),
+  {isDeleted:typeof window.tp3HistoryIsDeleted==='function'?window.tp3HistoryIsDeleted:undefined,...options});
+};
+var tp228Untouched=function(set){
+ return !!set?.previousValues228&&!set.done&&set.weight===set.previousValues228.weight&&set.reps===set.previousValues228.reps;
+};
+window.TrainPilotPrefill228={strength:tp228Strength,latest:tp228Latest,build:tp228BuildSets,untouched:tp228Untouched};
+// @prefill228-end
+var rf12BuiltinPrograms = function rf12BuiltinPrograms(){return [
+{id:'home-basic',name:'Otthoni A/B – Alap',location:'Otthon',level:'Kezdő',builtin:true,days:[{id:'A',name:'A',exercises:[...DEFAULT_PLAN.A]},{id:'B',name:'B',exercises:[...DEFAULT_PLAN.B]}]},
+{id:'home-level2',name:'Otthoni A/B – 2. szint',location:'Otthon',level:'Középhaladó',builtin:true,days:[{id:'A',name:'A',exercises:['goblet-squat','db-floor-press','one-arm-row','rdl','hammer-curl','plank']},{id:'B',name:'B',exercises:['bulgarian-split-squat','db-ohp','db-pullover','close-pushup','lateral-raise','crunch']}]},
+{id:'home-varied',name:'Otthoni változatos',location:'Otthon',level:'Középhaladó',builtin:true,days:[{id:'A',name:'Teljes test 1',exercises:['db-squat','db-floor-press','barbell-row','rdl','lateral-raise','crunch']},{id:'B',name:'Teljes test 2',exercises:['reverse-lunge','db-ohp','one-arm-row','pushup','hammer-curl','plank']}]},
+{id:'gym-fullbody',name:'Konditermi Full Body',location:'Edzőterem',level:'Kezdő',builtin:true,days:[{id:'A',name:'Full Body',exercises:['leg-press','machine-chest-press','lat-pulldown','leg-curl','machine-shoulder-press','crunch']}]},
+{id:'gym-ab',name:'Konditermi A/B',location:'Edzőterem',level:'Középhaladó',builtin:true,days:[{id:'A',name:'A',exercises:['leg-press','machine-chest-press','seated-cable-row','leg-curl','cable-curl','crunch']},{id:'B',name:'B',exercises:['rdl','lat-pulldown','machine-shoulder-press','reverse-lunge','cable-triceps','plank']}]}
+];};
+var programs = function programs(){return db.get('programs',null)??rf12BuiltinPrograms();};
+var activeProgramId = function activeProgramId(){return db.get('activeProgramId','home-basic');};
+var activeProgram = function activeProgram(){return programs().find(p=>p.id===activeProgramId())||programs()[0];};
+var programById = function programById(id){return programs().find(p=>p.id===id);};
+var programDay = function programDay(program,id){return program?.days?.find(d=>d.id===id)||program?.days?.[0];};
+var plannerSettings = function plannerSettings(){return db.get('plannerSettings',{mode:'alternate',time:'18:00',minutes:45,weeks:4,weekdays:[1,3,5]});};
+var mergeExerciseLibrary = function mergeExerciseLibrary(saved){const all=[...DEFAULT_EXERCISES,...EXTRA_EXERCISES].map(exerciseMeta),map=new Map(all.map(e=>[e.id,e]));for(const e of saved||[]){const base=map.get(e.id)||{};map.set(e.id,exerciseMeta({...base,...e}));}return [...map.values()];};
+var migrateTo12 = function migrateTo12(){
+ if(db.get('schemaVersion',0)>=RF12_SCHEMA)return;
+ const oldEx=db.get('exercises',DEFAULT_EXERCISES),oldPlan=db.get('plan',DEFAULT_PLAN),ps=rf12BuiltinPrograms();
+ const basic=ps.find(p=>p.id==='home-basic');basic.days=[{id:'A',name:'A',exercises:[...(oldPlan.A||DEFAULT_PLAN.A)]},{id:'B',name:'B',exercises:[...(oldPlan.B||DEFAULT_PLAN.B)]}];
+ db.set('exercises',mergeExerciseLibrary(oldEx));db.set('programs',ps);db.set('activeProgramId','home-basic');
+ const migrated=scheduled().map(p=>({...p,programId:p.programId||'home-basic',dayId:p.dayId||p.workout||'A',workout:p.workout||p.dayId||'A',status:p.cancelled?'cancelled':(p.status||'planned')}));db.set('scheduled',migrated);
+ db.set('plannerSettings',plannerSettings());db.set('schemaVersion',RF12_SCHEMA);
+};
+var migratePlank121 = function migratePlank121(){
+ if(db.get('plank121',false))return;
+ const ps=programs(),basic=ps.find(p=>p.id==='home-basic'),a=basic?.days.find(d=>d.id==='A');
+ if(a&&!a.exercises.includes('plank')){a.exercises.splice(Math.min(5,a.exercises.length),0,'plank');db.set('programs',ps);}
+ const legacy=db.get('plan',null);if(legacy?.A&&!legacy.A.includes('plank')){legacy.A.splice(Math.min(5,legacy.A.length),0,'plank');db.set('plan',legacy);}
+ db.set('plank121',true);
+};
+var workoutTitle = function workoutTitle(programId,dayId){const p=programById(programId)||activeProgram(),d=programDay(p,dayId);return `${p.name} • ${d?.name||dayId}`;};
+var nextPlanned = function nextPlanned(){const now=Date.now();return scheduled().filter(x=>!x.cancelled&&(x.status||'planned')==='planned'&&Date.parse(x.start)>=now&&!history().some(h=>h.scheduleId===x.id)).sort((a,b)=>Date.parse(a.start)-Date.parse(b.start))[0];};
+var startScheduledById = function startScheduledById(id){const p=scheduled().find(x=>x.id===id);if(p)startWorkout(p.dayId||p.workout,p.id,p.programId||'home-basic');};
+var localDateKey = function localDateKey(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;};
+var dateAt = function dateAt(date,time){const d=new Date(`${date}T${time||'18:00'}`);if(!Number.isFinite(d.getTime()))throw Error('Érvénytelen dátum vagy idő.');return d;};
+var cycleDay = function cycleDay(program,index){return program.days[((index%program.days.length)+program.days.length)%program.days.length];};
+var nextCycleIndex = function nextCycleIndex(programId){const p=programById(programId),items=[...scheduled().filter(x=>!x.cancelled&&(x.programId||'home-basic')===programId)].sort((a,b)=>Date.parse(a.start)-Date.parse(b.start));if(!items.length)return 0;const last=items[items.length-1],i=p.days.findIndex(d=>d.id===(last.dayId||last.workout));return i<0?0:i+1;};
+var makeScheduleItem = function makeScheduleItem(program,date,time,minutes,dayId){const start=dateAt(date,time),d=programDay(program,dayId);return {id:crypto.randomUUID(),programId:program.id,dayId:d.id,workout:d.id,start:start.toISOString(),end:new Date(start.getTime()+minutes*60000).toISOString(),status:'planned',updatedAt:Date.now(),cancelled:false};};
+var buildAlternateSchedule = function buildAlternateSchedule(date,time,count,minutes,firstDayId,programId=activeProgramId()){const p=programById(programId);if(!p||!/^\d{4}-\d{2}-\d{2}$/.test(date)||!/^\d{2}:\d{2}$/.test(time)||!Number.isInteger(count)||count<1||count>100||!Number.isInteger(minutes)||minutes<10||minutes>240)throw Error('Adj meg érvényes kezdést, időtartamot és alkalomszámot.');let idx=Math.max(0,p.days.findIndex(d=>d.id===firstDayId));const out=[];for(let n=0;n<count;n++){const d=dateAt(date,time);d.setDate(d.getDate()+n*2);out.push(makeScheduleItem(p,localDateKey(d),time,minutes,cycleDay(p,idx+n).id));}return out;};
+var buildWeeklySchedule = function buildWeeklySchedule(date,time,days,weeks,minutes,firstDayId,programId=activeProgramId()){const p=programById(programId);if(!p||!days.length||days.some(x=>!Number.isInteger(x)||x<0||x>6)||!Number.isInteger(weeks)||weeks<1||weeks>24)throw Error('Válassz heti napokat és érvényes időtartamot.');const start=dateAt(date,time),out=[];let idx=Math.max(0,p.days.findIndex(d=>d.id===firstDayId));for(let n=0;n<weeks*7;n++){const d=new Date(start);d.setDate(start.getDate()+n);if(!days.includes(d.getDay()))continue;out.push(makeScheduleItem(p,localDateKey(d),time,minutes,cycleDay(p,idx++).id));}return out;};
+var addScheduleBatch = function addScheduleBatch(items){const cur=scheduled(),unique=items.filter(x=>!cur.some(p=>!p.cancelled&&p.start===x.start&&(p.programId||'home-basic')===x.programId));if(cur.length+unique.length>1000)throw Error('Maximum 1000 tervezett alkalom tárolható.');db.set('scheduled',[...cur,...unique]);return unique.length;};
+var savePlannerSettings = function savePlannerSettings(){const mode=$('#plannerMode')?.value||'alternate',time=$('#plannerTime')?.value||'18:00',minutes=Math.max(10,Math.min(240,Number($('#plannerMinutes')?.value)||45)),weeks=Math.max(1,Math.min(24,Number($('#plannerWeeks')?.value)||4)),weekdays=[...document.querySelectorAll('input[name=plannerWeekday]:checked')].map(e=>Number(e.value));db.set('plannerSettings',{mode,time,minutes,weeks,weekdays});};
+var generatePlanner = function generatePlanner(){try{savePlannerSettings();const s=plannerSettings(),date=$('#plannerStart').value,first=$('#plannerFirst').value;let items;if(s.mode==='alternate')items=buildAlternateSchedule(date,s.time,Math.ceil(s.weeks*7/2),s.minutes,first);else if(s.mode==='weekly')items=buildWeeklySchedule(date,s.time,s.weekdays,s.weeks,s.minutes,first);else{alert('Egyéni módban koppints közvetlenül a naptár napjaira.');return;}const n=addScheduleBatch(items);render();alert(n?`${n} edzés megtervezve.`:'Ezek az alkalmak már szerepelnek.');}catch(e){alert(e.message);}};
+var changeCalendarMonth = function changeCalendarMonth(delta){const [y,m]=state.calendarMonth.split('-').map(Number),d=new Date(y,m-1+delta,1);state.calendarMonth=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;render();};
+var scheduleOnDate = function scheduleOnDate(date){return scheduled().filter(x=>!x.cancelled&&localDateKey(new Date(x.start))===date).sort((a,b)=>Date.parse(a.start)-Date.parse(b.start));};
+var toggleCalendarDay = function toggleCalendarDay(date){const exists=scheduleOnDate(date).find(x=>(x.status||'planned')==='planned'&&!history().some(h=>h.scheduleId===x.id));if(exists){if(confirm('Eltávolítod ezt a tervezett edzést?')){const s=scheduled(),i=s.findIndex(x=>x.id===exists.id);s[i]={...s[i],cancelled:true,status:'cancelled',updatedAt:Date.now()};db.set('scheduled',s);render();}return;}const s=plannerSettings(),p=activeProgram(),idx=nextCycleIndex(p.id),item=makeScheduleItem(p,date,s.time,s.minutes,cycleDay(p,idx).id);addScheduleBatch([item]);render();};
+var calendarGrid = function calendarGrid(){const [y,m]=state.calendarMonth.split('-').map(Number),first=new Date(y,m-1,1),last=new Date(y,m,0),lead=(first.getDay()+6)%7,cells=[];for(let i=0;i<lead;i++)cells.push('<div class="cal-cell empty"></div>');for(let day=1;day<=last.getDate();day++){const d=new Date(y,m-1,day),key=localDateKey(d),items=scheduleOnDate(key),h=history().filter(x=>localDateKey(new Date(x.started))===key),today=key===localDateKey(new Date()),item=items[0],done=item&&(item.status==='completed'||h.some(x=>x.scheduleId===item.id)),cls=['cal-cell',today?'today':'',item?'planned':'',done?'completed':'',item?.status==='skipped'?'skipped':''].join(' ');const label=item?esc(programDay(programById(item.programId||'home-basic'),item.dayId||item.workout)?.name||item.dayId||item.workout):h.length?'✓':'';cells.push(`<button class="${cls}" onclick="toggleCalendarDay('${key}')"><span>${day}</span>${label?`<b>${done?'✓ ':''}${label}</b>`:''}</button>`);}return cells.join('');};
+var scheduleListHtml = function scheduleListHtml(){const items=scheduled().filter(x=>!x.cancelled).sort((a,b)=>Date.parse(a.start)-Date.parse(b.start)).slice(-120);return items.length?items.map(x=>{const p=programById(x.programId||'home-basic'),d=programDay(p,x.dayId||x.workout),done=x.status==='completed'||history().some(h=>h.scheduleId===x.id);return `<div class="card schedule-card"><div><strong>${esc(p?.name||'Program')} • ${esc(d?.name||x.dayId||x.workout)}</strong><div class="small muted">${esc(fmtDate(x.start))} • ${done?'Teljesítve':x.status==='skipped'?'Kihagyva':'Tervezett'}</div></div><div class="schedule-actions">${!done?`<button class="btn" onclick="startScheduledById('${x.id}')">Indítás</button>`:''}<button class="btn secondary" onclick="editSchedulePrompt('${x.id}')">Áthelyezés</button><button class="btn secondary" onclick="skipSchedule('${x.id}')">${x.status==='skipped'?'Vissza':'Kihagyás'}</button></div></div>`;}).join(''):'<div class="muted">Még nincs tervezett edzés.</div>';};
+var editSchedulePrompt = function editSchedulePrompt(id){const s=scheduled(),i=s.findIndex(x=>x.id===id);if(i<0)return;const old=s[i],date=prompt('Új dátum (ÉÉÉÉ-HH-NN):',localDateKey(new Date(old.start)));if(date===null)return;const time=prompt('Új időpont (ÓÓ:PP):',new Date(old.start).toTimeString().slice(0,5));if(time===null)return;try{const st=dateAt(date,time),dur=Date.parse(old.end)-Date.parse(old.start);s[i]={...old,start:st.toISOString(),end:new Date(st.getTime()+dur).toISOString(),updatedAt:Date.now()};db.set('scheduled',s);render();}catch(e){alert(e.message);}};
+var skipSchedule = function skipSchedule(id){const s=scheduled(),i=s.findIndex(x=>x.id===id);if(i<0)return;s[i]={...s[i],status:s[i].status==='skipped'?'planned':'skipped',updatedAt:Date.now()};db.set('scheduled',s);render();};
+var calendarScreen = function calendarScreen(){const s=plannerSettings(),p=activeProgram(),days=p.days||[];return shell(`<main><div class="hero"><h1>Edzésnaptár</h1><div class="muted">Minden második nap, fix heti napok vagy teljesen egyéni kijelölés.</div></div><div class="setting"><label>Tervezési mód</label><select id="plannerMode" class="field"><option value="alternate" ${s.mode==='alternate'?'selected':''}>Minden második nap</option><option value="weekly" ${s.mode==='weekly'?'selected':''}>Fix heti napok</option><option value="custom" ${s.mode==='custom'?'selected':''}>Egyéni naptár</option></select><label>Kezdőnap</label><input id="plannerStart" class="field" type="date" value="${localDateKey(new Date())}"><label>Időpont</label><input id="plannerTime" class="field" type="time" value="${esc(s.time)}"><label>Időtartam (perc)</label><input id="plannerMinutes" class="field" type="number" min="10" max="240" value="${s.minutes}"><label>Hetek száma</label><input id="plannerWeeks" class="field" type="number" min="1" max="24" value="${s.weeks}"><label>Első programnap</label><select id="plannerFirst" class="field">${days.map(d=>`<option value="${esc(d.id)}">${esc(d.name)}</option>`).join('')}</select><div class="weekday-row">${['V','H','K','Sze','Cs','P','Szo'].map((d,i)=>`<label><input type="checkbox" name="plannerWeekday" value="${i}" ${s.weekdays.includes(i)?'checked':''}>${d}</label>`).join('')}</div><button class="btn block" onclick="generatePlanner()">Terv generálása</button><p class="small muted">Egyéni módban vagy utólag közvetlenül a naptár napjaira koppintva adhatsz hozzá/törölhetsz alkalmat.</p></div><div class="calendar-wrap"><div class="calendar-head"><button class="btn secondary" onclick="changeCalendarMonth(-1)">‹</button><strong>${new Date(state.calendarMonth+'-01T12:00').toLocaleDateString('hu-HU',{year:'numeric',month:'long'})}</strong><button class="btn secondary" onclick="changeCalendarMonth(1)">›</button></div><div class="cal-weekdays">${['H','K','Sze','Cs','P','Szo','V'].map(x=>`<span>${x}</span>`).join('')}</div><div class="calendar-grid">${calendarGrid()}</div><div class="cal-legend"><span>○ tervezett</span><span>✓ teljesített</span><span>– kihagyott</span></div></div><div class="section">Tervezett alkalmak</div>${scheduleListHtml()}</main>`);};
+var activateProgram = function activateProgram(id){if(!programById(id))return;if(!confirm('Aktiválod ezt a programot? A korábbi napló és tervezett alkalmak megmaradnak.'))return;db.set('activeProgramId',id);render();};
+var programCards = function programCards(){return programs().map(p=>{const active=p.id===activeProgramId();return `<div class="program-card rf103-program-card ${active?'active-program':''}"><div class="rf103-program-main"><div class="rf103-program-info"><span class="badge">${esc(p.location)}</span><span class="badge">${esc(p.level)}</span><h3>${esc(p.name)}</h3><p class="small muted">${p.days.length} napos ciklus • ${p.days.map(d=>d.exercises.length).join('/')} gyakorlat</p></div><button class="btn rf103-program-activate ${active?'secondary':''}" ${active?'disabled':''} onclick="activateProgram('${p.id}')">${active?'Aktív':'Aktiválás'}</button></div>${!p.builtin?`<div class="rf103-program-extra"><button class="btn secondary" onclick="editCustomProgram('${p.id}')">Szerkesztés</button><button class="btn danger" onclick="deleteCustomProgram('${p.id}')">Törlés</button></div>`:''}</div>`}).join('');};
+var programsScreen = function programsScreen(){return shell(`<main><div class="hero"><h1>Edzésprogramok</h1><div class="muted">Otthoni, konditermi és saját programok ugyanabban a naplóban.</div></div>${programCards()}<div class="section">Saját program</div><button class="btn block" onclick="createCustomProgram()">Új saját program létrehozása</button><div class="section">Gyakorlatkönyvtár</div><div class="card"><strong>${exercises().length} gyakorlat</strong><p class="small muted">Otthoni és konditermi gyakorlatok közös könyvtára. A meglévő videók és technikai segítségek megmaradtak.</p></div></main>`);};
+var createCustomProgram = function createCustomProgram(){const name=prompt('Program neve:','Saját program');if(!name)return;const count=Math.max(1,Math.min(7,Number(prompt('Hány napos ciklus? (1–7)','2'))||2)),p={id:'custom-'+crypto.randomUUID(),name:name.slice(0,80),location:'Egyéni',level:'Egyéni',builtin:false,days:Array.from({length:count},(_,i)=>({id:String.fromCharCode(65+i),name:String.fromCharCode(65+i),exercises:[DEFAULT_PLAN.A[0],DEFAULT_PLAN.A[1],DEFAULT_PLAN.A[2]]}))};db.set('programs',[...programs(),p]);editCustomProgram(p.id);};

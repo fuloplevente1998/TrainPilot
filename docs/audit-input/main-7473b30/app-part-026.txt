@@ -1,0 +1,329 @@
+ return key==='from'?(!rf263HistoryFilter.to||value<=rf263HistoryFilter.to):(!rf263HistoryFilter.from||value>=rf263HistoryFilter.from);
+};
+var rf263CloseDate = function rf263CloseDate(){
+ const picker=rf263DatePicker;if(!picker)return;
+ rf263DatePicker=null;picker.dialog.close();picker.dialog.remove();
+ document.getElementById(`rf263-${picker.key}-date`)?.focus();
+};
+var rf263PickDate = function rf263PickDate(value){
+ const picker=rf263DatePicker;if(!picker||value&&!rf263DateAllowed(picker.key,value))return;
+ const key=picker.key;rf263CloseDate();rf263SetHistoryFilter(key,value);
+ document.getElementById(`rf263-${key}-date`)?.focus();
+};
+var rf263MoveMonth = function rf263MoveMonth(delta){
+ const picker=rf263DatePicker;if(!picker)return;
+ const next=new Date(picker.month.getFullYear(),picker.month.getMonth()+delta,1,12);
+ if(next.getFullYear()<1900||next.getFullYear()>2100)return;
+ picker.month=next;rf263PaintDate();
+ picker.dialog.querySelector(delta<0?'[data-prev-month]':'[data-next-month]')?.focus();
+};
+var rf263PaintDate = function rf263PaintDate(){
+ const picker=rf263DatePicker;if(!picker)return;
+ const {dialog,key,month}=picker,y=month.getFullYear(),m=month.getMonth(),selected=rf263HistoryFilter[key];
+ const first=(new Date(y,m,1,12).getDay()+6)%7,count=new Date(y,m+1,0,12).getDate(),today=rf263DateKey(new Date());
+ let days='<span aria-hidden="true"></span>'.repeat(first);
+ for(let d=1;d<=count;d++){
+  const date=new Date(y,m,d,12),value=rf263DateKey(date),allowed=rf263DateAllowed(key,value);
+  days+=`<button type="button" class="rf263-date-day" data-date="${value}" aria-label="${esc(date.toLocaleDateString('hu-HU',{year:'numeric',month:'long',day:'numeric',weekday:'long'}))}" aria-pressed="${value===selected}" ${value===today?'aria-current="date"':''} ${allowed?'':'disabled'} onclick="rf263PickDate('${value}')">${d}</button>`;
+ }
+ dialog.innerHTML=`<div class="rf263-date-heading"><h2 id="rf263-date-title">${key==='from'?'Ettől':'Eddig'} – dátum</h2><button type="button" class="btn secondary" aria-label="Dátumválasztó bezárása" onclick="rf263CloseDate()">✕</button></div><div class="rf263-date-month"><button type="button" class="btn secondary" data-prev-month aria-label="Előző hónap" onclick="rf263MoveMonth(-1)" ${y===1900&&m===0?'disabled':''}>‹</button><strong aria-live="polite">${esc(month.toLocaleDateString('hu-HU',{year:'numeric',month:'long'}))}</strong><button type="button" class="btn secondary" data-next-month aria-label="Következő hónap" onclick="rf263MoveMonth(1)" ${y===2100&&m===11?'disabled':''}>›</button></div><div class="rf263-date-week" aria-hidden="true">${['H','K','Sze','Cs','P','Szo','V'].map(x=>`<span>${x}</span>`).join('')}</div><div class="rf263-date-grid">${days}</div><p class="small muted">A kiválasztott nap is beleszámít a szűrésbe.</p><div class="rf263-date-actions"><button type="button" class="btn secondary" onclick="rf263PickDate('')">Dátum törlése</button><button type="button" class="btn" onclick="rf263PickDate('${today}')" ${rf263DateAllowed(key,today)?'':'disabled'}>Ma</button></div>`;
+};
+var rf263OpenDate = function rf263OpenDate(key){
+ if(key!=='from'&&key!=='to')return;
+ rf263CloseDate();
+ const start=rf263ParseDate(rf263HistoryFilter[key])||rf263ParseDate(rf263HistoryFilter[key==='from'?'to':'from'])||new Date();
+ const dialog=document.createElement('dialog');dialog.className='rf263-date-dialog';
+ dialog.setAttribute('aria-labelledby','rf263-date-title');dialog.setAttribute('aria-modal','true');
+ document.body.appendChild(dialog);
+ rf263DatePicker={key,dialog,month:new Date(start.getFullYear(),start.getMonth(),1,12)};
+ dialog.addEventListener('cancel',e=>{e.preventDefault();rf263CloseDate()});
+ dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)rf263CloseDate()}});
+ dialog.addEventListener('keydown',e=>{
+  const value=e.target.dataset?.date;if(!value)return;
+  const delta={ArrowLeft:-1,ArrowRight:1,ArrowUp:-7,ArrowDown:7}[e.key];
+  if(delta==null)return;e.preventDefault();
+  const next=rf263ParseDate(value);next.setDate(next.getDate()+delta);const target=rf263DateKey(next);
+  if(!rf263DateAllowed(key,target))return;
+  rf263DatePicker.month=new Date(next.getFullYear(),next.getMonth(),1,12);rf263PaintDate();
+  dialog.querySelector(`[data-date="${target}"]`)?.focus();
+ });
+ rf263PaintDate();dialog.showModal();
+ (dialog.querySelector('[aria-pressed="true"]:not(:disabled)')||dialog.querySelector('[aria-current="date"]:not(:disabled)')||dialog.querySelector('[data-date]:not(:disabled)')||dialog.querySelector('button'))?.focus();
+};
+/* TrainPilot 2.6.3-dev2: unified Health hub, overnight recovery repair, readable diagnostics and scalable workout history. */
+const RF263_VERSION='2.6.3-dev2';
+const RF263_RECOVERY_DAYS=14;
+const RF263_PERMISSION_NAMES=typeof RF251_PERMISSION_NAMES==='object'?RF251_PERMISSION_NAMES:{
+ READ_HEART_RATE:'Pulzus',READ_RESTING_HEART_RATE:'Nyugalmi pulzus',READ_ACTIVE_CALORIES_BURNED:'Aktív energia',READ_TOTAL_CALORIES_BURNED:'Teljes energia',READ_EXERCISE:'Edzések',READ_SLEEP:'Alvás',READ_HEART_RATE_VARIABILITY:'HRV',READ_STEPS:'Lépések',READ_WEIGHT:'Testsúly',READ_BODY_FAT:'Testzsír',READ_OXYGEN_SATURATION:'SpO₂',READ_VO2_MAX:'VO₂max',READ_DISTANCE:'Távolság',READ_SPEED:'Sebesség',READ_BLOOD_PRESSURE:'Vérnyomás',READ_BLOOD_GLUCOSE:'Vércukor',READ_RESPIRATORY_RATE:'Légzésszám',READ_ENERGY_SCORE:'Samsung Energiapontszám'
+};
+
+(function rf263Css(){
+ if(document.querySelector?.('#rf263Css'))return;
+ const s=document.createElement('style');s.id='rf263Css';s.textContent=`
+  .rf263-sync-actions{grid-template-columns:minmax(0,1.45fr) minmax(0,.8fr)}
+  .rf263-permission-list{display:grid;gap:8px;margin-top:10px}.rf263-permission-row{margin:0}
+  .rf263-history-filter{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
+  .rf263-history-filter label{margin:0}.rf263-history-count{margin:10px 0 0}
+  details.rf263-history{padding:0;overflow:hidden}
+  details.rf263-history>summary{list-style:none;cursor:pointer;padding:14px 16px;user-select:none}
+  details.rf263-history>summary::-webkit-details-marker{display:none}
+  details.rf263-history>summary .history-head{margin:0;border:1px solid var(--line);border-radius:16px}
+  details.rf263-history>summary .history-title-row{gap:10px}
+  details.rf263-history>summary::after{display:none}
+  .rf103-history-side{display:flex;flex-direction:column;align-items:flex-end;gap:7px;flex:0 0 auto}
+  .rf103-history-chevron{display:grid;place-items:center;width:34px;height:30px;color:var(--accent2);font-size:24px;font-weight:900;line-height:1;border-radius:999px;box-shadow:inset 0 0 0 1px var(--accent);transition:transform .15s ease,background .15s ease}
+  details.rf263-history[open] .rf103-history-chevron{transform:rotate(180deg)}
+  details.rf263-history>.history-body{padding:0 16px 16px}
+  @media(max-width:520px){.rf263-sync-actions{grid-template-columns:1.25fr .85fr}.rf263-history-filter{grid-template-columns:1fr 1fr}.rf263-history-filter .rf263-clear-filter{grid-column:1/-1}}
+ `;document.head?.appendChild?.(s);
+})();
+
+
+let rf263SyncFlight=null;
+
+
+// Every legacy Health refresh alias now enters the same complete manual pipeline.
+rf244UnifiedSync=()=>rf263Sync({manual:true});
+rf240SyncNow=rf244UnifiedSync;
+rf240FullSync=()=>rf263Sync({manual:true,full:true});
+readRecoveryHealth=rf244UnifiedSync;
+readWellnessHealth=rf244UnifiedSync;
+rf207ReadTodayHealth=rf244UnifiedSync;
+rf225ConnectHealth=rf244UnifiedSync;
+readHealthWorkout=rf244UnifiedSync;
+exportHealthWorkout=rf244UnifiedSync;
+rf241RefreshWorkoutHealth=rf244UnifiedSync;
+rf240RefreshSelectedWorkout=rf244UnifiedSync;
+rf142ReadHealthForWorkout=rf244UnifiedSync;
+
+
+rf250HealthHub=rf263HealthHub;
+rf206HealthHub=rf263HealthHub;
+healthScreen=function(){
+ rf245CoachVisible=false;state.healthView=false;if(typeof rf225HealthPage!=='undefined')rf225HealthPage='hub';
+ return go('health');
+};
+
+// Coach never performs a Health sync. Its former refresh action only opens the Health hub.
+const rf263CoachBase=rf233CoachScreen;
+rf233CoachScreen=function(){
+ const r=rf263CoachBase();
+ const main=document.querySelector?.('main');
+ if(main){
+  for(const b of main.querySelectorAll?.('button')||[]){
+   const action=String(b.getAttribute?.('onclick')||''),text=String(b.textContent||'');
+   if(action.includes('readRecoveryHealth')||/Regeneráció frissítése|Refresh recovery|Regeneration aktualisieren|Actualizează recuperarea/.test(text)){
+    b.setAttribute?.('onclick',"go('health')");b.textContent='Egészség megnyitása';
+   }
+  }
+ }
+ return r;
+};
+rf220CoachScreen=rf233CoachScreen;
+
+// Scalable workout history: newest visible workout expanded, older entries collapsed, inclusive date range filter.
+let rf263HistoryFilter={from:'',to:''};
+
+
+historyScreen=function(){
+ const all=history(),filtered=rf263FilteredHistory(),from=rf263HistoryFilter.from,to=rf263HistoryFilter.to,active=!!(from||to);
+ return shell(`<main><div class="hero"><h1>Edzésnapló</h1><div class="muted">Az edzések alapból összecsukva jelennek meg; koppints egy bejegyzésre a részletekhez. Dátum szerint is szűrhetsz.</div></div><div class="card"><div class="rf263-history-filter">${rf263DateField('from','Ettől',from)}${rf263DateField('to','Eddig',to)}<button class="btn secondary rf263-clear-filter" onclick="rf263ClearHistoryFilter()" ${active?'':'disabled'}>Szűrés törlése</button></div><p class="small muted rf263-history-count">${filtered.length} / ${all.length} edzés</p></div>${filtered.length?filtered.map(({x,index},i)=>rf263HistoryItem(x,index,i)).join(''):(all.length?'<div class="card muted">A kiválasztott dátumtartományban nincs naplózott edzés.</div>':'<div class="muted">Még nincs elmentett edzés.</div>')}</main>`);
+};
+
+
+// Journal date picker: an app-rendered calendar, without native WebView date inputs.
+
+
+let rf263DatePicker=null;
+
+
+(function rf263DateCss(){
+ const style=document.createElement('style');style.id='rf263DateCss';style.textContent=`
+ .rf263-history-filter>*{min-width:0}.rf263-date-trigger{margin-top:4px;min-height:48px;white-space:normal;overflow-wrap:anywhere}.rf263-date-trigger::after{display:none}
+ .rf263-date-dialog{box-sizing:border-box;width:min(380px,calc(100vw - 24px));max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);margin:auto;padding:16px;border:1px solid var(--accent);border-radius:20px;background:var(--card);color:var(--text);box-shadow:0 20px 60px #0009;overflow:auto;overscroll-behavior:contain}
+ .rf263-date-dialog::backdrop{background:rgba(4,7,11,.78)}
+ .rf263-date-heading,.rf263-date-month{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}.rf263-date-heading h2{margin:0;font-size:18px}.rf263-date-month strong{text-align:center;min-width:0}
+ .rf263-date-heading .btn,.rf263-date-month .btn{min-width:44px;min-height:44px;padding:8px}
+ .rf263-date-week,.rf263-date-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;text-align:center}.rf263-date-week{margin-bottom:6px;font-size:12px;color:var(--muted)}
+ .rf263-date-day{min-width:0;min-height:44px;border:1px solid transparent;border-radius:10px;background:var(--card2);color:var(--text);font:inherit;cursor:pointer;padding:0}
+ .rf263-date-day[aria-current="date"]{border-color:var(--accent)}.rf263-date-day[aria-pressed="true"]{background:var(--accent);color:var(--tp-primary-ink,#11151b);font-weight:800}
+ .rf263-date-day:disabled{opacity:.35;cursor:not-allowed}.rf263-date-day:focus-visible{outline:2px solid var(--accent2);outline-offset:1px}.rf263-date-actions{display:flex;gap:8px}.rf263-date-actions .btn{flex:1;min-height:44px}
+ @media(max-width:360px){.rf263-date-dialog{padding:12px}.rf263-date-week,.rf263-date-grid{gap:2px}}
+ `;document.head.appendChild(style);
+})();
+
+// @endsection v263.js
+
+// @section trainpilot-110.js
+
+/* TrainPilot 1.1.2: automatic foreground Health sync, silent background UI refresh and themed timed-exercise stopwatch. */
+const RF110_AUTO_HEALTH_MS=5*60*1000;
+const RF110_RECOVERY_REFRESH_MS=6*60*60*1000;
+let rf110AutoHealthTimer=null,rf110AutoHealthFlight=null,rf110LastAutoHealthAt=0;
+
+// Automatic Health reads must never repaint the current route. The Health pipeline
+// legitimately repaints for a manual sync; suppress only paints caused by the
+// automatic flight. A manually queued sync still paints because rf250ActiveManual
+// becomes true before that run starts.
+const rf110PaintBase=rf245Paint;
+rf245Paint=function rf245Paint(){
+ if(rf110AutoHealthFlight&&!rf250ActiveManual)return;
+ return rf110PaintBase();
+};
+
+var rf110ReadPermissionGranted=function rf110ReadPermissionGranted(permissions){
+ return Object.entries(permissions||{}).some(([k,v])=>k.startsWith('READ_')&&v===true);
+};
+var rf110AutoHealthSync=function rf110AutoHealthSync({force=false}={}){
+ if(document.hidden||!isNative()||rf110AutoHealthFlight||state.health?.busy)return Promise.resolve(null);
+ const now=Date.now();if(!force&&now-rf110LastAutoHealthAt<RF110_AUTO_HEALTH_MS)return Promise.resolve(null);
+ rf110AutoHealthFlight=(async()=>{
+  try{
+   const p=healthPlugin(),status=await p.getStatus(),permissions=status?.permissions||{};
+   state.health=state.health||{};state.health.permissions=permissions;
+   if(!rf110ReadPermissionGranted(permissions))return null;
+   const diag=typeof rf244Diag==='function'?rf244Diag():{},lastRecovery=Date.parse(diag?.recoveryWindowAt||'');
+   const recoveryDue=!Number.isFinite(lastRecovery)||Date.now()-lastRecovery>=RF110_RECOVERY_REFRESH_MS;
+   const report=recoveryDue?await rf263Sync({plugin:p,manual:false}):await rf250Sync({plugin:p,manual:false});
+   if(report?.status!=='error')rf110LastAutoHealthAt=Date.now();
+   return report;
+  }catch(_){return null}
+  finally{rf110AutoHealthFlight=null}
+ })();
+ return rf110AutoHealthFlight;
+};
+var rf110InitAutoHealth=function rf110InitAutoHealth(){
+ if(rf110AutoHealthTimer)return;
+ setTimeout(()=>rf110AutoHealthSync({force:true}),1200);
+ rf110AutoHealthTimer=setInterval(()=>rf110AutoHealthSync(),RF110_AUTO_HEALTH_MS);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(()=>rf110AutoHealthSync(),600)});
+};
+
+// Permission management is navigation only. It must not enter the sync/busy pipeline.
+healthSettings=async function healthSettings(){
+ try{
+  await healthPlugin().openSettings();
+  state.health=state.health||{};state.health.message='Health Connect engedélyek megnyitva.';
+ }catch(e){
+  state.health=state.health||{};state.health.message=e?.message||'A Health Connect engedélyek nem nyithatók meg.';
+  if(state.tab==='health'&&!state.session)rf263HealthHub();
+ }
+};
+
+let rf110Stopwatch={key:'',setIndex:-1,elapsedMs:0,startedAt:0,running:false,timer:null,lastSecond:-1};
+var rf110StopwatchSeconds=function rf110StopwatchSeconds(){
+ const total=rf110Stopwatch.elapsedMs+(rf110Stopwatch.running?Math.max(0,Date.now()-rf110Stopwatch.startedAt):0);
+ return Math.max(0,Math.floor(total/1000));
+};
+var rf110FormatStopwatch=function rf110FormatStopwatch(sec){
+ sec=Math.max(0,Math.floor(Number(sec)||0));return `${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`;
+};
+var rf110StopwatchPersist=function rf110StopwatchPersist(sec){
+ if(!state.session||rf110Stopwatch.setIndex<0)return;
+ const row=state.session.exercises?.[state.current]?.sets?.[rf110Stopwatch.setIndex];if(!row)return;
+ row.reps=sec>0?String(sec):'';persistDraft();
+ const rows=[...document.querySelectorAll('main .row')],ui=rows[rf110Stopwatch.setIndex];
+ const fields=ui?[...ui.querySelectorAll('input.field')]:[],input=fields.at(-1);if(input)input.value=row.reps;
+};
+var rf110StopwatchPaint=function rf110StopwatchPaint(){
+ const sec=rf110StopwatchSeconds(),display=document.querySelector('#rf110StopwatchTime'),toggle=document.querySelector('#rf110StopwatchToggle');
+ if(display)display.textContent=rf110FormatStopwatch(sec);
+ if(toggle)toggle.textContent=rf110Stopwatch.running?'Szünet':'Indítás';
+ if(sec!==rf110Stopwatch.lastSecond){rf110Stopwatch.lastSecond=sec;rf110StopwatchPersist(sec)}
+};
+var rf110StopwatchPause=function rf110StopwatchPause(){
+ if(!rf110Stopwatch.running)return;
+ rf110Stopwatch.elapsedMs+=Math.max(0,Date.now()-rf110Stopwatch.startedAt);rf110Stopwatch.startedAt=0;rf110Stopwatch.running=false;
+ if(rf110Stopwatch.timer){clearInterval(rf110Stopwatch.timer);rf110Stopwatch.timer=null}rf110StopwatchPaint();
+};
+var rf110StopwatchHalt=function rf110StopwatchHalt(clear=false){
+ rf110StopwatchPause();if(clear){rf110Stopwatch.key='';rf110Stopwatch.setIndex=-1;rf110Stopwatch.elapsedMs=0;rf110Stopwatch.lastSecond=-1}
+};
+var rf110ToggleStopwatch=function rf110ToggleStopwatch(){
+ const interval=window.TrainPilotIntervals162?.owner?.();
+ if(interval&&!interval.run.stopped&&interval.run.phase?.phase!=='complete')return window.TrainPilotIntervals162.command(interval.run.running?'pause':'resume');
+ if(rf110Stopwatch.running){
+  const session=state.session,ei=state.current,si=rf110Stopwatch.setIndex,set=session?.exercises?.[ei]?.sets?.[si];
+  rf110StopwatchPause();
+  if(state.session===session&&set&&!set.done&&Number(set.reps)>0)return toggleSet(ei,si);
+  return;
+ }
+ rf110Stopwatch.startedAt=Date.now();rf110Stopwatch.running=true;rf110Stopwatch.timer=setInterval(rf110StopwatchPaint,250);rf110StopwatchPaint();
+};
+var rf110ResetStopwatch=function rf110ResetStopwatch(){
+ rf110StopwatchPause();rf110Stopwatch.elapsedMs=0;rf110Stopwatch.lastSecond=-1;rf110StopwatchPersist(0);rf110StopwatchPaint();
+};
+var rf110DecorateTimedWorkout=function rf110DecorateTimedWorkout(){
+ if(!state.session)return rf110StopwatchHalt(true);
+ const sessionExercise=state.session.exercises?.[state.current],exercise=sessionExercise?byId(sessionExercise.id):null;
+ const timed=String(sessionExercise?.repUnit||exercise?.repUnit||exercise?.reps||'').includes('mp');
+ if(!sessionExercise||!exercise||!timed)return rf110StopwatchHalt(true);
+ const setIndex=sessionExercise.sets.findIndex(s=>!s.done);if(setIndex<0)return rf110StopwatchHalt(true);
+ const key=`${state.session.started}|${state.current}|${setIndex}`;
+ if(rf110Stopwatch.key!==key){rf110StopwatchHalt(true);rf110Stopwatch.key=key;rf110Stopwatch.setIndex=setIndex;const saved=Number(sessionExercise.sets[setIndex].reps);rf110Stopwatch.elapsedMs=Number.isFinite(saved)&&saved>0?saved*1000:0}
+ if(document.querySelector('#rf110Stopwatch')){rf110StopwatchPaint();return}
+ const main=document.querySelector('main');if(!main)return;
+ const nav=[...main.querySelectorAll('button')].find(b=>/Következő gyakorlat|Edzés befejezése/.test(b.textContent||''));
+ const card=document.createElement('div');card.id='rf110Stopwatch';card.className='card rf110-stopwatch';
+ card.innerHTML=`<div class="rf110-stopwatch-head"><div><strong>Stopper • ${setIndex+1}. sorozat</strong><div class="small muted">Cél: ${esc(exercise.reps||'időre végzett sorozat')}</div></div><div id="rf110StopwatchTime" class="rf110-stopwatch-time">${rf110FormatStopwatch(rf110StopwatchSeconds())}</div></div><div class="rf110-stopwatch-actions"><button id="rf110StopwatchToggle" class="btn" onclick="rf110ToggleStopwatch()">${rf110Stopwatch.running?'Szünet':'Indítás'}</button><button class="btn secondary" onclick="rf110ResetStopwatch()">Nullázás</button></div><p class="small muted">Az eltelt másodperc automatikusan bekerül az aktuális sorozat mezőjébe.</p>`;
+ if(nav?.parentNode)nav.parentNode.insertBefore(card,nav);else main.appendChild(card);rf110StopwatchPaint();
+};
+
+(function rf110Css(){
+ if(document.querySelector?.('#rf110Css'))return;
+ const s=document.createElement('style');s.id='rf110Css';s.textContent=`
+  .rf110-stopwatch{border-radius:18px;border:1px solid var(--accent);background:linear-gradient(180deg,var(--card),var(--card2));padding:14px;margin:14px 0}
+  .rf110-stopwatch-head{display:flex;align-items:center;justify-content:space-between;gap:14px}
+  .rf110-stopwatch-time{font-size:36px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:.04em;color:var(--accent2)}
+  .rf110-stopwatch-actions{display:grid;grid-template-columns:1.35fr 1fr;gap:10px;margin-top:12px}
+  .rf110-stopwatch-actions .btn{min-height:46px}
+  @media(max-width:380px){.rf110-stopwatch-head{align-items:flex-start;flex-direction:column;gap:8px}.rf110-stopwatch-time{font-size:32px;width:100%;text-align:center}}
+ `;document.head?.appendChild?.(s);
+})();
+
+const rf110RenderWorkoutBase=renderWorkout;
+renderWorkout=function(){const r=rf110RenderWorkoutBase();rf110DecorateTimedWorkout();return r};
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&rf110Stopwatch.running)rf110StopwatchPaint()});
+
+rf110InitAutoHealth();
+
+// @endsection trainpilot-110.js
+
+
+// @section trainpilot-120-clean-runtime.js
+
+/* TrainPilot 1.2.0 clean runtime.
+ * The historical source remains available for compatibility helpers, but the live UI no
+ * longer traverses the old shell/render/go wrapper chain. Every route builds its final
+ * screen and applies DOM polish synchronously in the same task before the browser paints.
+ */
+const TP120_VERSION='1.2.0';
+
+// Final shell: build the current TrainPilot header directly instead of transforming old headers.
+shell=function(content){
+ const lang=typeof rf212Lang==='function'?rf212Lang():'hu';
+ let body=String(content||'');
+ if(/<h1>Beállítások<\/h1>|<h1>Settings<\/h1>|<h1>Einstellungen<\/h1>|<h1>Setări<\/h1>/.test(body)&&!body.includes('rf212-language')&&typeof rf212LanguagePanel==='function'){
+  body=body.replace(/(<div class="hero">[\s\S]*?<\/div>)/,`$1${rf212LanguagePanel()}`);
+ }
+ const active=id=>(state.tab===id||(id==='home'&&(state.tab==='stats'||state.tab==='profile')))?'active':'';
+ let html=`<div><div class="top"><div class="rf208-brand-row"><div class="brand">TrainPilot</div><button class="rf208-settings-btn" aria-label="Beállítások" title="Beállítások" onclick="go('settings')">⚙︎</button></div><div class="tag">intelligens edzéstervező</div><div class="tabs tabs6 rf208-tabs"><button class="tab ${active('home')}" onclick="go('home')">Kezdőlap</button><button class="tab ${active('plan')}" onclick="go('plan')">Edzés</button><button class="tab ${active('calendar')}" onclick="go('calendar')">Naptár</button><button class="tab ${active('programs')}" onclick="go('programs')">Programok</button><button class="tab ${active('history')}" onclick="go('history')">Napló</button><button class="tab ${active('health')}" onclick="go('health')">Egészség</button></div></div>${body}${state.session&&state.timer>0?timerHtml():''}</div>`;
+ document.documentElement.lang=lang;
+ if(typeof rf212Translate==='function')html=rf212Translate(html);
+ if(lang==='en'&&typeof rf213ApplyMap==='function'){html=rf213ApplyMap(html,RF213_EN);if(typeof rf213EnglishExerciseCards==='function')html=rf213EnglishExerciseCards(html)}
+ if(lang!=='hu'&&typeof rf214Map==='function'){html=rf214Map(html,RF214_MAPS[lang]||RF214_MAPS.en);if(typeof rf214ExerciseCards==='function')html=rf214ExerciseCards(html,lang)}
+ html=String(html).replaceAll('null/100','—').replaceAll('null ms','—');
+ return html;
+};
+
+// Use the last pure Home HTML builder before later versions started decorating the DOM
+// asynchronously. The same final cards are added synchronously after the root write below.
+if(typeof rf215Home==='function')home=function(){return rf215Home()};
+
+var tp120BindWeightShortcuts=function tp120BindWeightShortcuts(){
+ document.querySelectorAll?.('button,.stat,.card')?.forEach?.(el=>{
+  const txt=String(el.textContent||'').trim();
+  if(/Testsúly napló|Body weight log|Körpergewichtsprotokoll|Jurnal greutate|Legutóbbi testsúly|Latest body weight|Letztes Körpergewicht|Ultima greutate corporală/i.test(txt))el.setAttribute?.('onclick','rf215WeightScreen()');
+ });
+};
+var tp120BindCoach=function tp120BindCoach(){

@@ -1,0 +1,299 @@
+/* Explicit Leave is a durable workout pause; screen lock/background is not. */
+(function(){
+ 'use strict';
+ const id=s=>String(s?.syncId||s?.started||'');
+ let changing=false;
+ const api=()=>window.Capacitor?.isNativePlatform?.()===true?window.Capacitor?.Plugins?.WearSync||window.Capacitor?.registerPlugin?.('WearSync'):null;
+ function revision(session){session.pauseRevision=Math.max(Date.now(),Number(session.pauseRevision||0)+1,Number(db.get('workoutPauseRevision201',0))+1);db.set('workoutPauseRevision201',session.pauseRevision);}
+ function save(session){if(state.session===session)persistDraft();else{const d=db.get('draft',null);if(id(d?.session)!==id(session))throw Error('Workout changed');d.session=session;db.set('draft',d);}}
+ async function pause(session){
+  if(changing||state.session!==session)return false;changing=true;
+  try{
+   if(session.ownershipProtocol193===1&&(session.timerOwner==='watch'||window.TrainPilotOwnership193Core?.pending(session))){save(session);return true;}
+   if(!session.workoutPaused){
+    const rest=window.TrainPilotAutomatic162?.owner?.()?.meta.run,interval=window.TrainPilotIntervals162?.owner?.()?.run;
+    session.pauseTimer201=rest?.running?'rest':interval?.running?'interval':null;
+    session.pausedRestMillis201=Math.max(0,Number(state.restEndAt||0)-Date.now());
+    closeWorkoutInterval(session);session.workoutPaused=true;revision(session);save(session);
+   }
+   if(typeof rf110StopwatchHalt==='function')rf110StopwatchHalt(false);
+   if(typeof tp1481HaltSide==='function')tp1481HaltSide(false);
+   if(typeof tp107StopIndoor==='function')tp107StopIndoor();
+   // Manual GPS totals are recorded before leaving; a new GPS segment is explicitly started after return.
+   if(typeof tp106StopGPS==='function'&&!await tp106StopGPS())return false;
+   const rest=window.TrainPilotAutomatic162?.owner?.()?.meta.run,interval=window.TrainPilotIntervals162?.owner?.()?.run;
+   if(rest?.running&&!await window.TrainPilotAutomatic162.command('pause'))return false;
+   if(interval?.running&&!await window.TrainPilotIntervals162.command('pause'))return false;
+   state.restEndAt=null;state.timer=0;save(session);
+   const bridge=api();if(bridge&&!bridge.setWorkoutPause)throw Error('Workout pause bridge unavailable');
+   if(bridge)await bridge.setWorkoutPause({snapshot:window.TrainPilotWearSync.makeSnapshot()});
+   void window.TrainPilotWearSync?.syncNow?.();return true;
+  }catch(_){window.tp153Toast?.('Az edzésszünet mentése nem sikerült. Próbáld újra.',5000);return false;}
+  finally{changing=false;}
+ }
+ async function resume(session){
+  if(!session?.workoutPaused||state.session!==session)return true;
+  if(session.ownershipProtocol193===1&&(session.timerOwner==='watch'||window.TrainPilotOwnership193Core?.pending(session)))return false;
+  if(session.ownershipAwaitingResume193){
+   const rows=workoutIntervals(session);if(rows.at(-1)&&!rows.at(-1).end){rows.pop();save(session);}
+   if(!await window.TrainPilotOwnership193?.prepareResume(session))return false;
+  }
+  if(!workoutIntervals(session).at(-1)||workoutIntervals(session).at(-1).end)workoutIntervals(session).push({start:new Date().toISOString(),end:null});
+  session.workoutPaused=false;revision(session);save(session);
+  try{
+   if(api())await api().setWorkoutPause({snapshot:window.TrainPilotWearSync.makeSnapshot()});
+   if(session.pauseTimer201==='rest')await window.TrainPilotAutomatic162.command('resume');
+   else if(session.pauseTimer201==='interval')await window.TrainPilotIntervals162.command('resume');
+   else if(session.pausedRestMillis201>0){state.restEndAt=Date.now()+session.pausedRestMillis201;state.timer=Math.ceil(session.pausedRestMillis201/1000);state.timerId=setInterval(tickRest,250);}
+   delete session.pauseTimer201;delete session.pausedRestMillis201;save(session);
+   void window.TrainPilotWearSync?.syncNow?.();return true;
+  }catch(_){
+   session.workoutPaused=true;revision(session);closeWorkoutInterval(session);save(session);
+   // A rejected/lost bridge response may follow a successful native resume. Fence it with a newer pause.
+   try{if(api())await api().setWorkoutPause({snapshot:window.TrainPilotWearSync.makeSnapshot()});}catch(_){}
+   void window.TrainPilotWearSync?.syncNow?.();return false;
+  }
+ }
+ window.TrainPilotWorkoutPause201={pause,resume};
+ window.addEventListener?.('DOMContentLoaded',function protectOwnedDraft201(){
+  const base=resumeDraft;resumeDraft=async function(){
+   const saved=db.get('draft',null)?.session,protect=saved?.ownershipProtocol193===1&&(saved.timerOwner==='watch'||saved.ownershipAwaitingResume193||window.TrainPilotOwnership193Core?.pending(saved));
+   const before=protect?JSON.parse(JSON.stringify(saved)):null,result=await base.apply(this,arguments),s=state.session;
+   if(before&&id(s)===id(before)&&s.timerOwner===before.timerOwner&&s.ownerEpoch193===before.ownerEpoch193&&s.pauseRevision===before.pauseRevision&&s.wearSequence===before.wearSequence){
+    s.activeIntervals=before.activeIntervals;save(s);
+   }
+   if(s?.workoutPaused)await resume(s);return result;
+  };
+ });
+})();
+// @endsection workout-pause-201.js
+
+// @section workout-ownership-193.js
+/* Adopt only native journal transitions. Normal DataItems cannot grant ownership. */
+(function(){
+ 'use strict';
+ const clone=v=>JSON.parse(JSON.stringify(v)),id=s=>String(s?.syncId||s?.started||'');
+ const rank={offered:1,accepted:2,committed:3},fields=['done','reps','weight','leftSeconds','rightSeconds','distanceMeters','actualRir'];
+ function pending(session){return !!session?.handoff193&&session.handoff193.state!=='committed';}
+ function commandAllowed(session,command){
+  if(!session||session.ownershipProtocol193!==1||command?.workoutId!==id(session)||['healthSummary','requestHome','saveWorkoutFeedback'].includes(command.action))return true;
+  return !pending(session)&&Number(command.ownerEpoch193||0)===(Number(session.ownerEpoch193)||0);
+ }
+ function validateSets(own,root){
+  if(!Array.isArray(root.exercises)||root.exercises.length!==own.exercises.length||!Number.isInteger(root.currentExercise)||
+     root.currentExercise<0||root.currentExercise>=root.exercises.length)throw Error('Transferred workout changed');
+  const seen=new Set();
+  root.exercises.forEach((e,i)=>{
+   if(e.id!==own.exercises[i].id||!Array.isArray(e.sets)||e.sets.length!==own.exercises[i].sets.length)throw Error('Transferred workout changed');
+   e.sets.forEach((s,j)=>{
+    if(!s.setId||s.setId!==own.exercises[i].sets[j].setId||seen.has(s.setId)||typeof s.done!=='boolean')throw Error('Transferred set changed');
+    seen.add(s.setId);
+    if(s.actualRir!=null&&s.actualRir!==''&&!/^(?:10|[0-9])$/.test(String(s.actualRir)))throw Error('Invalid transferred RIR');
+    for(const key of fields.slice(1))if(s[key]!=null&&s[key]!==''&&(!Number.isFinite(Number(s[key]))||Number(s[key])<0))throw Error('Invalid transferred value');
+   });
+  });
+ }
+ function resumeWatch(draft,command){
+  const own=draft?.session,root=command?.finalSnapshot,h=own?.handoff193;
+  if(!own||own.ownershipProtocol193!==1||own.timerOwner!=='watch'||pending(own)||command.workoutId!==id(own)||
+     command.ownerEpoch193!==own.ownerEpoch193||root?.workoutId!==id(own)||root.ownershipProtocol193!==1||root.timerOwner!=='watch'||root.ownerEpoch193!==own.ownerEpoch193||
+     (h?root.handoff193?.id!==h.id||root.handoff193?.state!=='committed':!!root.handoff193)||root.workoutPaused!==false||
+     !Number.isSafeInteger(command.pauseRevision)||root.pauseRevision!==command.pauseRevision||!Number.isSafeInteger(command.sequence)||command.sequence<1)
+   throw Error('Invalid watch continuation');
+  if(command.pauseRevision<Number(own.pauseRevision||0))return null;
+  if(command.pauseRevision===Number(own.pauseRevision||0)){if(!own.workoutPaused)return null;throw Error('Conflicting watch continuation');}
+  validateSets(own,root);
+  if(!Array.isArray(root.activeIntervals)||!root.activeIntervals.length||root.activeIntervals.some((row,i)=>
+   !Number.isFinite(Date.parse(row.start))||row.end!=null&&(!Number.isFinite(Date.parse(row.end))||Date.parse(row.end)<Date.parse(row.start))||
+   i<root.activeIntervals.length-1&&row.end==null)||root.activeIntervals.at(-1).end!=null)throw Error('Invalid watch active interval');
+  const next=clone(draft),s=next.session;
+  root.exercises.forEach((e,i)=>e.sets.forEach((v,j)=>{for(const k of fields)if(k in v)s.exercises[i].sets[j][k]=v[k];if(v.done===false)delete s.exercises[i].sets[j].actualRir;}));
+  s.workoutPaused=false;s.pauseRevision=command.pauseRevision;s.activeIntervals=clone(root.activeIntervals);s.pauseTimer201=null;
+  s.wearSequence=Math.max(Number(s.wearSequence)||0,command.sequence);
+  s.watchAutomation162=root.automation?{...clone(root.automation),snapshot:clone(root)}:null;
+  s.automatic162={...s.automatic162,enabled:root.automation?.enabled===true,owner:'watch',watch:s.watchAutomation162,run:null,pending:false};
+  if(root.timerCheckpoint193?.timeLogs193)window.TrainPilotTime162Core.merge(s,root.timerCheckpoint193.timeLogs193);
+  if(root.automation?.timeLog)window.TrainPilotTime162Core.merge(s,{[root.automation.timeLog.key]:root.automation.timeLog});
+  next.current=root.currentExercise;next.restEndAt=null;next.savedAt=new Date().toISOString();return next;
+ }
+ function finalWatch(draft,command){
+  const own=draft?.session,root=command?.finalSnapshot,h=own?.handoff193,finished=Date.parse(command?.finishedAt),started=Date.parse(own?.started);
+  if(!own||own.ownershipProtocol193!==1||own.timerOwner!=='watch'||pending(own)||command?.action!=='finishWorkout'||command.confirmed!==true||
+     command.workoutId!==id(own)||command.ownerEpoch193!==own.ownerEpoch193||root?.workoutId!==id(own)||root.ownershipProtocol193!==1||
+     root.timerOwner!=='watch'||root.ownerEpoch193!==own.ownerEpoch193||(h?root.handoff193?.id!==h.id||root.handoff193?.state!=='committed':!!root.handoff193)||
+     root.workoutPaused!==true||!Number.isSafeInteger(root.pauseRevision)||root.pauseRevision<Number(own.pauseRevision||0)||
+     !Number.isSafeInteger(command.sequence)||command.sequence<1||command.sequence<Number(own.wearSequence||0)||
+     !Number.isFinite(finished)||!Number.isFinite(started)||finished<started||finished>Date.now()+30000)
+   throw Error('Invalid watch completion');
+  validateSets(own,root);
+  if(!Array.isArray(root.activeIntervals)||!root.activeIntervals.length||root.activeIntervals.length>4096||root.activeIntervals.some((row,i)=>{
+   const from=Date.parse(row.start),to=Date.parse(row.end),previous=i?Date.parse(root.activeIntervals[i-1].end):started;
+   return !Number.isFinite(from)||!Number.isFinite(to)||from<previous||to<from||to>finished;
+  }))throw Error('Invalid completed watch intervals');
+  const next=clone(draft),s=next.session;
+  root.exercises.forEach((e,i)=>e.sets.forEach((v,j)=>{for(const k of fields)if(k in v)s.exercises[i].sets[j][k]=v[k];if(v.done===false)delete s.exercises[i].sets[j].actualRir;}));
+  s.workoutPaused=true;s.pauseRevision=root.pauseRevision;s.activeIntervals=clone(root.activeIntervals);s.pauseTimer201=null;
+  s.wearSequence=Math.max(Number(s.wearSequence)||0,command.sequence);delete s.indoorTimer107;delete s.interval162;
+  s.watchAutomation162=root.automation?{...clone(root.automation),snapshot:clone(root)}:null;
+  s.automatic162={...s.automatic162,enabled:root.automation?.enabled===true,owner:'watch',watch:s.watchAutomation162,run:null,pending:false};
+  if(root.timerCheckpoint193?.timeLogs193)window.TrainPilotTime162Core.merge(s,root.timerCheckpoint193.timeLogs193);
+  if(root.automation?.timeLog)window.TrainPilotTime162Core.merge(s,{[root.automation.timeLog.key]:root.automation.timeLog});
+  next.current=root.currentExercise;next.restEndAt=null;next.savedAt=new Date().toISOString();return next;
+ }
+ function merge(draft,root){
+  const own=draft?.session,h=root?.handoff193;
+  if(!own||!h||root.workoutId!==id(own))return null;
+  const epoch=Number(root.ownerEpoch193),local=Number(own.ownerEpoch193)||0;
+  if(root.ownershipProtocol193!==1||h.protocol!==1||!rank[h.state]||!Number.isSafeInteger(epoch)||epoch<0||
+     !Number.isSafeInteger(h.epoch)||h.epoch<1||h.epoch!==epoch+(h.state==='committed'?0:1)||
+     !/^[A-Za-z0-9._:-]{1,128}$/.test(h.id)||!['phone','watch'].includes(h.source)||
+     h.target!==(h.source==='phone'?'watch':'phone')||root.timerOwner!==(h.state==='committed'?h.target:h.source)||root.workoutPaused!==true)
+   throw Error('Invalid ownership checkpoint');
+  if(epoch<local||h.epoch<(own.handoff193?.epoch||0))return null;
+  if(h.epoch===own.handoff193?.epoch&&h.id!==own.handoff193.id)throw Error('Conflicting ownership checkpoint');
+  const applied=own.ownershipApplied193;
+  if(applied?.id===h.id&&applied.epoch===epoch&&rank[applied.state]>=rank[h.state])return null;
+  validateSets(own,root);
+  const next=clone(draft),s=next.session;
+  root.exercises.forEach((e,i)=>e.sets.forEach((v,j)=>{for(const k of fields)if(k in v)s.exercises[i].sets[j][k]=v[k];if(v.done===false)delete s.exercises[i].sets[j].actualRir;}));
+  Object.assign(s,{ownershipProtocol193:1,ownerEpoch193:epoch,handoff193:clone(h),timerOwner:root.timerOwner,
+   workoutPaused:true,pauseRevision:Math.max(Number(s.pauseRevision)||0,Number(root.pauseRevision)||0),
+   ownershipApplied193:{id:h.id,state:h.state,epoch},pausedRestMillis201:Number(root.pausedRestMillis)||0});
+  delete s.indoorTimer107;
+  if(Array.isArray(root.activeIntervals))s.activeIntervals=clone(root.activeIntervals);
+  if(root.timerCheckpoint193)s.timerCheckpoint193=clone(root.timerCheckpoint193);else delete s.timerCheckpoint193;
+  s.pauseTimer201=root.resumeAutomaticOnContinue?(root.timerCheckpoint193?.timer?.restOnly?'rest':'interval'):null;
+  if(root.timerCheckpoint193?.timeLogs193)window.TrainPilotTime162Core.merge(s,root.timerCheckpoint193.timeLogs193);
+  if(root.timerOwner==='watch'){
+   s.ownershipAwaitingResume193=false;
+   s.watchAutomation162=root.automation?{...clone(root.automation),snapshot:clone(root)}:null;
+   s.automatic162={...s.automatic162,enabled:root.automation?.enabled===true,owner:'watch',watch:s.watchAutomation162,run:null,pending:false};
+   delete s.interval162;
+  }else if(h.state==='committed'){
+   // A reverse handoff must import a fresh phone execution generation before any resume.
+   s.ownershipAwaitingResume193=true;s.watchAutomation162=null;
+   s.automatic162={...s.automatic162,owner:'phone',run:null,pending:false,phase:'paused'};
+   delete s.interval162;delete s.phoneExecution162;
+  }
+  next.current=root.currentExercise;next.restEndAt=null;next.savedAt=new Date().toISOString();return next;
+ }
+ let busy=false;
+ const blocked=()=>window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending||window.TrainPilotBoot?.loading;
+ const draft=()=>state.session?{session:state.session,workout:state.workout,current:state.current,restEndAt:state.restEndAt||null}:db.get('draft',null);
+ function commit(value){
+  db.set('draft',value); // Commit before exposing the new owner to controls or publishing it.
+  if(id(state.session)===id(value.session)){
+   const session=state.session,exercises=session.exercises;
+   value.session.exercises.forEach((e,i)=>e.sets.forEach((s,j)=>{Object.assign(exercises[i].sets[j],s);if(!s.done)delete exercises[i].sets[j].actualRir;}));
+   Object.assign(session,value.session,{exercises});
+   for(const key of ['interval162','timerCheckpoint193','phoneExecution162','phoneEdit162','indoorTimer107'])if(!(key in value.session))delete session[key];
+   state.current=value.current;state.restEndAt=null;stopTimer();
+   if(session.timerOwner==='watch'||pending(session))window.TrainPilotOwnership193.releaseManualClocks?.();
+  }
+ }
+ async function sync(){
+  const c=window.Capacitor,api=c?.isNativePlatform?.()===true?(c.Plugins?.WearSync||c.registerPlugin?.('WearSync')):null;
+  if(!api?.ownershipStatus193)return true;
+  if(busy||blocked())return false;busy=true;
+  try{
+   let remote=await api.ownershipStatus193();if(blocked())return false;
+   if(remote?.ownershipProtocol193===1){
+    window.TrainPilotOwnership193.available=true;
+    const own=sessionOrNull();
+    // Only this phone's epoch-zero owner can be upgraded. Existing watch sessions keep their original protocol.
+    if(own&&own.ownershipProtocol193!==1&&(own.timerOwner||'phone')==='phone'&&!own.handoff193&&!own.ownerEpoch193){
+     const value=clone(draft());value.session.ownershipProtocol193=1;value.session.ownerEpoch193=0;value.session.timerOwner='phone';
+     db.set('draft',value);
+     if(state.session===own)Object.assign(own,{ownershipProtocol193:1,ownerEpoch193:0,timerOwner:'phone'});
+    }
+   }
+   const request=remote?.state?.request,s=sessionOrNull();
+   if(remote?.state?.stage==='incoming'&&s?.ownershipProtocol193===1&&request?.workoutId===id(s)&&
+      (s.timerOwner||'phone')==='phone'&&Number(request.epoch)===(Number(s.ownerEpoch193)||0)){
+    // A background WebView or an open editor cannot silently freeze/replace unsaved input.
+    if(state.session!==s||document.hidden||document.activeElement?.matches?.('input,textarea,select')||document.querySelector('dialog[open],[role="dialog"]'))return false;
+    if(window.TrainPilotPhoneExecution162&&!await window.TrainPilotPhoneExecution162.sync())return false;
+    if(!await window.TrainPilotWorkoutPause201.pause(s)||state.session!==s||blocked())return false;
+    if(window.TrainPilotPhoneExecution162&&!await window.TrainPilotPhoneExecution162.sync({prepare:false}))return false;
+    if(state.session!==s||blocked()||id(s)!==request.workoutId)return false;
+    remote=await api.prepareOwnership193({requestId:request.id,snapshot:window.TrainPilotWearSync.makeSnapshot()});
+    if(blocked()||state.session!==s)return false;
+   }
+   const root=remote?.state?.snapshot;
+   if(root?.active===false)return true;
+   const value=merge(draft(),root);if(value)commit(value);
+   return !pending(sessionOrNull());
+  }catch(_){return false;}finally{busy=false;window.TrainPilotOwnership193?.paint?.();window.TrainPilotWearRoutes193?.refresh?.();}
+ }
+ function sameValues(session,frame){
+  return Array.isArray(frame?.exercises)&&frame.exercises.length===session.exercises.length&&frame.exercises.every((e,i)=>
+   e.id===session.exercises[i].id&&Array.isArray(e.sets)&&e.sets.length===session.exercises[i].sets.length&&e.sets.every((set,j)=>{
+    const own=session.exercises[i].sets[j];return set.setId===own.setId&&set.done===own.done&&fields.slice(1).every(k=>String(set[k]??'')===String(own[k]??''));
+   }));
+ }
+ async function prepareResume(session){
+  if(!session?.ownershipAwaitingResume193)return true;
+  const c=window.Capacitor,api=c?.Plugins?.WearSync||c?.registerPlugin?.('WearSync'),clock=c?.Plugins?.IntervalTimer||c?.registerPlugin?.('IntervalTimer');
+  if(busy||blocked()||state.session!==session||document.hidden||pending(session)||session.timerOwner!=='phone'||!api?.preparePhoneResume193||!api?.installPhoneResume193)return false;
+  await window.TrainPilotWearSync.syncNow(); // Publish the same still-paused canonical draft before importing its execution.
+  if(busy||blocked()||state.session!==session)return false;busy=true;
+  try{
+   const prepared=await api.preparePhoneResume193(),frame=prepared?.snapshot,h=session.handoff193;
+   if(blocked()||state.session!==session||frame?.workoutId!==id(session)||frame.ownerEpoch193!==session.ownerEpoch193||!frame.workoutPaused||
+      frame.ownershipImport193?.id!==h?.id||frame.ownershipImport193?.epoch!==session.ownerEpoch193||!Number.isSafeInteger(frame.generation)||frame.generation<1||!sameValues(session,frame))return false;
+   const plan=frame.transition?.plan;
+   if(plan){
+    if(!clock?.armWorkout)return false;
+    await clock.armWorkout({workoutId:frame.workoutId,generation:frame.generation,language:frame.language||rf212Lang()});
+    if(blocked()||state.session!==session)return false;
+   }
+   const result=await api.installPhoneResume193({requestId:h.id,ownerEpoch193:session.ownerEpoch193});
+   if(blocked()||state.session!==session||result?.snapshot?.generation!==frame.generation||!result.snapshot.workoutPaused||!sameValues(session,result.snapshot))return false;
+   const value=clone(draft()),s=value.session;
+   s.phoneExecution162={generation:frame.generation,revision:result.snapshot.executionRevision,sequence:0};
+   delete s.phoneEdit162;s.ownershipAwaitingResume193=false;s.pauseTimer201=null;
+   s.automatic162={...s.automatic162,owner:'phone',run:null,pending:false,phase:'work'};
+   if(plan){
+    const timer=result.timer;if(!timer||timer.key!==plan.key||timer.running||timer.stopped||timer.interrupted)return false;
+    const run={...clone(plan),started:session.started,native:true,elapsedMs:timer.elapsedMs,running:false,stopped:false,interrupted:false,phaseNumber:timer.phaseNumber||0};
+    run.phase=window.TrainPilotInterval162Core.phase(run.steps,run.autoAdvance,run.elapsedMs,run.initialRest||0,!!run.restOnly);
+    if(!run.phase)return false;run.remainingMs=run.phase.remainingMs;
+    if(plan.restOnly){s.automatic162.run=run;s.automatic162.phase='paused';delete s.interval162;}
+    else s.interval162=run;
+    s.pausedRestMillis201=0;
+   }
+   commit(value);return true;
+  }catch(_){return false;}finally{busy=false;}
+ }
+ function sessionOrNull(){return state.session||db.get('draft',null)?.session||null;}
+ function acceptWatchResume(command){
+  try{
+   const value=resumeWatch(draft(),command);if(value){
+    commit(value);
+    if(state.session&&state.tab==='plan'&&!document.activeElement?.matches?.('input,textarea,select')&&!document.querySelector('dialog[open],[role="dialog"]'))renderWorkout();
+   }
+   return true;
+  }catch(_){return false;}
+ }
+ function acceptWatchFinal(command){
+  try{commit(finalWatch(draft(),command));return true;}catch(_){return false;}
+ }
+ window.TrainPilotOwnership193Core={merge,resumeWatch,finalWatch,pending,commandAllowed};
+ window.TrainPilotOwnership193={available:false,sync,prepareResume,acceptWatchResume,acceptWatchFinal,pending:()=>pending(sessionOrNull()),commandAllowed:command=>commandAllowed(sessionOrNull(),command),isReconciling:()=>busy};
+})();
+// @endsection workout-ownership-193.js
+
+// @section workout-ownership-ui-193.js
+(function(){
+ 'use strict';
+ const ownership=window.TrainPilotOwnership193;
+ const words={
+  hu:{title:'Edzés vezérlése',phone:'A telefon vezérli az edzést',watch:'Az óra vezérli az edzést',pending:'Az átadás folyamatban. Az edzés szünetel a visszaigazolásig.',
+   take:'Edzés visszavétele',retry:'Újrapróbálás',resume:'Folytatás telefonon',hint:'Az órán az Edzés vezérlése menüben kérheted az átvételt.',
+   mirror:'A vezérlés az órán érhető el. A telefonos szerkesztéshez vedd vissza az edzést.',paused:'Az edzés szünetel.',saved:'A visszavételi kérés mentve. Az átvétel után külön indíthatod a folytatást.',
+   failed:'A művelet nem fejeződött be. Ellenőrizd az eszközök kapcsolatát, majd próbáld újra.',busy:'Folyamatban…',
+   leaveWatch:'Kilépsz a telefonos nézetből? Az edzés az órán tovább fut.',leavePaused:'Kilépsz a telefonos nézetből? Az edzés az órán szünetben marad.',leavePending:'Kilépsz a nézetből? A mentett átadás folytatódik; az edzés a visszaigazolásig szünetben marad.'},
+  en:{title:'Workout control',phone:'Phone controls the workout',watch:'Watch controls the workout',pending:'Transfer in progress. The workout stays paused until confirmation.',
+   take:'Take back workout',retry:'Retry',resume:'Continue on phone',hint:'Request takeover in Workout control on your watch.',
+   mirror:'Use the controls on your watch. Take back the workout to edit it on your phone.',paused:'The workout is paused.',saved:'Return request saved. Continue explicitly after control returns.',
+   failed:'The operation did not finish. Check the device connection and retry.',busy:'Working…',

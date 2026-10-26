@@ -1,0 +1,201 @@
+ const words={hold:t.hold,increase:t.increase,reps:t.reps,variation:t.variation};
+ let comparison='<p class="small muted">'+esc(t.noExercise)+'</p>';
+ if(sample){
+  const r=sample.result,b=r.baseline||{},a=r.proposed||{};
+  const action=words[r.action]||t.insufficient;
+  const reason=tp197UiReason(r.reasonCode);
+  comparison='<p class="small"><strong>'+esc(t.example)+': '+esc(sample.name)+'</strong></p>'+
+   '<div class="tp197-ui-comparison"><span>'+esc(t.current)+'</span><span>'+esc(t.proposed)+'</span>'+
+   '<small>'+esc(t.sets)+': '+esc(fmt(b.sets))+'</small><small>'+esc(t.sets)+': '+esc(fmt(a.sets))+'</small>'+
+   '<small>'+esc(t.load)+': '+esc(fmt(b.weight))+'</small><small>'+esc(t.load)+': '+esc(fmt(a.weight))+'</small></div>'+
+   '<p class="small">'+esc(t.action)+': '+esc(action)+'</p>'+
+   '<p class="small tp197-preview-reason"><strong>'+esc(({hu:'Miért?',en:'Why?',de:'Warum?',ro:'De ce?'})[typeof rf212Lang==='function'?rf212Lang():'hu']||'Miért?')+'</strong> '+esc(reason)+'</p>';
+ }
+ return '<div class="tp197-ui-preview" role="status"><strong>'+esc(t.preview)+'</strong>'+
+  '<p class="small muted">'+esc(styleInfo)+' '+esc(modeInfo)+'</p>'+comparison+'</div>';
+};
+var tp197UiPanel=function(scope,pid,expanded=false){
+ if(scope==="program"&&(!pid||!programById(pid)))return "";
+ const t=tp197UiText(),choice=tp197UiChoice(scope,pid),key=tp197UiKey(scope,pid),id=scope==="program"?"tp197-mode-program":"tp197-mode-global";
+ const options=(values,selected)=>values.map(([value,label])=>'<option value="'+value+'"'+(selected===value?' selected':'')+'>'+esc(label)+'</option>').join("");
+ const scopeArg=scope==="program"?"'program',"+esc(JSON.stringify(String(pid))):"'global',null";
+ const picker=(field,short,values,selected)=>{
+  const pickerId=id+'-'+short,fieldLabel=field==='trainingStyle'?t.style:t.progress;
+  // Shared floating dropdown from Calendar. Do not use the Android native or a separate inline menu.
+  return '<select class="field tp197-mode-select" id="'+pickerId+'" aria-label="'+esc(fieldLabel)+'" onchange="tp197UiSet('+scopeArg+',\''+field+'\',this.value)">'+options(values,selected)+'</select>';
+ };
+ return '<details class="card tp197-mode-panel" id="'+id+'" data-tp197-scope="'+scope+'" '+(expanded?'open':'')+'>'+
+  '<summary><strong>'+esc(t.title)+'</strong><span class="small muted">'+esc(scope==="program"?t.program:t.global)+'</span><span class="tp197-panel-chevron" aria-hidden="true">⌄</span></summary>'+
+  '<div class="tp197-ui-body"><label>'+esc(t.style)+'</label>'+
+  picker('trainingStyle','style',[["normal",t.normal],["hit",t.hit]],choice.trainingStyle)+
+  '<label>'+esc(t.progress)+'</label>'+
+  picker('progressionMode','progress',[["double",t.double],["linear",t.linear],["rir",t.rir]],choice.progressionMode)+
+  tp197UiPreview(scope,pid,choice)+
+  '<p class="small muted tp197-ui-notice">'+esc(t.notice)+'</p>'+
+  '<button type="button" class="btn secondary tp197-ui-reset" onclick="tp197UiReset('+scopeArg+')">'+esc(t.restore)+'</button></div></details>';
+};
+var tp197UiSet=function(scope,pid,field,value){
+ if(!["global","program"].includes(scope)||field!=="trainingStyle"&&field!=="progressionMode")return false;
+ if(scope==="program"&&(!pid||!programById(pid)))return false;
+ if(field==="trainingStyle"&&!["normal","hit"].includes(value))return false;
+ if(field==="progressionMode"&&!["double","linear","rir"].includes(value))return false;
+ const key=tp197UiKey(scope,pid),draft=tp197UiChoice(scope,pid);
+ tp197UiPending[key]={...draft,[field]:value};
+ tp197UiRefresh(scope,pid);
+ return true;
+};
+// Mode changes update only the panel body, not the outer workout/settings view.
+var tp197UiRefresh=function(scope,pid){
+ const id=scope==="program"?"tp197-mode-program":"tp197-mode-global",panel=document.getElementById(id);
+ if(!panel)return;
+ const container=document.createElement('div');
+ container.innerHTML=tp197UiPanel(scope,pid,panel.open);
+ const next=container.firstElementChild,body=panel.querySelector('.tp197-ui-body'),updated=next?.querySelector('.tp197-ui-body');
+ if(body&&updated)body.innerHTML=updated.innerHTML;
+ else if(next)panel.replaceWith(next);
+ // Newly inserted selects must get Calendar's shared floating picker.
+ if(typeof rf260EnhanceSelects==='function')rf260EnhanceSelects();
+};
+var tp197UiChoose=function(scope,pid,field,value){
+ return tp197UiSet(scope,pid,field,value);
+};
+var tp197UiReset=function(scope,pid){delete tp197UiPending[tp197UiKey(scope,pid)];tp197UiRefresh(scope,pid);};
+const tp197BaseSettings=settingsScreen;
+settingsScreen=function(){
+ const html=String(tp197BaseSettings.apply(this,arguments)),anchor='<div class="setting tp1511-card">';
+ // Default selection stays in Settings, but is discoverable near the top instead of below the backup/profile cards.
+ return html.includes(anchor)?html.replace(anchor,tp197UiPanel("global",null)+anchor):html.replace('</main>',tp197UiPanel("global",null)+'</main>');
+};
+const tp197BaseTrainingPanel=tp1511TrainingPanel;
+tp1511TrainingPanel=function(){
+ const html=String(tp197BaseTrainingPanel.apply(this,arguments)),pid=activeProgram()?.id;
+ if(!pid||!html.includes('<div class="tp1511-training-body">'))return html;
+ // Place the program-specific controls within Workout settings, not as a separate card above Quick workout.
+ return html.replace('<div class="tp1511-training-body">','<div class="tp1511-training-body">'+tp197UiPanel("program",pid,true));
+};
+const tp197Css=document.createElement("style");tp197Css.id="tp197ModeUiStyle";
+tp197Css.textContent='.tp197-preview-reason{padding-top:4px;border-top:1px solid var(--line)}.tp1511-training-body>.tp197-mode-panel{margin:0 0 10px;padding:0!important}.tp197-mode-panel{box-sizing:border-box;max-width:100%;min-width:0;margin:10px 0;padding:0!important}.tp197-mode-panel>summary{box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:6px;min-height:46px;padding:7px 10px;list-style:none;font-size:13px;line-height:1.25}.tp197-mode-panel:not([open])>summary>.small{display:none}.tp197-mode-panel>summary>.tp197-panel-chevron{flex-shrink:0}.tp197-mode-panel>summary::-webkit-details-marker,.tp197-choice>summary::-webkit-details-marker{display:none}.tp197-mode-panel>summary strong{flex:1;min-width:0;overflow-wrap:anywhere}.tp197-mode-panel>summary .small{font-size:12px;flex:0 1 auto;text-align:right}.tp197-panel-chevron,.tp197-choice-chevron{font-size:22px;color:var(--accent);display:inline-block;transition:transform .15s;line-height:1}.tp197-mode-panel[open]>summary .tp197-panel-chevron,.tp197-choice[open]>summary .tp197-choice-chevron{transform:rotate(180deg)}.tp197-ui-body{display:grid;gap:8px;min-width:0;padding:8px 10px 10px}.tp197-ui-body label{font-size:13px;font-weight:700}.tp197-ui-body>.tp-select{min-width:0;width:100%}.tp197-choice{border:1px solid var(--line);border-radius:12px;background:#10141c;min-width:0}.tp197-choice>summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px;min-height:46px;font-weight:650}.tp197-choice>summary:focus-visible,.tp197-choice-option:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.tp197-choice-label{min-width:0;overflow-wrap:anywhere}.tp197-choice-options{display:grid;gap:4px;padding:4px 6px 7px;border-top:1px solid var(--line)}.tp197-choice-option{background:transparent;color:var(--text);border:0;border-radius:9px;text-align:left;padding:11px 9px;min-height:44px;font:inherit;display:flex;justify-content:space-between;align-items:center;gap:7px}.tp197-choice-option.is-selected{background:var(--card2);color:var(--accent)}.tp197-ui-preview{min-width:0;padding:11px;border-radius:12px;border:1px solid var(--line);background:var(--card2)}.tp197-ui-preview p{margin:6px 0;overflow-wrap:anywhere}.tp197-ui-comparison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px}.tp197-ui-comparison>*{min-width:0;overflow-wrap:anywhere}.tp197-ui-comparison>span{font-weight:700;font-size:12px}.tp197-ui-reset{min-height:44px;width:100%}.tp197-ui-notice{line-height:1.45}.tp1511-training-body .tp1511-prog{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}.tp1511-training-body .tp1511-prog>label{display:block;min-width:0;padding:8px;border-radius:11px;border:1px solid var(--line);background:var(--card2);font-size:12px;line-height:1.3;overflow-wrap:anywhere}.tp1511-training-body .tp1511-prog input{box-sizing:border-box;width:100%;min-width:0;margin-top:6px;padding:8px;font-size:16px;min-height:42px}';
+document.head.appendChild(tp197Css);
+// @endsection training-modes-ui-197.js
+
+// @section training-mode-confirm-197.js
+/* #197 step 5/7: two-stage approval, safe persistence and one-step undo.
+ * Separate from the canonical app.js section to avoid changing legacy runtime logic.
+ * The Coach continues to use preview-only #197 recommendations until step 6/7. */
+// These handlers are assigned in strict mode; declare the globals before binding them.
+var tp197UiCancel,tp197UiRequestSave,tp197UiApprove,tp197UiUndo;
+(function(){
+ 'use strict';
+ if(typeof tp197UiPanel!=='function'||typeof tp197UiChoice!=='function')return;
+ const words={
+  hu:{save:'Mentés',cancel:'Mégse',approve:'Jóváhagyom a módváltást',undo:'Utolsó módváltás visszavonása',question:'Biztosan mented ezt az edzésmódot? A régi napló és az aktív edzés változatlan marad.',notice:'A választás csak külön jóváhagyás után mentődik. A Coach nem módosít automatikusan súlyt vagy sorozatot.',active:'Aktív edzés közben nem válthatsz módot. Fejezd be az edzést, majd próbáld újra.',stale:'A beállítás időközben megváltozott. Ellenőrizd újra az előnézetet.',error:'A módváltás nem menthető. Az eddigi adatok változatlanok.',saved:'Mód elmentve; a napló és az aktív edzés nem változott.',reverted:'Az előző mód visszaállítva.',noUndo:'Nincs visszavonható mentés.'},
+  en:{save:'Save',cancel:'Cancel',approve:'Confirm mode change',undo:'Undo last mode change',question:'Save this training mode? Workout history and active sessions stay unchanged.',notice:'Selection is saved only after explicit confirmation. Coach never adjusts load or sets automatically.',active:'Cannot change modes during an active workout. Finish the workout and try again.',stale:'Settings changed in the meantime. Review the preview again.',error:'Could not save the mode change. Existing data are unchanged.',saved:'Mode saved; history and active workout unchanged.',reverted:'Previous mode restored.',noUndo:'No saved change to undo.'},
+  de:{save:'Speichern',cancel:'Abbrechen',approve:'Moduswechsel bestätigen',undo:'Letzten Moduswechsel rückgängig machen',question:'Trainingsmodus speichern? Verlauf und aktives Training bleiben unverändert.',notice:'Die Auswahl wird erst nach ausdrücklicher Bestätigung gespeichert. Coach ändert keine Last oder Sätze automatisch.',active:'Während eines aktiven Trainings ist kein Moduswechsel möglich.',stale:'Die Einstellungen wurden geändert. Vorschau erneut prüfen.',error:'Moduswechsel konnte nicht gespeichert werden. Bestehende Daten bleiben unverändert.',saved:'Modus gespeichert; Trainingsverlauf unverändert.',reverted:'Vorheriger Modus wiederhergestellt.',noUndo:'Keine Änderung zum Rückgängigmachen.'},
+  ro:{save:'Salvează',cancel:'Anulează',approve:'Confirmă schimbarea modului',undo:'Anulează ultima schimbare',question:'Salvezi acest mod? Istoricul și antrenamentul activ rămân neschimbate.',notice:'Opțiunea se salvează doar după confirmarea explicită. Coach nu modifică automat greutăți sau serii.',active:'Nu poți schimba modul în timpul unui antrenament activ.',stale:'Setările s-au schimbat între timp. Verifică din nou previzualizarea.',error:'Schimbarea nu a putut fi salvată. Datele existente nu s-au modificat.',saved:'Mod salvat; istoricul nu s-a modificat.',reverted:'Modul anterior a fost restabilit.',noUndo:'Nu există schimbări de anulat.'}
+ };
+ const approvals=Object.create(null),messages=Object.create(null);
+ const textFor=()=>words[typeof rf212Lang==='function'?rf212Lang():'hu']||words.en;
+ const valid=x=>!!x&&['normal','hit'].includes(x.trainingStyle)&&['double','linear','rir'].includes(x.progressionMode);
+ const clone=x=>x===undefined?null:JSON.parse(JSON.stringify(x));
+ const modeState=()=>settings()?.trainingModes197||null;
+ const snapshot=()=>JSON.stringify(modeState());
+ const isActive=()=>typeof state!=='undefined'&&!!state?.session;
+ const scopeOk=(scope,pid)=>scope==='global'||scope==='program'&&typeof pid==='string'&&pid.length>0&&pid.length<256&&typeof programById==='function'&&!!programById(pid)&&typeof activeProgram==='function'&&activeProgram()?.id===pid;
+ const k=(scope,pid)=>tp197UiKey(scope,pid);
+ const invalidate=(scope,pid)=>{delete approvals[k(scope,pid)];delete messages[k(scope,pid)];};
+ const alertFor=(scope,pid,name)=>{messages[k(scope,pid)]=name;tp197UiRefresh(scope,pid);return false;};
+ const originalSet=tp197UiSet;
+ tp197UiSet=function(scope,pid,field,value){invalidate(scope,pid);return originalSet(scope,pid,field,value);};
+ tp197UiCancel=function(scope,pid){
+  if(!scopeOk(scope,pid))return false;
+  invalidate(scope,pid);delete tp197UiPending[k(scope,pid)];tp197UiRefresh(scope,pid);
+  const panel=document.getElementById?.(scope==='program'?'tp197-mode-program':'tp197-mode-global');
+  if(panel){panel.open=false;panel.querySelector('summary')?.focus({preventScroll:true});}
+  return true;
+ };
+ tp197UiRequestSave=function(scope,pid){
+  if(!scopeOk(scope,pid))return false;
+  if(isActive())return alertFor(scope,pid,'active');
+  const choice=tp197UiChoice(scope,pid);
+  if(!valid(choice))return alertFor(scope,pid,'error');
+  approvals[k(scope,pid)]={snapshot:snapshot(),choice:clone(choice)};
+  delete messages[k(scope,pid)];
+  tp197UiRefresh(scope,pid);return true;
+ };
+ tp197UiApprove=function(scope,pid){
+  if(!scopeOk(scope,pid))return false;
+  if(isActive())return alertFor(scope,pid,'active');
+  const key=k(scope,pid),approved=approvals[key],choice=tp197UiChoice(scope,pid);
+  if(!approved||snapshot()!==approved.snapshot||!valid(choice)||
+     JSON.stringify(choice)!==JSON.stringify(approved.choice)){
+   delete approvals[key];return alertFor(scope,pid,'stale');
+  }
+  try{
+   const old=clone(modeState()),previous=old&&typeof old==='object'?clone(old):null;
+   if(previous)delete previous.undo; // bounded single-step undo, no recursive snapshots
+   const base=old&&typeof old==='object'&&old.schemaVersion===1?old:{};
+   const defaults=valid(base.defaults)?clone(base.defaults):{trainingStyle:'normal',progressionMode:'double'};
+   const byProgram=Object.assign(Object.create(null),base.byProgram&&typeof base.byProgram==='object'?base.byProgram:{});
+   const updatedAt=new Date().toISOString();
+   const next={
+    ...base,schemaVersion:1,
+    defaults:scope==='global'?{trainingStyle:choice.trainingStyle,progressionMode:choice.progressionMode}:defaults,
+    explicitChoice:scope==='global'?true:base.explicitChoice===true,
+    byProgram,
+    revision:Math.max(0,Number.isSafeInteger(base.revision)?base.revision:0)+1,
+    updatedAt,
+    undo:{scope:key,previous}
+   };
+   if(scope==='program')byProgram[pid]={trainingStyle:choice.trainingStyle,progressionMode:choice.progressionMode,explicitChoice:true,updatedAt};
+   // Single settings write; never touch program recipes, history, session/draft or Wear.
+   if(snapshot()!==approved.snapshot||isActive())return alertFor(scope,pid,'stale');
+   db.set('settings',{...settings(),trainingModes197:next});
+   delete approvals[key];delete tp197UiPending[key];
+   messages[key]='saved';tp197UiRefresh(scope,pid);return true;
+  }catch(_){return alertFor(scope,pid,'error');}
+ };
+ tp197UiUndo=function(scope,pid){
+  if(!scopeOk(scope,pid))return false;
+  if(isActive())return alertFor(scope,pid,'active');
+  const current=modeState(),key=k(scope,pid);
+  if(!current||current.undo?.scope!==key||!Object.prototype.hasOwnProperty.call(current.undo,'previous'))return alertFor(scope,pid,'noUndo');
+  try{
+   const next={...settings()},previous=clone(current.undo.previous);
+   if(previous===null)delete next.trainingModes197;
+   else{delete previous.undo;next.trainingModes197=previous;}
+   if(isActive()||snapshot()!==JSON.stringify(current))return alertFor(scope,pid,'stale');
+   db.set('settings',next);
+   invalidate(scope,pid);delete tp197UiPending[key];messages[key]='reverted';
+   tp197UiRefresh(scope,pid);return true;
+  }catch(_){return alertFor(scope,pid,'error');}
+ };
+ const oldPanel=tp197UiPanel;
+ tp197UiPanel=function(scope,pid,expanded){
+  let html=oldPanel(scope,pid,expanded);
+  if(!html)return html;
+  const t=textFor(),key=k(scope,pid),arg=scope==='program'?"'program',"+esc(JSON.stringify(String(pid))):"'global',null";
+  const button=(label,fn,extra='')=>'<button type="button" class="btn '+extra+'" onclick="'+fn+'('+arg+')">'+esc(label)+'</button>';
+  const approved=approvals[key],undo=modeState()?.undo?.scope===key;
+  const controls=approved
+   ?'<div class="tp197-confirm" role="group" aria-label="'+esc(t.question)+'"><p class="small">'+esc(t.question)+'</p>'+button(t.approve,'tp197UiApprove')+button(t.cancel,'tp197UiCancel','secondary')+'</div>'
+   :'<div class="tp197-actions">'+button(t.save,'tp197UiRequestSave')+button(t.cancel,'tp197UiCancel','secondary')+(undo?button(t.undo,'tp197UiUndo','secondary'):'')+'</div>';
+  const message=messages[key]?'<p class="small tp197-status" role="status">'+esc(t[messages[key]]||t.error)+'</p>':'';
+  html=html.replace(/<p class="small muted tp197-ui-notice">[\s\S]*?<\/p>/,
+      '<p class="small muted tp197-ui-notice">'+esc(t.notice)+'</p>');
+  return html.replace(/<button type="button" class="btn secondary tp197-ui-reset"[^>]*>[\s\S]*?<\/button>/,
+      controls+message);
+ };
+ const css=document.createElement('style');
+ css.id='tp197ConfirmStyle';
+ css.textContent='.tp197-actions,.tp197-confirm{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;min-width:0}.tp197-actions button,.tp197-confirm button{min-width:0;min-height:44px;white-space:normal;overflow-wrap:anywhere}.tp197-actions button:last-child:nth-child(3){grid-column:span 2}.tp197-confirm p{grid-column:span 2;margin:2px 0 8px}.tp197-confirm{padding:12px;border:1px solid var(--line);border-radius:12px}.tp197-status{overflow-wrap:anywhere}';
+ document.head.appendChild(css);
+})();
+// @endsection training-mode-confirm-197.js
+
+// @section training-coach-197.js
+/* #197 step 6: explanatory Coach recommendations. Never modify a session from
+ * a suggestion; load changes require a second, explicit approval action. */
+var TP197_COACH_I18N={
+ hu:{title:'Coach • progresszió',preview:'Javaslat, nincs alkalmazva',hold:'Súly tartása',increase:'Kis súlyemelés',reps:'Célismétlés növelése',variation:'Nehezebb gyakorlatváltozat',mode:'Választott módszer',history:'Korábbi alkalmak',reason:'Indok',current:'Korábbi súly',proposed:'Javasolt súly',sets:'Javasolt munkasorozat',reptarget:'Javasolt ismétlések',action:'Javaslat ellenőrzése',approve:'Jóváhagyom a súly módosítását',cancel:'Mégse',done:'A javasolt súly már be van állítva.',blocked:'Edzés közben megváltozott az állapot, vagy az óra vezérli. Nincs módosítás.',notice:'Az előző azonos programnap súlya és ismétlése szerkeszthető alapérték. A teljesítést és a RIR-t most rögzítsd; a Coach-javaslat külön jóváhagyható.',reasonMap:{'pain':'Fájdalomjelzés: nincs emelés','low-readiness':'Gyenge regeneráció: nincs emelés','high-effort':'Túl nehéz előző edzés','incomplete':'Hiányosan teljesített előzmény','rir-feedback-missing':'Nincs rögzített tényleges RIR','insufficient-history':'Még kevés megfelelő edzéselőzmény','double-stable-top':'Három stabil felső cél teljesítve','linear-stable-performance':'Két stabil szabályos edzés','rir-stable-reserve':'Tartósan nagyobb tényleges RIR','double-next-repetition':'Ismétlések fokozatos emelése','non-strength-activity':'Távolsági/időalapú gyakorlatnál nincs súlyjavaslat'}},
+ en:{title:'Coach • progression',preview:'Suggestion, not applied',hold:'Hold load',increase:'Small load increase',reps:'Increase repetition target',variation:'Harder exercise variation',mode:'Selected method',history:'Recent workouts',reason:'Why',current:'Previous load',proposed:'Suggested load',sets:'Suggested working sets',reptarget:'Suggested repetitions',action:'Review suggestion',approve:'Confirm load change',cancel:'Cancel',done:'The proposed load is already set.',blocked:'Workout state changed or the watch is in control. Nothing was modified.',notice:'The last matching program day provides editable weight and rep defaults. Record completion and RIR for today; Coach suggestions require approval.',reasonMap:{'pain':'Pain feedback: do not increase','low-readiness':'Poor recovery: do not increase','high-effort':'Previous effort too high','incomplete':'Incomplete prior workout','rir-feedback-missing':'Actual RIR not recorded','insufficient-history':'Not enough suitable history','double-stable-top':'Three stable top-range completions','linear-stable-performance':'Two stable successful workouts','rir-stable-reserve':'Consistently larger actual RIR','double-next-repetition':'Increase repetitions gradually','non-strength-activity':'No weight change for distance or timed activities'}},
+ de:{title:'Coach • Progression',preview:'Vorschlag, nicht übernommen',hold:'Gewicht halten',increase:'Kleine Gewichtserhöhung',reps:'Wiederholungsziel erhöhen',variation:'Schwerere Übungsvariante',mode:'Gewählte Methode',history:'Frühere Einheiten',reason:'Begründung',current:'Bisheriges Gewicht',proposed:'Vorgeschlagenes Gewicht',sets:'Empfohlene Arbeitssätze',reptarget:'Empfohlene Wiederholungen',action:'Vorschlag prüfen',approve:'Gewichtsänderung bestätigen',cancel:'Abbrechen',done:'Das vorgeschlagene Gewicht ist bereits gesetzt.',blocked:'Trainingszustand geändert oder Uhr steuert. Nichts geändert.',notice:'Gewicht und Wiederholungen des letzten gleichen Programmtags sind bearbeitbare Vorgaben. Abschluss und RIR werden neu erfasst; Coach-Vorschläge benötigen Bestätigung.',reasonMap:{'pain':'Schmerzen: nicht erhöhen','low-readiness':'Schwache Regeneration','high-effort':'Zu hohe letzte Belastung','incomplete':'Unvollständige Vorleistung','rir-feedback-missing':'Tatsächlicher RIR fehlt','insufficient-history':'Noch zu wenig Verlauf','double-stable-top':'Drei stabile obere Ziele','linear-stable-performance':'Zwei stabile Einheiten','rir-stable-reserve':'Stabil größere RIR-Reserve','double-next-repetition':'Wiederholungen langsam steigern','non-strength-activity':'Kein Gewicht für Distanz- und Zeitaktivität'}},

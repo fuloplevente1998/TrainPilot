@@ -1,0 +1,154 @@
+  const nw=tp149FormatNumber(next,{maximumFractionDigits:2});
+  if(stableTop)return {action:'increase',weight:next,autoApply:true,target:target,historyCount:recent.length,text:tp149T('progress.stableTop',{count:Math.min(3,sameLoad.length),weight:nw,unit:unit})};
+  return {action:'increase',weight:next,autoApply:false,target:target,historyCount:recent.length,text:tp149T('progress.hitTop',{over:latest.overTop?tp149T('progress.over'):'',weight:nw,unit:unit})};
+ }
+ if(latest.reps.length)return {action:'reps',weight:base,autoApply:false,target:target,historyCount:recent.length,text:tp149T('progress.repsLoad',{weight:fw,unit:unit,next:tp149ProgressionNext(latest.reps,target)})};
+ return {action:'hold',weight:base,autoApply:false,target:target,historyCount:recent.length,text:tp149T('progress.holdLoad',{weight:fw,unit:unit})};
+};
+
+rf152FeedbackHtml=function(e){
+ rf232Css();
+ const r=rf152Recommendation(e.id,e),sel=e.effort||'',t=rf232L(),count=Number(r.historyCount)||0,target=r.target;
+ const scale=RF232_EFFORT_KEYS.map(function(k,i){return '<button class="btn '+(sel===k?'':'secondary')+'" onclick="rf152SetEffort(\''+k+'\')"><span class="n">'+(i+1)+'</span><span class="lbl">'+esc(t[k])+'</span></button>';}).join('');
+ const meta=target?'<div class="small muted" style="margin-top:6px">'+esc(tp149T('workout.target'))+': '+esc(target.reps||target.kind)+' • '+esc(tp149T('progress.history',{count:count}))+'</div>':'';
+ return '<div class="card" id="rf152Feedback"><strong>'+esc(tp149T('progress.title'))+'</strong><p class="small muted" style="margin:6px 0 0">'+esc(tp149T('progress.goalNote'))+'</p><p class="small muted">'+esc(r.text)+'</p>'+meta+'<div class="small" style="margin:10px 0 8px">'+esc(t.prompt)+'</div><div class="rf232-effort">'+scale+'</div><button class="btn '+(sel==='pain'?'':'secondary')+' block rf232-pain" onclick="rf152SetEffort(\'pain\')">'+esc(t.pain)+'</button></div>';
+};
+
+timerHtml=function(){
+ return '<div class="timer"><strong id="tv">'+tstr(state.timer)+'</strong><div class="muted" style="flex:1">'+esc(tp149T('workout.rest'))+'</div><button class="btn secondary" onclick="skipTimer()">'+esc(tp149T('workout.skipRest'))+'</button></div>';
+};
+
+rf110StopwatchPaint=function(){
+ const sec=rf110StopwatchSeconds(),display=document.querySelector('#rf110StopwatchTime'),toggle=document.querySelector('#rf110StopwatchToggle'),status=document.querySelector('#rf142StopwatchStatus');
+ if(display)display.textContent=rf110FormatStopwatch(sec);
+ if(toggle)toggle.textContent=rf110Stopwatch.running?tp149T('stopwatch.pauseSave'):(sec>0?tp149T('stopwatch.resume'):tp149T('stopwatch.start'));
+ if(status){
+  const setNo=Math.max(1,(Number(rf110Stopwatch.setIndex)||0)+1);
+  status.textContent=rf110Stopwatch.running?tp149T('stopwatch.running',{set:setNo,sec:sec}):sec>0?tp149T('stopwatch.saved',{set:setNo,sec:sec}):tp149T('stopwatch.ready');
+ }
+ if(sec!==rf110Stopwatch.lastSecond){rf110Stopwatch.lastSecond=sec;rf110StopwatchPersist(sec);}
+};
+
+rf110DecorateTimedWorkout=function(){
+ if(!state.session)return rf110StopwatchHalt(true);
+ const sessionExercise=state.session.exercises?.[state.current],exercise=sessionExercise?byId(sessionExercise.id):null;
+ const timed=String(sessionExercise?.repUnit||exercise?.repUnit||exercise?.reps||'').includes('mp');
+ if(!sessionExercise||!exercise||!timed)return rf110StopwatchHalt(true);
+ const setIndex=sessionExercise.sets.findIndex(function(s){return !s.done;});if(setIndex<0)return rf110StopwatchHalt(true);
+ const key=String(state.session.started)+'|'+state.current+'|'+setIndex;
+ if(rf110Stopwatch.key!==key){rf110StopwatchHalt(true);rf110Stopwatch.key=key;rf110Stopwatch.setIndex=setIndex;const saved=Number(sessionExercise.sets[setIndex].reps);rf110Stopwatch.elapsedMs=Number.isFinite(saved)&&saved>0?saved*1000:0;}
+ if(document.querySelector('#rf110Stopwatch')){rf110StopwatchPaint();return;}
+ const main=document.querySelector('main');if(!main)return;
+ const firstRow=main.querySelector('.row'),nav=main.querySelector('[data-tp-workout-next]');
+ const card=document.createElement('div');card.id='rf110Stopwatch';card.className='card rf110-stopwatch rf142-stopwatch-top';
+ card.innerHTML='<div class="rf110-stopwatch-head"><div><strong>'+esc(tp149T('stopwatch.title',{set:setIndex+1}))+'</strong><div class="small muted">'+esc(tp149T('workout.target'))+': '+esc(exercise.reps||tp149T('stopwatch.timedTarget'))+'</div></div><div id="rf110StopwatchTime" class="rf110-stopwatch-time">'+rf110FormatStopwatch(rf110StopwatchSeconds())+'</div></div><div class="rf110-stopwatch-actions"><button id="rf110StopwatchToggle" class="btn" onclick="rf110ToggleStopwatch()">'+esc(rf110Stopwatch.running?tp149T('stopwatch.pauseSave'):tp149T('stopwatch.start'))+'</button><button class="btn secondary" onclick="rf110ResetStopwatch()">'+esc(tp149T('stopwatch.reset'))+'</button></div><p id="rf142StopwatchStatus" class="small muted">'+esc(tp149T('stopwatch.help'))+'</p>';
+ if(firstRow?.parentNode)firstRow.parentNode.insertBefore(card,firstRow);else if(nav?.parentNode)nav.parentNode.insertBefore(card,nav);else main.appendChild(card);
+ rf110StopwatchPaint();
+};
+
+demoCard=function(id){
+ const d=demoInfo(id);if(!d)return '';
+ return '<div class="video-card"><span class="badge">'+esc(tp149T('video.badge'))+'</span><p class="small muted">'+esc(d.credit)+' • '+esc(tp149T(d.provider?'video.player':'video.sourcePage'))+'</p><button class="btn block" onclick="openDemo(\''+esc(id)+'\')">'+esc(tp149T(d.provider?'video.openDemo':'video.openBrowser'))+'</button></div>';
+};
+motionDemo=function(id){return demoCard(id);};
+
+var tp149WorkoutTitle=function tp149WorkoutTitle(){
+ const p=state.session?.programId?programById(state.session.programId):activeProgram(),d=p?programDay(p,state.session?.dayId||state.workout):null;
+ if(p&&d)return tp149ProgramMeta(p,'name')+' • '+tp149ProgramDayName(p,d);
+ return String(state.session?.programName||state.workout||'TrainPilot');
+};
+
+renderWorkout=function(){
+ if(!state.session)return;
+ persistDraft();
+ const i=Math.max(0,Math.min(Number(state.current)||0,state.session.exercises.length-1)),se=state.session.exercises[i],e=byId(se.id)||se,total=state.session.exercises.length,pct=Math.round((i/Math.max(1,total))*100);
+ const name=e?.custom?String(e.hu||e.en||e.id):tp149ExerciseName(e),note=e?.custom?String(e.notes||''):tp149ExerciseNote(e),target=se.prescription?.reps||se.progressionPrescription?.reps||e.reps||'',sets=se.sets||[];
+ const rows=sets.map(function(s,si){
+  const load=e.loadType==='bodyweight'?'<span class="small muted">'+esc(tp149T('workout.bodyweight'))+'</span>':'<label class="small">'+esc(tp149LoadLabel(e.loadType))+'<input class="field" aria-label="'+esc(tp149LoadLabel(e.loadType))+'" inputmode="decimal" value="'+esc(s.weight??'')+'" oninput="upd('+i+','+si+',\'weight\',this.value)"></label>';
+  const unit=tp149RepUnit(e.repUnit);
+  return '<div class="row"><div class="num">'+(si+1)+'</div>'+load+'<label class="small">'+esc(unit)+'<input class="field" inputmode="numeric" aria-label="'+esc(unit)+'" placeholder="'+esc(target)+'" value="'+esc(s.reps??'')+'" oninput="upd('+i+','+si+',\'reps\',this.value)"></label><button class="check '+(s.done?'done':'')+'" onclick="toggleSet('+i+','+si+')">'+(s.done?'✓':'OK')+'</button></div>';
+ }).join('');
+ const body='<main class="tp149-workout"><div class="hero"><span class="badge">'+esc(tp149WorkoutTitle())+'</span><h1>'+(i+1)+'/'+total+'</h1><div class="muted">'+esc(name)+'</div><div class="progress"><div style="width:'+pct+'%"></div></div></div><div class="card detail"><h2>'+esc(name)+'</h2><div class="meta">'+esc(tp149T('workout.target'))+': '+sets.length+' × '+esc(target)+'</div>'+motionDemo(e.id)+(note?'<p class="note">'+esc(note)+'</p>':'')+'</div><div class="section">'+esc(tp149T('workout.sets'))+'</div>'+rows+'<br><button class="btn block" data-tp-workout-next onclick="nextExercise()">'+esc(tp149T(i===total-1?'workout.finish':'workout.next'))+'</button><br><br><button class="btn secondary block" onclick="prevExercise()" '+(i===0?'disabled':'')+'>'+esc(tp149T('workout.previous'))+'</button></main>';
+ render(shell(body));
+ const main=document.querySelector('main'),nav=main?.querySelector('[data-tp-workout-next]');
+ if(se&&main&&nav&&!document.querySelector('#rf152Feedback')){const wrap=document.createElement('div');wrap.innerHTML=rf152FeedbackHtml(se);if(wrap.firstElementChild)nav.parentNode.insertBefore(wrap.firstElementChild,nav);}
+ rf110DecorateTimedWorkout();
+ if(typeof tp120AfterRender==='function')tp120AfterRender();
+};
+
+toggleSet=function(ei,si){
+ const s=state.session?.exercises?.[ei]?.sets?.[si];if(!s)return;
+ if(!s.done&&(!/^\d+$/.test(String(s.reps))||Number(s.reps)<1)){alert(tp149T('workout.invalidReps'));return;}
+ s.done=!s.done;if(!s.done)delete s.actualRir;if(s.done)startRest();renderWorkout();
+};
+
+window.TrainPilotI18n.workoutAudit=function(){
+ const keys=['workout.target','workout.sets','workout.bodyweight','workout.finish','workout.next','workout.previous','workout.invalidReps','workout.rest','progress.title','progress.goalNote','progress.noHistory','progress.painLoad','progress.partialLoad','progress.body.noHistory','progress.body.pain','stopwatch.title','stopwatch.start','stopwatch.reset','video.openDemo'];
+ const missing={hu:[],en:[],de:[],ro:[]};
+ for(const lang of Object.keys(missing))for(const key of keys)if(!TP149_CATALOG[lang]?.[key])missing[lang].push(key);
+ return missing;
+};
+// @endsection trainpilot-149-workout-progression-i18n.js
+
+
+// @section trainpilot-149-cloud-calendar-i18n.js
+/* TrainPilot 1.4.9: direct Google Drive / Calendar synchronization localization. */
+(function(){
+ const rows={
+  'cloud.title':['Google-fiók és szinkron','Google account and sync','Google-Konto und Synchronisierung','Cont Google și sincronizare'],
+  'cloud.connectHelp':['Kapcsold a Google-fiókodat a TrainPilot-profilhoz. A kiadás megfelelő Google Cloud-beállítása szükséges.','Connect your Google account to your TrainPilot profile. The release requires the appropriate Google Cloud configuration.','Verbinde dein Google-Konto mit deinem TrainPilot-Profil. Für die Veröffentlichung ist die passende Google-Cloud-Konfiguration erforderlich.','Conectează contul Google la profilul TrainPilot. Versiunea publicată necesită configurarea Google Cloud corespunzătoare.'],
+  'cloud.signOut':['Kijelentkezés','Sign out','Abmelden','Deconectare'],
+  'cloud.autoDrive':['Automatikus Drive-szinkron','Automatic Drive sync','Automatische Drive-Synchronisierung','Sincronizare automată Drive'],
+  'cloud.autoCalendar':['Automatikus edzésnaptár','Automatic workout calendar','Automatischer Trainingskalender','Calendar automat de antrenamente'],
+  'cloud.autoHelp':['Az app megnyitásakor és adatváltozás után, internet mellett. Bezárt appban nincs háttérszinkron. A naptárkapcsolat iránya: TrainPilot → Google Naptár.','Runs when the app opens and after data changes while online. There is no background sync while the app is closed. Calendar direction: TrainPilot → Google Calendar.','Läuft beim Öffnen der App und nach Datenänderungen bei Internetverbindung. Bei geschlossener App gibt es keine Hintergrundsynchronisierung. Kalenderrichtung: TrainPilot → Google Kalender.','Rulează la deschiderea aplicației și după modificarea datelor, când există internet. Nu există sincronizare în fundal când aplicația este închisă. Direcția calendarului: TrainPilot → Google Calendar.'],
+  'cloud.syncDriveNow':['Drive-szinkron most','Sync Drive now','Drive jetzt synchronisieren','Sincronizează Drive acum'],
+  'cloud.earlierBackups':['Korábbi Drive-mentések','Earlier Drive backups','Frühere Drive-Sicherungen','Copii Drive anterioare'],
+  'cloud.earlierHelp':['Csak akkor ellenőrizd, ha egy régi edzés vagy testsúlyadat hiányzik a legfrissebb mentésből. A normál szinkron ezt nem futtatja.','Check these only if an old workout or weight entry is missing from the latest backup. Normal sync does not run this check.','Nur prüfen, wenn ein altes Training oder Gewicht in der neuesten Sicherung fehlt. Die normale Synchronisierung führt diese Prüfung nicht aus.','Verifică doar dacă o înregistrare veche de antrenament sau greutate lipsește din ultima copie. Sincronizarea normală nu face această verificare.'],
+  'cloud.earlierScan':['Korábbi mentések ellenőrzése','Check earlier backups','Frühere Sicherungen prüfen','Verifică copiile anterioare'],
+  'cloud.syncCalendarNow':['Naptárszinkron most','Sync calendar now','Kalender jetzt synchronisieren','Sincronizează calendarul acum'],
+  'cloud.connect':['Google-fiók kapcsolása','Connect Google account','Google-Konto verbinden','Conectează contul Google'],
+  'cloud.lastDrive':['Utolsó Drive-szinkron: {date}','Last Drive sync: {date}','Letzte Drive-Synchronisierung: {date}','Ultima sincronizare Drive: {date}'],
+  'cloud.lastCalendar':['Utolsó naptárszinkron: {date}','Last calendar sync: {date}','Letzte Kalendersynchronisierung: {date}','Ultima sincronizare calendar: {date}'],
+  'cloud.androidOnly':['A Google-kapcsolat Androidon érhető el.','Google connection is available on Android.','Die Google-Verbindung ist auf Android verfügbar.','Conectarea Google este disponibilă pe Android.'],
+  'cloud.connectTitle':['Google-fiók kapcsolása','Connect Google account','Google-Konto verbinden','Conectează contul Google'],
+  'cloud.connectConfirm':['A kiválasztott Google-fiókhoz kapcsolod a TrainPilotot? A szinkron későbbi bekapcsolása a telefon jelenlegi edzésadatait is ebbe a fiókba menti.','Connect TrainPilot to the selected Google account? Enabling sync later will also save the phone’s current workout data to this account.','TrainPilot mit dem ausgewählten Google-Konto verbinden? Wenn die Synchronisierung später aktiviert wird, werden auch die aktuellen Trainingsdaten des Telefons in diesem Konto gespeichert.','Conectezi TrainPilot la contul Google selectat? Activarea ulterioară a sincronizării va salva și datele actuale de antrenament ale telefonului în acest cont.'],
+  'cloud.connectAction':['Kapcsolás','Connect','Verbinden','Conectează'],
+  'cloud.connected':['Google-profil kapcsolva. A Drive és a naptár engedélyét külön kérjük, a funkció bekapcsolásakor.','Google profile connected. Drive and Calendar permissions are requested separately when each feature is enabled.','Google-Profil verbunden. Berechtigungen für Drive und Kalender werden beim Aktivieren der jeweiligen Funktion separat angefordert.','Profil Google conectat. Permisiunile Drive și Calendar sunt solicitate separat când este activată fiecare funcție.'],
+  'cloud.busy':['Várd meg a szinkron végét.','Wait for the sync to finish.','Warte, bis die Synchronisierung abgeschlossen ist.','Așteaptă finalizarea sincronizării.'],
+  'cloud.disconnectTitle':['Google-fiók leválasztása','Disconnect Google account','Google-Konto trennen','Deconectează contul Google'],
+  'cloud.disconnectConfirm':['Kijelentkezel? A szinkron leáll, a helyi és a Google-ban tárolt adatok megmaradnak.','Sign out? Sync will stop, while local data and data stored in Google will remain.','Abmelden? Die Synchronisierung wird beendet; lokale und bei Google gespeicherte Daten bleiben erhalten.','Te deconectezi? Sincronizarea se va opri, iar datele locale și cele stocate în Google vor rămâne.'],
+  'cloud.driveAfterWorkout':['Drive-szinkron az edzés befejezése után.','Drive will sync after the workout is finished.','Drive wird nach Abschluss des Trainings synchronisiert.','Drive se va sincroniza după finalizarea antrenamentului.'],
+  'cloud.offlineDrive':['Offline: a helyi adatok megvannak, a szinkron internetre vár.','Offline: local data is safe; sync is waiting for an internet connection.','Offline: Die lokalen Daten sind vorhanden; die Synchronisierung wartet auf eine Internetverbindung.','Offline: datele locale sunt în siguranță; sincronizarea așteaptă conexiunea la internet.'],
+  'cloud.syncingDrive':['Drive-szinkron…','Syncing Drive…','Drive wird synchronisiert…','Se sincronizează Drive…'],
+  'cloud.driveListing':['Mentések listázása…','Listing backups…','Sicherungen werden aufgelistet…','Se listează copiile…'],
+  'cloud.driveFound':['{listed} mentés listázva, {current} aktuális eszközmentés.','{listed} backups listed, {current} latest device backups.','{listed} Sicherungen gelistet, {current} aktuelle Gerätesicherungen.','{listed} copii listate, {current} copii curente ale dispozitivelor.'],
+  'cloud.driveUnchanged':['Drive naprakész, nincs új mentés vagy helyi változás.','Drive is up to date; no new backup or local changes.','Drive ist aktuell; keine neue Sicherung oder lokale Änderung.','Drive este actualizat; nu există copie nouă sau modificări locale.'],
+  'cloud.driveReading':['Aktuális mentés letöltése: {index}/{total}.','Downloading current backup: {index}/{total}.','Aktuelle Sicherung wird geladen: {index}/{total}.','Se descarcă copia curentă: {index}/{total}.'],
+  'cloud.driveArchiveReading':['Korábbi mentés ellenőrzése: {index}/{total}.','Checking earlier backup: {index}/{total}.','Frühere Sicherung wird geprüft: {index}/{total}.','Se verifică o copie anterioară: {index}/{total}.'],
+  'cloud.drivePhotos':['Edzésfotók ellenőrzése…','Checking workout photos…','Trainingsfotos werden geprüft…','Se verifică fotografiile antrenamentelor…'],
+  'cloud.driveWriting':['Új mentés feltöltése és visszaellenőrzése…','Uploading and verifying the new backup…','Neue Sicherung wird hochgeladen und geprüft…','Se încarcă și se verifică noua copie…'],
+  'cloud.unknownBackup':['Ismeretlen vagy más profilhoz tartozó felhőmentés.','Unknown cloud backup or backup belonging to another profile.','Unbekannte Cloud-Sicherung oder Sicherung eines anderen Profils.','Copie cloud necunoscută sau aparținând altui profil.'],
+  'cloud.manualConflict':['Eltérő adatok vannak a felhőben. Indíts kézi szinkront az egyeztetéshez.','Cloud data differs. Start a manual sync to resolve the conflict.','Die Cloud-Daten unterscheiden sich. Starte eine manuelle Synchronisierung zur Konfliktlösung.','Datele din cloud diferă. Pornește o sincronizare manuală pentru rezolvarea conflictului.'],
+  'cloud.conflictTitle':['Szinkronütközés','Sync conflict','Synchronisierungskonflikt','Conflict de sincronizare'],
+  'cloud.conflict':['Eltérő adatok vannak a telefonon és a felhőben. Az ütköző értékeknél a TELEFON változata maradjon?\nAz egyedi edzések mindkét helyről megmaradnak.','Data differs between the phone and the cloud. For conflicting values, keep the PHONE version?\nUnique workouts from both locations will be kept.','Die Daten auf Telefon und in der Cloud unterscheiden sich. Bei Konflikten die TELEFON-Version behalten?\nEindeutige Trainings von beiden Seiten bleiben erhalten.','Datele diferă între telefon și cloud. Pentru valorile în conflict, păstrezi versiunea de pe TELEFON?\nAntrenamentele unice din ambele locații vor fi păstrate.'],
+  'cloud.phone':['Telefon','Phone','Telefon','Telefon'],
+  'cloud.cloud':['Felhő','Cloud','Cloud','Cloud'],
+  'cloud.changedDuringSync':['Közben változtak az adatok vagy edzés indult. Indítsd újra a szinkront.','Data changed or a workout started during sync. Start the sync again.','Während der Synchronisierung wurden Daten geändert oder ein Training gestartet. Starte die Synchronisierung erneut.','Datele s-au modificat sau a început un antrenament în timpul sincronizării. Pornește sincronizarea din nou.'],
+  'cloud.verifyFailed':['A Drive-mentés ellenőrzése nem sikerült.','Drive backup verification failed.','Die Überprüfung der Drive-Sicherung ist fehlgeschlagen.','Verificarea copiei Drive a eșuat.'],
+  'cloud.changedLocal':['Közben változtak az adatok. A helyi változásokat a következő szinkron egyesíti.','Data changed during sync. Local changes will be merged during the next sync.','Während der Synchronisierung wurden Daten geändert. Lokale Änderungen werden bei der nächsten Synchronisierung zusammengeführt.','Datele s-au modificat în timpul sincronizării. Modificările locale vor fi îmbinate la următoarea sincronizare.'],
+  'cloud.driveDone':['Drive-szinkron kész.','Drive sync complete.','Drive-Synchronisierung abgeschlossen.','Sincronizarea Drive este finalizată.'],
+  'cloud.driveBackupWait':['A ZIP-mentés folyamatban van. A Drive helyi adatfrissítése utána folytatódik.','ZIP backup is in progress. Drive will apply local changes afterwards.','ZIP-Sicherung läuft. Drive übernimmt lokale Änderungen danach.','Copia ZIP este în curs. Drive va aplica modificările locale după aceea.'],
+  'cloud.driveCleanup':['Régi Drive-mentések rendezése… A helyi mentés már használható.','Organizing old Drive backups… Local backup is available.','Alte Drive-Sicherungen werden geordnet… Lokale Sicherung ist verfügbar.','Se organizează copiile vechi din Drive… Copia locală este disponibilă.'],
+  'cloud.invalidSchedules':['Hibás tervezett edzések.','Invalid scheduled workouts.','Ungültige geplante Trainings.','Antrenamente planificate nevalide.'],
+  'cloud.invalidSchedule':['Hibás tervezett edzés.','Invalid scheduled workout.','Ungültiges geplantes Training.','Antrenament planificat nevalid.'],
+  'cloud.noStorage':['Nincs elég hely a szinkronadatoknak.','Not enough storage for sync data.','Nicht genug Speicherplatz für Synchronisierungsdaten.','Nu există suficient spațiu pentru datele de sincronizare.'],
+  'cloud.calendarWaiting':['Naptárszinkron internetre vár.','Calendar sync is waiting for an internet connection.','Kalendersynchronisierung wartet auf eine Internetverbindung.','Sincronizarea calendarului așteaptă conexiunea la internet.'],
+  'cloud.calendarQueued':['Naptárszinkron várakozik a Drive-művelet végére.','Calendar sync is queued until the Drive operation finishes.','Kalendersynchronisierung wartet auf den Abschluss des Drive-Vorgangs.','Sincronizarea calendarului așteaptă încheierea operației Drive.'],
+  'cloud.calendarPreparing':['Naptárszinkron indítása, események előkészítése…','Starting calendar sync, preparing events…','Kalendersynchronisierung startet, Termine werden vorbereitet…','Se pornește sincronizarea calendarului, se pregătesc evenimentele…'],
+  'cloud.calendarRunning':['A naptárszinkron már folyamatban van.','Calendar sync is already in progress.','Die Kalendersynchronisierung läuft bereits.','Sincronizarea calendarului este deja în curs.'],
+  'cloud.calendarProgress':['Naptárszinkron folyamatban: {done}/{total} esemény elküldve.','Calendar sync in progress: {done}/{total} events sent.','Kalendersynchronisierung läuft: {done}/{total} Termine gesendet.','Sincronizarea calendarului este în curs: {done}/{total} evenimente trimise.'],
+  'cloud.calendarDelta':['Naptár: {changed} változás, {total} összes esemény.','Calendar: {changed} changes, {total} total events.','Kalender: {changed} Änderungen, {total} Termine insgesamt.','Calendar: {changed} modificări, {total} evenimente în total.'],
+  'cloud.calendarDoneCount':['Naptárszinkron kész: {changed} változás.','Calendar sync complete: {changed} changes.','Kalendersynchronisierung abgeschlossen: {changed} Änderungen.','Sincronizarea calendarului este finalizată: {changed} modificări.'],
+  'cloud.noCalendarItems':['Még nincs naptárba küldhető edzés.','There are no workouts to send to the calendar yet.','Noch keine Trainings zum Übertragen in den Kalender.','Nu există încă antrenamente de trimis în calendar.'],
+  'cloud.calendarDone':['Naptárszinkron kész.','Calendar sync complete.','Kalendersynchronisierung abgeschlossen.','Sincronizarea calendarului este finalizată.'],
+  'calendar.completed':['teljesített edzés','completed workout','abgeschlossenes Training','antrenament finalizat'],

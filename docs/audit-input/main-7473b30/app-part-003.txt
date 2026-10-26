@@ -1,0 +1,248 @@
+ render(shell(`<main><div class="hero"><span class="badge">FULL BODY ${state.workout}</span><h1>${i+1}/${p.length}</h1><div class="muted">${esc(e.hu)}</div><div class="progress"><div style="width:${pct}%"></div></div></div>
+ <div class="card detail"><h2>${esc(e.hu)}</h2><div class="en">${esc(e.en)}</div><div class="meta">Cél: ${e.sets} × ${esc(e.reps)}</div>${motionDemo(e.id)}<p class="note">${esc(e.notes)}</p></div>
+ <div class="section">Sorozatok</div>${se.sets.map((s,si)=>`<div class="row"><div class="num">${si+1}</div>${e.loadType==='bodyweight'?'<span class="small muted">Testsúly</span>':`<label class="small">${loadLabel(e.loadType)}<input class="field" aria-label="${loadLabel(e.loadType)}" inputmode="decimal" value="${s.weight}" oninput="upd(${i},${si},'weight',this.value)"></label>`}<label class="small">${e.repUnit}<input class="field" inputmode="numeric" aria-label="${e.repUnit}" placeholder="${esc(e.reps)}" value="${esc(s.reps)}" oninput="upd(${i},${si},'reps',this.value)"></label><button class="check ${s.done?"done":""}" onclick="toggleSet(${i},${si})">${s.done?"✓":"OK"}</button></div>`).join("")}
+ <br><button class="btn block" onclick="nextExercise()">${i===p.length-1?"Edzés befejezése":"Következő gyakorlat"}</button><br><br><button class="btn secondary block" onclick="prevExercise()" ${i===0?"disabled":""}>Előző</button></main>`))};
+var upd = function upd(ei,si,k,v){state.session.exercises[ei].sets[si][k]=k==="weight"?Math.max(0,(Number(String(v).replace(",","."))||0)):v;persistDraft()};
+var toggleSet = function toggleSet(ei,si){const s=state.session.exercises[ei].sets[si];if(!s.done && (!/^\d+$/.test(String(s.reps)) || Number(s.reps)<1)){alert("Írd be a tényleges ismétlésszámot vagy másodpercet.");return;}s.done=!s.done;if(s.done)startRest();renderWorkout()};
+var prevExercise = function prevExercise(){if(state.current>0){state.current--;renderWorkout();window.scrollTo(0,0)}};
+var nextExercise = function nextExercise(){if(state.current<state.session.exercises.length-1){state.current++;renderWorkout();window.scrollTo(0,0)}else finishWorkout()};
+// One finish entry point. Preparation, durable save and presentation stay separate;
+// later features call this coordinator instead of replacing finishWorkout.
+var TrainPilotWorkoutFinalization=(function(){
+ let active=null,lastFailure=null;
+ const key=s=>String(s?.syncId||s?.id||s?.started||'');
+ const same=(a,b)=>key(a)===key(b)||(!a?.syncId&&!a?.id&&!b?.syncId&&!b?.id&&
+  Number.isFinite(Date.parse(a?.started))&&Date.parse(a.started)===Date.parse(b?.started));
+ const then=(value,next)=>value&&typeof value.then==='function'?value.then(next):next(value);
+ function message(kind){
+  const lang=typeof rf212Lang==='function'?rf212Lang():'hu';
+  const words={
+   hu:{save:'Az edzés lezárása nem sikerült. Az edzés megmaradt; próbáld újra a befejezést. Ha a tárhely megtelt, előbb szabadíts fel helyet.',corrupt:'A napló vagy a naptár tárolt adata sérült. Nem írtuk felül. A befejezés előtt az adatokat helyre kell állítani.',feedback:'Az edzés mentve, de az értékelő felület nem nyitható meg. A Naplóban megtalálod az edzést.'},
+   en:{save:'Could not finish saving the workout. Your workout is kept; retry finishing it. If storage is full, free some space first.',corrupt:'Stored workout history or calendar data is damaged. It was not overwritten. Recover the data before finishing.',feedback:'Workout saved, but the feedback screen could not open. Find the workout in the Log.'},
+   de:{save:'Das Training konnte nicht vollständig gespeichert werden. Es bleibt erhalten; Abschluss erneut versuchen. Bei vollem Speicher zuerst Platz schaffen.',corrupt:'Gespeicherte Verlaufs- oder Kalenderdaten sind beschädigt und wurden nicht überschrieben. Vor dem Abschluss wiederherstellen.',feedback:'Training gespeichert, aber die Bewertung konnte nicht geöffnet werden. Das Training steht im Protokoll.'},
+   ro:{save:'Antrenamentul nu a putut fi salvat complet. Este păstrat; încearcă din nou finalizarea. Dacă spațiul este plin, eliberează spațiu.',corrupt:'Istoricul sau calendarul stocat este deteriorat. Datele nu au fost suprascrise. Recuperează-le înainte de finalizare.',feedback:'Antrenament salvat, dar evaluarea nu s-a putut deschide. Îl găsești în Jurnal.'}
+  };
+  return (words[lang]||words.en)[kind];
+ }
+ function failure(error,phase='save'){
+  lastFailure={phase,name:String(error?.name||'Error'),message:String(error?.message||error)};
+  alert(message(phase==='feedback'?'feedback':error?.finalizationCorrupt?'corrupt':'save'));
+  return false;
+ }
+ function rawList(name){
+  const raw=localStorage.getItem('repforge:'+name);
+  try{if(raw==null)return {raw,rows:[]};const rows=JSON.parse(raw);if(!Array.isArray(rows))throw Error('Expected an array');return {raw,rows};}
+  catch(error){error.finalizationCorrupt=true;throw error;}
+ }
+ function stopAutomatic(){
+  const api=window.TrainPilotAutomatic162;
+  return api?.owner?.()?.meta?.run?api.command('stop'):true;
+ }
+ function stopIntervals(){
+  const api=window.TrainPilotIntervals162,o=api?.owner?.();
+  return o&&!o.run.stopped&&o.run.phase?.phase!=='complete'?api.stop():true;
+ }
+ function stopLocalClocks(){
+  if(typeof tp107StopIndoor==='function')tp107StopIndoor(true);
+  if(typeof rf110StopwatchHalt==='function')rf110StopwatchHalt(true);
+  if(typeof tp1481HaltSide==='function')tp1481HaltSide(true);
+  return true;
+ }
+ function stopGPS(){
+  if(typeof tp106DistanceInputsValid==='function'&&!tp106DistanceInputsValid())return false;
+  if(typeof tp106GpsBusy!=='undefined'&&tp106GpsBusy){alert(tp106T('busy'));return false;}
+  return typeof tp106StopGPS==='function'&&(tp106GpsState.active||db.get('gpsTrip106',null))?tp106StopGPS():true;
+ }
+ function confirmCompletion(session,options){
+  const sets=session.exercises.flatMap(e=>e.sets||[]);
+  if(!sets.some(s=>s.done)){alert('Előbb jelölj legalább egy sorozatot teljesítettnek.');return false;}
+  if(options.wearConfirmed===true||sets.every(s=>s.done))return true;
+  if(typeof tp2628Confirm==='function')return tp2628Confirm(tp149T('dialog.partial.message'),{
+   title:tp149T('dialog.partial.title'),confirmText:tp149T('common.save')});
+  return confirm('Vannak be nem fejezett sorozatok. Elmented a részleges edzést?');
+ }
+ function save(session,options){
+  // Refuse corrupt raw data before history() can disguise it as an empty array.
+  const oldHistory=rawList('history'),oldSchedule=rawList('scheduled');
+  const rows=history(),previous=rows.find(row=>same(row,session));
+  const snapshot=JSON.parse(JSON.stringify(session));delete snapshot.finalizationPending;
+  for(const e of snapshot.exercises)for(const set of e.sets||[])delete set.previousValues228;
+  const requested=Date.parse(options.wearFinishedAt||''),started=Date.parse(session.started||'');
+  snapshot.finished=previous?.finished||(Number.isFinite(requested)&&requested>=started&&requested<=Date.now()+30000?new Date(requested).toISOString():new Date().toISOString());
+  closeWorkoutInterval(snapshot,snapshot.finished);
+  // The durable draft identifies a partially completed save across retries/reload.
+  session.finalizationPending=true;persistDraft();
+  const schedule=oldSchedule.rows.map(row=>row.id===session.scheduleId?{...row,status:'completed',updatedAt:Date.now()}:row);
+  const writes=[['history',[snapshot,...rows.filter(row=>!same(row,session))],oldHistory.raw]];
+  if(session.scheduleId&&oldSchedule.rows.some(row=>row.id===session.scheduleId))writes.push(['scheduled',schedule,oldSchedule.raw]);
+  const attempted=[];
+  try{for(const [name,value,raw] of writes){attempted.push([name,raw]);db.set(name,value);}}
+  catch(error){
+   // Best-effort rollback; the durable draft and idempotent upsert also protect
+   // recovery if rollback itself fails or the process dies between the writes.
+   for(const [name,raw] of attempted.reverse())try{if(raw==null)localStorage.removeItem('repforge:'+name);else localStorage.setItem('repforge:'+name,raw);}catch(_){}
+   throw error;
+  }
+  active.saved=snapshot;
+  return true;
+ }
+ function prepare(session,options){
+  const steps=[stopAutomatic,stopIntervals,stopLocalClocks,stopGPS,()=>confirmCompletion(session,options),()=>save(session,options)];
+  function run(index){
+   if(state.session!==session)return false;
+   for(let i=index;i<steps.length;i++){
+    const value=steps[i]();
+    if(value&&typeof value.then==='function')return value.then(ok=>ok===false?false:run(i+1));
+    if(value===false||state.session!==session)return false;
+   }
+   return true;
+  }
+  return run(0);
+ }
+ function complete(session,options){
+  const snapshot=active.saved;
+  // Keep the recoverable draft until native close has succeeded as well.
+  db.set('draft',null);
+  session.finished=snapshot.finished;session.activeIntervals=snapshot.activeIntervals;
+  const workout=state.workout;stopTimer();
+  state.session=null;state.workout=null;lastFailure=null;
+  try{
+   if(options.silent===true||options.wearConfirmed===true){if(state.tab==='plan')state.tab='home';render();}
+   else{state.tab='home';render(shell(`<main><div class="hero"><h1>Kész ✓</h1><div class="muted">Full Body ${esc(workout)} elmentve.</div><br><button class="btn block" onclick="go('home')">Kezdőlap</button></div></main>`));}
+   if(window.TrainPilotWorkoutFeedback)window.TrainPilotWorkoutFeedback.afterFinish(snapshot,options);
+   else if(options.wearSilent!==true&&options.silent!==true&&options.wearConfirmed!==true&&typeof feedbackScreen==='function')feedbackScreen(snapshot.started);
+   if(typeof rf241QueueWorkoutSync==='function')rf241QueueWorkoutSync(rf240WorkoutKey(snapshot));
+  }catch(error){failure(error,'feedback');}
+  return true;
+ }
+ function finish(options={}){
+  if(active)return active.promise||false;
+  const session=state.session;if(!session)return false;
+  active={session,saved:null,promise:null};
+  try{
+   const fence=window.TrainPilotPhoneExecution162?.finishFence;
+   const result=then(fence?fence(()=>prepare(session,options)):prepare(session,options),ok=>
+    ok===true&&state.session===session?complete(session,options):false);
+   if(result&&typeof result.then==='function'){
+    const promise=result.catch(error=>failure(error)).finally(()=>{active=null;});active.promise=promise;return promise;
+   }
+   active=null;return result;
+  }catch(error){active=null;return failure(error);}
+ }
+ return {finish,failure:()=>lastFailure?{...lastFailure}:null,isFinishing:()=>!!active};
+})();
+var finishWorkout=function finishWorkout(options={}){return TrainPilotWorkoutFinalization.finish(options);};
+var formatSet = function formatSet(e,s){
+ // Historical weights are deliberately not reinterpreted: old entries lacked metadata.
+ if(!e.loadType)return `${s.weight||0} kg × ${s.reps||'—'} (régi súlyjelölés)`;
+ const rep=e.repUnit==='mp'?`${s.reps||'—'} mp`:`${s.reps||'—'}${e.repUnit==='ism.'?' ism.':e.repUnit}`;
+ return e.loadType==='bodyweight'?rep:`${s.weight||0} ${loadLabel(e.loadType)} × ${rep}`;
+};
+var historyScreen = function historyScreen(){
+ const h=history();
+ return shell(`<main>
+   <div class="hero"><h1>Edzésnapló</h1><div class="muted">Az edzéseid részletesen, de átláthatóbban.</div></div>
+   ${h.length ? h.map((x,hi)=>{
+     const c=completedSets(x);
+     return `<div class="history">
+       <div class="history-head">
+         <div class="history-title-row">
+           <div><div class="history-title">Full Body ${x.workout}</div><div class="history-date">${fmtDate(x.started)}</div></div>
+           <span class="badge">${x.exercises.length} gyakorlat</span>
+         </div>
+         <div class="history-badges">
+           <span class="history-badge">⏱ ${sessionDuration(x)}</span>
+           <span class="history-badge">✓ ${c.done}/${c.total} sorozat</span>
+         </div>
+       </div>
+       <div class="history-body"><button class="btn secondary" onclick="calendarIntent(${hi})">Hozzáadás a naptárhoz</button>
+         ${x.exercises.map(e=>`<div class="history-ex">
+           <div class="history-ex-name">${esc(e.hu)}</div>
+           <div class="en">${esc(e.en||"")}</div>
+           <div class="history-setchips">
+             ${(e.sets||[]).map(s=>`<span class="setchip">${esc(formatSet(e,s))}${s.done?" ✓":" • nincs kész"}</span>`).join("")}
+           </div>
+         </div>`).join("")}
+       </div>
+     </div>`;
+   }).join("") : `<div class="muted">Még nincs elmentett edzés.</div>`}
+ </main>`)
+};
+var weightScreen = function weightScreen(){const w=weights();return shell(`<main><div class="hero"><h1>Testsúly</h1><div class="muted">Egyszerű tömegnövelési napló.</div></div>
+ <div class="setting"><label>Mai testsúly (kg)</label><input id="kg" class="field" type="number" step="0.1" min="30" max="250" placeholder="pl. 62.4"><br><br><button class="btn block" onclick="addWeight()">Mentés</button></div>
+ <div class="section">Előzmények</div>${w.length?w.map(x=>`<div class="weight-row"><strong>${x.kg} kg</strong><div class="small muted">${fmtDate(x.date)}</div></div>`).join(""):`<div class="muted">Még nincs adat.</div>`}</main>`)};
+var addWeight = function addWeight(){const kg=Number(String($("#kg").value).replace(",","."));if(!kg||kg<30||kg>250){alert("Adj meg érvényes testsúlyt.");return}const w=weights();w.unshift({kg,date:new Date().toISOString()});db.set("weights",w);render()};
+var settingsScreen = function settingsScreen(){const s=settings();return shell(`<main><div class="hero"><h1>Beállítások</h1><div class="muted">Minden adat helyben tárolódik.</div></div>
+ <div class="setting"><label>Pihenőidő (másodperc)</label><input id="rest" class="field" type="number" min="30" max="300" value="${s.rest}"><br><br><button class="btn block" onclick="saveSettings()">Mentés</button></div>
+ <div class="setting"><label>Biztonsági mentés</label><p class="small muted">Válaszd ki, hová kerüljön a JSON-fájl. Androidon az app írás után visszaolvassa és ellenőrzi.</p><p class="small muted">${esc(backupStatus())}</p><div class="grid2"><button class="btn secondary" onclick="exportData()">Mentés fájlba</button><button class="btn secondary" onclick="chooseImport()">Visszatöltés</button></div><input id="importFile" type="file" accept=".json,application/json" hidden onchange="importData(this.files[0])"></div>
+ ${cloudPanel()}${plannerPanel()}<div class="setting"><label>RepForge 1.1.5 • Edzésterv</label><p class="small muted">Excel-alapterv: 2–3 sorozat, plankkel. Kímélő indulás: a későbbi HU/EN Excel 2 sorozatos terve. A választás felülírja a saját tervedet.</p><button class="btn secondary block" onclick="resetStarter()">Kímélő kezdőterv (2 sorozat)</button><br><button class="btn danger block" onclick="resetPlan()">Terv visszaállítása</button></div>
+ </main>`)};
+var saveSettings = function saveSettings(){const rest=Math.max(30,Math.min(300,Number($("#rest").value)||90));db.set("settings",{rest});alert("Mentve.")};
+var resetStarter = function resetStarter(){if(confirm("A saját terv helyére a 2 sorozatos kezdőterv kerül. Folytatod?")){db.set("exercises",STARTER_EXERCISES);db.set("plan",{...DEFAULT_PLAN,A:DEFAULT_PLAN.A.filter(id=>id!=="plank")});render()}};
+var resetPlan = function resetPlan(){if(confirm("Visszaállítod az alapértelmezett A/B tervet?")){db.set("plan",DEFAULT_PLAN);db.set("exercises",DEFAULT_EXERCISES);render()}};
+var tickRest = function tickRest(){
+ if(!state.restEndAt)return;
+ state.timer=Math.max(0,Math.ceil((state.restEndAt-Date.now())/1000));
+ const e=$("#tv");if(e)e.textContent=tstr(state.timer);
+ if(state.timer===0){stopTimer();document.querySelector(".timer")?.remove();if(navigator.vibrate)navigator.vibrate([200,100,200]);}
+};
+var startRest = function startRest(){stopTimer();state.timer=settings().rest;state.restEndAt=Date.now()+state.timer*1000;state.timerId=setInterval(tickRest,250)};
+var stopTimer = function stopTimer(){if(state.timerId)clearInterval(state.timerId);state.timerId=null;state.restEndAt=null;state.timer=0;};
+var skipTimer = function skipTimer(){stopTimer();renderWorkout()};
+var tstr = function tstr(s){return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`};
+var timerHtml = function timerHtml(){return `<div class="timer"><strong id="tv">${tstr(state.timer)}</strong><div class="muted" style="flex:1">Pihenő</div><button class="btn secondary" onclick="skipTimer()">Kihagyás</button></div>`};
+var render = function render(custom){
+ if(window.TrainPilotBoot?.loading)return;
+ closeDemo();
+ const root=$("#app"); if(custom){root.innerHTML=custom;return}
+ if(state.tab==="home")root.innerHTML=home();
+ else if(state.tab==="plan")root.innerHTML=planScreen();
+ else if(state.tab==="history")root.innerHTML=historyScreen();
+ else if(state.tab==="weight")root.innerHTML=weightScreen();
+ else root.innerHTML=settingsScreen();
+};
+var motionDemo = function motionDemo(id){return demoCard(id)};
+var sessionDuration = function sessionDuration(x){
+  if(!x.started || !x.finished) return "—";
+  const intervals=Array.isArray(x.activeIntervals)?x.activeIntervals:null;
+  const ms=intervals?.length?intervals.reduce((sum,i)=>{const a=Date.parse(i.start),b=Date.parse(i.end||x.finished);return sum+(Number.isFinite(a)&&Number.isFinite(b)?Math.max(0,b-a):0)},0):Date.parse(x.finished)-Date.parse(x.started);
+  const sec=Math.max(0,Math.round(ms/1000));
+  const min=Math.floor(sec/60), rem=sec%60;
+  return min ? `${min} p ${rem ? rem+" mp" : ""}` : `${rem} mp`;
+};
+var completedSets = function completedSets(x){
+  let done=0,total=0;
+  for(const e of x.exercises||[]) for(const s of e.sets||[]){total++; if(s.done)done++;}
+  return {done,total};
+};
+
+const DEFAULT_EXERCISES = [
+{id:"db-squat",hu:"Guggolás 2 kézisúlyzóval",en:"Dumbbell Squat",equipment:"2 kézisúlyzó",target:"Láb",notes:"Egy-egy súlyzó lógjon a tested mellett. Láb vállszélesség körül, csípő hátra és lefelé, majd állj fel. Törzs feszes.",sets:3,reps:"8–12",weight:5,unit:"kg/kez"},
+{id:"db-floor-press",hu:"Földön fekve nyomás",en:"Dumbbell Floor Press",equipment:"2 kézisúlyzó",target:"Mell",notes:"Hanyatt fekve engedd a könyököt kontrolláltan a padlóig, majd nyomd vissza a súlyokat.",sets:3,reps:"8–12",weight:5,unit:"kg/kez"},
+{id:"one-arm-row",hu:"Egykezes evezés",en:"One-Arm Dumbbell Row",equipment:"1 kézisúlyzó + támasz",target:"Hát",notes:"Stabil támasz mellett húzd a súlyt a csípő/bordák felé. Ne csavard a törzsed.",sets:3,reps:"8–12 / kar",weight:5,unit:"kg"},
+{id:"rdl",hu:"Román felhúzás – kétkezes rúddal",en:"Barbell Romanian Deadlift (RDL)",equipment:"kétkezes rúd",target:"Combhajlító/far",notes:"Térd enyhén hajlítva, hát semleges, csípő hátra. Csak addig menj le, amíg kontrollált.",sets:3,reps:"8–12",weight:10,unit:"kg összesen"},
+{id:"db-curl",hu:"Bicepszezés",en:"Dumbbell Biceps Curl",equipment:"2 kézisúlyzó",target:"Bicepsz",notes:"Könyök a test mellett, lendítés nélkül emeld, majd kontrolláltan engedd vissza.",sets:2,reps:"10–15",weight:5,unit:"kg/kez"},
+{id:"reverse-lunge",hu:"Hátralépős kitörés",en:"Dumbbell Reverse Lunge",equipment:"2 kézisúlyzó",loadType:"per_hand",target:"Láb",notes:"Tarts egy-egy kézisúlyzót a tested mellett. Lépj hátra, engedd a hátsó térdet lefelé, majd az első lábbal told vissza magad. A súlyt karonként, az ismétlést lábanként add meg.",sets:3,reps:"8–12 / láb",weight:5,unit:"testsúly"},
+{id:"db-ohp",hu:"Fej fölé nyomás",en:"Dumbbell Overhead Press",equipment:"2 kézisúlyzó",target:"Váll",notes:"Vállmagasságból nyomd a súlyokat a fej fölé, majd lassan engedd vissza.",sets:3,reps:"8–12",weight:5,unit:"kg/kez max."},
+{id:"barbell-row",hu:"Döntött törzsű evezés – kétkezes rúddal",en:"Barbell Bent-Over Row",equipment:"kétkezes rúd",target:"Hát",notes:"Feszes törzs, semleges hát, húzd a rudat a has/bordák alsó része felé.",sets:3,reps:"8–12",weight:10,unit:"kg összesen"},
+{id:"pushup",hu:"Fekvőtámasz",en:"Push-Up",equipment:"testsúly",target:"Mell/tricepsz",notes:"Test egyenes. Állj meg, amikor még kb. 2–3 szabályos ismétlés maradna.",sets:3,reps:"közel maximum",weight:0,unit:"testsúly"},
+{id:"oh-triceps",hu:"Tricepsz fej fölött",en:"Dumbbell Overhead Triceps Extension",equipment:"1 kézisúlyzó",target:"Tricepsz",notes:"Egy könnyű súlyzót fogj két kézzel, engedd a fej mögé, majd nyújtsd vissza.",sets:2,reps:"10–15",weight:4,unit:"kg körül"},
+{id:"crunch",hu:"Hasprés",en:"Crunch",equipment:"testsúly",target:"Has",notes:"Hanyatt fekve emeld el a lapockát a földtől. Nem kell teljesen felülni.",sets:3,reps:"15–20",weight:0,unit:"testsúly"}
+,{id:"plank",hu:"Plank (alkartámasz)",en:"Forearm Plank",equipment:"testsúly",target:"Törzs",notes:"Alkar és lábujjak a talajon. Has és farizom feszes, a test egyenes; ne essen be a derekad.",sets:3,reps:"30–60 mp",weight:0,unit:"testsúly"}
+];
+
+const STARTER_EXERCISES = [
+{id:"db-squat",hu:"Guggolás 2 kézisúlyzóval",en:"Dumbbell Squat",equipment:"2 kézisúlyzó",target:"Láb",notes:"Egy-egy súlyzó lógjon a tested mellett. Láb vállszélesség körül, csípő hátra és lefelé, majd állj fel. Törzs feszes.",sets:2,reps:"8–10",weight:5,unit:"kg/kez"},
+{id:"db-floor-press",hu:"Földön fekve nyomás",en:"Dumbbell Floor Press",equipment:"2 kézisúlyzó",target:"Mell",notes:"Hanyatt fekve engedd a könyököt kontrolláltan a padlóig, majd nyomd vissza a súlyokat.",sets:2,reps:"8–10",weight:5,unit:"kg/kez"},
+{id:"one-arm-row",hu:"Egykezes evezés",en:"One-Arm Dumbbell Row",equipment:"1 kézisúlyzó + támasz",target:"Hát",notes:"Stabil támasz mellett húzd a súlyt a csípő/bordák felé. Ne csavard a törzsed.",sets:2,reps:"8–10/kar",weight:5,unit:"kg"},
+{id:"rdl",hu:"Román felhúzás – kétkezes rúddal",en:"Barbell Romanian Deadlift (RDL)",equipment:"kétkezes rúd",target:"Combhajlító/far",notes:"Térd enyhén hajlítva, hát semleges, csípő hátra. Csak addig menj le, amíg kontrollált.",sets:2,reps:"8–10",weight:10,unit:"kg összesen"},
+{id:"db-curl",hu:"Bicepszezés",en:"Dumbbell Biceps Curl",equipment:"2 kézisúlyzó",target:"Bicepsz",notes:"Könyök a test mellett, lendítés nélkül emeld, majd kontrolláltan engedd vissza.",sets:2,reps:"8–10",weight:5,unit:"kg/kez"},
+{id:"reverse-lunge",hu:"Hátralépős kitörés",en:"Dumbbell Reverse Lunge",equipment:"2 kézisúlyzó",loadType:"per_hand",target:"Láb",notes:"Tarts egy-egy kézisúlyzót a tested mellett. Lépj hátra, engedd a hátsó térdet lefelé, majd az első lábbal told vissza magad. A súlyt karonként, az ismétlést lábanként add meg.",sets:2,reps:"8/láb",weight:5,unit:"testsúly"},
+{id:"db-ohp",hu:"Fej fölé nyomás",en:"Dumbbell Overhead Press",equipment:"2 kézisúlyzó",target:"Váll",notes:"Vállmagasságból nyomd a súlyokat a fej fölé, majd lassan engedd vissza.",sets:2,reps:"8",weight:5,unit:"kg/kez max."},
+{id:"barbell-row",hu:"Döntött törzsű evezés – kétkezes rúddal",en:"Barbell Bent-Over Row",equipment:"kétkezes rúd",target:"Hát",notes:"Feszes törzs, semleges hát, húzd a rudat a has/bordák alsó része felé.",sets:2,reps:"8–10",weight:10,unit:"kg összesen"},
+{id:"pushup",hu:"Fekvőtámasz",en:"Push-Up",equipment:"testsúly",target:"Mell/tricepsz",notes:"Test egyenes. Állj meg, amikor még kb. 2–3 szabályos ismétlés maradna.",sets:2,reps:"2–3 RIR",weight:0,unit:"testsúly"},
+{id:"oh-triceps",hu:"Tricepsz fej fölött",en:"Dumbbell Overhead Triceps Extension",equipment:"1 kézisúlyzó",target:"Tricepsz",notes:"Egy könnyű súlyzót fogj két kézzel, engedd a fej mögé, majd nyújtsd vissza.",sets:2,reps:"8–10",weight:4,unit:"kg körül"},
+{id:"crunch",hu:"Hasprés",en:"Crunch",equipment:"testsúly",target:"Has",notes:"Hanyatt fekve emeld el a lapockát a földtől. Nem kell teljesen felülni.",sets:2,reps:"10–15",weight:0,unit:"testsúly"}
+];
+
+

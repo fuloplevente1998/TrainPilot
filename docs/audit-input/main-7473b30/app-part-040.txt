@@ -1,0 +1,200 @@
+ tp2628Confirm=function(message,opts){const p=tp149ConfirmBase(message,opts);tp149TranslateFreshDom(document.getElementById?.('tp2628Dialog'));return p;};
+}
+if(typeof tp2628Notice==='function'){
+ const tp149NoticeBase=tp2628Notice;
+ tp2628Notice=function(message,title){const p=tp149NoticeBase(message,title);tp149TranslateFreshDom(document.getElementById?.('tp2628Dialog'));return p;};
+}
+if(typeof rf130OpenAddPhoto==='function'){
+ const tp149PhotoBase=rf130OpenAddPhoto;
+ rf130OpenAddPhoto=function(){const r=tp149PhotoBase.apply(this,arguments);tp149TranslateFreshDom(document.getElementById?.('rf130PhotoModal'));return r;};
+}
+if(typeof openDemo==='function'){
+ const tp149DemoBase=openDemo;
+ openDemo=function(){const r=tp149DemoBase.apply(this,arguments);tp149TranslateFreshDom(document.querySelector?.('.video-dialog'));return r;};
+}
+
+
+if(typeof restoreText==='function'){
+ const tp149RestoreTextBase=restoreText;
+ restoreText=function(text){
+  let desired=null;
+  try{
+   const parsed=JSON.parse(String(text).replace(/^\uFEFF/,''));
+   if(parsed&&Object.hasOwn(TP149_LANGS,parsed.language))desired=parsed.language;
+  }catch(_){}
+  if(!desired)return tp149RestoreTextBase(text);
+  const confirmBase=typeof tp2628Confirm==='function'?tp2628Confirm:null;
+  if(!confirmBase)return tp149RestoreTextBase(text);
+  tp2628Confirm=function(message,opts){
+   const p=confirmBase(message,opts);
+   return Promise.resolve(p).then(function(ok){if(ok){db.set('language',desired);document.documentElement.lang=rf212Lang();}return ok;});
+  };
+  try{return tp149RestoreTextBase(text);}finally{tp2628Confirm=confirmBase;}
+ };
+}
+window.TrainPilotI18n={
+ version:TP149_VERSION,languages:['hu','en','de','ro'],locale:tp149Locale,
+ t:tp149T,translate:tp149Translate,plural:tp149Plural,formatNumber:tp149FormatNumber,
+ formatDate:tp149FormatDate,formatDateTime:tp149FormatDateTime,formatUnit:tp149FormatUnit,
+ audit:tp149CatalogAudit,exerciseNameAudit:tp149ExerciseNameAudit,programAudit:tp149ProgramAudit,exerciseName:tp149ExerciseName,exerciseNote:tp149ExerciseNote,equipment:tp149Equipment,target:tp149Target,muscleGroup:tp149MuscleGroupLabel,movement:tp149MovementLabel,style:tp149StyleText,programMeta:tp149ProgramMeta,programDayName:tp149ProgramDayName,plannerRow:tp149PlannerRow,plannerAudit:tp149PlannerAudit,generatedReasons:tp149GeneratedReasons
+};
+// @endsection trainpilot-149-complete-i18n.js
+
+
+// @section trainpilot-149-calendar-history-i18n.js
+/* TrainPilot 1.4.9: direct key-based calendar, scheduling and journal localization. */
+(function(){
+ const rows={
+  'calendar.title':['Edzésnaptár','Workout calendar','Trainingskalender','Calendar de antrenament'],
+  'calendar.intro':['Koppints egy napra, majd válassz az aktív program edzésnapjai közül. Több hét előre a Tervezési beállítások alatt tervezhetsz.','Tap a day, then choose one of the active program workout days. You can plan several weeks ahead under Planning settings.','Tippe auf einen Tag und wähle anschließend einen Trainingstag des aktiven Programms. Unter Planungseinstellungen kannst du mehrere Wochen im Voraus planen.','Atinge o zi, apoi alege una dintre zilele de antrenament ale programului activ. Poți planifica mai multe săptămâni înainte din Setări de planificare.'],
+  'calendar.planningSettings':['Tervezési beállítások','Planning settings','Planungseinstellungen','Setări de planificare'],
+  'calendar.weeksAhead':['több hét előre','several weeks ahead','mehrere Wochen im Voraus','mai multe săptămâni înainte'],
+  'calendar.rhythmHelp':['Válassz ritmust. A TrainPilot az aktív program napjait sorrendben forgatja.','Choose a rhythm. TrainPilot cycles through the active program days in order.','Wähle einen Rhythmus. TrainPilot durchläuft die Tage des aktiven Programms der Reihe nach.','Alege un ritm. TrainPilot parcurge în ordine zilele programului activ.'],
+  'calendar.rhythm':['Tervezési ritmus','Planning rhythm','Planungsrhythmus','Ritm de planificare'],
+  'calendar.cadence.alternate':['Minden második nap','Every other day','Jeden zweiten Tag','O dată la două zile'],
+  'calendar.cadence.daily':['Minden nap','Every day','Jeden Tag','În fiecare zi'],
+  'calendar.cadence.weekly':['Kijelölt heti napokon','Selected weekdays','An ausgewählten Wochentagen','În zilele săptămânii selectate'],
+  'calendar.startDate':['Kezdőnap','Start date','Startdatum','Data de început'],
+  'calendar.time':['Időpont','Time','Uhrzeit','Ora'],
+  'calendar.duration':['Időtartam (perc)','Duration (minutes)','Dauer (Minuten)','Durată (minute)'],
+  'calendar.weeks':['Hetek száma','Number of weeks','Anzahl der Wochen','Număr de săptămâni'],
+  'calendar.firstDay':['Első edzésnap','First workout day','Erster Trainingstag','Prima zi de antrenament'],
+  'calendar.plan':['Edzések megtervezése','Plan workouts','Trainings planen','Planifică antrenamentele'],
+  'calendar.planned':['Tervezett edzések','Planned workouts','Geplante Trainings','Antrenamente planificate'],
+  'calendar.chooseDay':['Válassz edzésnapot:','Choose a workout day:','Trainingstag auswählen:','Alege o zi de antrenament:'],
+  'calendar.scheduled':['Tervezve: {day}','Scheduled: {day}','Geplant: {day}','Planificat: {day}'],
+  'calendar.status.planned':['Tervezett','Planned','Geplant','Planificat'],
+  'calendar.status.skipped':['Kihagyva','Skipped','Übersprungen','Omis'],
+  'calendar.action.start':['Indítás','Start','Starten','Pornește'],
+  'calendar.action.move':['Áthelyezés','Move','Verschieben','Mută'],
+  'calendar.action.skip':['Kihagyás','Skip','Überspringen','Omite'],
+  'calendar.action.restore':['Vissza','Restore','Zurücksetzen','Restaurează'],
+  'calendar.noPlanned':['Még nincs tervezett edzés.','No workouts are planned yet.','Noch kein Training geplant.','Nu există încă antrenamente planificate.'],
+  'calendar.error.dateTime':['Adj meg érvényes kezdőnapot és időpontot.','Enter a valid start date and time.','Gib ein gültiges Startdatum und eine gültige Uhrzeit ein.','Introdu o dată de început și o oră valide.'],
+  'calendar.error.weekday':['A heti napos tervezéshez jelölj ki legalább egy napot.','Select at least one weekday for weekly planning.','Wähle für die Wochenplanung mindestens einen Wochentag aus.','Selectează cel puțin o zi a săptămânii pentru planificarea săptămânală.'],
+  'calendar.error.noEmpty':['Nem találtam új, üres napot a megadott időszakban.','No new free day was found in the selected period.','Im gewählten Zeitraum wurde kein neuer freier Tag gefunden.','Nu a fost găsită nicio zi liberă nouă în perioada selectată.'],
+  'weekday.mon':['H','Mon','Mo','Lu'],'weekday.tue':['K','Tue','Di','Ma'],'weekday.wed':['Sze','Wed','Mi','Mi'],'weekday.thu':['Cs','Thu','Do','Jo'],'weekday.fri':['P','Fri','Fr','Vi'],'weekday.sat':['Szo','Sat','Sa','Sâ'],'weekday.sun':['V','Sun','So','Du'],
+  'journal.title':['Edzésnapló','Workout log','Trainingstagebuch','Jurnal de antrenament'],
+  'journal.intro':['Az edzések alapból összecsukva jelennek meg; koppints egy bejegyzésre a részletekhez. Dátum szerint is szűrhetsz.','Workouts are collapsed by default; tap an entry for details. You can also filter by date.','Trainings sind standardmäßig eingeklappt; tippe für Details auf einen Eintrag. Du kannst auch nach Datum filtern.','Antrenamentele sunt restrânse implicit; atinge o înregistrare pentru detalii. Poți filtra și după dată.'],
+  'journal.from':['Ettől','From','Von','De la'],
+  'journal.to':['Eddig','To','Bis','Până la'],
+  'journal.clearFilter':['Szűrés törlése','Clear filter','Filter löschen','Șterge filtrul'],
+  'journal.count':['{shown} / {total} edzés','{shown} / {total} workouts','{shown} / {total} Trainings','{shown} / {total} antrenamente'],
+  'journal.noneRange':['A kiválasztott dátumtartományban nincs naplózott edzés.','There are no logged workouts in the selected date range.','Im ausgewählten Datumsbereich gibt es keine protokollierten Trainings.','Nu există antrenamente înregistrate în intervalul de date selectat.'],
+  'journal.none':['Még nincs elmentett edzés.','No workout has been saved yet.','Noch kein Training gespeichert.','Nu există încă niciun antrenament salvat.'],
+  'journal.datePick':['Dátum kiválasztása','Choose date','Datum auswählen','Alege data'],
+  'journal.dateTitle.from':['Ettől – dátum','From – date','Von – Datum','De la – data'],
+  'journal.dateTitle.to':['Eddig – dátum','To – date','Bis – Datum','Până la – data'],
+  'journal.closePicker':['Dátumválasztó bezárása','Close date picker','Datumsauswahl schließen','Închide selectorul de dată'],
+  'journal.prevMonth':['Előző hónap','Previous month','Vorheriger Monat','Luna anterioară'],
+  'journal.nextMonth':['Következő hónap','Next month','Nächster Monat','Luna următoare'],
+  'journal.inclusive':['A kiválasztott nap is beleszámít a szűrésbe.','The selected day is included in the filter.','Der ausgewählte Tag ist im Filter enthalten.','Ziua selectată este inclusă în filtru.'],
+  'journal.clearDate':['Dátum törlése','Clear date','Datum löschen','Șterge data'],
+  'journal.today':['Ma','Today','Heute','Astăzi'],
+  'journal.exerciseCount':['{count} gyakorlat','{count} exercises','{count} Übungen','{count} exerciții'],
+  'journal.photoCount':['{count} fotó','{count} photos','{count} Fotos','{count} fotografii'],
+  'journal.setCount':['{done}/{total} sorozat','{done}/{total} sets','{done}/{total} Sätze','{done}/{total} serii'],
+  'journal.editWorkout':['Edzés módosítása','Edit workout','Training bearbeiten','Editează antrenamentul'],
+  'journal.addCalendar':['Naptárhoz adás','Add to calendar','Zum Kalender hinzufügen','Adaugă în calendar'],
+  'journal.healthData':['Health adatok','Health data','Health-Daten','Date Health'],
+  'journal.notDone':['nincs kész','not done','nicht erledigt','nefinalizat']
+ };
+ for(const [key,row] of Object.entries(rows)){
+  TP149_KEY_ROWS[key]=row;
+  TP149_CATALOG.hu[key]=row[0];TP149_CATALOG.en[key]=row[1];TP149_CATALOG.de[key]=row[2];TP149_CATALOG.ro[key]=row[3];
+ }
+})();
+
+var tp149Weekdays=function tp149Weekdays(){return ['weekday.mon','weekday.tue','weekday.wed','weekday.thu','weekday.fri','weekday.sat','weekday.sun'].map(function(k){return tp149T(k);});};
+
+rf230WeekdayRow=function(mode){
+ const vals=[1,2,3,4,5,6,0],names=tp149Weekdays();
+ return '<div id="rf230Weekdays" class="rf2211-weekdays" style="'+(mode==='weekly'?'':'display:none')+'">'+names.map(function(n,i){return '<label><input type="checkbox" name="rf2211Weekday" value="'+vals[i]+'" '+((plannerSettings().weekdays||[]).includes(vals[i])?'checked ':'')+'onchange="tp155SavePlannerBasics()">'+esc(n)+'</label>';}).join('')+'</div>';
+};
+
+rf2211Planner=function(){
+ const s=plannerSettings(),p=activeProgram(),days=rf2211Days(),today=new Date().toISOString().slice(0,10),mode=rf230PlannerMode();
+ return '<details class="card rf2211-planner"><summary><strong>'+esc(tp149T('calendar.planningSettings'))+'</strong><span class="small muted"> • '+esc(tp149T('calendar.weeksAhead'))+'</span></summary><div class="rf2211-planbody"><p class="small muted">'+esc(tp149T('calendar.rhythmHelp'))+'</p><label class="small">'+esc(tp149T('calendar.rhythm'))+'<select class="field" id="rf230Mode" onchange="rf230ModeChanged()"><option value="alternate" '+(mode==='alternate'?'selected':'')+'>'+esc(tp149T('calendar.cadence.alternate'))+'</option><option value="daily" '+(mode==='daily'?'selected':'')+'>'+esc(tp149T('calendar.cadence.daily'))+'</option><option value="weekly" '+(mode==='weekly'?'selected':'')+'>'+esc(tp149T('calendar.cadence.weekly'))+'</option></select></label><div class="grid2"><label class="small">'+esc(tp149T('calendar.startDate'))+'<input class="field" id="rf2211Start" type="date" value="'+today+'"></label><label class="small">'+esc(tp149T('calendar.time'))+'<input class="field" id="rf2211Time" type="time" value="'+esc(s.time)+'"></label><label class="small">'+esc(tp149T('calendar.duration'))+'<input class="field" id="rf2211Minutes" type="number" min="10" max="240" value="'+s.minutes+'"></label><label class="small">'+esc(tp149T('calendar.weeks'))+'<input class="field" id="rf2211Weeks" type="number" min="1" max="12" value="4"></label></div><label class="small">'+esc(tp149T('calendar.firstDay'))+'<select class="field" id="rf2211First">'+days.map(function(d,i){return '<option value="'+i+'">'+esc(tp149ProgramDayName(p,d))+'</option>';}).join('')+'</select></label>'+rf230WeekdayRow(mode)+'<button class="btn block" onclick="rf2211PlanWeeks()">'+esc(tp149T('calendar.plan'))+'</button></div></details>';
+};
+
+rf2211PlanWeeks=function(){
+ const p=activeProgram(),days=rf2211Days();if(!p||!days.length)return;
+ const start=document.querySelector('#rf2211Start')?.value,time=document.querySelector('#rf2211Time')?.value,mode=document.querySelector('#rf230Mode')?.value||'alternate';
+ const minutes=Math.max(10,Math.min(240,Number(document.querySelector('#rf2211Minutes')?.value)||45));
+ const weeks=Math.max(1,Math.min(12,Number(document.querySelector('#rf2211Weeks')?.value)||4));
+ const first=Math.max(0,Math.min(days.length-1,Number(document.querySelector('#rf2211First')?.value)||0));
+ const weekdays=[...document.querySelectorAll('input[name="rf2211Weekday"]:checked')].map(function(x){return Number(x.value);});
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(start||'')||!/^\d{2}:\d{2}$/.test(time||'')){alert(tp149T('calendar.error.dateTime'));return;}
+ if(mode==='weekly'&&!weekdays.length){alert(tp149T('calendar.error.weekday'));return;}
+ const base=new Date(start+'T12:00'),out=[];let cycle=first;
+ for(let i=0;i<weeks*7;i++){
+  const d=new Date(base);d.setDate(base.getDate()+i);
+  const include=mode==='daily'||(mode==='alternate'&&i%2===0)||(mode==='weekly'&&weekdays.includes(d.getDay()));
+  if(!include)continue;
+  const date=[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+  if(scheduleOnDate(date).some(function(x){return !x.cancelled;}))continue;
+  out.push(makeScheduleItem(p,date,time,minutes,days[cycle%days.length].id));cycle++;
+ }
+ if(!out.length){alert(tp149T('calendar.error.noEmpty'));return;}
+ db.set('plannerSettings',Object.assign({},plannerSettings(),{mode:mode,time:time,minutes:minutes,weekdays:weekdays}));addScheduleBatch(out);if(typeof cloudChanged==='function')cloudChanged();render();if(window.TrainPilot110)tp153Toast(window.TrainPilot110.t('replanned'),1800);
+};
+
+rf2211DayPicker=function(){
+ const date=rf2211Selected();if(!date)return '';
+ const p=activeProgram(),days=rf2211Days(),item=scheduleOnDate(date).find(function(x){return !x.cancelled;});
+ const title=tp149FormatDate(new Date(date+'T12:00'),{month:'long',day:'numeric',weekday:'long'});
+ if(item){
+  const d=programDay(p,item.dayId||item.workout),name=tp149ProgramDayName(p,d)||item.dayId||item.workout;
+  return '<div class="card rf2211-picker"><div><strong>'+esc(title)+'</strong><div class="small muted">'+esc(tp149T('calendar.scheduled',{day:name}))+'</div></div><button class="btn danger" onclick="rf2211DeleteDate()">'+esc(tp149T('common.delete'))+'</button></div>';
+ }
+ return '<div class="card rf2211-picker"><strong>'+esc(title)+'</strong><div class="small muted">'+esc(tp149T('calendar.chooseDay'))+'</div><div class="rf2211-daybuttons">'+days.map(function(d){return '<button class="btn" onclick="rf2211AddDay(\''+esc(d.id)+'\')">'+esc(tp149ProgramDayName(p,d))+'</button>';}).join('')+'</div></div>';
+};
+
+scheduleListHtml=function(){
+ const isDone=function(x){return typeof rf209ScheduleDone==='function'?rf209ScheduleDone(x):(x.status==='completed'||history().some(function(h){return h.scheduleId===x.id;}));};
+ const items=scheduled().filter(function(x){return !x.cancelled&&!isDone(x);}).sort(function(a,b){return Date.parse(a.start)-Date.parse(b.start);}).slice(-120);
+ if(!items.length)return '<div class="muted">'+esc(tp149T('calendar.noPlanned'))+'</div>';
+ return items.map(function(x){
+  const p=programById(x.programId||'home-basic'),d=programDay(p,x.dayId||x.workout),skipped=x.status==='skipped',moving=state?.rf260MovingScheduleId===x.id;
+  const title=p&&d?tp146ProgramDayTitle(p,d):(x.dayId||x.workout||'');
+  return '<div class="card schedule-card tp146-schedule-card"><div class="tp146-schedule-head"><div class="tp146-schedule-copy"><strong class="tp146-schedule-title">'+esc(title)+'</strong><div class="small muted">'+esc(tp149FormatDateTime(x.start))+' • '+esc(tp149T(skipped?'calendar.status.skipped':'calendar.status.planned'))+'</div></div><button class="btn danger tp146-schedule-delete" onclick="rf209DeleteSchedule(\''+esc(x.id)+'\')">'+esc(tp149T('common.delete'))+'</button></div><div class="schedule-actions tp146-schedule-actions-row"><button class="btn" onclick="startScheduledById(\''+esc(x.id)+'\')">'+esc(tp149T('calendar.action.start'))+'</button><button class="btn secondary '+(moving?'tp-action-active':'')+'" data-tp-move-id="'+esc(x.id)+'" aria-pressed="'+(moving?'true':'false')+'" onclick="rf260OpenScheduleMove(\''+esc(x.id)+'\',this)">'+esc(tp149T('calendar.action.move'))+'</button><button class="btn secondary '+(skipped?'tp-selected':'')+'" aria-pressed="'+(skipped?'true':'false')+'" onclick="skipSchedule(\''+esc(x.id)+'\')">'+esc(tp149T(skipped?'calendar.action.restore':'calendar.action.skip'))+'</button></div></div>';
+ }).join('');
+};
+
+calendarScreen=function(){
+ const weekdays=tp149Weekdays(),month=tp149FormatDate(new Date(state.calendarMonth+'-01T12:00'),{year:'numeric',month:'long'});
+ return shell('<main><div class="hero rf224-hero"><h1>'+esc(tp149T('calendar.title'))+'</h1><div class="muted">'+esc(tp149T('calendar.intro'))+'</div></div>'+rf2211Planner()+'<div class="calendar-wrap"><div class="calendar-head"><button class="btn secondary" onclick="changeCalendarMonth(-1)">‹</button><strong>'+esc(month)+'</strong><button class="btn secondary" onclick="changeCalendarMonth(1)">›</button></div><div class="cal-weekdays">'+weekdays.map(function(x){return '<span>'+esc(x)+'</span>';}).join('')+'</div><div class="calendar-grid">'+calendarGrid()+'</div></div>'+rf2211DayPicker()+'<div class="section">'+esc(tp149T('calendar.planned'))+'</div>'+scheduleListHtml()+'</main>');
+};
+
+rf263DateField=function(key,label,value){
+ const date=rf263ParseDate(value),text=date?tp149FormatDate(date,{year:'numeric',month:'2-digit',day:'2-digit'}):tp149T('journal.datePick');
+ return '<div><span class="small muted" id="rf263-'+key+'-label">'+esc(label)+'</span><button type="button" id="rf263-'+key+'-date" class="tp-select-trigger rf263-date-trigger" aria-haspopup="dialog" aria-labelledby="rf263-'+key+'-label rf263-'+key+'-value" onclick="rf263OpenDate(\''+key+'\')"><span id="rf263-'+key+'-value">'+esc(text)+'</span><span aria-hidden="true">▦</span></button></div>';
+};
+
+rf263PaintDate=function(){
+ const picker=rf263DatePicker;if(!picker)return;
+ const dialog=picker.dialog,key=picker.key,month=picker.month,y=month.getFullYear(),m=month.getMonth(),selected=rf263HistoryFilter[key];
+ const first=(new Date(y,m,1,12).getDay()+6)%7,count=new Date(y,m+1,0,12).getDate(),today=rf263DateKey(new Date()),weekdays=tp149Weekdays();
+ let days='<span aria-hidden="true"></span>'.repeat(first);
+ for(let d=1;d<=count;d++){
+  const date=new Date(y,m,d,12),value=rf263DateKey(date),allowed=rf263DateAllowed(key,value);
+  days+='<button type="button" class="rf263-date-day" data-date="'+value+'" aria-label="'+esc(tp149FormatDate(date,{year:'numeric',month:'long',day:'numeric',weekday:'long'}))+'" aria-pressed="'+(value===selected)+'" '+(value===today?'aria-current="date"':'')+' '+(allowed?'':'disabled')+' onclick="rf263PickDate(\''+value+'\')">'+d+'</button>';
+ }
+ const title=tp149T(key==='from'?'journal.dateTitle.from':'journal.dateTitle.to');
+ dialog.innerHTML='<div class="rf263-date-heading"><h2 id="rf263-date-title">'+esc(title)+'</h2><button type="button" class="btn secondary" aria-label="'+esc(tp149T('journal.closePicker'))+'" onclick="rf263CloseDate()">✕</button></div><div class="rf263-date-month"><button type="button" class="btn secondary" data-prev-month aria-label="'+esc(tp149T('journal.prevMonth'))+'" onclick="rf263MoveMonth(-1)" '+(y===1900&&m===0?'disabled':'')+'>‹</button><strong aria-live="polite">'+esc(tp149FormatDate(month,{year:'numeric',month:'long'}))+'</strong><button type="button" class="btn secondary" data-next-month aria-label="'+esc(tp149T('journal.nextMonth'))+'" onclick="rf263MoveMonth(1)" '+(y===2100&&m===11?'disabled':'')+'>›</button></div><div class="rf263-date-week" aria-hidden="true">'+weekdays.map(function(x){return '<span>'+esc(x)+'</span>';}).join('')+'</div><div class="rf263-date-grid">'+days+'</div><p class="small muted">'+esc(tp149T('journal.inclusive'))+'</p><div class="rf263-date-actions"><button type="button" class="btn secondary" onclick="rf263PickDate(\'\')">'+esc(tp149T('journal.clearDate'))+'</button><button type="button" class="btn" onclick="rf263PickDate(\''+today+'\')" '+(rf263DateAllowed(key,today)?'':'disabled')+'>'+esc(tp149T('journal.today'))+'</button></div>';
+};
+
+var tp149HistoryExerciseName=function tp149HistoryExerciseName(e){
+ const lib=e?.id&&typeof byId==='function'?byId(e.id):null;
+ return lib&&!lib.custom?tp149ExerciseName(lib):String(e?.hu||e?.en||e?.id||'');
+};
+var tp149HistoryTitle=function tp149HistoryTitle(x){
+ const p=x?.programId&&typeof programById==='function'?programById(x.programId):null,d=p?programDay(p,x.dayId||x.workout):null;
+ if(p&&d)return tp149ProgramMeta(p,'name')+' • '+tp149ProgramDayName(p,d);
+ if(x?.programName)return String(x.programName)+' • '+String(x.dayId||x.workout||'');
+ return 'Full Body '+String(x?.workout||'');
+};
+
+rf263HistoryItem=function(x,originalIndex,visibleIndex){
+ const c=completedSets(x),title=tp149HistoryTitle(x),key=rf142WorkoutKey(x),photoCount=rf130VisiblePhotos(x).length;
+ const count=tp149T('journal.exerciseCount',{count:x.exercises.length})+(photoCount?' • '+tp149T('journal.photoCount',{count:photoCount}):'');

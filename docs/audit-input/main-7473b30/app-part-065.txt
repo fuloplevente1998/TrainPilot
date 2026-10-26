@@ -1,0 +1,393 @@
+  '#rf220CoachCard.tp166-home-coach{cursor:pointer;touch-action:pan-y;user-select:none;overflow:visible!important;padding:12px 13px!important;transition:border-color .12s ease,background .12s ease,transform .08s ease}',
+  '#rf220CoachCard.tp166-home-coach:active{transform:scale(.995)}',
+  '#rf220CoachCard.tp166-home-coach:focus-visible{outline:2px solid color-mix(in srgb,var(--accent) 72%,white);outline-offset:2px}',
+  '#rf220CoachCard.tp166-home-coach .tp166-home-coach-copy{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:10px}',
+  '#rf220CoachCard.tp166-home-coach h2{margin:4px 0 5px!important;font-size:19px!important;line-height:1.2!important;overflow-wrap:anywhere}',
+  '#rf220CoachCard.tp166-home-coach .tp166-home-coach-copy p{margin:0!important;line-height:1.38!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important}',
+  '#rf220CoachCard.tp166-home-coach .tp166-home-coach-chevron{font-size:28px;line-height:1;color:var(--accent2);padding-top:2px}',
+  '#rf220CoachCard.tp166-home-coach .tp166-home-coach-target{margin-top:10px!important}',
+  '#rf220CoachCard.tp166-home-coach .tp166-home-coach-target>span{min-width:0}',
+  '#rf220CoachCard.tp166-home-coach .tp166-home-coach-target small,#rf220CoachCard.tp166-home-coach .tp166-home-coach-target strong{white-space:normal!important;overflow-wrap:anywhere}',
+  '#rf220CoachCard.tp166-home-coach .tp166-home-coach-sub{margin:8px 0 0!important;white-space:normal!important;overflow:visible!important}',
+  '#rf220CoachCard.tp166-home-coach .rf221-coach-actions,#rf220CoachCard.tp166-home-coach button{display:none!important}',
+  '@media(max-width:340px){#rf220CoachCard.tp166-home-coach{padding:10px 11px!important}#rf220CoachCard.tp166-home-coach .tp151-coach-target{grid-template-columns:1fr!important}#rf220CoachCard.tp166-home-coach h2{font-size:18px!important}}',
+  '@media(prefers-reduced-motion:reduce){#rf220CoachCard.tp166-home-coach{transition:none!important;transform:none!important}}'
+ ].join('');
+ document.head?.appendChild(style);
+
+ window.TrainPilot166Issue13={version:TP166_ISSUE13,fullCardTap:true,noHomeButtons:true,coachDesign:true,stableCoachPanel:true,scrollGestureGuard:true,synchronousAfterRender:true,paintStable:true,localizedRepaintCompatible:true};
+ window.tp166DecorateHomeCoach();
+})();
+// @endsection trainpilot-166-issue13-home-coach-card.js
+
+// @section trainpilot-167-issues22-24-gui-journal.js
+/* TrainPilot 1.6.7: #22 compact Home Coach, #23 Health without duplicate Coach, #24 no epoch fallback in Journal. */
+(function(){
+ 'use strict';
+
+ // #22 — Home already shows the active program / next due workout above Coach.
+ // Keep only the Coach recommendation and readiness here.
+ window.tp166HomeCoachMarkup=function tp166HomeCoachMarkup(){
+  let plan=null;
+  try{plan=typeof rf233CoachPlan==='function'?rf233CoachPlan():null}catch(_){}
+  const t=typeof rf233L==='function'?rf233L():(typeof rf220L==='function'?rf220L():{coach:'TrainPilot Coach'});
+  const r=plan?.readiness||(typeof rf220Readiness==='function'?rf220Readiness():{score:null,level:'medium'});
+  const title=plan?.decision?.title||(t?.[r?.level]||t?.coach||'TrainPilot Coach');
+  const text=plan?.decision?.text||(typeof rf220CoachText==='function'?rf220CoachText(r):'');
+  const score=r?.score==null?'—':(typeof tp149FormatNumber==='function'?tp149FormatNumber(r.score):String(r.score));
+  const kicker=typeof tp151T==='function'?tp151T('todayAdvice'):(t?.today||t?.advice||'Mai javaslat');
+  const readiness=typeof tp149T==='function'?tp149T('coach.readiness'):(typeof rf220L==='function'?rf220L().readiness:'Mai készenlét');
+  return '<span class="tp151-kicker">'+esc(kicker)+'</span>'+
+   '<div class="tp166-home-coach-copy"><div><h2>'+esc(title)+'</h2><p>'+esc(text)+'</p></div><span class="tp166-home-coach-chevron" aria-hidden="true">›</span></div>'+
+   '<div class="tp151-coach-target tp166-home-coach-target tp167-home-coach-readiness"><span><small>'+esc(readiness)+'</small><strong>'+esc(score)+'/100</strong></span></div>';
+ };
+
+ // #23 — Coach remains available from Home and the dedicated Coach panel.
+ // Health should focus on health / recovery data only.
+ if(typeof rf235HealthCoachCard==='function'){
+  rf235HealthCoachCard=function(){return ''};
+ }
+ window.tp167RemoveHealthCoach=function tp167RemoveHealthCoach(){
+  if(state?.tab!=='health')return false;
+  const main=document.querySelector('main.rf263-health,main.tp151-health');
+  if(!main)return false;
+  main.querySelectorAll('#rf235HealthCoach,.rf235-health-coach').forEach(function(el){el.remove()});
+  return true;
+ };
+
+ // #24 — never manufacture Unix epoch as a workout date.
+ window.tp167HistoryDateIso=function tp167HistoryDateIso(value){
+  if(value==null||value==='')return '';
+  const d=value instanceof Date?value:new Date(value);
+  const ms=d.getTime();
+  if(!Number.isFinite(ms))return '';
+  const year=d.getUTCFullYear();
+  if(year<2000||year>2100)return '';
+  return d.toISOString();
+ };
+ window.tp167RecoverHistoryDate=function tp167RecoverHistoryDate(source){
+  const s=source&&typeof source==='object'?source:{};
+  const candidates=[s.started,s.finished,s.completedAt,s.endedAt,s.date,s.createdAt];
+  for(const value of candidates){
+   const iso=window.tp167HistoryDateIso(value);
+   if(iso)return iso;
+  }
+  return '';
+ };
+ window.tp167MissingDateText=function tp167MissingDateText(){
+  const lang=typeof rf212Lang==='function'?rf212Lang():'hu';
+  return ({hu:'Dátum nem elérhető',en:'Date unavailable',de:'Datum nicht verfügbar',ro:'Data indisponibilă'})[lang]||'Date unavailable';
+ };
+
+ window.tp165SafeHistoryRecord=function tp165SafeHistoryRecord(value,index){
+  const source=value&&typeof value==='object'&&!Array.isArray(value)?value:{};
+  const exercises=Array.isArray(source.exercises)?source.exercises:[];
+  const started=window.tp167RecoverHistoryDate(source);
+  const finished=window.tp167HistoryDateIso(source.finished);
+  return Object.assign({},source,{
+   started:started,
+   finished:finished||source.finished||'',
+   exercises:exercises.filter(function(e){return e&&typeof e==='object'}).map(function(e){
+    return Object.assign({},e,{
+     id:String(e.id||'legacy-exercise-'+index),
+     hu:String(e.hu||e.name||e.en||'Korábbi gyakorlat'),
+     en:String(e.en||''),
+     sets:Array.isArray(e.sets)?e.sets.filter(function(s){return s&&typeof s==='object'}):[]
+    });
+   })
+  });
+ };
+
+ if(typeof rf263HistoryDay==='function'){
+  const historyDayBase=rf263HistoryDay;
+  rf263HistoryDay=function(value){
+   const iso=window.tp167HistoryDateIso(value);
+   return iso?historyDayBase(iso):'';
+  };
+ }
+ if(typeof fmtDate==='function'){
+  const fmtDateBase=fmtDate;
+  fmtDate=function(value){
+   const iso=window.tp167HistoryDateIso(value);
+   return iso?fmtDateBase(iso):window.tp167MissingDateText();
+  };
+ }
+
+ // The current Journal card formatter uses tp149FormatDateTime directly.
+ // Normalize its final date cell too, so invalid legacy dates cannot surface as 1970 or a bare dash.
+ if(typeof rf263HistoryItem==='function'){
+  const historyItemBase167=rf263HistoryItem;
+  rf263HistoryItem=function(x,originalIndex,visibleIndex){
+   const safe=window.tp165SafeHistoryRecord(x,originalIndex);
+   let html=String(historyItemBase167.call(this,safe,originalIndex,visibleIndex));
+   if(!window.tp167HistoryDateIso(safe.started)){
+    const label=esc(window.tp167MissingDateText());
+    const open='<div class="history-date">',close='</div>',start=html.indexOf(open);
+    if(start>=0){const bodyStart=start+open.length,end=html.indexOf(close,bodyStart);if(end>=0)html=html.slice(0,bodyStart)+label+html.slice(end);}
+   }
+   return html;
+  };
+ }
+
+ // #23 also removes the now-obsolete Coach wording from the Health intro.
+ try{
+  if(typeof TP149_CATALOG!=='undefined'){
+   TP149_CATALOG.hu['health.intro']='Health Connect, regeneráció és Health-adatok egy helyen.';
+   TP149_CATALOG.en['health.intro']='Health Connect, recovery and health data in one place.';
+   TP149_CATALOG.de['health.intro']='Health Connect, Regeneration und Gesundheitsdaten an einem Ort.';
+   TP149_CATALOG.ro['health.intro']='Health Connect, recuperare și date de sănătate într-un singur loc.';
+  }
+ }catch(_){}
+
+ const afterRenderBase167=tp120AfterRender;
+ tp120AfterRender=function(){
+  const out=afterRenderBase167.apply(this,arguments);
+  window.tp167RemoveHealthCoach();
+  return out;
+ };
+
+ const style=document.createElement('style');style.id='tp167Issues2224Css';style.textContent=[
+  '#rf220CoachCard.tp166-home-coach .tp167-home-coach-readiness{grid-template-columns:1fr!important;margin-top:9px!important}',
+  '#rf220CoachCard.tp166-home-coach .tp167-home-coach-readiness>span{width:100%!important}',
+  'main.rf263-health #rf235HealthCoach,main.rf263-health .rf235-health-coach{display:none!important}',
+  '@media(max-width:340px){#rf220CoachCard.tp166-home-coach .tp167-home-coach-readiness{grid-template-columns:1fr!important}}'
+ ].join('');
+ document.head?.appendChild(style);
+
+ window.TrainPilot167Issues2224={
+  version:'1.6.7',
+  issue22:{duplicateProgramRemoved:true,readinessKept:true},
+  issue23:{healthCoachRemoved:true,coachLogicPreserved:true},
+  issue24:{epochFallbackRemoved:true,recoverRealDate:true,missingDateLabel:true,journalDateRendered:true}
+ };
+ window.tp166DecorateHomeCoach?.();
+ window.tp167RemoveHealthCoach();
+})();
+// @endsection trainpilot-167-issues22-24-gui-journal.js
+
+// @section trainpilot-177-progress-model.js
+/* TrainPilot #60 – v1.7.7 Progress data model.
+ * Standalone, deterministic and independently testable. No DOM or persistent writes.
+ * Uses completed Journal rows only; plans/scheduled items and drafts are not inputs.
+ */
+(function(factory){
+  const api=factory();
+  if(typeof module!=='undefined'&&module.exports)module.exports=api;
+  if(typeof window!=='undefined')window.TrainPilot177Model=api;
+})(function(){
+ 'use strict';
+ const PERIODS={'1d':1,'7d':7,'30d':30,'3m':91};
+ const GROUPS=['chest','back','shoulders','legs','arms','core'];
+ const LABELS={chest:'Mell',back:'Hát',shoulders:'Váll',legs:'Láb',arms:'Kar',core:'Core'};
+ const canonicalGroup=value=>{
+  const k=String(value||'').trim().toLowerCase();
+  if(['chest','mell','pectorals'].includes(k))return 'chest';
+  if(['back','hát','hat'].includes(k))return 'back';
+  if(['shoulders','shoulder','váll','vall','delts'].includes(k))return 'shoulders';
+  if(['legs','leg','láb','lab','glutes','far','láb / far'].includes(k))return 'legs';
+  if(['arms','arm','kar','biceps','triceps','forearms'].includes(k))return 'arms';
+  if(['core','abs','törzs','torzs','has'].includes(k))return 'core';
+  return null;
+ };
+ const localStart=date=>new Date(date.getFullYear(),date.getMonth(),date.getDate());
+ const addDays=(date,delta)=>new Date(date.getFullYear(),date.getMonth(),date.getDate()+delta);
+ const dayKey=date=>date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
+ const number=value=>{const n=Number(value);return Number.isFinite(n)&&n>0?n:0};
+ const durationMinutes=workout=>{
+  if(Array.isArray(workout.activeIntervals)&&workout.activeIntervals.length){
+   const ms=workout.activeIntervals.reduce((sum,i)=>{const a=Date.parse(i.start),b=Date.parse(i.end||workout.finished||'');return sum+(Number.isFinite(a)&&Number.isFinite(b)?Math.max(0,b-a):0)},0);
+   return ms>0?ms/60000:null;
+  }
+  const started=Date.parse(workout.started||workout.startedAt||'');
+  const finished=Date.parse(workout.finished||workout.endedAt||workout.finishedAt||workout.completedAt||'');
+  const minutes=(finished-started)/60000;
+  return Number.isFinite(minutes)&&minutes>0?minutes:null;
+ };
+ const signedPercent=(current,previous)=>previous>0?Math.round((current-previous)*100/previous):null;
+ const dateOf=workout=>{
+  const value=workout.finished||workout.endedAt||workout.finishedAt||workout.completedAt;
+  const n=Date.parse(value||'');
+  return Number.isFinite(n)?new Date(n):null;
+ };
+ const groupsOf=(exercise,groupMap)=>{
+  let raw=[];
+  try{raw=groupMap?groupMap(exercise):[]}catch(_){raw=[]}
+  if(!Array.isArray(raw))raw=[];
+  if(!raw.length)raw=[exercise.muscleGroup,exercise.target];
+  return [...new Set(raw.map(canonicalGroup).filter(Boolean))];
+ };
+ const addBest=(records,previous,key,value,record)=>{
+  if(!(value>0))return;
+  const old=previous.get(key);
+  if(old!==undefined&&value>old+1e-6)records.push(record);
+  if(old===undefined||value>old)previous.set(key,value);
+ };
+ const prepare=(raw,options)=>{
+  const isDeleted=options&&options.isDeleted;
+  const groupMap=options&&options.groupMap;
+  const cleaned=[];
+  for(const w of Array.isArray(raw)?raw:[]){
+   if(!w||typeof w!=='object'||w.status==='draft'||w.cancelled||w.deleted)continue;
+   if(isDeleted&&isDeleted(w))continue;
+   const date=dateOf(w);if(!date)continue;
+   const groups=Object.fromEntries(GROUPS.map(g=>[g,0]));
+   let sets=0,volume=0,weighted=false;
+   const performances=[];
+   for(const e of Array.isArray(w.exercises)?w.exercises:[]){
+    if(!e||typeof e!=='object')continue;
+    const muscles=groupsOf(e,groupMap),done=(Array.isArray(e.sets)?e.sets:[]).filter(s=>s&&s.done===true);
+    if(!done.length)continue;
+    const id=String(e.id||e.hu||e.en||'unknown');
+    const unit=String(e.repUnit||'').trim().toLowerCase();
+    const timed=/mp|sec|second/.test(unit);
+    const bilateral=/oldal|side/.test(unit);
+    for(const s of done){
+     sets++;
+     const share=muscles.length>1?0.7:1;
+     muscles.forEach((g,i)=>{groups[g]+=i===0?share:0.3/(muscles.length-1)});
+     const weight=number(s.weight),reps=number(s.reps);
+     if(!timed&&weight>0&&reps>0){volume+=weight*reps;weighted=true}
+     performances.push({id,weight,reps,seconds:timed&&!bilateral?reps:0,
+      left:bilateral?number(s.leftSeconds):0,right:bilateral?number(s.rightSeconds):0,
+      timed,bilateral});
+    }
+   }
+   const key=w.id||`${w.started||''}|${w.programId||''}|${w.dayId||w.workout||''}`;
+   cleaned.push({source:w,key:String(key),date,dateMs:date.getTime(),durationMinutes:durationMinutes(w),
+    sets,volume:Math.round(volume*100)/100,weighted,groups,performances});
+  }
+  cleaned.sort((a,b)=>a.dateMs-b.dateMs);
+  const best=new Map();
+  for(const w of cleaned){
+   const localBest=new Map();
+   for(const s of w.performances){
+    if(s.weight>0&&s.reps>0){
+     const k=s.id+'|weight';
+     const prior=localBest.get(k);
+     if(!prior||s.weight>prior.value)localBest.set(k,{key:k,value:s.weight,kind:'weight',id:s.id,unit:'kg'});
+     // Repetition records are comparable only at the same load.
+     const kr=s.id+'|reps@'+s.weight;
+     const prevRep=localBest.get(kr);
+     if(!prevRep||s.reps>prevRep.value)localBest.set(kr,{key:kr,value:s.reps,kind:'reps',id:s.id,unit:'ism.',weight:s.weight});
+    }else if(!s.timed&&s.reps>0){
+     const k=s.id+'|bodyreps';
+     const prev=localBest.get(k);
+     if(!prev||s.reps>prev.value)localBest.set(k,{key:k,value:s.reps,kind:'reps',id:s.id,unit:'ism.'});
+    }
+    if(s.timed&&!s.bilateral&&s.seconds>0){
+     const k=s.id+'|time';const prev=localBest.get(k);
+     if(!prev||s.seconds>prev.value)localBest.set(k,{key:k,value:s.seconds,kind:'time',id:s.id,unit:'mp'});
+    }
+    if(s.bilateral&&s.left>0&&s.right>0){
+     // Track both sides, using distinct comparable records.
+     for(const side of ['left','right']){
+      const k=s.id+'|'+side,prev=localBest.get(k),v=s[side];
+      if(!prev||v>prev.value)localBest.set(k,{key:k,value:v,kind:side,id:s.id,unit:'mp'});
+     }
+    }
+   }
+   w.pr=[];
+   localBest.forEach(record=>addBest(w.pr,best,record.key,record.value,{
+    id:record.id,kind:record.kind,weight:record.weight||0,previous:best.get(record.key),
+    value:record.value,unit:record.unit,date:w.date,workoutKey:w.key
+   }));
+  }
+  return cleaned;
+ };
+ const build=(prepared,period,today)=>{
+  const span=PERIODS[period]||PERIODS['3m'];
+  const now=today instanceof Date&&!Number.isNaN(today.getTime())?today:new Date();
+  const end=addDays(localStart(now),1),start=addDays(end,-span),previousStart=addDays(start,-span);
+  const rows=(Array.isArray(prepared)?prepared:[]).filter(w=>w.date>=previousStart&&w.date<end);
+  const inRange=(from,to)=>rows.filter(w=>w.date>=from&&w.date<to);
+  const current=inRange(start,end),prior=inRange(previousStart,start);
+  const sum=(xs,key)=>xs.reduce((n,w)=>n+w[key],0);
+  const metric=xs=>({workouts:xs.length,sets:sum(xs,'sets'),volume:sum(xs,'volume'),
+    weightedCount:xs.filter(w=>w.weighted).length,pr:xs.flatMap(w=>w.pr)});
+  const a=metric(current),b=metric(prior);
+  a.avgVolume=a.weightedCount?a.volume/a.weightedCount:null;
+  b.avgVolume=b.weightedCount?b.volume/b.weightedCount:null;
+  for(const [metrics,workouts] of [[a,current],[b,prior]]){
+   const timed=workouts.filter(w=>w.durationMinutes!=null);
+   metrics.timedWorkouts=timed.length;
+   metrics.avgDuration=timed.length?timed.reduce((sum,w)=>sum+w.durationMinutes,0)/timed.length:null;
+  }
+  const groupScores=Object.fromEntries(GROUPS.map(g=>[g,0]));
+  current.forEach(w=>GROUPS.forEach(g=>{groupScores[g]+=w.groups[g]||0}));
+  const maxScore=Math.max(0,...Object.values(groupScores));
+  const groups=GROUPS.map(g=>({key:g,name:LABELS[g],sets:groupScores[g],
+   percent:maxScore?Math.round(groupScores[g]*100/maxScore):0}));
+  const bucketDays=period==='1d'||period==='7d'?1:7;
+  const bucketCount=Math.ceil(span/bucketDays),buckets=[];
+  for(let i=0;i<bucketCount;i++){
+   const from=addDays(start,i*bucketDays),to=addDays(from,bucketDays);
+   const xs=current.filter(w=>w.date>=from&&w.date<to);
+   buckets.push({start:from,end:to<end?to:end,day:dayKey(from),volume:sum(xs,'volume'),workouts:xs});
+  }
+  const changes={
+   volume:signedPercent(a.volume,b.volume),workouts:signedPercent(a.workouts,b.workouts),
+   duration:b.avgDuration==null||a.avgDuration==null?null:signedPercent(a.avgDuration,b.avgDuration),
+   sets:signedPercent(a.sets,b.sets),pr:signedPercent(a.pr.length,b.pr.length),
+   avgVolume:signedPercent(a.avgVolume||0,b.avgVolume||0)
+  };
+  return {period,span,start,end,previousStart,current,prior,buckets,groups,maxGroupScore:maxScore,
+   currentMetrics:a,previousMetrics:b,changes};
+ };
+ return {PERIODS,GROUPS,LABELS,canonicalGroup,localStart,addDays,dayKey,number,signedPercent,prepare,build};
+});
+// @endsection trainpilot-177-progress-model.js
+
+// @section trainpilot-177-progress-ui.js
+/* TrainPilot #60 – v1.7.7 Fejlődés screen.
+ * Additive Journal tab; no duplicate data store and no changes to the global app chrome.
+ * Loaded after app.js and wired after the existing DOMContentLoaded UI decorators.
+ */
+window.addEventListener?.('DOMContentLoaded',function(){
+ 'use strict';
+ const model=window.TrainPilot177Model;
+ if(!model||typeof historyScreen!=='function'||typeof shell!=='function')return;
+ const COPY={
+  hu:{log:'Edzésnapló',stats:'Statisztikák',progress:'Fejlődés',volume:'Összes volumen',trend:'Volumen trend',
+   day1:'1 nap',days7:'7 nap',days30:'30 nap',months3:'3 hó',vs:'az előző időszakhoz képest',pr:'PR rekordok',
+   workouts:'Edzések száma',average:'Átlagos volumen',averageSmall:'súlyzós edzésenként',
+   duration:'Átl. edzésidő',durationDetail:'Átlagos edzésidő',durationNote:'Mért időtartamú edzésekből számolva',durationMissing:'Nincs mért edzésidő ebben az időszakban.',sets:'Sorozatok száma',muscles:'Izomcsoport-terhelés',groupNote:'A színek és arányok az időszak legterheltebb izomcsoportjához viszonyítanak, nem fáradtságot mérnek.',
+   low:'Kisebb',medium:'Közepes',high:'Nagyobb',anatomyZoom:'Izomterhelés nagyítása',
+   coach:'Fejlődési javaslat',more:'Részletek',noData:'Ehhez az időszakhoz nincs elegendő naplózott adat.',
+   noWeight:'Ebben az időszakban nincs mérhető súlyzós volumen.',openLog:'Megnyitás az Edzésnaplóban',
+   close:'Bezárás',back:'Vissza',previous:'Korábbi',current:'Új',sessions:'Edzések',completed:'Befejezett edzések',setCount:'sorozat',
+   daily:'Napi bontás',weekly:'Heti bontás',exercises:'Gyakorlatok',groupWork:'Naplózott gyakorlatok',
+   hint:'Válassz egy oszlopot a részletekhez.',groupDetails:'Izomcsoport részletei',
+   allStats:'Megnyitás a Statisztikákban',noChange:'Nincs összehasonlítható előzmény',
+   suggestionEmpty:'Rögzíts további edzéseket a személyre szabott fejlődési összesítéshez.',
+   suggestionGood:'A naplózott súlyzós volumen nőtt az előző azonos hosszúságú időszakhoz képest.',
+   suggestionFocus:'A legtöbb sorozatterhelést ez az izomcsoport kapta: ',
+   suggestionStable:'A következetességet az edzésszám és a volumen együtt mutatja.',
+   coachOpen:'Részletek a Coachban',weight:'Súly',reps:'Ismétlés',time:'Idő',left:'Bal oldal',right:'Jobb oldal'},
+  en:{log:'Workout log',stats:'Statistics',progress:'Progress',volume:'Total volume',trend:'Volume trend',
+   day1:'1 day',days7:'7 days',days30:'30 days',months3:'3 mo',vs:'vs previous period',pr:'PR records',
+   workouts:'Workouts',average:'Average volume',averageSmall:'per weighted workout',
+   duration:'Avg. duration',durationDetail:'Average workout duration',durationNote:'Based on workouts with recorded duration',durationMissing:'No recorded workout duration in this period.',sets:'Completed sets',muscles:'Muscle group load',groupNote:'Colors and percentages are relative to the most trained group, not a fatigue measurement.',
+   low:'Lower',medium:'Medium',high:'Higher',anatomyZoom:'Enlarge muscle load diagram',
+   coach:'Progress insight',more:'Details',noData:'Not enough logged data for this period.',
+   noWeight:'No measurable weighted volume in this period.',openLog:'Open in workout log',
+   close:'Close',back:'Back',previous:'Previous',current:'New',sessions:'Workouts',completed:'Completed workouts',setCount:'sets',
+   daily:'Daily bars',weekly:'Weekly bars',exercises:'Exercises',groupWork:'Logged exercises',
+   hint:'Tap a bar for details.',groupDetails:'Muscle group details',
+   allStats:'Open Statistics',noChange:'No comparable previous data',
+   suggestionEmpty:'Log more workouts for useful progress insights.',
+   suggestionGood:'Your logged weighted volume increased compared with the previous period.',
+   suggestionFocus:'Most recorded working-set load was assigned to: ',
+   suggestionStable:'Workout count and volume together provide context for consistency.',
+   coachOpen:'View in Coach',weight:'Weight',reps:'Reps',time:'Time',left:'Left side',right:'Right side'},
+  de:{log:'Trainingstagebuch',stats:'Statistiken',progress:'Fortschritt',volume:'Gesamtvolumen',trend:'Volumentrend',
+   day1:'1 Tag',days7:'7 Tage',days30:'30 Tage',months3:'3 Mon.',vs:'zum vorigen Zeitraum',pr:'Persönliche Rekorde',
+   workouts:'Trainingseinheiten',average:'Ø Volumen',averageSmall:'pro Krafttraining',
+   duration:'Ø Dauer',durationDetail:'Ø Trainingsdauer',durationNote:'Berechnet aus Trainings mit erfasster Dauer',durationMissing:'Keine erfasste Trainingsdauer in diesem Zeitraum.',sets:'Sätze',muscles:'Muskelgruppenbelastung',groupNote:'Farben und Prozentwerte beziehen sich auf die am stärksten trainierte Gruppe, keine Ermüdungsmessung.',
+   low:'Niedriger',medium:'Mittel',high:'Höher',anatomyZoom:'Muskelbelastungsdiagramm vergrößern',
+   coach:'Fortschrittsempfehlung',more:'Details',noData:'Nicht genügend erfasste Daten für diesen Zeitraum.',
+   noWeight:'Kein messbares Krafttrainingsvolumen in diesem Zeitraum.',openLog:'Im Trainingstagebuch öffnen',
+   close:'Schließen',back:'Zurück',previous:'Vorher',current:'Neu',sessions:'Trainings',completed:'Abgeschlossene Trainings',setCount:'Sätze',
+   daily:'Tagesansicht',weekly:'Wochenansicht',exercises:'Übungen',groupWork:'Protokollierte Übungen',
+   hint:'Tippe auf einen Balken für Details.',groupDetails:'Muskelgruppendetails',
+   allStats:'In Statistiken öffnen',noChange:'Keine vergleichbaren früheren Daten',
+   suggestionEmpty:'Erfasse weitere Trainings für personalisierte Fortschrittsberichte.',

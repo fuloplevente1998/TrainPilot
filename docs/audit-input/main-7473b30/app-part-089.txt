@@ -1,0 +1,306 @@
+   leaveWatch:'Leave the phone view? The workout will keep running on your watch.',leavePaused:'Leave the phone view? The workout will remain paused on your watch.',leavePending:'Leave this view? The saved transfer will continue; the workout stays paused until confirmation.'},
+  de:{title:'Trainingssteuerung',phone:'Das Telefon steuert das Training',watch:'Die Uhr steuert das Training',pending:'Übertragung läuft. Das Training bleibt bis zur Bestätigung pausiert.',
+   take:'Training zurücknehmen',retry:'Erneut versuchen',resume:'Auf Telefon fortsetzen',hint:'Fordere die Übernahme unter Trainingssteuerung auf der Uhr an.',
+   mirror:'Die Steuerung erfolgt auf der Uhr. Zum Bearbeiten am Telefon das Training zurücknehmen.',paused:'Das Training pausiert.',saved:'Rückgabe angefordert. Nach der Bestätigung ausdrücklich fortsetzen.',
+   failed:'Die Aktion wurde nicht abgeschlossen. Geräteverbindung prüfen und erneut versuchen.',busy:'In Bearbeitung…',
+   leaveWatch:'Telefonansicht verlassen? Das Training läuft auf der Uhr weiter.',leavePaused:'Telefonansicht verlassen? Das Training bleibt auf der Uhr pausiert.',leavePending:'Ansicht verlassen? Die gespeicherte Übertragung läuft weiter; das Training bleibt bis zur Bestätigung pausiert.'},
+  ro:{title:'Control antrenament',phone:'Telefonul controlează antrenamentul',watch:'Ceasul controlează antrenamentul',pending:'Transfer în curs. Antrenamentul rămâne în pauză până la confirmare.',
+   take:'Preia înapoi antrenamentul',retry:'Reîncearcă',resume:'Continuă pe telefon',hint:'Cere preluarea din Control antrenament pe ceas.',
+   mirror:'Folosește comenzile de pe ceas. Preia antrenamentul pentru a-l edita pe telefon.',paused:'Antrenamentul este în pauză.',saved:'Cererea de revenire a fost salvată. Continuă explicit după confirmare.',
+   failed:'Operația nu s-a încheiat. Verifică legătura dintre dispozitive și reîncearcă.',busy:'În curs…',
+   leaveWatch:'Părăsești ecranul telefonului? Antrenamentul continuă pe ceas.',leavePaused:'Părăsești ecranul telefonului? Antrenamentul rămâne în pauză pe ceas.',leavePending:'Părăsești ecranul? Transferul salvat continuă; antrenamentul rămâne în pauză până la confirmare.'}
+ };
+ const text=key=>(words[typeof rf212Lang==='function'?rf212Lang():'en']||words.en)[key];
+ const pending=s=>window.TrainPilotOwnership193Core.pending(s),identity=s=>String(s?.syncId||s?.started||'');
+ const locked=s=>s?.ownershipProtocol193===1&&(s.timerOwner==='watch'||s.workoutPaused||s.ownershipAwaitingResume193||pending(s));
+ const bridge=()=>window.Capacitor?.Plugins?.WearSync||window.Capacitor?.registerPlugin?.('WearSync');
+ let acting=false,error='',requested=false,view='',wasLocked=null,painting=false;
+ const disabled=new WeakMap();
+ function safeControl(node){
+  return !!node.closest('[data-tp193-panel],[onclick*="TrainPilotGpsMap163"]')||
+   (state.session?.timerOwner==='phone'&&!pending(state.session)&&!!node.closest('[onclick*="finishWorkout"]'));
+ }
+ function releaseManualClocks(){
+  if(typeof rf110Stopwatch!=='undefined'){
+   if(rf110Stopwatch.timer)clearInterval(rf110Stopwatch.timer);
+   Object.assign(rf110Stopwatch,{key:'',setIndex:-1,elapsedMs:0,startedAt:0,running:false,timer:null,lastSecond:-1});
+  }
+  if(typeof tp1481SideStopwatch!=='undefined'){
+   if(tp1481SideStopwatch.timer)clearInterval(tp1481SideStopwatch.timer);
+   tp1481SideStopwatch={exerciseIndex:-1,setIndex:-1,side:null,elapsedMs:0,startedAt:0,running:false,timer:null,lastSecond:-1};
+  }
+ }
+ function paint(){
+  const s=state.session,main=document.querySelector('main.tp153-workout');
+  if(!main||s?.ownershipProtocol193!==1){document.querySelector('[data-tp193-panel]')?.remove();wasLocked=null;return;}
+  const key=identity(s)+':'+Number(s.ownerEpoch193||0)+':'+(s.handoff193?.id||'')+':'+(s.handoff193?.state||'');
+  const changed=key!==view;
+  if(changed){view=key;error='';requested=false;}
+  const readonly=locked(s);
+  if(changed&&main.querySelector('[data-tp193-panel]')&&!painting){wasLocked=readonly;painting=true;try{renderWorkout();}finally{painting=false;}return;}
+  if(wasLocked===true&&!readonly&&!painting){wasLocked=false;painting=true;try{renderWorkout();}finally{painting=false;}return;}
+  wasLocked=readonly;
+  let panel=main.querySelector('[data-tp193-panel]');
+  if(!panel){panel=document.createElement('section');panel.className='card tp193-ownership';panel.dataset.tp193Panel='';main.prepend(panel);}
+  const stateText=pending(s)?text('pending'):requested?text('saved'):s.timerOwner==='watch'?text('mirror'):s.workoutPaused?text('paused'):text('hint');
+  const action=pending(s)?'retry':s.timerOwner==='watch'?'take':s.workoutPaused?'resume':null;
+  panel.innerHTML='<strong>'+esc(text(s.timerOwner==='watch'?'watch':'phone'))+'</strong><div class="small muted" role="status" aria-live="polite">'+esc(error||stateText)+'</div>'+
+   (action?'<button type="button" class="btn secondary" data-tp193-action="'+action+'" '+(acting?'disabled':'')+' onclick="TrainPilotOwnership193.'+(action==='take'?'takeBack':action==='resume'?'continueOnPhone':'retryTransfer')+'()">'+esc(acting?text('busy'):text(action))+'</button>':'');
+  if(!main.dataset.tp193Guard){
+   main.dataset.tp193Guard='1';
+   main.addEventListener('click',event=>{
+    if(locked(state.session)&&!safeControl(event.target)){event.preventDefault();event.stopImmediatePropagation();}
+   },true);
+   main.addEventListener('keydown',event=>{
+    if(['Enter',' '].includes(event.key)&&locked(state.session)&&event.target.closest('button,input,select,textarea,[onclick],[role="button"]')&&!safeControl(event.target)){event.preventDefault();event.stopImmediatePropagation();}
+   },true);
+  }
+  main.querySelectorAll('button,input,select,textarea').forEach(node=>{
+   if(safeControl(node)){if(disabled.has(node)){node.disabled=disabled.get(node);disabled.delete(node);}return;}
+   if(readonly){if(!disabled.has(node))disabled.set(node,node.disabled);node.disabled=true;}
+   else if(disabled.has(node)){node.disabled=disabled.get(node);disabled.delete(node);}
+  });
+ }
+ async function act(kind){
+  const s=state.session;if(acting||s?.ownershipProtocol193!==1||window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending)return false;
+  acting=true;error='';paint();
+  try{
+   if(kind==='take'){
+    if(s.timerOwner!=='watch'||pending(s))return false;
+    await window.TrainPilotWearSync.drainCommands();if(state.session!==s)return false;
+    if(!bridge()?.requestOwnership193)throw Error('Bridge unavailable');
+    await bridge().requestOwnership193();requested=true;await ownership.sync();
+   }else if(kind==='resume'){
+    if(s.timerOwner!=='phone'||pending(s)||!s.workoutPaused)return false;
+    if(!await window.TrainPilotWorkoutPause201.resume(s))throw Error('Continuation failed');
+    if(state.session===s)renderWorkout();
+   }else await ownership.sync();
+   return true;
+  }catch(_){error=text('failed');return false;}finally{acting=false;paint();}
+ }
+ Object.assign(ownership,{paint,releaseManualClocks,takeBack:()=>act('take'),continueOnPhone:()=>act('resume'),retryTransfer:()=>act('retry'),
+  leaveMessage:s=>s?.ownershipProtocol193!==1?null:pending(s)?text('leavePending'):s.timerOwner==='watch'?text(s.workoutPaused?'leavePaused':'leaveWatch'):null});
+ window.addEventListener?.('DOMContentLoaded',function ownershipUi193(){
+  if(!document.getElementById('tp193-ownership-style')){
+   const style=document.createElement('style');style.id='tp193-ownership-style';style.textContent='.tp193-ownership{display:grid;gap:8px;padding:12px!important}.tp193-ownership strong{font-size:14px}.tp193-ownership .btn{min-height:42px;padding:8px 12px}';document.head.appendChild(style);
+  }
+  const renderBase=renderWorkout;renderWorkout=function(){const result=renderBase.apply(this,arguments);paint();return result;};
+  for(const name of ['rf110DecorateTimedWorkout','tp1481DecoratePerSide']){
+   const base=name==='rf110DecorateTimedWorkout'?rf110DecorateTimedWorkout:tp1481DecoratePerSide;
+   const decorate=function(){if(locked(state.session)){releaseManualClocks();document.getElementById('rf110Stopwatch')?.remove();return;}return base.apply(this,arguments);};
+   if(name==='rf110DecorateTimedWorkout')rf110DecorateTimedWorkout=decorate;else tp1481DecoratePerSide=decorate;
+  }
+  paint();
+ });
+})();
+// @endsection workout-ownership-ui-193.js
+
+// @section phone-recording-162.js
+(function(){
+ 'use strict';
+ window.addEventListener?.('DOMContentLoaded',()=>{
+  const base=toggleSet;toggleSet=function(ei,si){
+   const session=state.session,e=session?.exercises?.[ei],set=e?.sets?.[si];let api=null;
+   try{if(window.Capacitor?.isNativePlatform?.()===true)api=window.Capacitor?.Plugins?.WearSync||window.Capacitor?.registerPlugin?.('WearSync');}catch(_){}
+   const eligible=api?.executionStatus&&session?.automatic162?.enabled&&(session.timerOwner||'phone')==='phone'&&
+    !session.exercises.some(e=>e.measurementType==='distance')&&!window.TrainPilotWearSync?.isApplyingCommand?.()&&
+    set&&!set.done&&['','ism.','reps','/kar','/láb'].includes(e.repUnit||'')&&/^\d+$/.test(String(set.reps))&&Number(set.reps)>0;
+   if(eligible)return window.TrainPilotPhoneExecution162.recordPhoneSet(ei,si);
+   const capture=session&&(session.timerOwner||'phone')==='phone'&&!window.TrainPilotWearSync?.isApplyingCommand?.()&&set&&!set.done;
+   if(!capture)return base.apply(this,arguments);
+   window.TrainPilotWearSync?.ensureSetIdentities?.();
+   const before=window.TrainPilotUndo188.values(set),recordId=crypto.randomUUID();
+   const recorded=result=>{
+    if(state.session===session&&e.sets[si]===set&&set.done&&set.setId){
+     const previous=session.lastRecord188;
+     window.TrainPilotUndo188.capture(session,{commandId:recordId,workoutId:String(session.syncId||session.started||''),exerciseId:e.id,setId:set.setId},before);
+     try{persistDraft();}catch(error){if(previous===undefined)delete session.lastRecord188;else session.lastRecord188=previous;throw error;}
+     void window.TrainPilotWearSync?.syncNow?.();
+     window.TrainPilotPhoneUndo188?.paint?.();
+     window.TrainPilotSetHaptic227?.success?.(session,set);
+    }
+    return result;
+   };
+   const result=base.apply(this,arguments);
+   return result&&typeof result.then==='function'?result.then(recorded):recorded(result);
+  };
+ });
+})();
+// @endsection phone-recording-162.js
+
+// @section phone-undo-188.js
+(function(){
+ 'use strict';
+ const core=window.TrainPilotUndo188,copy=v=>JSON.parse(JSON.stringify(v));let busy=false,poll=null;
+ const COPY={hu:{undo:'Visszavonás',label:'Utolsó sorozat visszavonása',waiting:'Egyeztetés…',failed:'A sorozat nem vonható vissza. Ellenőrizd a kapcsolatot vagy használd a szerkesztést.'},en:{undo:'Undo',label:'Undo last set',waiting:'Syncing…',failed:'The set could not be undone. Check the connection or edit it.'},de:{undo:'Rückgängig',label:'Letzten Satz rückgängig machen',waiting:'Abgleich…',failed:'Der Satz konnte nicht zurückgenommen werden. Verbindung prüfen oder bearbeiten.'},ro:{undo:'Anulează',label:'Anulează ultima serie',waiting:'Sincronizare…',failed:'Seria nu a putut fi anulată. Verifică conexiunea sau editează seria.'}};
+ const t=k=>(COPY[rf212Lang()]||COPY.hu)[k];
+ const blocked=()=>window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending||window.TrainPilotBoot?.loading||window.TrainPilotWearSync?.isApplyingCommand?.();
+ function paint(){
+  const s=state.session,waiting=busy||s?.automatic162?.pending===true,button=document.querySelector('[data-tp188-undo]');
+  if(button){
+   const hidden=!core.available(s)&&!waiting;
+   const changed=button.hidden!==hidden;button.hidden=hidden;
+   button.disabled=waiting||blocked()||window.TrainPilotPhoneExecution162?.isReconciling?.()||!core.available(s);
+   button.textContent=waiting?t('waiting'):'↶ '+t('undo');button.setAttribute('aria-label',t('label'));button.setAttribute('aria-busy',String(waiting));
+   if(changed)window.TrainPilotIssue16?.syncGeometry?.();
+  }
+  if(s&&(s.lastRecord188||waiting)&&!poll)poll=setInterval(paint,500);
+  else if((!s||!s.lastRecord188&&!waiting)&&poll){clearInterval(poll);poll=null;}
+ }
+ async function undo(){
+  const s=state.session;if(busy||blocked()||!core.available(s)||s.automatic162?.pending)return false;
+  const recordId=s.lastRecord188.recordId;busy=true;paint();let applied=false;
+  try{
+   if(s.timerOwner==='watch')return await window.TrainPilotWearAutomatic162.remote('undo',{recordId});
+   if(s.lastRecord188.native188&&s.phoneExecution162&&s.automatic162?.enabled){
+    applied=await window.TrainPilotPhoneExecution162.undoPhoneSet(recordId);
+   }else{
+    if(!await window.TrainPilotAutomatic162.command('pause')||!await window.TrainPilotIntervals162.command('pause'))return false;
+    if(state.session!==s||!core.available(s)||s.lastRecord188.recordId!==recordId||blocked())return false;
+    const next=copy(s),command={...copy(s.lastRecord188),commandId:crypto.randomUUID()};
+    if(!core.inverse(next,command))return false;
+    const current=next.exercises.findIndex(e=>e.id===command.exerciseId);
+    db.set('draft',{...db.get('draft',{}),session:next,workout:state.workout,current,restEndAt:null,savedAt:new Date().toISOString()});
+    const exercises=s.exercises;next.exercises.forEach((e,i)=>e.sets.forEach((v,j)=>Object.assign(exercises[i].sets[j],v)));
+    Object.assign(s,next,{exercises});state.current=current;stopTimer();state.restEndAt=null;applied=true;renderWorkout();
+   }
+   if(applied)void window.TrainPilotWearSync?.syncNow?.();
+   return applied;
+  }catch(_){return false;}
+  finally{busy=false;paint();if(!applied&&state.session===s&&s.timerOwner!=='watch')window.tp153Toast?.(t('failed'),5000);}
+ }
+ window.TrainPilotPhoneUndo188={undo,paint};
+ window.addEventListener?.('DOMContentLoaded',()=>{
+  const base=renderWorkout;renderWorkout=function(){
+   const result=base.apply(this,arguments),panel=document.querySelector('[data-tp162-automatic]');
+   if(panel&&!panel.querySelector('[data-tp188-undo]')){
+    const button=document.createElement('button');button.type='button';button.className='btn secondary tp162-small tp188-undo';button.dataset.tp188Undo='';button.hidden=true;button.addEventListener('click',undo);panel.append(button);
+   }
+   paint();window.TrainPilotIssue16?.syncGeometry?.();return result;
+  };
+  const auto=window.TrainPilotAutomatic162;if(auto){const original=auto.paint;auto.paint=function(){const result=original.apply(this,arguments);paint();return result;};}
+ });
+})();
+// @endsection phone-undo-188.js
+
+
+
+// @section wear-gps-route-193.js
+/* Route references are metadata; coordinates cross the bridge only when the map is opened. */
+(function(){
+ 'use strict';
+ const id=s=>String(s?.syncId||s?.started||''),key=/^wear193:[a-f0-9]{64}$/,clone=s=>({...s,exercises:s.exercises.map(e=>({...e,sets:e.sets.map(v=>({...v}))}))});
+ function merge(workout,bindings){
+  if(workout?.ownershipProtocol193!==1||!Array.isArray(workout.exercises)||!Array.isArray(bindings))return null;
+  const next=clone(workout);let changed=false;
+  for(const binding of bindings){
+   if(binding?.workoutId!==id(workout)||!key.test(binding.routeKey||'')||!Number.isInteger(binding.pointCount)||binding.pointCount<1||binding.pointCount>12000)continue;
+   const set=next.exercises.find(e=>e.id===binding.exerciseId)?.sets.find(v=>v.setId===binding.setId);if(!set)continue;
+   if(set.gpsRouteKey193!==binding.routeKey){set.gpsRouteKey193=binding.routeKey;changed=true;}
+  }
+  return changed?next:null;
+ }
+ const flights=new Map(),erasing=new Set(),deleted=new Set(),last=new Map();
+ const blocked=()=>window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending||window.TrainPilotBoot?.loading;
+ const api=()=>window.Capacitor?.isNativePlatform?.()===true?(window.Capacitor.Plugins?.DistanceTracker||window.Capacitor.registerPlugin?.('DistanceTracker')):null;
+ function existing(wanted){return id(state.session)===wanted?state.session:id(db.get('draft',null)?.session)===wanted?db.get('draft').session:(db.get('history',[])||[]).find(h=>id(h)===wanted);}
+ function commit(wanted,bindings){
+  if(blocked()||erasing.has(wanted)||deleted.has(wanted))return false;
+  if(id(state.session)===wanted){
+   const own=state.session,next=merge(own,bindings);if(!next)return true;
+   db.set('draft',{...(db.get('draft',null)||{}),session:next,workout:state.workout,current:state.current,restEndAt:state.restEndAt||null,savedAt:new Date().toISOString()});
+   for(const [ei,e] of next.exercises.entries())for(const [si,set] of e.sets.entries())if(set.gpsRouteKey193)own.exercises[ei].sets[si].gpsRouteKey193=set.gpsRouteKey193;
+   return true;
+  }
+  const draft=db.get('draft',null);
+  if(id(draft?.session)===wanted){const next=merge(draft.session,bindings);if(next)db.set('draft',{...draft,session:next,savedAt:new Date().toISOString()});return true;}
+  const rows=db.get('history',[])||[],index=rows.findIndex(h=>id(h)===wanted);if(index<0)return false;
+  const next=merge(rows[index],bindings);if(next){rows[index]=next;db.set('history',rows);}return true;
+ }
+ async function sync(wanted){
+  wanted=String(wanted||'');if(!wanted||blocked()||erasing.has(wanted)||deleted.has(wanted)||existing(wanted)?.ownershipProtocol193!==1)return false;
+  const bridge=api();if(!bridge?.routeBindings193)return false;if(flights.has(wanted))return flights.get(wanted);
+  const flight=(async()=>{try{
+   const result=await bridge.routeBindings193({workoutId:wanted}),ok=result?.workoutId===wanted&&commit(wanted,result.bindings);
+   if(ok)for(const el of document.querySelectorAll('details[data-tp152-history-key][open]'))paintHistory(el,el.dataset.tp152HistoryKey);
+   return ok;
+  }catch(_){return false;}finally{flights.delete(wanted);}})();
+  flights.set(wanted,flight);return flight;
+ }
+ function refresh(){
+  if(document.hidden||blocked()||!api()?.routeBindings193)return;
+  const now=Date.now(),workouts=[state.session||db.get('draft',null)?.session];
+  // A workout can be saved before its offline GPS packets arrive. Keep expanded
+  // journal entries eligible for metadata hydration after the live draft is gone.
+  const cards=Array.from(document.querySelectorAll('details[data-tp152-history-key][open]')).slice(0,5);
+  if(cards.length){const rows=history();for(const el of cards)workouts.push(rows.find(h=>rf142WorkoutKey(h)===el.dataset.tp152HistoryKey));}
+  for(const workout of workouts){const wanted=id(workout);
+   if(workout?.ownershipProtocol193!==1||now-(last.get(wanted)||0)<10000)continue;
+   last.set(wanted,now);void sync(wanted);
+  }
+ }
+ async function erase(wanted){
+  wanted=String(wanted||'');if(!wanted)return false;erasing.add(wanted);
+  try{const bridge=api();if(window.Capacitor?.isNativePlatform?.()===true&&(await bridge?.deleteWorkoutRoutes193?.({workoutId:wanted}))?.deleted!==true)return false;deleted.add(wanted);return true;}
+  catch(_){return false;}finally{erasing.delete(wanted);}
+ }
+ function paintHistory(el,workoutKey){
+  if(!el?.isConnected)return;const row=history().find(h=>rf142WorkoutKey(h)===workoutKey),map=window.TrainPilotGpsMap163;
+  const body=el.querySelector(':scope > .tp3-combined-history-body');if(!row||!body||body.querySelector('.tp163-route-entry')||!map?.references(row).length)return;
+  const entry=document.createElement('div'),button=document.createElement('button');entry.className='tp163-route-entry';button.className='btn secondary block tp163-route-button';button.type='button';button.textContent='↗ '+map.text('open');
+  button.addEventListener('click',event=>{event.stopPropagation();map.openRoute(workoutKey);});entry.append(button);body.prepend(entry);
+ }
+ window.TrainPilotWearRoutes193Core={merge};window.TrainPilotWearRoutes193={sync,refresh,erase};
+ window.addEventListener?.('DOMContentLoaded',()=>setTimeout(()=>{
+  setInterval(refresh,10000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
+  const base=window.tp3EnsureHistoryBody;if(typeof base!=='function')return;
+  window.tp3EnsureHistoryBody=function(el,index,workoutKey){const result=base.apply(this,arguments);if(!api()?.routeBindings193)return result;
+   const row=history().find(h=>rf142WorkoutKey(h)===workoutKey);
+   if(row?.ownershipProtocol193===1)void sync(id(row)).then(ok=>{if(ok)paintHistory(el,workoutKey);});return result;
+  };
+ },0));
+})();
+// @endsection wear-gps-route-193.js
+
+
+// @section distance-activity-flow-220.js
+/* #206/#220: distance workouts are measurements, not weight-training sets.
+ * Keep one internal set for existing GPS owner, sync, diary and history contracts.
+ * The already shipped explicit GPS STOP -> done transition remains the only
+ * automatic GPS completion path.
+ */
+(function(){
+ 'use strict';
+ const words={
+  hu:{quick:'Nem kell sorozatot, ismétlést vagy célidőt megadni. Indítsd el a mérést az edzésnél.',distance:'Távolság',duration:'Idő',pace:'Tempó',ready:'Mérésre kész',tracking:'GPS-mérés folyamatban',saved:'Mérés rögzítve – folytathatod az edzést',notSaved:'A mérés még nincs teljesítve',manual:'Kézi adatbevitel (GPS nélkül)',segments:'Szakaszok'},
+  en:{quick:'No sets, repetitions or target duration needed. Start measuring in the workout.',distance:'Distance',duration:'Time',pace:'Pace',ready:'Ready to measure',tracking:'GPS tracking in progress',saved:'Measurement saved – you can continue',notSaved:'Measurement not yet completed',manual:'Manual entry (without GPS)',segments:'Segments'},
+  de:{quick:'Keine Sätze, Wiederholungen oder Zielzeit nötig. Starte die Messung im Training.',distance:'Strecke',duration:'Zeit',pace:'Tempo',ready:'Bereit zur Messung',tracking:'GPS-Messung läuft',saved:'Messung gespeichert – Training fortsetzen',notSaved:'Messung noch nicht abgeschlossen',manual:'Manuelle Eingabe (ohne GPS)',segments:'Abschnitte'},
+  ro:{quick:'Nu sunt necesare serii, repetări sau o durată prestabilită. Pornește măsurarea în antrenament.',distance:'Distanță',duration:'Timp',pace:'Ritm',ready:'Gata de măsurare',tracking:'Măsurare GPS în curs',saved:'Măsurare salvată – poți continua',notSaved:'Măsurarea nu este finalizată',manual:'Introducere manuală (fără GPS)',segments:'Segmente'}
+ };
+ const tr=k=>(words[rf212Lang()]||words.en)[k];
+ const originalQuick=tp150QuickExercise;
+ tp150QuickExercise=function(id){
+  const item=originalQuick.apply(this,arguments),definition=byId(id);
+  if(item&&tp106IsDistance(definition||item)&&item.sets?.length){
+   // Preserve exactly one internal measurement record. Never require the
+   // user to configure a weight-training series for a quick distance workout.
+   item.sets=item.sets.slice(0,1);item.sets[0].set=1;
+  }
+  return item;
+ };
+ const originalFields=tp152QuickFields;
+ tp152QuickFields=function(e){
+  if(!tp106IsDistance(e))return originalFields.apply(this,arguments);
+  return '<p class="small muted tp220-quick-info">'+esc(tr('quick'))+'</p>';
+ };
+ function paint(){
+  const panel=document.getElementById('tp220-distance-readout'),e=state.session?.exercises?.[state.current];
+  if(!panel||!tp106IsDistance(e))return;
+  const sets=Array.isArray(e.sets)?e.sets:[],meters=sets.reduce((sum,s)=>sum+(Number.isFinite(Number(s.distanceMeters))&&Number(s.distanceMeters)>0?Number(s.distanceMeters):0),0);
+  const seconds=sets.reduce((sum,s)=>sum+(Number.isFinite(Number(s.reps))&&Number(s.reps)>0?Number(s.reps):0),0);
+  const done=sets.some(s=>s.done),trip=db.get('gpsTrip106',null),owner=tp106GpsOwner(trip),tracking=tp106GpsState.active&&owner?.e===e;
+  const pace=meters>0&&seconds>0?Math.round(seconds*1000/meters):0;
+  const paceText=pace>0?Math.floor(pace/60)+':'+String(pace%60).padStart(2,'0')+' /km':'—';
+  panel.querySelector('[data-tp220-distance]').textContent=tp106Km(meters)+' km';
+  panel.querySelector('[data-tp220-time]').textContent=rf110FormatStopwatch(Math.round(seconds));
+  panel.querySelector('[data-tp220-pace]').textContent=paceText;

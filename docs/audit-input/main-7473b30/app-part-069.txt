@@ -1,0 +1,167 @@
+ catch(error){alert(tp149T('backup.invalidFile')+'\n'+(error?.message||error));}
+ finally{const input=document.getElementById('importFile');if(input)input.value='';}
+};
+var tp105SetHealth=async function(on){if(cloudBusy){alert(tp105Text('busy'));render();return;}if(on&&!await tp2628Confirm(tp105Text('healthConfirm'),{title:tp105Text('data')})){render();return;}if(cloudBusy){render();return;}db.set('privacyPrefs',{includeHealth:!!on});if(cloudProfile?.sub){localStorage.removeItem('repforge:cloudBase:'+cloudProfile.sub);localStorage.removeItem('repforge:cloudHeads:'+cloudProfile.sub);}render();};
+// Full backups use the same local-file/Drive recovery as the photo viewer.
+var tp180PhotoFailure=function(kind,workout){
+ const text={
+  hu:{missing:'A teljes mentéshez hiányzik egy fotófájl. Kapcsolódj a fotót tároló Google-fiókhoz és az internethez, majd próbáld újra.',empty:'A teljes mentéshez tartozó fotófájl üres vagy sérült.',large:'Egy fotófájl meghaladja a teljes mentés 6 MB-os képenkénti korlátját. A fotó megmaradt; a teljes mentés nem készült el.'},
+  en:{missing:'A photo file is missing from the full backup. Connect to its Google account and the internet, then retry.',empty:'A photo file for the full backup is empty or damaged.',large:'A photo exceeds the full backup limit of 6 MB per image. The photo is preserved; no full backup was created.'},
+  de:{missing:'Eine Fotodatei fehlt für die vollständige Sicherung. Mit dem zugehörigen Google-Konto und dem Internet verbinden und erneut versuchen.',empty:'Eine Fotodatei für die vollständige Sicherung ist leer oder beschädigt.',large:'Ein Foto überschreitet das Limit von 6 MB pro Bild. Das Foto bleibt erhalten; die vollständige Sicherung wurde nicht erstellt.'},
+  ro:{missing:'Lipsește un fișier foto pentru copia completă. Conectează contul Google corespunzător și internetul, apoi reîncearcă.',empty:'Un fișier foto pentru copia completă este gol sau deteriorat.',large:'O fotografie depășește limita de 6 MB pe imagine. Fotografia rămâne intactă; copia completă nu a fost creată.'}
+ };
+ const label=[workout.workout||workout.dayId,workout.started].filter(Boolean).join(' · ');
+ return Error((text[rf212Lang()]||text.en)[kind]+(label?'\n'+label:''));
+};
+var tp180PreparePhotos=async function(data){
+ const native=rf130PhotoPlugin();if(!native?.exists)return;
+ const seen=new Set();
+ for(const workout of data.history||[])for(const photo of workout.photos||[]){
+  if(photo.deletedAt||seen.has(photo.id))continue;seen.add(photo.id);
+  let status=await native.exists({id:photo.id});
+  if((!status.exists||status.bytes===0)&&photo.driveFileId&&cloudProfile&&navigator.onLine!==false&&googleBridge()?.drivePhotoRead){
+   try{await googleBridge().drivePhotoRead({id:photo.driveFileId,photoId:photo.id,silent:true});status=await native.exists({id:photo.id});}
+   catch(error){throw Error(tp180PhotoFailure(status.exists?'empty':'missing',workout).message+'\n'+(error?.message||error));}
+  }
+  if(!status.exists)throw tp180PhotoFailure('missing',workout);
+  if(status.bytes===0)throw tp180PhotoFailure('empty',workout);
+  if(status.bytes>6*1024*1024)throw tp180PhotoFailure('large',workout);
+ }
+};
+var tp105Archive=async function(restore=false){
+ if(!isNative()){alert(tp105Text('native'));return;}if(state.session||(restore?tp105DataSyncBusy():cloudBusy&&!['drive','calendar','maintenance'].includes(cloudActiveOperation))||window.TrainPilotBackupBusy){alert(tp105Text('busy'));return;}
+ const bridge=tp105ArchiveBridge();let token=null;window.TrainPilotBackupBusy=true;
+ try{if(restore){await window.TrainPilotPhoneExecution162?.block?.(true);const r=await bridge.open();if(r.cancelled)return;token=r.token;await restoreText(r.data,token);}else{const snapshot=await (window.TrainPilotHealthJournal?.backup?.()||makeBackup()),data=JSON.stringify(snapshot);if(new Blob([data]).size>20*1024*1024)throw Error(tp149T('backup.maxSize'));await tp180PreparePhotos(snapshot);const r=await bridge.save({data:data,name:'TrainPilot-'+new Date().toISOString().slice(0,10)+'.zip'});if(r.cancelled)return;if(!r.verified)throw Error(tp149T('backup.verifyError'));db.set('lastExport',{name:r.name,date:new Date().toISOString(),bytes:r.bytes});window.TrainPilotFeedback?.success(tp149T('backup.exportDone',{name:r.name,bytes:tp149FormatNumber(r.bytes)}));render();}}catch(e){alert(e?.message||String(e));}finally{try{if(token&&!localStorage.getItem('repforge:archiveRestore105'))await bridge.discard({token:token});}finally{try{if(restore)await window.TrainPilotPhoneExecution162?.block?.(false);}finally{window.TrainPilotBackupBusy=false;releaseCloudBackup();if(!cloudBusy)finishCloud();}}}
+};
+var tp105ManageData=async function(kind){
+ if(state.session||cloudBusy||tp105DataSyncBusy()||window.TrainPilotBackupBusy){alert(tp105Text('busy'));return;}
+ if(!isNative()){alert(tp105Text('native'));return;}
+ if(!await tp2628Confirm(tp105Text(kind+'Confirm'),{title:tp105Text(kind==='local'?'localDelete':kind==='drive'?'driveDelete':kind==='calendar'?'calendarDelete':'revoke'),danger:true}))return;
+ if(state.session||cloudBusy||tp105DataSyncBusy()||window.TrainPilotBackupBusy){alert(tp105Text('busy'));return;}
+ cloudBusy=true;cloudActiveOperation='management';
+ try{
+  db.set('cloudPrefs',{drive:false,calendar:false});cloudDirty=false;calendarSyncPending=false;clearTimeout(cloudTimer);
+  const owner=cloudProfile?.sub;
+  if(kind==='drive')await googleBridge().driveDeleteAll();
+  if(kind==='calendar')await googleBridge().calendarDeleteManaged();
+  if(kind==='revoke'){await googleBridge().revoke();cloudProfile=null;}
+  if(kind==='local'){
+   await googleBridge().disconnect();cloudProfile=null;await tp105ArchiveBridge().eraseLocal();
+   const keys=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k?.startsWith('repforge:'))keys.push(k);}for(const k of keys)localStorage.removeItem(k);
+   window.TrainPilotFeedback?.afterReload(tp105Text('done'));location.reload();return;
+  }
+  if(owner)for(const suffix of ['cloudBase:','cloudHeads:','cloudCalendarSent:'])localStorage.removeItem('repforge:'+suffix+owner);
+  db.set('cloudStatus',{});window.TrainPilotFeedback?.success(tp105Text('done'));render();
+ }catch(e){alert(e?.message||String(e));}finally{cloudBusy=false;cloudActiveOperation='';}
+};
+var tp105DataPanel=function(){
+ const button=function(key,call){return '<button class="btn secondary block" style="margin-top:10px" onclick="'+call+'">'+esc(tp105Text(key))+'</button>';};
+ return '<details class="setting tp105-data"><summary><strong>'+esc(tp105Text('data'))+'</strong></summary><label class="tp105-health-consent"><input type="checkbox" '+(tp105HealthConsent()?'checked':'')+' onchange="tp105SetHealth(this.checked)"> '+esc(tp105Text('health'))+'</label><p class="small muted">'+esc(tp105Text('healthHelp'))+'</p>'+button('zip','tp105Archive(false)')+button('unzip','tp105Archive(true)')+button('privacy','tp105OpenPrivacy()')+'<p class="small muted">'+esc(tp105Text('account'))+'</p>'+(cloudProfile?button('revoke',"tp105ManageData('revoke')")+button('driveDelete',"tp105ManageData('drive')")+button('calendarDelete',"tp105ManageData('calendar')"):'')+button('localDelete',"tp105ManageData('local')")+'</details>';
+};
+var tp105OpenPrivacy=async function(){if(isNative())await tp105ArchiveBridge().privacy({language:rf212Lang()});else window.open('privacy.html','_blank','noopener');};
+const tp105HealthPluginBase=healthPlugin;
+healthPlugin=function(){const p=tp105HealthPluginBase();if(!p)return p;return new Proxy(p,{get:function(target,key){const method=target[key];if(typeof method!=='function')return method;return function(args={}){return method.call(target,{...args,language:rf212Lang()});};}});};
+const tp105GoogleBridgeBase=googleBridge;
+googleBridge=function(){const p=tp105GoogleBridgeBase();if(!p)return p;return new Proxy(p,{get:function(target,key){
+ const method=target[key];if(typeof method!=='function')return method;
+ return function(args={}){return Promise.resolve(method.call(target,{...args,language:rf212Lang()})).then(function(result){
+  if(args.silent!==true)cloudRetryAt=0;return result;
+ },function(error){
+  if(error?.code==='GOOGLE_NETWORK'){cloudRetryAt=Date.now()+60000;if(args.silent===true)cloudDirty=true;}
+  throw error;
+ });};
+}});};
+// @endsection publication-105.js
+
+// @section custom-exercise-distance-106.js
+/* Custom exercise overlay and opt-in GNSS totals, without route-coordinate storage. */
+var TP106_DISTANCE_TEXT={
+ hu:{measure:'Mérés típusa',reps:'Ismétlés',time:'Idő (mp)',distance:'Idő és távolság',km:'Távolság (km)',seconds:'Idő (mp)',help:'Futás, kocogás, görkori és más távolságmérős mozgás: idő és kilométer, kézzel vagy külön indított GPS-méréssel.',gps:'GPS-távolságmérés',start:'GPS-mérés indítása',stop:'Leállítás és rögzítés',waiting:'GPS-jelre vár… A mért táv becslés.',tracking:'GPS-mérés fut',stopped:'GPS-mérés leállítva',native:'A GPS-mérés az Android alkalmazásban használható. A táv kézzel is megadható.',privacy:'A mérés pontos helyengedélyt kér, és lezárt képernyőnél értesítéssel fut. Csak az összesített táv és idő kerül a naplóba; útvonalat nem tárolunk.',invalid:'Adj meg érvényes távolságot (0–2000 km).',needDistance:'Adj meg időt vagy pozitív távolságot.',busy:'Várd meg a GPS-művelet végét.',manual:'Kézi táv',signal:'GPS-jelre várunk. Beltéren a távolság gyakran nem mérhető; a hiányzó szakaszt nem számoljuk bele.',saved:'GPS-idő és távolság rögzítve.'},
+ en:{measure:'Measurement type',reps:'Repetitions',time:'Time (s)',distance:'Time and distance',km:'Distance (km)',seconds:'Time (s)',help:'Running, jogging, skating and other distance activities: record time and kilometres manually or with separately started GPS tracking.',gps:'GPS distance tracking',start:'Start GPS tracking',stop:'Stop and record',waiting:'Waiting for GPS… The measured distance is an estimate.',tracking:'GPS tracking active',stopped:'GPS tracking stopped',native:'GPS tracking is available in the Android app. Distance can also be entered manually.',privacy:'Tracking requests precise location and runs with a notification when the screen is locked. Only total distance and time enter the log; no route is stored.',invalid:'Enter a valid distance (0–2000 km).',needDistance:'Enter time or a positive distance.',busy:'Wait for the GPS operation to finish.',manual:'Manual distance',signal:'Waiting for GPS. Indoor distance often cannot be measured; missing segments are not included.',saved:'GPS time and distance recorded.'},
+ de:{measure:'Messart',reps:'Wiederholungen',time:'Zeit (s)',distance:'Zeit und Strecke',km:'Strecke (km)',seconds:'Zeit (s)',help:'Laufen, Joggen, Skaten und andere Streckenaktivitäten: Zeit und Kilometer manuell oder mit separat gestarteter GPS-Messung erfassen.',gps:'GPS-Distanzmessung',start:'GPS-Messung starten',stop:'Stoppen und speichern',waiting:'Warte auf GPS… Die Strecke ist eine Schätzung.',tracking:'GPS-Messung läuft',stopped:'GPS-Messung beendet',native:'GPS-Messung ist in der Android-App verfügbar. Manuelle Streckeneingabe ist möglich.',privacy:'Die Messung benötigt genauen Standortzugriff und läuft bei gesperrtem Bildschirm mit Benachrichtigung. Nur Gesamtstrecke und Zeit werden gespeichert, keine Route.',invalid:'Gültige Strecke eingeben (0–2000 km).',needDistance:'Zeit oder eine positive Strecke eingeben.',busy:'Warten, bis der GPS-Vorgang beendet ist.',manual:'Manuelle Strecke',signal:'Warte auf GPS. In Innenräumen ist die Strecke oft nicht messbar; fehlende Abschnitte werden nicht mitgerechnet.',saved:'GPS-Zeit und Strecke gespeichert.'},
+ ro:{measure:'Tip de măsurare',reps:'Repetări',time:'Timp (s)',distance:'Timp și distanță',km:'Distanță (km)',seconds:'Timp (s)',help:'Alergare, jogging, patinaj și alte activități: timp și kilometri introduși manual sau prin măsurare GPS pornită separat.',gps:'Măsurare distanță GPS',start:'Pornește măsurarea GPS',stop:'Oprește și înregistrează',waiting:'Se așteaptă GPS… Distanța măsurată este o estimare.',tracking:'Măsurare GPS activă',stopped:'Măsurare GPS oprită',native:'Măsurarea GPS este disponibilă în aplicația Android. Distanța poate fi introdusă manual.',privacy:'Măsurarea cere localizare precisă și continuă cu notificare când ecranul este blocat. Se salvează doar distanța totală și timpul, fără traseu.',invalid:'Introdu o distanță validă (0–2000 km).',needDistance:'Introdu timpul sau o distanță pozitivă.',busy:'Așteaptă finalizarea operațiunii GPS.',manual:'Distanță manuală',signal:'Se așteaptă GPS. În interior distanța adesea nu poate fi măsurată; segmentele lipsă nu sunt incluse.',saved:'Timpul și distanța GPS au fost înregistrate.'}
+};
+var tp106T=function(key){return (TP106_DISTANCE_TEXT[rf212Lang()]||TP106_DISTANCE_TEXT.en)[key]||key;};
+const TP106_ACTIVITIES=[
+ ['running','Futás','Running','Laufen','Alergare'],
+ ['jogging','Kocogás','Jogging','Joggen','Jogging'],
+ ['inline-skating','Görkorcsolyázás / görkori','Inline skating','Inlineskaten','Patinaj pe role'],
+ ['cycling','Kerékpározás / bicikli','Cycling','Radfahren','Ciclism'],
+ ['walking','Séta / gyaloglás','Walking','Gehen','Mers pe jos'],
+ ['hiking','Túrázás','Hiking','Wandern','Drumeție']
+];
+const TP106_DISTANCE_IDS=new Set(TP106_ACTIVITIES.map(function(row){return row[0];}));
+const TP106_ACTIVITY_NOTES=[
+ 'Rögzítsd a megtett kilométert és az időt kézzel, vagy indíts külön GPS-mérést. A GPS csak összesített távot és időt tárol; beltéren add meg a távot kézzel.',
+ 'Record distance and time manually, or start GPS tracking separately. GPS stores only total distance and time; enter indoor distance manually.',
+ 'Strecke und Zeit manuell erfassen oder GPS separat starten. GPS speichert nur Gesamtstrecke und Zeit; Strecken in Innenräumen manuell eingeben.',
+ 'Introdu distanța și timpul manual sau pornește GPS separat. GPS salvează doar distanța totală și timpul; introdu manual distanța în interior.'
+];
+const TP106_ACTIVITY_EQUIPMENT={
+ 'running':['Futócipő','Running shoes','Laufschuhe','Pantofi de alergare'],
+ 'jogging':['Futócipő','Running shoes','Laufschuhe','Pantofi de alergare'],
+ 'inline-skating':['Görkorcsolya','Inline skates','Inlineskates','Role'],
+ 'cycling':['Kerékpár','Bicycle','Fahrrad','Bicicletă'],
+ 'walking':['Gyaloglócipő','Walking shoes','Wanderschuhe','Pantofi de mers'],
+ 'hiking':['Túracipő','Hiking shoes','Wanderschuhe','Pantofi de drumeție']
+};
+for(const row of TP106_ACTIVITIES){
+ const id=row[0],equipment=TP106_ACTIVITY_EQUIPMENT[id][0];
+ EXTRA_EXERCISES.push({id:id,hu:row[1],en:row[2],equipment:equipment,target:'Láb',notes:TP106_ACTIVITY_NOTES[0],sets:1,reps:'300',weight:0,loadType:'bodyweight',repUnit:'mp',measurementType:'distance',movementPattern:'conditioning',difficulty:'beginner',beginnerSafe:true,complexity:'low',compound:false,goalTags:['fitness'],style:'conditioning',gearNeeds:[],muscleGroup:'legs'});
+ MUSCLE_MAP[id]=['legs'];TP149_EX_DE[id]=row[3];TP149_EX_RO[id]=row[4];
+ TP149_EX_NOTE_EN[id]=TP106_ACTIVITY_NOTES[1];TP149_EX_NOTE_DE[id]=TP106_ACTIVITY_NOTES[2];TP149_EX_NOTE_RO[id]=TP106_ACTIVITY_NOTES[3];TP149_EQUIPMENT_ROWS[equipment]=TP106_ACTIVITY_EQUIPMENT[id];
+}
+var tp106HasDistance=function(set){const value=set?.distanceMeters;return (typeof value==='number'||typeof value==='string'&&value.trim()!=='')&&Number.isFinite(Number(value))&&Number(value)>=0;};
+var tp106IsDistance=function(e){
+ if(!e)return false;if(TP106_DISTANCE_IDS.has(e.id))return true;
+ const sets=Array.isArray(e.sets)?e.sets:[];
+ if(e.measurementType!=='distance'&&!sets.some(tp106HasDistance)&&!String(e.id||'').startsWith('custom-'))return false;
+ const definition=byId(e.id);if(definition?.measurementType==='distance')return true;
+ // Empty optional wire fields are not a measurement type. Known lifts/timed
+ // exercises can also carry a stale distance flag from older sync snapshots.
+ if(definition&&!sets.some(s=>tp106HasDistance(s)&&Number(s.distanceMeters)>0))return false;
+ return e.measurementType==='distance'||sets.some(tp106HasDistance);
+};
+// These activities can be selected manually, but do not replace lifts in generated strength plans.
+const tp106AvailableBase=available132;
+available132=function(id,p){return TP106_DISTANCE_IDS.has(id)?false:tp106AvailableBase.apply(this,arguments);};
+const tp106DemoBase=demoInfo;
+demoInfo=function(id){if(!TP106_DISTANCE_IDS.has(id))return tp106DemoBase.apply(this,arguments);const e=byId(id);return {provider:null,videoId:null,credit:tp106T('distance'),source:'https://www.youtube.com/results?search_query='+encodeURIComponent(e.en+' technique tutorial'),sourceVerified:false,sourceKind:'unverified-search'};};
+const tp106RecommendationBase=rf152Recommendation;
+rf152Recommendation=function(id,se){if(!tp106IsDistance(se||{id:id}))return tp106RecommendationBase.apply(this,arguments);return {action:'hold',weight:0,autoApply:false,target:tp140Prescription(id,se),historyCount:0,text:tp106T('help')};};
+const tp106AdviceBase=rf233ExerciseAdvice;
+rf233ExerciseAdvice=function(id,decision){if(!tp106IsDistance({id:id}))return tp106AdviceBase.apply(this,arguments);return {action:'hold',label:tp106T('distance'),text:tp106T('help')};};
+const tp106ShortAdviceBase=window.tp155CoachShortAdvice;
+window.tp155CoachShortAdvice=function(id,decision,existing){if(!tp106IsDistance({id:id}))return tp106ShortAdviceBase.apply(this,arguments);return {action:'hold',label:tp106T('distance'),text:tp106T('help')};};
+var tp106Km=function(meters){return Number.isFinite(Number(meters))?tp149FormatNumber(Number(meters)/1000,{maximumFractionDigits:3}):'';};
+var tp106ParseKm=function(value){const raw=String(value).trim().replace(',','.');if(!raw)return null;if(!/^\d+(\.\d{0,3})?$/.test(raw))throw Error(tp106T('invalid'));const km=Number(raw);if(!Number.isFinite(km)||km<0||km>2000)throw Error(tp106T('invalid'));return Math.round(km*1000);};
+var tp106SetDistance=function(set,value){const meters=tp106ParseKm(value);if(meters===null){delete set.distanceMeters;delete set.distanceSource;}else{set.distanceMeters=meters;set.distanceSource='manual';}};
+window.tp106CustomExercisePanelHtml=function(){
+ const options=function(rows,label){return rows.map(function(k){return '<option value="'+esc(k)+'">'+esc(label(k))+'</option>';}).join('');};
+ const patterns=options(Object.keys(RF148_PATTERN_LABELS),function(k){return rf212Lang()==='hu'?RF148_PATTERN_LABELS[k]:tp149MovementLabel(k);});
+ const styles=options(Object.keys(RF148_STYLE_LABELS),function(k){return rf212Lang()==='hu'?RF148_STYLE_LABELS[k]:tp149StyleText({style:k});});
+ const muscles=options(Object.keys(MUSCLES),tp149MuscleGroupLabel);
+ const gears=Object.keys(GEAR132).map(function(k){return '<label class="exclude-row"><input type="checkbox" name="ceGear" value="'+esc(k)+'">'+esc(tp149PlannerGear(k))+'</label>';}).join('');
+ const field=function(key,id,extra){return '<label>'+esc(tp149T('customExercise.'+key))+'<input id="'+id+'" class="field" maxlength="80" '+(extra||'')+'></label>';};
+ return '<main class="tp106-custom-exercise"><div class="hero"><h1>'+esc(tp149T('customExercise.title'))+'</h1><p>'+esc(tp149T('customExercise.intro'))+'</p></div><div class="setting">'+field('name','ceHu')+field('equipment','ceEq')+
+ '<label>'+esc(tp106T('measure'))+'<select id="ceMeasure" class="field" onchange="tp106MeasureChanged(this.value)"><option value="reps">'+esc(tp106T('reps'))+'</option><option value="time">'+esc(tp106T('time'))+'</option><option value="distance">'+esc(tp106T('distance'))+'</option></select></label><p class="small muted">'+esc(tp106T('help'))+'</p>'+
+ '<label>'+esc(tp149T('customExercise.muscle'))+'<select id="ceMuscle" class="field">'+muscles+'</select></label><label>'+esc(tp149T('customExercise.pattern'))+'<select id="cePattern" class="field">'+patterns+'</select></label><label>'+esc(tp149T('customExercise.style'))+'<select id="ceStyle" class="field">'+styles+'</select></label>'+
+ '<label>'+esc(tp149T('customExercise.difficulty'))+'<select id="ceDifficulty" class="field"><option value="beginner">'+esc(tp149T('customExercise.beginner'))+'</option><option value="intermediate">'+esc(tp149T('customExercise.intermediate'))+'</option><option value="advanced">'+esc(tp149T('customExercise.advanced'))+'</option></select></label>'+
+ '<details><summary>'+esc(tp149T('customExercise.gear'))+'</summary><p class="small muted">'+esc(tp149T('customExercise.gearHelp'))+'</p>'+gears+'</details><label>'+esc(tp149T('customExercise.notes'))+'<textarea id="ceNotes" class="field" maxlength="500"></textarea></label><button type="button" class="btn block" onclick="saveCustomExercise14()">'+esc(tp149T('customExercise.save'))+'</button></div></main>';
+};
+customExerciseScreen=function(){return window.tp155R4OpenPanel('custom-exercise',document.activeElement);};
+var tp106MeasureChanged=function(value){
+ if(value!=='distance')return;
+ for(const pair of [['ceMuscle','legs'],['cePattern','conditioning'],['ceStyle','conditioning']]){const el=document.getElementById(pair[0]);if(el){el.value=pair[1];el.dispatchEvent(new Event('change',{bubbles:true}));}}
+};
+var tp106ProgramId='';
+window.tp106CustomProgramPanelHtml=function(){
+ const p=tp106ProgramId?programById(tp106ProgramId):null;
+ if(!p)return '<main class="tp106-custom-program"><div class="hero"><p>'+esc(tp149T('programEdit.help'))+'</p></div><form class="setting" onsubmit="event.preventDefault();tp106SaveProgram()"><label>'+esc(tp149T('dialog.customProgram.name'))+'<input id="tp106ProgramName" class="field" maxlength="80" oninput="this.setCustomValidity(String())" required value="'+esc(tp149T('dialog.customProgram.default'))+'"></label><label>'+esc(tp149T('dialog.customProgram.length'))+'<select id="tp106ProgramDays" class="field">'+Array.from({length:7},function(_,i){return '<option value="'+(i+1)+'" '+(i===1?'selected':'')+'>'+(i+1)+'</option>';}).join('')+'</select></label><button class="btn block" type="submit">'+esc(tp149T('programs.create'))+'</button></form></main>';
+ const id=p.id,options=function(selected){return exercises().map(function(e){return '<option value="'+esc(e.id)+'" '+(e.id===selected?'selected':'')+'>'+esc(tp149ExerciseName(e))+'</option>';}).join('');};
+ const days=p.days.map(function(d,di){
+  const rows=d.exercises.map(function(eid,ei){return '<div class="custom-ex-row tp152-custom-row"><select class="field" onchange="customExercise(\''+esc(id)+'\','+di+','+ei+',this.value)">'+options(eid)+'</select><div class="tp152-custom-actions"><button type="button" class="btn secondary" '+(ei===0?'disabled':'')+' onclick="moveCustomExercise14(\''+esc(id)+'\','+di+','+ei+',-1)">↑</button><button type="button" class="btn secondary" '+(ei===d.exercises.length-1?'disabled':'')+' onclick="moveCustomExercise14(\''+esc(id)+'\','+di+','+ei+',1)">↓</button><button type="button" class="btn danger" onclick="removeCustomExercise(\''+esc(id)+'\','+di+','+ei+')">×</button></div></div>';}).join('');
+  return '<details class="setting tp152-accordion tp152-custom-day" '+(di===0?'open':'')+'><summary><div><strong>'+esc(tp149ProgramDayName(p,d))+'</strong><div class="small muted">'+esc(tp149Plural('exercise.count',d.exercises.length))+'</div></div><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-accordion-body"><label>'+esc(tp149T('programEdit.dayName'))+'<input class="field" value="'+esc(d.name)+'" onchange="customDayName(\''+esc(id)+'\','+di+',this.value)"></label>'+rows+'<button type="button" class="btn secondary block" onclick="addCustomExercise(\''+esc(id)+'\','+di+')">＋ '+esc(tp152T('add'))+'</button></div></details>';
+ }).join('');
+ return '<main class="tp152-custom-program tp106-custom-program"><div class="hero"><p>'+esc(tp149T('programEdit.help'))+'</p></div>'+days+'</main>';
+};

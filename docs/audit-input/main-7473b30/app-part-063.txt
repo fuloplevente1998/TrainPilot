@@ -1,0 +1,324 @@
+  '.tp155-planner-always-open .rf2211-weekdays label{gap:2px!important;font-size:10px!important}',
+  '.tp155-planner-always-open .btn.block{min-height:38px!important;margin:0!important;padding:7px 10px!important}',
+  '.tp155-planner-always-open .tp155-custom-plan-hint{margin:0!important;padding:6px 8px!important}'
+ ].join('');document.head.appendChild(style);
+ rf2211PlanWeeks=function(){
+  const mode=document.querySelector('#rf230Mode')?.value||rf230PlannerMode();if(mode==='custom'){window.tp155SavePlannerBasics();return;}
+  const p=activeProgram(),s=plannerSettings();if(!p)return;
+  const options={programId:p.id,programDays:p.days,startDate:document.querySelector('#rf2211Start')?.value,weeks:Number(document.querySelector('#rf2211Weeks')?.value),firstIndex:Number(document.querySelector('#rf2211First')?.value),time:document.querySelector('#rf2211Time')?.value,minutes:Number(document.querySelector('#rf2211Minutes')?.value),mode,weekdays:[...document.querySelectorAll('input[name="rf2211Weekday"]:checked')].map(x=>Number(x.value)),activeScheduleIds:[state.session?.scheduleId,db.get('draft',null)?.session?.scheduleId].filter(Boolean),replaceOtherPrograms:true};
+  try{
+   const result=window.TrainPilot110Core.planWeeks(scheduled(),history(),options);
+   if(!result.moved.length){alert(tp149T('calendar.error.noEmpty'));return;}
+   const keys=['scheduled','plannerSettings'],old=keys.map(key=>localStorage.getItem('repforge:'+key));
+   try{db.set('scheduled',result.rows);db.set('plannerSettings',{...s,mode,time:options.time,minutes:options.minutes,weekdays:options.weekdays});}
+   catch(error){keys.forEach((key,i)=>old[i]===null?localStorage.removeItem('repforge:'+key):localStorage.setItem('repforge:'+key,old[i]));throw error;}
+   state.tp155PlannedRange={programId:p.id,startDate:options.startDate,weeks:options.weeks,firstDayId:p.days[options.firstIndex].id};
+   if(typeof cloudChanged==='function')cloudChanged();render();window.TrainPilotFeedback?.success(window.TrainPilot110.t('replanned'));
+  }catch(error){const key={date:'calendar.error.dateTime',time:'calendar.error.dateTime',weekdays:'calendar.error.weekday',programDay:'calendar.error.dateTime'}[error.message]||'planner.saveFailed';alert(tp149T(key));}
+ };
+ window.TrainPilot155CalendarPlanner={version:'1.5.5-calendar-planner',alwaysOpen:true,compact:true};
+})();
+// @endsection trainpilot-155-calendar-planner-compact.js
+
+// @section trainpilot-155-workout-settings-compact.js
+/* Compact, outlined workout settings without changing its fields or handlers. */
+(function(){
+ 'use strict';
+ const style=document.createElement('style');style.id='tp155WorkoutSettingsCompactCss';style.textContent=[
+  '.tp1511-training{border:1px solid var(--accent)!important;background-color:var(--card)!important;background-image:linear-gradient(145deg,var(--card) 0%,var(--card2) 100%)!important;box-shadow:inset 3px 0 0 var(--accent)!important}',
+  '.tp1511-training>summary{min-height:46px!important;padding:7px 10px!important;gap:8px}',
+  '.tp1511-training>summary strong{font-size:13px}.tp1511-training>summary small{font-size:10px;line-height:1.2}',
+  '.tp1511-training-body{display:grid!important;gap:6px!important;padding:7px 10px 9px!important;border-top-color:color-mix(in srgb,var(--accent) 26%,var(--line))!important}',
+  '.tp1511-training-body>p{margin:0!important;line-height:1.25!important}',
+  '.tp1511-training-body>label,.tp1511-training .tp1511-prog label{display:grid;gap:3px;font-size:11px!important;font-weight:750}',
+  '.tp1511-training .field{min-height:36px!important;height:36px!important;padding-block:5px!important}',
+  '.tp1511-training .tp1511-section{margin:2px 0 0!important;padding:6px 8px!important;border:1px solid color-mix(in srgb,var(--accent) 28%,var(--line))!important;border-radius:9px!important;background:color-mix(in srgb,var(--accent) 6%,var(--card2))!important;font-size:11px!important}',
+  '.tp1511-training .tp1511-prog{gap:5px!important}',
+  '.tp1511-training .btn.block{min-height:38px!important;margin-top:1px!important;padding:7px 10px!important}'
+ ].join('');document.head.appendChild(style);
+ const tp155DecorateWorkoutSettings=function(){const el=document.querySelector('.tp1511-training');if(!el)return;if(el.closest('.tp124-active-program-frame')){for(const key of ['border','background-color','background-image','box-shadow'])el.style.removeProperty(key);return;}el.style.setProperty('border','1px solid var(--accent)','important');el.style.setProperty('background-color','var(--card)','important');el.style.setProperty('background-image','linear-gradient(145deg,var(--card) 0%,var(--card2) 100%)','important');el.style.setProperty('box-shadow','inset 3px 0 0 var(--accent)','important')};
+ const tp155WorkoutSettingsRenderBase=render;render=function(){const out=tp155WorkoutSettingsRenderBase.apply(this,arguments);tp155DecorateWorkoutSettings();return out};tp155DecorateWorkoutSettings();
+ window.TrainPilot155WorkoutSettings={version:'1.5.5-workout-settings',compact:true,colorOutline:true};
+})();
+// @endsection trainpilot-155-workout-settings-compact.js
+
+// @section repforge-160-phone-release-polish.js
+/* RepForge 1.6 phone fixes: compact Quick header, anchored filters, shared Journal arrow. */
+(function(){
+ 'use strict';
+ const style=document.createElement('style');style.id='repforge160PhoneReleaseCss';style.textContent=[
+  '#tp155R4PanelHost[data-panel="quick"] .tp155-r4-panel-close{position:absolute!important;top:10px!important;right:10px!important;float:none!important;margin:0!important;z-index:8}',
+  '#tp155R4PanelHost[data-panel="quick"] .tp155-quick-controls{padding:4px 0 0!important}',
+  '.tp160-quick-head{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:8px;padding-right:44px}',
+  '.tp160-quick-search{position:relative}.tp160-quick-search>span{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}',
+  '.tp160-quick-context{align-self:center;font-size:12px;line-height:1.15;white-space:nowrap;color:var(--muted)}',
+  '.tp160-quick-search{display:grid;gap:2px;min-width:0;font-size:10px;font-weight:800;color:var(--muted)}',
+  '.tp160-quick-search .field{min-width:0;min-height:36px!important;height:36px!important;padding:6px 9px!important}',
+  '.tp155-quick-filter-row>label{min-width:0}.tp155-quick-filter-row .tp-select{position:relative!important}',
+  '.tp155-quick-filter-row .tp-select-menu{position:absolute!important;left:0!important;right:auto!important;top:calc(100% + 4px)!important;bottom:auto!important;width:100%!important;max-width:100%!important;max-height:min(240px,38dvh)!important}',
+  '.tp160-journal-disclosure{box-sizing:border-box;display:inline-grid;place-items:center;width:18px;height:18px;min-width:18px;flex:0 0 18px;margin-left:6px}',
+  '.tp160-journal-disclosure::before{content:"";display:block;width:9px;height:12px;background:var(--text);clip-path:polygon(0 0,100% 50%,0 100%);transform:rotate(0deg);transform-origin:50% 50%;transition:transform .15s ease}',
+  '.tp155-journal-filter[open]>summary>.tp160-journal-disclosure::before{transform:rotate(90deg)}',
+  '@media(max-width:350px){.tp160-quick-head{grid-template-columns:1fr;padding-right:42px;gap:3px}.tp160-quick-context{font-size:11px}}'
+ ].join('');
+ document.head.appendChild(style);
+ window.RepForge160={version:'1.6.0',quickHeader:true,anchoredQuickFilters:true,journalDisclosure:true};
+})();
+// @endsection repforge-160-phone-release-polish.js
+
+// @section trainpilot-161-minor-fixes.js
+/* TrainPilot 1.6.1: Android panel/IME polish and bilateral stopwatch persistence/UI fixes. */
+(function(){
+ 'use strict';
+
+ const TP161_VERSION='1.6.1';
+
+ // Keep Calendar / Coach / Settings closer to the fixed 2x4 navigation and
+ // keep any open panel inside Android's visual viewport while the IME is visible.
+ window.tp161AdjustPanel=function tp161AdjustPanel(){
+  const host=document.getElementById('tp155R4PanelHost');if(!host)return;
+  const nav=document.querySelector('.top.tp154-nav-grid'),rect=nav?.getBoundingClientRect?.();
+  const vv=window.visualViewport;
+  const layoutHeight=Math.max(0,Number(window.innerHeight)||0);
+  const visualHeight=Math.max(0,Number(vv?.height)||layoutHeight);
+  const visualTop=Math.max(0,Number(vv?.offsetTop)||0);
+  const imeOpen=!!(vv&&layoutHeight>0&&(layoutHeight-visualHeight)>80);
+  const visualBottom=imeOpen?Math.max(0,layoutHeight-(visualTop+visualHeight)):0;
+  const compactPanel=/^(calendar|coach|settings)$/.test(String(host.dataset.panel||''));
+  const lift=compactPanel?4:0;
+  const navBottom=rect?Math.max(0,rect.bottom):0;
+  host.style.setProperty('top',Math.round(Math.max(0,navBottom+(imeOpen?visualTop:0)-lift))+'px','important');
+  host.style.setProperty('bottom',Math.round(visualBottom)+'px','important');
+  host.classList.toggle('tp161-ime-open',imeOpen);
+ };
+
+ const refreshBase=window.tp155R4RefreshPanel;
+ if(typeof refreshBase==='function')window.tp155R4RefreshPanel=function(){
+  const out=refreshBase.apply(this,arguments);window.tp161AdjustPanel();return out;
+ };
+ const openBase=window.tp155R4OpenPanel;
+ if(typeof openBase==='function')window.tp155R4OpenPanel=function(){
+  const out=openBase.apply(this,arguments);window.tp161AdjustPanel();
+  try{requestAnimationFrame(()=>window.tp161AdjustPanel())}catch(_){}
+  return out;
+ };
+
+ const adjustSoon=function(){try{requestAnimationFrame(()=>window.tp161AdjustPanel())}catch(_){window.tp161AdjustPanel()}};
+ window.addEventListener?.('resize',adjustSoon,{passive:true});
+ window.addEventListener?.('scroll',adjustSoon,{passive:true});
+ window.visualViewport?.addEventListener?.('resize',adjustSoon,{passive:true});
+ window.visualViewport?.addEventListener?.('scroll',adjustSoon,{passive:true});
+ document.addEventListener?.('focusin',function(e){
+  if(document.getElementById('tp155R4PanelHost')?.contains(e.target))setTimeout(adjustSoon,0);
+ });
+
+ // Make bilateral timing visibly write back to the active workout set row as
+ // well as to the draft data. This also gives the phone UI immediate feedback.
+ window.tp161SyncPerSideRow=function tp161SyncPerSideRow(setIndex){
+  const ex=state.session?.exercises?.[state.current];if(!ex||!tp1481IsPerSideTimed(ex))return;
+  const set=ex.sets?.[setIndex];if(!set)return;
+  const sides=tp1481SyncPerSideReps(set);
+  const row=[...document.querySelectorAll('main .row')][setIndex];
+  if(!row)return;
+  const input=[...row.querySelectorAll('input.field')].at(-1);
+  if(input&&document.activeElement!==input)input.value=set.reps||'';
+  if(input){
+   const left=sides.left||'—',right=sides.right||'—';
+   input.setAttribute('aria-label',(typeof tp149T==='function'?tp149T('stopwatch.leftShort'):'Bal')+' '+left+' / '+(typeof tp149T==='function'?tp149T('stopwatch.rightShort'):'Jobb')+' '+right);
+   if(!set.reps)input.placeholder=(typeof tp149T==='function'?tp149T('stopwatch.leftShort'):'Bal')+' '+left+' • '+(typeof tp149T==='function'?tp149T('stopwatch.rightShort'):'Jobb')+' '+right;
+  }
+ };
+
+ if(typeof tp1481PersistSide==='function'){
+  const persistSideBase=tp1481PersistSide;
+  tp1481PersistSide=function(sec){
+   const setIndex=tp1481SideStopwatch?.setIndex;
+   const out=persistSideBase.apply(this,arguments);
+   if(setIndex>=0)window.tp161SyncPerSideRow(setIndex);
+   return out;
+  };
+ }
+ if(typeof tp1481SetSideSeconds==='function'){
+  const setSideBase=tp1481SetSideSeconds;
+  tp1481SetSideSeconds=function(setIndex){
+   const out=setSideBase.apply(this,arguments);window.tp161SyncPerSideRow(setIndex);return out;
+  };
+ }
+ if(typeof tp1481ResetSide==='function'){
+  const resetSideBase=tp1481ResetSide;
+  tp1481ResetSide=function(){
+   const ex=state.session?.exercises?.[state.current],setIndex=ex?.sets?.findIndex?.(s=>!s.done);
+   const out=resetSideBase.apply(this,arguments);
+   if(setIndex>=0)window.tp161SyncPerSideRow(setIndex);
+   return out;
+  };
+ }
+ if(typeof tp1481DecoratePerSide==='function'){
+  const decorateSideBase=tp1481DecoratePerSide;
+  tp1481DecoratePerSide=function(){
+   const out=decorateSideBase.apply(this,arguments);
+   const host=document.querySelector('#rf110Stopwatch.tp1481-side-stopwatch');
+   if(host){
+    host.classList.add('tp161-side-stopwatch');host.classList.remove('card');
+    host.querySelectorAll('.tp1481-side-card').forEach(x=>x.classList.add('card','tp161-side-window'));
+    const ex=state.session?.exercises?.[state.current],setIndex=ex?.sets?.findIndex?.(s=>!s.done);
+    if(setIndex>=0)window.tp161SyncPerSideRow(setIndex);
+   }
+   return out;
+  };
+ }
+
+ const style=document.createElement('style');style.id='tp161MinorFixCss';style.textContent=[
+  '#tp155R4PanelHost:is([data-panel="calendar"],[data-panel="coach"],[data-panel="settings"]){padding-top:0!important}',
+  '#tp155R4PanelHost:is([data-panel="calendar"],[data-panel="coach"],[data-panel="settings"]) .tp155-r4-panel-close{position:absolute!important;top:10px!important;right:10px!important;float:none!important;margin:0!important}',
+  '#tp155R4PanelHost:is([data-panel="calendar"],[data-panel="coach"],[data-panel="settings"]) .tp155-r4-panel-content{clear:none!important}',
+  '#tp155R4PanelHost[data-panel="calendar"] .calendar-head{padding-right:48px!important;min-height:44px}',
+  '#tp155R4PanelHost[data-panel="coach"] .tp155-r4-panel-content>main>h1:first-child{margin-top:2px!important;padding-right:48px;min-height:40px;display:flex;align-items:center}',
+  '#tp155R4PanelHost[data-panel="settings"] .tp155-r4-panel-content>main>.hero:first-child{margin-top:0!important;padding-right:48px!important}',
+  '#tp155R4PanelHost.tp161-ime-open .tp155-r4-panel{max-height:100%!important}',
+  '.tp161-side-stopwatch{border:0!important;background:transparent!important;box-shadow:none!important;padding:0!important}',
+  '.tp161-side-stopwatch>.rf110-stopwatch-head{padding:0 2px 8px;margin:0}',
+  '.tp161-side-stopwatch>.tp1481-side-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px;margin-top:0}',
+  '.tp161-side-stopwatch .tp161-side-window{min-width:0;margin:0!important}',
+  '.tp161-side-stopwatch>#tp1481SideStatus{margin:10px 2px 0}',
+  '@media(max-width:340px){.tp161-side-stopwatch>.tp1481-side-grid{grid-template-columns:1fr!important}}'
+ ].join('');
+ document.head?.appendChild(style);
+
+ window.RepForge161={version:TP161_VERSION,visualViewportIme:true,compactPanels:true,separateSideCards:true,perSidePersistence:true};
+ window.tp161AdjustPanel();
+})();
+// @endsection trainpilot-161-minor-fixes.js
+
+
+// @section trainpilot-162-minor-ui.js
+/* TrainPilot 1.6.2: minor phone UI polish and Home Health-count consistency. */
+(function(){
+ 'use strict';
+ const TP162_VERSION='1.6.2';
+ const dailyBase=rf223Daily;
+ window.tp162VisibleHealthSessions=function tp162VisibleHealthSessions(d){
+   const sessions=Array.isArray(d?.exerciseSessions)?d.exerciseSessions:[];
+   const local=(typeof history==='function'?history():[]).filter(function(h){return Number.isFinite(Date.parse(h?.started))&&Number.isFinite(Date.parse(h?.finished));});
+   const ownPackage='com.repforge.app',exactTolerance=1000;
+   const stableIds=new Set(local.map(function(h){return h?.healthStableId?'trainpilot:'+h.healthStableId:'';}).filter(Boolean));
+   return sessions.filter(function(s){
+     if(String(s?.source||'')!==ownPackage)return true;
+     const clientRecordId=String(s?.clientRecordId||'');
+     if(clientRecordId.indexOf('trainpilot:tpw_')===0)return stableIds.has(clientRecordId);
+     const start=Date.parse(s?.start),end=Date.parse(s?.end);if(!Number.isFinite(start)||!Number.isFinite(end))return false;
+     return local.some(function(h){return Math.abs(Date.parse(h.started)-start)<=exactTolerance&&Math.abs(Date.parse(h.finished)-end)<=exactTolerance;});
+   });
+ };
+ rf223Daily=function(){const d=dailyBase.apply(this,arguments);if(!d)return d;const visible=window.tp162VisibleHealthSessions(d);const minutes=visible.reduce(function(sum,s){return sum+Math.max(0,Number(s?.durationMinutes)||0);},0);return Object.assign({},d,{exerciseSessions:visible,exerciseSessionCount:visible.length,exerciseMinutes:minutes});};
+
+ if(typeof window.tp155R4DecorateNavigation==='function'){
+  const decorateNavBase=window.tp155R4DecorateNavigation;
+  window.tp155R4DecorateNavigation=function(){
+   const out=decorateNavBase.apply(this,arguments),host=document.getElementById('tp155R4PanelHost');
+   if(host?.dataset?.panel==='exercises'){
+    const buttons=[...document.querySelectorAll('.top.tp154-nav-grid .tp151-nav-item')];
+    const programs=buttons.find(function(btn){return /go\(['"]programs['"]\)/.test(String(btn.getAttribute('onclick')||''))});
+    if(programs){programs.classList.add('active');programs.setAttribute('aria-expanded','true')}
+   }
+   return out;
+  };
+ }
+
+ const style=document.createElement('style');style.id='tp162MinorUiCss';style.textContent=[
+  '.tp-brand-strip{display:none!important}',
+  '.top.tp154-nav-grid{top:0!important}',
+  'main.rf221-home>.onboarding{margin:0!important;padding:9px 11px 10px!important;display:grid!important;gap:6px!important}',
+  'main.rf221-home>.onboarding h2{margin:0!important;line-height:1.15!important}',
+  'main.rf221-home>.onboarding p{margin:0!important;line-height:1.25!important}',
+  'main.rf221-home>.onboarding .btn{margin:0!important;min-height:40px!important;padding:8px 10px!important}',
+  'main.rf221-home{min-height:0!important}',
+  '#tp155R4PanelHost:is([data-panel="calendar"],[data-panel="coach"],[data-panel="settings"],[data-panel="exercises"]) .tp155-r4-panel-close{position:absolute!important;top:14px!important;right:14px!important;float:none!important;margin:0!important;z-index:9!important}',
+  '#tp155R4PanelHost:is([data-panel="calendar"],[data-panel="coach"],[data-panel="settings"],[data-panel="exercises"]) .tp155-r4-panel-content{clear:none!important}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp155-exercise-panel>.hero{margin:0!important;padding:5px 50px 5px 4px!important}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp155-exercise-panel>.hero h1{margin:0 0 3px!important;line-height:1.12!important}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp155-exercise-panel>.hero p{margin:0!important;line-height:1.25!important}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp155-library-filters{margin:6px 0!important;padding:7px!important}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp155-library-results>p.muted{margin:4px 0 6px!important;line-height:1.2!important}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp155-library-results .tp-library-card{margin:4px 0!important}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp-library-card>summary{padding:8px 10px!important;min-height:52px!important;gap:8px!important}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp-library-card>summary h3{margin:0 0 2px!important;line-height:1.12!important}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp-library-card>summary p{margin:0!important;line-height:1.18!important}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp155-library-results{scroll-padding-top:4px!important;padding-bottom:5px!important}',
+  '#tp155R4PanelHost[data-panel="calendar"] .tp155-r4-calendar-frame{padding:7px!important}',
+  '#tp155R4PanelHost[data-panel="calendar"] .calendar-head{min-height:40px!important;margin-bottom:6px!important;padding-right:50px!important;grid-template-columns:46px 1fr 46px!important;gap:6px!important}',
+  '#tp155R4PanelHost[data-panel="calendar"] .calendar-head .btn{min-height:38px!important;padding:6px!important}',
+  '#tp155R4PanelHost[data-panel="calendar"] .cal-weekdays{gap:2px!important}',
+  '#tp155R4PanelHost[data-panel="calendar"] .cal-weekdays span{padding:3px 0!important}',
+  '#tp155R4PanelHost[data-panel="calendar"] .calendar-grid{gap:2px!important}',
+  '#tp155R4PanelHost[data-panel="calendar"] .cal-cell{min-height:42px!important;padding:3px!important;border-radius:10px!important}',
+  '#tp155R4PanelHost[data-panel="calendar"] .tp155-r4-planner-bottom{margin-top:7px!important}',
+  '#tp155R4PanelHost[data-panel="calendar"] .tp155-planner-always-open{padding:7px!important}',
+  '@media(max-width:360px){#tp155R4PanelHost[data-panel="calendar"] .cal-cell{min-height:40px!important}#tp155R4PanelHost[data-panel="exercises"] .tp-library-card>summary{padding:7px 8px!important;min-height:50px!important}}'
+ ].join('');
+ document.head?.appendChild(style);
+ window.TrainPilot162={version:TP162_VERSION,staleOwnHealthCountGuard:true,compactHome:true,cleanTopNav:true,compactCalendar:true,compactExerciseLibrary:true,parentProgramsActive:true,insetPanelClose:true};
+})();
+// @endsection trainpilot-162-minor-ui.js
+
+// @section trainpilot-162-followup.js
+/* TrainPilot 1.6.2 follow-up: isolated UI regression fixes. */
+(function(){
+ 'use strict';
+
+ const cleanupChrome=function(){
+  document.querySelectorAll('.tp-brand-strip').forEach(function(el){el.remove()});
+  if(state?.tab==='health'){
+   const health=document.querySelector('main.rf263-health');
+   health?.querySelector(':scope > .hero:first-child,:scope > .tp151-page-head:first-child')?.remove();
+  }
+ };
+ window.tp162CleanupChrome=cleanupChrome;
+
+ // Preserve parent navigation state for panel subviews.
+ if(typeof window.tp155R4DecorateNavigation==='function'){
+  const decorateBase=window.tp155R4DecorateNavigation;
+  window.tp155R4DecorateNavigation=function(){
+   const out=decorateBase.apply(this,arguments),host=document.getElementById('tp155R4PanelHost');
+   if(host?.dataset?.panel==='quick'){
+    const buttons=[...document.querySelectorAll('.top.tp154-nav-grid .tp151-nav-item')];
+    const workout=buttons.find(function(btn){return /go\(['"]plan['"]\)/.test(String(btn.getAttribute('onclick')||''))});
+    if(workout){workout.classList.add('active');workout.setAttribute('aria-expanded','true')}
+   }
+   return out;
+  };
+ }
+
+ // Workout landing card: the start action is the single prominent label.
+ // Keep the existing short help directly below it; do not duplicate the Quick Workout title.
+ if(typeof tp150CompactQuickCard==='function'){
+  tp150CompactQuickCard=function(){
+   return '<div class="card tp150-quick-entry tp150-quick-entry-compact tp150-quick-entry-minimal"><button type="button" class="btn block" onclick="tp155R4TogglePanel(\'quick\',this)">'+esc(tp150qwT('start'))+'</button><p class="small muted tp150-quick-entry-help">'+esc(tp150qwT('cardHelp'))+'</p></div>';
+  };
+ }
+ const quickEntryMinimalCss=document.createElement('style');
+ quickEntryMinimalCss.id='tp150QuickEntryMinimalStyle';
+ quickEntryMinimalCss.textContent='.tp150-quick-entry-minimal{display:flex!important;flex-direction:column;align-items:stretch;gap:8px;padding:12px 14px!important}.tp150-quick-entry-minimal>.btn{width:100%!important;min-width:0!important}.tp150-quick-entry-minimal .tp150-quick-entry-help{margin:0!important;text-align:center;line-height:1.35}';
+ document.head.appendChild(quickEntryMinimalCss);
+
+ // Quick Workout keeps only the compact context title; legacy explanatory hero/page headers stay out.
+ if(typeof window.tp155QuickPanelHtml==='function'){
+  const quickHtmlBase=window.tp155QuickPanelHtml;
+  window.tp155QuickPanelHtml=function(){
+   const html=String(quickHtmlBase.apply(this,arguments)||''),tpl=document.createElement('template');tpl.innerHTML=html;
+   const main=tpl.content.querySelector('main');
+   main?.querySelectorAll(':scope > .hero,:scope > .tp151-page-head').forEach(function(el){el.remove()});
+   return main?main.outerHTML:html;
+  };
+ }
+
+ // Visible product branding only; legacy package/storage/sync identifiers remain untouched.
+ if(typeof cloudPanel==='function'){
+  const cloudPanelBase162=cloudPanel;
+  cloudPanel=function(){return String(cloudPanelBase162.apply(this,arguments)).replace('RepForge → Google Naptár','TrainPilot → Google Naptár')};
+ }
+
+ // Theme picker: inline dropdown matching the language selector interaction.
+ const themeOptions162=function(keys){
+  const current=rf200ThemeKey();
+  return keys.map(function(key){

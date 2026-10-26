@@ -1,0 +1,201 @@
+ const modal=document.getElementById('rf130PhotoModal'),buttons=[...(modal?.querySelectorAll?.('[data-rf130-source]')||[])],status=modal?.querySelector?.('[data-rf130-status]');
+ buttons.forEach(function(b){b.disabled=true;});if(status)status.textContent=tp149T(source==='capture'?'photo.openCamera':'photo.openPicker');
+ try{
+  const r=source==='capture'?await storage.capture():await storage.pick();
+  if(r?.cancelled){if(status)status.textContent=tp149T('photo.cancelled');return;}
+  if(!r?.id)throw Error(tp149T('photo.saveFailed'));
+  const q=rf130WorkoutByKey(key);if(!q.x)throw Error(tp149T('photo.workoutMissing'));
+  const now=new Date().toISOString(),photo={id:r.id,label:rf130PhotoLabel,createdAt:now,updatedAt:Date.now(),mimeType:'image/jpeg',width:r.width||null,height:r.height||null,bytes:r.bytes||null,driveFileId:null,deletedAt:null};
+  q.x.photos=[...(q.x.photos||[]),photo];db.set('history',q.h);rf130ClosePhotoModal();cloudChanged();render();window.TrainPilotFeedback?.saved();
+ }catch(e){
+  const msg=String(e?.message||e||'');
+  if(/cancel|canceled|cancelled|megszak|abgebroch|anulat/i.test(msg)){if(status)status.textContent=tp149T('photo.cancelled');return;}
+  if(status)status.textContent=tp149T('photo.operationFailed');alert(msg||tp149T('photo.addFailed'));
+ }finally{buttons.forEach(function(b){b.disabled=false;});}
+};
+
+rf130LoadPhotoPreview=async function(host,id){
+ if(!host||host.dataset.loaded==='1')return;host.dataset.loaded='1';
+ try{const r=await rf130PhotoPlugin()?.read?.({id:id,maxPx:480});if(r?.dataUrl)host.innerHTML='<img src="'+r.dataUrl+'" alt="'+esc(tp149T('photo.previewAlt'))+'">';}
+ catch(_){host.dataset.loaded='0';host.classList.add('rf130-cloud-only');}
+};
+
+rf130ShowPhoto=async function(key,id){
+ const q=rf130FindPhoto(key,id);if(!q.p||q.p.deletedAt)return;const plugin=rf130PhotoPlugin();if(!plugin){alert(tp149T('photo.unavailable'));return;}let r=null;
+ try{r=await plugin.read({id:id,maxPx:1600});}
+ catch(_){
+  if(q.p.driveFileId&&cloudProfile&&googleBridge()?.drivePhotoRead&&navigator.onLine!==false){
+   try{showCloudMessage(tp149T('photo.downloading'));await googleBridge().drivePhotoRead({id:q.p.driveFileId,photoId:id,silent:false});r=await plugin.read({id:id,maxPx:1600});showCloudMessage(tp149T('photo.downloaded'));}
+   catch(e){alert(e?.message||tp149T('photo.driveFailed'));return;}
+  }else{alert(q.p.driveFileId?tp149T('photo.driveOnly'):tp149T('photo.deviceMissing'));return;}
+ }
+ if(!r?.dataUrl)return;rf130ClosePhotoModal();
+ const modal=document.createElement('div');modal.id='rf130PhotoModal';modal.className='video-modal';
+ modal.innerHTML='<div class="video-dialog rf130-photo-view" role="dialog" aria-modal="true" aria-labelledby="tp126PhotoTitle"><div class="tp-modal-head"><h2 id="tp126PhotoTitle">'+esc(rf130PhotoLabelText(q.p.label))+'</h2><button type="button" class="btn danger tp-modal-close tp126-photo-close" aria-label="'+esc(tp149T('common.close'))+'" onclick="rf130ClosePhotoModal()">×</button></div><img src="'+r.dataUrl+'" alt="'+esc(rf130PhotoLabelText(q.p.label))+'"><p class="small muted">'+esc(tp149FormatDateTime(q.p.createdAt))+(q.p.driveFileId?' • '+esc(tp149T('photo.driveSaved')):'')+'</p></div>';
+ document.body.appendChild(modal);modal.querySelector('button')?.focus();
+};
+
+rf130DeletePhoto=async function(key,id){
+ const q=rf130FindPhoto(key,id);if(!q.p||q.p.deletedAt)return;
+ const ok=await tp2628Confirm(tp149T('photo.deleteMessage'),{title:tp149T('photo.deleteTitle'),confirmText:tp149T('common.delete'),danger:true});if(!ok)return;
+ try{await rf130PhotoPlugin()?.delete?.({id:id});}catch(_){}
+ q.p.deletedAt=new Date().toISOString();q.p.updatedAt=Date.now();db.set('history',q.h);cloudChanged();render();window.TrainPilotFeedback?.deleted();
+};
+
+rf130PhotoSection=function(x,key){
+ const photos=rf130VisiblePhotos(x);
+ return '<div class="rf130-photo-section"><div class="rf130-photo-head"><strong>'+esc(tp149T('photo.section'))+'</strong><button class="btn secondary" type="button" onclick="rf130OpenAddPhoto(\''+esc(key)+'\')">＋ '+esc(tp149T('photo.add'))+'</button></div>'+
+ (photos.length?'<div class="rf130-photo-grid">'+photos.map(function(p){return '<div class="rf130-photo-card"><button class="rf130-photo-preview" data-rf130-photo-id="'+esc(p.id)+'" onclick="rf130ShowPhoto(\''+esc(key)+'\',\''+esc(p.id)+'\')"><span>'+(p.driveFileId?'☁':'▣')+' '+esc(rf130PhotoLabelText(p.label))+'</span></button><div class="small muted">'+esc(tp149FormatDateTime(p.createdAt))+(p.driveFileId?' • Drive':'')+'</div><button class="btn secondary block" onclick="rf130DeletePhoto(\''+esc(key)+'\',\''+esc(p.id)+'\')">'+esc(tp149T('common.delete'))+'</button></div>';}).join('')+'</div>':'<p class="small muted">'+esc(tp149T('photo.none'))+'</p>')+'</div>';
+};
+
+window.TrainPilotI18n.photoAudit=function(){
+ const keys=['photo.before','photo.after','photo.other','photo.add','photo.privacy','photo.camera','photo.pick','photo.unavailable','photo.saveFailed','photo.section','photo.none','photo.deleteTitle','photo.deleteMessage'];
+ const missing={hu:[],en:[],de:[],ro:[]};for(const lang of Object.keys(missing))for(const key of keys)if(!TP149_CATALOG[lang]?.[key])missing[lang].push(key);return missing;
+};
+// @endsection trainpilot-149-photo-i18n.js
+
+
+// @section trainpilot-149-video-modal-i18n.js
+/* TrainPilot 1.4.9: exercise video dialog is rendered in the selected language. */
+(function(){
+ const rows={
+  'video.dialogLabel':['Gyakorlatbemutató','Exercise demo','Übungsdemo','Demonstrație exercițiu'],
+  'video.demoTitle':['Bemutató','Demo','Demo','Demonstrație'],
+  'video.source':['Forrás: {source}. Ha a lejátszó nem indul, nyisd meg külső alkalmazásban.','Source: {source}. If the player does not start, open it in an external app.','Quelle: {source}. Wenn der Player nicht startet, öffne das Video in einer externen App.','Sursă: {source}. Dacă playerul nu pornește, deschide videoclipul într-o aplicație externă.'],
+  'video.openExternal':['Megnyitás külső alkalmazásban','Open in external app','In externer App öffnen','Deschide în aplicație externă'],
+  'video.sourceGuide':['Forrás és útmutató','Source and guide','Quelle und Anleitung','Sursă și ghid'],
+  'video.offline':['A videóhoz internet kell. Az edzés és a szöveges útmutató offline is használható.','Video requires an internet connection. The workout and text instructions are still available offline.','Für das Video ist eine Internetverbindung erforderlich. Training und Textanleitung sind weiterhin offline verfügbar.','Videoclipul necesită conexiune la internet. Antrenamentul și instrucțiunile text rămân disponibile offline.'],
+  'video.openFailed':['Nem sikerült megnyitni a videót.','Video could not be opened.','Das Video konnte nicht geöffnet werden.','Videoclipul nu a putut fi deschis.']
+ };
+ for(const [key,row] of Object.entries(rows)){TP149_KEY_ROWS[key]=row;TP149_CATALOG.hu[key]=row[0];TP149_CATALOG.en[key]=row[1];TP149_CATALOG.de[key]=row[2];TP149_CATALOG.ro[key]=row[3];}
+})();
+openDemo=function(id){
+ const d=demoInfo(id);if(!d)return;
+ if(navigator.onLine===false){alert(tp149T('video.offline'));return;}
+ if(!d.provider){openVideoLink(d.source);return;}
+ closeDemo();
+ const e=byId(id),name=e?tp149ExerciseName(e):tp149T('video.demoTitle');
+ const modal=document.createElement('div');modal.id='videoModal';modal.className='video-modal';
+ const src=d.provider==='youtube'?'https://www.youtube.com/embed/'+d.videoId+'?playsinline=1&rel=0':'https://player.vimeo.com/video/'+d.videoId+'?playsinline=1';
+ const external=d.provider==='youtube'?'https://www.youtube.com/watch?v='+d.videoId:d.source;
+ modal.innerHTML='<div class="video-dialog" role="dialog" aria-modal="true" aria-label="'+esc(tp149T('video.dialogLabel'))+'"><button class="btn secondary" onclick="closeDemo()">✕ '+esc(tp149T('common.close'))+'</button><h2>'+esc(name)+'</h2><div class="video-player"><iframe title="'+esc(name)+'" src="'+esc(src)+'" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div><p class="small muted">'+esc(tp149T('video.source',{source:d.credit}))+'</p><button class="btn block" onclick="openVideoLink(\''+esc(external)+'\')">'+esc(tp149T('video.openExternal'))+'</button><button class="btn secondary block" onclick="openVideoLink(\''+esc(d.source)+'\')">'+esc(tp149T('video.sourceGuide'))+'</button></div>';
+ document.body.appendChild(modal);modal.querySelector('button')?.focus();
+};
+openVideoLink=async function(url){
+ persistDraft();
+ try{if(isNative())await nativeFiles().openVideo({url:url});else window.open(url,'_blank','noopener,noreferrer');}
+ catch(e){alert(e?.message||tp149T('video.openFailed'));}
+};
+window.TrainPilotI18n.videoAudit=function(){
+ const keys=['video.badge','video.openDemo','video.dialogLabel','video.source','video.openExternal','video.sourceGuide','video.offline','video.openFailed'];
+ const missing={hu:[],en:[],de:[],ro:[]};for(const lang of Object.keys(missing))for(const key of keys)if(!TP149_CATALOG[lang]?.[key])missing[lang].push(key);return missing;
+};
+// @endsection trainpilot-149-video-modal-i18n.js
+
+
+// @section trainpilot-149-home-program-editor-i18n.js
+/* TrainPilot 1.4.9: direct Home, Programs and program-editor localization. */
+(function(){
+ const rows={
+  'home.nextLabel':['Következő','Next','Nächstes','Următorul'],
+  'home.personalPlanner':['Személyes edzéstervező','Personal workout planner','Persönlicher Trainingsplaner','Planificator personal de antrenament'],
+  'home.plannerIntro':['Állítsunk össze egy hozzád illő, követhető tervet.','Let’s build a practical plan that fits you.','Erstellen wir einen passenden, gut umsetzbaren Plan.','Hai să construim un plan potrivit și ușor de urmat.'],
+  'home.profileNewPlan':['Profil és új terv','Profile and new plan','Profil und neuer Plan','Profil și plan nou'],
+  'home.activeProgram':['Aktív program','Active program','Aktives Programm','Program activ'],
+  'home.next':['Következő: {day} • {date}','Next: {day} • {date}','Als Nächstes: {day} • {date}','Urmează: {day} • {date}'],
+  'home.nextCycle':['Következő ciklusnap: {day}','Next cycle day: {day}','Nächster Zyklustag: {day}','Următoarea zi din ciclu: {day}'],
+  'home.startPlanned':['Tervezett edzés indítása','Start planned workout','Geplantes Training starten','Pornește antrenamentul planificat'],
+  'home.startWorkout':['Edzés indítása','Start workout','Training starten','Pornește antrenamentul'],
+  'home.draft':['Félbehagyott edzés','Unfinished workout','Unvollständiges Training','Antrenament neterminat'],
+  'home.draftHelp':['A sorozatok mentve vannak.','Your sets are saved.','Deine Sätze sind gespeichert.','Seriile sunt salvate.'],
+  'home.resume':['Edzés folytatása','Resume workout','Training fortsetzen','Continuă antrenamentul'],
+  'home.completed':['Elvégzett edzések','Completed workouts','Abgeschlossene Trainings','Antrenamente finalizate'],
+  'home.latestWeight':['Legutóbbi testsúly','Latest body weight','Letztes Körpergewicht','Ultima greutate corporală'],
+  'home.today':['Mai állapot','Today status','Heutiger Status','Starea de azi'],
+  'home.activity':['Aktivitás','Activity','Aktivität','Activitate'],
+  'home.activeKcal':['Aktív kcal','Active kcal','Aktive kcal','Kcal active'],
+  'home.workouts':['Edzések','Workouts','Trainings','Antrenamente'],
+  'home.noHealth':['Nincs mai Health Connect adat','No Health Connect data today','Heute keine Health-Connect-Daten','Nu există date Health Connect azi'],
+  'home.coachDetails':['Részletek','Details','Details','Detalii'],
+  'home.stats':['Statisztika','Statistics','Statistik','Statistici'],
+  'home.coachLowFresh':['Kevés friss adat','Little recent data','Wenig aktuelle Daten','Puține date recente'],
+  'home.coachNoFresh':['A Coach több friss Health-adat után ad napi készenléti pontszámot. A korábbi teljesítményt és a mai közérzetedet vedd alapul.','The Coach does not have enough recent data to estimate daily readiness. Use your previous performance and how you feel today as a guide.','Der Coach hat nicht genügend aktuelle Daten, um die tägliche Trainingsbereitschaft einzuschätzen. Orientiere dich an deiner bisherigen Leistung und deinem heutigen Befinden.','Coach nu are suficiente date recente pentru a estima nivelul zilnic de pregătire. Folosește performanțele anterioare și starea de azi ca reper.'],
+  'programs.title':['Edzésprogramok','Workout programs','Trainingsprogramme','Programe de antrenament'],
+  'programs.intro':['Otthoni, konditermi és saját programok ugyanabban a naplóban.','Home, gym and custom programs share the same workout log.','Home-, Studio- und eigene Programme verwenden dasselbe Trainingsprotokoll.','Programele pentru acasă, sală și cele personalizate folosesc același jurnal.'],
+  'programs.custom':['Saját program','Custom program','Eigenes Programm','Program personalizat'],
+  'programs.create':['Új saját program létrehozása','Create custom program','Eigenes Programm erstellen','Creează program personalizat'],
+  'programs.exerciseManagement':['Gyakorlatkezelés','Exercise management','Übungsverwaltung','Gestionare exerciții'],
+  'programs.createExercise':['+ Saját gyakorlat','+ Custom exercise','+ Eigene Übung','+ Exercițiu personalizat'],
+  'programs.library':['Gyakorlatok / Izomcsoportok','Exercises / Muscle groups','Übungen / Muskelgruppen','Exerciții / Grupe musculare'],
+  'programs.customExercises':['Saját gyakorlatok','Custom exercises','Eigene Übungen','Exerciții personalizate'],
+  'programEdit.back':['Vissza','Back','Zurück','Înapoi'],
+  'programEdit.help':['Válassz gyakorlatokat és sorrendet minden programnaphoz.','Choose exercises and their order for each program day.','Wähle Übungen und ihre Reihenfolge für jeden Programmtag.','Alege exercițiile și ordinea lor pentru fiecare zi de program.'],
+  'programEdit.dayName':['Nap neve','Day name','Tagesname','Numele zilei'],
+  'programEdit.exercises':['Gyakorlatok','Exercises','Übungen','Exerciții'],
+  'programEdit.add':['+ Gyakorlat','+ Exercise','+ Übung','+ Exercițiu'],
+  'program.exercise.editHelp':['Itt közvetlenül módosíthatod a kiválasztott programot.','Edit the selected program directly here.','Hier kannst du das ausgewählte Programm direkt bearbeiten.','Poți modifica direct aici programul selectat.'],
+  'program.exercise.editAction':['Gyakorlat módosítása','Edit exercise','Übung bearbeiten','Editează exercițiul'],
+  'program.exercise.replace':['Gyakorlat cseréje','Replace exercise','Übung ersetzen','Înlocuiește exercițiul'],
+  'program.exercise.saveReplace':['Csere mentése','Save replacement','Änderung speichern','Salvează înlocuirea'],
+  'program.exercise.details':['Sorozat / ismétlés / súly részletes módosítása','Edit sets / reps / weight in detail','Sätze / Wiederholungen / Gewicht detailliert bearbeiten','Editează detaliat seriile / repetările / greutatea'],
+  'program.exercise.remove':['Gyakorlat törlése a programból','Remove exercise from program','Übung aus Programm entfernen','Elimină exercițiul din program'],
+  'program.exercise.addTitle':['Gyakorlat hozzáadása','Add exercise','Übung hinzufügen','Adaugă exercițiu'],
+  'program.exercise.none':['Nincs további gyakorlat','No more exercises available','Keine weiteren Übungen verfügbar','Nu mai sunt exerciții disponibile'],
+  'program.exercise.addAction':['+ Hozzáadás a programhoz','+ Add to program','+ Zum Programm hinzufügen','+ Adaugă în program'],
+  'program.exercise.duplicate':['Ez a gyakorlat már szerepel ebben a programban.','This exercise is already in this program.','Diese Übung ist bereits in diesem Programm.','Acest exercițiu există deja în program.'],
+  'program.exercise.oneRequired':['A programban legalább 1 gyakorlatnak maradnia kell.','At least 1 exercise must remain in the program.','Mindestens 1 Übung muss im Programm bleiben.','Cel puțin 1 exercițiu trebuie să rămână în program.'],
+  'program.exercise.notFound':['A kiválasztott gyakorlat nem található.','The selected exercise was not found.','Die ausgewählte Übung wurde nicht gefunden.','Exercițiul selectat nu a fost găsit.'],
+  'program.exercise.replaceFailed':['A csere nem sikerült.','Replacement failed.','Ersetzen fehlgeschlagen.','Înlocuirea a eșuat.'],
+  'program.exercise.addFailed':['A hozzáadás nem sikerült.','Could not add the exercise.','Übung konnte nicht hinzugefügt werden.','Exercițiul nu a putut fi adăugat.'],
+  'program.exercise.deleteFailed':['A törlés nem sikerült.','Deletion failed.','Löschen fehlgeschlagen.','Ștergerea a eșuat.'],
+  'customExercise.title':['Saját gyakorlat','Custom exercise','Eigene Übung','Exercițiu personalizat'],
+  'customExercise.intro':['Adj hozzá saját gyakorlatot a könyvtárhoz. A saját szöveged minden alkalmazásnyelven változatlan marad.','Add your own exercise to the library. Your own text stays unchanged in every app language.','Füge deine eigene Übung zur Bibliothek hinzu. Dein eigener Text bleibt in jeder App-Sprache unverändert.','Adaugă propriul exercițiu în bibliotecă. Textul tău rămâne neschimbat în toate limbile aplicației.'],
+  'customExercise.name':['Név','Name','Name','Nume'],
+  'customExercise.equipment':['Felszerelés leírása','Equipment description','Ausrüstungsbeschreibung','Descriere echipament'],
+  'customExercise.muscle':['Fő izomcsoport','Primary muscle group','Hauptmuskelgruppe','Grupă musculară principală'],
+  'customExercise.pattern':['Mozgásminta','Movement pattern','Bewegungsmuster','Tipar de mișcare'],
+  'customExercise.style':['Kategória / stílus','Category / style','Kategorie / Stil','Categorie / stil'],
+  'customExercise.difficulty':['Nehézség','Difficulty','Schwierigkeit','Dificultate'],
+  'customExercise.beginner':['Kezdő','Beginner','Anfänger','Începător'],
+  'customExercise.intermediate':['Középhaladó','Intermediate','Fortgeschritten','Intermediar'],
+  'customExercise.advanced':['Haladó','Advanced','Erfahren','Avansat'],
+  'customExercise.gear':['Szükséges felszerelés','Required equipment','Benötigte Ausrüstung','Echipament necesar'],
+  'customExercise.gearHelp':['Csak azt jelöld, ami nélkül a gyakorlat nem végezhető el.','Select only equipment that is required to perform the exercise.','Wähle nur Ausrüstung, ohne die die Übung nicht ausgeführt werden kann.','Selectează doar echipamentul fără de care exercițiul nu poate fi efectuat.'],
+  'customExercise.notes':['Technikai jegyzet','Technical note','Technischer Hinweis','Notă tehnică'],
+  'customExercise.save':['Gyakorlat mentése','Save exercise','Übung speichern','Salvează exercițiul'],
+  'customExercise.nameError':['Adj meg legalább 2 karakteres nevet.','Enter a name with at least 2 characters.','Gib einen Namen mit mindestens 2 Zeichen ein.','Introdu un nume de cel puțin 2 caractere.'],
+  'customExercise.invalid':['Érvénytelen gyakorlatadat.','Invalid exercise data.','Ungültige Übungsdaten.','Date de exercițiu nevalide.'],
+  'customExercise.invalidDifficulty':['Érvénytelen nehézség.','Invalid difficulty.','Ungültige Schwierigkeit.','Dificultate nevalidă.'],
+  'customExercise.saved':['Saját gyakorlat hozzáadva.','Custom exercise added.','Eigene Übung hinzugefügt.','Exercițiu personalizat adăugat.']
+ };
+ for(const [key,row] of Object.entries(rows)){TP149_KEY_ROWS[key]=row;TP149_CATALOG.hu[key]=row[0];TP149_CATALOG.en[key]=row[1];TP149_CATALOG.de[key]=row[2];TP149_CATALOG.ro[key]=row[3];}
+})();
+
+var tp149ExerciseDisplay=function tp149ExerciseDisplay(e){return e?tp149ExerciseName(e):'';};
+const tp149Rf201ExerciseRowBase=rf201ExerciseRow;
+rf201ExerciseRow=function(dayId,id,i){
+ if(rf212Lang()==='hu')return tp149Rf201ExerciseRowBase.apply(this,arguments);
+ const e=byId(id);if(!e)return '';
+ const rawPlay=typeof rf260VideoButton==='function'?rf260VideoButton(id):'',play=rawPlay.replace('event.stopPropagation();','event.preventDefault();event.stopPropagation();');
+ const name=tp149ExerciseDisplay(e),targetText=tp149Target(e),equipmentText=tp149Equipment(e),noteText=tp149ExerciseNote(e);
+ const meta=[e.sets?e.sets+' × '+String(e.reps||''):'',e.weight?tp149FormatNumber(e.weight,{maximumFractionDigits:2})+' '+tp149LoadLabel(e.loadType):''].filter(Boolean).join(' • ');
+ const target=targetText?'<span class="badge">'+esc(targetText)+'</span>':'',equipment=equipmentText?'<span class="badge">'+esc(equipmentText)+'</span>':'';
+ const note='<p class="small muted tp146-exercise-note">'+esc(noteText||tp149T('program.exercise.editHelp'))+'</p>';
+ return '<details class="exercise tp146-exercise" data-tp146-day="'+esc(dayId)+'" data-tp146-exercise="'+esc(id)+'"><summary class="tp146-exercise-summary"><div class="num">'+(i+1)+'</div><div class="tp146-exercise-copy"><div class="ex-name">'+esc(name)+'</div><div class="meta">'+esc(meta)+'</div></div><div class="tp-exercise-actions">'+play+'<span class="tp146-exercise-chevron" aria-hidden="true">⌄</span></div></summary><div class="tp146-exercise-body">'+((target||equipment)?'<div class="tp146-exercise-tags">'+target+equipment+'</div>':'')+note+'<button type="button" class="btn secondary block tp146-edit-exercise" onclick="event.stopPropagation();rf154EditSlot(\''+esc(dayId)+'\','+i+')">'+esc(tp149T('program.exercise.editAction'))+'</button></div></details>';
+};
+
+var tp149HomeDraftName=function tp149HomeDraftName(draft){
+ const s=draft?.session||{},p=s.programId?programById(s.programId):null,d=p?programDay(p,s.dayId||s.workout):null;
+ if(p&&d)return tp149ProgramMeta(p,'name')+' • '+tp149ProgramDayName(p,d);
+ return String(s.programName||s.workout||'');
+};
+var tp149HomeToday=function tp149HomeToday(){
+ const d=typeof rf223Daily==='function'?rf223Daily():null,kg=typeof rf223Weight==='function'?rf223Weight():(weights()?.[0]?.kg??null);
+ const mins=Math.max(0,Math.round(Number(d?.exerciseMinutes)||0)),kcal=d?.activeCalories==null?null:Math.round(Number(d.activeCalories)||0),n=Number(d?.exerciseSessionCount)||((d?.exerciseSessions||[]).length||0);
+ return '<div class="card rf223-today" id="rf223Today"><div class="rf223-title"><strong>'+esc(tp149T('home.today'))+'</strong>'+(!d?'<span class="small muted">'+esc(tp149T('home.noHealth'))+'</span>':'')+'</div><div class="rf223-grid"><button class="rf223-stat" onclick="go(\'health\')"><small>'+esc(tp149T('home.activity'))+'</small><strong>'+(mins?(typeof rf222Duration==='function'?esc(rf222Duration(mins)):tp149FormatNumber(mins)+' min'):'—')+'</strong></button><button class="rf223-stat" onclick="go(\'health\')"><small>'+esc(tp149T('home.activeKcal'))+'</small><strong>'+(kcal==null?'—':esc(tp149FormatNumber(kcal))+' kcal')+'</strong></button><button class="rf223-stat" onclick="go(\'history\')"><small>'+esc(tp149T('home.workouts'))+'</small><strong>'+(d?esc(tp149FormatNumber(n)):'—')+'</strong></button><button class="rf223-stat" onclick="rf215WeightScreen()"><small>'+esc(tp149T('health.weight'))+'</small><strong>'+(kg==null?'—':esc(tp149FormatNumber(kg,{maximumFractionDigits:1}))+' kg')+'</strong></button></div></div>';
+};
+var tp149HomeCoach=function tp149HomeCoach(){
+ let p=null;try{p=rf233CoachPlan();}catch(_){}
+ if(!p)return '<div class="card" id="rf220CoachCard"><strong>'+esc(tp149T('coach.title'))+'</strong><button class="btn block" onclick="rf233CoachScreen()">'+esc(tp149T('home.coachDetails'))+'</button></div>';
+ const noFresh=p.readiness?.score==null,score=noFresh?'—':tp149FormatNumber(p.readiness.score)+'/100';
+ const decision=noFresh?[tp149T('home.coachLowFresh'),tp149T('home.coachNoFresh')].join(' • '):[p.decision?.title,p.decision?.text].filter(Boolean).join(' • ');

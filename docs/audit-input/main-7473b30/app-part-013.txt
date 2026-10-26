@@ -1,0 +1,193 @@
+ ro:{name:'Română'}
+};
+
+
+const RF212_TEXT={
+ en:{
+  'Kezdőlap':'Home','Edzés':'Workout','Naptár':'Calendar','Programok':'Programs','Napló':'Log','Egészség':'Health','Beállítások':'Settings',
+  'Személyre szabás, mentés és szinkronizálás.':'Personalization, backup and synchronization.',
+  'Nyelv':'Language','Rendszer nyelve':'System language','Magyar':'Hungarian',
+  'Pihenőidő (másodperc)':'Rest time (seconds)','Mentés':'Save','Biztonsági mentés':'Backup',
+  'Mentsd az alkalmazás adatait fájlba, vagy állíts vissza egy korábbi mentést.':'Save app data to a file or restore a previous backup.',
+  'Mentés fájlba':'Save to file','Visszatöltés':'Restore','Edzésprofil':'Training profile',
+  'A kímélő profil csökkenti az alap sorozatszámokat. Az alapértékek bármikor visszaállíthatók.':'The lighter profile reduces default set counts. Defaults can be restored at any time.',
+  'Kímélő kezdőprofil (2 sorozat)':'Gentle starter profile (2 sets)','Alapértékek visszaállítása':'Restore defaults',
+  'Edzésnaptár':'Workout calendar','Tervezd meg az edzéseidet a vizuális naptárban.':'Plan your workouts in the visual calendar.',
+  'Naptár és tervező megnyitása':'Open calendar and planner','Témaszín':'Theme color','Válaszd ki az alkalmazás kiemelőszínét.':'Choose the app accent color.',
+  'Sárga':'Yellow','Kék':'Blue','Zöld':'Green','Lila':'Purple','Narancs':'Orange','Cián':'Cyan','Türkiz':'Teal','Rózsaszín':'Pink','Indigó':'Indigo','Lime':'Lime','Piros':'Red','Magenta':'Magenta','Levendula':'Lavender','Égkék':'Sky blue','Menta':'Mint','Korall':'Coral',
+  'Elvégzett edzések':'Completed workouts','Legutóbbi testsúly':'Latest body weight','Aktív program':'Active program',
+  'Indítás':'Start','Szerkesztés':'Edit','Törlés':'Delete','Áthelyezés':'Move','Kihagyás':'Skip','Hozzáadás':'Add',
+  'Gyakorlatok / Izomcsoportok':'Exercises / Muscle groups','Gyakorlatok':'Exercises','Izomcsoportok':'Muscle groups',
+  'Túl könnyű':'Too easy','Pont jó':'Just right','Nagyon nehéz':'Very hard','Fájdalom':'Pain','Fájdalmat éreztem':'I felt pain',
+  'Health Connect mérés':'Health Connect measurement','RepForge becslés':'TrainPilot estimate','Regeneráció':'Recovery',
+  'Alvás':'Sleep','Pulzus':'Heart rate','Testsúly':'Body weight','Kalória':'Calories','Frissítés':'Refresh',
+  'Ma':'Today','Heti':'Weekly','Havi':'Monthly','Vissza':'Back','Bezárás':'Close','Mégse':'Cancel','Kész':'Done'
+ },
+ de:{
+  'Kezdőlap':'Start','Edzés':'Training','Naptár':'Kalender','Programok':'Programme','Napló':'Protokoll','Egészség':'Gesundheit','Beállítások':'Einstellungen',
+  'Személyre szabás, mentés és szinkronizálás.':'Personalisierung, Sicherung und Synchronisierung.',
+  'Nyelv':'Sprache','Rendszer nyelve':'Systemsprache','Magyar':'Ungarisch',
+  'Pihenőidő (másodperc)':'Pausenzeit (Sekunden)','Mentés':'Speichern','Biztonsági mentés':'Sicherung',
+  'Mentsd az alkalmazás adatait fájlba, vagy állíts vissza egy korábbi mentést.':'App-Daten in einer Datei sichern oder eine frühere Sicherung wiederherstellen.',
+  'Mentés fájlba':'In Datei speichern','Visszatöltés':'Wiederherstellen','Edzésprofil':'Trainingsprofil',
+  'A kímélő profil csökkenti az alap sorozatszámokat. Az alapértékek bármikor visszaállíthatók.':'Das schonende Profil reduziert die Standard-Satzzahl. Standardwerte können jederzeit wiederhergestellt werden.',
+  'Kímélő kezdőprofil (2 sorozat)':'Schonendes Starterprofil (2 Sätze)','Alapértékek visszaállítása':'Standardwerte wiederherstellen',
+  'Edzésnaptár':'Trainingskalender','Tervezd meg az edzéseidet a vizuális naptárban.':'Plane deine Trainings im visuellen Kalender.',
+  'Naptár és tervező megnyitása':'Kalender und Planer öffnen','Témaszín':'Akzentfarbe','Válaszd ki az alkalmazás kiemelőszínét.':'Wähle die Akzentfarbe der App.',
+  'Sárga':'Gelb','Kék':'Blau','Zöld':'Grün','Lila':'Violett','Narancs':'Orange','Cián':'Cyan','Türkiz':'Türkis','Rózsaszín':'Rosa','Indigó':'Indigo','Lime':'Limette','Piros':'Rot','Magenta':'Magenta','Levendula':'Lavendel','Égkék':'Himmelblau','Menta':'Minze','Korall':'Koralle',
+  'Elvégzett edzések':'Abgeschlossene Trainings','Legutóbbi testsúly':'Letztes Körpergewicht','Aktív program':'Aktives Programm',
+  'Indítás':'Starten','Szerkesztés':'Bearbeiten','Törlés':'Löschen','Áthelyezés':'Verschieben','Kihagyás':'Überspringen','Hozzáadás':'Hinzufügen',
+  'Gyakorlatok / Izomcsoportok':'Übungen / Muskelgruppen','Gyakorlatok':'Übungen','Izomcsoportok':'Muskelgruppen',
+  'Túl könnyű':'Zu leicht','Pont jó':'Genau richtig','Nagyon nehéz':'Sehr schwer','Fájdalom':'Schmerz','Fájdalmat éreztem':'Ich hatte Schmerzen',
+  'Health Connect mérés':'Health-Connect-Messung','RepForge becslés':'TrainPilot-Schätzung','Regeneráció':'Erholung',
+  'Alvás':'Schlaf','Pulzus':'Herzfrequenz','Testsúly':'Körpergewicht','Kalória':'Kalorien','Frissítés':'Aktualisieren',
+  'Ma':'Heute','Heti':'Wöchentlich','Havi':'Monatlich','Vissza':'Zurück','Bezárás':'Schließen','Mégse':'Abbrechen','Kész':'Fertig'
+ },
+ ro:{
+  'Kezdőlap':'Acasă','Edzés':'Antrenament','Naptár':'Calendar','Programok':'Programe','Napló':'Jurnal','Egészség':'Sănătate','Beállítások':'Setări',
+  'Személyre szabás, mentés és szinkronizálás.':'Personalizare, backup și sincronizare.',
+  'Nyelv':'Limbă','Rendszer nyelve':'Limba sistemului','Magyar':'Maghiară',
+  'Pihenőidő (másodperc)':'Pauză (secunde)','Mentés':'Salvare','Biztonsági mentés':'Copie de siguranță',
+  'Mentsd az alkalmazás adatait fájlba, vagy állíts vissza egy korábbi mentést.':'Salvează datele aplicației într-un fișier sau restaurează o copie anterioară.',
+  'Mentés fájlba':'Salvează în fișier','Visszatöltés':'Restaurare','Edzésprofil':'Profil de antrenament',
+  'A kímélő profil csökkenti az alap sorozatszámokat. Az alapértékek bármikor visszaállíthatók.':'Profilul ușor reduce numărul implicit de serii. Valorile implicite pot fi restaurate oricând.',
+  'Kímélő kezdőprofil (2 sorozat)':'Profil ușor pentru începători (2 serii)','Alapértékek visszaállítása':'Restaurează valorile implicite',
+  'Edzésnaptár':'Calendar de antrenament','Tervezd meg az edzéseidet a vizuális naptárban.':'Planifică antrenamentele în calendarul vizual.',
+  'Naptár és tervező megnyitása':'Deschide calendarul și planificatorul','Témaszín':'Culoare de accent','Válaszd ki az alkalmazás kiemelőszínét.':'Alege culoarea de accent a aplicației.',
+  'Sárga':'Galben','Kék':'Albastru','Zöld':'Verde','Lila':'Mov','Narancs':'Portocaliu','Cián':'Cian','Türkiz':'Turcoaz','Rózsaszín':'Roz','Indigó':'Indigo','Lime':'Lime','Piros':'Roșu','Magenta':'Magenta','Levendula':'Lavandă','Égkék':'Albastru cer','Menta':'Mentă','Korall':'Coral',
+  'Elvégzett edzések':'Antrenamente finalizate','Legutóbbi testsúly':'Ultima greutate','Aktív program':'Program activ',
+  'Indítás':'Start','Szerkesztés':'Editare','Törlés':'Ștergere','Áthelyezés':'Mutare','Kihagyás':'Omite','Hozzáadás':'Adaugă',
+  'Gyakorlatok / Izomcsoportok':'Exerciții / Grupe musculare','Gyakorlatok':'Exerciții','Izomcsoportok':'Grupe musculare',
+  'Túl könnyű':'Prea ușor','Pont jó':'Potrivit','Nagyon nehéz':'Foarte greu','Fájdalom':'Durere','Fájdalmat éreztem':'Am simțit durere',
+  'Health Connect mérés':'Măsurare Health Connect','RepForge becslés':'Estimare TrainPilot','Regeneráció':'Recuperare',
+  'Alvás':'Somn','Pulzus':'Puls','Testsúly':'Greutate','Kalória':'Calorii','Frissítés':'Actualizare',
+  'Ma':'Astăzi','Heti':'Săptămânal','Havi':'Lunar','Vissza':'Înapoi','Bezárás':'Închide','Mégse':'Anulează','Kész':'Gata'
+ }
+};
+
+
+const rf212Shell=shell;
+shell=function(content){
+ let html=rf212Shell(content);
+ if(/<h1>Beállítások<\/h1>|<h1>Settings<\/h1>|<h1>Einstellungen<\/h1>|<h1>Setări<\/h1>/.test(html)&&!html.includes('rf212-language')){
+  html=html.replace(/(<div class="hero">[\s\S]*?<\/div>)/,`$1${rf212LanguagePanel()}`);
+ }
+ document.documentElement.lang=rf212Lang();
+ return rf212Translate(html);
+};
+
+document.documentElement.lang=rf212Lang();
+document.title='TrainPilot';
+
+
+render();
+
+
+// @endsection v212.js
+
+// @section v213.js
+var rf213ApplyMap = function rf213ApplyMap(html,map){
+ let out=String(html);
+ Object.keys(map).sort((a,b)=>b.length-a.length).forEach(k=>{out=out.split(k).join(map[k]);});
+ return out;
+};
+var rf213EnglishExerciseCards = function rf213EnglishExerciseCards(html){
+ // Built-in exercise cards already contain both Hungarian and English names. In English mode,
+ // use the English name as the primary label instead of displaying a bilingual card.
+ return String(html)
+  .replace(/<div class="ex-name">([^<]*)<\/div><div class="en">([^<]+)<\/div>/g,(_m,_hu,en)=>`<div class="ex-name">${en}</div>`)
+  .replace(/<h2>([^<]*)<\/h2><div class="en">([^<]+)<\/div>/g,(_m,_hu,en)=>`<h2>${en}</h2>`);
+};
+/* TrainPilot 2.1.3: complete English localization pass over the current rendered UI. */
+const RF213_VERSION='2.1.3';
+
+const RF213_EN={
+ 'intelligens edzéstervező':'intelligent workout planner',
+ 'Nem tudod, hogyan kezdd?':'Not sure how to start?',
+ 'Állítsunk össze egy hozzád illő, követhető tervet.':'Let’s build a practical plan that fits you.',
+ 'Segíts elkezdeni':'Help me get started',
+ 'Aktív program':'Active program','Következő:':'Next:',
+ 'Tervezett edzés indítása':'Start scheduled workout','Elvégzett edzések':'Completed workouts','Legutóbbi testsúly':'Latest body weight',
+ 'Személyes terv':'Personal plan','Gyakorlatok / Izomcsoportok':'Exercises / Muscle groups','Edzésprogramok':'Workout programs',
+ 'Otthoni, konditermi és saját programok ugyanabban a naplóban.':'Home, gym and custom programs in the same log.',
+ 'Otthoni A/B – Alap':'Home A/B – Basic','Otthoni A/B – 2. szint':'Home A/B – Level 2','Otthoni változatos':'Home variety',
+ 'Konditermi Full Body':'Gym Full Body','Konditermi A/B':'Gym A/B','Otthon':'Home','Edzőterem':'Gym','Kezdő':'Beginner','Középhaladó':'Intermediate',
+ '2 napos ciklus':'2-day cycle','gyakorlat':'exercise','Aktiválás':'Activate','Aktív':'Active',
+ 'Workoutprogramok':'Workout programs',
+ 'Tervezési mód':'Planning mode','Minden második nap':'Every other day','Kezdőnap':'Start date','Időpont':'Time','Időtartam (perc)':'Duration (minutes)',
+ 'Hetek száma':'Number of weeks','Első programnap':'First program day','Terv generálása':'Generate plan',
+ 'Egyéni módban vagy utólag közvetlenül a naptár napjaira koppintva adhatsz hozzá/törölhetsz alkalmat.':'In custom mode, or later, tap calendar days directly to add or remove sessions.',
+ 'Szeptember':'September','Október':'October','November':'November','December':'December','Január':'January','Február':'February','Március':'March','Április':'April','Május':'May','Június':'June','Július':'July','Augusztus':'August',
+ 'Tervezett alkalmak':'Scheduled sessions','Tervezett':'Scheduled','Teljesítve':'Completed','Kihagyott':'Skipped',
+ 'Indítás':'Start','Áthelyezés':'Move','Kihagyás':'Skip','Törlés':'Delete','Start':'Start','Move':'Move','Skip':'Skip','Delete':'Delete',
+ 'Mai aktivitás • Health Connect':'Today’s activity • Health Connect','Aktív kalória és pulzusadatok a telefonon megosztott adatforrásból. Ezek nem kerülnek Google Drive mentésbe.':'Active calories and heart-rate data from the phone’s shared health source. These are not stored in Google Drive backup.',
+ 'Mai adatok beolvasása':'Read today’s data','TrainPilot edzésenergia':'TrainPilot workout energy',
+ 'Saját becslés az edzés időtartamából, testsúlyból, elvégzett sorozatokból és nehézség-visszajelzésből. Nem helyettesíti a viselhető eszköz mérését.':'TrainPilot estimate based on workout duration, body weight, completed sets and effort feedback. It does not replace wearable-device measurement.',
+ 'Becsült összesen':'Estimated total','Becsült edzések':'Estimated workouts','Regeneráció':'Recovery',
+ 'Alvás és HRV még nincs beolvasva ebben a nézetben.':'Sleep and HRV have not been loaded in this view yet.','Még nincs beolvasott alvás/HRV adat.':'No sleep/HRV data loaded yet.',
+ 'Alvás és HRV frissítése':'Refresh sleep and HRV','Testsúly napló':'Body weight log','Edzésnapló':'Workout log',
+ 'Edzés módosítása':'Edit workout','Health adatok':'Health data','Naptárhoz':'calendar','Hozzáadás a naptárhoz':'Add to calendar','Add a naptárhoz':'Add to calendar',
+ 'sorozat':'set','sorozatok':'sets','ism.':'reps','összesen':'total','kg/kar':'kg/arm','kg/kez':'kg/hand','testsúly':'body weight',
+ 'Google-fiók és szinkron':'Google account and sync','Kijelentkezés':'Sign out','Automatikus Drive-szinkron':'Automatic Drive sync','Automatikus edzésnaptár':'Automatic workout calendar',
+ 'Az app megnyitásakor és adatváltozás után, internet mellett. Bezárt appban nincs háttérszinkron. A naptárkapcsolat iránya:':'When the app opens and after data changes while online. There is no background sync while the app is closed. Calendar sync direction:',
+ 'Drive-szinkron most':'Sync Drive now','Naptárszinkron most':'Sync calendar now','Calendarszinkron most':'Sync calendar now','Drive-szinkron kész.':'Drive sync complete.',
+ 'Utolsó Drive-szinkron:':'Last Drive sync:','Utolsó naptárszinkron:':'Last calendar sync:','Edzésnaptár':'Workout calendar',
+ 'Biztonsági mentés':'Backup','Mentés fájlba':'Save to file','Visszatöltés':'Restore','Utolsó ellenőrzött mentés:':'Last verified backup:',
+ 'Saját programhoz':'custom program','Add saját programhoz':'Add to custom program','Bemutató megnyitása':'Open demo','VIDEÓBEMUTATÓ • INTERNET':'VIDEO DEMO • INTERNET','külön lejátszó':'external player',
+ 'Fő izomcsoport:':'Primary muscle group:','Bicepsz':'Biceps','Tricepsz':'Triceps','Mell':'Chest','Hát':'Back','Váll':'Shoulders','Törzs':'Core','Láb':'Legs','Farizom':'Glutes','Combhajlító':'Hamstrings','Vádli':'Calves',
+ 'Guggolás 2 kézisúlyzóval':'Dumbbell Squat','Földön fekve nyomás':'Dumbbell Floor Press','Egykezes evezés':'One-Arm Dumbbell Row','Döntött törzsű evezés – kétkezes rúddal':'Barbell Bent-Over Row','Román felhúzás – kétkezes rúddal':'Barbell Romanian Deadlift (RDL)','Oldalemelés':'Dumbbell Lateral Raise','Bicepszezés':'Dumbbell Biceps Curl','Fej fölé nyomás':'Dumbbell Overhead Press','Hátralépős kitörés':'Dumbbell Reverse Lunge','Hasprés':'Crunch','Plank (alkartámasz)':'Forearm Plank',
+ '1 kézisúlyzó + támasz':'1 dumbbell + support','2 kézisúlyzó':'2 dumbbells','kétkezes rúd':'barbell','1 kézisúlyzó':'1 dumbbell',
+ 'Stabil támasz mellett húzd a súlyt a csípő/bordák felé. Ne csavard a törzsed.':'With stable support, pull the weight toward your hip/ribs. Do not twist your torso.',
+ 'Hanyatt fekve engedd a könyököt kontrolláltan a padlóig, majd nyomd vissza a súlyokat.':'Lying on your back, lower your elbows under control to the floor, then press the weights back up.',
+ 'Feszes törzs, semleges hát, húzd a rudat a has/bordák alsó része felé.':'Brace your torso, keep a neutral back and pull the bar toward your lower ribs/abdomen.',
+ 'Térd enyhén hajlítva, hát semleges, csípő hátra. Csak addig menj le, amíg kontrollált.':'Keep a slight knee bend and neutral back, push the hips back and lower only as far as you can control.',
+ 'Enyhén hajlított könyökkel emeld oldalra a súlyzókat vállmagasság közeléig, lendítés nélkül.':'With slightly bent elbows, raise the dumbbells to around shoulder height without swinging.',
+ 'Könyök a test mellett, lendítés nélkül emeld, majd kontrolláltan engedd vissza.':'Keep your elbows by your sides, curl without swinging, then lower under control.',
+ 'Egy-egy súlyzó lógjon a tested mellett. Láb vállszélesség körül, csípő hátra és lefelé, majd állj fel. Törzs feszes.':'Hold one dumbbell at each side. Stand around shoulder width, sit the hips back and down, then stand up with a braced torso.',
+ 'Tarts egy-egy kézisúlyzót a tested mellett. Lépj hátra, engedd a hátsó térdet lefelé, majd az első lábbal told vissza magad. A súlyt karonként, az ismétlést lábanként add meg.':'Hold a dumbbell in each hand. Step back, lower the rear knee, then push back up through the front leg. Enter weight per arm and reps per leg.',
+ 'Vállmagasságból nyomd a súlyokat a fej fölé, majd lassan engedd vissza.':'Press the weights overhead from shoulder height, then lower them slowly.',
+ 'Hanyatt fekve emeld el a lapockát a földtől. Nem kell teljesen felülni.':'Lying on your back, lift your shoulder blades from the floor. You do not need to sit all the way up.'
+};
+
+
+const rf213Shell=shell;
+shell=function(content){
+ let html=rf213Shell(content);
+ if(rf212Lang()==='en'){
+  html=rf213ApplyMap(html,RF213_EN);
+  html=rf213EnglishExerciseCards(html);
+ }
+ return html;
+};
+
+
+render();
+
+
+// @endsection v213.js
+
+// @section v214.js
+var rf214Map = function rf214Map(html,map){let out=String(html);Object.keys(map).sort((a,b)=>b.length-a.length).forEach(k=>{out=out.split(k).join(map[k]);});return out;};
+var rf214ExerciseCards = function rf214ExerciseCards(html,lang){if(lang==='hu')return html;return String(html).replace(/<div class="ex-name">([^<]*)<\/div><div class="en">([^<]+)<\/div>/g,(_m,hu,en)=>`<div class="ex-name">${lang==='en'?en:(RF214_MAPS[lang]?.[hu]||en)}</div>`).replace(/<h2>([^<]*)<\/h2><div class="en">([^<]+)<\/div>/g,(_m,hu,en)=>`<h2>${lang==='en'?en:(RF214_MAPS[lang]?.[hu]||en)}</h2>`);};
+/* TrainPilot 2.1.4: unified localization pass for Hungarian, English, German and Romanian. */
+const RF214_VERSION='2.1.4';
+const RF214_MAPS={
+ en:{...RF213_EN,
+  'Workout calendar':'Workout calendar','Minden második nap, fix heti napok vagy teljesen egyéni kijelölés.':'Every other day, fixed weekdays or fully custom scheduling.',
+  'Tervezési mód':'Planning mode','Kezdőnap':'Start date','Időpont':'Time','Időtartam (perc)':'Duration (minutes)','Hetek száma':'Number of weeks','Első programnap':'First program day','Terv generálása':'Generate plan',
+  'Tervezett alkalmak':'Scheduled sessions','Teljesítve':'Completed','Kihagyott':'Skipped','Tervezett':'Scheduled',
+  'Edzés módosítása':'Edit workout','Health adatok':'Health data','Hozzáadás a naptárhoz':'Add to calendar','Add a naptárhoz':'Add to calendar',
+  'Személyes terv':'Personal plan','Aktiválás':'Activate','Aktív':'Active','Bemutató megnyitása':'Open demo','Add saját programhoz':'Add to custom program',
+  'Mai aktivitás':'Today’s activity','Mai adatok beolvasása':'Read today’s data','TrainPilot edzésenergia':'TrainPilot workout energy','Becsült összesen':'Estimated total','Becsült edzések':'Estimated workouts',
+  'Alvás és HRV frissítése':'Refresh sleep and HRV','Testsúly napló':'Body weight log','Edzésnapló':'Workout log','Automatikus Drive-szinkron':'Automatic Drive sync','Automatikus edzésnaptár':'Automatic workout calendar','Kijelentkezés':'Sign out'
+ },
+ de:{
+  'intelligens edzéstervező':'intelligenter Trainingsplaner','Nem tudod, hogyan kezdd?':'Du weißt nicht, wie du anfangen sollst?','Állítsunk össze egy hozzád illő, követhető tervet.':'Erstellen wir einen passenden, leicht umsetzbaren Plan.','Segíts elkezdeni':'Beim Start helfen',
+  'Aktív program':'Aktives Programm','Következő:':'Nächstes:','Tervezett edzés indítása':'Geplantes Training starten','Elvégzett edzések':'Abgeschlossene Trainings','Legutóbbi testsúly':'Letztes Körpergewicht',
+  'Személyes terv':'Persönlicher Plan','Gyakorlatok / Izomcsoportok':'Übungen / Muskelgruppen','Edzésprogramok':'Trainingsprogramme','Workoutprogramok':'Trainingsprogramme','Otthoni, konditermi és saját programok ugyanabban a naplóban.':'Heim-, Studio- und eigene Programme im selben Protokoll.',
+  'Otthoni A/B – Alap':'Zuhause A/B – Basis','Otthoni A/B – 2. szint':'Zuhause A/B – Stufe 2','Otthoni változatos':'Zuhause abwechslungsreich','Konditermi Full Body':'Studio Ganzkörper','Konditermi A/B':'Studio A/B','Otthon':'Zuhause','Edzőterem':'Fitnessstudio','Kezdő':'Anfänger','Középhaladó':'Fortgeschritten','2 napos ciklus':'2-Tage-Zyklus','gyakorlat':'Übung','Aktiválás':'Aktivieren','Aktív':'Aktiv',
+  'Workout calendar':'Trainingskalender','Minden második nap, fix heti napok vagy teljesen egyéni kijelölés.':'Jeden zweiten Tag, feste Wochentage oder vollständig individuelle Planung.','Tervezési mód':'Planungsmodus','Minden második nap':'Jeden zweiten Tag','Kezdőnap':'Startdatum','Időpont':'Uhrzeit','Időtartam (perc)':'Dauer (Minuten)','Hetek száma':'Anzahl der Wochen','Első programnap':'Erster Programmtag','Terv generálása':'Plan erstellen','Tervezett alkalmak':'Geplante Einheiten','Tervezett':'Geplant','Teljesítve':'Abgeschlossen','Kihagyott':'Übersprungen','Indítás':'Starten','Áthelyezés':'Verschieben','Kihagyás':'Überspringen','Törlés':'Löschen',
+  'Mai aktivitás • Health Connect':'Heutige Aktivität • Health Connect','Aktív kalória és pulzusadatok a telefonon megosztott adatforrásból. Ezek nem kerülnek Google Drive mentésbe.':'Aktive Kalorien und Herzfrequenzdaten aus der freigegebenen Gesundheitsquelle des Telefons. Diese werden nicht in Google Drive gesichert.','Mai adatok beolvasása':'Heutige Daten laden','TrainPilot edzésenergia':'TrainPilot Trainingsenergie','Becsült összesen':'Geschätzt gesamt','Becsült edzések':'Geschätzte Trainings','Regeneráció':'Erholung','Alvás és HRV még nincs beolvasva ebben a nézetben.':'Schlaf und HRV wurden in dieser Ansicht noch nicht geladen.','Még nincs beolvasott alvás/HRV adat.':'Noch keine Schlaf-/HRV-Daten geladen.','Alvás és HRV frissítése':'Schlaf und HRV aktualisieren','Testsúly napló':'Körpergewichtsprotokoll','Edzésnapló':'Trainingsprotokoll',
+  'Edzés módosítása':'Training bearbeiten','Health adatok':'Health-Daten','Hozzáadás a naptárhoz':'Zum Kalender hinzufügen','Add a naptárhoz':'Zum Kalender hinzufügen','sorozat':'Satz','sorozatok':'Sätze','ism.':'Wdh.','összesen':'gesamt','kg/kar':'kg/Arm','kg/kez':'kg/Hand','testsúly':'Körpergewicht',
+  'Google-fiók és szinkron':'Google-Konto und Synchronisierung','Kijelentkezés':'Abmelden','Automatikus Drive-szinkron':'Automatische Drive-Synchronisierung','Automatikus edzésnaptár':'Automatischer Trainingskalender','Drive-szinkron most':'Drive jetzt synchronisieren','Naptárszinkron most':'Kalender jetzt synchronisieren','Calendarszinkron most':'Kalender jetzt synchronisieren','Drive-szinkron kész.':'Drive-Synchronisierung abgeschlossen.','Utolsó Drive-szinkron:':'Letzte Drive-Synchronisierung:','Utolsó naptárszinkron:':'Letzte Kalendersynchronisierung:','Biztonsági mentés':'Sicherung','Mentés fájlba':'In Datei speichern','Visszatöltés':'Wiederherstellen','Utolsó ellenőrzött mentés:':'Letzte geprüfte Sicherung:',
+  'Bemutató megnyitása':'Demo öffnen','Add saját programhoz':'Zum eigenen Programm hinzufügen','VIDEÓBEMUTATÓ • INTERNET':'VIDEO-DEMO • INTERNET','külön lejátszó':'externer Player','Fő izomcsoport:':'Hauptmuskelgruppe:','Bicepsz':'Bizeps','Tricepsz':'Trizeps','Mell':'Brust','Hát':'Rücken','Váll':'Schultern','Törzs':'Rumpf','Láb':'Beine','Farizom':'Gesäß','Combhajlító':'Beinbeuger','Vádli':'Waden',

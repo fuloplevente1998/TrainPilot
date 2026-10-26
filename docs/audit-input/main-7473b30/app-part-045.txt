@@ -1,0 +1,241 @@
+  'dialog.scheduleDelete.message':['Törlöd ezt a tervezett alkalmat? A teljesített edzésnapló megmarad.','Delete this scheduled session? Completed workout history is kept.','Diese geplante Einheit löschen? Abgeschlossene Trainings im Protokoll bleiben erhalten.','Ștergi această sesiune planificată? Istoricul antrenamentelor finalizate se păstrează.']
+ };
+ for(const [key,row] of Object.entries(rows)){
+  TP149_KEY_ROWS[key]=row;
+  TP149_CATALOG.hu[key]=row[0];TP149_CATALOG.en[key]=row[1];TP149_CATALOG.de[key]=row[2];TP149_CATALOG.ro[key]=row[3];
+ }
+})();
+
+const TP149_DIALOG_BASES={
+ startWorkout:typeof startWorkout==='function'?startWorkout:null,
+ resetPlan:typeof resetPlan==='function'?resetPlan:null,
+ resetStarter:typeof resetStarter==='function'?resetStarter:null,
+ activateProgram:typeof activateProgram==='function'?activateProgram:null,
+ createCustomProgram:typeof createCustomProgram==='function'?createCustomProgram:null,
+ deleteCustomProgram:typeof deleteCustomProgram==='function'?deleteCustomProgram:null,
+ deleteCustomExercise:typeof deleteCustomExercise14==='function'?deleteCustomExercise14:null,
+ deleteHistory:typeof deleteHistoryWorkout==='function'?deleteHistoryWorkout:null,
+ resetDay:typeof rf153ResetDay==='function'?rf153ResetDay:null,
+ removeExercise:typeof rf154Remove==='function'?rf154Remove:null,
+ weightDelete:typeof rf215Del==='function'?rf215Del:null,
+ weightEdit:typeof rf215Edit==='function'?rf215Edit:null,
+ editSchedule:typeof editSchedulePrompt==='function'?editSchedulePrompt:null,
+ dayChoice:typeof rf224DayChoice==='function'?rf224DayChoice:null,
+ cancelSchedule:typeof cancelSchedule==='function'?cancelSchedule:null
+};
+
+const TP149_DIALOG_LITERAL_KEYS={
+ 'Edzés elhagyása':'dialog.leaveWorkout.title',
+ 'Kilépsz a folyamatban lévő edzésből? A mentett vázlat megmarad, később folytathatod.':'dialog.leaveWorkout.message',
+ 'Kilépés':'dialog.leaveWorkout.action'
+};
+var tp149DialogLiteral=function tp149DialogLiteral(value){
+ const raw=String(value??''),key=TP149_DIALOG_LITERAL_KEYS[raw];
+ return key?tp149T(key):raw;
+};
+
+tp2628Confirm=function(message,opts={}){
+ tp2628DialogRemove();
+ return new Promise(function(resolve){
+  const title=opts.title?tp149DialogLiteral(opts.title):tp149T('dialog.confirm.title'),confirmText=opts.confirmText?tp149DialogLiteral(opts.confirmText):tp149T('common.ok'),cancelText=opts.cancelText?tp149DialogLiteral(opts.cancelText):tp149T('common.cancel'),danger=opts.danger===true,body=tp149DialogLiteral(message);
+  const modal=document.createElement('div');modal.id='tp2628Dialog';modal.className='tp2628-dialog-backdrop';
+  modal.innerHTML='<div class="tp2628-dialog" role="dialog" aria-modal="true" aria-labelledby="tp2628DialogTitle"><h2 id="tp2628DialogTitle">'+tp2628DialogEscape(title)+'</h2><p class="tp2628-dialog-message">'+tp2628DialogEscape(body)+'</p><div class="tp2628-dialog-actions"><button type="button" class="btn secondary" data-tp2628-cancel>'+tp2628DialogEscape(cancelText)+'</button><button type="button" class="btn '+(danger?'danger':'')+'" data-tp2628-confirm>'+tp2628DialogEscape(confirmText)+'</button></div></div>';
+  let finished=false;
+  const finish=function(value){if(finished)return;finished=true;document.removeEventListener('keydown',key,true);modal.remove();resolve(value);};
+  const key=function(e){if(e.key==='Escape'){e.preventDefault();finish(false);}};
+  modal.querySelector('[data-tp2628-cancel]').onclick=function(){finish(false);};
+  modal.querySelector('[data-tp2628-confirm]').onclick=function(){finish(true);};
+  modal.addEventListener('click',function(e){if(e.target===modal)finish(false);});
+  document.addEventListener('keydown',key,true);document.body.appendChild(modal);modal.querySelector('[data-tp2628-cancel]')?.focus();
+ });
+};
+tp2628Notice=function(message,title='TrainPilot'){
+ tp2628DialogRemove();
+ return new Promise(function(resolve){
+  const modal=document.createElement('div');modal.id='tp2628Dialog';modal.className='tp2628-dialog-backdrop';
+  modal.innerHTML='<div class="tp2628-dialog" role="alertdialog" aria-modal="true" aria-labelledby="tp2628DialogTitle"><h2 id="tp2628DialogTitle">'+tp2628DialogEscape(title)+'</h2><p class="tp2628-dialog-message">'+tp2628DialogEscape(message)+'</p><div class="tp2628-dialog-actions single"><button type="button" class="btn" data-tp2628-ok>'+tp2628DialogEscape(tp149T('common.ok'))+'</button></div></div>';
+  let finished=false;
+  const finish=function(){if(finished)return;finished=true;document.removeEventListener('keydown',key,true);modal.remove();resolve(true);};
+  const key=function(e){if(e.key==='Escape'||e.key==='Enter'){e.preventDefault();finish();}};
+  modal.querySelector('[data-tp2628-ok]').onclick=finish;document.addEventListener('keydown',key,true);document.body.appendChild(modal);modal.querySelector('[data-tp2628-ok]')?.focus();
+ });
+};
+tp2629Prompt=function(message,opts={}){
+ tp2628DialogRemove();
+ return new Promise(function(resolve){
+  const title=opts.title||tp149T('dialog.input.title'),okText=opts.okText||tp149T('common.ok'),cancelText=opts.cancelText||tp149T('common.cancel');
+  const modal=document.createElement('div');modal.id='tp2628Dialog';modal.className='tp2628-dialog-backdrop';
+  modal.innerHTML='<div class="tp2628-dialog" role="dialog" aria-modal="true" aria-labelledby="tp2628DialogTitle"><h2 id="tp2628DialogTitle">'+tp2628DialogEscape(title)+'</h2><p class="tp2628-dialog-message">'+tp2628DialogEscape(message)+'</p><input class="field" data-tp2629-input type="'+tp2628DialogEscape(opts.type||'text')+'" value="'+tp2628DialogEscape(opts.value??'')+'" '+(opts.inputMode?'inputmode="'+tp2628DialogEscape(opts.inputMode)+'"':'')+'><div class="tp2628-dialog-actions" style="margin-top:14px"><button type="button" class="btn secondary" data-tp2628-cancel>'+tp2628DialogEscape(cancelText)+'</button><button type="button" class="btn" data-tp2628-confirm>'+tp2628DialogEscape(okText)+'</button></div></div>';
+  let finished=false;const input=modal.querySelector('[data-tp2629-input]');
+  const finish=function(value){if(finished)return;finished=true;document.removeEventListener('keydown',key,true);modal.remove();resolve(value);};
+  const key=function(e){if(e.key==='Escape'){e.preventDefault();finish(null);}else if(e.key==='Enter'){e.preventDefault();finish(input.value);}};
+  modal.querySelector('[data-tp2628-cancel]').onclick=function(){finish(null);};
+  modal.querySelector('[data-tp2628-confirm]').onclick=function(){finish(input.value);};
+  modal.addEventListener('click',function(e){if(e.target===modal)finish(null);});
+  document.addEventListener('keydown',key,true);document.body.appendChild(modal);input.focus();input.select?.();
+ });
+};
+
+const tp149RestoreDialogBase=restoreText;
+restoreText=function(text){
+ if(String(text).length>20*1024*1024)throw Error('Maximum 20 MB.');
+ let d,desired=null;try{d=validateBackup(JSON.parse(String(text).replace(/^\uFEFF/,'')));const raw=JSON.parse(String(text).replace(/^\uFEFF/,''));if(raw&&Object.hasOwn(TP149_LANGS,raw.language))desired=raw.language;}catch(e){throw e;}
+ void tp2628Confirm(tp149T('dialog.restore.message',{workouts:d.history.length,weights:d.weights.length}),{title:tp149T('dialog.restore.title'),confirmText:tp149T('backup.restore'),danger:true}).then(function(ok){
+  if(!ok)return;
+  const oldConfirm=tp2628Confirm;tp2628Confirm=function(){return Promise.resolve(true);};
+  try{tp149RestoreDialogBase(text);if(desired){db.set('language',desired);document.documentElement.lang=rf212Lang();}}
+  finally{tp2628Confirm=oldConfirm;}
+ });
+ return true;
+};
+
+startWorkout=function(dayId,scheduleId=null,programId=null){
+ if(!db.get('draft',null))return tp2629ConfirmBypass(function(){return TP149_DIALOG_BASES.startWorkout(dayId,scheduleId,programId);},true);
+ void tp2628Confirm(tp149T('dialog.newWorkout.message'),{title:tp149T('dialog.newWorkout.title'),confirmText:tp149T('calendar.action.start'),danger:true}).then(function(ok){
+  if(ok)tp2629ConfirmBypass(function(){return TP149_DIALOG_BASES.startWorkout(dayId,scheduleId,programId);},true);
+ });
+};
+
+resetPlan=function(){void tp2628Confirm(tp149T('dialog.restoreDefaults.message'),{title:tp149T('dialog.restoreDefaults.title'),confirmText:tp149T('dialog.restoreAction'),danger:true}).then(function(ok){if(ok)tp2629ConfirmBypass(function(){return TP149_DIALOG_BASES.resetPlan();},true);});};
+resetStarter=function(){void tp2628Confirm(tp149T('dialog.starter.message'),{title:tp149T('dialog.starter.title'),confirmText:tp149T('dialog.apply')}).then(function(ok){if(ok)tp2629ConfirmBypass(function(){return TP149_DIALOG_BASES.resetStarter();},true);});};
+
+activateProgram=function(id){
+ if(!programById(id))return;
+ void tp2628Confirm(tp149T('dialog.activate.message'),{title:tp149T('dialog.activate.title'),confirmText:tp149T('dialog.activate.action')}).then(function(ok){if(ok)tp2629ConfirmBypass(function(){return TP149_DIALOG_BASES.activateProgram(id);},true);});
+};
+createCustomProgram=async function(){
+ const name=await tp2629Prompt(tp149T('dialog.customProgram.name'),{title:tp149T('dialog.customProgram.title'),value:tp149T('dialog.customProgram.default')});if(!name)return;
+ const count=await tp2629Prompt(tp149T('dialog.customProgram.length'),{title:tp149T('dialog.customProgram.lengthTitle'),value:'2',type:'number',inputMode:'numeric'});if(count===null)return;
+ return tp2629PromptBypass([name,count],function(){return TP149_DIALOG_BASES.createCustomProgram();});
+};
+deleteCustomProgram=function(id){
+ const p=programById(id);if(!p||p.builtin)return;
+ void tp2628Confirm(tp149T('dialog.deleteProgram.message'),{title:tp149T('dialog.deleteProgram.title'),confirmText:tp149T('common.delete'),danger:true}).then(function(ok){if(ok)tp2629ConfirmBypass(function(){return TP149_DIALOG_BASES.deleteCustomProgram(id);},true);});
+};
+deleteCustomExercise14=function(id){
+ const e=exercises().find(function(x){return x.id===id;});if(!e?.custom)return;
+ void tp2628Confirm(tp149T('dialog.deleteExercise.message'),{title:tp149T('dialog.deleteExercise.title'),confirmText:tp149T('common.delete'),danger:true}).then(function(ok){if(ok)tp2629ConfirmBypass(function(){return TP149_DIALOG_BASES.deleteCustomExercise(id);},true);});
+};
+deleteHistoryWorkout=function(key){
+ const i=rf142FindHistoryIndex(key),h=history();if(i<0)return TP149_DIALOG_BASES.deleteHistory(key);const x=h[i];
+ const msg=tp149T('dialog.deleteWorkout.message',{date:tp149FormatDateTime(x.started),duration:sessionDuration(x)});
+ return tp2628Confirm(msg,{title:tp149T('dialog.deleteWorkout.title'),confirmText:tp149T('common.delete'),danger:true}).then(function(ok){if(ok)tp2629ConfirmBypass(function(){return tp142DeleteHistoryWorkout(key);},true);});
+};
+rf153ResetDay=function(w){
+ const p=activeProgram(),d=p?programDay(p,w):null,label=d?tp149ProgramDayName(p,d):String(w);
+ void tp2628Confirm(tp149T('dialog.resetDay.message',{day:label}),{title:tp149T('dialog.resetDay.title'),confirmText:tp149T('dialog.restoreAction'),danger:true}).then(function(ok){if(ok)tp2629ConfirmBypass(function(){return TP149_DIALOG_BASES.resetDay(w);},true);});
+};
+rf154Remove=function(w,i){
+ let blocked=false;try{const st=typeof rf155DayState==='function'?rf155DayState(w):null,arr=st?.day?.exercises||plan()?.[w]||[];blocked=arr.length<=1;}catch(_){}
+ if(blocked)return TP149_DIALOG_BASES.removeExercise(w,i);
+ void tp2628Confirm(tp149T('dialog.removeExercise.message'),{title:tp149T('dialog.removeExercise.title'),confirmText:tp149T('common.delete'),danger:true}).then(function(ok){if(ok)tp2629ConfirmBypass(function(){return TP149_DIALOG_BASES.removeExercise(w,i);},true);});
+};
+rf215Del=function(date){
+ void tp2628Confirm(tp149T('dialog.weightDelete.message'),{title:tp149T('dialog.weightDelete.title'),confirmText:tp149T('common.delete'),danger:true}).then(function(ok){if(ok)tp2629ConfirmBypass(function(){return TP149_DIALOG_BASES.weightDelete(date);},true);});
+};
+rf215Edit=async function(date){
+ const x=weights().find(function(y){return y.date===date;});if(!x)return;
+ const v=await tp2629Prompt(tp149T('dialog.weightEdit.prompt'),{title:tp149T('dialog.weightEdit.title'),value:x.kg,type:'number',inputMode:'decimal'});if(v===null)return;
+ return tp2629PromptBypass([v],function(){return TP149_DIALOG_BASES.weightEdit(date);});
+};
+editSchedulePrompt=async function(id){
+ const s=scheduled(),i=s.findIndex(function(x){return x.id===id;});if(i<0)return;const old=s[i];
+ const date=await tp2629Prompt(tp149T('dialog.scheduleMove.date'),{title:tp149T('dialog.scheduleMove.title'),value:localDateKey(new Date(old.start)),type:'date'});if(date===null)return;
+ const time=await tp2629Prompt(tp149T('dialog.scheduleMove.time'),{title:tp149T('dialog.scheduleMove.title'),value:new Date(old.start).toTimeString().slice(0,5),type:'time'});if(time===null)return;
+ return tp2629PromptBypass([date,time],function(){return TP149_DIALOG_BASES.editSchedule(id);});
+};
+rf224DayChoice=async function(date){
+ const items=scheduleOnDate(date).filter(function(x){return !x.cancelled;});if(items.length)return TP149_DIALOG_BASES.dayChoice(date);
+ const p=activeProgram(),days=p?.days||[];if(!days.length)return;
+ const labels=days.map(function(d,i){return (i+1)+'. '+tp149ProgramDayName(p,d);}).join('\n');
+ const raw=await tp2629Prompt(tp149T('dialog.chooseDay.prompt')+'\n\n'+labels,{title:tp149T('dialog.chooseDay.title'),value:'1',inputMode:'numeric'});if(raw===null)return;
+ return tp2629PromptBypass([raw],function(){return TP149_DIALOG_BASES.dayChoice(date);});
+};
+cancelSchedule=function(i){
+ const row=scheduled()?.[i];if(!row)return;
+ void tp2628Confirm(tp149T('dialog.scheduleDelete.message'),{title:tp149T('dialog.scheduleDelete.title'),confirmText:tp149T('common.delete'),danger:true}).then(function(ok){if(ok)tp2629ConfirmBypass(function(){return TP149_DIALOG_BASES.cancelSchedule(i);},true);});
+};
+
+window.TrainPilotI18n.dialogAudit=function(){
+ const keys=['dialog.input.title','dialog.restore.title','dialog.leaveWorkout.title','dialog.leaveWorkout.message','dialog.leaveWorkout.action','dialog.newWorkout.title','dialog.partial.title','dialog.restoreDefaults.title','dialog.activate.title','dialog.customProgram.title','dialog.deleteProgram.title','dialog.deleteExercise.title','dialog.deleteWorkout.title','dialog.weightDelete.title','dialog.weightEdit.title','dialog.scheduleMove.title','dialog.chooseDay.title','dialog.scheduleDelete.title'];
+ const missing={hu:[],en:[],de:[],ro:[]};for(const lang of Object.keys(missing))for(const key of keys)if(!TP149_CATALOG[lang]?.[key])missing[lang].push(key);return missing;
+};
+// @endsection trainpilot-149-dialog-i18n.js
+
+
+// @section trainpilot-149-weight-i18n.js
+/* TrainPilot 1.4.9: key-based body-weight journal. */
+(function(){
+ const rows={
+  'weight.title':['Testsúly napló','Body weight log','Körpergewichtsprotokoll','Jurnal greutate corporală'],
+  'weight.intro':['Rögzítsd a testsúlyodat, és kövesd a változást időben.','Record your body weight and follow the trend over time.','Erfasse dein Körpergewicht und verfolge die Entwicklung über die Zeit.','Înregistrează greutatea corporală și urmărește evoluția în timp.'],
+  'weight.addTitle':['Új testsúly rögzítése','Record new body weight','Neues Körpergewicht erfassen','Înregistrează greutatea corporală'],
+  'weight.label':['Testsúly','Body weight','Körpergewicht','Greutate corporală'],
+  'weight.date':['Dátum','Date','Datum','Data'],
+  'weight.current':['Aktuális','Current','Aktuell','Actuală'],
+  'weight.start':['Kezdő','Starting','Startwert','Inițială'],
+  'weight.change':['Változás','Change','Änderung','Schimbare'],
+  'weight.minMax':['Minimum / Maximum','Minimum / Maximum','Minimum / Maximum','Minim / Maxim'],
+  'weight.trend':['Testsúly változása','Body weight trend','Gewichtsverlauf','Evoluția greutății'],
+  'weight.history':['Előzmények','History','Verlauf','Istoric'],
+  'weight.none':['Még nincs testsúlyadat.','No body weight data yet.','Noch keine Gewichtsdaten.','Nu există încă date despre greutate.'],
+  'weight.backHealth':['Vissza az Egészséghez','Back to Health','Zurück zu Gesundheit','Înapoi la Sănătate'],
+  'weight.invalid':['Adj meg 30 és 300 kg közötti testsúlyt.','Enter a body weight between 30 and 300 kg.','Gib ein Körpergewicht zwischen 30 und 300 kg ein.','Introdu o greutate corporală între 30 și 300 kg.'],
+  'weight.range.7':['7 nap','7 days','7 Tage','7 zile'],
+  'weight.range.30':['30 nap','30 days','30 Tage','30 zile'],
+  'weight.range.90':['3 hónap','3 months','3 Monate','3 luni'],
+  'weight.range.365':['1 év','1 year','1 Jahr','1 an'],
+  'weight.range.all':['Összes','All','Alle','Toate']
+ };
+ for(const [key,row] of Object.entries(rows)){
+  TP149_KEY_ROWS[key]=row;TP149_CATALOG.hu[key]=row[0];TP149_CATALOG.en[key]=row[1];TP149_CATALOG.de[key]=row[2];TP149_CATALOG.ro[key]=row[3];
+ }
+})();
+
+rf215Add=function(){
+ const kg=Number(String(document.querySelector('#rf215kg')?.value||'').replace(',','.')),d=document.querySelector('#rf215date')?.value;
+ if(!kg||kg<30||kg>300){alert(tp149T('weight.invalid'));return;}
+ const w=weights();w.unshift({kg:Math.round(kg*10)/10,date:new Date((d||rf215Date())+'T12:00:00').toISOString()});db.set('weights',w);if(typeof cloudChanged==='function')cloudChanged();rf215WeightScreen();window.TrainPilotFeedback?.saved();
+};
+rf215Chart=function(a){
+ if(a.length<2)return '<div class="muted" style="padding:24px 0;text-align:center">'+esc(tp149T('weight.none'))+'</div>';
+ const W=720,H=240,p=28,v=a.map(function(x){return Number(x.kg);}),mn=Math.min(...v),mx=Math.max(...v),sp=Math.max(1,mx-mn);
+ const X=function(i){return p+(W-2*p)*(i/(a.length-1));},Y=function(n){return H-p-(H-2*p)*((n-mn)/sp);};
+ const pts=a.map(function(d,i){return X(i)+','+Y(+d.kg);}).join(' ');
+ const dots=a.map(function(d,i){return '<circle cx="'+X(i)+'" cy="'+Y(+d.kg)+'" r="5" fill="var(--accent)"><title>'+esc(tp149FormatDate(d.date,{year:'numeric',month:'short',day:'numeric'}))+' • '+esc(tp149FormatNumber(d.kg,{minimumFractionDigits:1,maximumFractionDigits:1}))+' kg</title></circle>';}).join('');
+ return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" height="240" role="img" aria-label="'+esc(tp149T('weight.trend'))+'"><polyline fill="none" stroke="var(--accent)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" points="'+pts+'"/>'+dots+'<text x="32" y="24" fill="currentColor" opacity=".65">'+esc(tp149FormatNumber(mx,{minimumFractionDigits:1,maximumFractionDigits:1}))+' kg</text><text x="32" y="226" fill="currentColor" opacity=".65">'+esc(tp149FormatNumber(mn,{minimumFractionDigits:1,maximumFractionDigits:1}))+' kg</text></svg>';
+};
+rf215WeightScreen=function(){
+ state.tab='health';if(typeof rf225HealthPage!=='undefined')rf225HealthPage='weight';state.healthView=false;
+ const a=rf215All(),d=rf215Data(),cur=a.at(-1)?.kg??null,start=a[0]?.kg??null,mn=a.length?Math.min(...a.map(function(x){return +x.kg;})):null,mx=a.length?Math.max(...a.map(function(x){return +x.kg;})):null,diff=cur!=null&&start!=null?Math.round((cur-start)*10)/10:null;
+ const kg=function(x){return x==null?'—':tp149FormatNumber(x,{minimumFractionDigits:1,maximumFractionDigits:1})+' kg';};
+ const ranges=[['7','weight.range.7'],['30','weight.range.30'],['90','weight.range.90'],['365','weight.range.365'],['all','weight.range.all']];
+ const cards=a.length?a.slice().reverse().map(function(x){
+  return '<div class="card"><strong>'+esc(kg(Number(x.kg)))+'</strong><div class="small muted">'+esc(tp149FormatDate(x.date,{year:'numeric',month:'long',day:'numeric'}))+'</div><br><button class="btn secondary" onclick="rf215Edit(\''+esc(x.date)+'\')">'+esc(tp149T('common.edit'))+'</button> <button class="btn danger" onclick="rf215Del(\''+esc(x.date)+'\')">'+esc(tp149T('common.delete'))+'</button></div>';
+ }).join(''):'<div class="muted">'+esc(tp149T('weight.none'))+'</div>';
+ const html='<main><button class="btn secondary" onclick="rf263HealthHub()">← '+esc(tp149T('weight.backHealth'))+'</button><div class="hero"><h1>'+esc(tp149T('weight.title'))+'</h1><div class="muted">'+esc(tp149T('weight.intro'))+'</div></div><div class="card"><h2>'+esc(tp149T('weight.addTitle'))+'</h2><div class="grid2"><label>'+esc(tp149T('weight.label'))+' (kg)<input id="rf215kg" class="field" type="number" step="0.1" min="30" max="300" value="'+esc(cur??'')+'"></label><label>'+esc(tp149T('weight.date'))+'<input id="rf215date" class="field" type="date" value="'+esc(rf215Date())+'"></label></div><br><button class="btn block" onclick="rf215Add()">'+esc(tp149T('common.save'))+'</button></div><div class="grid2"><div class="stat"><small>'+esc(tp149T('weight.current'))+'</small><strong>'+esc(kg(cur))+'</strong></div><div class="stat"><small>'+esc(tp149T('weight.start'))+'</small><strong>'+esc(kg(start))+'</strong></div><div class="stat"><small>'+esc(tp149T('weight.change'))+'</small><strong>'+esc(diff==null?'—':(diff>0?'+':'')+tp149FormatNumber(diff,{minimumFractionDigits:1,maximumFractionDigits:1})+' kg')+'</strong></div><div class="stat"><small>'+esc(tp149T('weight.minMax'))+'</small><strong>'+esc(mn==null?'—':tp149FormatNumber(mn,{minimumFractionDigits:1,maximumFractionDigits:1})+' / '+tp149FormatNumber(mx,{minimumFractionDigits:1,maximumFractionDigits:1})+' kg')+'</strong></div></div><div class="card"><h2>'+esc(tp149T('weight.trend'))+'</h2><div style="display:flex;gap:6px;flex-wrap:wrap">'+ranges.map(function(r){return '<button class="btn '+(rf215Range()===r[0]?'':'secondary')+'" onclick="rf215SetRange(\''+r[0]+'\')">'+esc(tp149T(r[1]))+'</button>';}).join('')+'</div>'+rf215Chart(d)+'</div><div class="section">'+esc(tp149T('weight.history'))+'</div>'+cards+'</main>';
+ render(shell(html));
+};
+
+window.TrainPilotI18n.weightAudit=function(){
+ const keys=['weight.title','weight.intro','weight.addTitle','weight.label','weight.date','weight.current','weight.start','weight.change','weight.minMax','weight.trend','weight.history','weight.none','weight.backHealth','weight.invalid'];
+ const missing={hu:[],en:[],de:[],ro:[]};for(const lang of Object.keys(missing))for(const key of keys)if(!TP149_CATALOG[lang]?.[key])missing[lang].push(key);return missing;
+};
+// @endsection trainpilot-149-weight-i18n.js
+
+
+// @section trainpilot-149-settings-backup-i18n.js
+/* TrainPilot 1.4.9: direct settings, theme, planner shortcut and backup localization. */
+(function(){
+ const rows={
+  'settings.subtitle':['Személyre szabás, mentés és szinkronizálás.','Personalization, backup and sync.','Personalisierung, Sicherung und Synchronisierung.','Personalizare, copie de siguranță și sincronizare.'],
+  'settings.rest':['Pihenőidő (másodperc)','Rest time (seconds)','Pausenzeit (Sekunden)','Timp de pauză (secunde)'],
+  'settings.saved':['Mentve.','Saved.','Gespeichert.','Salvat.'],
+  'settings.theme':['Témaszín','Accent color','Akzentfarbe','Culoare de accent'],
+  'settings.themeHelp':['Válaszd ki az alkalmazás kiemelőszínét.','Choose the app accent color.','Wähle die Akzentfarbe der App.','Alege culoarea de accent a aplicației.'],
+  'theme.yellow':['Sárga','Yellow','Gelb','Galben'],'theme.blue':['Kék','Blue','Blau','Albastru'],'theme.green':['Zöld','Green','Grün','Verde'],
+  'theme.purple':['Lila','Purple','Violett','Mov'],'theme.orange':['Narancs','Orange','Orange','Portocaliu'],'theme.cyan':['Cián','Cyan','Cyan','Cian'],
+  'theme.teal':['Türkiz','Teal','Türkis','Turcoaz'],'theme.pink':['Rózsaszín','Pink','Rosa','Roz'],'theme.indigo':['Indigó','Indigo','Indigo','Indigo'],
+  'theme.lime':['Lime','Lime','Limette','Lime'],'theme.red':['Piros','Red','Rot','Roșu'],'theme.magenta':['Magenta','Magenta','Magenta','Magenta'],
+  'theme.lavender':['Levendula','Lavender','Lavendel','Lavandă'],'theme.sky':['Égkék','Sky blue','Himmelblau','Albastru cer'],
+  'theme.mint':['Menta','Mint','Mint','Mentă'],'theme.coral':['Korall','Coral','Koralle','Coral'],

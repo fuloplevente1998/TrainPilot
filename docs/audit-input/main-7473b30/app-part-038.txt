@@ -1,0 +1,274 @@
+ "lateral-raise": "Cu coatele ușor îndoite, ridică ganterele lateral până aproape de nivelul umerilor, fără balans.",
+ "hammer-curl": "Folosește o priză neutră, cu palmele orientate una spre cealaltă. Ține coatele aproape de trunchi.",
+ "close-pushup": "Așază mâinile mai aproape decât lățimea umerilor. Menține trunchiul încordat și coboară controlat.",
+ "leg-press": "Ține zona lombară lipită de spătar. Coboară sarcina controlat, apoi împinge înapoi fără să blochezi forțat genunchii.",
+ "machine-chest-press": "Ține omoplații stabili pe spătar. Împinge mânerele înainte, apoi revino controlat.",
+ "lat-pulldown": "Înclină-te ușor pe spate și trage bara spre partea superioară a pieptului. Nu smuci greutatea și nu trage bara în spatele cefei.",
+ "seated-cable-row": "Ține trunchiul neutru, trage mânerul spre abdomen și apropie omoplații, apoi revino controlat.",
+ "leg-curl": "Menține șoldurile stabile. Flexează genunchii controlat, apoi revino lent în poziția inițială.",
+ "machine-shoulder-press": "Ține spatele sprijinit. Împinge mânerele în sus, apoi coboară-le controlat.",
+ "cable-triceps": "Ține coatele lângă trunchi. Extinde antebrațele în jos, apoi revino controlat.",
+ "cable-curl": "Ține coatele lângă trunchi. Flexează brațele fără să folosești elan.",
+ "incline-pushup": "Menține corpul într-o linie dreaptă, cu mâinile pe o suprafață ridicată și stabilă. Coboară pieptul spre suport controlat.",
+ "modified-pushup": "Din sprijin pe genunchi, menține o linie dreaptă de la genunchi la cap. Coatele se deplasează aproximativ la 45 de grade.",
+ "decline-pushup": "Așază picioarele pe o suprafață ridicată și stabilă. Menține trunchiul încordat și controlează poziția coatelor.",
+ "pike-pushup": "Din poziția de V inversat, coboară capul controlat spre podea, apoi împinge-te înapoi.",
+ "plyo-pushup": "Execută doar după ce stăpânești flotarea de bază. Împinge exploziv de la sol și aterizează ușor, cu coatele îndoite.",
+ "archer-pushup": "Folosește o poziție largă a mâinilor și încarcă în principal un braț, în timp ce celălalt rămâne întins lateral. Alternează părțile.",
+ "prisoner-squat": "Ține mâinile în spatele capului și pieptul deschis. Execută genuflexiunea controlat, cu genunchii urmărind direcția picioarelor.",
+ "single-leg-squat": "Stai pe un picior și folosește un suport stabil dacă este nevoie. Coboară doar atât cât poți menține genunchiul și bazinul controlate.",
+ "squat-jump": "Sari exploziv din genuflexiune, apoi aterizează ușor cu genunchii îndoiți. Nu continua până la epuizare completă.",
+ "lunge-jump": "Sari din fandare și schimbă picioarele în aer. Aterizează ușor și nu lăsa genunchiul să cadă spre interior.",
+ "jumping-jacks": "Deschide și închide ritmic picioarele în timp ce ridici brațele. Aterizează ușor; pentru impact redus poți executa varianta prin pași.",
+ "box-jump": "Sari doar pe o suprafață stabilă care nu se poate răsturna. Aterizează ușor pe ambele picioare și, de preferat, coboară prin pas.",
+ "db-front-squat": "Ține câte o ganteră la nivelul umerilor. Menține pieptul sus și lasă genunchii să urmărească direcția picioarelor.",
+ "single-arm-db-press": "Întins pe bancă, împinge cu un singur braț. Încordează trunchiul pentru ca bazinul și pieptul să nu se rotească.",
+ "single-arm-incline-press": "Împinge cu un braț pe banca înclinată fără să rotești trunchiul. Începe cu o greutate ușoară de probă.",
+ "single-leg-press": "Împinge platforma cu un singur picior, controlat. Nu bloca genunchiul și nu îl lăsa să cadă spre interior.",
+ "seated-leg-curl": "Reglează perna deasupra gleznei și ține spatele pe spătar. Flexează și revino controlat.",
+ "single-leg-seated-curl": "Flexează cu un picior controlat, menținând bazinul stabil. Folosește aceeași tehnică pe ambele părți.",
+ "leg-press-calf": "Ține doar partea din față a tălpii sigur pe platformă. Ridică și coboară călcâiul din gleznă, menținând genunchiul controlat.",
+ "close-grip-bench": "Folosește o priză mai îngustă decât la împinsul normal la bancă, dar nu extrem de îngustă. Coboară bara controlat.",
+ "pullup": "Pe o bară stabilă, trage pieptul spre bară fără balans. Nu lăsa umerii să cadă înainte în poziția de sus.",
+ "chinup": "Folosește priză supinată și menține trunchiul încordat. Evită balansul și ridicarea umerilor.",
+ "negative-pullup": "Pornește din poziția de sus și coboară controlat timp de 3–5 secunde. Începe de pe o treaptă sau platformă sigură.",
+ "scapular-pullup": "Cu brațele întinse, trage doar omoplații în jos și înapoi, apoi revino controlat.",
+ "inverted-row": "Menține corpul drept, trage pieptul spre bara stabilă, apoi coboară lent.",
+ "dip": "Pe bare paralele stabile, coboară corpul controlat, apoi împinge-te înapoi. Nu forța o adâncime incomodă pentru umeri.",
+ "bench-dip": "Asigură-te că banca este stabilă. Coboară doar într-un interval fără durere pentru umeri, cu coatele deplasându-se înapoi.",
+ "diamond-pushup": "Ține mâinile apropiate sub piept. Încordează trunchiul și controlează coatele.",
+ "pseudo-planche-pushup": "Mută umerii ușor înaintea mâinilor și menține trunchiul încordat. Execută doar după ce stăpânești o tehnică stabilă de flotare.",
+ "hanging-knee-raise": "Fără balans, trage genunchii spre piept și rotește ușor bazinul posterior.",
+ "hanging-leg-raise": "Ridică picioarele întinse sau ușor îndoite fără balans. Treci la această variantă doar după ce stăpânești atârnarea și ridicarea genunchilor.",
+ "hollow-hold": "Apasă ușor zona lombară spre podea. Scurtează poziția brațelor sau îndoaie genunchii dacă zona lombară se ridică.",
+ "superman-hold": "Culcat pe burtă, ridică brațele și picioarele într-un interval mic, cu gâtul neutru. Nu arcui excesiv spatele.",
+ "mountain-climber": "Din poziție de flotare, adu alternativ genunchii înainte. Menține bazinul și umerii stabile.",
+ "band-row": "Fixează banda într-un punct sigur. Trage coatele înapoi, apropie omoplații, apoi revino lent.",
+ "band-lat-pulldown": "Fixează banda în siguranță într-un punct înalt. Trage coatele în jos pe lângă trunchi.",
+ "band-chest-press": "Fixează banda în siguranță în spatele tău. Împinge brațele înainte, menținând cutia toracică stabilă.",
+ "band-overhead-press": "Stai pe mijlocul benzii, stabilizează trunchiul și împinge mâinile deasupra capului.",
+ "band-face-pull": "Fixează banda aproximativ la nivelul feței și trage spre frunte, menținând coatele sus.",
+ "band-biceps-curl": "Stai pe bandă, ține coatele lângă trunchi și flexează brațele fără balans.",
+ "band-triceps-pushdown": "Ține coatele lângă trunchi și extinde doar antebrațele în jos.",
+ "band-pallof-press": "Cu banda trăgând din lateral, împinge mâinile înainte de la piept fără să lași trunchiul să se rotească.",
+ "kb-goblet-squat": "Ține kettlebellul în fața pieptului. Execută genuflexiunea controlat și lasă genunchii să urmărească direcția picioarelor.",
+ "kb-deadlift": "Du șoldurile înapoi, menține spatele neutru, apoi ridică-te prin extensia șoldurilor.",
+ "kb-swing": "Extinde șoldurile exploziv, fără să ridici greutatea din brațe. Execută doar după ce stăpânești o flexie de șold stabilă.",
+ "kb-clean": "Ține kettlebellul aproape de corp și lasă-l să ajungă ușor în poziția rack. Este o mișcare tehnică; începe cu greutate mică.",
+ "kb-press": "Din poziția rack, împinge kettlebellul deasupra capului cu trunchiul încordat. Nu arcui excesiv zona lombară.",
+ "kb-row": "Dintr-o poziție stabilă de flexie a șoldului, trage cotul spre șold. Nu roti trunchiul.",
+ "kb-reverse-lunge": "Ține kettlebellul în poziție goblet sau rack, fă un pas înapoi, apoi ridică-te prin piciorul din față.",
+ "kb-halo": "Cu o greutate ușoară, ghidează kettlebellul controlat în jurul capului. Menține cutia toracică și bazinul stabile.",
+ "barbell-back-squat": "Pornește dintr-un rack sigur. Menține trunchiul încordat și genunchii în direcția picioarelor. Se recomandă brațe de siguranță.",
+ "conventional-deadlift": "Ține bara aproape de picioare și coloana neutră. Creează tensiune în bară înainte de a o desprinde de podea.",
+ "bench-press": "Menține omoplații stabili și picioarele pe podea. Se recomandă brațe de siguranță sau un partener de asigurare.",
+ "incline-bench-press": "Folosește o înclinație moderată a băncii și menține omoplații stabili. Se recomandă brațe de siguranță sau un partener de asigurare.",
+ "barbell-overhead-press": "Încordează fesierii și abdomenul când împingi bara deasupra capului. Nu compensa prin arcuirea excesivă a zonei lombare.",
+ "assisted-pullup-machine": "Setează o asistență potrivită, trage pieptul în sus și coboară controlat.",
+ "pec-deck": "Ține umerii jos și înapoi. Apropie brațele controlat, fără să smucești greutatea.",
+ "cable-lateral-raise": "Folosește o sarcină ușoară și ridică brațul lateral până aproape de nivelul umărului. Nu folosi balans.",
+ "hack-squat": "Ține spatele și bazinul lipite de suport. Coboară controlat, apoi împinge platforma înapoi.",
+ "standing-calf-raise": "Mișcă glezna printr-un interval complet și fără durere. Contractă scurt gambele în partea de sus.",
+ "bodyweight-squat": "Stai într-o poziție stabilă, coboară șoldurile, apoi ridică-te. Genunchii urmăresc direcția picioarelor.",
+ "glute-bridge": "Întins pe spate cu genunchii îndoiți, ridică șoldurile. Contractă fesierii, apoi coboară controlat.",
+ "dead-bug": "Întins pe spate, ridică brațele și menține genunchii îndoiți. Extinde alternativ brațul și piciorul opus, cu trunchiul stabil.",
+ "bird-dog": "Din sprijin în patru labe, extinde brațul și piciorul opus. Menține bazinul orizontal.",
+ "side-plank": "Culcat pe o parte, sprijină-te pe antebraț și ridică șoldurile. Lucrează ambele părți și înregistrează timpul per parte.",
+ "calf-raise": "Folosind un suport stabil, ridică-te pe vârfuri, apoi coboară lent călcâiele.",
+ "db-step-up": "Urcă cu un picior pe o platformă stabilă, apoi coboară controlat. Numără repetările per picior și asigură-te că platforma nu se poate răsturna.",
+ "db-rdl": "Cu genunchii ușor îndoiți, du șoldurile înapoi. Ține ganterele aproape de picioare și spatele neutru.",
+ "db-bench-press": "Întins pe o bancă stabilă, împinge ganterele deasupra pieptului, apoi coboară-le controlat. Ține picioarele ferm pe podea.",
+ "incline-db-press": "Cu spatele sprijinit pe banca înclinată, împinge ganterele în sus. Nu folosi elan și nu ridica șoldurile.",
+ "db-reverse-fly": "Cu trunchiul aplecat și stabil, ridică gantere ușoare lateral. Ține coatele ușor îndoite și nu balansa trunchiul.",
+ "face-pull": "Trage frânghia spre față, astfel încât mâinile să ajungă lângă aceasta. Revino controlat, fără să balansezi trunchiul.",
+ "leg-extension": "Reglează aparatul la dimensiunile corpului. Dintr-o poziție stabilă în șezut, extinde genunchii controlat, apoi coboară lent.",
+ "cable-fly": "Cu coatele ușor îndoite, apropie brațele în fața pieptului, apoi deschide controlat. Introdu sarcina pentru o singură parte a cablului."
+};
+var tp149ExerciseNote=function tp149ExerciseNote(exercise,lang=rf212Lang()){
+ if(!exercise)return '';
+ if(exercise.custom===true)return String(exercise.notes||'');
+ if(lang==='hu')return String(exercise.notes||'');
+ if(lang==='de')return TP149_EX_NOTE_DE[exercise.id]||TP149_EX_NOTE_EN[exercise.id]||String(exercise.notes||'');
+ if(lang==='ro')return TP149_EX_NOTE_RO[exercise.id]||TP149_EX_NOTE_EN[exercise.id]||String(exercise.notes||'');
+ return TP149_EX_NOTE_EN[exercise.id]||String(exercise.notes||'');
+};
+var tp149Equipment=function tp149Equipment(exercise,lang=rf212Lang()){
+ if(!exercise)return '';
+ if(exercise.custom===true)return String(exercise.equipment||'');
+ return tp149RowValue(TP149_EQUIPMENT_ROWS[String(exercise.equipment||'')],lang,exercise.equipment||'');
+};
+var tp149Target=function tp149Target(exercise,lang=rf212Lang()){
+ if(!exercise)return '';
+ if(exercise.custom===true&&exercise.muscleGroup==null)return String(exercise.target||'');
+ const raw=String(exercise.target||'').trim();if(!raw)return '';
+ return raw.split('/').map(function(part){
+  const key=part.trim().toLocaleLowerCase('hu-HU');
+  return tp149RowValue(TP149_TARGET_PARTS[key],lang,part.trim());
+ }).join(' / ');
+};
+var tp149MovementLabel=function tp149MovementLabel(pattern,lang=rf212Lang()){
+ return tp149RowValue(TP149_MOVEMENT_ROWS[pattern],lang,pattern||'');
+};
+var tp149StyleText=function tp149StyleText(exercise,lang=rf212Lang()){
+ const key=exercise?.style||'strength';return tp149RowValue(TP149_STYLE_ROWS[key],lang,key);
+};
+
+var tp149ExerciseName=function tp149ExerciseName(exercise,lang=rf212Lang()){
+ if(!exercise)return '';
+ if(exercise.custom===true)return String(exercise.hu||exercise.en||exercise.id||'');
+ if(lang==='hu')return String(exercise.hu||exercise.en||exercise.id||'');
+ if(lang==='en')return String(exercise.en||exercise.hu||exercise.id||'');
+ if(lang==='de')return TP149_EX_DE[exercise.id]||String(exercise.en||exercise.hu||exercise.id||'');
+ if(lang==='ro')return TP149_EX_RO[exercise.id]||String(exercise.en||exercise.hu||exercise.id||'');
+ return String(exercise.en||exercise.hu||exercise.id||'');
+};
+var tp149ExerciseNameAudit=function tp149ExerciseNameAudit(){
+ const list=typeof exercises==='function'?exercises().filter(function(e){return e&&e.custom!==true;}):[];
+ const targetUnknown=function(e){return String(e.target||'').split('/').map(function(x){return x.trim().toLocaleLowerCase('hu-HU');}).filter(Boolean).filter(function(k){return !TP149_TARGET_PARTS[k];});};
+ return {
+  total:list.length,
+  missing:{
+   hu:list.filter(function(e){return !String(e.hu||'').trim();}).map(function(e){return e.id;}),
+   en:list.filter(function(e){return !String(e.en||'').trim();}).map(function(e){return e.id;}),
+   de:list.filter(function(e){return !TP149_EX_DE[e.id];}).map(function(e){return e.id;}),
+   ro:list.filter(function(e){return !TP149_EX_RO[e.id];}).map(function(e){return e.id;}),
+   noteEn:list.filter(function(e){return !TP149_EX_NOTE_EN[e.id];}).map(function(e){return e.id;}),
+   noteDe:list.filter(function(e){return !TP149_EX_NOTE_DE[e.id];}).map(function(e){return e.id;}),
+   noteRo:list.filter(function(e){return !TP149_EX_NOTE_RO[e.id];}).map(function(e){return e.id;}),
+   equipment:list.filter(function(e){return e.equipment&&!TP149_EQUIPMENT_ROWS[e.equipment];}).map(function(e){return e.id+':'+e.equipment;}),
+   target:list.flatMap(function(e){return targetUnknown(e).map(function(x){return e.id+':'+x;});}),
+   movement:list.filter(function(e){return e.movementPattern&&!TP149_MOVEMENT_ROWS[e.movementPattern];}).map(function(e){return e.id+':'+e.movementPattern;}),
+   style:list.filter(function(e){return e.style&&!TP149_STYLE_ROWS[e.style];}).map(function(e){return e.id+':'+e.style;})
+  }
+ };
+};
+var tp149ProgramAudit=function tp149ProgramAudit(){
+ const list=typeof programs==='function'?programs().filter(function(p){return p&&p.builtin===true;}):[];
+ const missing=[];
+ for(const p of list){
+  const row=TP149_PROGRAM_ROWS[p.id];if(!row){missing.push(p.id+':program');continue;}
+  if(!Array.isArray(row.name)||row.name.length!==4||row.name.some(function(x){return !String(x||'').trim();}))missing.push(p.id+':name');
+  for(const d of p.days||[]){const day=row.days?.[d.id];if(!Array.isArray(day)||day.length!==4||day.some(function(x){return !String(x||'').trim();}))missing.push(p.id+':day:'+d.id);}
+ }
+ return {total:list.length,missing:missing};
+};
+
+var tp149Map=function tp149Map(lang=rf212Lang()){
+ const base=typeof RF214_MAPS!=='undefined'?(RF214_MAPS[lang]||{}):{};
+ const out=Object.assign({},base,TP149_MAPS[lang]||{});
+ if(lang!=='hu'&&typeof exercises==='function'){
+  for(const e of exercises()){
+   if(!e||e.custom)continue;
+   if(e.hu)out[e.hu]=lang==='en'?(e.en||e.hu):lang==='de'?(TP149_EX_DE[e.id]||e.en||e.hu):(TP149_EX_RO[e.id]||e.en||e.hu);
+   if(e.notes&&!out[e.notes])out[e.notes]=lang==='en'?'Perform the exercise with controlled technique and a pain-free range of motion.':lang==='de'?'Führe die Übung kontrolliert und in einem schmerzfreien Bewegungsumfang aus.':'Execută exercițiul controlat, într-un interval de mișcare fără durere.';
+  }
+ }
+ return out;
+};
+var tp149Patterns=function tp149Patterns(text,lang){
+ let s=String(text);
+ const p={
+  en:[
+   [/(\d+)\s+gyakorlat/g,'$1 exercises'],[/(\d+)\s+exercise\b/g,'$1 exercises'],[/(\d+)\s+sorozat/g,'$1 sets'],[/(\d+)\s+napos ciklus/g,'$1-day cycle'],[/(\d+)\s+perc/g,'$1 min'],[/(\d+)\s+edzés megtervezve\./g,'$1 workouts scheduled.'],[/Pihenő:\s*(\d+)\s*mp/g,'Rest: $1 sec'],[/(\d+)\s*mp pihenő/g,'$1 sec rest'],[/(\d+)\s+alkalom/g,'$1 sessions'],[/\s\/\s*kar\b/g,' / arm'],[/\s\/\s*láb\b/g,' / leg'],[/\s\/\s*oldal\b/g,' / side'],[/\bmp\b/g,'sec']
+  ],
+  de:[
+   [/(\d+)\s+gyakorlat/g,'$1 Übungen'],[/(\d+)\s+Übung\b/g,'$1 Übungen'],[/(\d+)\s+sorozat/g,'$1 Sätze'],[/(\d+)\s+napos ciklus/g,'$1-Tage-Zyklus'],[/(\d+)\s+perc/g,'$1 Min.'],[/(\d+)\s+edzés megtervezve\./g,'$1 Trainings geplant.'],[/Pihenő:\s*(\d+)\s*mp/g,'Pause: $1 Sek.'],[/(\d+)\s*mp pihenő/g,'$1 Sek. Pause'],[/(\d+)\s+alkalom/g,'$1 Einheiten'],[/\s\/\s*kar\b/g,' / Arm'],[/\s\/\s*láb\b/g,' / Bein'],[/\s\/\s*oldal\b/g,' / Seite'],[/\bmp\b/g,'Sek.']
+  ],
+  ro:[
+   [/(\d+)\s+gyakorlat/g,'$1 exerciții'],[/(\d+)\s+exercițiu\b/g,'$1 exerciții'],[/(\d+)\s+sorozat/g,'$1 serii'],[/(\d+)\s+napos ciklus/g,'ciclu de $1 zile'],[/(\d+)\s+perc/g,'$1 min'],[/(\d+)\s+edzés megtervezve\./g,'$1 antrenamente planificate.'],[/Pihenő:\s*(\d+)\s*mp/g,'Pauză: $1 sec'],[/(\d+)\s*mp pihenő/g,'$1 sec pauză'],[/(\d+)\s+alkalom/g,'$1 sesiuni'],[/\s\/\s*kar\b/g,' / braț'],[/\s\/\s*láb\b/g,' / picior'],[/\s\/\s*oldal\b/g,' / parte'],[/\bmp\b/g,'sec']
+  ]
+ };
+ for(const pair of p[lang]||[])s=s.replace(pair[0],pair[1]);
+ return s;
+};
+var tp149UserValues=function tp149UserValues(){
+ const values=[];
+ const add=function(v){v=String(v??'').trim();if(v)values.push(v);};
+ try{for(const e of exercises())if(e?.custom){add(e.hu);add(e.en);add(e.equipment);add(e.notes);}}catch(_){}
+ try{for(const p of programs())if(p&&p.builtin!==true){add(p.name);add(p.location);for(const d of p.days||[])add(d?.name);}}catch(_){}
+ const out=[];for(const raw of values){out.push(raw);try{if(typeof esc==='function')out.push(esc(raw));}catch(_){}}
+ return [...new Set(out.filter(Boolean))].sort(function(a,b){return b.length-a.length;});
+};
+var tp149Translate=function tp149Translate(input,lang=rf212Lang()){
+ const browserHasLanguage=typeof navigator!=='undefined'&&((navigator.languages&&navigator.languages.length)||navigator.language);
+ if(lang==='hu'||!browserHasLanguage)return String(input);
+ let source=String(input),protectedValues=[];
+ for(const value of tp149UserValues()){
+  if(!value||!source.includes(value))continue;
+  const token='\uE000TPU'+protectedValues.length+'\uE001';
+  source=source.split(value).join(token);protectedValues.push([token,value]);
+ }
+ let out=source,map=tp149Map(lang);
+ Object.keys(map).sort(function(a,b){return b.length-a.length;}).forEach(function(k){if(k&&out.includes(k))out=out.split(k).join(map[k]);});
+ out=tp149Patterns(out,lang);
+ for(const pair of protectedValues)out=out.split(pair[0]).join(pair[1]);
+ return out;
+};
+rf212Translate=function(html){return tp149Translate(html,rf212Lang());};
+rf214Map=function(html,map){const lang=rf212Lang();return lang==='hu'?String(html):tp149Translate(html,lang);};
+
+const tp149LanguagePanelBase=rf212LanguagePanel;
+rf212LanguagePanel=function(){
+ if(rf212Lang()==='hu')return tp149LanguagePanelBase.apply(this,arguments);
+ const lang=rf212Lang(),current=rf212LangSetting();
+ const labels={
+  system:{hu:'Rendszer nyelve',en:'System language',de:'Systemsprache',ro:'Limba sistemului'},
+  hu:{hu:'Magyar',en:'Hungarian',de:'Ungarisch',ro:'Maghiară'},
+  en:{hu:'English',en:'English',de:'Englisch',ro:'Engleză'},
+  de:{hu:'Deutsch',en:'German',de:'Deutsch',ro:'Germană'},
+  ro:{hu:'Română',en:'Romanian',de:'Rumänisch',ro:'Română'}
+ };
+ const title=lang==='hu'?'Nyelv':TP149_MAPS[lang]?.Nyelv||'Language';
+ const help=lang==='hu'?'Alapértelmezésként a telefon rendszerének nyelvét használja. Bármikor felülírható.':TP149_MAPS[lang]?.['Alapértelmezésként a telefon rendszerének nyelvét használja. Bármikor felülírható.'];
+ return '<div class="setting rf212-language"><label>'+esc(title)+'</label><p class="small muted">'+esc(help)+'</p><select class="field" onchange="rf212SetLang(this.value)">'+Object.keys(TP149_LANGS).map(function(k){return '<option value="'+k+'" '+(current===k?'selected':'')+'>'+esc(labels[k][lang]||labels[k].en)+'</option>';}).join('')+'</select></div>';
+};
+
+var tp149LanguageOptionLabel=function tp149LanguageOptionLabel(setting,lang=rf212Lang()){
+ const key=setting==='system'?'language.system':'language.'+setting;
+ return tp149T(key,{},lang);
+};
+rf212LanguagePanel=function(){
+ if(rf212Lang()==='hu')return tp149LanguagePanelBase.apply(this,arguments);
+ const lang=rf212Lang(),current=rf212LangSetting();
+ return '<div class="setting rf212-language"><label>'+esc(tp149T('language.title',{},lang))+'</label><p class="small muted">'+esc(tp149T('language.help',{},lang))+'</p><select class="field" onchange="rf212SetLang(this.value)">'+Object.keys(TP149_LANGS).map(function(k){return '<option value="'+k+'" '+(current===k?'selected':'')+'>'+esc(tp149LanguageOptionLabel(k,lang))+'</option>';}).join('')+'</select></div>';
+};
+if(typeof tab==='function'){
+ tab=function(id,label){
+  const key={home:'nav.home',plan:'nav.workout',calendar:'nav.calendar',programs:'nav.programs',history:'nav.log',health:'nav.health',settings:'nav.settings'}[id];
+  const text=key?tp149T(key):label;
+  return '<button class="tab '+(state.tab===id?'active':'')+'" onclick="go(\''+id+'\')">'+esc(text)+'</button>';
+ };
+}
+if(typeof backupStatus==='function'){
+ backupStatus=function(){
+  const x=db.get('lastExport',null);
+  return x?tp149T('backup.lastVerified',{name:x.name,date:tp149FormatDateTime(x.date)}):tp149T('backup.none');
+ };
+}
+
+if(typeof tp146ProgramDayTitle==='function'){
+ tp146ProgramDayTitle=function(program,day){
+  const name=String(tp149ProgramMeta(program,'name')).replace(/\s*[–—]\s*/g,' - ').replace(/\s+-\s+/g,' - ').trim();
+  const dayName=day&&(day.id||day.name)?tp149ProgramDayName(program,day):'';
+  return dayName?name+' - '+dayName:name;
+ };
+ workoutTitle=function(programId,dayId){
+  const p=programById(programId)||activeProgram(),d=programDay(p,dayId);
+  return tp146ProgramDayTitle(p,d);
+ };
+}
+
+if(typeof rf260VideoButton==='function'){
+ rf260VideoButton=function(id){
+  const d=typeof demoInfo==='function'?demoInfo(id):null;if(!d)return '';
+  const e=typeof byId==='function'?byId(id):null;
+  const label=(e?tp149ExerciseName(e):tp149T('exercise.library'))+' '+tp149T('exercise.demoSuffix');
+  return '<button type="button" class="btn secondary tp-play-btn" data-tp-role="control" aria-label="'+esc(label)+'" title="'+esc(label)+'" onclick="event.stopPropagation();openDemo(\''+esc(id)+'\')">'+rf260PlayIcon()+'</button>';
+ };
+}
+if(typeof libraryMatch==='function'){
+ libraryMatch=function(e,group,gear,q){
+  const normal=function(x){return String(x).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();};
+  const names=[e?.hu,e?.en,tp149ExerciseName(e,'de'),tp149ExerciseName(e,'ro')];
+  const equipment=['hu','en','de','ro'].map(function(lang){return tp149Equipment(e,lang);});
+  const hay=normal(names.concat(equipment).join(' '));

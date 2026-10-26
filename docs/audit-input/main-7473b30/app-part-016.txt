@@ -1,0 +1,304 @@
+const rf225PermissionNames={READ_HEART_RATE:'Pulzus',READ_ACTIVE_CALORIES_BURNED:'Aktív kalória',READ_EXERCISE:'Edzések',READ_SLEEP:'Alvás',READ_HEART_RATE_VARIABILITY:'HRV'};
+
+const rf225HealthShell=shell;
+shell=function(content){
+ if(state.tab==='health'&&rf225HealthPage==='hub'){
+  content=content.replace('<main>','<main>'+rf225ConnectionCard());
+  if(state.health.busy)content=content.replace(/onclick="(rf207ReadTodayHealth\(\)|readRecoveryHealth\(\))"/g,'onclick="$1" disabled');
+ }
+ return rf225HealthShell(content);
+};
+rf141RecoverySignals=function(s){return s?['sleepMinutes','hrvRmssdMs'].flatMap((k,i)=>{const value=rf225Number(s[k]);return value==null?[]:[{kind:i?'hrv':'sleep',value}];}):[];};
+const rf225RecoveryText=rf141RecoveryText;
+rf141RecoveryText=function(){
+ const original=state.health.recovery;
+ if(!original)return rf225RecoveryText();
+ // The legacy evaluator converts null to zero; NaN keeps absent fields absent.
+ state.health.recovery={...original,sleepMinutes:rf225Number(original.sleepMinutes)??NaN,hrvRmssdMs:rf225Number(original.hrvRmssdMs)??NaN,hrvBaselineMs:rf225Number(original.hrvBaselineMs)??NaN};
+ try{return rf225RecoveryText();}finally{state.health.recovery=original;}
+};
+
+// Generate new personal plans from the chosen equipment, never overwrite saved A/B days.
+
+generatePersonalProgram=function(input){
+ const p=validateProfile(input),gear=profileGear132(p),lib=exercises().filter(e=>available132(e.id,p)&&(p.experience!=='beginner'||e.beginnerSafe));
+ const patterns={leg:['squat','lunge'],hinge:['hinge','knee-flexion'],push:['horizontal-push','chest-isolation'],pull:['horizontal-pull','vertical-pull'],shoulder:['vertical-push','shoulder-isolation','rear-delt'],bi:['elbow-flexion'],tri:['elbow-extension'],core:['core-bracing','core-flexion'],stability:['core-stability']};
+ const pools=Object.fromEntries(Object.entries(patterns).map(([role,ps])=>[role,lib.filter(e=>ps.includes(e.movementPattern)).sort((a,b)=>rf14Score(b.id,p,role)-rf14Score(a.id,p,role)||a.id.localeCompare(b.id))]));
+ const hasPull=pools.pull.length>0,split=p.split==='auto'?(p.experience==='beginner'||!hasPull?'full':'upperlower'):p.split;
+ if(split==='ppl'&&!hasPull)throw Error('A toló/húzó/láb felosztáshoz valódi húzógyakorlat és megfelelő felszerelés szükséges.');
+ const layouts=split==='full'?[['A',['leg','push',hasPull?'pull':'stability','core','hinge','shoulder','bi']],['B',['hinge','push',hasPull?'pull':'stability','core','leg','shoulder','tri']]]:split==='upperlower'?[['Felsőtest',['push',hasPull?'pull':'stability','shoulder','bi','tri']],['Alsótest és törzs',['leg','hinge','core','stability']]]:[['Toló',['push','shoulder','tri']],['Húzó',['pull','bi','core']],['Láb és törzs',['leg','hinge','core']]];
+ const rx=rf225Prescription({repUnit:'ism.',compound:true},p),capacity=Math.max(3,Math.min(7,Math.floor((p.minutes-4)/(rx.sets*(0.65+rx.rest/60))))),prescriptions={};
+ const days=layouts.map(([name,roles],di)=>{
+  const ids=[];
+  for(const role of roles.slice(0,capacity)){
+   let pool=pools[role].filter(e=>!ids.includes(e.id));
+   if(!pool.length&&['shoulder','bi','tri'].includes(role))pool=[...pools.core,...pools.stability].filter(e=>!ids.includes(e.id));
+   if(!pool.length)throw Error('A felszereléssel és kizárásokkal nincs elég különböző gyakorlat ehhez a felosztáshoz.');
+   const e=pool[di%pool.length];ids.push(e.id);prescriptions[e.id]=rf225Prescription(e,p);
+  }
+  return {id:String.fromCharCode(65+di),name,exercises:rf146Order(ids)};
+ });
+ return {id:'personal-'+crypto.randomUUID(),name:(gear.length?'Kombinált':'Saját testsúlyos')+' terv – '+({full:'A/B',upperlower:'Felső / alsó',ppl:'Toló / húzó / láb'}[split]),location:gear.length?'Választott felszerelés':'Saját testsúly',level:p.experience==='beginner'?'Kezdő':'Középhaladó',builtin:false,generated:true,generatorVersion:'2.2.5',gear:[...gear],days,prescriptions,reasons:[`Elérhető: ${gear.length?gear.map(k=>GEAR132[k]).join(' + '):'Saját testsúly'}.`,`${p.minutes} perc: legfeljebb ${capacity} gyakorlat, ${rx.sets} sorozat, ${rx.rest} mp pihenő.`,hasPull?'A teljes testes felosztásban mell-, hát- és törzsgyakorlat is szerepel.':'Húzóeszköz nélküli terv: a törzsstabilizálás nem helyettesíti az evezést vagy lehúzást.','A kezdősúlyt próbasorozattal állítsd be.'],createdAt:new Date().toISOString()};
+};
+
+
+// @endsection v225.js
+
+// @section v227.js
+
+const RF227_VERSION='2.2.7';
+(function rf227TouchPolish(){
+  const id='trainpilot-touch-polish';
+  if(document.getElementById(id))return;
+  const style=document.createElement('style');
+  style.id=id;
+  style.textContent=`
+    html{-webkit-tap-highlight-color:transparent}
+    button,a,[role="button"],.btn,.tab,.cal-cell,.exercise,.setting,.program-card,.history,.stat{
+      -webkit-tap-highlight-color:transparent;
+    }
+    button:focus:not(:focus-visible),a:focus:not(:focus-visible),[role="button"]:focus:not(:focus-visible),
+    .btn:focus:not(:focus-visible),.tab:focus:not(:focus-visible),.cal-cell:focus:not(:focus-visible){outline:none}
+    :focus-visible{outline:2px solid var(--accent2,#ffd975);outline-offset:2px}
+  `;
+  document.head.appendChild(style);
+})();
+
+
+// @endsection v227.js
+
+// @section v228.js
+
+const RF228_VERSION='2.2.8';
+
+(function rf228InteractionPolish(){
+  const id='trainpilot-touch-motion';
+  if(document.getElementById(id))return;
+  const style=document.createElement('style');
+  style.id=id;
+  style.textContent=`
+    button,.btn,.tab,.cal-cell,[role="button"],.rf223-stat{
+      transition:transform .11s ease,filter .11s ease,opacity .11s ease,background-color .14s ease,border-color .14s ease;
+      transform-origin:center;
+    }
+    button:active,.btn:active,.tab:active,.cal-cell:active,[role="button"]:active,.rf223-stat:active{
+      transform:scale(.975);
+      filter:brightness(1.08);
+    }
+    @media (prefers-reduced-motion:reduce){button,.btn,.tab,.cal-cell,[role="button"],.rf223-stat{transition:none!important;transform:none!important}}
+  `;
+  document.head.appendChild(style);
+})();
+
+let rf228HealthRun=0;
+healthAction=async function(fn,pendingText='Kapcsolódás…'){
+  if(!state.health)state.health={};
+  if(state.health.busy){
+    state.health.message='Egy másik Health Connect frissítés már fut. Várj néhány másodpercet, majd próbáld újra.';
+    if(state.tab==='health'&&!state.session)render();
+    return;
+  }
+  const tab=state.tab,page=typeof rf225HealthPage==='string'?rf225HealthPage:'hub';
+  const stillHere=()=>tab==='health'&&state.tab===tab&&(!state.session)&&(typeof rf225HealthPage!=='string'||rf225HealthPage===page);
+  const run=++rf228HealthRun;
+  state.health.busy=true;
+  state.health.busySince=Date.now();
+  state.health.message=pendingText;
+  if(stillHere())render();
+  const watchdog=typeof setTimeout==='function'?setTimeout(()=>{
+    if(run!==rf228HealthRun||!state.health.busy)return;
+    rf228HealthRun++;
+    state.health.busy=false;
+    state.health.busySince=0;
+    state.health.message='A Health Connect nem válaszolt időben. Próbáld újra, vagy ellenőrizd az Alvás és HRV engedélyeket.';
+    if(stillHere())render();
+  },20000):null;
+  try{
+    const msg=await fn(healthPlugin());
+    if(run!==rf228HealthRun)return;
+    state.health.message=msg||'Frissítés kész.';
+  }catch(e){
+    if(run!==rf228HealthRun)return;
+    state.health.message=e?.message||'A Health Connect művelet nem sikerült.';
+  }finally{
+    if(watchdog!=null&&typeof clearTimeout==='function')clearTimeout(watchdog);
+    if(run===rf228HealthRun){
+      state.health.busy=false;
+      state.health.busySince=0;
+      if(stillHere())render();
+    }
+  }
+};
+
+readRecoveryHealth=async function(){
+  return healthAction(async p=>{
+    const message=await rf225ReadRecovery(p);
+    return message;
+  },'Alvás és HRV frissítése…');
+};
+
+
+// @endsection v228.js
+
+// @section v228a.js
+
+const RF2210_VERSION='2.2.10';
+
+workoutDescription=function(h){return 'TrainPilot – teljesített edzés\n'+h.exercises.map(e=>e.hu+': '+e.sets.filter(s=>s.done).map(s=>formatSet(e,s)).join('; ')).join('\n');};
+calendarEvents=async function(){const events=new Map();for(const p of scheduled()){const id=await eventId('plan:'+p.id);events.set(id,p.cancelled?{id,cancelled:true}:{id,summary:'TrainPilot – Full Body '+p.workout,description:'TrainPilot – tervezett edzés',start:{dateTime:p.start},end:{dateTime:p.end},reminders:{useDefault:false,overrides:[{method:'popup',minutes:30}]}});}for(const h of history()){if(!Number.isFinite(Date.parse(h.finished))||!Number.isFinite(Date.parse(h.started))||Date.parse(h.finished)<=Date.parse(h.started))continue;const id=await eventId(h.scheduleId?'plan:'+h.scheduleId:'workout:'+recordKey('history',h));events.set(id,{id,summary:'✓ TrainPilot – Full Body '+h.workout,description:workoutDescription(h),start:{dateTime:h.started},end:{dateTime:h.finished},reminders:{useDefault:false}});}return [...events.values()];};
+calendarIntent=async function(index,planned=false){try{const x=planned?scheduled()[index]:history()[index];if(!x)throw Error('Nincs ilyen edzés.');const start=Date.parse(planned?x.start:x.started),end=Date.parse(planned?x.end:x.finished);if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start)throw Error('Ehhez az edzéshez nincs érvényes kezdési/befejezési idő.');if(!isNative())throw Error('A naptárgomb Androidon használható.');await nativeFiles().addCalendarEvent({title:'TrainPilot – Full Body '+x.workout,start,end,description:planned?'TrainPilot – tervezett edzés':workoutDescription(x)});alert('A naptár ablaka megnyílt. Válaszd ki a naptárat, és ott mentsd el. A kézi bejegyzés nem kapcsolódik az automatikus szinkronhoz.');}catch(e){alert(e.message);}};
+
+(function(){const id='trainpilot-global-press-v2210';if(document.getElementById(id))return;const s=document.createElement('style');s.id=id;s.textContent=`button,.btn,.tab,.cal-cell,[role="button"],.rf223-stat,a[href],input[type="button"],input[type="submit"]{-webkit-tap-highlight-color:transparent;touch-action:manipulation;transform-origin:center;transition:transform .12s cubic-bezier(.2,.8,.2,1),filter .12s ease,opacity .12s ease,background-color .14s ease,border-color .14s ease}button:active,.btn:active,.tab:active,.cal-cell:active,[role="button"]:active,.rf223-stat:active,a[href]:active,input[type="button"]:active,input[type="submit"]:active{transform:scale(.972);filter:brightness(1.07) saturate(1.03);opacity:.97}button:disabled,input:disabled{transform:none!important;filter:none!important;opacity:.55}@media (prefers-reduced-motion:reduce){button,.btn,.tab,.cal-cell,[role="button"],.rf223-stat,a[href],input[type="button"],input[type="submit"]{transition:none!important;transform:none!important;filter:none!important}}`;document.head.appendChild(s);})();
+
+
+// @endsection v228a.js
+
+// @section v228b.js
+var rf2211Days = function rf2211Days(){return activeProgram()?.days||[];};
+var rf2211Selected = function rf2211Selected(){return state.rf2211CalendarDate||'';};
+var rf2211SelectDate = function rf2211SelectDate(date){state.rf2211CalendarDate=date;render();};
+var rf2211AddDay = function rf2211AddDay(dayId){
+ const date=rf2211Selected();if(!date)return;
+ const p=activeProgram(),s=plannerSettings();
+ if(!p||!rf2211Days().some(d=>d.id===dayId))return;
+ const existing=scheduleOnDate(date).filter(x=>!x.cancelled);
+ if(existing.length){alert('Erre a napra már van tervezett edzés. Előbb töröld vagy helyezd át.');return;}
+ addScheduleBatch([makeScheduleItem(p,date,s.time,s.minutes,dayId)]);
+ if(typeof cloudChanged==='function')cloudChanged();
+ render();
+};
+var rf2211DeleteDate = function rf2211DeleteDate(){
+ const date=rf2211Selected();if(!date)return;
+ const item=scheduleOnDate(date).find(x=>!x.cancelled);if(!item)return;
+ rf209DeleteSchedule(item.id);
+ if(typeof cloudChanged==='function')cloudChanged();
+};
+var rf2211DayPicker = function rf2211DayPicker(){
+ const date=rf2211Selected();if(!date)return '';
+ const p=activeProgram(),days=rf2211Days(),item=scheduleOnDate(date).find(x=>!x.cancelled);
+ const title=new Date(date+'T12:00').toLocaleDateString(typeof rf222Locale==='function'?rf222Locale():'hu-HU',{month:'long',day:'numeric',weekday:'long'});
+ if(item){const d=programDay(p,item.dayId||item.workout);return `<div class="card rf2211-picker"><div><strong>${esc(title)}</strong><div class="small muted">Tervezve: ${esc(d?.name||item.dayId||item.workout)}</div></div><button class="btn danger" onclick="rf2211DeleteDate()">Törlés</button></div>`;}
+ return `<div class="card rf2211-picker"><strong>${esc(title)}</strong><div class="small muted">Válassz edzésnapot:</div><div class="rf2211-daybuttons">${days.map(d=>`<button class="btn" onclick="rf2211AddDay('${esc(d.id)}')">${esc(d.name||d.id)}</button>`).join('')}</div></div>`;
+};
+var rf2211Planner = function rf2211Planner(){
+ const s=plannerSettings(),days=rf2211Days();
+ const today=new Date().toISOString().slice(0,10);
+ return `<details class="card rf2211-planner"><summary><strong>Tervezési beállítások</strong><span class="small muted"> • több hét előre</span></summary><div class="rf2211-planbody"><p class="small muted">A gyors naptáras kijelölés mellett itt több hétre is megtervezheted az aktív programot.</p><div class="grid2"><label class="small">Kezdőnap<input class="field" id="rf2211Start" type="date" value="${today}"></label><label class="small">Időpont<input class="field" id="rf2211Time" type="time" value="${esc(s.time)}"></label><label class="small">Időtartam (perc)<input class="field" id="rf2211Minutes" type="number" min="10" max="240" value="${s.minutes}"></label><label class="small">Hetek száma<input class="field" id="rf2211Weeks" type="number" min="1" max="12" value="4"></label></div><label class="small">Első edzésnap<select class="field" id="rf2211First">${days.map((d,i)=>`<option value="${i}">${esc(d.name||d.id)}</option>`).join('')}</select></label><div class="rf2211-weekdays">${[['H',1],['K',2],['Sze',3],['Cs',4],['P',5],['Szo',6],['V',0]].map(([n,v])=>`<label><input type="checkbox" name="rf2211Weekday" value="${v}">${n}</label>`).join('')}</div><button class="btn block" onclick="rf2211PlanWeeks()">Edzések megtervezése</button></div></details>`;
+};
+var rf2211PlanWeeks = function rf2211PlanWeeks(){
+ const p=activeProgram(),days=rf2211Days();if(!p||!days.length)return;
+ const start=document.querySelector('#rf2211Start')?.value,time=document.querySelector('#rf2211Time')?.value;
+ const minutes=Math.max(10,Math.min(240,Number(document.querySelector('#rf2211Minutes')?.value)||45));
+ const weeks=Math.max(1,Math.min(12,Number(document.querySelector('#rf2211Weeks')?.value)||4));
+ const first=Math.max(0,Math.min(days.length-1,Number(document.querySelector('#rf2211First')?.value)||0));
+ const weekdays=[...document.querySelectorAll('input[name="rf2211Weekday"]:checked')].map(x=>Number(x.value));
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(start||'')||!/^\d{2}:\d{2}$/.test(time||'')||!weekdays.length){alert('Adj meg kezdőnapot, időpontot és legalább egy heti napot.');return;}
+ const base=new Date(start+'T12:00'),out=[];let cycle=first;
+ for(let i=0;i<weeks*7;i++){
+   const d=new Date(base);d.setDate(base.getDate()+i);if(!weekdays.includes(d.getDay()))continue;
+   const date=[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+   if(scheduleOnDate(date).some(x=>!x.cancelled))continue;
+   out.push(makeScheduleItem(p,date,time,minutes,days[cycle%days.length].id));cycle++;
+ }
+ if(!out.length){alert('Nem találtam új, üres napot a megadott időszakban.');return;}
+ db.set('plannerSettings',{...plannerSettings(),mode:'custom',time,minutes});addScheduleBatch(out);if(typeof cloudChanged==='function')cloudChanged();render();if(window.TrainPilot110)tp153Toast(window.TrainPilot110.t('replanned'),1800);
+};
+const RF2211_VERSION='2.2.11';
+
+
+toggleCalendarDay=rf2211SelectDate;
+
+
+calendarScreen=function(){
+ const t=typeof rf224T==='function'?rf224T():{title:'Edzésnaptár',planned:'Tervezett edzések'};
+ return shell(`<main><div class="hero rf224-hero"><h1>${t.title}</h1><div class="muted">Koppints egy napra, majd válassz az aktív program edzésnapjai közül. Több hét előre a Tervezési beállítások alatt tervezhetsz.</div></div>${rf2211Planner()}<div class="calendar-wrap"><div class="calendar-head"><button class="btn secondary" onclick="changeCalendarMonth(-1)">‹</button><strong>${new Date(state.calendarMonth+'-01T12:00').toLocaleDateString(typeof rf222Locale==='function'?rf222Locale():'hu-HU',{year:'numeric',month:'long'})}</strong><button class="btn secondary" onclick="changeCalendarMonth(1)">›</button></div><div class="cal-weekdays">${['H','K','Sze','Cs','P','Szo','V'].map(x=>`<span>${x}</span>`).join('')}</div><div class="calendar-grid">${calendarGrid()}</div></div>${rf2211DayPicker()}<div class="section">${t.planned||'Tervezett edzések'}</div>${scheduleListHtml()}</main>`);
+};
+(function(){if(document.querySelector('#rf2211Css'))return;const s=document.createElement('style');s.id='rf2211Css';s.textContent=`.rf2211-planner{margin:0 0 8px;padding:8px 10px}.rf2211-planner summary{cursor:pointer}.rf2211-planbody{margin-top:10px}.rf2211-weekdays{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}.rf2211-weekdays label{display:flex;gap:5px;align-items:center}.rf2211-picker{margin-top:10px}.rf2211-daybuttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}.rf2211-picker>.btn.danger{margin-top:8px;width:100%}`;document.head.appendChild(s)})();
+
+render();
+
+
+// @endsection v228b.js
+
+// @section v228c.js
+var rf230PlannerMode = function rf230PlannerMode(){const m=plannerSettings()?.mode;return ['daily','alternate','weekly'].includes(m)?m:'alternate';};
+var rf230WeekdayRow = function rf230WeekdayRow(mode){return `<div id="rf230Weekdays" class="rf2211-weekdays" style="${mode==='weekly'?'':'display:none'}">${[['H',1],['K',2],['Sze',3],['Cs',4],['P',5],['Szo',6],['V',0]].map(([n,v])=>`<label><input type="checkbox" name="rf2211Weekday" value="${v}">${n}</label>`).join('')}</div>`;};
+var rf230ModeChanged = function rf230ModeChanged(){const mode=document.querySelector('#rf230Mode')?.value||'alternate',row=document.querySelector('#rf230Weekdays');if(row)row.style.display=mode==='weekly'?'flex':'none';};
+const RF230_VERSION='2.3';
+
+
+rf2211Planner=function(){
+ const s=plannerSettings(),days=rf2211Days(),today=new Date().toISOString().slice(0,10),mode=rf230PlannerMode();
+ return `<details class="card rf2211-planner"><summary><strong>Tervezési beállítások</strong><span class="small muted"> • több hét előre</span></summary><div class="rf2211-planbody"><p class="small muted">Válassz ritmust. A TrainPilot az aktív program napjait sorrendben forgatja.</p><label class="small">Tervezési ritmus<select class="field" id="rf230Mode" onchange="rf230ModeChanged()"><option value="alternate" ${mode==='alternate'?'selected':''}>Minden második nap</option><option value="daily" ${mode==='daily'?'selected':''}>Minden nap</option><option value="weekly" ${mode==='weekly'?'selected':''}>Kijelölt heti napokon</option></select></label><div class="grid2"><label class="small">Kezdőnap<input class="field" id="rf2211Start" type="date" value="${today}"></label><label class="small">Időpont<input class="field" id="rf2211Time" type="time" value="${esc(s.time)}"></label><label class="small">Időtartam (perc)<input class="field" id="rf2211Minutes" type="number" min="10" max="240" value="${s.minutes}"></label><label class="small">Hetek száma<input class="field" id="rf2211Weeks" type="number" min="1" max="12" value="4"></label></div><label class="small">Első edzésnap<select class="field" id="rf2211First">${days.map((d,i)=>`<option value="${i}">${esc(d.name||d.id)}</option>`).join('')}</select></label>${rf230WeekdayRow(mode)}<button class="btn block" onclick="rf2211PlanWeeks()">Edzések megtervezése</button></div></details>`;
+};
+
+rf2211PlanWeeks=function(){
+ const p=activeProgram(),days=rf2211Days();if(!p||!days.length)return;
+ const start=document.querySelector('#rf2211Start')?.value,time=document.querySelector('#rf2211Time')?.value,mode=document.querySelector('#rf230Mode')?.value||'alternate';
+ const minutes=Math.max(10,Math.min(240,Number(document.querySelector('#rf2211Minutes')?.value)||45));
+ const weeks=Math.max(1,Math.min(12,Number(document.querySelector('#rf2211Weeks')?.value)||4));
+ const first=Math.max(0,Math.min(days.length-1,Number(document.querySelector('#rf2211First')?.value)||0));
+ const weekdays=[...document.querySelectorAll('input[name="rf2211Weekday"]:checked')].map(x=>Number(x.value));
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(start||'')||!/^\d{2}:\d{2}$/.test(time||'')){alert('Adj meg érvényes kezdőnapot és időpontot.');return;}
+ if(mode==='weekly'&&!weekdays.length){alert('A heti napos tervezéshez jelölj ki legalább egy napot.');return;}
+ const base=new Date(start+'T12:00'),out=[];let cycle=first;
+ for(let i=0;i<weeks*7;i++){
+  const d=new Date(base);d.setDate(base.getDate()+i);
+  const include=mode==='daily'||(mode==='alternate'&&i%2===0)||(mode==='weekly'&&weekdays.includes(d.getDay()));
+  if(!include)continue;
+  const date=[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+  if(scheduleOnDate(date).some(x=>!x.cancelled))continue;
+  out.push(makeScheduleItem(p,date,time,minutes,days[cycle%days.length].id));cycle++;
+ }
+ if(!out.length){alert('Nem találtam új, üres napot a megadott időszakban.');return;}
+ db.set('plannerSettings',{...plannerSettings(),mode,time,minutes});addScheduleBatch(out);if(typeof cloudChanged==='function')cloudChanged();render();if(window.TrainPilot110)tp153Toast(window.TrainPilot110.t('replanned'),1800);
+};
+
+
+render();
+
+
+// @endsection v228c.js
+
+// @section v229.js
+var rf229RecoveryHistory = function rf229RecoveryHistory(){
+  const x=db.get('recoveryHistory',[]);
+  return Array.isArray(x)?x:[];
+};
+var rf229LocalDay = function rf229LocalDay(iso){
+  const d=new Date(iso);if(!Number.isFinite(d.getTime()))return '';
+  const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+};
+var rf229DayWindow = function rf229DayWindow(dayOffset){
+  // Noon-to-noon captures the overnight sleep that ENDS on the target day while
+  // staying inside the native readRecovery 14-day / instant-range contract.
+  const end=new Date();end.setHours(12,0,0,0);end.setDate(end.getDate()-dayOffset+1);
+  if(end>Date.now())end.setTime(Date.now());
+  const start=new Date(end);start.setDate(start.getDate()-1);
+  return {start:start.toISOString(),end:end.toISOString()};
+};
+var rf229Median = function rf229Median(values){
+  const a=values.filter(v=>v!=null&&v!=='').map(Number).filter(Number.isFinite).sort((x,y)=>x-y);if(!a.length)return null;
+  const i=Math.floor(a.length/2);return a.length%2?a[i]:(a[i-1]+a[i])/2;
+};
+var rf229UpsertRecovery = function rf229UpsertRecovery(item){
+  const rows=rf229RecoveryHistory().filter(x=>x&&x.day!==item.day);
+  rows.push(item);rows.sort((a,b)=>String(b.day).localeCompare(String(a.day)));
+  // No arbitrary retention cutoff: every daily record remains in the local history.
+  db.set('recoveryHistory',rows);
+};
+var rf229ApplyLatestRecovery = function rf229ApplyLatestRecovery(){
+  const rows=rf229RecoveryHistory();if(!rows.length)return null;
+  const latest=rows[0];
+  const baseline=rf229Median(rows.slice(0,7).map(x=>x.hrvRmssdMs));
+  const current={...latest,hrvBaselineMs:baseline};
+  if(!state.health)state.health={};state.health.recovery=current;
+  return current;
+};
+var rf229ReadRecoveryHistory = async function rf229ReadRecoveryHistory(p,days=14){
+  const n=Math.max(1,Math.min(14,Number(days)||14));
+  let saved=0,successfulReads=0,firstError=null;
+  for(let i=0;i<n;i++){
+    const w=rf229DayWindow(i);let r;
+    try{r=await p.readRecovery(w);successfulReads++;}

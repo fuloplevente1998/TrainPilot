@@ -1,0 +1,278 @@
+var rf245ReportHtml = function rf245ReportHtml(){const r=db.get(RF245_REPORT,null);if(!r)return '';return `<details class="card" open><summary><strong>Szinkron eredménye</strong></summary>${(r.stages||[]).map(s=>`<p><b>${esc(s.name)}</b> • ${esc(s.detail)}</p>`).join('')}${(r.errors||[]).map(e=>`<p class="small">${esc(e)}</p>`).join('')}</details>`};
+/* TrainPilot 2.4.5: one Health pipeline and freshness-aware Coach. */
+const RF245_VERSION='2.4.5';
+const RF245_REPORT='healthSyncReport245';
+let rf245Flight=null,rf245Tail=Promise.resolve(),rf245ActiveManual=false,rf245ManualFlight=null;
+
+
+let rf245CoachVisible=false;
+
+
+// A timeout may inform the user, but must never unlock a still-running native call.
+healthAction=function(fn,pending='Health adatok szinkronizálása…'){
+ return rf245Exclusive(async()=>{
+  state.health=state.health||{};state.health.busy=true;rf245Progress(pending);
+  try{const result=await fn(healthPlugin());state.health.message=result||'Frissítés kész.';return result}
+  catch(e){state.health.message=rf245Message(e);return null}
+  finally{state.health.busy=false;rf245Paint()}
+ });
+};
+
+// The ledger is the only writer of derived recovery. Display renders never rewrite it.
+
+rf229ApplyLatestRecovery=function(){
+ const rows=rf229RecoveryHistory(),latest=rows.find(x=>x.sleepMinutes!=null||x.hrvRmssdMs!=null||x.energyScore!=null);
+ state.health=state.health||{};
+ if(!latest){state.health.recovery={};return null}
+ const end=Date.parse(latest.day+'T12:00:00'),samples=rows.filter(x=>x.day<latest.day&&end-Date.parse(x.day+'T12:00:00')<=7*86400000&&x.hrvSource===latest.hrvSource).map(x=>rf240Num(x.hrvRmssdMs)).filter(x=>x!=null&&x>0);
+ const current={...latest,hrvBaselineMs:samples.length>=3?rf240Median(samples):null,baselineSamples:samples.length};state.health.recovery=current;return current;
+};
+rf240ApplyLedger=function(){
+ const ledger=rf240Ledger(),days=ledger.days||{},today=days[rf240DayKey(new Date())]||{};
+ const w={steps:rf240Num(today.steps),readAt:ledger.lastSyncAt||null};
+ for(const [key,time] of [['weightKg','weightTime'],['bodyFatPercent','bodyFatTime'],['oxygenSaturationPercent','oxygenSaturationTime'],['vo2Max','vo2MaxTime']]){const x=rf240Latest(days,key,time);w[key]=x?.value??null;w[time]=x?.time||null}
+ state.health=state.health||{};state.health.daily={...today};state.health.wellness=w;db.set('wellnessLatest',w);rf229ApplyLatestRecovery();return ledger;
+};
+
+// Keep old entry points working while serializing their workout writes too.
+const rf245LegacyWorkout=rf240SyncWorkout;
+const rf245SaveMatched=rf242SaveMatchedWorkoutHealth;
+rf242SaveMatchedWorkoutHealth=function(key,h,data,meta){const current=history().find(x=>rf240WorkoutKey(x)===key);if(!current||current.started!==h.started||current.finished!==h.finished)return false;return rf245SaveMatched(key,h,data,meta)};
+const rf245ReadWorkout=async(p,h,force)=>{
+ const windows=new Map();
+ const syncWorkout=window.TrainPilotIssue79?.syncWorkout||rf245LegacyWorkout;
+ const saved=await syncWorkout({readTrainingWindow:async args=>{
+  const end=new Date(Math.min(Date.parse(args.end),Date.now())).toISOString();
+  const actualWindow={start:args.start,end};const r=await p.readTrainingWindow(actualWindow);
+  if(rf245Warnings(r).length)throw Error(rf245Warnings(r).join(' • '));windows.set(args.start+'|'+args.end,actualWindow);return r;
+ }},h,force);
+ if(saved){const rows=history(),row=rows.find(x=>rf240WorkoutKey(x)===rf240WorkoutKey(h)),data=row?.health240,actual=data&&windows.get(data.sourceWindowStart+'|'+data.sourceWindowEnd);if(actual){data.sourceWindowStart=actual.start;data.sourceWindowEnd=actual.end;db.set('history',rows)}}
+ return saved;
+};
+rf240SyncWorkout=function(p,h,force=false){return rf245Exclusive(()=>rf245ReadWorkout(p,h,force))};
+
+
+rf244UnifiedSync=()=>rf245Sync({manual:true});
+rf240SyncNow=rf244UnifiedSync;
+rf240FullSync=()=>rf245Sync({manual:true,full:true});
+readRecoveryHealth=rf244UnifiedSync;
+readWellnessHealth=rf244UnifiedSync;
+rf207ReadTodayHealth=rf244UnifiedSync;
+rf225ConnectHealth=rf244UnifiedSync;
+readHealthWorkout=rf244UnifiedSync;
+exportHealthWorkout=rf244UnifiedSync;
+rf241RefreshWorkoutHealth=rf244UnifiedSync;
+rf240RefreshSelectedWorkout=rf244UnifiedSync;
+rf142ReadHealthForWorkout=rf244UnifiedSync;
+rf240RunIncremental=(p,requestPermission=false)=>rf245Sync({plugin:p,manual:requestPermission});
+rf240RunFull=(p,days=30,requestPermission=false)=>rf245Sync({plugin:p,manual:requestPermission,full:true});
+
+// Preserve the existing scoring weights; exclude missing, future and old observations.
+rf220Num=rf240Num;
+rf220WorkoutTime=function(h){for(const k of ['finished','started','endedAt','finishedAt','date','startedAt','start']){const t=Date.parse(h?.[k]||'');if(Number.isFinite(t))return t}return 0};
+
+rf220PainRecent=()=>rf245RecentHistory().some(h=>(h.exercises||[]).some(e=>e.effort==='pain'));
+rf220EffortLoad=function(){let score=100,n=0;for(const h of rf245RecentHistory())for(const e of h.exercises||[]){if(!e.effort)continue;n++;if(e.effort==='hard'||e.effort==='challenging')score-=8;if(e.effort==='pain')score-=20;if(e.effort==='easy')score+=2}return {score:Math.max(20,Math.min(100,score)),n}};
+
+// Display precision is shared by the Samsung card, recovery tiles and Coach reasons.
+// Keep the original SDK value untouched for calculations and provenance.
+var tp184FormatScore=function(value){
+ const n=rf240Num(value);return n==null||n<0||n>100?'—':tp149FormatNumber(Math.round(n))+'/100';
+};
+// A Samsung daily score is usable only with verifiable provenance and a timestamp for today.
+var tp184EnergyToday=function tp184EnergyToday(){
+ const health=state.health||{},daily=health.daily||{},rec=health.recovery||{};
+ const now=Date.now(),today=rf240DayKey(new Date(now));
+ const valid=(value,time,source,day)=>{
+  const number=rf240Num(value),stamp=Date.parse(time||''),age=now-stamp;
+  const origin=String(source||'');
+  if(number==null||number<=0||number>100)return null;
+  if(origin!=='samsung_health'&&origin!=='com.sec.android.app.shealth')return null;
+  if(!Number.isFinite(stamp)||age<0||age>36*3600000||rf240DayKey(new Date(stamp))!==today)return null;
+  if(day&&day!==today)return null;
+  return {value:number,time,source:origin};
+ };
+ const external=window.TrainPilotEnergy184;
+ if(external?.hasResult()){
+  const data=external.reading()||{};
+  return valid(data.energyScore,data.energyScoreTime,data.energyScoreSource||data.metricProviders?.energyScore,data.day);
+ }
+ return valid(daily.energyScore,daily.energyScoreTime,daily.energyScoreSource||daily.metricProviders?.energyScore,daily.day||today)
+  ||valid(rec.energyScore,rec.energyScoreTime,rec.energyScoreSource,rec.day);
+};
+rf220Readiness=function(){
+ const rec=state.health?.recovery||{},sleep=rf245Fresh(rec.sleepEnd,rec.day)?rf240Num(rec.sleepMinutes):null;
+ const hrv=rf245Fresh(rec.hrvTime,rec.day)?rf240Num(rec.hrvRmssdMs):null,base=rf240Num(rec.hrvBaselineMs),load=rf220EffortLoad();
+ const pain=rf220PainRecent();
+ // TrainPilot's original estimate is calculated independently, never mixed into the Samsung score.
+ let own=70,ownParts=0;
+ if(sleep!=null){ownParts++;own+=sleep>=450?12:sleep>=420?8:sleep>=360?1:-14}
+ if(hrv!=null&&hrv>0&&base>0){ownParts++;const d=(hrv-base)/base;own+=d>=.15?10:d<=-.2?-14:d<=-.1?-6:3}
+ if(load.n){ownParts++;own+=(load.score-70)*.35}
+ if(pain)own-=12;
+ const trainpilotScore=ownParts?Math.round(Math.max(25,Math.min(100,own))):null;
+ const samsung=tp184EnergyToday();
+ if(samsung){
+  // Samsung already considers recovery/activity. Never add sleep, HRV or positive load bonuses.
+  // Pain or severe recent effort can only reduce readiness; high Samsung scores cannot override them.
+  let score=samsung.value;
+  if(pain||load.n&&load.score<55)score=Math.min(score,54);
+  else if(load.n&&load.score<70)score=Math.min(score,74);
+  return {score,level:score>=75?'good':score>=55?'medium':'low',
+   sleep,hrv,base,load:load.n?load.score:null,energyScore:samsung.value,
+   energyScoreTime:samsung.time,energyScoreSource:samsung.source,
+   trainpilotScore,trainpilotParts:ownParts,readinessSource:'samsung',
+   parts:1+(load.n?1:0),confidence:'Samsung Energiapontszám ('+tp184FormatScore(samsung.value)+')'};
+ }
+ return {score:trainpilotScore,
+  level:trainpilotScore==null?'unknown':trainpilotScore>=75?'good':trainpilotScore>=55?'medium':'low',
+  sleep,hrv,base,load:load.n?load.score:null,parts:ownParts,
+  energyScore:null,trainpilotScore,trainpilotParts:ownParts,readinessSource:'trainpilot',
+  confidence:ownParts>=3?'Több adatforrás':ownParts?'Korlátozott adatok':'Kevés friss adat'};
+};
+const rf245Decision=rf233Decision;
+rf233Decision=function(r){if(r.score!=null)return rf245Decision(r);return {mode:'unknown',pain:rf220PainRecent(),title:'Kevés friss adat',text:'Nincs elég friss adat a napi terhelhetőség becsléséhez. A korábbi teljesítményt és a mai közérzetedet vedd alapul.'}};
+const rf245Advice=rf233ExerciseAdvice;
+rf233ExerciseAdvice=function(id,decision){const result=rf245Advice(id,decision),r=rf220Readiness();if((decision.mode==='unknown'||(r.energyScore==null&&r.sleep==null&&!(r.hrv>0&&r.base>0)))&&['increase','reps'].includes(result.action))return {action:'hold',label:rf233L().hold,text:'Kevés friss regenerációs adat: a Coach most nem javasol automatikus emelést.'};return result};
+const rf245CoachScreen=rf233CoachScreen;
+rf233CoachScreen=function(){rf245CoachVisible=true;return rf245CoachScreen()};
+rf220CoachScreen=rf233CoachScreen;
+const rf245Go=go;go=function(tab){rf245CoachVisible=false;return rf245Go(tab)};
+const rf245Signals=rf233SignalHtml;
+rf233SignalHtml=function(plan){const r=plan.readiness,rec=state.health?.recovery||{};return rf245Signals(plan).replace('null/100','—')+`<div class="rf233-signal">${esc(r.confidence)} • ${r.parts}/3 jel</div><div class="rf233-signal">Alvás/HRV: legfeljebb 36 órás mérés. HRV-alap: ${Number(rec.baselineSamples)||0} korábbi napi érték.</div>`};
+rf225ConnectionCard=function(){return `<div class="card"><p class="small muted">A szinkron a Health Connectben már elérhető adatokat olvassa. Az óra saját szinkronját a Samsung Health kezeli.</p><button class="btn secondary" onclick="healthSettings()">Engedélyek kezelése</button></div>`};
+
+
+const rf245Shell=shell;
+shell=function(content){
+ content=String(content).replaceAll('2.4.4','2.4.5').replaceAll('null/100','—').replaceAll('null ms','—');
+ if(state.tab==='health'){
+  content=content.replace('Összes Health adat frissítése','Mindent szinkronizál');
+  content=content.replace('</main>',rf245ReportHtml()+'</main>');
+ }
+ if(state.tab==='history'){
+  content=content.replace(/<button class="btn secondary" onclick="rf241RefreshWorkoutHealth\('[^']*'\)">[^<]*<\/button>/g,'');
+  content=content.replace('<main>','<main><button class="btn block" onclick="rf244UnifiedSync()">Mindent szinkronizál</button>');
+ }
+ if(state.health?.busy)content=content.replace(/onclick="(?:rf244UnifiedSync|rf240SyncNow|rf240FullSync|rf241RefreshWorkoutHealth|readRecoveryHealth|exportHealthWorkout|readHealthWorkout|rf225ConnectHealth)\([^"]*"/g,'$& disabled');
+ return rf245Shell(content);
+};
+// Details remain useful for permissions; the independent import/export actions are gone.
+healthScreen=function(){rf245CoachVisible=false;state.tab='health';state.healthView=true;rf225HealthPage='details';render(shell(`<main><div class="hero"><h1>Health Connect kapcsolat</h1><p>Óra → Samsung Health → Health Connect → TrainPilot</p></div><div class="card"><p>A közös szinkron frissíti a napi adatokat, az edzések Health-adatait és a Coachot. Írási engedéllyel az elmúlt 30 nap még hiányzó TrainPilot-edzéseit is exportálja.</p><button class="btn block" onclick="rf244UnifiedSync()">Mindent szinkronizál</button><button class="btn secondary block" onclick="healthSettings()">Engedélyek kezelése</button><p role="status">${esc(state.health?.message||'')}</p></div><button class="btn secondary" onclick="go('health')">Vissza az Egészség oldalra</button></main>`))};
+
+rf245Recovery(rf240Ledger());rf240ApplyLedger();
+
+
+// @endsection v245.js
+
+// @section v250.js
+var rf250ValidSpan = function rf250ValidSpan(a,b){a=Date.parse(a);b=Date.parse(b);return Number.isFinite(a)&&Number.isFinite(b)&&b>a?[a,b]:null};
+var rf250SleepSpans = function rf250SleepSpans(s){
+ const asleep=(s?.stages||[]).filter(x=>x?.isAsleep===true).map(x=>rf250ValidSpan(x.start,x.end)).filter(Boolean);
+ if(s?.provider==='samsung_health'&&s?.stages?.length)return asleep;
+ if(asleep.length)return asleep;
+ const fallback=rf250ValidSpan(s?.start,s?.end);return fallback?[fallback]:[];
+};
+var rf250MergeSpans = function rf250MergeSpans(spans){const a=spans.slice().sort((x,y)=>x[0]-y[0]),out=[];for(const s of a){const last=out.at(-1);if(last&&s[0]<=last[1])last[1]=Math.max(last[1],s[1]);else out.push(s.slice())}return out};
+var rf250Hash = function rf250Hash(s){let h=2166136261>>>0;for(const ch of String(s)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)>>>0}return h.toString(36)};
+var rf250EnsureStableWorkoutIds = function rf250EnsureStableWorkoutIds(){
+ const rows=history();let changed=false;
+ for(const h of rows){if(!rf240ValidWorkout(h)||h.healthStableId)continue;const seed=h.id||`${rf240WorkoutKey(h)}|${h.createdAt||h.started}`;h.healthStableId='tpw_'+rf250Hash(seed);changed=true}
+ if(changed)db.set('history',rows);return changed;
+};
+var rf250DesiredTypes = function rf250DesiredTypes(permissions){return RF250_CHANGE_TYPES.filter(([,perm])=>permissions?.[perm]===true).map(([type])=>type)};
+var rf250NewTokens = async function rf250NewTokens(p,types,report){const out={};for(const type of types){try{const r=await p.createChangeToken({recordType:type});if(r?.token)out[type]=r.token;else report.errors.push(`Change token ${type}: hiányzó token`)}catch(e){report.errors.push(`Change token ${type}: ${rf245Message(e)}`)}}return out};
+var rf250Exclusive = function rf250Exclusive(fn){const run=rf250Tail.then(fn);rf250Tail=run.catch(()=>{});return run};
+var rf250Pipeline = async function rf250Pipeline(p,{manual=false,full=false,journalDirtyDays=[]}={}){
+ const report={startedAt:new Date().toISOString(),stages:[],days:0,workouts:0,exported:0,skipped:0,errors:[]};
+ const stage=(name,status,detail)=>report.stages.push({name,status,detail});
+ let status=await p.getStatus();if(manual&&!Object.entries(status.permissions||{}).some(([key,value])=>key.startsWith('READ_')&&value===true)){await p.requestRead();status=await p.getStatus()}
+ const permissions=status.permissions||{};state.health=state.health||{};state.health.permissions=permissions;
+ if(!Object.entries(permissions).some(([k,v])=>k.startsWith('READ_')&&v))throw Error('Nincs Health Connect olvasási engedély.');
+ stage('Engedélyek','ok','A TrainPilot által támogatott és engedélyezett adattípusokat olvassuk.');
+
+ let meta=rf240Meta(),ledger=rf240Ledger(),keys=[],candidateTokens={},tokenProblem=false;keys=journalDirtyDays.slice();
+ const desired=rf250DesiredTypes(permissions),oldTokens=meta.tokensByType&&typeof meta.tokensByType==='object'?meta.tokensByType:{};
+ let snapshot=!!full||!meta.initialized||!meta.tokensByType;
+ if(!snapshot){
+  const oldNames=Object.keys(oldTokens).filter(x=>desired.includes(x)).sort(),newNames=desired.slice().sort();
+  if(oldNames.join('|')!==newNames.join('|'))snapshot=true;
+ }
+ if(!snapshot){
+  candidateTokens={};
+  for(const type of desired){
+   const token=oldTokens[type];if(!token){snapshot=true;break}
+   try{const ch=await p.pollChanges({token});candidateTokens[type]=ch.nextToken||token;keys.push(...(ch.changedDays||[]));if(Number(ch.deletedCount)>0)snapshot=true}
+   catch(e){report.errors.push(`Változáskövetés ${type}: ${rf245Message(e)}`);tokenProblem=true;snapshot=true;break}
+  }
+ }
+ if(snapshot){
+  // Tokens are captured before the snapshot, so writes during the snapshot are not lost.
+  candidateTokens=await rf250NewTokens(p,desired,report);keys=[...keys,...rf240RecentDays(30)];
+ }
+ keys=[...new Set([...keys,...rf240RecentDays(2)])].filter(x=>/^\d{4}-\d{2}-\d{2}$/.test(x)&&x<=rf240DayKey(new Date())).sort();
+ let dayErrors=0;ledger.warnings=[];
+ for(const day of keys){
+  rf245Progress(`Napi adatok: ${report.days+dayErrors+1}/${keys.length}`);
+  try{
+   const r=await p.readHealthDay(rf240DayBounds(day)),warnings=rf245Warnings(r);
+   if(warnings.length){const previous=ledger.days[day]||{},partial={...previous,...r};for(const [k,v] of Object.entries(previous))if((r[k]==null)||(Array.isArray(r[k])&&!r[k].length))partial[k]=v;ledger.days[day]={...partial,day,warnings,partial:true};throw Error(warnings.join(' • '))}
+   ledger.days[day]={...r,day,readAt:new Date().toISOString()};report.days++;
+  }catch(e){dayErrors++;report.errors.push(day+': '+rf245Message(e))}
+ }
+ ledger.warnings=report.errors.slice();ledger.lastAttemptAt=new Date().toISOString();
+ if(!dayErrors){ledger.lastSyncAt=ledger.lastAttemptAt;if(snapshot)ledger.lastFullSyncAt=ledger.lastSyncAt;meta={...meta,initialized:true,token:null,tokensByType:candidateTokens,lastSyncAt:ledger.lastSyncAt,lastFullSyncAt:snapshot?ledger.lastSyncAt:meta.lastFullSyncAt};}
+ // Any partial daily read keeps the old token set, so the failed changes are retried.
+ rf240SaveLedger(ledger);rf240SaveMeta(meta);stage('Napi Health-adatok',dayErrors||tokenProblem?'partial':'ok',`${report.days}/${keys.length} nap`);
+ rf245Recovery(ledger);rf240ApplyLedger();
+ const diag={permissions,lastAt:new Date().toISOString(),recoverySaved:rf229RecoveryHistory().filter(x=>x.sleepMinutes!=null||x.hrvRmssdMs!=null).length,error:dayErrors?'Egyes napok nem frissültek; a korábbi adatokat megtartottuk.':null};rf244SaveDiag(diag);
+ const latestRecovery=state.health?.recovery||{};stage('Alvás és HRV',dayErrors?'partial':'ok',latestRecovery.sleepStageBased?'Sleep stage alapú alvásidő.':'Session-időtartam fallback, ha nincs sleep stage adat.');
+
+ rf250EnsureStableWorkoutIds();const rows=history().filter(rf240ValidWorkout),recent=Date.now()-30*86400000;
+ let writeAllowed=permissions.WRITE_EXERCISE===true;
+ // Sync uses existing write access; missing export access is managed explicitly.
+ let workoutErrors=0,exportErrors=0;
+ for(const h of rows){
+  const activeWindows=window.TrainPilotIssue79?.intervals(h)||[];
+  const key=rf240WorkoutKey(h),exported=db.get('healthExports245',{})[h.healthStableId||key],fingerprint=h.started+'|'+h.finished+(activeWindows.length?'|'+JSON.stringify(activeWindows.map(w=>[w.start,w.end])):'');
+  const needsExport=manual&&writeAllowed&&Date.parse(h.finished)>=recent&&(!exported||exported.fingerprint!==fingerprint);
+  if(Date.parse(h.finished)<recent&&!needsExport)continue;
+  rf245Progress(`Edzések ellenőrzése: ${report.workouts+1}`);
+  try{
+   const checked=await rf245ReadWorkout(p,h,manual||needsExport),fresh=history().find(x=>x.healthStableId===h.healthStableId||rf240WorkoutKey(x)===key)?.health240;
+   if(rf245Warnings(fresh).length)throw Error(rf245Warnings(fresh).join(' • '));if(checked)report.workouts++;
+   if(!needsExport)continue;if(!permissions.READ_EXERCISE){report.skipped++;continue}
+   try{
+    const current=history().find(x=>x.healthStableId===h.healthStableId);if(!current||current.started!==h.started||current.finished!==h.finished)throw Error('Az edzés közben módosult; a következő szinkron ellenőrzi.');
+    const exportWindows=activeWindows.length?activeWindows:[{start:h.started,end:h.finished}];
+    for(let segment=0;segment<exportWindows.length;segment++){
+     const w=exportWindows[segment],exact=await p.readTrainingWindow({start:w.start,end:w.end});
+     if(rf245Warnings(exact).length)throw Error(rf245Warnings(exact).join(' • '));
+     if(rf245ExternalSession(exact,{started:w.start,finished:w.end})){report.skipped++;continue}
+     await p.writeWorkout({start:w.start,end:w.end,title:(h.programName||'TrainPilot')+' • '+(h.dayId||h.workout||''),clientRecordId:'trainpilot:'+h.healthStableId+(segment?':segment:'+Date.parse(w.start):''),clientVersion:Date.now()});
+    }
+    const saved=db.get('healthExports245',{});saved[h.healthStableId]={fingerprint,at:new Date().toISOString(),clientRecordId:'trainpilot:'+h.healthStableId};db.set('healthExports245',saved);report.exported++;
+   }catch(e){exportErrors++;report.errors.push('Edzésexport: '+rf245Message(e))}
+  }catch(e){workoutErrors++;report.errors.push('Edzés '+h.started+': '+rf245Message(e))}
+ }
+ stage('Edzések Health-adatai',workoutErrors?'partial':'ok',`${report.workouts} frissítve`);
+ stage('Health Connect-export',!manual||!writeAllowed?'skipped':exportErrors||workoutErrors?'partial':'ok',!manual?'Háttérfrissítés: export nem indult.':!writeAllowed?'Nincs írási engedély.':`${report.exported} exportálva, ${report.skipped} kihagyva.`);
+ const readiness=rf220Readiness();stage('Coach','ok',readiness.score==null?'Kevés friss adat; nincs készenléti pontszám.':`${readiness.score}/100 • ${readiness.confidence}`);
+ report.finishedAt=new Date().toISOString();report.status=report.errors.length?'partial':'ok';db.set(RF250_REPORT,report);db.set(RF245_REPORT,report);return report;
+};
+var rf250Sync = function rf250Sync(options={}){
+ if(rf250Flight){if(options.manual&&!rf250ActiveManual){if(!rf250ManualFlight)rf250ManualFlight=rf250Flight.then(()=>{rf250ManualFlight=null;return rf250Sync(options)});return rf250ManualFlight}return rf250Flight}
+ rf250ActiveManual=!!options.manual;rf250Flight=rf250Exclusive(async()=>{
+  state.health=state.health||{};state.health.busy=true;rf245Progress('Minden támogatott Health-adat szinkronizálása…');
+  try{const r=await rf250Pipeline(options.plugin||healthPlugin(),options);state.health.message=r.errors.length?'Részleges szinkron – lásd a jelentést.':'Szinkron befejezve.';return r}
+  catch(e){const r={status:'error',finishedAt:new Date().toISOString(),stages:[],errors:[rf245Message(e)]};db.set(RF250_REPORT,r);db.set(RF245_REPORT,r);state.health.message='A Health Connect szinkron nem sikerült. Ellenőrizd az engedélyeket, majd próbáld újra.';return r}
+  finally{state.health.busy=false;rf250Flight=null;rf245Paint()}
+ });return rf250Flight;
+};
+var rf250Fmt = function rf250Fmt(v,d=0,suffix=''){const n=rf240Num(v);return n==null?'—':rf240Fmt(n,d)+suffix};
+var rf250HealthHub = function rf250HealthHub(){
+ state.tab='health';state.healthView=false;if(typeof rf225HealthPage!=='undefined')rf225HealthPage='hub';rf240ApplyLedger();
+ const ledger=rf240Ledger(),today=ledger.days?.[rf240DayKey(new Date())]||{},rec=state.health?.recovery||{},w=state.health?.wellness||{},coach=typeof rf235HealthCoachCard==='function'?rf235HealthCoachCard():'';
+ const syncAt=ledger.lastSyncAt?new Date(ledger.lastSyncAt).toLocaleString(typeof rf233Locale==='function'?rf233Locale():undefined):'Még nem volt';
+ const sleepSub=rec.sleepMinutes==null?'':rec.sleepStageBased?'sleep stage alapján':(rec.sleepSource?'session-időtartam • '+rf244Source(rec.sleepSource):'session-időtartam');
+ const bp=w.bloodPressureSystolic==null||w.bloodPressureDiastolic==null?'—':`${Math.round(w.bloodPressureSystolic)}/${Math.round(w.bloodPressureDiastolic)} mmHg`;

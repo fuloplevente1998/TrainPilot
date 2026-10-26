@@ -1,0 +1,212 @@
+ 'rf153Remove','rf153ResetDay','rf154Remove','rf209DeleteSchedule','rf2211DeleteDate',
+ 'disconnectGoogle','clearHealthView'
+]);
+
+
+// Programmatically created controls receive explicit semantics at their creation boundary.
+if(typeof rf251DecorateHealthHub==='function'){
+ const rf253DecorateHealthHubBase=rf251DecorateHealthHub;
+ rf251DecorateHealthHub=function(){
+  const r=rf253DecorateHealthHubBase();
+  const b=document.querySelector('#rf251WeightJournal');
+  if(b?.dataset)b.dataset.tpRole='emphasis';
+  return r;
+ };
+}
+
+// v2.5.2's observer remains useful for controls inserted outside the normal render path,
+// but role classification no longer depends on visible button labels.
+rf252ButtonRole=rf253SemanticRole;
+rf252ApplyButtonHierarchy=function(root=document){
+ const buttons=root?.querySelectorAll?.('button.btn')||[];
+ buttons.forEach(el=>{
+  el.classList.remove('tp-primary','tp-emphasis');
+  const role=rf253SemanticRole(el);
+  if(el.dataset)el.dataset.tpRole=role;
+  if(role==='primary')el.classList.add('tp-primary');
+  else if(role==='emphasis')el.classList.add('tp-emphasis');
+  else if(role==='danger')el.classList.add('danger');
+ });
+};
+
+// Collapse the nested 2.5.1 -> 2.5.2 render wrappers into one final post-render hook.
+// rf251RenderBase points at the verified pre-2.5.1 renderer, which already retains the
+// Health subpage router and all older required rendering behavior.
+const rf253RenderCore=typeof rf251RenderBase==='function'?rf251RenderBase:(typeof rf252RenderBase==='function'?rf252RenderBase:render);
+
+render=function(custom){const r=rf253RenderCore(custom);rf253AfterRender(custom);return r};
+
+// Collapse the old Health-route and Coach-visibility go() wrappers into one explicit router.
+// rf225Go is the verified pre-Health-wrapper navigation function; the two legacy side effects
+// are preserved here instead of being carried through another nested wrapper chain.
+const rf253GoCore=typeof rf225Go==='function'?rf225Go:(typeof rf245Go==='function'?rf245Go:go);
+const RF253_CORE_ROUTES=Object.freeze({
+ home:'home',plan:'plan',calendar:'calendar',programs:'programs',history:'history',health:'health',settings:'settings'
+});
+
+go=function(route){return tpNavigate(route)};
+window.TrainPilotRoutes=RF253_CORE_ROUTES;
+window.TrainPilotNavigate=tpNavigate;
+
+
+rf252ScheduleButtonPass();
+
+
+// @endsection v253.js
+
+// @section v260.js
+var rf260PlayIcon = function rf260PlayIcon(){return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z"/></svg>'};
+var rf260VideoButton = function rf260VideoButton(id){
+ const d=typeof demoInfo==='function'?demoInfo(id):null;if(!d)return '';
+ const e=typeof byId==='function'?byId(id):null,label=`${e?.hu||'Gyakorlat'} bemutatóvideó`;
+ return `<button type="button" class="btn secondary tp-play-btn" data-tp-role="control" aria-label="${esc(label)}" title="${esc(label)}" onclick="event.stopPropagation();openDemo('${esc(id)}')">${rf260PlayIcon()}</button>`;
+};
+var rf260MoveText = function rf260MoveText(){
+ const k=typeof rf212Lang==='function'?rf212Lang():'hu';
+ const all={
+  hu:{title:'Edzés áthelyezése',date:'Új dátum',time:'Új időpont',cancel:'Mégse',save:'Áthelyezés mentése',invalid:'Adj meg érvényes dátumot és időpontot.'},
+  en:{title:'Move workout',date:'New date',time:'New time',cancel:'Cancel',save:'Save move',invalid:'Enter a valid date and time.'},
+  de:{title:'Training verschieben',date:'Neues Datum',time:'Neue Uhrzeit',cancel:'Abbrechen',save:'Verschieben speichern',invalid:'Gib ein gültiges Datum und eine gültige Uhrzeit ein.'},
+  ro:{title:'Mută antrenamentul',date:'Dată nouă',time:'Oră nouă',cancel:'Anulează',save:'Salvează mutarea',invalid:'Introdu o dată și o oră valide.'}
+ };return all[k]||all.hu;
+};
+var rf260SetMoveButtonState = function rf260SetMoveButtonState(id,on){
+ const buttons=document.querySelectorAll?.('[data-tp-move-id]')||[];buttons.forEach(b=>{const active=on&&String(b.dataset?.tpMoveId||'')===String(id||'');b.classList?.toggle?.('tp-action-active',active);b.setAttribute?.('aria-pressed',active?'true':'false')});
+};
+var rf260CloseScheduleMove = function rf260CloseScheduleMove(restoreFocus=true){
+ document.querySelector?.('#tpScheduleMoveModal')?.remove?.();document.body?.classList?.remove?.('tp-modal-open');const id=state?.rf260MovingScheduleId;state&&(state.rf260MovingScheduleId=null);rf260SetMoveButtonState(id,false);const back=rf260MoveReturnFocus;rf260MoveReturnFocus=null;if(restoreFocus)setTimeout(()=>back?.focus?.(),0);
+};
+var rf260TrapModalFocus = function rf260TrapModalFocus(e){const modal=document.querySelector?.('#tpTemporalPicker')||document.querySelector?.('#tpScheduleMoveModal');if(!modal||e.key!=='Tab')return;const focusables=Array.from(modal.querySelectorAll?.('button:not(:disabled),input:not(:disabled),[tabindex]:not([tabindex="-1"])')||[]);if(!focusables.length)return;const first=focusables[0],last=focusables[focusables.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus?.()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus?.()}};
+var rf260OpenScheduleMove = function rf260OpenScheduleMove(id,button=null){
+ const item=scheduled().find(x=>x.id===id&&!x.cancelled);if(!item)return;
+ const returnFocus=button||document.activeElement||null;rf260CloseScheduleMove(false);rf260MoveReturnFocus=returnFocus;state.rf260MovingScheduleId=id;rf260SetMoveButtonState(id,true);if(button){button.classList?.add?.('tp-action-active');button.setAttribute?.('aria-pressed','true')}
+ const t=rf260MoveText(),start=new Date(item.start),date=Number.isNaN(start.getTime())?localDateKey(new Date()):localDateKey(start),time=Number.isNaN(start.getTime())?'18:00':start.toTimeString().slice(0,5),modal=document.createElement('div');
+ modal.id='tpScheduleMoveModal';modal.className='tp-modal';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-labelledby','tpMoveTitle');
+ modal.innerHTML=`<div class="tp-modal-card" onclick="event.stopPropagation()"><div class="tp-modal-head"><div><h2 id="tpMoveTitle">${esc(t.title)}</h2><div class="small muted">${esc(fmtDate(item.start))}</div></div><button type="button" class="btn secondary tp-modal-close" aria-label="${esc(t.cancel)}" onclick="rf260CloseScheduleMove()">×</button></div><div class="tp-modal-grid"><label class="small">${esc(t.date)}<input class="field" id="tpMoveDate" type="date" value="${esc(date)}"></label><label class="small">${esc(t.time)}<input class="field" id="tpMoveTime" type="time" value="${esc(time)}"></label></div><div class="tp-modal-actions"><button type="button" class="btn secondary" onclick="rf260CloseScheduleMove()">${esc(t.cancel)}</button><button type="button" class="btn" onclick="rf260SaveScheduleMove('${esc(id)}')">${esc(t.save)}</button></div></div>`;
+ modal.addEventListener?.('click',rf260CloseScheduleMove);document.body?.appendChild?.(modal);document.body?.classList?.add?.('tp-modal-open');rf260EnhanceTemporalFields();setTimeout(()=>document.querySelector?.('#tpMoveDate')?.closest?.('.tp-temporal')?.querySelector?.('.tp-temporal-trigger')?.focus?.(),0);
+};
+var rf260SaveScheduleMove = function rf260SaveScheduleMove(id){
+ const t=rf260MoveText(),date=document.querySelector?.('#tpMoveDate')?.value,time=document.querySelector?.('#tpMoveTime')?.value;if(!date||!time){alert(t.invalid);return}
+ const rows=scheduled(),i=rows.findIndex(x=>x.id===id&&!x.cancelled);if(i<0){rf260CloseScheduleMove();return}
+ try{const old=rows[i],st=dateAt(date,time),dur=Math.max(60000,Date.parse(old.end)-Date.parse(old.start));if(Number.isNaN(st.getTime()))throw Error(t.invalid);rows[i]={...old,start:st.toISOString(),end:new Date(st.getTime()+dur).toISOString(),updatedAt:Date.now()};db.set('scheduled',rows);rf260CloseScheduleMove();render()}catch(e){alert(e?.message||t.invalid)}
+};
+var rf260FriendlyHealthSource = function rf260FriendlyHealthSource(pkg,label=''){
+ const p=String(pkg||''),l=String(label||'').trim();
+ if(/samsung|shealth/i.test(p+' '+l))return 'Samsung Health';
+ if(/healthconnect|health\.connect|healthdata/i.test(p+' '+l))return 'Health Connect';
+ if(l&&!/^com\.|^org\.|^net\./i.test(l))return l;
+ if(/^com\.|^org\.|^net\./i.test(p))return 'Health Connect';
+ return l||p||'Health Connect';
+};
+var rf260CloseSelects = function rf260CloseSelects(except=null){
+ const all=document.querySelectorAll?.('.tp-select.open')||[];all.forEach(w=>{if(w===except)return;w.classList.remove('open');if(w.classList.contains('tp162-theme-dropdown'))state.tp162ThemeOpen=false;w.querySelector?.('.tp-select-trigger')?.setAttribute?.('aria-expanded','false')});
+};
+var rf260VisualViewport = function rf260VisualViewport(){
+ const vv=window.visualViewport,vw=vv?.width||window.innerWidth||document.documentElement?.clientWidth||360,vh=vv?.height||window.innerHeight||document.documentElement?.clientHeight||640;
+ return {left:vv?.offsetLeft||0,top:vv?.offsetTop||0,width:vw,height:vh,right:(vv?.offsetLeft||0)+vw,bottom:(vv?.offsetTop||0)+vh};
+};
+var rf260PositionSelect = function rf260PositionSelect(wrap){
+ const trigger=wrap.querySelector?.('.tp-select-trigger'),menu=wrap.querySelector?.('.tp-select-menu');if(!trigger||!menu||!trigger.getBoundingClientRect)return;
+ const r=trigger.getBoundingClientRect(),v=rf260VisualViewport(),edge=8,gap=6,desired=Math.min(320,Math.max(160,v.height*.46));
+ const width=Math.min(Math.max(r.width,180),Math.max(160,v.width-edge*2)),left=Math.max(v.left+edge,Math.min(r.left,v.right-width-edge));
+ const below=Math.max(0,v.bottom-r.bottom-gap),above=Math.max(0,r.top-v.top-gap),openTop=below<Math.min(190,desired)&&above>below,available=openTop?above:below;
+ const maxHeight=Math.max(96,Math.min(desired,available||desired)),top=openTop?Math.max(v.top+edge,r.top-gap-maxHeight):Math.min(v.bottom-edge-80,r.bottom+gap);
+ menu.dataset&&(menu.dataset.placement=openTop?'top':'bottom');menu.style.left=left+'px';menu.style.width=width+'px';menu.style.right='auto';menu.style.bottom='auto';menu.style.top=top+'px';menu.style.setProperty?.('--tp-menu-max-height',maxHeight+'px');
+};
+var rf260RepositionOpenSelects = function rf260RepositionOpenSelects(){(document.querySelectorAll?.('.tp-select.open')||[]).forEach(rf260PositionSelect)};
+var rf260SelectLabel = function rf260SelectLabel(select){const o=select?.options?.[select.selectedIndex];return o?.textContent||o?.label||''};
+var rf260OptionSignature = function rf260OptionSignature(select){return Array.from(select?.options||[]).map(o=>`${o.value}\u001f${o.textContent||o.label||''}\u001f${o.disabled?'1':'0'}\u001f${o.dataset?.swatch||''}`).join('\u001e')};
+var rf260OptionSwatch = function rf260OptionSwatch(o){const c=String(o?.dataset?.swatch||'');return /^#[0-9a-f]{6}$/i.test(c)?c:''};
+var rf260SetSelectContent = function rf260SetSelectContent(el,o){if(!el||!o)return;el.textContent='';const c=rf260OptionSwatch(o);if(c){const sw=document.createElement('span');sw.className='tp-select-swatch';sw.style.background=c;el.appendChild(sw)}const tx=document.createElement('span');tx.className='tp-select-label';tx.textContent=o.textContent||o.label||o.value;el.appendChild(tx)};
+var rf260BuildSelectOptions = function rf260BuildSelectOptions(select,menu){
+ if(!select||!menu)return;menu.innerHTML='';
+ Array.from(select.options||[]).forEach(o=>{const b=document.createElement('button');b.type='button';b.className='tp-select-option';b.setAttribute('role','option');b.setAttribute('aria-selected',o.selected?'true':'false');b.disabled=!!o.disabled;if(b.dataset)b.dataset.value=o.value;rf260SetSelectContent(b,o);b.addEventListener?.('click',ev=>{ev.stopPropagation();if(o.disabled)return;select.value=o.value;rf260SyncCustomSelect(select);rf260CloseSelects();try{select.dispatchEvent(new Event('change',{bubbles:true}))}catch(_){select.onchange?.({target:select})}});menu.appendChild(b)});
+ if(select.dataset)select.dataset.tpOptionSignature=rf260OptionSignature(select);
+};
+var rf260SyncCustomSelect = function rf260SyncCustomSelect(select){
+ const wrap=select?.closest?.('.tp-select');if(!wrap)return;const trigger=wrap.querySelector?.('.tp-select-trigger'),menu=wrap.querySelector?.('.tp-select-menu');
+ if(menu&&String(select.dataset?.tpOptionSignature||'')!==rf260OptionSignature(select))rf260BuildSelectOptions(select,menu);
+ if(trigger){const value=trigger.querySelector?.('.tp-select-value');if(value)rf260SetSelectContent(value,select.options?.[select.selectedIndex]);trigger.disabled=!!select.disabled}
+ wrap.classList?.toggle?.('tp-disabled',!!select.disabled);
+ const native=Array.from(select.options||[]),opts=wrap.querySelectorAll?.('.tp-select-option')||[];opts.forEach((b,i)=>{const o=native[i],on=!!o?.selected;b.disabled=!!o?.disabled;b.setAttribute?.('aria-selected',on?'true':'false')});
+};
+var rf260EnhanceSelect = function rf260EnhanceSelect(select,index=0){
+ if(!select||select.multiple||Number(select.size)>1)return;
+ if(select.dataset?.tpCustomSelect==='1'){rf260SyncCustomSelect(select);return}
+ const parent=select.parentNode;if(!parent?.insertBefore||!document.createElement)return;
+ if(select.dataset)select.dataset.tpCustomSelect='1';
+ const wrap=document.createElement('div');wrap.className='tp-select';
+ parent.insertBefore(wrap,select);wrap.appendChild(select);select.classList?.add?.('tp-native-select');select.setAttribute?.('aria-hidden','true');select.tabIndex=-1;
+ const trigger=document.createElement('button');trigger.type='button';trigger.className='tp-select-trigger';trigger.disabled=!!select.disabled;trigger.setAttribute('aria-haspopup','listbox');trigger.setAttribute('aria-expanded','false');
+ const labelText=select.closest?.('label')?.childNodes?Array.from(select.closest('label').childNodes).filter(n=>n.nodeType===3).map(n=>n.textContent).join(' ').trim():'';if(labelText)trigger.setAttribute('aria-label',labelText);
+ const value=document.createElement('span');value.className='tp-select-value';value.style.display='flex';value.style.alignItems='center';rf260SetSelectContent(value,select.options?.[select.selectedIndex]);trigger.appendChild(value);
+ const menu=document.createElement('div');menu.className='tp-select-menu';menu.setAttribute('role','listbox');menu.id=`tp-select-menu-${index}-${Math.random().toString(36).slice(2,7)}`;trigger.setAttribute('aria-controls',menu.id);
+ rf260BuildSelectOptions(select,menu);
+ wrap.appendChild(trigger);wrap.appendChild(menu);select.addEventListener?.('change',()=>rf260SyncCustomSelect(select));
+ trigger.addEventListener?.('click',ev=>{ev.stopPropagation();const opening=!wrap.classList.contains('open');rf260CloseSelects(wrap);wrap.classList.toggle('open',opening);trigger.setAttribute('aria-expanded',opening?'true':'false');if(opening){rf260PositionSelect(wrap);const selected=menu.querySelector?.('[aria-selected="true"]');selected?.scrollIntoView?.({block:'nearest'});selected?.focus?.()}});
+ trigger.addEventListener?.('keydown',ev=>{if(ev.key==='ArrowDown'||ev.key==='Enter'||ev.key===' '){ev.preventDefault();if(!wrap.classList.contains('open'))trigger.click()}else if(ev.key==='Escape'){rf260CloseSelects();trigger.focus?.()}});
+ menu.addEventListener?.('keydown',ev=>{const items=Array.from(menu.querySelectorAll?.('.tp-select-option:not(:disabled)')||[]),i=items.indexOf(document.activeElement);if(ev.key==='Escape'){ev.preventDefault();rf260CloseSelects();trigger.focus?.()}else if(ev.key==='ArrowDown'&&items.length){ev.preventDefault();items[(i+1+items.length)%items.length].focus?.()}else if(ev.key==='ArrowUp'&&items.length){ev.preventDefault();items[(i-1+items.length)%items.length].focus?.()}});
+};
+var rf260EnhanceSelects = function rf260EnhanceSelects(){const selects=document.querySelectorAll?.('select.field')||[];selects.forEach((s,i)=>rf260EnhanceSelect(s,i))};
+var rf260TemporalText = function rf260TemporalText(){
+ const k=typeof rf212Lang==='function'?rf212Lang():'hu';
+ const all={
+  hu:{date:'Dátum kiválasztása',time:'Időpont kiválasztása',datetime:'Dátum és idő kiválasztása',cancel:'Mégse',clear:'Törlés',today:'Ma',next:'Tovább az időponthoz',back:'Vissza a dátumhoz',save:'Mentés',hour:'Óra',minute:'Perc',prev:'Előző hónap',nextMonth:'Következő hónap'},
+  en:{date:'Choose date',time:'Choose time',datetime:'Choose date and time',cancel:'Cancel',clear:'Clear',today:'Today',next:'Continue to time',back:'Back to date',save:'Save',hour:'Hour',minute:'Minute',prev:'Previous month',nextMonth:'Next month'},
+  de:{date:'Datum auswählen',time:'Uhrzeit auswählen',datetime:'Datum und Uhrzeit auswählen',cancel:'Abbrechen',clear:'Löschen',today:'Heute',next:'Weiter zur Uhrzeit',back:'Zurück zum Datum',save:'Speichern',hour:'Stunde',minute:'Minute',prev:'Vorheriger Monat',nextMonth:'Nächster Monat'},
+  ro:{date:'Alege data',time:'Alege ora',datetime:'Alege data și ora',cancel:'Anulează',clear:'Șterge',today:'Astăzi',next:'Continuă la oră',back:'Înapoi la dată',save:'Salvează',hour:'Ora',minute:'Minut',prev:'Luna precedentă',nextMonth:'Luna următoare'}
+ };return all[k]||all.hu;
+};
+var rf260TemporalType = function rf260TemporalType(input){return String(input?.dataset?.tpTemporalType||input?.getAttribute?.('type')||'').toLowerCase()};
+var rf260TemporalDateKey = function rf260TemporalDateKey(date){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`};
+var rf260TemporalParseDate = function rf260TemporalParseDate(value){
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(value||''))return null;const [y,m,d]=value.split('-').map(Number),x=new Date(y,m-1,d,12);return x.getFullYear()===y&&x.getMonth()===m-1&&x.getDate()===d?x:null;
+};
+var rf260TemporalParts = function rf260TemporalParts(input){
+ const type=rf260TemporalType(input),raw=String(input?.value||''),now=new Date();let date=null,hour=now.getHours(),minute=now.getMinutes();
+ if(type==='date')date=rf260TemporalParseDate(raw);
+ else if(type==='time'){const m=raw.match(/^(\d{2}):(\d{2})/);if(m){hour=Number(m[1]);minute=Number(m[2])}}
+ else if(type==='datetime-local'){const m=raw.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/);if(m){date=rf260TemporalParseDate(m[1]);hour=Number(m[2]);minute=Number(m[3])}}
+ return {date:date||new Date(now.getFullYear(),now.getMonth(),now.getDate(),12),hour:Math.max(0,Math.min(23,hour)),minute:Math.max(0,Math.min(59,minute))};
+};
+var rf260TemporalDisplay = function rf260TemporalDisplay(input){
+ const type=rf260TemporalType(input),v=String(input?.value||''),t=rf260TemporalText();
+ if(type==='date'){const d=rf260TemporalParseDate(v);return d?d.toLocaleDateString(typeof rf233Locale==='function'?rf233Locale():'hu-HU'):t.date}
+ if(type==='time')return /^\d{2}:\d{2}/.test(v)?v.slice(0,5):t.time;
+ if(type==='datetime-local'){const m=v.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/),d=m&&rf260TemporalParseDate(m[1]);return d?`${d.toLocaleDateString(typeof rf233Locale==='function'?rf233Locale():'hu-HU')} • ${m[2]}`:t.datetime}
+ return v;
+};
+var rf260TemporalLabel = function rf260TemporalLabel(input){
+ const label=input?.closest?.('label');if(label){const txt=Array.from(label.childNodes||[]).filter(n=>n.nodeType===3).map(n=>n.textContent).join(' ').trim();if(txt)return txt}
+ const prev=input?.previousElementSibling;if(prev?.tagName==='LABEL')return String(prev.textContent||'').trim();return input?.id||rf260TemporalText().datetime;
+};
+var rf260SyncTemporalField = function rf260SyncTemporalField(input){
+ const wrap=input?.closest?.('.tp-temporal');if(!wrap)return;const trigger=wrap.querySelector?.('.tp-temporal-trigger'),value=trigger?.querySelector?.('.tp-temporal-value');if(value)value.textContent=rf260TemporalDisplay(input);if(trigger)trigger.disabled=!!input.disabled;wrap.classList?.toggle?.('tp-disabled',!!input.disabled);
+};
+var rf260EnhanceTemporalField = function rf260EnhanceTemporalField(input,index=0){
+ if(!input)return;const current=String(input.getAttribute?.('type')||'').toLowerCase(),stored=String(input.dataset?.tpTemporalType||'').toLowerCase(),type=stored||current;if(!['date','time','datetime-local'].includes(type))return;
+ if(input.dataset?.tpTemporal==='1'){rf260SyncTemporalField(input);return}
+ const parent=input.parentNode;if(!parent?.insertBefore||!document.createElement)return;if(input.dataset){input.dataset.tpTemporal='1';input.dataset.tpTemporalType=type}
+ const wrap=document.createElement('div');wrap.className='tp-temporal';parent.insertBefore(wrap,input);wrap.appendChild(input);input.classList?.add?.('tp-native-temporal');input.setAttribute?.('aria-hidden','true');input.tabIndex=-1;
+ // Changing the backing control to hidden makes Android WebView native date/time pickers unreachable while preserving its value and id for existing application logic.
+ try{input.type='hidden'}catch(_){input.setAttribute?.('type','hidden')}
+ const trigger=document.createElement('button');trigger.type='button';trigger.className='tp-select-trigger tp-temporal-trigger';trigger.disabled=!!input.disabled;trigger.setAttribute('aria-haspopup','dialog');trigger.setAttribute('aria-expanded','false');trigger.setAttribute('aria-label',rf260TemporalLabel(input));
+ const value=document.createElement('span');value.className='tp-temporal-value';value.textContent=rf260TemporalDisplay(input);const icon=document.createElement('span');icon.className='tp-temporal-icon';icon.setAttribute('aria-hidden','true');icon.textContent=type==='time'?'◷':'▦';trigger.append(value,icon);wrap.appendChild(trigger);
+ input.addEventListener?.('change',()=>rf260SyncTemporalField(input));input.addEventListener?.('input',()=>rf260SyncTemporalField(input));trigger.addEventListener?.('click',ev=>{ev.preventDefault();ev.stopPropagation();rf260OpenTemporal(input,trigger)});
+ trigger.addEventListener?.('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '||ev.key==='ArrowDown'){ev.preventDefault();rf260OpenTemporal(input,trigger)}});
+};
+var rf260EnhanceTemporalFields = function rf260EnhanceTemporalFields(){const fields=document.querySelectorAll?.('input.field[type="date"],input.field[type="time"],input.field[type="datetime-local"],input.field[data-tp-temporal-type]')||[];fields.forEach((x,i)=>rf260EnhanceTemporalField(x,i))};
+var rf260TemporalAllowedDate = function rf260TemporalAllowedDate(input,value){
+ const d=rf260TemporalParseDate(value);if(!d)return false;const min=String(input?.getAttribute?.('min')||'').slice(0,10),max=String(input?.getAttribute?.('max')||'').slice(0,10);return (!min||value>=min)&&(!max||value<=max);
+};
+var rf260TemporalClose = function rf260TemporalClose(restore=true){
+ const p=rf260TemporalPicker;if(!p)return;rf260TemporalPicker=null;p.modal?.remove?.();p.trigger?.setAttribute?.('aria-expanded','false');if(restore)setTimeout(()=>p.trigger?.focus?.(),0);
+};
+var rf260TemporalCommit = function rf260TemporalCommit(value){
+ const p=rf260TemporalPicker;if(!p)return;const input=p.input;input.value=value;try{input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}))}catch(_){input.onchange?.({target:input})}rf260SyncTemporalField(input);rf260TemporalClose(true);
+};
+var rf260TemporalMoveMonth = function rf260TemporalMoveMonth(delta){const p=rf260TemporalPicker;if(!p)return;const n=new Date(p.month.getFullYear(),p.month.getMonth()+delta,1,12);if(n.getFullYear()<1900||n.getFullYear()>2100)return;p.month=n;rf260TemporalPaintDate();};
+var rf260TemporalChooseDate = function rf260TemporalChooseDate(value){
+ const p=rf260TemporalPicker;if(!p||!rf260TemporalAllowedDate(p.input,value))return;const d=rf260TemporalParseDate(value);p.date=d;p.month=new Date(d.getFullYear(),d.getMonth(),1,12);if(p.type==='date'){rf260TemporalCommit(value);return}p.stage='time';rf260TemporalPaintTime();
+};
+var rf260TemporalSetTime = function rf260TemporalSetTime(part,value,button){

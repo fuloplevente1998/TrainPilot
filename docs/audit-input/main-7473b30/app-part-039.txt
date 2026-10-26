@@ -1,0 +1,204 @@
+  return (group==='all'||rf205PrimaryMuscle(e.id)===group)&&(gear==='all'||libraryGear(e)===gear)&&hay.includes(normal(String(q||'').trim()));
+ };
+}
+if(typeof libraryResults==='function'){
+ libraryResults=function(group,gear,q){
+  const es=exercises().filter(function(e){return libraryMatch(e,group,gear,q);});
+  const count=tp149T('exercise.resultCount',{shown:es.length,total:exercises().length});
+  return '<p class="muted">'+esc(count)+'</p>'+((es.map(function(e){
+   const groups=muscleGroups(e.id),secondary=groups.slice(1).map(function(x){return tp149MuscleGroupLabel(x);}).filter(Boolean).join(' / ');
+   const primary=groups[0]?tp149MuscleGroupLabel(groups[0]):tp149Target(e);
+   return '<details class="card tp-library-card"><summary><div class="tp-library-summary-main"><h3>'+esc(tp149ExerciseName(e))+'</h3><p class="small">'+esc(tp149Equipment(e))+' • '+esc(tp149T('exercise.primaryMuscle'))+': '+esc(primary)+'</p></div>'+rf260VideoButton(e.id)+'</summary><div class="tp-library-body"><p class="small muted">'+esc(tp149MovementLabel(e.movementPattern))+' • '+esc(tp149StyleText(e))+'</p>'+(secondary?'<p class="small muted">'+esc(tp149T('exercise.additionalMuscles'))+': '+esc(secondary)+'</p>':'')+'<p>'+esc(tp149ExerciseNote(e)||tp149T('exercise.noDescription'))+'</p><button class="btn secondary block" onclick="chooseLibraryPlacement(\''+esc(e.id)+'\')">'+esc(tp149T('exercise.addToProgram'))+'</button></div></details>';
+  }).join(''))||'<p>'+esc(tp149T('exercise.noResults'))+'</p>');
+ };
+}
+if(typeof rf203ExerciseLibrary==='function'){
+ rf203ExerciseLibrary=function(){
+  const list=exercises();
+  render(shell('<main><button class="btn secondary" onclick="go(\'programs\')">← '+esc(tp149T('exercise.backPrograms'))+'</button><div class="hero"><span class="badge">'+esc(tp149T('exercise.libraryBadge'))+'</span><h1>'+esc(tp149Plural('exercise.count',list.length))+'</h1><div class="muted">'+esc(tp149T('exercise.librarySubtitle'))+'</div></div>'+list.map(function(e,i){return '<div class="exercise" onclick="rf203ExerciseDetail(\''+esc(e.id)+'\')"><div class="num">'+(i+1)+'</div><div><div class="ex-name">'+esc(tp149ExerciseName(e))+'</div><div class="meta">'+esc(tp149Target(e))+(e.equipment?' • '+esc(tp149Equipment(e)):'')+(e.movementPattern?' • '+esc(tp149MovementLabel(e.movementPattern)):'')+'</div></div><div class="tp-exercise-actions">'+rf260VideoButton(e.id)+'<div class="chev" aria-hidden="true">›</div></div></div>';}).join('')+'</main>'));
+ };
+}
+if(typeof rf203ExerciseDetail==='function'){
+ rf203ExerciseDetail=function(id){
+  const e=byId(id);if(!e)return;
+  render(shell('<main><button class="btn secondary" onclick="rf203ExerciseLibrary()">← '+esc(tp149T('exercise.library'))+'</button><div class="hero"><h1>'+esc(tp149ExerciseName(e))+'</h1><div class="muted">'+(e.sets||'')+(e.sets?' × ':'')+esc(e.reps||'')+(e.weight?' • '+tp149FormatUnit(e.weight,'kilogram'):'')+'</div></div><div class="card detail"><span class="badge">'+esc(tp149Target(e))+'</span>'+(e.equipment?'<span class="badge">'+esc(tp149Equipment(e))+'</span>':'')+(e.movementPattern?'<span class="badge">'+esc(tp149MovementLabel(e.movementPattern))+'</span>':'')+(typeof motionDemo==='function'?motionDemo(e.id):'')+'<p class="note">'+esc(tp149ExerciseNote(e)||tp149T('exercise.noDescription'))+'</p></div></main>'));
+ };
+}
+if(typeof muscleLibrary==='function'){
+ muscleLibrary=function(group='all'){
+  state.libraryFilter={group:group,gear:'all',q:''};
+  const muscleOptions=Object.keys(MUSCLES).map(function(k){return '<option value="'+esc(k)+'" '+(group===k?'selected':'')+'>'+esc(tp149MuscleGroupLabel(k))+'</option>';}).join('');
+  const gearHtml=Object.entries(TP149_LIBRARY_GEAR_ROWS).map(function(kv){return '<option value="'+esc(kv[0])+'">'+esc(tp149RowValue(kv[1]))+'</option>';}).join('');
+  render(shell('<main><button class="btn secondary" onclick="go(\'programs\')">← '+esc(tp149T('nav.programs'))+'</button><div class="hero"><h1>'+esc(tp149T('exercise.libraryTitle'))+'</h1><p>'+esc(tp149T('exercise.librarySummary',{count:exercises().length}))+'</p></div><div class="setting"><label>'+esc(tp149T('exercise.search'))+'<input id="libraryQuery" class="field" type="search" placeholder="'+esc(tp149T('exercise.searchPlaceholder'))+'" oninput="filterLibrary()"></label><label>'+esc(tp149T('exercise.muscleGroup'))+'<select id="libraryMuscle" class="field" onchange="filterLibrary()"><option value="all">'+esc(tp149T('exercise.all'))+'</option>'+muscleOptions+'</select></label><label>'+esc(tp149T('exercise.equipment'))+'<select id="libraryGear" class="field" onchange="filterLibrary()">'+gearHtml+'</select></label></div><div id="libraryResults">'+libraryResults(group,'all','')+'</div></main>'));
+ };
+}
+
+
+if(typeof programCards==='function'){
+ programCards=function(){
+  return programs().map(function(p){
+   const active=p.id===activeProgramId(),name=tp149ProgramMeta(p,'name'),location=tp149ProgramMeta(p,'location'),level=tp149ProgramMeta(p,'level');
+   const stats=tp149T('program.cardStats',{days:p.days.length,counts:p.days.map(function(d){return d.exercises.length;}).join('/')});
+   return '<div class="program-card rf103-program-card '+(active?'active-program':'')+'"><div class="rf103-program-main"><div class="rf103-program-info"><span class="badge">'+esc(location)+'</span><span class="badge">'+esc(level)+'</span><h3>'+esc(name)+'</h3><p class="small muted">'+esc(stats)+'</p></div><button class="btn rf103-program-activate '+(active?'secondary':'')+'" '+(active?'disabled':'')+' onclick="activateProgram(\''+esc(p.id)+'\')">'+esc(tp149T(active?'program.active':'program.activate'))+'</button></div>'+(!p.builtin?'<div class="rf103-program-extra"><button class="btn secondary" onclick="editCustomProgram(\''+esc(p.id)+'\')">'+esc(tp149T('common.edit'))+'</button><button class="btn danger" onclick="deleteCustomProgram(\''+esc(p.id)+'\')">'+esc(tp149T('common.delete'))+'</button></div>':'')+'</div>';
+  }).join('');
+ };
+}
+const tp149Rf148PlanDayHeadingBase=rf148PlanDayHeading;
+if(typeof rf148PlanDayHeading==='function'){
+ rf148PlanDayHeading=function(program,day){
+  const badge=String(day?.id||'').trim(),dayName=tp149ProgramDayName(program,day),templateId=program?.sourceTemplateId||program?.id;
+  const role=tp124DayWithoutBadge(dayName,badge),standard=['home-basic','home-level2'].includes(templateId)&&(!day?.name||day.name===day.id);
+  const level=(templateId==='home-basic'?['Alap','Basic','Basis','Bază']:['2. szint','Level 2','Stufe 2','Nivel 2'])[tp149LangIndex(rf212Lang())];
+  const base=standard?(role||level):tp149ProgramMeta(program,'name'),extra=!standard&&role&&role!==base?' · '+role:'';
+  return '<div class="tp146-day-headingline"><h2 class="tp146-day-title">'+esc(base+extra)+(badge?' <span class="tp146-day-letter" aria-label="'+esc(badge)+'">'+esc(badge)+'</span>':'')+'</h2></div>';
+ };
+}
+const tp149PlanScreenBase=planScreen;
+if(typeof planScreen==='function'){
+ planScreen=function(){
+  if(rf212Lang()==='hu')return tp149PlanScreenBase.apply(this,arguments);
+  const p=activeProgram();
+  if(!p)return shell('<main><div class="hero"><h1>'+esc(tp149T('program.noActive'))+'</h1><div class="muted">'+esc(tp149T('program.noActiveHelp'))+'</div></div><button class="btn block" onclick="go(\'programs\')">'+esc(tp149T('program.choose'))+'</button></main>');
+  const pName=tp149ProgramMeta(p,'name'),location=tp149ProgramMeta(p,'location'),level=tp149ProgramMeta(p,'level');
+  return shell('<main class="tp146-plan"><div class="hero"><span class="badge">'+esc(tp149T('program.activeBadge'))+'</span><h1>'+esc(pName)+'</h1><div class="muted">'+esc(location)+(level?' • '+esc(level):'')+' • '+esc(tp149T('program.cycle',{count:p.days?.length||0}))+'</div><br><button class="btn secondary block" onclick="go(\'programs\')">'+esc(tp149T('program.chooseAnother'))+'</button></div>'+(p.days||[]).map(function(d){return '<div class="card tp146-day-head"><div class="tp146-day-copy"><span class="badge">'+esc(tp149T('program.workoutDayBadge'))+'</span>'+rf148PlanDayHeading(p,d)+'<div class="small muted">'+esc(tp149T('program.tapDetails',{count:d.exercises?.length||0}))+'</div></div></div>'+(d.exercises||[]).map(function(id,i){return rf201ExerciseRow(d.id,id,i);}).join('')+'<button class="btn secondary block" onclick="rf154AddScreen(\''+esc(d.id)+'\')">+ '+esc(tp149T('program.addExercise'))+'</button><br><button class="btn block" onclick="startWorkout(\''+esc(d.id)+'\')">'+esc(tp149T('workout.start'))+'</button>';}).join('<br>')+'</main>');
+ };
+}
+const tp149ShowWorkoutBase=showWorkout;
+if(typeof showWorkout==='function'){
+ showWorkout=function(dayId){
+  if(rf212Lang()==='hu')return tp149ShowWorkoutBase.apply(this,arguments);
+  state.workout=dayId;state.tab='plan';const p=activeProgram(),d=programDay(p,dayId);if(!p||!d){render();return;}
+  render(shell('<main class="tp146-plan"><button class="btn secondary" onclick="go(\'plan\')">← '+esc(tp149ProgramMeta(p,'name'))+'</button><div class="hero"><span class="badge">'+esc(tp149T('program.activeBadge'))+'</span><div class="tp146-workout-hero-title">'+rf148PlanDayHeading(p,d)+'</div><div class="muted">'+esc(tp149Plural('exercise.count',d.exercises?.length||0))+'</div></div>'+(d.exercises||[]).map(function(id,i){return rf201ExerciseRow(d.id,id,i);}).join('')+'<br><button class="btn secondary block" onclick="rf154AddScreen(\''+esc(d.id)+'\')">+ '+esc(tp149T('program.addExercise'))+'</button><br><button class="btn block" onclick="startWorkout(\''+esc(d.id)+'\')">'+esc(tp149T('workout.start'))+'</button></main>'));
+ };
+}
+
+
+validateProfile=function(p){
+ if(!p||!Number.isInteger(p.age)||p.age<18||p.age>100||!Number.isFinite(p.height)||p.height<100||p.height>250||!Number.isFinite(p.weight)||p.weight<30||p.weight>350)throw Error(tp149T('planner.errorProfile'));
+ const out=Object.assign({},p,{location:p.location||'home',gear:Array.isArray(p.gear)?p.gear:profileGear132(p),excluded:Array.isArray(p.excluded)?p.excluded:[],focus:p.focus||'balanced',avoidAreas:Array.isArray(p.avoidAreas)?p.avoidAreas:[]});
+ const allowed={goal:['fitness','muscle','strength','fatloss'],experience:['beginner','intermediate'],activity:['sedentary','mixed','physical'],location:['home','gym'],cadence:['alternate','weekly','custom'],split:['auto','full','upperlower','ppl'],focus:Object.keys(TP149_PLANNER_ROWS.focus)};
+ for(const k of Object.keys(allowed))if(!allowed[k].includes(out[k]))throw Error(tp149T('planner.errorChoice'));
+ if(!Number.isInteger(out.minutes)||out.minutes<20||out.minutes>120||out.minutes%5!==0)throw Error(tp149T('planner.errorMinutes'));
+ if(!Array.isArray(out.gear)||out.gear.some(function(x){return !Object.hasOwn(GEAR132,x);})||new Set(out.gear).size!==out.gear.length)throw Error(tp149T('planner.errorGear'));
+ if(!Array.isArray(out.excluded)||out.excluded.some(function(id){return !exercises().some(function(e){return e.id===id;})&&!(rf148BackupValidationIds&&rf148BackupValidationIds.has(id));}))throw Error(tp149T('planner.errorExclude'));
+ if(new Set(out.avoidAreas).size!==out.avoidAreas.length||out.avoidAreas.some(function(x){return !Object.hasOwn(TP149_PLANNER_ROWS.area,x);}))throw Error(tp149T('planner.errorAvoid'));
+ return out;
+};
+gearForm132=function(p){
+ const selected=profileGear132(p);
+ const rows=Object.keys(GEAR132).map(function(k){return '<label class="exclude-row"><input name="pfGear" type="checkbox" value="'+esc(k)+'" '+(selected.includes(k)?'checked':'')+'>'+esc(tp149PlannerGear(k))+'</label>';}).join('');
+ return '<div class="setting"><h2>'+esc(tp149T('planner.gearTitle'))+'</h2><p>'+esc(tp149T('planner.gearHelp'))+'</p><div class="muscle-chips"><button type="button" class="btn secondary" onclick="gearPreset132(\'bodyweight\')">'+esc(tp149T('planner.presetBodyweight'))+'</button><button type="button" class="btn secondary" onclick="gearPreset132(\'dumbbells\')">'+esc(tp149T('planner.presetDumbbell'))+'</button><button type="button" class="btn secondary" onclick="gearPreset132(\'calisthenics\')">'+esc(tp149T('planner.presetCalisthenics'))+'</button><button type="button" class="btn secondary" onclick="gearPreset132(\'mixed\')">'+esc(tp149T('planner.presetAll'))+'</button></div>'+rows+'<p class="small muted">'+esc(tp149T('planner.gearMore'))+'</p></div>';
+};
+profileScreen=function(){
+ state.tab='profile';state.healthView=false;if(typeof rf245CoachVisible!=='undefined')rf245CoachVisible=false;
+ const old=state.profilePreview||trainingProfile()||{};
+ const p=Object.assign({age:'',height:'',weight:'',goal:'fitness',experience:'beginner',activity:'mixed',minutes:45,location:'home',gear:[],cadence:'alternate',split:'auto',excluded:[],focus:'balanced',avoidAreas:[]},old);
+ const mins={};for(let m=20;m<=120;m+=5)mins[String(m)]=tp149FormatNumber(m)+' '+tp149T('unit.minute.short');
+ const avoid=Object.keys(TP149_PLANNER_ROWS.area).map(function(k){return '<label class="exclude-row"><input type="checkbox" name="pfAvoidArea" value="'+esc(k)+'" '+((p.avoidAreas||[]).includes(k)?'checked':'')+'>'+esc(tp149PlannerRow('area',k))+'</label>';}).join('');
+ const html='<main><button class="btn secondary" onclick="go(\'home\')">← '+esc(tp149T('planner.back'))+'</button><div class="hero"><h1>'+esc(tp149T('planner.title'))+'</h1><p>'+esc(tp149T('planner.intro'))+'</p></div><div class="setting profile-grid">'+
+ '<label>'+esc(tp149T('planner.age'))+'<input id="pfAge" class="field" type="number" min="18" max="100" value="'+esc(p.age)+'"></label>'+
+ '<label>'+esc(tp149T('planner.height'))+'<input id="pfHeight" class="field" type="number" min="100" max="250" value="'+esc(p.height)+'"></label>'+
+ '<label>'+esc(tp149T('planner.weight'))+'<input id="pfWeight" class="field" type="number" step="0.1" min="30" max="350" value="'+esc(p.weight)+'"></label>'+
+ profileSelect('pfGoal',tp149T('planner.goal'),tp149PlannerOptions('goal'),p.goal)+
+ profileSelect('pfExperience',tp149T('planner.experience'),tp149PlannerOptions('experience'),p.experience)+
+ profileSelect('pfActivity',tp149T('planner.activity'),tp149PlannerOptions('activity'),p.activity)+
+ gearForm132(p)+
+ profileSelect('pfMinutes',tp149T('planner.minutes'),mins,String(p.minutes))+
+ profileSelect('pfCadence',tp149T('planner.cadence'),tp149PlannerOptions('cadence'),p.cadence)+
+ profileSelect('pfSplit',tp149T('planner.split'),Object.fromEntries(['auto','full','upperlower','ppl'].map(function(k){return [k,tp149PlannerRow('split',k)];})),p.split)+
+ profileSelect('pfFocus',tp149T('planner.focus'),tp149PlannerOptions('focus'),p.focus||'balanced')+
+ '<details class="rf148-profile-accordion"><summary>'+esc(tp149T('planner.avoidAreas'))+'</summary><div class="rf148-profile-accordion-body"><p class="small muted">'+esc(tp149T('planner.avoidHelp'))+'</p>'+avoid+'</div></details>'+
+ '<details class="rf148-profile-accordion"><summary>'+esc(tp149T('planner.excludeExercises'))+'</summary><div class="rf148-profile-accordion-body"><p class="small muted">'+esc(tp149T('planner.excludeHelp'))+'</p>'+exercises().map(function(e){return '<label class="exclude-row"><input type="checkbox" name="pfExclude" value="'+esc(e.id)+'" '+((p.excluded||[]).includes(e.id)?'checked':'')+'>'+esc(tp149ExerciseName(e))+'</label>';}).join('')+'</div></details>'+
+ '<p class="small muted">'+esc(tp149T('planner.storageHelp'))+'</p><button class="btn block" onclick="previewProfile()">'+esc(tp149T('planner.build'))+'</button></div></main>';
+ render(shell(html));window.scrollTo?.(0,0);if(typeof rf260ScrollState==='function')rf260ScrollState();
+};
+generatePersonalProgram=function(input){
+ const p=validateProfile(input),gear=profileGear132(p);
+ const lib=exercises().filter(function(e){return available132(e.id,p)&&!rf148ExerciseAvoided(e,p)&&(p.experience!=='beginner'||e.beginnerSafe);});
+ if(lib.length<3)throw Error(tp149T('planner.errorPool'));
+ const pools=rf148RolePools(lib,p);
+ const lower=pools.leg.length+pools.hinge.length>0,pull=pools.pull.length>0;
+ let effective=p.split;if(effective==='auto')effective=p.experience==='intermediate'&&lower&&pull?'upperlower':'full';
+ if((effective==='ppl'||effective==='upperlower')&&!lower)effective='upper';
+ if(effective==='ppl'&&!pull)effective='full';if(effective==='full'&&!lower)effective='upper';
+ const layouts={
+  full:[['A',['leg','push','pull','core','hinge','shoulder','bi','conditioning']],['B',['hinge','pull','push','core','leg','shoulder','tri','conditioning']]],
+  upper:[['upperA',['push','pull','shoulder','bi','tri','core','stability','conditioning']],['upperB',['pull','push','shoulder','tri','bi','core','stability','conditioning']]],
+  upperlower:[['upper',['push','pull','shoulder','bi','tri','core']],['lowerCore',['leg','hinge','core','stability','conditioning']]],
+  ppl:[['push',['push','shoulder','tri','core']],['pull',['pull','bi','core','stability']],['legsCore',['leg','hinge','core','conditioning']]]
+ };
+ const specs=layouts[effective]||layouts.full,capacity=Math.min(rf148Capacity(p.minutes),lib.length),prescriptions={},focusRoles=rf148FocusRoles(p.focus);
+ const fallback=lib.slice().sort(function(a,b){const ar=Object.keys(RF148_ROLE_PATTERNS).find(function(r){return RF148_ROLE_PATTERNS[r].includes(a.movementPattern);});const br=Object.keys(RF148_ROLE_PATTERNS).find(function(r){return RF148_ROLE_PATTERNS[r].includes(b.movementPattern);});const af=focusRoles.includes(ar)?1:0,bf=focusRoles.includes(br)?1:0;return bf-af||Number(b.compound)-Number(a.compound)||Number(b.beginnerSafe)-Number(a.beginnerSafe)||a.id.localeCompare(b.id);});
+ const days=specs.map(function(spec,di){
+  const dayKey=spec[0],roles=rf148FocusOrder(spec[1],p.focus),ids=[];
+  for(const role of roles){if(ids.length>=capacity)break;const available=(pools[role]||[]).filter(function(e){return !ids.includes(e.id);});if(!available.length)continue;ids.push(available[di%available.length].id);}
+  for(const e of fallback){if(ids.length>=capacity)break;if(!ids.includes(e.id))ids.push(e.id);}
+  if(ids.length<3)throw Error(tp149T('planner.errorDayPool'));
+  ids.forEach(function(id){prescriptions[id]=rf148Prescription(exercises().find(function(e){return e.id===id;}),p);});
+  return {id:String.fromCharCode(65+di),name:tp149PlannerRow('generatedDay',dayKey,'hu',dayKey),i18nKey:dayKey,exercises:ids};
+ });
+ const changed=p.split!=='auto'&&effective!==p.split;
+ const i18n={effectiveSplit:effective,gear:gear.slice(),focus:p.focus,avoidAreas:(p.avoidAreas||[]).slice(),minutes:p.minutes,capacity:capacity,changed:changed,experience:p.experience};
+ const canonical={generated:true,effectiveSplit:effective,gear:gear.slice(),focus:p.focus,avoidAreas:(p.avoidAreas||[]).slice(),i18n:i18n};
+ const reasons=tp149GeneratedReasons(canonical,'hu');
+ return {id:'personal-'+crypto.randomUUID(),name:tp149T('planner.generatedName',{split:tp149PlannerRow('split',effective,'hu',effective)},'hu'),location:gear.length?tp149T('planner.locationSelected',{},'hu'):tp149T('planner.locationBodyweight',{},'hu'),level:tp149PlannerRow('level',p.experience,'hu',p.experience),builtin:false,generated:true,generatorVersion:RF148_VERSION,effectiveSplit:effective,gear:gear.slice(),focus:p.focus,avoidAreas:(p.avoidAreas||[]).slice(),days:days,prescriptions:prescriptions,reasons:reasons,i18n:i18n,createdAt:new Date().toISOString()};
+};
+showPersonalPreview=function(){
+ const p=state.programPreview;if(!p)return;
+ const reasons=tp149GeneratedReasons(p);
+ render(shell('<main><button class="btn secondary" onclick="profileScreen()">← '+esc(tp149T('planner.title'))+'</button><div class="hero"><h1>'+esc(tp149ProgramMeta(p,'name'))+'</h1><p>'+esc(tp149T('planner.previewLabel'))+'</p></div><div class="card">'+reasons.map(function(x){return '<p>'+esc(x)+'</p>';}).join('')+'<p>'+esc(tp149T('planner.trialHelp'))+'</p></div>'+p.days.map(function(d){return '<div class="section">'+esc(tp149ProgramDayName(p,d))+'</div>'+d.exercises.map(function(id){const e=byId(id),r=p.prescriptions[id];return '<div class="card"><strong>'+esc(tp149ExerciseName(e))+'</strong><p>'+r.sets+' × '+esc(r.reps)+' • '+esc(tp149T('planner.rest',{seconds:tp149FormatNumber(r.rest)}))+'</p><span class="badge">'+esc(tp149MuscleGroupLabel(muscleGroups(id)[0]))+'</span>'+demoCard(id)+'</div>';}).join('');}).join('')+'<button class="btn block" onclick="acceptPersonalProgram()">'+esc(tp149T('planner.activate'))+'</button></main>'));
+};
+acceptPersonalProgram=function(){
+ if(!state.programPreview)return;const p=state.programPreview,profile=state.profilePreview;const keys=['settings','programs','activeProgramId','plannerSettings'];const old=keys.map(function(k){return localStorage.getItem('repforge:'+k);});
+ try{db.set('settings',Object.assign({},settings(),{profile:profile}));db.set('programs',[...programs(),p]);db.set('activeProgramId',p.id);db.set('plannerSettings',Object.assign({},plannerSettings(),{mode:profile.cadence,minutes:profile.minutes}));}
+ catch(e){keys.forEach(function(k,i){old[i]===null?localStorage.removeItem('repforge:'+k):localStorage.setItem('repforge:'+k,old[i]);});alert(tp149T('planner.saveFailed'));return;}
+ state.programPreview=null;state.profilePreview=null;state.tab='calendar';render();alert(tp149T('planner.saved'));
+};
+
+var tp149TranslateDom=function tp149TranslateDom(root=document){
+ const lang=rf212Lang();document.documentElement.lang=lang;if(lang==='hu'||!root||typeof document.createTreeWalker!=='function'||typeof NodeFilter==='undefined')return;
+ const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+ const nodes=[];let n;while((n=walker.nextNode()))nodes.push(n);
+ for(const node of nodes){
+  const p=node.parentElement;if(!p||/^(SCRIPT|STYLE|TEXTAREA)$/i.test(p.tagName))continue;
+  const old=node.nodeValue;if(!old||!old.trim())continue;
+  const translated=tp149Translate(old,lang);if(translated!==old)node.nodeValue=translated;
+ }
+ root.querySelectorAll?.('[aria-label],[title],[placeholder]').forEach(function(el){
+  for(const a of ['aria-label','title','placeholder']){const v=el.getAttribute(a);if(v){const t=tp149Translate(v,lang);if(t!==v)el.setAttribute(a,t);}}
+ });
+ const weekdayLabels={
+  en:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+  de:['Mo','Di','Mi','Do','Fr','Sa','So'],
+  ro:['Lu','Ma','Mi','Jo','Vi','Sâ','Du']
+ };
+ root.querySelectorAll?.('.cal-weekdays span').forEach(function(el,i){if(weekdayLabels[lang]?.[i])el.textContent=weekdayLabels[lang][i];});
+ root.querySelectorAll?.('.rf2211-weekdays label').forEach(function(el,i){const label=weekdayLabels[lang]?.[i];if(!label)return;for(const n of [...el.childNodes])if(n.nodeType===3&&n.nodeValue.trim())n.nodeValue=label;});
+ // Built-in exercise cards: use the canonical English name or explicit DE/RO translation.
+ root.querySelectorAll?.('.exercise,.detail,.tp-library-card').forEach(function(card){
+  const hu=card.querySelector?.('.ex-name')||card.querySelector?.('h2')||card.querySelector?.('h3');
+  const en=card.querySelector?.('.en');if(!hu)return;
+  const current=String(hu.textContent||'').trim();
+  const e=typeof exercises==='function'?exercises().find(function(x){return !x.custom&&(x.hu===current||x.en===String(en?.textContent||'').trim());}):null;
+  if(e){hu.textContent=tp149ExerciseName(e,lang);if(en)en.hidden=true;}
+ });
+};
+const tp149AfterRenderBase=tp120AfterRender;
+tp120AfterRender=function(){tp149AfterRenderBase();tp149TranslateDom(document.querySelector('#app')||document);};
+
+const tp149FmtDateBase=fmtDate;
+fmtDate=function(v){const out=tp149FormatDateTime(v);return out==='—'?tp149FmtDateBase(v):out;};
+if(typeof rf222Locale==='function')rf222Locale=function(){return tp149Locale();};
+if(typeof rf233Locale==='function')rf233Locale=function(){return tp149Locale();};
+
+const tp149SetLangBase=rf212SetLang;
+rf212SetLang=function(v){
+ if(!Object.hasOwn(TP149_LANGS,v))return;
+ db.set('language',v);document.documentElement.lang=rf212Lang();render();
+};
+
+var tp149TranslateFreshDom=function tp149TranslateFreshDom(node){
+ if(node&&rf212Lang()!=='hu')tp149TranslateDom(node);
+};
+if(typeof tp2628Confirm==='function'){
+ const tp149ConfirmBase=tp2628Confirm;

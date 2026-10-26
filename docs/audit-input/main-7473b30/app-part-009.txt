@@ -1,0 +1,193 @@
+    if(Number.isFinite(baseH)&&baseH>0){
+      const d=(cur-baseH)/baseH;
+      if(d<=-0.20)parts.push('A legutóbbi HRV a saját közelmúltbeli alapértéked alatt van; ne erőltesd az automatikus terhelésemelést.');
+      else if(d>=0.15)parts.push('A legutóbbi HRV a saját közelmúltbeli alapértéked felett van.');
+      else parts.push('A legutóbbi HRV közel van a saját alapértékedhez.');
+    } else parts.push('HRV adat elérhető; személyes alapértékhez több napnyi adat kell.');
+  }
+  if(!parts.length)return base;
+  return `${base} ${parts.join(' ')} Ez tájékoztató edzésterhelési jelzés, nem orvosi diagnózis.`;
+};
+var readRecoveryHealth = async function readRecoveryHealth(){
+  await healthAction(async p=>{
+    const end=new Date(),start=new Date(end.getTime()-8*24*3600000);
+    const result=await p.readRecovery({start:start.toISOString(),end:end.toISOString()});
+    state.health.recovery=result;
+    return (result.sleepMinutes!=null||result.hrvRmssdMs!=null)
+      ?'Regenerációs adatok frissítve a Health Connectből.'
+      :'Nem találtunk megosztott alvás/HRV adatot. Ellenőrizd a Samsung Health/Health Connect engedélyeket és szinkront.';
+  });
+};
+var rf141RecoveryHtml = function rf141RecoveryHtml(){
+  const s=state.health?.recovery;if(!s)return '<p class="small muted">Még nincs beolvasott alvás/HRV adat.</p>';
+  return `<div class="grid2"><div class="stat"><small>Legutóbbi alvás</small><strong>${rf141FmtDuration(s.sleepMinutes)}</strong></div><div class="stat"><small>Legutóbbi HRV (RMSSD)</small><strong>${s.hrvRmssdMs==null?'Nincs adat':Math.round(s.hrvRmssdMs)+' ms'}</strong></div></div><p class="small muted">${s.hrvBaselineMs==null?'HRV alapértékhez több adat kell.':'7 napos HRV medián: '+Math.round(s.hrvBaselineMs)+' ms'}${s.sleepEnd?' • Alvás vége: '+esc(new Date(s.sleepEnd).toLocaleString('hu-HU')):''}</p>`;
+};
+/* RepForge 1.4.1: completes the 1.4 feature package; Health Connect recovery metrics (sleep + HRV), no bundled offline videos. */
+const RF141_VERSION='1.4.1';
+
+
+const rf141HealthScreen=healthScreen;
+healthScreen=function(){
+  rf141HealthScreen();
+  const main=document.querySelector('main'); if(!main)return;
+  const old=main.querySelector('#rf141RecoveryCard'); if(old)old.remove();
+  const card=document.createElement('div');card.id='rf141RecoveryCard';card.className='card';
+  card.innerHTML=`<h2>Regeneráció</h2><p class="small muted">Health Connectből: alvás és HRV (RMSSD). Az értékeket csak az aktuális nézetben tartjuk, nem kerülnek Drive-mentésbe.</p>${rf141RecoveryHtml()}<button class="btn secondary block" onclick="readRecoveryHealth()" ${state.health.busy?'disabled':''}>Alvás és HRV frissítése</button>`;
+  const hero=main.querySelector('.hero'); if(hero)hero.insertAdjacentElement('afterend',card); else main.prepend(card);
+};
+
+const rf141ClearHealth=clearHealthView;
+clearHealthView=function(){if(state.health)state.health.recovery=null;return rf141ClearHealth();};
+
+const rf141Home=home;
+home=function(){
+  const html=rf141Home();
+  return html.replace(/<div class="card"><strong>Terhelési iránytű<\/strong><p class="small muted">[\s\S]*?<\/p><button class="btn secondary" onclick="statsScreen\(\)">Statisztikák<\/button><\/div>/,
+    `<div class="card"><strong>Terhelési iránytű</strong><p class="small muted">${esc(rf141RecoveryText())}</p><div class="grid2"><button class="btn secondary" onclick="statsScreen()">Statisztikák</button><button class="btn secondary" onclick="healthScreen()">Regeneráció frissítése</button></div></div>`);
+};
+
+// v1.4.1 intentionally keeps online/existing exercise demos only; no bundled offline video library.
+const rf141DemoCard=demoCard;
+demoCard=function(id){const html=rf141DemoCard(id);return html.replace('<span class="badge">OFFLINE BEMUTATÓ</span>','<span class="badge">HELYI BEMUTATÓ</span>');};
+
+
+const rf141Shell=shell;
+shell=function(content){return rf141Shell(content).replaceAll('1.4.0','1.4.1');};
+
+render();
+
+
+// @endsection v141.js
+
+// @section v142.js
+var rf142LocalInputValue = function rf142LocalInputValue(iso){
+  const d=new Date(iso); if(!Number.isFinite(d.getTime()))return '';
+  const p=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+};
+var rf142IsoFromLocal = function rf142IsoFromLocal(value){
+  const d=new Date(value); if(!value||!Number.isFinite(d.getTime()))throw Error('Adj meg érvényes dátumot és időpontot.');
+  return d.toISOString();
+};
+var rf142WorkoutKey = function rf142WorkoutKey(x){return x.id||`${x.started}|${x.programId||''}|${x.dayId||x.workout||''}`;};
+var rf142FindHistoryIndex = function rf142FindHistoryIndex(key){return history().findIndex(x=>rf142WorkoutKey(x)===key);};
+var rf142ValidWindow = function rf142ValidWindow(started,finished){
+  const a=Date.parse(started),b=Date.parse(finished),now=Date.now()+60000;
+  if(!Number.isFinite(a)||!Number.isFinite(b))throw Error('Érvénytelen kezdési vagy befejezési idő.');
+  if(b<=a)throw Error('A befejezésnek a kezdés után kell lennie.');
+  if(b>now)throw Error('A befejezési idő nem lehet a jövőben.');
+  const mins=Math.round((b-a)/60000);
+  if(mins>24*60)throw Error('Egy edzés legfeljebb 24 órás lehet. Ellenőrizd az időpontokat.');
+  return mins;
+};
+var editHistoryWorkout = function editHistoryWorkout(key){
+  const i=rf142FindHistoryIndex(key),x=history()[i]; if(!x){alert('Az edzés nem található.');return;}
+  render(shell(`<main><button class="btn secondary" onclick="go('history')">← Vissza</button><div class="hero"><h1>Edzés módosítása</h1><p>${esc(x.programName||'Edzés')} • ${esc(x.dayId||x.workout||'')}</p></div><div class="card"><label>Kezdés<input class="field" id="rf142Start" type="datetime-local" value="${esc(rf142LocalInputValue(x.started))}"></label><label>Befejezés<input class="field" id="rf142End" type="datetime-local" value="${esc(rf142LocalInputValue(x.finished))}"></label><p class="small muted">Mentés után az edzés időtartama újraszámolódik. Az órás adatokat az új időablakból lehet újra lekérni.</p><button class="btn block" onclick="saveHistoryWorkoutTime('${esc(key)}',false)">Időpont mentése</button><br><button class="btn secondary block" onclick="saveHistoryWorkoutTime('${esc(key)}',true)">Mentés + órás adatok frissítése</button></div><div class="card"><strong>Hibás edzés?</strong><p class="small muted">A törlés végleges ezen a készüléken. Drive szinkron esetén a következő szinkron a módosított helyi naplót használja.</p><button class="btn secondary block" onclick="deleteHistoryWorkout('${esc(key)}')">Edzés törlése</button></div></main>`));
+};
+var saveHistoryWorkoutTime = async function saveHistoryWorkoutTime(key,refreshHealth){
+  try{
+    const i=rf142FindHistoryIndex(key); if(i<0)throw Error('Az edzés nem található.');
+    const old=history()[i],started=rf142IsoFromLocal($('#rf142Start')?.value),finished=rf142IsoFromLocal($('#rf142End')?.value);
+    const mins=rf142ValidWindow(started,finished);
+    const h=history();
+    h[i]={...h[i],started,finished,editedAt:new Date().toISOString()};
+    h.sort((a,b)=>String(b.started||'').localeCompare(String(a.started||'')));
+    db.set('history',h);
+    if(state.feedbackStarted===old.started)state.feedbackStarted=started;
+    if(state.health){
+      if(state.health.workout===old.started)state.health.workout=started;
+      state.health.summary=null;
+    }
+    if(refreshHealth){
+      const updated=h.find(x=>x.started===started&&x.finished===finished);
+      await rf142ReadHealthForWorkout(updated);
+      return;
+    }
+    window.TrainPilotFeedback?.saved();
+    go('history');
+  }catch(e){alert(e.message||'Az időpont mentése nem sikerült.');}
+};
+var rf142ReadHealthForWorkout = async function rf142ReadHealthForWorkout(h){
+  if(!h){alert('Az edzés nem található.');return;}
+  if(typeof isNative==='function'&&!isNative()){
+    window.TrainPilotFeedback?.saved();go('history');return;
+  }
+  state.health.workout=h.started; state.health.summary=null;
+  await healthAction(async p=>{
+    let source=state.health.source||'';
+    let result=await p.readWorkout({start:h.started,end:h.finished,source});
+    if(!result.source&&result.sources?.length===1){
+      source=result.sources[0];
+      result=await p.readWorkout({start:h.started,end:h.finished,source});
+    }
+    state.health.summary=result;state.health.source=result.source||source;
+    return result.source
+      ?'Az edzés időpontja mentve, és az órás adatok az új időablakból frissültek.'
+      :result.sources?.length
+        ?'Az időpont mentve. Több adatforrás található; válassz forrást az Óra és egészségadatok képernyőn.'
+        :'Az időpont mentve, de ehhez az időablakhoz még nincs megosztott órás adat. Szinkronizáld az órát, majd frissítsd újra.';
+  });
+  healthScreen();
+};
+var deleteHistoryWorkout = function deleteHistoryWorkout(key){
+  const i=rf142FindHistoryIndex(key),h=history(); if(i<0){alert('Az edzés nem található.');return;}
+  const x=h[i];
+  if(!confirm(`Biztosan törlöd ezt az edzést?\n${fmtDate(x.started)} • ${sessionDuration(x)}`))return;
+  const closed=db.get('wearClosedWorkouts',[])||[],workoutId=String(x.syncId||x.id||x.started||'');
+  if(workoutId&&!closed.some(v=>v.workoutId===workoutId))db.set('wearClosedWorkouts',[...closed,{workoutId,status:'discarded',receivedAt:Date.now()}].slice(-128));
+  h.splice(i,1);db.set('history',h);
+  if(x.scheduleId&&!h.some(v=>v.scheduleId===x.scheduleId)){
+    const s=scheduled(),si=s.findIndex(v=>v.id===x.scheduleId);
+    if(si>=0&&s[si].status==='completed'){s[si]={...s[si],status:'planned',updatedAt:Date.now()};db.set('scheduled',s);}
+  }
+  if(state.health?.workout===x.started){state.health.workout='';state.health.summary=null;}
+  alert('Az edzés törölve.');go('history');
+};
+// Keep the synchronous deletion before later dialog wrappers are installed.
+const tp142DeleteHistoryWorkout=deleteHistoryWorkout;
+/* RepForge 1.4.2: editable workout timestamps, safe deletion, and Health Connect re-read for corrected workout windows. */
+const RF142_VERSION='1.4.2';
+
+
+historyScreen=function(){
+  const h=history();
+  return shell(`<main><div class="hero"><h1>Edzésnapló</h1><div class="muted">Minden program korábbi edzése egy helyen marad.</div></div>${h.length?h.map((x,hi)=>{const c=completedSets(x),title=x.programName?`${x.programName} • ${x.dayId||x.workout}`:`Full Body ${x.workout}`,key=rf142WorkoutKey(x);return `<div class="history"><div class="history-head"><div class="history-title-row"><div><div class="history-title">${esc(title)}</div><div class="history-date">${fmtDate(x.started)}</div></div><span class="badge">${x.exercises.length} gyakorlat</span></div><div class="history-badges"><span class="history-badge">⏱ ${sessionDuration(x)}</span><span class="history-badge">✓ ${c.done}/${c.total} sorozat</span></div></div><div class="history-body"><div class="grid2"><button class="btn secondary" onclick="editHistoryWorkout('${esc(key)}')">Edzés módosítása</button><button class="btn secondary" onclick="healthFromHistory(${hi})">Health adatok</button></div><br><button class="btn secondary" onclick="calendarIntent(${hi})">Hozzáadás a naptárhoz</button>${x.exercises.map(e=>`<div class="history-ex"><div class="history-ex-name">${esc(e.hu)}</div><div class="en">${esc(e.en||'')}</div><div class="history-setchips">${(e.sets||[]).map(s=>`<span class="setchip">${esc(formatSet(e,s))}${s.done?' ✓':' • nincs kész'}</span>`).join('')}</div></div>`).join('')}</div></div>`;}).join(''):'<div class="muted">Még nincs elmentett edzés.</div>'}</main>`);
+};
+
+
+const rf142Shell=shell;
+shell=function(content){return rf142Shell(content).replaceAll('1.4.1','1.4.2');};
+
+render();
+
+
+// @endsection v142.js
+
+// @section v143.js
+var discardDraft143 = function discardDraft143(){const d=db.get('draft',null);if(!d){alert('Nincs félbehagyott edzés.');return;}const failed=()=>alert('Az edzés közben változott, vagy a törlés nem fejeződött be. Próbáld újra.');void tp2628Confirm('Biztosan törlöd a félbehagyott edzést? A naplóba nem kerül be.',{title:'Félbehagyott edzés törlése',confirmText:'Törlés',danger:true}).then(async ok=>{if(!ok)return;const discarded=await window.TrainPilotWearSync?.discardDraft?.(d.session);if(discarded){alert('A félbehagyott edzés törölve.');go('home');}else failed();}).catch(failed);};
+/* RepForge 1.4.3: 60-exercise library, curated online demos, generator integration, and safe home-screen draft deletion. */
+const RF143_VERSION='1.4.3';
+const RF143_NEW_EXERCISES=[
+{id:'incline-pushup',hu:'Emelt fekvőtámasz',en:'Incline Push-Up',equipment:'testsúly + stabil pad/támasz',loadType:'bodyweight',target:'Mell / tricepsz',notes:'Tartsd a törzset egyenes vonalban, a kezek stabil emelt felületen legyenek. Kontrolláltan engedd a mellkast a támasz felé.',sets:2,reps:'8–15',weight:0,repUnit:'ism.',gear:'bodyweight',movementPattern:'horizontal-push',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:true,goalTags:['fitness','muscle','fatloss']},
+{id:'modified-pushup',hu:'Térdelős fekvőtámasz',en:'Modified Push-Up',equipment:'testsúly',loadType:'bodyweight',target:'Mell / tricepsz',notes:'Térdtámaszból tarts egyenes vonalat a térdtől a fejig. A könyök nagyjából 45 fokban haladjon.',sets:2,reps:'8–15',weight:0,repUnit:'ism.',gear:'bodyweight',movementPattern:'horizontal-push',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:true,goalTags:['fitness','muscle','fatloss']},
+{id:'decline-pushup',hu:'Lábemelt fekvőtámasz',en:'Decline Push-Up',equipment:'testsúly + pad',loadType:'bodyweight',target:'Mell / váll / tricepsz',notes:'A láb stabil emelt felületen legyen. Tarts feszes törzset és kontrollált könyökhelyzetet.',sets:2,reps:'5–12',weight:0,repUnit:'ism.',gear:'bodyweight',movementPattern:'horizontal-push',difficulty:'intermediate',complexity:'medium',beginnerSafe:false,compound:true,goalTags:['fitness','muscle','strength']},
+{id:'pike-pushup',hu:'Pike fekvőtámasz',en:'Pike Push-Up',equipment:'testsúly',loadType:'bodyweight',target:'Váll / tricepsz',notes:'Fordított V helyzetből közelítsd a fejet kontrolláltan a talajhoz, majd nyomd vissza magad.',sets:2,reps:'5–12',weight:0,repUnit:'ism.',gear:'bodyweight',movementPattern:'vertical-push',difficulty:'intermediate',complexity:'medium',beginnerSafe:false,compound:true,goalTags:['fitness','muscle','strength']},
+{id:'plyo-pushup',hu:'Robbanékony fekvőtámasz',en:'Plyometric Push-Up',equipment:'testsúly',loadType:'bodyweight',target:'Mell / tricepsz',notes:'Csak stabil alap fekvőtámasz után. Robbanékonyan nyomd el magad, majd puhán, hajlított könyökkel érkezz.',sets:3,reps:'3–5',weight:0,repUnit:'ism.',gear:'bodyweight',movementPattern:'horizontal-push',difficulty:'advanced',complexity:'high',beginnerSafe:false,compound:true,goalTags:['fitness','strength']},
+{id:'archer-pushup',hu:'Íjász fekvőtámasz',en:'Archer Push-Up',equipment:'testsúly',loadType:'bodyweight',target:'Mell / tricepsz / törzs',notes:'Széles kéztartásból terheld főleg az egyik kart, a másik nyúljon oldalra. Váltott oldalakkal dolgozz.',sets:2,reps:'5–10 / oldal',weight:0,repUnit:'/oldal',gear:'bodyweight',movementPattern:'horizontal-push',difficulty:'advanced',complexity:'high',beginnerSafe:false,compound:true,goalTags:['fitness','muscle','strength']},
+{id:'prisoner-squat',hu:'Tarkóra tett kézzel guggolás',en:'Prisoner Squat',equipment:'testsúly',loadType:'bodyweight',target:'Láb / far / törzs',notes:'A kezek a fej mögött, mellkas nyitva. Guggolj kontrolláltan, a térd kövesse a lábfejet.',sets:2,reps:'10–15',weight:0,repUnit:'ism.',gear:'bodyweight',movementPattern:'squat',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:true,goalTags:['fitness','muscle','fatloss']},
+{id:'single-leg-squat',hu:'Egylábas guggolás támasz mellett',en:'Single-Leg Squat',equipment:'testsúly + opcionális stabil támasz',loadType:'bodyweight',target:'Láb / far / törzs',notes:'Egy lábon, szükség esetén stabil támaszt fogva ereszkedj csak addig, amíg a térd és a medence kontrollált marad.',sets:2,reps:'5–10 / oldal',weight:0,repUnit:'/oldal',gear:'bodyweight',movementPattern:'squat',difficulty:'advanced',complexity:'high',beginnerSafe:false,compound:true,goalTags:['fitness','strength']},
+{id:'squat-jump',hu:'Guggolásból felugrás',en:'Squat Jump',equipment:'testsúly',loadType:'bodyweight',target:'Láb / far',notes:'Guggolásból robbanékonyan ugorj fel, majd puhán, hajlított térddel érkezz. Ne végezd kifáradásig.',sets:3,reps:'5–8',weight:0,repUnit:'ism.',gear:'bodyweight',movementPattern:'squat',difficulty:'intermediate',complexity:'medium',beginnerSafe:false,compound:true,goalTags:['fitness','strength','fatloss']},
+{id:'lunge-jump',hu:'Váltott kitörésből felugrás',en:'Lunge Jump',equipment:'testsúly',loadType:'bodyweight',target:'Láb / far',notes:'Kitörésből ugorj fel és cseréld a lábakat a levegőben. Puhán érkezz, a térd ne essen befelé.',sets:3,reps:'5–8 / oldal',weight:0,repUnit:'/oldal',gear:'bodyweight',movementPattern:'lunge',difficulty:'intermediate',complexity:'high',beginnerSafe:false,compound:true,goalTags:['fitness','strength','fatloss']},
+{id:'jumping-jacks',hu:'Terpesz-zár szökdelés',en:'Jumping Jacks',equipment:'testsúly',loadType:'bodyweight',target:'Teljes test',notes:'Ritmusosan nyisd-zárd a lábakat és emeld a karokat. Puhán érkezz; alacsony terheléshez lépegetve is végezhető.',sets:2,reps:'30–60 mp',weight:0,repUnit:'mp',gear:'bodyweight',movementPattern:'conditioning',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:true,goalTags:['fitness','fatloss']},
+{id:'box-jump',hu:'Dobozra felugrás',en:'Box Jump',equipment:'stabil fellépő/doboz',loadType:'bodyweight',target:'Láb / far',notes:'Csak stabil, nem billenő felületre ugorj. Puhán érkezz mindkét lábra, lefelé inkább lépj.',sets:3,reps:'3–5',weight:0,repUnit:'ism.',gear:'step',movementPattern:'squat',difficulty:'intermediate',complexity:'high',beginnerSafe:false,compound:true,goalTags:['fitness','strength']},
+{id:'db-front-squat',hu:'Két kézisúlyzós elöl guggolás',en:'Dumbbell Front Squat',equipment:'2 kézisúlyzó',loadType:'per_hand',target:'Láb / far / törzs',notes:'Tarts egy-egy súlyzót vállmagasságban. Mellkas maradjon fent, a térdek kövessék a lábfejeket.',sets:2,reps:'8–12',weight:0,repUnit:'ism.',gear:'dumbbells',movementPattern:'squat',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:true,goalTags:['fitness','muscle','strength','fatloss']},
+{id:'single-arm-db-press',hu:'Egykezes kézisúlyzós fekvenyomás',en:'Single-Arm Dumbbell Chest Press',equipment:'1 kézisúlyzó + pad',loadType:'single_dumbbell',target:'Mell / tricepsz / törzs',notes:'Padon fekve egy karral nyomj. Feszítsd a törzset, hogy a medence és a mellkas ne forduljon el.',sets:2,reps:'8–12 / oldal',weight:0,repUnit:'/oldal',gear:'dumbbell',movementPattern:'horizontal-push',difficulty:'intermediate',complexity:'medium',beginnerSafe:false,compound:true,goalTags:['fitness','muscle','strength']},
+{id:'single-arm-incline-press',hu:'Egykezes ferdepados kézisúlyzós nyomás',en:'Single-Arm Incline Dumbbell Chest Press',equipment:'1 kézisúlyzó + állítható pad',loadType:'single_dumbbell',target:'Mell / váll / tricepsz',notes:'Ferde padon egy karral nyomj, a törzs ne forduljon el. Kezdj könnyű próbasúllyal.',sets:2,reps:'8–12 / oldal',weight:0,repUnit:'/oldal',gear:'dumbbell',movementPattern:'horizontal-push',difficulty:'intermediate',complexity:'medium',beginnerSafe:false,compound:true,goalTags:['fitness','muscle','strength']},
+{id:'single-leg-press',hu:'Egylábas lábtoló',en:'Single-Leg Press',equipment:'lábtoló gép',loadType:'total',target:'Láb / far',notes:'Egy lábbal nyomd a platformot kontrolláltan. A térdet ne zárd ki és ne engedd befelé esni.',sets:2,reps:'8–12 / oldal',weight:0,repUnit:'/oldal',gear:'machine',movementPattern:'squat',difficulty:'intermediate',complexity:'medium',beginnerSafe:false,compound:true,goalTags:['fitness','muscle','strength']},
+{id:'seated-leg-curl',hu:'Ülő lábhajlítás gépen',en:'Seated Leg Curl',equipment:'ülő lábhajlító gép',loadType:'total',target:'Combhajlító',notes:'Állítsd a párnát a boka fölé, a hát maradjon a támlán. Hajlíts és engedj vissza kontrolláltan.',sets:2,reps:'8–15',weight:0,repUnit:'ism.',gear:'machine',movementPattern:'knee-flexion',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:false,goalTags:['fitness','muscle','strength']},
+{id:'single-leg-seated-curl',hu:'Egylábas ülő lábhajlítás',en:'Single-Leg Seated Leg Curl',equipment:'ülő lábhajlító gép',loadType:'total',target:'Combhajlító',notes:'Egy lábbal hajlíts kontrolláltan, a medence maradjon stabil. Az oldalakat azonos technikával végezd.',sets:2,reps:'8–12 / oldal',weight:0,repUnit:'/oldal',gear:'machine',movementPattern:'knee-flexion',difficulty:'intermediate',complexity:'medium',beginnerSafe:false,compound:false,goalTags:['fitness','muscle','strength']},
+{id:'leg-press-calf',hu:'Vádliemelés lábtoló gépen',en:'Leg Press Calf Raise',equipment:'lábtoló gép',loadType:'total',target:'Vádli',notes:'Csak az előláb legyen stabilan a platformon. Bokából emeld és engedd a sarkat, a térd maradjon kontrollált.',sets:2,reps:'12–20',weight:0,repUnit:'ism.',gear:'machine',movementPattern:'calf',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:false,goalTags:['fitness','muscle','strength']},
+{id:'close-grip-bench',hu:'Szűk fogású fekvenyomás',en:'Close Grip Bench Press',equipment:'kétkezes rúd + pad',loadType:'total',target:'Tricepsz / mell',notes:'A fogás legyen a normál fekvenyomásnál szűkebb, de ne extrém keskeny. Kontrolláltan engedd a rudat.',sets:2,reps:'6–12',weight:0,repUnit:'ism.',gear:'barbell',movementPattern:'horizontal-push',difficulty:'intermediate',complexity:'medium',beginnerSafe:false,compound:true,goalTags:['muscle','strength','fitness']}
+];
+const RF143_DEMOS={'incline-pushup':'0JUrOH--Kdk','modified-pushup':'PDr5B2jLUOw','decline-pushup':'DBz85WuXqMk','pike-pushup':'2b5t0Cu2nQI','plyo-pushup':'MH4gcTKQiEc','archer-pushup':'IDu6pRAPChg','prisoner-squat':'UYbsgiiZgao','single-leg-squat':'sSXnaFyhiZs','squat-jump':'tZSYZdtbONc','lunge-jump':'_5kDxC0flg0','jumping-jacks':'uLVt6u15L98','box-jump':'DXu-8TAJwi4','db-front-squat':'hZI8Yy5elZs','single-arm-db-press':'qFTnmyC-nf4','single-arm-incline-press':'iJ-GwVeUuCg','single-leg-press':'3aYsOsBA7ZE','seated-leg-curl':'_2Kd0d-JEUM','single-leg-seated-curl':'PXNJ71rksvU','leg-press-calf':'8k435cj30gc','close-grip-bench':'LJeqLAmJLfs'};
+const RF143_MUSCLES={'incline-pushup':['chest','triceps','core'],'modified-pushup':['chest','triceps','core'],'decline-pushup':['chest','shoulders','triceps'],'pike-pushup':['shoulders','triceps','core'],'plyo-pushup':['chest','triceps','shoulders'],'archer-pushup':['chest','triceps','core'],'prisoner-squat':['legs','core'],'single-leg-squat':['legs','core'],'squat-jump':['legs','core'],'lunge-jump':['legs','core'],'jumping-jacks':['legs','shoulders','core'],'box-jump':['legs','core'],'db-front-squat':['legs','core'],'single-arm-db-press':['chest','triceps','core'],'single-arm-incline-press':['chest','shoulders','triceps'],'single-leg-press':['legs'],'seated-leg-curl':['legs'],'single-leg-seated-curl':['legs'],'leg-press-calf':['legs'],'close-grip-bench':['triceps','chest','shoulders']};

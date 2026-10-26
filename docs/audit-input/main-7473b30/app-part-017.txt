@@ -1,0 +1,216 @@
+    catch(e){if(!firstError)firstError=e;continue;}
+    if(!r)continue;
+    const day=rf229LocalDay(r.sleepEnd||w.end);if(!day)continue;
+    const item={day,sleepMinutes:rf225Number(r.sleepMinutes),sleepStart:r.sleepStart||null,sleepEnd:r.sleepEnd||null,sleepSource:r.sleepSource||null,hrvRmssdMs:rf225Number(r.hrvRmssdMs),hrvSamples:Number(r.hrvSamples)||0,hrvSource:r.hrvSource||null,readAt:new Date().toISOString()};
+    if(item.sleepMinutes==null&&item.hrvRmssdMs==null)continue;
+    rf229UpsertRecovery(item);saved++;
+  }
+  // Distinguish a genuine "no shared data" result from a total permission/API failure.
+  // healthAction is responsible for surfacing the thrown message without navigating away.
+  if(successfulReads===0&&firstError)throw firstError;
+  rf229ApplyLatestRecovery();
+  return saved;
+};
+var rf229RecoverySummary = function rf229RecoverySummary(){
+  const rows=rf229RecoveryHistory().slice(0,7);
+  if(!rows.length)return '<p class="small muted">Még nincs mentett napi alvás/HRV előzmény.</p>';
+  return `<div class="card" id="rf229RecoveryHistory"><h2>Regenerációs előzmények</h2><p class="small muted">A teljes éjszakai alvást a befejezés napjához rendeljük. A legutóbbi 7 nap:</p>${rows.map(x=>`<div class="history-ex"><strong>${esc(x.day)}</strong><div class="small muted">Alvás: ${x.sleepMinutes==null?'—':rf141FmtDuration(x.sleepMinutes)} • HRV: ${x.hrvRmssdMs==null?'—':Math.round(x.hrvRmssdMs)+' ms'}</div></div>`).join('')}</div>`;
+};
+const RF229_VERSION='2.2.9';
+
+// Persistent day-by-day recovery history. Recovery belongs to the local date
+// on which the sleep session ends, not to a workout window.
+
+
+readRecoveryHealth=async function(){
+  return healthAction(async p=>{
+    const saved=await rf229ReadRecoveryHistory(p,14);
+    return saved?`Alvás és HRV frissítve: ${saved} napi regenerációs bejegyzés mentve.`:'Nem találtunk megosztott alvás/HRV adatot az elmúlt 14 napban.';
+  },'Napi alvás és HRV frissítése…');
+};
+
+const rf229Hub=rf206HealthHub;
+rf206HealthHub=function(){
+  const result=rf229Hub();
+  if(typeof result==='string')return result.replace('</main>',rf229RecoverySummary()+'</main>');
+  const main=document.querySelector('main');
+  if(main&&!main.querySelector('#rf229RecoveryHistory'))main.insertAdjacentHTML('beforeend',rf229RecoverySummary());
+  return result;
+};
+
+// Keep daily recovery history in local backup/export and restore it when present.
+
+
+const rf229RestoreText=restoreText;
+restoreText=function(text){
+  let rows=[];
+  try{const parsed=JSON.parse(String(text).replace(/^\uFEFF/,''));if(Array.isArray(parsed?.recoveryHistory))rows=parsed.recoveryHistory.filter(x=>x&&typeof x.day==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x.day));}catch(_){}
+  const ok=rf229RestoreText(text);
+  if(ok&&rows.length){db.set('recoveryHistory',rows);rf229ApplyLatestRecovery();}
+  return ok;
+};
+rf229ApplyLatestRecovery();
+
+
+// @endsection v229.js
+
+// @section v232.js
+var rf232L = function rf232L(){const k=typeof rf212Lang==='function'?rf212Lang():'hu';return RF232_I18N[k]||RF232_I18N.hu;};
+var rf232EffortScore = function rf232EffortScore(v){return ({easy:1,light:2,good:3,challenging:4,hard:5})[v]??null;};
+var rf232Css = function rf232Css(){
+ if(document.querySelector('#rf232Css'))return;
+ const s=document.createElement('style');s.id='rf232Css';
+ s.textContent='.rf232-effort{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}.rf232-effort .btn{padding:8px 3px;min-width:0;line-height:1.05}.rf232-effort .n{display:block;font-size:15px;font-weight:800}.rf232-effort .lbl{display:block;margin-top:4px;font-size:9px;white-space:normal}.rf232-pain{margin-top:8px}@media(max-width:340px){.rf232-effort{gap:3px}.rf232-effort .btn{padding:7px 2px}.rf232-effort .lbl{font-size:8px}}';
+ document.head.appendChild(s);
+};
+/* TrainPilot 2.3.2: five-step effort feedback + Coach load integration. */
+const RF232_VERSION='2.3.2';
+const RF232_EFFORT_KEYS=['easy','light','good','challenging','hard'];
+const RF232_I18N={
+ hu:{prompt:'Milyen nehéz volt ez a gyakorlat?',easy:'Túl könnyű',light:'Kicsit könnyű',good:'Pont jó',challenging:'Kicsit nehéz',hard:'Túl nehéz',pain:'Fájdalom / kellemetlenség',partialHold:'A legutóbbi edzés részleges volt, ezért most nem emelünk.',lightHold:'Kicsit könnyű volt. Maradjon a súly, és előbb érd el stabilan az ismétléstartomány tetejét.',lightIncrease:'Kicsit könnyű volt és minden sorozat elérte a felső ismétléshatárt; kis terhelésemelés javasolt.',challengeHold:'Kicsit nehéz volt. A következő alkalommal maradjon a jelenlegi terhelés.',bodyHold:'Maradjon a jelenlegi gyakorlatváltozat; előbb stabilizáld az ismétléseket.',bodyReps:'Következő cél: 1–2 szabályos ismétléssel több sorozatonként.'},
+ en:{prompt:'How hard was this exercise?',easy:'Too easy',light:'Slightly easy',good:'Just right',challenging:'Slightly hard',hard:'Too hard',pain:'Pain / discomfort',partialHold:'The last workout was incomplete, so the load will not increase yet.',lightHold:'It felt slightly easy. Keep the load and first reach the top of the rep range consistently.',lightIncrease:'It felt slightly easy and every set reached the top of the rep range; a small load increase is suggested.',challengeHold:'It felt slightly hard. Keep the current load next time.',bodyHold:'Keep the current exercise variation and first stabilize the repetitions.',bodyReps:'Next target: 1–2 more clean repetitions per set.'},
+ de:{prompt:'Wie schwer war diese Übung?',easy:'Zu leicht',light:'Etwas leicht',good:'Genau richtig',challenging:'Etwas schwer',hard:'Zu schwer',pain:'Schmerz / Beschwerden',partialHold:'Das letzte Training war unvollständig, daher wird die Belastung noch nicht erhöht.',lightHold:'Es war etwas leicht. Belastung beibehalten und zuerst den oberen Wiederholungsbereich stabil erreichen.',lightIncrease:'Es war etwas leicht und alle Sätze erreichten die obere Wiederholungsgrenze; eine kleine Steigerung ist sinnvoll.',challengeHold:'Es war etwas schwer. Beim nächsten Mal die aktuelle Belastung beibehalten.',bodyHold:'Die aktuelle Übungsvariante beibehalten und zuerst die Wiederholungen stabilisieren.',bodyReps:'Nächstes Ziel: 1–2 saubere Wiederholungen mehr pro Satz.'},
+ ro:{prompt:'Cât de greu a fost acest exercițiu?',easy:'Prea ușor',light:'Puțin ușor',good:'Potrivit',challenging:'Puțin greu',hard:'Prea greu',pain:'Durere / disconfort',partialHold:'Ultimul antrenament a fost incomplet, deci greutatea nu crește încă.',lightHold:'A fost puțin ușor. Păstrează greutatea și atinge mai întâi constant limita superioară de repetări.',lightIncrease:'A fost puțin ușor și toate seriile au atins limita superioară; se recomandă o creștere mică a greutății.',challengeHold:'A fost puțin greu. Păstrează aceeași greutate data viitoare.',bodyHold:'Păstrează varianta actuală a exercițiului și stabilizează mai întâi repetările.',bodyReps:'Ținta următoare: încă 1–2 repetări corecte pe serie.'}
+};
+
+
+// Keep legacy keys stable so old history remains readable; add only the two missing middle states.
+RF152_EFFORT.light='Kicsit könnyű';
+RF152_EFFORT.challenging='Kicsit nehéz';
+RF152_EFFORT.hard='Túl nehéz';
+
+
+rf232Css();
+
+const rf232RecommendationBase=rf152Recommendation;
+rf152Recommendation=function(id){
+ const last=rf152Last(id),lib=byId(id),effort=last?.exercise?.effort;
+ if(effort!=='light'&&effort!=='challenging')return rf232RecommendationBase(id);
+ if(!last||!lib)return rf232RecommendationBase(id);
+ const t=rf232L(),e=last.exercise,d=rf152DoneSets(e),all=rf152AllDone(e),base=rf152BaseWeight(e),range=rf152RepRange(id),reps=d.map(s=>Number(s.reps)||0);
+ if(!all)return {action:'hold',weight:base,text:t.partialHold};
+ if(effort==='challenging')return {action:'hold',weight:base,text:t.challengeHold};
+ const hitTop=!!(range.max&&reps.length&&Math.min(...reps)>=range.max);
+ if(lib.loadType==='bodyweight'){
+  if(hitTop)return {action:'reps',weight:0,text:t.bodyReps};
+  return {action:'hold',weight:0,text:t.bodyHold};
+ }
+ if(hitTop){
+  const step=rf152Step(lib),next=Math.max(0,Math.round((base+step)*2)/2);
+  return {action:'increase',weight:next,text:t.lightIncrease+` ${next} ${loadLabel(lib.loadType)}.`};
+ }
+ return {action:'hold',weight:base,text:t.lightHold};
+};
+
+rf152FeedbackHtml=function(e){
+ rf232Css();const r=e.rf152Recommendation||rf152Recommendation(e.id),sel=e.effort||'',t=rf232L();
+ const scale=RF232_EFFORT_KEYS.map((k,i)=>`<button class="btn ${sel===k?'':'secondary'}" onclick="rf152SetEffort('${k}')"><span class="n">${i+1}</span><span class="lbl">${esc(t[k])}</span></button>`).join('');
+ return `<div class="card" id="rf152Feedback"><strong>Adaptív progresszió</strong><p class="small muted">${esc(r.text)}</p><div class="small" style="margin-bottom:8px">${esc(t.prompt)}</div><div class="rf232-effort">${scale}</div><button class="btn ${sel==='pain'?'':'secondary'} block rf232-pain" onclick="rf152SetEffort('pain')">${esc(t.pain)}</button></div>`;
+};
+rf152SetEffort=function(v){
+ const e=state.session?.exercises?.[state.current];if(!e||(!RF232_EFFORT_KEYS.includes(v)&&v!=='pain'))return;
+ e.effort=v;e.effortScore=rf232EffortScore(v);persistDraft();renderWorkout();
+};
+
+// Feed the finer effort scale into the existing TrainPilot Coach readiness calculation.
+if(typeof rf220EffortLoad==='function')rf220EffortLoad=function(){
+ let score=100,n=0;
+ for(const h of rf220Hist().slice(0,3))for(const e of h.exercises||[]){
+  if(!e.effort)continue;n++;
+  score+=({easy:3,light:1,good:0,challenging:-4,hard:-8,pain:-20})[e.effort]||0;
+ }
+ return {score:Math.max(20,Math.min(100,score)),n};
+};
+
+
+// @endsection v232.js
+
+// @section v233.js
+var rf233L = function rf233L(){const k=typeof rf212Lang==='function'?rf212Lang():'hu';return RF233_I18N[k]||RF233_I18N.hu;};
+var rf233Locale = function rf233Locale(){const k=typeof rf212Lang==='function'?rf212Lang():'hu';return ({hu:'hu-HU',en:'en-US',de:'de-DE',ro:'ro-RO'})[k]||'hu-HU';};
+var rf233DayKey = function rf233DayKey(v){const d=v instanceof Date?v:new Date(v);if(!Number.isFinite(d.getTime()))return '';return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');};
+var rf233Today = function rf233Today(){return rf233DayKey(new Date());};
+var rf233RecoveryAgeDays = function rf233RecoveryAgeDays(){const day=state.health?.recovery?.day;if(!/^\d{4}-\d{2}-\d{2}$/.test(day||''))return null;const a=new Date(day+'T12:00'),b=new Date(rf233Today()+'T12:00');return Math.max(0,Math.round((b-a)/86400000));};
+var rf233TargetWorkout = function rf233TargetWorkout(){
+ const now=Date.now(),today=rf233Today();
+ const open=(typeof scheduled==='function'?scheduled():[]).filter(x=>x&&!x.cancelled&&(x.status||'planned')==='planned'&&!(typeof rf209ScheduleDone==='function'&&rf209ScheduleDone(x))).sort((a,b)=>Date.parse(a.start)-Date.parse(b.start));
+ const todays=open.find(x=>rf233DayKey(x.start)===today);
+ const upcoming=todays||open.find(x=>{const t=Date.parse(x.start);return Number.isFinite(t)&&t>=new Date(today+'T00:00').getTime();})||null;
+ if(upcoming){const program=programById(upcoming.programId||activeProgramId()),day=programDay(program,upcoming.dayId||upcoming.workout);return {kind:todays?'today':'next',item:upcoming,program,day};}
+ const program=activeProgram();if(!program)return {kind:'none',item:null,program:null,day:null};
+ let day=null;
+ try{if(typeof nextCycleIndex==='function'&&typeof cycleDay==='function')day=cycleDay(program,nextCycleIndex(program.id));}catch(_){}
+ day=day||program.days?.[0]||null;
+ return {kind:day?'suggested':'none',item:null,program,day};
+};
+var rf233Decision = function rf233Decision(r){
+ const pain=typeof rf220PainRecent==='function'&&rf220PainRecent();
+ let mode=r.score<55?'light':r.score<75?'reduced':'normal';
+ const t=rf233L();
+ return {mode,pain,title:t[mode],text:t[mode+'Text']+(pain?' '+t.painText:'')};
+};
+var rf233LastEffort = function rf233LastEffort(id){try{return rf152Last(id)?.exercise?.effort||null}catch(_){return null}};
+var rf233ExerciseAdvice = function rf233ExerciseAdvice(id,decision){
+ const t=rf233L();let rec=null,last=null,base=0,effort=null;
+ try{rec=rf152Recommendation(id);last=rf152Last(id);effort=last?.exercise?.effort||null;base=last?.exercise?rf152BaseWeight(last.exercise):0;}catch(_){}
+ if(effort==='pain')return {action:'pain',label:t.pain,text:rec?.text||t.painText};
+ if(decision.mode==='light')return {action:'easy',label:t.easyStart,text:base>0?`${t.lightText} (${base} ${loadLabel(byId(id)?.loadType)} → indulj könnyebben.)`:t.lightText};
+ if(decision.mode==='reduced'&&(effort==='hard'||effort==='challenging'))return {action:'hold',label:t.hold,text:rec?.text||t.reducedText};
+ if(decision.mode==='reduced'&&rec?.action==='increase')return {action:'hold',label:t.hold,text:t.reducedText};
+ if(rec?.action==='increase')return {action:'increase',label:t.increase,text:rec.text};
+ if(rec?.action==='reps')return {action:'reps',label:t.reps,text:rec.text};
+ if(rec?.action==='hold')return {action:'hold',label:t.hold,text:rec.text};
+ if(rec?.action==='start')return {action:'start',label:t.startLoad,text:rec.text};
+ return {action:'unknown',label:t.unknown,text:rec?.text||t.unknown};
+};
+var rf233CoachPlan = function rf233CoachPlan(){
+ const readiness=rf220Readiness(),decision=rf233Decision(readiness),target=rf233TargetWorkout();
+ const ids=target.day?.exercises||[];
+ return {readiness,decision,target,exercises:ids.map(id=>({id,name:rf220ExerciseName(id),effort:rf233LastEffort(id),advice:rf233ExerciseAdvice(id,decision)}))};
+};
+var rf233SignalHtml = function rf233SignalHtml(plan){
+ const t=rf233L(),r=plan.readiness,age=rf233RecoveryAgeDays(),rows=[];
+ rows.push(`${t.sleep}: ${r.sleep==null?'—':(Math.round(r.sleep/6)/10)+' h'}`);
+ rows.push(`${t.hrv}: ${r.hrv==null?'—':Math.round(r.hrv)+' ms'}${r.hrv!=null&&r.base?` / ${Math.round(r.base)} ms`:''}`);
+ rows.push(`${t.load}: ${r.load}/100`);
+ rows.push(age==null?t.noRecovery:`${t.dataAge}: ${age===0?'ma':age+' '+t.daysOld}`);
+ return rows.map(x=>`<div class="rf233-signal">${esc(x)}</div>`).join('');
+};
+var rf233TargetTitle = function rf233TargetTitle(target){const t=rf233L();if(target.kind==='today')return t.today;if(target.kind==='next')return t.next;if(target.kind==='suggested')return t.suggested;return t.noPlan;};
+var rf233TargetSub = function rf233TargetSub(target){if(!target.day)return '';const bits=[target.program?.name||'',target.day?.name||target.day?.id||''];if(target.item?.start)bits.push(new Date(target.item.start).toLocaleString(rf233Locale(),{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}));return bits.filter(Boolean).join(' • ');};
+var rf233StartTarget = function rf233StartTarget(){const p=rf233CoachPlan(),x=p.target;if(x.kind==='today'&&x.item&&typeof startScheduledById==='function')return startScheduledById(x.item.id);if(x.kind==='suggested'&&x.day?.id)return startWorkout(x.day.id);if(x.kind==='next')return go('calendar');};
+var rf233ExerciseRows = function rf233ExerciseRows(plan){const t=rf233L();if(!plan.exercises.length)return `<p class="muted">${t.unknown}</p>`;return plan.exercises.map(x=>`<div class="card rf233-ex"><div class="rf233-exhead"><strong>${esc(x.name)}</strong><span class="badge">${esc(x.advice.label)}</span></div><div class="small muted">${esc(x.advice.text)}</div></div>`).join('');};
+var rf233CoachScreen = function rf233CoachScreen(){
+ const t=rf233L(),p=rf233CoachPlan(),r=p.readiness,target=p.target;
+ const button=target.kind==='today'?`<button class="btn block" onclick="rf233StartTarget()">${t.start}</button>`:target.kind==='next'?`<button class="btn secondary block" onclick="rf233StartTarget()">${t.calendar}</button>`:target.kind==='suggested'?`<button class="btn block" onclick="rf233StartTarget()">${t.start}</button>`:`<button class="btn secondary block" onclick="go('calendar')">${t.calendar}</button>`;
+ render(shell(`<main><button class="btn secondary" onclick="go('home')">←</button><div class="hero"><h1>${t.coach}</h1><div class="muted">${esc(p.decision.text)}</div></div><div class="card rf233-today"><div class="rf233-score"><div><small>${esc(rf220L().readiness)}</small><strong>${r.score}/100</strong></div><div><small>${esc(rf233TargetTitle(target))}</small><strong>${esc(target.day?.name||target.day?.id||'—')}</strong></div></div><p><b>${esc(p.decision.title)}</b></p><p class="small muted">${esc(rf233TargetSub(target))}</p>${button}</div><div class="card"><strong>${t.why}</strong><div class="rf233-signals">${rf233SignalHtml(p)}</div><br><button class="btn secondary block" onclick="readRecoveryHealth().then(()=>rf233CoachScreen())">${t.refresh}</button></div><div class="section">${t.exercisePlan}</div>${rf233ExerciseRows(p)}<p class="small muted">${t.approx}</p>${rf220ProgressHtml()}</main>`));
+};
+var rf233BindHome = function rf233BindHome(){
+ if(window.TrainPilotBoot?.loading)return;
+ setTimeout(()=>{
+  const main=document.querySelector('main');if(!main||main.querySelector('#rf220CoachCard'))return;
+  const p=rf233CoachPlan(),t=rf233L(),c=document.createElement('div');c.id='rf220CoachCard';c.className='card rf233-home';
+  c.innerHTML=`<strong>${t.coach}</strong><div class="rf233-homegrid"><div><span class="small muted">${esc(rf220L().readiness)}</span><b>${p.readiness.score}/100</b></div><div><span class="small muted">${esc(rf233TargetTitle(p.target))}</span><b>${esc(p.target.day?.name||p.target.day?.id||'—')}</b></div></div><p class="small">${esc(p.decision.title)} • ${esc(p.decision.text)}</p><button class="btn block" onclick="rf233CoachScreen()">${esc(rf220L().open)}</button>`;
+  const hero=main.querySelector('.hero');if(hero)hero.insertAdjacentElement('afterend',c);else main.prepend(c);
+ },0);
+};
+var rf233Css = function rf233Css(){if(document.querySelector('#rf233Css'))return;const s=document.createElement('style');s.id='rf233Css';s.textContent='.rf233-score,.rf233-homegrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.rf233-score>div,.rf233-homegrid>div{display:flex;flex-direction:column;gap:3px}.rf233-score strong{font-size:22px}.rf233-signals{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}.rf233-signal{padding:8px;border-radius:10px;background:rgba(255,255,255,.045);font-size:12px}.rf233-ex{padding:10px}.rf233-exhead{display:flex;gap:8px;justify-content:space-between;align-items:center;margin-bottom:5px}.rf233-homegrid b{font-size:14px}@media(max-width:360px){.rf233-signals{grid-template-columns:1fr}.rf233-score{grid-template-columns:1fr}}';document.head.appendChild(s);};
+/* TrainPilot 2.3.3: actionable daily Coach plan. */
+const RF233_VERSION='2.3.3';
+const RF233_I18N={
+ hu:{coach:'TrainPilot Coach',today:'Mai edzés',next:'Következő edzés',suggested:'Javasolt edzés',noPlan:'Nincs tervezett edzés',start:'Edzés indítása',calendar:'Naptár megnyitása',refresh:'Regeneráció frissítése',why:'Mi alapján?',exercisePlan:'Gyakorlatonkénti javaslat',normal:'Normál terhelés',reduced:'Kissé visszafogott terhelés',light:'Könnyített nap',normalText:'A jelenlegi adatok alapján mehet a tervezett edzés. A progresszió csak ott lépjen tovább, ahol az előző teljesítés és visszajelzés is indokolja.',reducedText:'Kezdj óvatosabban. A korábban nehéznek jelölt gyakorlatoknál tartsd a terhelést; súlyemelést csak jó bemelegítés után válassz.',lightText:'A mai jelek alapján ne erőltesd a progressziót. Könnyített edzés vagy pihenő is megfelelő választás lehet.',painText:'A közelmúltban fájdalom / kellemetlenség jelzés volt. Az érintett gyakorlatnál ne emelj terhelést.',sleep:'Alvás',hrv:'HRV',load:'Edzésterhelés',dataAge:'Regenerációs adat',daysOld:'napos',noRecovery:'Nincs friss alvás/HRV adat',hold:'Tartás',increase:'Emelhető',reps:'Ismétlés +',easyStart:'Könnyebb kezdés',pain:'Ne emelj',startLoad:'Kezdő terhelés',unknown:'Nincs elég előzmény',approx:'A Coach tájékoztató edzéstámogatás, nem orvosi értékelés.'},
+ en:{coach:'TrainPilot Coach',today:"Today's workout",next:'Next workout',suggested:'Suggested workout',noPlan:'No planned workout',start:'Start workout',calendar:'Open calendar',refresh:'Refresh recovery',why:'Why?',exercisePlan:'Exercise recommendations',normal:'Normal load',reduced:'Slightly reduced load',light:'Light day',normalText:'Current data supports the planned workout. Progress only where the previous performance and feedback support it.',reducedText:'Start more conservatively. Hold load on exercises previously marked hard; increase only after a good warm-up.',lightText:'Do not force progression today. A lighter session or rest can be appropriate.',painText:'A recent pain/discomfort flag exists. Do not increase load on the affected exercise.',sleep:'Sleep',hrv:'HRV',load:'Training load',dataAge:'Recovery data',daysOld:'days old',noRecovery:'No recent sleep/HRV data',hold:'Hold',increase:'Can increase',reps:'Reps +',easyStart:'Start lighter',pain:'Do not increase',startLoad:'Starting load',unknown:'Not enough history',approx:'Coach guidance is informational and is not medical advice.'},
+ de:{coach:'TrainPilot Coach',today:'Heutiges Training',next:'Nächstes Training',suggested:'Empfohlenes Training',noPlan:'Kein Training geplant',start:'Training starten',calendar:'Kalender öffnen',refresh:'Regeneration aktualisieren',why:'Grundlage',exercisePlan:'Empfehlung je Übung',normal:'Normale Belastung',reduced:'Etwas reduzierte Belastung',light:'Leichter Tag',normalText:'Die aktuellen Daten sprechen für das geplante Training. Progression nur dort, wo Leistung und Rückmeldung dafür sprechen.',reducedText:'Etwas vorsichtiger starten. Bei zuletzt schweren Übungen Belastung halten; nur nach gutem Aufwärmen steigern.',lightText:'Heute keine Progression erzwingen. Leichteres Training oder Pause kann passend sein.',painText:'Kürzlich wurde Schmerz/Beschwerden gemeldet. Bei der betroffenen Übung nicht steigern.',sleep:'Schlaf',hrv:'HRV',load:'Trainingsbelastung',dataAge:'Regenerationsdaten',daysOld:'Tage alt',noRecovery:'Keine aktuellen Schlaf-/HRV-Daten',hold:'Halten',increase:'Steigerbar',reps:'Wdh. +',easyStart:'Leichter starten',pain:'Nicht steigern',startLoad:'Startbelastung',unknown:'Nicht genug Verlauf',approx:'Coach-Hinweise sind informativ und keine medizinische Bewertung.'},
+ ro:{coach:'TrainPilot Coach',today:'Antrenamentul de azi',next:'Următorul antrenament',suggested:'Antrenament recomandat',noPlan:'Nu există antrenament planificat',start:'Pornește antrenamentul',calendar:'Deschide calendarul',refresh:'Actualizează recuperarea',why:'Pe ce se bazează?',exercisePlan:'Recomandări pe exerciții',normal:'Încărcare normală',reduced:'Încărcare ușor redusă',light:'Zi ușoară',normalText:'Datele actuale susțin antrenamentul planificat. Progresează doar unde performanța și feedbackul anterior justifică asta.',reducedText:'Începe mai prudent. Păstrează greutatea la exercițiile marcate anterior ca dificile; crește doar după o încălzire bună.',lightText:'Nu forța progresia azi. Un antrenament mai ușor sau odihna pot fi potrivite.',painText:'Există un semnal recent de durere/disconfort. Nu crește greutatea la exercițiul afectat.',sleep:'Somn',hrv:'HRV',load:'Încărcare',dataAge:'Date recuperare',daysOld:'zile vechi',noRecovery:'Nu există date recente de somn/HRV',hold:'Menține',increase:'Poți crește',reps:'Repetări +',easyStart:'Începe mai ușor',pain:'Nu crește',startLoad:'Greutate inițială',unknown:'Istoric insuficient',approx:'Recomandările Coach sunt informative, nu evaluare medicală.'}
+};
+
+
+rf233Css();
+rf220CoachScreen=rf233CoachScreen;
+rf220BindHome=rf233BindHome;
+
+
+// @endsection v233.js
+
+// @section v234.js
+var rf234Lang = function rf234Lang(){return typeof rf212Lang==='function'?rf212Lang():'hu'};

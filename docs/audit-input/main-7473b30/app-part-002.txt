@@ -1,0 +1,180 @@
+ cloudDriveStage=tp149T('cloud.driveBackupWait');showCloudMessage(cloudMessage);
+ return new Promise(function(resolve){cloudBackupWaiters.push(resolve);});
+};
+var releaseCloudBackup=function(){const pending=cloudBackupWaiters.splice(0);for(const resolve of pending)resolve();};
+var finishCloud = function finishCloud(){
+ cloudBusy=false;cloudActiveOperation='';cloudDriveStage='';showCloudMessage(cloudMessage);
+ // A file picker/restore can remain open after Drive maintenance finishes.
+ // Keep queued work until the backup releases its own lock.
+ if(window.TrainPilotBackupBusy)return;
+ if(calendarSyncPending){calendarSyncPending=false;void syncCalendar(false);return;}
+ if(cloudDirty){cloudDirty=false;cloudChanged();}
+};
+var initCloud = async function initCloud(){if(!isNative()||!googleBridge()?.status)return;try{const r=await googleBridge().status();cloudProfile=r.profile?JSON.parse(r.profile):null;if(state.tab==='settings')render();cloudChanged();}catch(e){showCloudMessage(e.message);}};
+var connectGoogle = async function connectGoogle(){if(cloudBusy)return;if(!isNative()){alert('A Google-kapcsolat Androidon érhető el.');return;}if(!confirm('A kiválasztott Google-fiókhoz kapcsolod a RepForge-ot? A szinkron későbbi bekapcsolása a telefon jelenlegi edzésadatait is ebbe a fiókba menti.'))return;cloudBusy=true;try{const r=await googleBridge().connect();cloudProfile=JSON.parse(r.profile);db.set('cloudPrefs',{drive:false,calendar:false});db.set('cloudStatus',{});render();alert('Google-profil kapcsolva. A Drive és a naptár engedélyét külön kérjük, a funkció bekapcsolásakor.');}catch(e){alert(e.message);}finally{finishCloud();}};
+var disconnectGoogle = async function disconnectGoogle(){if(cloudBusy){alert('Várd meg a szinkron végét.');return;}if(!confirm('Kijelentkezel? A szinkron leáll, a helyi és a Google-ban tárolt adatok megmaradnak.'))return;try{await googleBridge().disconnect();cloudProfile=null;db.set('cloudPrefs',{drive:false,calendar:false});db.set('cloudStatus',{});cloudMessage='';render();}catch(e){alert(e.message);}};
+var setCloudOption = async function setCloudOption(key,on){const p=cloudPrefs();p[key]=on;db.set('cloudPrefs',p);if(on){if(key==='drive')await syncCloud(false);else await syncCalendar(false);}};
+var cloudChanged = function cloudChanged(){
+ if(!cloudProfile||typeof setTimeout==='undefined')return;
+ if(!cloudPrefs().drive&&!cloudPrefs().calendar){cloudDirty=false;clearTimeout(cloudTimer);return;}
+ if(cloudBusy||window.TrainPilotBackupBusy){cloudDirty=true;return;}
+ clearTimeout(cloudTimer);
+ cloudTimer=setTimeout(async()=>{
+  cloudTimer=null;
+  if(cloudBusy||window.TrainPilotBackupBusy){cloudDirty=true;return;}
+  if(cloudPrefs().calendar)await syncCalendar(true);
+  // A backup can start, or connectivity can fail, while Calendar is awaiting Google.
+  if(cloudBusy||window.TrainPilotBackupBusy){cloudDirty=true;return;}
+  if(Date.now()<cloudRetryAt){cloudChanged();return;}
+  if(cloudPrefs().drive)await syncCloud(true);
+ },Math.max(1800,cloudRetryAt-Date.now()));
+};
+var canonical = function canonical(x){if(Array.isArray(x))return '['+x.map(canonical).join(',')+']';if(x&&typeof x==='object')return '{'+Object.keys(x).sort().map(k=>JSON.stringify(k)+':'+canonical(x[k])).join(',')+'}';return JSON.stringify(x);};
+var canonicalSyncData = function canonicalSyncData(d){return canonical({history:d.history,weights:d.weights,settings:d.settings,exercises:d.exercises,plan:d.plan,scheduled:d.scheduled});};
+var syncData = function syncData(){return {...makeBackup(),scheduled:scheduled()};};
+var recordKey = function recordKey(kind,x){return kind==='history'?(x.id||x.workout+'|'+x.started):kind==='weights'?(x.id||x.date):x.id;};
+var mergeSync = function mergeSync(local,remotes,base,choose){
+ const out=JSON.parse(JSON.stringify(local));
+ for(const kind of ['history','weights','scheduled']){
+  const map=new Map((local[kind]||[]).map(x=>[recordKey(kind,x),x]));
+  for(const remote of remotes)for(const x of remote[kind]||[]){const key=recordKey(kind,x),old=map.get(key);if(!old){map.set(key,x);continue;}if(canonical(old)===canonical(x))continue;
+   if(kind==='scheduled'&&(old.updatedAt||0)!==(x.updatedAt||0)){map.set(key,(old.updatedAt||0)>(x.updatedAt||0)?old:x);continue;}
+   if(kind==='history'&&typeof rf130MergeHistoryPhotos==='function'){const photoMerged=rf130MergeHistoryPhotos(old,x);if(photoMerged){map.set(key,photoMerged);continue;}}
+   map.set(key,choose(kind,old,x));
+  }out[kind]=[...map.values()].sort((a,b)=>String(b.started||b.date||b.start).localeCompare(String(a.started||a.date||a.start)));
+ }
+ for(const key of ['settings','exercises','plan']){
+  let selected=local[key];for(const remote of remotes){const x=remote[key];if(canonical(selected)===canonical(x))continue;if(base&&canonical(x)===canonical(base[key]))continue;if(base&&canonical(selected)===canonical(base[key]))selected=x;else selected=choose(key,selected,x);}out[key]=selected;
+ }return out;
+};
+var validateSync = function validateSync(d){validateBackup(d);if(!Array.isArray(d.scheduled)||d.scheduled.length>500)throw Error('Hibás tervezett edzések.');for(const p of d.scheduled)if(!p||typeof p.id!=='string'||!/^[a-z0-9-]{8,80}$/.test(p.id)||!['A','B'].includes(p.workout)||!Number.isFinite(Date.parse(p.start))||!Number.isFinite(Date.parse(p.end))||Date.parse(p.end)<=Date.parse(p.start)||typeof p.updatedAt!=='number'||!Number.isFinite(p.updatedAt)||typeof p.cancelled!=='boolean')throw Error('Hibás tervezett edzés.');return d;};
+var storeMerged = function storeMerged(d){const keys=['history','weights','settings','exercises','plan','scheduled'],old=keys.map(k=>localStorage.getItem('repforge:'+k));try{for(const k of keys)localStorage.setItem('repforge:'+k,JSON.stringify(d[k]));}catch(e){for(const k of keys)localStorage.removeItem('repforge:'+k);keys.forEach((k,i)=>{if(old[i]!=null)localStorage.setItem('repforge:'+k,old[i]);});throw Error('Nincs elég hely a szinkronadatoknak.');}};
+var syncCloud = async function syncCloud(silent=false){
+ if(cloudBusy||window.TrainPilotBackupBusy||!cloudProfile)return;if(state.session){showCloudMessage('Drive-szinkron az edzés befejezése után.');return;}if(navigator.onLine===false){showCloudMessage('Offline: a helyi adatok megvannak, a szinkron internetre vár.');return;}
+ cloudBusy=true;showCloudMessage('Drive-szinkron…');
+ try{
+  const owner=cloudProfile.sub,bridge=googleBridge(),local=validateSync(syncData()),startState=canonicalSyncData(local),files=(await bridge.driveList({silent})).files||[];
+  const latest=new Map();for(const f of files){const m=/^repforge-sync-([a-z0-9-]{36})-/.exec(f.name);if(!m)continue;const old=latest.get(m[1]);if(!old||String(f.createdTime)>String(old.createdTime))latest.set(m[1],f);}
+  const remotes=[];for(const f of [...latest.values()].sort((a,b)=>String(a.createdTime).localeCompare(String(b.createdTime)))){const snap=JSON.parse((await bridge.driveRead({id:f.id,silent})).data);if(snap.app!=='RepForgeSync'||snap.schema!==1||snap.owner!==owner)throw Error('Ismeretlen vagy más profilhoz tartozó felhőmentés.');remotes.push(validateSync(snap.data));}
+  const base=db.get('cloudBase:'+owner,null);let decision=null;
+  const choose=(key,a,b)=>{if(silent)throw Error('Eltérő adatok vannak a felhőben. Indíts kézi szinkront az egyeztetéshez.');if(decision===null)decision=confirm('Eltérő adatok vannak a telefonon és a felhőben. Az ütköző értékeknél a TELEFON változata maradjon?\nOK: telefon • Mégse: felhő. Az egyedi edzések mindkét helyről megmaradnak.');return decision?a:b;};
+  const merged=validateSync(mergeSync(local,remotes,base,choose));
+  if(typeof rf130SyncWorkoutPhotos==='function')await rf130SyncWorkoutPhotos(merged,bridge,silent);
+  if(state.session||canonicalSyncData(syncData())!==startState)throw Error('Közben változtak az adatok vagy edzés indult. Indítsd újra a szinkront.');
+  let device=db.get('cloudDevice',null);if(!device){device=crypto.randomUUID();db.set('cloudDevice',device);}
+  if(!base||canonicalSyncData(merged)!==canonicalSyncData(base)||!files.length){const r=await bridge.driveWrite({silent,data:JSON.stringify({app:'RepForgeSync',schema:1,owner,device,data:merged})});if(!r.verified)throw Error('A Drive-mentés ellenőrzése nem sikerült.');}
+  await waitForCloudBackup();
+  if(state.session||canonicalSyncData(syncData())!==startState)throw Error('Közben változtak az adatok. A helyi változásokat a következő szinkron egyesíti.');
+  storeMerged(merged);db.set('cloudBase:'+owner,merged);db.set('cloudStatus',{...db.get('cloudStatus',{}),drive:new Date().toISOString()});showCloudMessage('Drive-szinkron kész.');render();
+  if(typeof rf130DeleteSyncedPhotos==='function')await rf130DeleteSyncedPhotos(merged);
+ }catch(e){showCloudMessage(e.message);if(!silent)alert(cloudMessage);}finally{finishCloud();}
+};
+var eventId = async function eventId(key){const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(key));return 'rf'+Array.from(new Uint8Array(hash),x=>x.toString(16).padStart(2,'0')).join('');};
+var workoutDescription = function workoutDescription(h){return 'RepForge – teljesített edzés\n'+h.exercises.map(e=>e.hu+': '+e.sets.filter(s=>s.done).map(s=>formatSet(e,s)).join('; ')).join('\n');};
+var calendarEvents = async function calendarEvents(){const events=new Map();for(const p of scheduled()){const id=await eventId('plan:'+p.id);events.set(id,p.cancelled?{id,cancelled:true}:{id,summary:'RepForge – Full Body '+p.workout,description:'Tervezett edzés',start:{dateTime:p.start},end:{dateTime:p.end},reminders:{useDefault:false,overrides:[{method:'popup',minutes:30}]}});}for(const h of history()){if(!Number.isFinite(Date.parse(h.finished))||!Number.isFinite(Date.parse(h.started))||Date.parse(h.finished)<=Date.parse(h.started))continue;const id=await eventId(h.scheduleId?'plan:'+h.scheduleId:'workout:'+recordKey('history',h));events.set(id,{id,summary:'✓ RepForge – Full Body '+h.workout,description:workoutDescription(h),start:{dateTime:h.started},end:{dateTime:h.finished},reminders:{useDefault:false}});}return [...events.values()];};
+var syncCalendar = async function syncCalendar(silent=false){if(cloudBusy||window.TrainPilotBackupBusy||!cloudProfile)return;if(navigator.onLine===false){showCloudMessage('Naptárszinkron internetre vár.');return;}cloudBusy=true;try{const events=await calendarEvents();if(!events.length){showCloudMessage('Még nincs naptárba küldhető edzés.');return;}for(let i=0;i<events.length;i+=100)await googleBridge().calendarSync({silent,events:JSON.stringify(events.slice(i,i+100))});db.set('cloudStatus',{...db.get('cloudStatus',{}),calendar:new Date().toISOString()});showCloudMessage('Naptárszinkron kész.');}catch(e){showCloudMessage(e.message);if(!silent)alert(e.message);}finally{finishCloud();}};
+var calendarIntent = async function calendarIntent(index,planned=false){try{const x=planned?scheduled()[index]:history()[index];if(!x)throw Error('Nincs ilyen edzés.');const start=Date.parse(planned?x.start:x.started),end=Date.parse(planned?x.end:x.finished);if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start)throw Error('Ehhez az edzéshez nincs érvényes kezdési/befejezési idő.');if(!isNative())throw Error('A naptárgomb Androidon használható.');await nativeFiles().addCalendarEvent({title:'RepForge – Full Body '+x.workout,start,end,description:planned?'Tervezett edzés':workoutDescription(x)});alert('A naptár ablaka megnyílt. Válaszd ki a naptárat, és ott mentsd el. A kézi bejegyzés nem kapcsolódik az automatikus szinkronhoz.');}catch(e){alert(e.message);}};
+var plannerPanel = function plannerPanel(){return `<div class="setting"><label>Edzések tervezése</label><p class="small muted">Válassz kezdőnapot, időpontot és heti napokat. Az alkalmak A/B sorrendben váltakoznak.</p><label>Kezdőnap<input class="field" type="date" id="planDate"></label><label>Időpont<input class="field" type="time" id="planTime"></label><label>Időtartam (perc)<input class="field" type="number" id="planMinutes" min="10" max="240" value="45"></label><label>Hetek száma<input class="field" type="number" id="planWeeks" min="1" max="12" value="4"></label><label>Első edzés<select class="field" id="planFirst"><option>A</option><option>B</option></select></label><p>${['V','H','K','Sze','Cs','P','Szo'].map((d,i)=>`<label style="display:inline-block;margin:6px"><input type="checkbox" name="planDay" value="${i}">${d}</label>`).join('')}</p><button class="btn block" onclick="createSchedule()">Edzések megtervezése</button><br>${scheduled().map((p,i)=>p.cancelled?'':`<div class="card"><strong>Full Body ${p.workout}</strong><p>${esc(fmtDate(p.start))}${history().some(h=>h.scheduleId===p.id)?' • Teljesítve':''}</p><button class="btn secondary" onclick="calendarIntent(${i},true)">Naptárba</button> <button class="btn secondary" onclick="cancelSchedule(${i})">Törlés</button>${!history().some(h=>h.scheduleId===p.id)?` <button class="btn" onclick="startWorkout('${p.workout}','${p.id}')">Indítás</button>`:''}</div>`).join('')}</div>`;};
+var buildSchedule = function buildSchedule(date,time,days,weeks,minutes,first){
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!/^\d{2}:\d{2}$/.test(time)||!days.length||days.some(x=>!Number.isInteger(x)||x<0||x>6)||!Number.isInteger(weeks)||weeks<1||weeks>12||!Number.isInteger(minutes)||minutes<10||minutes>240||!['A','B'].includes(first))throw Error('Adj meg érvényes napot, időpontot, heti napokat és időtartamot.');
+ const start=new Date(date+'T'+time);if(!Number.isFinite(start.getTime()))throw Error('Érvénytelen dátum.');const result=[];let w=first;
+ for(let n=0;n<weeks*7;n++){const d=new Date(start);d.setDate(start.getDate()+n);if(!days.includes(d.getDay()))continue;result.push({id:crypto.randomUUID(),workout:w,start:d.toISOString(),end:new Date(d.getTime()+minutes*60000).toISOString(),updatedAt:Date.now(),cancelled:false});w=w==='A'?'B':'A';}return result;
+};
+var createSchedule = function createSchedule(){try{const next=buildSchedule($('#planDate').value,$('#planTime').value,[...document.querySelectorAll('input[name=planDay]:checked')].map(e=>Number(e.value)),Number($('#planWeeks').value),Number($('#planMinutes').value),$('#planFirst').value),current=scheduled(),unique=next.filter(x=>!current.some(p=>!p.cancelled&&p.start===x.start));if(current.length+unique.length>500)throw Error('Maximum 500 tervezett alkalom tárolható.');if(!unique.length){alert('Ezek az időpontok már szerepelnek.');return;}db.set('scheduled',[...current,...unique]);render();alert(unique.length+' edzés megtervezve. A naptárhoz használd a Naptárba gombot, vagy az automatikus naptárszinkront.');}catch(e){alert(e.message);}};
+var cancelSchedule = function cancelSchedule(i){const s=scheduled();if(!s[i]||!confirm('Törlöd ezt a tervezett alkalmat? A teljesített edzésnapló megmarad.'))return;s[i]={...s[i],cancelled:true,updatedAt:Date.now()};db.set('scheduled',s);render();};
+// Native Google authorization: access tokens never enter JavaScript or backups.
+let cloudProfile=null,cloudBusy=false,cloudMessage='',cloudTimer=null,cloudDirty=false;
+
+
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)cloudChanged();});
+
+
+// @endsection cloud.js
+
+// @section app.js
+var migrateLunge114 = function migrateLunge114(){
+ if(db.get('lunge114',false))return;
+ const saved=db.get('exercises',null);
+ if(saved)db.set('exercises',saved.map(e=>e.id==='reverse-lunge'?{...e,en:'Dumbbell Reverse Lunge',equipment:'2 kézisúlyzó',loadType:'per_hand',unit:'kg/kar',weight:e.weight>0?e.weight:5,notes:DEFAULT_EXERCISES.find(x=>x.id===e.id).notes}:e));
+ db.set('lunge114',true);
+};
+var settings = function settings(){return db.get("settings",{rest:90})};
+var exerciseMeta = function exerciseMeta(e){
+ const loadType=e.loadType || ({"db-squat":"per_hand","db-floor-press":"per_hand","db-curl":"per_hand","db-ohp":"per_hand","one-arm-row":"single_dumbbell","oh-triceps":"single_dumbbell","rdl":"total","barbell-row":"total"}[e.id]||"bodyweight");
+ const repUnit=e.repUnit || ({"one-arm-row":"/kar","reverse-lunge":"/láb","plank":"mp"}[e.id]||"ism.");
+ return {...e,loadType,repUnit,unit:loadLabel(loadType)};
+};
+var loadLabel = function loadLabel(t){return ({per_hand:"kg/kar",total:"kg összesen",single_dumbbell:"kg (1 súlyzó)",bodyweight:"testsúly"})[t]||"kg"};
+var exercises = function exercises(){return db.get("exercises",DEFAULT_EXERCISES).map(exerciseMeta)};
+var plan = function plan(){return db.get("plan",DEFAULT_PLAN)};
+function history(){return db.get("history",[])}
+var weights = function weights(){return db.get("weights",[])};
+var fmtDate = function fmtDate(s){return new Date(s).toLocaleString("hu-HU",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"})};
+var shell = function shell(content){
+return `<div>
+  <div class="top"><div class="brand">REPFORGE</div><div class="tag">offline edzésnapló • reklám nélkül</div>
+  <div class="tabs">
+  ${tab("home","Kezdőlap")}${tab("plan","Terv")}${tab("history","Napló")}${tab("weight","Testsúly")}${tab("settings","Beállítás")}
+  </div></div>${content}${state.session&&state.timer>0?timerHtml():""}</div>`};
+var tab = function tab(id,label){return `<button class="tab ${state.tab===id?"active":""}" onclick="go('${id}')">${label}</button>`};
+var go = function go(t){if(state.session && !confirm("Kilépsz a folyamatban lévő edzésből? A még el nem mentett edzés elvész."))return;if(state.session)db.set("draft",null);stopTimer();state.tab=t;state.session=null;state.workout=null;render()};
+var nextWorkout = function nextWorkout(){const h=history();return !h.length?"A":h[0].workout==="A"?"B":"A"};
+var home = function home(){
+ const h=history(), w=weights(), nw=nextWorkout();
+ const latestW=w.length?w[0].kg:"—";const draft=db.get("draft",null);
+ return shell(`<main>
+  ${draft?`<div class="card"><strong>Félbehagyott edzés</strong><p class="small muted">${esc(draft.session?.workout||"")} • folytathatod a mentett sorozatokkal.</p><button class="btn block" onclick="resumeDraft()">Edzés folytatása</button></div><br>`:""}
+  <div class="hero"><span class="badge">Következő</span><h1>FULL BODY ${nw}</h1><div class="muted">${plan()[nw].length} gyakorlat • heti 3 alkalom • saját A/B terv</div><br><button class="btn block" onclick="startWorkout('${nw}')">Edzés indítása</button></div>
+  <div class="grid2"><div class="stat"><small>Elvégzett edzések</small><strong>${h.length}</strong></div><div class="stat"><small>Legutóbbi testsúly</small><strong>${latestW}${latestW==="—"?"":" kg"}</strong></div></div>
+  <div class="section">Gyors választás</div><div class="grid2"><button class="btn secondary" onclick="showWorkout('A')">Full Body A</button><button class="btn secondary" onclick="showWorkout('B')">Full Body B</button></div>
+ </main>`)};
+var exCard = function exCard(e,i,w){return `<div class="exercise" onclick="showExercise('${w}',${i})"><div class="num">${i+1}</div><div><div class="ex-name">${esc(e.hu)}</div><div class="en">${esc(e.en)}</div><div class="meta">${e.sets} × ${esc(e.reps)} • ${e.weight?e.weight+" "+esc(e.unit):esc(e.unit)}</div></div><div class="chev">›</div></div>`};
+var planScreen = function planScreen(){
+ const p=plan();
+ return shell(`<main><div class="hero"><h1>A/B edzésterv</h1><div class="muted">1. hét: A • B • A &nbsp; | &nbsp; 2. hét: B • A • B</div></div>
+ ${["A","B"].map(w=>`<div class="section">FULL BODY ${w}</div>${p[w].map((id,i)=>exCard(byId(id),i,w)).join("")}<button class="btn secondary block" onclick="editPlan('${w}')">Terv szerkesztése</button>`).join("")}</main>`)};
+var showWorkout = function showWorkout(w){state.workout=w;state.tab="plan";render(shell(`<main><div class="hero"><h1>FULL BODY ${w}</h1><div class="muted">${plan()[w].length} gyakorlat</div></div>${plan()[w].map((id,i)=>exCard(byId(id),i,w)).join("")}<button class="btn block" onclick="startWorkout('${w}')">Edzés indítása</button></main>`))};
+var showExercise = function showExercise(w,i){const e=byId(plan()[w][i]);state.tab="plan";render(shell(`<main><button class="btn secondary" onclick="showWorkout('${w}')">← Vissza</button><br><br><div class="card detail"><h2>${esc(e.hu)}</h2><div class="en">${esc(e.en)}</div><div class="meta">${e.sets} × ${esc(e.reps)} • ${e.weight?e.weight+" "+esc(e.unit):esc(e.unit)}</div><br><span class="badge">${esc(e.target)}</span><span class="badge">${esc(e.equipment)}</span>${motionDemo(e.id)}<p class="note">${esc(e.notes)}</p></div></main>`))};
+var editPlan = function editPlan(w){
+ const p=plan(), exs=exercises();
+ render(shell(`<main><button class="btn secondary" onclick="go('plan')">← Vissza</button><div class="section">Full Body ${w} szerkesztése</div>
+ ${p[w].map((id,i)=>{const e=byId(id);return `<div class="setting">
+   <label>${i+1}. gyakorlat</label>
+   <select class="field" onchange="changePlan('${w}',${i},this.value)">${exs.map(x=>`<option value="${x.id}" ${x.id===id?"selected":""}>${esc(x.hu)} — ${esc(x.en)}</option>`).join("")}</select>
+   <div style="height:10px"></div>
+   <label>Célismétlés / időtartam</label>
+   <input class="field" value="${esc(e.reps)}" onchange="changeExerciseValue('${id}','reps',this.value)">
+   <label>Terhelés értelmezése</label>
+   <select class="field" onchange="changeExerciseValue('${id}','loadType',this.value);editPlan('${w}')">${['per_hand','total','single_dumbbell','bodyweight'].map(t=>`<option value="${t}" ${e.loadType===t?'selected':''}>${loadLabel(t)}</option>`).join('')}</select>
+   ${e.loadType!=='bodyweight'?`<label>Induló súly (${loadLabel(e.loadType)})</label><input class="field" inputmode="decimal" value="${e.weight}" onchange="changeExerciseValue('${id}','weight',this.value)">`:''}
+   <label>Sorozatok száma</label>
+   <select class="field" onchange="changeExerciseSets('${id}',this.value)">
+     ${Array.from({length:10},(_,n)=>n+1).map(n=>`<option value="${n}" ${Number(e.sets)===n?"selected":""}>${n} sorozat</option>`).join("")}
+   </select>
+   <div class="small muted" style="margin-top:7px">Az edzés indításakor pontosan ennyi sorozat jelenik meg ennél a gyakorlatnál.</div>
+ </div>`}).join("")}
+ </main>`))};
+var changePlan = function changePlan(w,i,id){const p=plan();p[w][i]=id;db.set("plan",p);editPlan(w)};
+var changeExerciseValue = function changeExerciseValue(id,key,value){
+ const exs=exercises(),e=exs.find(x=>x.id===id);if(!e)return;
+ e[key]=key==='weight'?Math.max(0,Number(String(value).replace(',','.'))||0):value;
+ db.set('exercises',exs);
+};
+var changeExerciseSets = function changeExerciseSets(id,value){
+ const exs=exercises();
+ const e=exs.find(x=>x.id===id);
+ if(!e)return;
+ e.sets=Math.max(1,Math.min(10,Number(value)||2));
+ db.set("exercises",exs);
+};
+var startWorkout = function startWorkout(w,scheduleId=null){
+ if(db.get("draft",null)&&!confirm("Új edzést indítasz? A félbehagyott edzés helyére ez kerül."))return;
+ state.workout=w;state.current=0;
+ const p=plan();
+ state.session={workout:w,...(scheduleId?{scheduleId}:{}),started:new Date().toISOString(),exercises:p[w].map(id=>{const e=byId(id);const prev=findLastExercise(id);return {id,hu:e.hu,en:e.en,loadType:e.loadType,repUnit:e.repUnit,sets:Array.from({length:e.sets},(_,i)=>({set:i+1,weight:prev?.loadType===e.loadType?(prev?.sets?.[i]?.weight??e.weight):e.weight,reps:"",done:false}))}})};
+ renderWorkout()
+};
+var findLastExercise = function findLastExercise(id){for(const h of history()){const x=h.exercises.find(e=>e.id===id);if(x)return x}return null};
+var renderWorkout = function renderWorkout(){
+ persistDraft();
+ const i=state.current,p=state.session.exercises.map(x=>x.id),e=byId(p[i]),se=state.session.exercises[i],pct=Math.round((i/p.length)*100);

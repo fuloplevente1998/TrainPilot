@@ -1,0 +1,210 @@
+ if(state.tab!=='home')return;const main=document.querySelector?.('main');if(!main||main.querySelector?.('#rf220CoachCard'))return;
+ const c=document.createElement('div');c.id='rf220CoachCard';c.className='card';const t=rf220L(),r=rf220Readiness();
+ c.innerHTML=`<strong>${t.coach}</strong><p class="small muted">${t.readiness}: <b>${r.score==null?'—':r.score+'/100'}</b> • ${t[r.level]||''}</p><button class="btn block" onclick="rf220CoachScreen()">${t.open}</button>`;
+ const hero=main.querySelector?.('.hero');if(hero)hero.insertAdjacentElement?.('afterend',c);else main.prepend?.(c);
+};
+var tp120CompactHome=function tp120CompactHome(){
+ if(state.tab!=='home')return;const main=document.querySelector?.('main');if(!main||!main.querySelector?.('#rf220CoachCard'))return;main.classList?.add?.('rf221-home');
+ const c=main.querySelector?.('#rf220CoachCard');if(c){const t=rf220L(),x=rf221T(),r=rf220Readiness();c.innerHTML=`<div class="rf221-coach-head"><strong>${t.coach}</strong><span class="badge">${r.score==null?'—':r.score+'/100'}</span></div><div class="small muted rf221-coach-line">${t[r.level]||''} • ${esc(rf220CoachText(r))}</div><div class="grid2 rf221-coach-actions"><button class="btn secondary" onclick="rf220CoachScreen()">${x.details}</button><button class="btn secondary" onclick="tp2627OpenStats()">${x.stats}</button></div>`}
+ main.querySelectorAll?.('.card')?.forEach?.(el=>{if(el===c)return;const text=String(el.textContent||'');if(/Gyors elérés|Quick access|Schnellzugriff|Acces rapid/i.test(text))el.remove?.()});
+};
+var tp120TodayCard=function tp120TodayCard(){
+ if(state.tab!=='home')return;const main=document.querySelector?.('main.rf221-home')||document.querySelector?.('main');if(!main||main.querySelector?.('#rf223Today'))return;
+ const coach=main.querySelector?.('#rf220CoachCard');if(coach)coach.insertAdjacentHTML?.('beforebegin',rf223StatusHtml());
+};
+var tp120RemoveProgramStats=function tp120RemoveProgramStats(){
+ if(state.tab!=='programs')return;const main=document.querySelector?.('main');if(!main)return;
+ main.querySelectorAll?.('button,.card,[role="button"]')?.forEach?.(el=>{const txt=String(el.textContent||'').trim(),oc=String(el.getAttribute?.('onclick')||'');if(/statsScreen\s*\(/.test(oc)||/^(Statisztikák|Statistics|Statistiken|Statistici)$/.test(txt)){const card=el.closest?.('.card');if(card&&/Gyakorlat|Exercise|Übung|Exerci/i.test(String(card.textContent||'')))el.remove?.();else if(el.tagName==='BUTTON')el.remove?.()}});
+};
+var tp120AfterRender=function tp120AfterRender(){
+ // Feedback is a separate page even when finishing a workout leaves the Home tab selected.
+ // It must not receive Home cards or the fixed Home viewport.
+ const feedback=document.querySelector?.('#app main.tp122-feedback');
+ // All DOM-affecting work is deliberately synchronous: no zero-delay legacy repaint.
+ if(state.tab==='home'&&!feedback){
+  if(typeof rf221Css==='function')rf221Css();if(typeof rf223Css==='function')rf223Css();
+  tp120BindCoach();tp120CompactHome();tp120TodayCard();if(typeof rf251RepairHomeCoach==='function')rf251RepairHomeCoach();tp120BindWeightShortcuts();
+ }
+ if(state.tab==='programs')tp120RemoveProgramStats();
+ if(state.tab==='health')tp120BindWeightShortcuts();
+ if(typeof rf260SplitStickyHeader==='function')rf260SplitStickyHeader();
+ if(typeof rf260UpdateViewClasses==='function')rf260UpdateViewClasses();
+ if(typeof rf260TrimHome==='function')rf260TrimHome();
+ if(typeof rf260EnhanceSelects==='function')rf260EnhanceSelects();
+ if(typeof rf260EnhanceTemporalFields==='function')rf260EnhanceTemporalFields();
+ if(typeof rf252ApplyButtonHierarchy==='function')rf252ApplyButtonHierarchy(document);
+ if(typeof rf260EnhanceActiveStates==='function')rf260EnhanceActiveStates();
+};
+
+// Data arriving asynchronously may refresh the page behind a panel, but must
+// not replace an unfinished editor or restart an active workout view.
+var tpUIRefreshDepth=0;
+var tpRefreshDataUI=function(){
+ if(document.hidden||window.TrainPilotBoot?.loading||window.TrainPilotBackupBusy||state.session)return;
+ if(state.tab==='profile'||state.workout||document.querySelector('#app main.tp150-quick-picker,#app main.tp151-quick-config,#app main.tp128-preview'))return;
+ const focused=document.activeElement;
+ if(focused?.closest?.('#app')&&focused.matches?.('input,textarea,select,[contenteditable="true"]'))return;
+ // A saved workout is an expanded view, not a separate route. Remember its
+ // identity and disclosures before asynchronous data replaces the journal.
+ // Keys survive a newly synced workout being inserted ahead of the open row.
+ if(state.tab==='history'&&(state.rf151HistoryEdit||state.tp3HistoryExerciseEdit))return;
+ const journal=state.tab==='history'?[...document.querySelectorAll('#app details[data-tp152-history-key]')].map(el=>({
+  key:el.dataset.tp152HistoryKey,open:el.open,
+  collapsed:el.querySelector('.rf-history-health-panel')?.classList.contains('collapsed'),
+  nested:[...el.querySelectorAll('details')].map(d=>d.open),top:el.getBoundingClientRect().top
+ })):[];
+ // An expanded page section can contain a draft even after its input loses
+ // focus. Import data normally, but defer whole-page replacement while the
+ // user reads or edits it. The default active-program banner is not an editor.
+ // Saved workouts use the keyed restoration below so their metrics can update.
+ if(!journal.length&&[...document.querySelectorAll('#app main details[open]:not(.tp152-active-program),#app main [aria-expanded="true"]')].some(el=>
+  el.getClientRects().length&&!el.parentElement?.closest('details:not([open]),[hidden]')))return;
+ const anchor=journal.find(row=>row.open),scroll=window.scrollY;
+ if(journal.length)state.tp3HistoryOpenKey=anchor?.key||null;
+ tpUIRefreshDepth++;
+ try{
+  if(rf245CoachVisible&&!document.getElementById('tp155R4PanelHost'))rf233CoachScreen();else render();
+  for(const el of document.querySelectorAll('#app details[data-tp152-history-key]')){
+   const saved=journal.find(row=>row.key===el.dataset.tp152HistoryKey);if(!saved)continue;
+   el.open=saved.open;
+   if(saved.open)window.tp3EnsureHistoryBody?.(el,rf142FindHistoryIndex(saved.key),saved.key);
+   const panel=el.querySelector('.rf-history-health-panel');
+   if(panel){panel.classList.toggle('collapsed',!!saved.collapsed);panel.querySelector('.rf-history-health-toggle')?.setAttribute('aria-expanded',String(!saved.collapsed));const body=panel.querySelector('.rf-history-health-body');if(body)body.hidden=!!saved.collapsed;}
+   el.querySelectorAll('details').forEach((d,i)=>{if(i<saved.nested.length)d.open=saved.nested[i]});
+  }
+  if(journal.length){
+   const el=anchor&&[...document.querySelectorAll('#app details[data-tp152-history-key]')].find(el=>el.dataset.tp152HistoryKey===anchor.key);
+   window.scrollTo(0,el?window.scrollY+el.getBoundingClientRect().top-anchor.top:scroll);
+  }
+ }
+ finally{tpUIRefreshDepth--;}
+};
+window.TrainPilotUIRefresh={refresh:tpRefreshDataUI,isBackground:()=>tpUIRefreshDepth>0};
+
+// Final direct renderer. One route => one #app innerHTML write; no historical render wrappers.
+render=function(custom){
+ if(window.TrainPilotBoot?.loading)return;
+ if(typeof closeDemo==='function')closeDemo();
+ const root=document.querySelector('#app');if(!root)return;
+ if(custom!=null){root.innerHTML=String(custom);tp120AfterRender();return;}
+ if(state.tab==='profile')return profileScreen();
+ if(state.tab==='stats')return rf221StatsScreen();
+ if(state.tab==='health'){if(typeof rf225HealthPage!=='undefined'&&rf225HealthPage==='weight')return rf215WeightScreen();return rf263HealthHub()}
+ let html='';
+ if(state.tab==='home')html=home();
+ else if(state.tab==='plan')html=planScreen();
+ else if(state.tab==='calendar')html=calendarScreen();
+ else if(state.tab==='programs')html=programsScreen();
+ else if(state.tab==='history')html=historyScreen();
+ else html=settingsScreen();
+ root.innerHTML=html;tp120AfterRender();
+};
+
+// Final direct router. No route-mask and no nested go() wrapper chain.
+go=function(route){
+ const key=String(route||'home'),target=RF253_CORE_ROUTES?.[key]||key;
+ const navigate=()=>{
+  if(typeof stopTimer==='function')stopTimer();
+  if(typeof rf245CoachVisible!=='undefined')rf245CoachVisible=false;
+  state.healthView=false;
+  if(target==='health'&&typeof rf225HealthPage!=='undefined')rf225HealthPage='hub';
+  if(target==='weight')return rf215WeightScreen();
+  if(target==='coach')return rf220CoachScreen();
+  if(target==='progress')return tp2627OpenStats();
+  state.tab=target;state.session=null;state.workout=null;render();
+  window.scrollTo?.(0,0);if(typeof rf260ScrollState==='function')rf260ScrollState();
+ };
+ if(state.session){tp2628Confirm('Kilépsz a folyamatban lévő edzésből? A mentett vázlat megmarad, később folytathatod.',{title:'Edzés elhagyása',confirmText:'Kilépés',danger:true}).then(ok=>{if(ok)navigate()});return;}
+ return navigate();
+};
+window.TrainPilotNavigate=go;
+
+// Manual and automatic Health repaint boundary without another wrapper layer.
+rf245Paint=function rf245Paint(){
+ if(rf110AutoHealthFlight&&!rf250ActiveManual)return;
+ tpRefreshDataUI();
+};
+
+
+// Workout rendering stays visually atomic: base workout HTML, feedback and stopwatch all in one task.
+if(typeof rf152RenderWorkout==='function')renderWorkout=function(){
+ rf152RenderWorkout();if(!state.session)return;const e=state.session.exercises?.[state.current],main=document.querySelector?.('main');
+ if(e&&main&&!document.querySelector?.('#rf152Feedback')){const nav=[...main.querySelectorAll?.('button')||[]].find(b=>/Következő gyakorlat|Edzés befejezése/.test(String(b.textContent||'')));if(nav){const wrap=document.createElement('div');wrap.innerHTML=rf152FeedbackHtml(e);if(wrap.firstElementChild)nav.parentNode?.insertBefore?.(wrap.firstElementChild,nav)}}
+ rf110DecorateTimedWorkout();tp120AfterRender();
+};
+
+// No 1.1.2 route masking survives into 1.2.
+document.documentElement.classList?.remove?.('tp-route-switching');
+document.getElementById?.('rf112PaintGuard')?.remove?.();
+document.title='TrainPilot';
+
+// @endsection trainpilot-120-clean-runtime.js
+
+
+// @section trainpilot-130-workout-photos.js
+/* TrainPilot 1.3.0: private workout photos, lazy previews and Drive appDataFolder file sync. */
+const TP130_VERSION='1.3.1';
+var rf130PhotoPlugin = function rf130PhotoPlugin(){return window.Capacitor?.Plugins?.WorkoutPhotos||window.Capacitor?.registerPlugin?.('WorkoutPhotos')||null;};
+
+var rf130PhotoLabelText = function rf130PhotoLabelText(label){return ({before:'Edzés előtt',after:'Edzés után',other:'Egyéb'})[label]||'Fotó';};
+var rf130WorkoutByKey = function rf130WorkoutByKey(key){const h=history(),i=h.findIndex(x=>rf142WorkoutKey(x)===key);return {h,i,x:i>=0?h[i]:null};};
+var rf130VisiblePhotos = function rf130VisiblePhotos(x){return (x?.photos||[]).filter(p=>p&&p.id&&!p.deletedAt);};
+var rf130MergeHistoryPhotos = function rf130MergeHistoryPhotos(a,b){
+ if(!a||!b)return null;const ac=JSON.parse(JSON.stringify(a)),bc=JSON.parse(JSON.stringify(b));delete ac.photos;delete bc.photos;if(canonical(ac)!==canonical(bc))return null;
+ const map=new Map();for(const src of [a,b])for(const p of src.photos||[]){if(!p?.id)continue;const old=map.get(p.id);if(!old){map.set(p.id,JSON.parse(JSON.stringify(p)));continue;}const newer=(Number(p.updatedAt)||0)>=(Number(old.updatedAt)||0)?p:old,merged={...old,...p,...newer};merged.driveFileId=p.driveFileId||old.driveFileId||null;merged.deletedAt=[p.deletedAt,old.deletedAt].filter(Boolean).sort().pop()||null;merged.updatedAt=Math.max(Number(p.updatedAt)||0,Number(old.updatedAt)||0);map.set(p.id,merged);}
+ return {...a,photos:[...map.values()].sort((x,y)=>String(x.createdAt||'').localeCompare(String(y.createdAt||'')))};
+};
+var rf130SyncWorkoutPhotos = async function rf130SyncWorkoutPhotos(data,bridge,silent){
+ const native=rf130PhotoPlugin();if(!native||!bridge?.drivePhotoWrite)return data;let touched=false;
+ for(const h of data.history||[])for(const p of h.photos||[]){if(!p?.id)continue;
+  if(p.deletedAt){if(p.driveFileId&&bridge.drivePhotoDelete){await bridge.drivePhotoDelete({id:p.driveFileId,photoId:p.id,silent});p.driveFileId=null;p.updatedAt=Date.now();touched=true}continue;}
+  if(!p.driveFileId){let exists=false;try{exists=!!(await native.exists({id:p.id})).exists}catch(_){}if(exists){const r=await bridge.drivePhotoWrite({photoId:p.id,silent});if(!r?.verified||!r?.id)throw Error('A naplófotó Drive-mentése nem ellenőrizhető.');p.driveFileId=r.id;p.updatedAt=Date.now();touched=true;}}
+ }
+ if(touched)data.history=[...(data.history||[])];return data;
+};
+// Remove files only after their tombstones are committed locally. A concurrent ZIP
+// either reserves the old dataset before that commit or excludes the deleted photos.
+var rf130DeleteSyncedPhotos=async function(data){
+ const native=rf130PhotoPlugin();if(!native?.delete)return;
+ for(const h of data.history||[])for(const p of h.photos||[])if(p?.id&&p.deletedAt){try{await native.delete({id:p.id});}catch(_){}}
+};
+let rf130PhotoTarget=null,rf130PhotoLabel='after';
+var rf130ClosePhotoModal = function rf130ClosePhotoModal(){document.getElementById('rf130PhotoModal')?.remove();rf130PhotoTarget=null;};
+var rf130SetPhotoLabel = function rf130SetPhotoLabel(label){if(!['before','after','other'].includes(label))return;rf130PhotoLabel=label;document.querySelectorAll('#rf130PhotoModal [data-rf130-label]').forEach(b=>{const on=b.dataset.rf130Label===label;b.classList.toggle('active',on);b.setAttribute('aria-pressed',on?'true':'false');});};
+var rf130OpenAddPhoto = function rf130OpenAddPhoto(key){
+ if(!isNative()){alert('A naplófotó Androidon érhető el.');return;}rf130ClosePhotoModal();rf130PhotoTarget=key;rf130PhotoLabel='after';const modal=document.createElement('div');modal.id='rf130PhotoModal';modal.className='video-modal';modal.innerHTML=`<div class="video-dialog rf130-photo-dialog" role="dialog" aria-modal="true" aria-label="Fotó hozzáadása"><button type="button" class="btn secondary" data-rf130-action="close">✕ Bezárás</button><h2>Fotó hozzáadása</h2><p class="small muted">A kép privát app-tárhelyre kerül, legfeljebb 1600 px hosszú oldallal. Az újramentés eltávolítja az eredeti EXIF/GPS metaadatot.</p><div class="rf130-labels"><button type="button" class="btn secondary" data-rf130-label="before" aria-pressed="false">Edzés előtt</button><button type="button" class="btn secondary active" data-rf130-label="after" aria-pressed="true">Edzés után</button><button type="button" class="btn secondary" data-rf130-label="other" aria-pressed="false">Egyéb</button></div><br><div class="grid2"><button type="button" class="btn block" data-rf130-source="capture">Kamera</button><button type="button" class="btn secondary block" data-rf130-source="pick">Kiválasztás</button></div><p class="small muted" data-rf130-status aria-live="polite"></p></div>`;document.body.appendChild(modal);rf130SetPhotoLabel(rf130PhotoLabel);modal.addEventListener('click',e=>{const b=e.target?.closest?.('button');if(!b||!modal.contains(b))return;if(b.dataset.rf130Action==='close'){rf130ClosePhotoModal();return;}if(b.dataset.rf130Label){rf130SetPhotoLabel(b.dataset.rf130Label);return;}if(b.dataset.rf130Source){e.preventDefault();rf130AcquirePhoto(b.dataset.rf130Source);}});modal.querySelector('button')?.focus();
+};
+var rf130AcquirePhoto = async function rf130AcquirePhoto(source){
+ const key=rf130PhotoTarget,storage=rf130PhotoPlugin();
+ if(!key||!storage){alert('A fotókezelő nem érhető el.');return;}
+ const modal=document.getElementById('rf130PhotoModal'),buttons=[...(modal?.querySelectorAll?.('[data-rf130-source]')||[])],status=modal?.querySelector?.('[data-rf130-status]');
+ buttons.forEach(b=>b.disabled=true);if(status)status.textContent=source==='capture'?'Kamera megnyitása…':'Képválasztó megnyitása…';
+ try{
+  const r=source==='capture'?await storage.capture():await storage.pick();
+  if(r?.cancelled){if(status)status.textContent='Művelet megszakítva.';return;}
+  if(!r?.id)throw Error('A fotó mentése nem sikerült.');
+  const q=rf130WorkoutByKey(key);if(!q.x)throw Error('Az edzés nem található.');
+  const now=new Date().toISOString(),photo={id:r.id,label:rf130PhotoLabel,createdAt:now,updatedAt:Date.now(),mimeType:'image/jpeg',width:r.width||null,height:r.height||null,bytes:r.bytes||null,driveFileId:null,deletedAt:null};
+  q.x.photos=[...(q.x.photos||[]),photo];db.set('history',q.h);rf130ClosePhotoModal();cloudChanged();render();window.TrainPilotFeedback?.saved();
+ }catch(e){
+  const msg=String(e?.message||e||'');
+  if(/cancel|canceled|cancelled|megszak/i.test(msg)){if(status)status.textContent='Művelet megszakítva.';return;}
+  if(status)status.textContent='A fotóművelet nem sikerült.';alert(msg||'A fotó hozzáadása nem sikerült.');
+ }finally{buttons.forEach(b=>b.disabled=false);}
+};
+var rf130FindPhoto = function rf130FindPhoto(key,id){const q=rf130WorkoutByKey(key),p=q.x?.photos?.find(x=>x.id===id);return {...q,p};};
+var rf130LoadPhotoPreview = async function rf130LoadPhotoPreview(host,id){if(!host||host.dataset.loaded==='1')return;host.dataset.loaded='1';try{const r=await rf130PhotoPlugin()?.read?.({id,maxPx:480});if(r?.dataUrl)host.innerHTML=`<img src="${r.dataUrl}" alt="Naplófotó">`;}catch(_){host.dataset.loaded='0';host.classList.add('rf130-cloud-only');}};
+var rf130LoadHistoryPhotos = function rf130LoadHistoryPhotos(details){if(!details?.open)return;details.querySelectorAll?.('[data-rf130-photo-id]')?.forEach?.(el=>rf130LoadPhotoPreview(el,el.dataset.rf130PhotoId));};
+var rf130ShowPhoto = async function rf130ShowPhoto(key,id){
+ const q=rf130FindPhoto(key,id);if(!q.p||q.p.deletedAt)return;const plugin=rf130PhotoPlugin();if(!plugin){alert('A fotókezelő nem érhető el.');return;}let r=null;try{r=await plugin.read({id,maxPx:1600})}catch(_){if(q.p.driveFileId&&cloudProfile&&googleBridge()?.drivePhotoRead&&navigator.onLine!==false){try{showCloudMessage('Naplófotó letöltése…');await googleBridge().drivePhotoRead({id:q.p.driveFileId,photoId:id,silent:false});r=await plugin.read({id,maxPx:1600});showCloudMessage('Naplófotó letöltve.')}catch(e){alert(e?.message||'A Drive-fotó nem tölthető le.');return}}else{alert(q.p.driveFileId?'A fotó a Drive-ban van. Kapcsold a Google-fiókot és legyen internetkapcsolat.':'A fotófájl nincs ezen a készüléken.');return}}
+ if(!r?.dataUrl)return;rf130ClosePhotoModal();const modal=document.createElement('div');modal.id='rf130PhotoModal';modal.className='video-modal';modal.innerHTML=`<div class="video-dialog rf130-photo-view" role="dialog" aria-modal="true"><button class="btn secondary" onclick="rf130ClosePhotoModal()">✕ Bezárás</button><h2>${esc(rf130PhotoLabelText(q.p.label))}</h2><img src="${r.dataUrl}" alt="${esc(rf130PhotoLabelText(q.p.label))}"><p class="small muted">${esc(fmtDate(q.p.createdAt))}${q.p.driveFileId?' • Drive mentve':''}</p></div>`;document.body.appendChild(modal);modal.querySelector('button')?.focus();
+};
+var rf130DeletePhoto = async function rf130DeletePhoto(key,id){
+ const q=rf130FindPhoto(key,id);if(!q.p||q.p.deletedAt)return;if(!confirm('Törlöd ezt a naplófotót? A következő Drive-szinkron a felhőből is eltávolítja.'))return;try{await rf130PhotoPlugin()?.delete?.({id})}catch(_){}q.p.deletedAt=new Date().toISOString();q.p.updatedAt=Date.now();db.set('history',q.h);cloudChanged();render();window.TrainPilotFeedback?.deleted();
+};
+var rf130PhotoSection = function rf130PhotoSection(x,key){const photos=rf130VisiblePhotos(x);return `<div class="rf130-photo-section"><div class="rf130-photo-head"><strong>Edzésfotók</strong><button class="btn secondary" type="button" onclick="rf130OpenAddPhoto('${esc(key)}')">＋ Fotó hozzáadása</button></div>${photos.length?`<div class="rf130-photo-grid">${photos.map(p=>`<div class="rf130-photo-card"><button class="rf130-photo-preview" data-rf130-photo-id="${esc(p.id)}" onclick="rf130ShowPhoto('${esc(key)}','${esc(p.id)}')"><span>${p.driveFileId?'☁':'▣'} ${esc(rf130PhotoLabelText(p.label))}</span></button><div class="small muted">${esc(fmtDate(p.createdAt))}${p.driveFileId?' • Drive':''}</div><button class="btn secondary block" onclick="rf130DeletePhoto('${esc(key)}','${esc(p.id)}')">Törlés</button></div>`).join('')}</div>`:'<p class="small muted">Ehhez az edzéshez még nincs fotó.</p>'}</div>`;};
+rf263HistoryItem=function(x,originalIndex,visibleIndex){
+ const c=completedSets(x),title=x.programName?`${x.programName} • ${x.dayId||x.workout}`:`Full Body ${x.workout}`,key=rf142WorkoutKey(x),photoCount=rf130VisiblePhotos(x).length;
+ return `<details class="history rf263-history rf103-history" ontoggle="if(this.open){rf130LoadHistoryPhotos(this);rfHistoryHealthEnsure(${originalIndex})}"><summary><div class="history-head"><div class="history-title-row"><div><div class="history-title">${esc(title)}</div><div class="history-date">${fmtDate(x.started)}</div></div><div class="rf103-history-side"><span class="badge">${x.exercises.length} gyakorlat${photoCount?` • ${photoCount} fotó`:''}</span><span class="rf103-history-chevron" aria-hidden="true">⌄</span></div></div><div class="history-badges"><span class="history-badge">⏱ ${sessionDuration(x)}</span><span class="history-badge">✓ ${c.done}/${c.total} sorozat</span></div></div></summary><div class="history-body"><div class="grid2"><button class="btn secondary" onclick="editHistoryWorkout('${esc(key)}')">Edzés módosítása</button><button class="btn secondary" onclick="calendarIntent(${originalIndex})">Naptárhoz adás</button></div><div class="rf-history-health-panel" data-rf-history-health-panel="${originalIndex}"><button type="button" class="rf-history-health-toggle" aria-expanded="true" onclick="event.stopPropagation();rfHistoryHealthToggle(${originalIndex})"><strong>Health adatok</strong><span class="small muted">${esc(rfHistoryHealthWindow(x))}</span><span class="rf-history-health-chevron" aria-hidden="true">⌄</span></button><div class="rf-history-health-body"><div class="rf-history-health" data-rf-history-health="${originalIndex}">${rfHistoryHealthHtml(originalIndex)}</div><button type="button" class="btn secondary block rf-history-health-refresh" onclick="event.stopPropagation();healthFromHistory(${originalIndex})">Frissítés</button></div></div>${rf130PhotoSection(x,key)}${x.exercises.map(e=>`<div class="history-ex"><div class="history-ex-name">${esc(e.hu)}</div><div class="en">${esc(e.en||'')}</div><div class="history-setchips">${(e.sets||[]).map(s=>`<span class="setchip">${esc(formatSet(e,s))}${s.done?' ✓':' • nincs kész'}</span>`).join('')}</div></div>`).join('')}</div></details>`;
+};
+

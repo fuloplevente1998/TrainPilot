@@ -1,0 +1,207 @@
+  classicTeal:{hu:'Türkiz',en:'Teal',de:'Türkis',ro:'Turcoaz',sk:'Tyrkysová',pl:'Turkusowy'},
+  classicRose:{hu:'Rózsaszín',en:'Rose',de:'Rosé',ro:'Roz',sk:'Ružová',pl:'Różowy'},
+  classicAmber:{hu:'Arany',en:'Amber',de:'Bernstein',ro:'Chihlimbar',sk:'Jantárová',pl:'Bursztynowy'},
+  classicCyan:{hu:'Cián',en:'Cyan',de:'Cyan',ro:'Cian',sk:'Azúrová',pl:'Cyjan'}
+ });
+
+ // One-tap language selector: no outer accordion and no redundant system-language help.
+ rf212LanguagePanel=function(){
+  const cur=rf212LangSetting(),labels={system:tp1511T('system'),hu:'Magyar',en:'English',de:'Deutsch',ro:'Română',sk:'Slovenčina',pl:'Polski'};
+  return '<div class="setting rf212-language tp1511-card tp155-language-direct"><div class="tp1511-head tp155-language-head"><b>'+(TP1511_FLAGS[cur]||'🌐')+'</b><div class="tp155-language-copy"><strong>'+esc(tp1511T('lang'))+'</strong><select class="field tp1511-lang tp155-language-select" aria-label="'+esc(tp1511T('lang'))+'" onchange="rf212SetLang(this.value)">'+Object.keys(TP1511_FLAGS).map(function(k){return '<option value="'+k+'" '+(cur===k?'selected':'')+'>'+(TP1511_FLAGS[k]||'')+' '+esc(labels[k]||k)+'</option>'}).join('')+'</select></div></div></div>';
+ };
+
+ // Journal: one expandable inline calendar for an exact-date filter.
+ const TP155_R3_COPY={
+  hu:{filter:'Szűrő dátum szerint',clear:'Szűrő törlése',today:'Ma'},
+  en:{filter:'Filter by date',clear:'Clear filter',today:'Today'},
+  de:{filter:'Nach Datum filtern',clear:'Filter löschen',today:'Heute'},
+  ro:{filter:'Filtrare după dată',clear:'Șterge filtrul',today:'Astăzi'},
+  sk:{filter:'Filtrovať podľa dátumu',clear:'Zrušiť filter',today:'Dnes'},
+  pl:{filter:'Filtruj według daty',clear:'Wyczyść filtr',today:'Dzisiaj'}
+ };
+ var tp155R3Copy=function(){const l=typeof rf212Lang==='function'?rf212Lang():'hu';return TP155_R3_COPY[l]||TP155_R3_COPY.hu};
+ var tp155JournalLocale=function(){try{return typeof rf233Locale==='function'?rf233Locale():'hu-HU'}catch(_){return 'hu-HU'}};
+ var tp155JournalSelected=function(){return rf263HistoryFilter.from&&rf263HistoryFilter.from===rf263HistoryFilter.to?rf263HistoryFilter.from:''};
+ var tp155JournalMonthStart=function(){
+  const selected=rf263ParseDate(tp155JournalSelected()),stored=rf263ParseDate(state.tp155JournalMonth||'');
+  const d=stored||selected||new Date();return new Date(d.getFullYear(),d.getMonth(),1,12);
+ };
+ var tp155JournalStoreMonth=function(d){state.tp155JournalMonth=rf263DateKey(new Date(d.getFullYear(),d.getMonth(),1,12))};
+ window.tp155JournalFilterToggle=function(el){state.tp155JournalFilterOpen=!!el?.open};
+ window.tp155JournalMoveMonth=function(delta){
+  const m=tp155JournalMonthStart(),next=new Date(m.getFullYear(),m.getMonth()+Number(delta||0),1,12);tp155JournalStoreMonth(next);state.tp155JournalFilterOpen=true;render(historyScreen());
+ };
+ window.tp155JournalSetMonth=function(value,open=true){
+  const d=rf263ParseDate(value);if(!d)return;tp155JournalStoreMonth(d);state.tp155JournalFilterOpen=!!open;render(historyScreen());
+ };
+ window.tp155JournalPickDate=function(value){
+  if(value&&!rf263ParseDate(value))return;
+  rf263HistoryFilter={from:value||'',to:value||''};state.tp155JournalFilterOpen=false;
+  if(value){const d=rf263ParseDate(value);tp155JournalStoreMonth(d)}
+  render(historyScreen());
+ };
+ rf263ClearHistoryFilter=function(){rf263HistoryFilter={from:'',to:''};state.tp155JournalFilterOpen=false;delete state.tp155JournalMonth;render(historyScreen())};
+ var tp155JournalCalendarHtml=function(){
+  const c=tp155R3Copy(),m=tp155JournalMonthStart(),y=m.getFullYear(),mo=m.getMonth(),selected=tp155JournalSelected(),today=rf263DateKey(new Date()),locale=tp155JournalLocale();
+  const first=(new Date(y,mo,1,12).getDay()+6)%7,count=new Date(y,mo+1,0,12).getDate();
+  let days='<span aria-hidden="true"></span>'.repeat(first);
+  for(let d=1;d<=count;d++){
+   const date=new Date(y,mo,d,12),value=rf263DateKey(date);
+   days+='<button type="button" class="tp155-journal-day" data-date="'+value+'" aria-label="'+esc(date.toLocaleDateString(locale,{year:'numeric',month:'long',day:'numeric',weekday:'long'}))+'" aria-pressed="'+(value===selected?'true':'false')+'" '+(value===today?'aria-current="date"':'')+' onclick="event.preventDefault();event.stopPropagation();tp155JournalPickDate(\''+value+'\')">'+d+'</button>';
+  }
+  return '<div class="tp155-journal-calendar"><div class="tp155-journal-month"><button type="button" class="btn secondary" onclick="event.preventDefault();event.stopPropagation();tp155JournalMoveMonth(-1)">‹</button><strong>'+esc(m.toLocaleDateString(locale,{year:'numeric',month:'long'}))+'</strong><button type="button" class="btn secondary" onclick="event.preventDefault();event.stopPropagation();tp155JournalMoveMonth(1)">›</button></div><div class="tp155-journal-week" aria-hidden="true">'+['H','K','Sze','Cs','P','Szo','V'].map(function(x){return '<span>'+x+'</span>'}).join('')+'</div><div class="tp155-journal-days">'+days+'</div><div class="tp155-journal-actions"><button type="button" class="btn secondary" onclick="event.preventDefault();event.stopPropagation();rf263ClearHistoryFilter()" '+(selected?'':'disabled')+'>'+esc(c.clear)+'</button><button type="button" class="btn secondary" onclick="event.preventDefault();event.stopPropagation();tp155JournalPickDate(\''+today+'\')">'+esc(c.today)+'</button></div></div>';
+ };
+ historyScreen=function(){
+  const all=history(),filtered=rf263FilteredHistory(),selected=tp155JournalSelected(),c=tp155R3Copy(),locale=tp155JournalLocale(),selectedLabel=selected?rf263ParseDate(selected).toLocaleDateString(locale):'';
+  const filter='<details class="card tp155-journal-filter" '+(state.tp155JournalFilterOpen?'open':'')+' ontoggle="tp155JournalFilterToggle(this)"><summary><div><strong>'+esc(c.filter)+'</strong>'+(selectedLabel?'<span class="small muted">'+esc(selectedLabel)+'</span>':'')+'</div><span class="tp152-chevron" aria-hidden="true">⌄</span></summary>'+tp155JournalCalendarHtml()+'</details><p class="small muted rf263-history-count">'+esc(tp149T('journal.count',{shown:filtered.length,total:all.length}))+'</p>';
+  const rows=filtered.length?filtered.map(function(row,i){return rf263HistoryItem(row.x,row.index,i)}).join(''):(all.length?'<div class="card muted">'+esc(tp149T('journal.noneRange'))+'</div>':'<div class="muted">'+esc(tp149T('journal.none'))+'</div>');
+  return shell('<main class="tp150-journal-compact">'+filter+rows+'</main>');
+ };
+
+ // Time selector: scrollable lists, always opens upward from the trigger, blurred content behind it.
+ window.tp155R3SetTime=function(part,value,button){
+  rf260TemporalSetTime(part,Number(value),button);
+  const p=rf260TemporalPicker,b=document.getElementById('tp155R3TimeSave');if(b&&p)b.textContent=rf260TemporalText().save+' • '+String(p.hour).padStart(2,'0')+':'+String(p.minute).padStart(2,'0');
+ };
+ rf260TemporalPaintTime=function(){
+  const p=rf260TemporalPicker;if(!p)return;const t=rf260TemporalText(),hours=Array.from({length:24},function(_,i){return '<button type="button" class="tp155-time-option" data-tp-hour="'+i+'" aria-pressed="'+(i===p.hour?'true':'false')+'" onclick="tp155R3SetTime(\'hour\','+i+',this)">'+String(i).padStart(2,'0')+'</button>'}).join(''),mins=Array.from({length:60},function(_,i){return '<button type="button" class="tp155-time-option" data-tp-minute="'+i+'" aria-pressed="'+(i===p.minute?'true':'false')+'" onclick="tp155R3SetTime(\'minute\','+i+',this)">'+String(i).padStart(2,'0')+'</button>'}).join('');
+  p.modal.classList.add('tp155-time-upward');
+  p.modal.innerHTML='<div class="tp-modal-card tp-temporal-card tp155-time-card" onclick="event.stopPropagation()"><div class="tp-modal-head"><h2 id="tpTemporalTitle">'+esc(p.type==='datetime-local'?t.datetime:t.time)+'</h2><button type="button" class="btn secondary tp-modal-close" aria-label="'+esc(t.cancel)+'" onclick="rf260TemporalClose()">×</button></div>'+(p.type==='datetime-local'?'<button type="button" class="btn secondary block tp-temporal-back" onclick="rf260TemporalPicker.stage=\'date\';rf260TemporalPaintDate()">← '+esc(t.back)+'</button>':'')+'<div class="tp155-time-head"><strong>'+esc(t.hour)+'</strong><strong>'+esc(t.minute)+'</strong></div><div class="tp155-time-lists"><div class="tp155-time-list">'+hours+'</div><div class="tp155-time-list">'+mins+'</div></div><div class="tp-temporal-actions"><button type="button" class="btn secondary" onclick="rf260TemporalClose()">'+esc(t.cancel)+'</button><button id="tp155R3TimeSave" type="button" class="btn" onclick="rf260TemporalSaveTime()">'+esc(t.save)+' • '+String(p.hour).padStart(2,'0')+':'+String(p.minute).padStart(2,'0')+'</button></div></div>';
+  requestAnimationFrame(function(){const h=p.modal.querySelector('[data-tp-hour][aria-pressed="true"]'),m=p.modal.querySelector('[data-tp-minute][aria-pressed="true"]');h?.scrollIntoView?.({block:'center'});m?.scrollIntoView?.({block:'center'});tp152PositionTemporal()});
+ };
+ tp152PositionTemporal=function(){
+  const p=rf260TemporalPicker,card=p?.modal?.querySelector?.('.tp155-time-card,.tp152-time-card');if(!p||!card)return;const r=p.trigger?.getBoundingClientRect?.();if(!r)return;
+  const gap=8,w=Math.min(380,Math.max(260,innerWidth-24)),maxH=Math.max(240,Math.min(innerHeight-24,620));
+  card.style.width=w+'px';card.style.maxHeight=maxH+'px';card.style.overflowY='auto';card.style.position='fixed';card.style.margin='0';
+  const left=Math.max(12,Math.min(innerWidth-w-12,r.left+r.width/2-w/2));card.style.left=left+'px';
+  const h=Math.min(card.scrollHeight,maxH),top=Math.max(12,Math.min(innerHeight-h-12,r.top-h-gap));card.style.top=top+'px';
+ };
+
+ const style=document.createElement('style');style.id='tp155Round3Css';style.textContent=[
+  /* Natural Home height: scroll exists only when content genuinely exceeds the viewport. */
+  'html body.tp-home-view main.rf221-home{height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important}',
+
+  /* Larger glyphs/text, identical 2x4 cell height. Hungarian label fit is the current target; other languages remain a later audit. */
+  '.top.tp154-nav-grid .tp151-nav-icon,.top.tp154-nav-grid .tp154-nav-action-icon{font-size:22px!important}',
+  '.top.tp154-nav-grid .tp154-settings-action .tp154-nav-action-icon{font-size:24px!important}',
+  'html[lang="hu"] .top.tp154-nav-grid .tp151-nav-label{font-size:13.5px!important;line-height:1.04!important;font-weight:850!important}',
+  'html body .top.tp154-nav-grid,html.tp-nav-compact body .top.tp154-nav-grid{grid-auto-rows:56px!important}',
+  'html body .top.tp154-nav-grid .tp154-nav-cell,html body .top.tp154-nav-grid .tp151-top-icon.tp154-nav-cell,html.tp-nav-compact body .top.tp154-nav-grid .tp154-nav-cell,html.tp-nav-compact body .top.tp154-nav-grid .tp151-top-icon.tp154-nav-cell{height:56px!important;min-height:56px!important;max-height:56px!important}',
+  '@media(max-width:390px){html body .top.tp154-nav-grid,html.tp-nav-compact body .top.tp154-nav-grid{grid-auto-rows:54px!important}html body .top.tp154-nav-grid .tp154-nav-cell,html body .top.tp154-nav-grid .tp151-top-icon.tp154-nav-cell,html.tp-nav-compact body .top.tp154-nav-grid .tp154-nav-cell,html.tp-nav-compact body .top.tp154-nav-grid .tp151-top-icon.tp154-nav-cell{height:54px!important;min-height:54px!important;max-height:54px!important}html[lang="hu"] .top.tp154-nav-grid .tp151-nav-label{font-size:12.5px!important}.top.tp154-nav-grid .tp151-nav-icon,.top.tp154-nav-grid .tp154-nav-action-icon{font-size:21px!important}}',
+
+  /* Basic themes: matte accent borders/selections remain, only glow is removed. */
+  'html[data-tp-theme-family="basic"] :is(.card,.setting,.tp151-nav-dock){box-shadow:none!important}',
+  'html[data-tp-theme-family="basic"] body main.rf221-home>.hero.tp155-home-active-card{border:2px solid color-mix(in srgb,var(--accent) 66%,var(--line))!important;background:color-mix(in srgb,var(--accent) 7%,var(--card))!important;box-shadow:none!important}',
+  'html[data-tp-theme-family="basic"] .tp155-home-program-right{border-left-color:color-mix(in srgb,var(--accent) 42%,var(--line))!important}',
+  'html[data-tp-theme-family="basic"] :is(.btn.tp-primary,.btn.tp-emphasis,.tab.active,.tp151-nav-item.active,.tp151-top-icon.active,.tp-action-active,.cal-cell.tp-selected-day,.tp-select.open .tp-select-trigger,.tp1511-theme-chip.active,.rf130-labels .btn[aria-pressed="true"],.tp-temporal-day[aria-pressed="true"],.tp-time-option[aria-pressed="true"],.tp155-time-option[aria-pressed="true"]){box-shadow:none!important;filter:none!important}',
+  'html[data-tp-theme-family="basic"] :is(.btn[aria-pressed="true"],.btn.tp-selected,.tp-select-option[aria-selected="true"],.rf232-effort .btn:not(.secondary),.rf232-pain:not(.secondary)){box-shadow:none!important;filter:none!important;border-color:color-mix(in srgb,var(--accent) 64%,var(--line))!important;background:color-mix(in srgb,var(--accent) 16%,var(--card2))!important;color:var(--text)!important}',
+  'html[data-tp-theme-family="basic"] .rf208-settings-btn{box-shadow:none!important;border-color:color-mix(in srgb,var(--accent) 52%,var(--line))!important;background:color-mix(in srgb,var(--accent) 12%,var(--card2))!important}',
+  'html[data-tp-theme-family="basic"] :is(.tp151-nav-item.active,.tp151-top-icon.active,.tp-action-active,.tp1511-theme-chip.active,.tp-select.open .tp-select-trigger){border:1px solid color-mix(in srgb,var(--accent) 64%,var(--line))!important}',
+  'html[data-tp-theme-family="basic"] :is(.tp151-nav-item.active,.tp151-top-icon.active,.tp-action-active,.tp1511-theme-chip.active){background:color-mix(in srgb,var(--accent) 16%,var(--card2))!important;color:var(--text)!important}',
+  'html[data-tp-theme-family="basic"] .cal-cell.tp-selected-day{border-color:var(--accent)!important;background:color-mix(in srgb,var(--accent) 17%,var(--card2))!important}',
+  'html[data-tp-theme-family="basic"] :is(.tp-temporal-day[aria-pressed="true"],.tp-time-option[aria-pressed="true"],.tp155-time-option[aria-pressed="true"],.rf130-labels .btn[aria-pressed="true"]){background:color-mix(in srgb,var(--accent) 26%,var(--card2))!important;border-color:var(--accent)!important;color:var(--text)!important}',
+  'html[data-tp-theme-family="basic"] :is(.tp152-active-program,.tp152-day,.tp152-program-card,.tp152-program-day,.tp152-exercise,.tp152-quick-row,.tp152-inline-add,.tp152-history-editor){box-shadow:none!important}',
+  'html[data-tp-theme-family="basic"] :is(.tp152-active-program,.tp152-program-card){border-color:color-mix(in srgb,var(--tp-program-accent,var(--accent)) 58%,var(--line))!important}',
+  'html[data-tp-theme-family="basic"] :is(.tp152-day,.tp152-exercise,.tp152-program-day,.tp152-quick-row,.tp152-inline-add){border-color:color-mix(in srgb,var(--tp-program-accent,var(--accent)) 34%,var(--line))!important}',
+
+  /* Direct language dropdown. */
+  '.tp155-language-direct{overflow:visible!important}.tp155-language-head{align-items:center!important}.tp155-language-copy{min-width:0;flex:1}.tp155-language-copy>strong{display:block;margin-bottom:5px}.tp155-language-direct .tp-select{margin:0!important}.tp155-language-direct .tp-select-trigger{min-height:42px!important}',
+
+  /* Inline Journal calendar. */
+  '.tp155-journal-filter{padding:0!important;overflow:hidden;margin:0 0 8px!important}.tp155-journal-filter>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 13px;cursor:pointer}.tp155-journal-filter>summary::-webkit-details-marker{display:none}.tp155-journal-filter>summary>div{display:flex;flex-direction:column;gap:2px}.tp155-journal-calendar{padding:0 12px 12px;border-top:1px solid var(--line)}',
+  '.tp155-journal-month{display:grid;grid-template-columns:42px minmax(0,1fr) 42px;gap:8px;align-items:center;margin:10px 0}.tp155-journal-month strong{text-align:center}.tp155-journal-month .btn{min-width:42px;min-height:42px;padding:6px}',
+  '.tp155-journal-week,.tp155-journal-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;text-align:center}.tp155-journal-week{font-size:11px;font-weight:800;color:var(--muted);margin-bottom:5px}.tp155-journal-day{min-width:0;min-height:40px;border:1px solid var(--line);border-radius:10px;background:var(--card2);color:var(--text);font:inherit;font-weight:750;padding:0}.tp155-journal-day[aria-current="date"]{border-color:color-mix(in srgb,var(--accent) 62%,var(--line))}.tp155-journal-day[aria-pressed="true"]{background:color-mix(in srgb,var(--accent) 24%,var(--card2));border-color:var(--accent);font-weight:900}',
+  '.tp155-journal-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.tp155-journal-actions .btn{min-height:42px}.tp150-journal-compact>.rf263-history-count{margin:4px 2px 10px!important}',
+
+  /* Upward time list with blurred backdrop. */
+  '.tp-temporal-modal.tp155-time-upward{background:rgba(4,7,11,.58)!important;backdrop-filter:blur(9px)!important;-webkit-backdrop-filter:blur(9px)!important}',
+  '.tp155-time-card{transform-origin:bottom center}.tp155-time-head{display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:center;color:var(--muted);margin:2px 0 6px;font-size:12px;font-weight:850}.tp155-time-lists{display:grid;grid-template-columns:1fr 1fr;gap:10px}.tp155-time-list{display:grid;grid-template-columns:1fr;gap:4px;max-height:min(42dvh,300px);overflow:auto;overscroll-behavior:contain;padding:3px;border:1px solid var(--line);border-radius:13px;background:var(--card2)}.tp155-time-option{min-height:40px;border:1px solid transparent;border-radius:9px;background:var(--card);color:var(--text);font:inherit;font-weight:850}.tp155-time-option[aria-pressed="true"]{background:color-mix(in srgb,var(--accent) 28%,var(--card2));border-color:var(--accent)}'
+ ].join('');
+ document.head.appendChild(style);
+
+ // Re-apply current theme after the Basic palette changes.
+ rf200ApplyTheme(rf200ThemeKey());
+ window.TrainPilot155Round3={version:TP155_R3_VERSION,matteBasic:true,expandedBasicPalette:true,naturalHomeHeight:true,largerHuNav:true,inlineJournalDate:true,directLanguage:true,upwardTimePicker:true,pendingI18nNavAudit:true,pendingDropdownStyleAudit:true};
+})();
+// @endsection trainpilot-155-round3-ui-polish.js
+
+// @section trainpilot-155-round3-journal-range.js
+/* TrainPilot 1.5.5 Round 3 phone fix: Journal two-date inclusive range filter. */
+(function(){
+ 'use strict';
+ const COPY={
+  hu:{filter:'Szűrő dátum szerint',from:'Ettől',to:'Eddig',clear:'Szűrő törlése',today:'Ma',pickEnd:'Válaszd ki az időszak végét'},
+  en:{filter:'Filter by date',from:'From',to:'To',clear:'Clear filter',today:'Today',pickEnd:'Select the end of the range'},
+  de:{filter:'Nach Datum filtern',from:'Von',to:'Bis',clear:'Filter löschen',today:'Heute',pickEnd:'Ende des Zeitraums auswählen'},
+  ro:{filter:'Filtrare după dată',from:'De la',to:'Până la',clear:'Șterge filtrul',today:'Astăzi',pickEnd:'Selectează sfârșitul intervalului'},
+  sk:{filter:'Filtrovať podľa dátumu',from:'Od',to:'Do',clear:'Zrušiť filter',today:'Dnes',pickEnd:'Vyber koniec rozsahu'},
+  pl:{filter:'Filtruj według daty',from:'Od',to:'Do',clear:'Wyczyść filtr',today:'Dzisiaj',pickEnd:'Wybierz koniec zakresu'}
+ };
+ const lang=()=>typeof rf212Lang==='function'?rf212Lang():'hu';
+ const copy=()=>COPY[lang()]||COPY.hu;
+ const locale=()=>{try{return typeof rf233Locale==='function'?rf233Locale():'hu-HU'}catch(_){return 'hu-HU'}};
+ const valid=value=>!!(value&&typeof rf263ParseDate==='function'&&rf263ParseDate(value));
+ const committed=()=>({from:rf263HistoryFilter?.from||'',to:rf263HistoryFilter?.to||''});
+ const pending=()=>state.tp155JournalRangeStart||'';
+ const monthStart=()=>{
+  const stored=valid(state.tp155JournalMonth)?rf263ParseDate(state.tp155JournalMonth):null;
+  const seed=stored||(valid(pending())?rf263ParseDate(pending()):null)||(valid(rf263HistoryFilter?.from)?rf263ParseDate(rf263HistoryFilter.from):null)||new Date();
+  return new Date(seed.getFullYear(),seed.getMonth(),1,12);
+ };
+ const storeMonth=d=>{state.tp155JournalMonth=rf263DateKey(new Date(d.getFullYear(),d.getMonth(),1,12))};
+ const fmt=value=>{const d=valid(value)?rf263ParseDate(value):null;return d?d.toLocaleDateString(locale(),{year:'numeric',month:'2-digit',day:'2-digit'}):'—'};
+
+ window.tp155R4JournalMoveMonth=function(delta){
+  const m=monthStart(),next=new Date(m.getFullYear(),m.getMonth()+Number(delta||0),1,12);
+  storeMonth(next);state.tp155JournalFilterOpen=true;render(historyScreen());
+ };
+ window.tp155R4JournalPickDate=function(value){
+  if(!valid(value))return;
+  const start=pending(),active=committed();
+  storeMonth(rf263ParseDate(value));
+  if(!start||(active.from&&active.to)){
+   state.tp155JournalRangeStart=value;
+   rf263HistoryFilter={from:'',to:''};
+   state.tp155JournalFilterOpen=true;
+  }else{
+   let from=start,to=value;
+   if(to<from){const tmp=from;from=to;to=tmp}
+   rf263HistoryFilter={from:from,to:to};
+   delete state.tp155JournalRangeStart;
+   state.tp155JournalFilterOpen=true;
+  }
+  render(historyScreen());
+ };
+ window.tp155R4JournalToday=function(){
+  const value=rf263DateKey(new Date()),start=pending();
+  storeMonth(new Date());
+  if(start){
+   let from=start,to=value;if(to<from){const tmp=from;from=to;to=tmp}
+   rf263HistoryFilter={from:from,to:to};delete state.tp155JournalRangeStart;
+  }else{
+   rf263HistoryFilter={from:value,to:value};delete state.tp155JournalRangeStart;
+  }
+  state.tp155JournalFilterOpen=true;render(historyScreen());
+ };
+ window.tp155R4JournalClear=function(){
+  rf263HistoryFilter={from:'',to:''};delete state.tp155JournalRangeStart;delete state.tp155JournalMonth;
+  state.tp155JournalFilterOpen=false;render(historyScreen());
+ };
+ rf263ClearHistoryFilter=window.tp155R4JournalClear;
+
+ const calendarHtml=function(){
+  const c=copy(),m=monthStart(),y=m.getFullYear(),mo=m.getMonth(),today=rf263DateKey(new Date()),a=committed(),start=pending();
+  const from=start||a.from||'',to=start?'':a.to||'';
+  const first=(new Date(y,mo,1,12).getDay()+6)%7,count=new Date(y,mo+1,0,12).getDate(),weekdays=typeof tp149Weekdays==='function'?tp149Weekdays():['H','K','Sze','Cs','P','Szo','V'];
+  let days='<span aria-hidden="true"></span>'.repeat(first);
+  for(let d=1;d<=count;d++){
+   const date=new Date(y,mo,d,12),value=rf263DateKey(date),isStart=value===from,isEnd=!!to&&value===to,inRange=!!(from&&to&&value>from&&value<to);
+   const cls='tp155-journal-day'+(isStart?' is-start':'')+(isEnd?' is-end':'')+(inRange?' is-range':'');
+   days+='<button type="button" class="'+cls+'" data-date="'+value+'" aria-label="'+esc(date.toLocaleDateString(locale(),{year:'numeric',month:'long',day:'numeric',weekday:'long'}))+'" aria-pressed="'+((isStart||isEnd)?'true':'false')+'" '+(value===today?'aria-current="date"':'')+' onclick="event.preventDefault();event.stopPropagation();tp155R4JournalPickDate(\''+value+'\')">'+d+'</button>';
+  }
+  const active=!!(start||a.from||a.to);
+  return '<div class="tp155-journal-calendar tp155-r4-range-calendar">'+
+   '<div class="tp155-journal-range-head"><div><span>'+esc(c.from)+'</span><strong>'+esc(fmt(from))+'</strong></div><div><span>'+esc(c.to)+'</span><strong>'+esc(fmt(to))+'</strong></div></div>'+
+   (start?'<p class="small muted tp155-journal-range-help">'+esc(c.pickEnd)+'</p>':'')+
+   '<div class="tp155-journal-month"><button type="button" class="btn secondary" onclick="event.preventDefault();event.stopPropagation();tp155R4JournalMoveMonth(-1)">‹</button><strong>'+esc(m.toLocaleDateString(locale(),{year:'numeric',month:'long'}))+'</strong><button type="button" class="btn secondary" onclick="event.preventDefault();event.stopPropagation();tp155R4JournalMoveMonth(1)">›</button></div>'+
+   '<div class="tp155-journal-week" aria-hidden="true">'+weekdays.map(x=>'<span>'+esc(x)+'</span>').join('')+'</div><div class="tp155-journal-days">'+days+'</div>'+

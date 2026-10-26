@@ -1,0 +1,202 @@
+  'backup.help':['Mentsd az alkalmazás adatait fájlba, vagy állíts vissza egy korábbi mentést.','Save the app data to a file or restore an earlier backup.','Speichere die App-Daten in einer Datei oder stelle eine frühere Sicherung wieder her.','Salvează datele aplicației într-un fișier sau restaurează o copie anterioară.'],
+  'backup.exportDone':['A mentés elkészült és visszaolvasással ellenőrizve.\n{name}\n{bytes} bájt\nA fájl a kiválasztott helyen található.','Backup created and verified by reading it back.\n{name}\n{bytes} bytes\nThe file is in the selected location.','Sicherung erstellt und durch erneutes Einlesen überprüft.\n{name}\n{bytes} Byte\nDie Datei befindet sich am ausgewählten Ort.','Copia a fost creată și verificată prin recitire.\n{name}\n{bytes} octeți\nFișierul se află în locația selectată.'],
+  'backup.exportBrowser':['A mentés letöltése elindult.','Backup download started.','Download der Sicherung gestartet.','Descărcarea copiei de siguranță a început.'],
+  'backup.verifyError':['A fájl ellenőrzése nem sikerült.','File verification failed.','Die Dateiüberprüfung ist fehlgeschlagen.','Verificarea fișierului a eșuat.'],
+  'backup.finishWorkout':['Előbb fejezd be az edzést.','Finish the workout first.','Beende zuerst das Training.','Finalizează mai întâi antrenamentul.'],
+  'backup.restoreFailed':['Nem sikerült visszatölteni.','Restore failed.','Wiederherstellung fehlgeschlagen.','Restaurarea a eșuat.'],
+  'backup.invalidFile':['Hibás mentésfájl.','Invalid backup file.','Ungültige Sicherungsdatei.','Fișier de copie de siguranță nevalid.'],
+  'backup.maxSize':['Maximum 20 MB.','Maximum 20 MB.','Maximal 20 MB.','Maximum 20 MB.'],
+  'backup.invalidStructure':['A mentésfájl szerkezete nem érvényes.','The backup file structure is invalid.','Die Struktur der Sicherungsdatei ist ungültig.','Structura fișierului de copie este nevalidă.'],
+  'backup.noStorage':['Nincs elég tárhely. A korábbi adatokat visszaállítottam.','Not enough storage. Previous data was restored.','Nicht genug Speicherplatz. Die vorherigen Daten wurden wiederhergestellt.','Spațiu insuficient. Datele anterioare au fost restaurate.'],
+  'backup.restoreDone':['Visszatöltés kész.','Restore complete.','Wiederherstellung abgeschlossen.','Restaurarea este finalizată.'],
+  'settings.calendar':['Edzésnaptár','Workout calendar','Trainingskalender','Calendar de antrenament'],
+  'settings.calendarHelp':['Tervezd meg az edzéseidet a vizuális naptárban.','Plan your workouts in the visual calendar.','Plane deine Trainings im visuellen Kalender.','Planifică antrenamentele în calendarul vizual.'],
+  'settings.openCalendar':['Naptár és tervező megnyitása','Open calendar and planner','Kalender und Planer öffnen','Deschide calendarul și planificatorul'],
+  'settings.trainingProfile':['Edzésprofil','Training profile','Trainingsprofil','Profil de antrenament'],
+  'settings.trainingProfileHelp':['A kímélő profil csökkenti az alap sorozatszámokat. Az alapértékek bármikor visszaállíthatók.','The gentle profile reduces default set counts. Defaults can be restored at any time.','Das schonende Profil reduziert die Standard-Satzzahlen. Die Standardwerte können jederzeit wiederhergestellt werden.','Profilul ușor reduce numărul implicit de serii. Valorile implicite pot fi restaurate oricând.'],
+  'settings.gentleProfile':['Kímélő kezdőprofil (2 sorozat)','Gentle beginner profile (2 sets)','Schonendes Anfängerprofil (2 Sätze)','Profil ușor pentru începători (2 serii)'],
+  'settings.restoreDefaults':['Alapértékek visszaállítása','Restore defaults','Standardwerte wiederherstellen','Restaurează valorile implicite'],
+  'settings.progression':['Progresszív cél • tényleges súlylépcsők','Progressive goal • actual load increments','Progressives Ziel • tatsächliche Gewichtsabstufungen','Obiectiv progresiv • trepte reale de greutate'],
+  'settings.progressionHelp':['Állítsd a felszereléseddel ténylegesen kirakható legkisebb növelést. A kézisúlyzós értékek a kijelzett egységre vonatkoznak.','Set the smallest increment your equipment can actually provide. Dumbbell values refer to the displayed unit.','Stelle die kleinste mit deiner Ausrüstung tatsächlich mögliche Steigerung ein. Kurzhantelwerte beziehen sich auf die angezeigte Einheit.','Setează cea mai mică creștere posibilă cu echipamentul tău. Valorile pentru gantere se referă la unitatea afișată.'],
+  'settings.stepIsolation':['Izolációs gyakorlat (kg)','Isolation exercise (kg)','Isolationsübung (kg)','Exercițiu de izolare (kg)'],
+  'settings.stepPerHand':['Kézisúlyzó / kar (kg/kar)','Dumbbell / arm (kg/arm)','Kurzhantel / Arm (kg/Arm)','Ganteră / braț (kg/braț)'],
+  'settings.stepSingle':['Egy kézisúlyzó (kg)','Single dumbbell (kg)','Eine Kurzhantel (kg)','O ganteră (kg)'],
+  'settings.stepTotal':['Rúd / összsúly (kg)','Bar / total load (kg)','Stange / Gesamtgewicht (kg)','Bară / greutate totală (kg)'],
+  'settings.saveSteps':['Súlylépcsők mentése','Save load increments','Gewichtsabstufungen speichern','Salvează treptele de greutate']
+ };
+ for(const [key,row] of Object.entries(rows)){
+  TP149_KEY_ROWS[key]=row;TP149_CATALOG.hu[key]=row[0];TP149_CATALOG.en[key]=row[1];TP149_CATALOG.de[key]=row[2];TP149_CATALOG.ro[key]=row[3];
+ }
+})();
+
+var tp149ThemeKeys={yellow:'theme.yellow',blue:'theme.blue',green:'theme.green',purple:'theme.purple',orange:'theme.orange',cyan:'theme.cyan',teal:'theme.teal',pink:'theme.pink',indigo:'theme.indigo',lime:'theme.lime',red:'theme.red',magenta:'theme.magenta',lavender:'theme.lavender',sky:'theme.sky',mint:'theme.mint',coral:'theme.coral'};
+const tp149ThemePanelBase=rf200ThemePanel;
+rf200ThemePanel=function(){
+ if(rf212Lang()==='hu')return tp149ThemePanelBase.apply(this,arguments);
+ const current=rf200ThemeKey();
+ return '<div class="setting rf200-theme-setting"><label>'+esc(tp149T('settings.theme'))+'</label><p class="small muted">'+esc(tp149T('settings.themeHelp'))+'</p><select class="field rf200-theme-select" onchange="rf200SetTheme(this.value)">'+Object.entries(RF200_THEMES).map(function(pair){const k=pair[0],theme=pair[1];return '<option value="'+esc(k)+'" data-swatch="'+esc(theme.accent)+'" '+(current===k?'selected':'')+'>'+esc(tp149T(tp149ThemeKeys[k]||k))+'</option>';}).join('')+'</select></div>';
+};
+const tp149PlannerPanelBase=plannerPanel;
+plannerPanel=function(){
+ if(rf212Lang()==='hu')return tp149PlannerPanelBase.apply(this,arguments);
+ return '<div class="setting"><label>'+esc(tp149T('settings.calendar'))+'</label><p class="small muted">'+esc(tp149T('settings.calendarHelp'))+'</p><button class="btn block" onclick="go(\'calendar\')">'+esc(tp149T('settings.openCalendar'))+'</button></div>';
+};
+
+const tp149SettingsScreenBase=settingsScreen;
+settingsScreen=function(){
+ if(rf212Lang()==='hu')return tp149SettingsScreenBase.apply(this,arguments);
+ const s=settings(),d={isolation:0.5,per_hand:1,single_dumbbell:1,total:2.5},x=Object.assign({},d,s.progressionSteps||{});
+ const progression='<div class="setting" id="tp140ProgressionSteps"><label>'+esc(tp149T('settings.progression'))+'</label><p class="small muted">'+esc(tp149T('settings.progressionHelp'))+'</p><div class="grid2"><label>'+esc(tp149T('settings.stepIsolation'))+'<input id="tp140StepIsolation" class="field" type="number" min="0.25" max="10" step="0.25" value="'+esc(x.isolation)+'"></label><label>'+esc(tp149T('settings.stepPerHand'))+'<input id="tp140StepPerHand" class="field" type="number" min="0.25" max="10" step="0.25" value="'+esc(x.per_hand)+'"></label><label>'+esc(tp149T('settings.stepSingle'))+'<input id="tp140StepSingle" class="field" type="number" min="0.25" max="10" step="0.25" value="'+esc(x.single_dumbbell)+'"></label><label>'+esc(tp149T('settings.stepTotal'))+'<input id="tp140StepTotal" class="field" type="number" min="0.25" max="10" step="0.25" value="'+esc(x.total)+'"></label></div><br><button class="btn secondary block" onclick="saveSettings()">'+esc(tp149T('settings.saveSteps'))+'</button></div>';
+ const html='<main><div class="hero"><h1>'+esc(tp149T('settings.title'))+'</h1><div class="muted">'+esc(tp149T('settings.subtitle'))+'</div></div>'+
+ rf212LanguagePanel()+rf200ThemePanel()+
+ '<div class="setting"><label>'+esc(tp149T('settings.rest'))+'</label><input id="rest" class="field" type="number" min="30" max="300" value="'+esc(s.rest)+'"><br><br><button class="btn block" onclick="saveSettings()">'+esc(tp149T('common.save'))+'</button></div>'+
+ '<div class="setting"><label>'+esc(tp149T('backup.title'))+'</label><p class="small muted">'+esc(tp149T('backup.help'))+'</p><p class="small muted">'+esc(backupStatus())+'</p><div class="grid2"><button class="btn secondary" onclick="exportData()">'+esc(tp149T('backup.saveFile'))+'</button><button class="btn secondary" onclick="chooseImport()">'+esc(tp149T('backup.restore'))+'</button></div><input id="importFile" type="file" accept=".json,application/json" hidden onchange="importData(this.files[0])"></div>'+
+ cloudPanel()+plannerPanel()+
+ '<div class="setting"><label>'+esc(tp149T('settings.trainingProfile'))+'</label><p class="small muted">'+esc(tp149T('settings.trainingProfileHelp'))+'</p><button class="btn secondary block" onclick="resetStarter()">'+esc(tp149T('settings.gentleProfile'))+'</button><br><button class="btn danger block" onclick="resetPlan()">'+esc(tp149T('settings.restoreDefaults'))+'</button></div>'+
+ progression+'</main>';
+ return shell(html);
+};
+
+saveSettings=function(){
+ const clamp=function(id,fallback){const n=Number(document.getElementById(id)?.value);return Number.isFinite(n)?Math.max(.25,Math.min(10,Math.round(n*4)/4)):fallback;},cur=settings();
+ db.set('settings',Object.assign({},cur,{rest:Math.max(30,Math.min(300,Number(document.getElementById('rest')?.value)||cur.rest||90)),progressionSteps:{isolation:clamp('tp140StepIsolation',cur.progressionSteps?.isolation??.5),per_hand:clamp('tp140StepPerHand',cur.progressionSteps?.per_hand??1),single_dumbbell:clamp('tp140StepSingle',cur.progressionSteps?.single_dumbbell??1),total:clamp('tp140StepTotal',cur.progressionSteps?.total??2.5)}}));
+ if(typeof cloudChanged==='function')cloudChanged();alert(tp149T('settings.saved'));
+};
+
+exportData=async function(){
+ try{
+  const data=JSON.stringify(await (window.TrainPilotHealthJournal?.backup?.()||makeBackup())),name='trainpilot-backup-'+new Date().toISOString().replace(/[:.]/g,'-')+'.json';
+  if(new Blob([data]).size>20*1024*1024)throw Error(tp149T('backup.maxSize'));
+  if(isNative()){
+   const r=await nativeFiles().save({name:name,data:data});if(r.cancelled)return;if(!r.verified)throw Error(tp149T('backup.verifyError'));
+   db.set('lastExport',{name:r.name,date:new Date().toISOString(),bytes:r.bytes});
+   window.TrainPilotFeedback?.success(tp149T('backup.exportDone',{name:r.name,bytes:tp149FormatNumber(r.bytes)}));render();
+  }else{
+   const b=new Blob([data],{type:'application/json'}),url=URL.createObjectURL(b),link=document.createElement('a');
+   link.href=url;link.download=name;document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);
+   db.set('lastExport',{name:name,date:new Date().toISOString(),bytes:new Blob([data]).size});window.TrainPilotFeedback?.success(tp149T('backup.exportBrowser'));render();
+  }
+ }catch(e){alert(e?.message||String(e));}
+};
+chooseImport=async function(){
+ if(state.session){alert(tp149T('backup.finishWorkout'));return;}
+ if(!isNative()){document.getElementById('importFile')?.click();return;}
+ try{const r=await nativeFiles().open();if(!r.cancelled)await restoreText(r.data);}
+ catch(e){alert(tp149T('backup.restoreFailed')+'\n'+(e?.message||e));}
+};
+importData=async function(file){
+ if(!file)return;
+ try{if(file.size>20*1024*1024)throw Error(tp149T('backup.maxSize'));await restoreText(await file.text());}
+ catch(e){alert(tp149T('backup.invalidFile')+'\n'+(e?.message||e));}
+ finally{const input=document.getElementById('importFile');if(input)input.value='';}
+};
+
+window.TrainPilotI18n.settingsAudit=function(){
+ const keys=['settings.title','settings.subtitle','settings.rest','settings.theme','settings.themeHelp','backup.title','backup.help','backup.saveFile','backup.restore','settings.calendar','settings.openCalendar','settings.trainingProfile','settings.gentleProfile','settings.restoreDefaults','settings.progression','settings.saveSteps'];
+ const missing={hu:[],en:[],de:[],ro:[]};for(const lang of Object.keys(missing))for(const key of keys)if(!TP149_CATALOG[lang]?.[key])missing[lang].push(key);return missing;
+};
+// @endsection trainpilot-149-settings-backup-i18n.js
+
+
+// @section trainpilot-149-shell-i18n.js
+/* TrainPilot 1.4.9: the application chrome no longer uses RF212/RF213/RF214 post-render translation. */
+(function(){
+ const rows={
+  'brand.tagline':['intelligens edzéstervező','intelligent workout planner','intelligenter Trainingsplaner','planificator inteligent de antrenament'],
+  'dialog.leaveWorkout.title':['Edzés elhagyása','Leave workout','Training verlassen','Părăsește antrenamentul'],
+  'dialog.leaveWorkout.message':['Kilépsz a folyamatban lévő edzésből? A mentett vázlat megmarad, később folytathatod.','Leave the workout in progress? The saved draft will remain so you can continue later.','Laufendes Training verlassen? Der gespeicherte Entwurf bleibt erhalten, sodass du später fortsetzen kannst.','Părăsești antrenamentul în desfășurare? Schița salvată rămâne și poți continua mai târziu.'],
+  'dialog.leaveWorkout.action':['Kilépés','Leave','Verlassen','Părăsește']
+ };
+ for(const [key,row] of Object.entries(rows)){
+  TP149_KEY_ROWS[key]=row;TP149_CATALOG.hu[key]=row[0];TP149_CATALOG.en[key]=row[1];TP149_CATALOG.de[key]=row[2];TP149_CATALOG.ro[key]=row[3];
+ }
+})();
+
+shell=function(content){
+ const active=function(id){return (state.tab===id||(id==='home'&&(state.tab==='stats'||state.tab==='profile')))?'active':'';};
+ const nav=[['home','nav.home'],['plan','nav.workout'],['calendar','nav.calendar'],['programs','nav.programs'],['history','nav.log'],['health','nav.health']];
+ const html='<div><div class="top"><div class="rf208-brand-row"><div class="brand">TrainPilot</div><button class="rf208-settings-btn" aria-label="'+esc(tp149T('nav.settings'))+'" title="'+esc(tp149T('nav.settings'))+'" onclick="go(\'settings\')">⚙︎</button></div><div class="tag">'+esc(tp149T('brand.tagline'))+'</div><div class="tabs tabs6 rf208-tabs">'+nav.map(function(x){return '<button class="tab '+active(x[0])+'" onclick="go(\''+x[0]+'\')">'+esc(tp149T(x[1]))+'</button>';}).join('')+'</div></div>'+String(content||'')+(state.session&&state.timer>0?timerHtml():'')+'</div>';
+ document.documentElement.lang=rf212Lang();return html.replaceAll('null/100','—').replaceAll('null ms','—');
+};
+
+go=function(route){
+ const key=String(route||'home'),target=RF253_CORE_ROUTES?.[key]||key;
+ const navigate=function(){
+  window.tp155R4ClosePanel?.(false);
+  if(state.session){rf110StopwatchHalt(true);tp1481HaltSide(true);}
+  if(typeof stopTimer==='function')stopTimer();
+  if(typeof rf245CoachVisible!=='undefined')rf245CoachVisible=false;
+  state.healthView=false;
+  if(target==='health'&&typeof rf225HealthPage!=='undefined')rf225HealthPage='hub';
+  if(target==='weight')return rf215WeightScreen();
+  if(target==='coach')return rf220CoachScreen();
+  if(target==='progress')return tp2627OpenStats();
+  state.tab=target;state.session=null;state.workout=null;render();
+  window.scrollTo?.(0,0);if(typeof rf260ScrollState==='function')rf260ScrollState();
+ };
+ if(state.session){
+  const leaving=state.session;
+  tp2628Confirm(window.TrainPilotOwnership193?.leaveMessage?.(leaving)||tp149T('dialog.leaveWorkout.message'),{title:tp149T('dialog.leaveWorkout.title'),confirmText:tp149T('dialog.leaveWorkout.action'),danger:true}).then(async function(ok){if(ok&&state.session===leaving&&await window.TrainPilotWorkoutPause201.pause(leaving))navigate();});return;
+ }
+ return navigate();
+};
+window.TrainPilotNavigate=go;
+
+window.TrainPilotI18n.shellAudit=function(){
+ const keys=['brand.tagline','nav.home','nav.workout','nav.calendar','nav.programs','nav.log','nav.health','nav.settings','dialog.leaveWorkout.title','dialog.leaveWorkout.message'];
+ const missing={hu:[],en:[],de:[],ro:[]};for(const lang of Object.keys(missing))for(const key of keys)if(!TP149_CATALOG[lang]?.[key])missing[lang].push(key);return missing;
+};
+// @endsection trainpilot-149-shell-i18n.js
+
+
+// @section trainpilot-149-photo-i18n.js
+/* TrainPilot 1.4.9: workout photo flow is localized before render. */
+(function(){
+ const rows={
+  'photo.before':['Edzés előtt','Before workout','Vor dem Training','Înainte de antrenament'],
+  'photo.after':['Edzés után','After workout','Nach dem Training','După antrenament'],
+  'photo.other':['Egyéb','Other','Sonstiges','Altele'],
+  'photo.label':['Fotó','Photo','Foto','Fotografie'],
+  'photo.androidOnly':['A naplófotó Androidon érhető el.','Workout-log photos are available on Android.','Trainingsfotos im Protokoll sind auf Android verfügbar.','Fotografiile din jurnal sunt disponibile pe Android.'],
+  'photo.add':['Fotó hozzáadása','Add photo','Foto hinzufügen','Adaugă fotografie'],
+  'photo.privacy':['A kép privát app-tárhelyre kerül, legfeljebb 1600 px hosszú oldallal. Az újramentés eltávolítja az eredeti EXIF/GPS metaadatot.','The image is stored in private app storage with a maximum long side of 1600 px. Re-saving removes the original EXIF/GPS metadata.','Das Bild wird im privaten App-Speicher mit maximal 1600 px langer Seite gespeichert. Beim erneuten Speichern werden ursprüngliche EXIF-/GPS-Metadaten entfernt.','Imaginea este stocată în spațiul privat al aplicației, cu latura lungă de maximum 1600 px. Resalvarea elimină metadatele EXIF/GPS originale.'],
+  'photo.camera':['Kamera','Camera','Kamera','Cameră'],
+  'photo.pick':['Kiválasztás','Choose','Auswählen','Alege'],
+  'photo.unavailable':['A fotókezelő nem érhető el.','Photo handling is unavailable.','Die Fotoverwaltung ist nicht verfügbar.','Gestionarea fotografiilor nu este disponibilă.'],
+  'photo.openCamera':['Kamera megnyitása…','Opening camera…','Kamera wird geöffnet…','Se deschide camera…'],
+  'photo.openPicker':['Képválasztó megnyitása…','Opening photo picker…','Bildauswahl wird geöffnet…','Se deschide selectorul de imagini…'],
+  'photo.cancelled':['Művelet megszakítva.','Operation cancelled.','Vorgang abgebrochen.','Operațiune anulată.'],
+  'photo.saveFailed':['A fotó mentése nem sikerült.','Photo could not be saved.','Das Foto konnte nicht gespeichert werden.','Fotografia nu a putut fi salvată.'],
+  'photo.workoutMissing':['Az edzés nem található.','Workout not found.','Training nicht gefunden.','Antrenamentul nu a fost găsit.'],
+  'photo.operationFailed':['A fotóművelet nem sikerült.','Photo operation failed.','Fotoaktion fehlgeschlagen.','Operațiunea foto a eșuat.'],
+  'photo.addFailed':['A fotó hozzáadása nem sikerült.','Photo could not be added.','Das Foto konnte nicht hinzugefügt werden.','Fotografia nu a putut fi adăugată.'],
+  'photo.previewAlt':['Naplófotó','Workout-log photo','Trainingsfoto','Fotografie din jurnal'],
+  'photo.downloading':['Naplófotó letöltése…','Downloading workout photo…','Trainingsfoto wird heruntergeladen…','Se descarcă fotografia din jurnal…'],
+  'photo.downloaded':['Naplófotó letöltve.','Workout photo downloaded.','Trainingsfoto heruntergeladen.','Fotografia din jurnal a fost descărcată.'],
+  'photo.driveFailed':['A Drive-fotó nem tölthető le.','Drive photo could not be downloaded.','Das Drive-Foto konnte nicht heruntergeladen werden.','Fotografia din Drive nu a putut fi descărcată.'],
+  'photo.driveOnly':['A fotó a Drive-ban van. Kapcsold a Google-fiókot, és legyen internetkapcsolat.','The photo is in Drive. Connect your Google account and make sure you are online.','Das Foto befindet sich in Drive. Verbinde dein Google-Konto und stelle eine Internetverbindung her.','Fotografia este în Drive. Conectează contul Google și asigură-te că ai internet.'],
+  'photo.deviceMissing':['A fotófájl nincs ezen a készüléken.','The photo file is not on this device.','Die Fotodatei befindet sich nicht auf diesem Gerät.','Fișierul foto nu se află pe acest dispozitiv.'],
+  'photo.driveSaved':['Drive mentve','Saved to Drive','In Drive gespeichert','Salvat în Drive'],
+  'photo.deleteTitle':['Naplófotó törlése','Delete workout photo','Trainingsfoto löschen','Șterge fotografia din jurnal'],
+  'photo.deleteMessage':['Törlöd ezt a naplófotót? A következő Drive-szinkron a felhőből is eltávolítja.','Delete this workout photo? The next Drive sync will remove it from the cloud too.','Dieses Trainingsfoto löschen? Bei der nächsten Drive-Synchronisierung wird es auch aus der Cloud entfernt.','Ștergi această fotografie din jurnal? Următoarea sincronizare Drive o va elimina și din cloud.'],
+  'photo.section':['Edzésfotók','Workout photos','Trainingsfotos','Fotografii de antrenament'],
+  'photo.none':['Ehhez az edzéshez még nincs fotó.','There are no photos for this workout yet.','Für dieses Training gibt es noch keine Fotos.','Nu există încă fotografii pentru acest antrenament.'],
+  'photo.driveVerify':['A naplófotó Drive-mentése nem ellenőrizhető.','Workout photo Drive backup could not be verified.','Die Drive-Sicherung des Trainingsfotos konnte nicht überprüft werden.','Copia Drive a fotografiei din jurnal nu a putut fi verificată.']
+ };
+ for(const [key,row] of Object.entries(rows)){TP149_KEY_ROWS[key]=row;TP149_CATALOG.hu[key]=row[0];TP149_CATALOG.en[key]=row[1];TP149_CATALOG.de[key]=row[2];TP149_CATALOG.ro[key]=row[3];}
+})();
+
+rf130PhotoLabelText=function(label){return tp149T(({before:'photo.before',after:'photo.after',other:'photo.other'})[label]||'photo.label');};
+
+rf130OpenAddPhoto=function(key){
+ if(!isNative()){alert(tp149T('photo.androidOnly'));return;}
+ rf130ClosePhotoModal();rf130PhotoTarget=key;rf130PhotoLabel='after';
+ const modal=document.createElement('div');modal.id='rf130PhotoModal';modal.className='video-modal';
+ modal.innerHTML='<div class="video-dialog rf130-photo-dialog" role="dialog" aria-modal="true" aria-label="'+esc(tp149T('photo.add'))+'"><button type="button" class="btn secondary" data-rf130-action="close">✕ '+esc(tp149T('common.close'))+'</button><h2>'+esc(tp149T('photo.add'))+'</h2><p class="small muted">'+esc(tp149T('photo.privacy'))+'</p><div class="rf130-labels"><button type="button" class="btn secondary" data-rf130-label="before" aria-pressed="false">'+esc(tp149T('photo.before'))+'</button><button type="button" class="btn secondary active" data-rf130-label="after" aria-pressed="true">'+esc(tp149T('photo.after'))+'</button><button type="button" class="btn secondary" data-rf130-label="other" aria-pressed="false">'+esc(tp149T('photo.other'))+'</button></div><br><div class="grid2"><button type="button" class="btn block" data-rf130-source="capture">'+esc(tp149T('photo.camera'))+'</button><button type="button" class="btn secondary block" data-rf130-source="pick">'+esc(tp149T('photo.pick'))+'</button></div><p class="small muted" data-rf130-status aria-live="polite"></p></div>';
+ document.body.appendChild(modal);rf130SetPhotoLabel(rf130PhotoLabel);
+ modal.addEventListener('click',function(e){const b=e.target?.closest?.('button');if(!b||!modal.contains(b))return;if(b.dataset.rf130Action==='close'){rf130ClosePhotoModal();return;}if(b.dataset.rf130Label){rf130SetPhotoLabel(b.dataset.rf130Label);return;}if(b.dataset.rf130Source){e.preventDefault();rf130AcquirePhoto(b.dataset.rf130Source);}});
+ modal.querySelector('button')?.focus();
+};
+
+rf130AcquirePhoto=async function(source){
+ const key=rf130PhotoTarget,storage=rf130PhotoPlugin();if(!key||!storage){alert(tp149T('photo.unavailable'));return;}

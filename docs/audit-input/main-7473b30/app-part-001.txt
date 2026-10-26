@@ -1,0 +1,331 @@
+var tp128FreshInstall = !["schemaVersion","settings","programs","history","draft","onboarding128"].some(function(k){return localStorage.getItem("repforge:"+k)!=null});
+// Recover photo/WebView/native-health restore as one dataset before rendering.
+(function(){
+ const photo=JSON.parse(localStorage.getItem('repforge:archiveRestore105')||'null');
+ const health=JSON.parse(localStorage.getItem('repforge:healthRestore120')||'null');
+ const revert=marker=>{for(const [k,v] of marker.old){if(v===null)localStorage.removeItem('repforge:'+k);else localStorage.setItem('repforge:'+k,v);}window.TrainPilotInvalidateStartupReads?.();};
+ if(photo&&!health)revert(photo);
+ window.TrainPilotRestore105Pending=photo?.token||health?.token||'';
+ window.addEventListener('DOMContentLoaded',function(){
+  if(window.Capacitor?.isNativePlatform?.()!==true)return;
+  const archive=window.Capacitor?.Plugins?.BackupArchive||window.Capacitor?.registerPlugin?.('BackupArchive');if(!archive)return;
+  window.TrainPilotBackupBusy=true;
+  window.TrainPilotRestoreRecovery=(async()=>{
+   let rollback=photo?.token||'';
+   if(health){
+    const journal=window.Capacitor?.Plugins?.HealthJournal||window.Capacitor?.registerPlugin?.('HealthJournal');if(!journal)throw Error('Native health restore requires recovery.');
+    const pending=await journal.pendingRestore();
+    if(pending.token){if(pending.token!==health.token)throw Error('Health restore token mismatch.');await journal.finishRestore({token:health.token,commit:false});revert(health);}
+    else rollback=''; // The native commit is the final durable commit point for all domains.
+   }
+   await archive.recover({rollbackToken:rollback});await window.TrainPilotPhoneExecution162?.block?.(false);localStorage.removeItem('repforge:archiveRestore105');localStorage.removeItem('repforge:healthRestore120');
+   window.TrainPilotBackupBusy=false;window.TrainPilotRestore105Pending='';
+   if(window.TrainPilotBoot?.loading)window.TrainPilotBoot.finish();
+  })();
+  window.TrainPilotRestoreRecovery.catch(error=>alert(error.message));return window.TrainPilotRestoreRecovery;
+ });
+})();
+/* TrainPilot — canonical application source.
+ * Sections retain the tested initialization order; backup construction is centralized.
+ * Edit this file directly; no generated version layers or build-time patches.
+ */
+
+// @section startup.js
+
+/* First local render releases the branded Android splash; cloud stays deferred. */
+(function(){
+ const boot=window.TrainPilotBoot={loading:true,failed:false,finished:false};
+ let watchdog;
+ const now=()=>typeof performance!=='undefined'?performance.now():Date.now();
+ boot.startedAt=now();
+ boot.durationMs=null;
+ boot.waitingForModules=document.readyState==='loading'||document.readyState==='interactive';
+ const releaseNative=function(failed){
+  try{
+   if(window.Capacitor?.isNativePlatform?.()!==true)return false;
+   const native=window.Capacitor?.Plugins?.AppFeedback||window.Capacitor?.registerPlugin?.('AppFeedback');
+   if(typeof native?.startupReady!=='function')return false;
+   const exit=Promise.resolve(native.startupReady({failed:!!failed})).catch(()=>{});
+   if(!failed)boot.nativeExitFinished=exit;
+   return true;
+  }catch(_){return false;}
+ };
+ boot.fail=function(){
+  if(boot.failed||boot.finished)return;
+  boot.failed=true;clearTimeout(watchdog);
+  releaseNative(true);
+  const overlay=document.getElementById('tpBoot');
+  if(!overlay)return;
+  overlay.classList?.add('tp-boot-failed');
+  overlay.setAttribute?.('role','alert');
+  overlay.textContent='Az alkalmazás betöltése nem sikerült. ';
+  const retry=document.createElement('button');retry.type='button';retry.textContent='Újrapróbálás';
+  retry.onclick=()=>window.location.reload();overlay.appendChild(retry);
+ };
+ window.addEventListener?.('error',()=>{if(boot.loading)boot.fail();},true);
+ boot.finish=function(){
+  if(boot.finished||boot.failed||boot.waitingForModules)return;
+  boot.loading=false;
+  try{
+   const firstRender=()=>{
+    if(typeof boot.renderInitialScreen==='function')boot.renderInitialScreen();
+    else render();
+    if(!document.querySelector('#app')?.innerHTML)throw Error('Empty initial screen');
+   };
+   if(typeof window.tp7WithHistorySnapshot==='function')window.tp7WithHistorySnapshot(firstRender);
+   else firstRender();
+  }catch(e){boot.fail();throw e;}
+  // 1.2 clean runtime renders the final DOM synchronously; reveal on the next frame.
+  const reveal=()=>{
+   if(boot.failed)return;
+   document.documentElement.classList.remove('tp-booting');
+   document.documentElement.classList.add('tp-ready');
+   boot.finished=true;boot.readyAt=now();boot.durationMs=Math.max(0,boot.readyAt-boot.startedAt);clearTimeout(watchdog);
+   boot.documentDurationMs=Math.max(0,boot.readyAt-(Number(window.TrainPilotDocumentStartedAt)||boot.startedAt));
+   window.TrainPilotReleaseStartupReads?.();
+   const overlay=document.getElementById('tpBoot');
+   const native=releaseNative(false);
+   const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+   if(overlay){
+    overlay.style.pointerEvents='none';
+    if(native||reduced||typeof overlay.animate!=='function')overlay.remove();
+    else{
+     const logo=overlay.querySelector('svg');
+     if(!logo){overlay.remove();return;}
+     // Continue from the live loading scale; never snap back to the small icon.
+     const from=new DOMMatrixReadOnly(getComputedStyle(logo).transform).a;
+     const to=Math.max(from,Math.max(innerWidth,innerHeight)*1.4/(logo.clientWidth*.5));
+     logo.style.animation='none';logo.style.transform=`scale(${from})`;
+     const zoomFrames=[],fadeFrames=[];
+     for(let n=0;n<=40;n++){
+      const progress=n/40,t=Math.max(0,Math.min(1,(progress-.55)/.45));
+      zoomFrames.push({offset:progress,transform:`scale(${from*Math.pow(to/from,progress)})`});
+      fadeFrames.push({offset:progress,opacity:1-t*t*(3-2*t)});
+     }
+     const timing={duration:480,easing:'linear',fill:'forwards'};
+     const zoom=logo.animate(zoomFrames,timing),fade=overlay.animate(fadeFrames,timing);
+     Promise.all([zoom.finished,fade.finished]).then(()=>overlay.remove(),()=>overlay.remove());
+    }
+   }
+   try{console.info(`[TrainPilot] local UI ready in ${Math.round(boot.durationMs)} ms`)}catch(_){}
+   // Native resolves only after its final fade frame. Keep account/cloud work
+   // outside the compositor hand-off as well as the first local render.
+   const cloudLater=()=>setTimeout(()=>{if(typeof initCloud==='function')initCloud();},0);
+   if(native&&boot.nativeExitFinished)boot.nativeExitFinished.then(cloudLater);
+   else cloudLater();
+  };
+  const frame=typeof requestAnimationFrame==='function'?requestAnimationFrame:(fn)=>setTimeout(fn,0);
+  frame(reveal);
+ };
+ watchdog=setTimeout(()=>boot.fail(),30000);
+})();
+
+
+// @endsection startup.js
+
+// @section backup.js
+const TRAINPILOT_VERSION='1.3.71';
+var isNative = function isNative(){return !!window.Capacitor?.isNativePlatform?.();};
+var nativeFiles = function nativeFiles(){if(!filesPlugin)filesPlugin=window.Capacitor?.registerPlugin?.('NativeFiles')||window.Capacitor?.Plugins?.NativeFiles;if(!filesPlugin)throw Error('A natív fájlkezelő nem érhető el.');return filesPlugin;};
+var backupStatus = function backupStatus(){const x=db.get('lastExport',null);return x?`Utolsó ellenőrzött mentés: ${x.name} • ${fmtDate(x.date)}`:'Még nincs ellenőrzött fájlmentés.';};
+var makeBackup = function makeBackup(){
+ const data={app:'RepForge',version:2,appVersion:TRAINPILOT_VERSION,exportedAt:new Date().toISOString(),
+  history:history(),weights:weights(),settings:settings(),plan:typeof programs==='function'?db.get('plan',DEFAULT_PLAN):plan(),exercises:exercises(),scheduled:typeof scheduled==='function'?scheduled():[]};
+ if(typeof programs==='function')Object.assign(data,{version:3,schemaVersion:RF12_SCHEMA,programs:programs(),activeProgramId:activeProgramId(),plannerSettings:plannerSettings()});
+ if(typeof rf144Favorites==='function')data.exerciseFavorites=rf144Favorites();
+ if(typeof rf200ThemeKey==='function')data.themeAccent=rf200ThemeKey();
+ if(typeof rf212LangSetting==='function')data.language=rf212LangSetting();
+ if(typeof rf229RecoveryHistory==='function')data.recoveryHistory=rf229RecoveryHistory();
+ // Export consent is evaluated at call time. Sync strips daily Health data separately.
+ if(typeof tp105Project!=='function')return data;
+ const includeHealth=tp105HealthConsent();
+ if(includeHealth){data.healthLedger=rf240Ledger();data.wellnessLatest=db.get('wellnessLatest',null);}
+ return tp105Project(data,includeHealth);
+};
+var exportData = async function exportData(){
+ try{
+  const data=JSON.stringify(makeBackup(),null,2),name='repforge-backup-'+new Date().toISOString().replace(/[:.]/g,'-')+'.json';
+  if(isNative()){
+   const r=await nativeFiles().save({name,data});if(r.cancelled)return;
+   if(!r.verified)throw Error('A fájl ellenőrzése nem sikerült.');
+   db.set('lastExport',{name:r.name,date:new Date().toISOString(),bytes:r.bytes});
+   alert(`Mentés kész és visszaolvasással ellenőrizve.\n${r.name}\n${r.bytes} bájt\nA fájl a kiválasztott helyen található.`);render();
+  }else{
+   const b=new Blob([data],{type:'application/json'}),url=URL.createObjectURL(b),a=document.createElement('a');
+   a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+   alert('A letöltés elindult. Ellenőrizd a böngésző Letöltések listájában; a böngészős fájlírást az app nem tudja visszaellenőrizni.');
+  }
+ }catch(e){alert('Nem készült ellenőrzött mentés.\n'+(e.message||e));}
+};
+var chooseImport = async function chooseImport(){
+ if(state.session){alert('Előbb fejezd be az edzést.');return;}
+ if(!isNative()){document.getElementById('importFile').click();return;}
+ try{const r=await nativeFiles().open();if(!r.cancelled)await restoreText(r.data);}catch(e){alert('Nem sikerült visszatölteni.\n'+(e.message||e));}
+};
+var importData = async function importData(file){if(!file)return;try{if(file.size>20*1024*1024)throw Error('Maximum 20 MB.');await restoreText(await file.text());}catch(e){alert('Hibás mentésfájl.\n'+e.message);}finally{const e=document.getElementById('importFile');if(e)e.value='';}};
+// IDs enter event handlers and selectors. Validate every imported reference before
+// migration, confirmation, native photo installation or local database writes.
+var validateBackupIdentifiers=function(data){
+ const fail=function(){throw Error('A mentés szerkezete vagy egyik azonosítója nem érvényes.');};
+ const object=function(value){if(!value||typeof value!=='object'||Array.isArray(value))fail();return value;};
+ const identifier=function(value,optional=false){
+  if(optional&&(value===undefined||value===null))return;
+  if(typeof value!=='string'||!value.trim()||!/^[\p{L}\p{N} _.:/+|=-]{1,200}$/u.test(value)||['__proto__','prototype','constructor'].includes(value))fail();
+ };
+ const rows=function(value,optional=false){if(optional&&value===undefined)return [];if(!Array.isArray(value))fail();return value;};
+ const references=function(value,optional=false){for(const id of rows(value,optional))identifier(id);};
+ object(data);
+ for(const exercise of rows(data.exercises)){object(exercise);identifier(exercise.id);}
+ for(const program of rows(data.programs,true)){
+  object(program);identifier(program.id);
+  for(const day of rows(program.days)){object(day);identifier(day.id);references(day.exercises);}
+  if(program.prescriptions!==undefined)for(const id of Object.keys(object(program.prescriptions)))identifier(id);
+ }
+ identifier(data.activeProgramId,true);
+ if(data.plan!==undefined)for(const [id,ids] of Object.entries(object(data.plan))){identifier(id);references(ids);}
+ references(data.exerciseFavorites,true);
+ if(data.settings?.profile?.excluded!==undefined)references(data.settings.profile.excluded);
+ for(const workout of rows(data.history)){
+  object(workout);
+  for(const key of ['id','programId','dayId','workout','scheduleId'])identifier(workout[key],true);
+  for(const exercise of rows(workout.exercises)){
+   object(exercise);identifier(exercise.id);
+   for(const set of rows(exercise.sets)){object(set);identifier(set.setId,true);}
+  }
+  for(const photo of rows(workout.photos,true)){object(photo);identifier(photo.id);identifier(photo.driveFileId,true);}
+ }
+ for(const weight of rows(data.weights)){object(weight);identifier(weight.id,true);}
+ for(const item of rows(data.scheduled,true)){
+  object(item);for(const key of ['id','programId','dayId','workout'])identifier(item[key],key!=='id');
+ }
+ return data;
+};
+var validateBackup = function validateBackup(d){
+ validateBackupIdentifiers(d);
+ const fail=()=>{throw Error('A fájl szerkezete nem érvényes RepForge-mentés.');};
+ const obj=x=>x&&typeof x==='object'&&!Array.isArray(x),str=x=>typeof x==='string'&&x.length<=2000,num=x=>typeof x==='number'&&Number.isFinite(x)&&x>=0,id=x=>typeof x==='string'&&/^[a-z0-9-]{1,80}$/.test(x);
+ if(!obj(d)||![1,2].includes(d.version)||(d.app!=null&&d.app!=='RepForge'))fail();
+ if(!Array.isArray(d.exercises)||!d.exercises.length||d.exercises.length>300||!Array.isArray(d.history)||!Array.isArray(d.weights)||!obj(d.plan)||!obj(d.settings))fail();
+ const ids=new Set();
+ for(const e of d.exercises){
+  if(!obj(e)||!id(e.id)||ids.has(e.id)||!str(e.hu)||!str(e.en)||!str(e.reps)||!Number.isInteger(e.sets)||e.sets<1||e.sets>10||!num(e.weight))fail();
+  if(e.loadType!=null&&!['per_hand','total','single_dumbbell','bodyweight'].includes(e.loadType))fail();
+  if(e.repUnit!=null&&!['ism.','/kar','/láb','mp'].includes(e.repUnit))fail();
+  ids.add(e.id);
+ }
+ for(const w of ['A','B'])if(!Array.isArray(d.plan[w])||!d.plan[w].length||d.plan[w].length>30||d.plan[w].some(x=>!ids.has(x)))fail();
+ if(!num(d.settings.rest)||d.settings.rest<30||d.settings.rest>300)fail();
+ for(const h of d.history){
+  if(!obj(h)||!['A','B'].includes(h.workout)||!str(h.started)||!Number.isFinite(Date.parse(h.started))||!Array.isArray(h.exercises))fail();
+  for(const e of h.exercises){
+   if(!obj(e)||!id(e.id)||!str(e.hu)||!Array.isArray(e.sets))fail();
+   for(const s of e.sets)if(!obj(s)||!num(s.weight)||!['string','number'].includes(typeof s.reps)||typeof s.done!=='boolean')fail();
+  }
+ }
+ for(const w of d.weights)if(!obj(w)||!num(w.kg)||!Number.isFinite(Date.parse(w.date)))fail();
+ if(d.scheduled!=null){if(!Array.isArray(d.scheduled)||d.scheduled.length>500)fail();for(const p of d.scheduled)if(!obj(p)||!id(p.id)||!["A","B"].includes(p.workout)||!Number.isFinite(Date.parse(p.start))||!Number.isFinite(Date.parse(p.end))||Date.parse(p.end)<=Date.parse(p.start)||!num(p.updatedAt)||typeof p.cancelled!=="boolean")fail();}
+ return d;
+};
+var restoreText = function restoreText(text){
+ if(text.length>20*1024*1024)throw Error('Maximum 20 MB.');
+ const d=validateBackup(JSON.parse(text.replace(/^\uFEFF/,'')));
+ if(!confirm(`${d.history.length} edzés és ${d.weights.length} testsúlyadat visszatöltése?\nEz lecseréli az app jelenlegi naplóját és tervét. A félbehagyott edzés törlődik.`))return false;
+ const keys=['history','weights','settings','plan','exercises','scheduled','draft'],old=keys.map(k=>localStorage.getItem('repforge:'+k));
+ try{for(const k of keys)db.set(k,k==='draft'?null:k==='scheduled'?(d.scheduled||[]):d[k]);}
+ catch(e){for(const k of keys)localStorage.removeItem('repforge:'+k);keys.forEach((k,i)=>{if(old[i]!==null)localStorage.setItem('repforge:'+k,old[i]);});throw Error('Nincs elég tárhely. A korábbi adatokat visszaállítottam.');}
+ alert('Visszatöltés kész.');render();return true;
+};
+var workoutIntervals = function workoutIntervals(session){
+ if(!Array.isArray(session.activeIntervals))session.activeIntervals=[{start:session.started,end:null}];
+ return session.activeIntervals;
+};
+var closeWorkoutInterval = function closeWorkoutInterval(session,at=new Date().toISOString()){
+ if(!session)return;
+ const last=workoutIntervals(session).at(-1);
+ if(last&&!last.end)last.end=at;
+};
+var persistDraft = function persistDraft(){if(state.session){workoutIntervals(state.session);db.set('draft',{session:state.session,workout:state.workout,current:state.current,restEndAt:state.restEndAt||null,savedAt:new Date().toISOString()});}};
+var resumeDraft = function resumeDraft(){
+ const d=db.get('draft',null);if(!d)return;
+ if(!d.session||!['A','B'].includes(d.workout)||!Array.isArray(d.session.exercises)||!d.session.exercises.length||d.session.exercises.some(e=>!byId(e.id))){alert('A félbehagyott edzés nem állítható vissza a jelenlegi tervvel.');return;}
+ stopTimer();state.tab='plan';state.session=d.session;state.workout=d.workout;state.current=Math.max(0,Math.min(d.current||0,d.session.exercises.length-1));
+ if(d.restEndAt>Date.now()){state.restEndAt=d.restEndAt;state.timer=Math.ceil((d.restEndAt-Date.now())/1000);state.timerId=setInterval(tickRest,250);}
+ renderWorkout();
+};
+let filesPlugin;
+
+
+document.addEventListener('visibilitychange',()=>{if(document.hidden)persistDraft();});
+
+
+// @endsection backup.js
+
+// @section demos.js
+var demoInfo = function demoInfo(id){const d=DEMOS[id];return d?{provider:d[1],videoId:d[2],credit:d[3]||(d[0]?'Muscle & Strength':'Zi workout'),source:d[0]?'https://www.muscleandstrength.com/exercises/'+d[0]:'https://www.youtube.com/watch?v='+d[2]}:null;};
+var demoCard = function demoCard(id){const d=demoInfo(id);if(!d)return '';return `<div class="video-card"><span class="badge">VIDEÓBEMUTATÓ • INTERNET</span><p class="small muted">${esc(d.credit)} • ${d.provider?'külön lejátszó':'videó a forrásoldalon'}</p><button class="btn block" onclick="openDemo('${id}')">${d.provider?'▶ Bemutató megnyitása':'▶ Videó a böngészőben'}</button></div>`;};
+var closeDemo = function closeDemo(){document.getElementById('videoModal')?.remove();};
+var openDemo = function openDemo(id){
+ const d=demoInfo(id);if(!d)return;
+ if(navigator.onLine===false){alert('A videóhoz internet kell. Az edzés és a szöveges útmutató offline is használható.');return;}
+ if(!d.provider){openVideoLink(d.source);return;}
+ closeDemo();
+ const modal=document.createElement('div');modal.id='videoModal';modal.className='video-modal';
+ const src=d.provider==='youtube'?`https://www.youtube.com/embed/${d.videoId}?playsinline=1&rel=0`:`https://player.vimeo.com/video/${d.videoId}?playsinline=1`;
+ const external=d.provider==='youtube'?'https://www.youtube.com/watch?v='+d.videoId:d.source;
+ modal.innerHTML=`<div class="video-dialog" role="dialog" aria-modal="true" aria-label="Gyakorlatbemutató"><button class="btn secondary" onclick="closeDemo()">✕ Bezárás</button><h2>${esc(byId(id)?.hu||'Bemutató')}</h2><div class="video-player"><iframe title="${esc(byId(id)?.hu)}" src="${src}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div><p class="small muted">Forrás: ${esc(d.credit)}. Ha a lejátszó nem indul, nyisd meg külső alkalmazásban.</p><button class="btn block" onclick="openVideoLink('${external}')">Megnyitás külső alkalmazásban</button><button class="btn secondary block" onclick="openVideoLink('${d.source}')">Forrás és útmutató</button></div>`;
+ document.body.appendChild(modal);modal.querySelector('button').focus();
+};
+var openVideoLink = async function openVideoLink(url){persistDraft();try{if(isNative())await nativeFiles().openVideo({url});else window.open(url,'_blank','noopener,noreferrer');}catch(e){alert(e.message||'Nem sikerült megnyitni a videót.');}};
+// Video mappings: original links plus v1.2.1 YouTube additions (2026-09-10).
+// Online players; media is not downloaded or bundled into the APK.
+// 2026-09-10: all built-in exercises use YouTube embeds. Device playback remains to be tested.
+const DEMOS = {
+ 'goblet-squat':[null,'youtube','CkFzgR55gho','YouTube – Goblet Squat'],
+ 'bulgarian-split-squat':[null,'youtube','vLuhN_glFZ8','YouTube – Bulgarian Split Squat'],
+ 'db-pullover':[null,'youtube','a3cF2sS5v6I','YouTube – Dumbbell Pullover on Floor'],
+ 'lateral-raise':[null,'youtube','3VcKaXpzqRo','ScottHermanFitness'],
+ 'hammer-curl':[null,'youtube','zC3nLlEvin4','ScottHermanFitness'],
+ 'close-pushup':[null,'youtube','W3gBdsTzDrk','Team Evolve'],
+ 'leg-press':[null,'youtube','yZmx_Ac3880','Renaissance Periodization'],
+ 'machine-chest-press':[null,'youtube','NwzUje3z0qY','Renaissance Periodization'],
+ 'lat-pulldown':[null,'youtube','CAwf7n6Luuc','ScottHermanFitness'],
+ 'seated-cable-row':[null,'youtube','UCXxvVItLoM','Renaissance Periodization'],
+ 'leg-curl':[null,'youtube','ELOCsoDSmrg','ScottHermanFitness'],
+ 'machine-shoulder-press':[null,'youtube','WvLMauqrnK8','Renaissance Periodization'],
+ 'cable-triceps':[null,'youtube','_w-HpW70nSQ','ScottHermanFitness'],
+ 'cable-curl':[null,'youtube','0QjH28wli5Q','YouTube – Straight Bar Cable Curl'],
+
+ 'db-squat':[null,'youtube','v_c67Omje48','Mike Hildebrandt'],
+ 'db-floor-press':[null,'youtube','uUGDRwge4F8','ScottHermanFitness'],
+ 'one-arm-row':['one-arm-dumbbell-row.html','youtube','YZgVEy6cmaY'],
+ 'rdl':['romanian-deadlift','youtube','-m45n1_x32E'],
+ 'db-curl':[null,'youtube','sAq_ocpRh_I','ScottHermanFitness'],
+ 'plank':[null,'youtube','pSHjTRCQxIw','ScottHermanFitness'],
+ 'reverse-lunge':[null,'youtube','sjlsISvHyZs','ScottHermanFitness'],
+ 'db-ohp':[null,'youtube','Raemd3qWgJc','Renaissance Periodization'],
+ 'barbell-row':[null,'youtube','fpgfWbe7yhc'],
+ 'pushup':['push-up.html','youtube','KEFQyLkDYtI'],
+ 'oh-triceps':['two-arm-standing-dumbbell-extension.html','youtube','VjmgzEmODnI'],
+ 'crunch':['ab-crunch','youtube','Plh1CyiPE_Y']
+};
+
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDemo();});
+
+
+// @endsection demos.js
+
+// @section cloud.js
+var googleBridge = function googleBridge(){return window.Capacitor?.Plugins?.GoogleSync||window.Capacitor?.registerPlugin?.('GoogleSync');};
+var scheduled = function scheduled(){return db.get('scheduled',[]);};
+var cloudPrefs = function cloudPrefs(){return db.get('cloudPrefs',{drive:false,calendar:false});};
+var cloudStatus = function cloudStatus(){const s=db.get('cloudStatus',{});return `<div id="cloudStatus" class="small muted">${esc(cloudMessage)}${s.drive?'<p>Utolsó Drive-szinkron: '+esc(fmtDate(s.drive))+'</p>':''}${s.calendar?'<p>Utolsó naptárszinkron: '+esc(fmtDate(s.calendar))+'</p>':''}</div>`;};
+var cloudPanel = function cloudPanel(){const p=cloudPrefs();return `<div class="setting"><label>Google-fiók és szinkron</label><p class="small muted">${cloudProfile?esc(cloudProfile.name||cloudProfile.email)+' • '+esc(cloudProfile.email):'Kapcsold a Google-fiókodat a TrainPilot-profilhoz. A kiadás Google Cloud-beállítása szükséges.'}</p>${cloudProfile?`<button class="btn secondary block" onclick="disconnectGoogle()">Kijelentkezés</button><br><label><input type="checkbox" ${p.drive?'checked':''} onchange="setCloudOption('drive',this.checked)"> Automatikus Drive-szinkron</label><label><input type="checkbox" ${p.calendar?'checked':''} onchange="setCloudOption('calendar',this.checked)"> Automatikus edzésnaptár</label><p class="small muted">Az app megnyitásakor és adatváltozás után, internet mellett. Bezárt appban nincs háttérszinkron. A naptárkapcsolat iránya: RepForge → Google Naptár.</p><button class="btn block" onclick="syncCloud(false)">Drive-szinkron most</button><br><button class="btn secondary block" onclick="syncCalendar(false)">Naptárszinkron most</button>`:`<button class="btn block" onclick="connectGoogle()">Google-fiók kapcsolása</button>`}${cloudStatus()}</div>`;};
+var showCloudMessage = function showCloudMessage(t){cloudMessage=t||'';const e=document.getElementById('cloudStatus');if(e)e.outerHTML=cloudStatus();};
+var calendarSyncPending=false;
+var cloudDriveStage='';
+var cloudActiveOperation='';
+var cloudRetryAt=0;
+var cloudBackupWaiters=[];
+var waitForCloudBackup=function(){
+ if(!window.TrainPilotBackupBusy)return Promise.resolve();

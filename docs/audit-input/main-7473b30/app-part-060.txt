@@ -1,0 +1,398 @@
+  // Dismissing the calendar's replanner goes back one step; explicit navigation
+  // (restoreFocus=false) releases the whole panel instead.
+  const calendarReturn=currentPanel==='replan'&&restoreFocus?replanCalendarReturn:null;
+  replanCalendarReturn=null;
+  if(calendarReturn){
+   window.tp155R4OpenPanel('calendar',calendarReturn.trigger);
+   const panel=panelHost.querySelector('.tp155-r4-panel');if(panel)panel.scrollTop=calendarReturn.scrollTop;
+   panelHost.querySelector('.tp110-replan-link')?.focus?.({preventScroll:true});
+   return true;
+  }
+  const trigger=panelTrigger,restoreY=panelOpenScrollY;
+  currentPanel='';panelTrigger=null;panelOpenScrollY=0;
+  panelHost?.remove();panelHost=null;
+  document.documentElement.classList.remove('tp155-r4-panel-open');
+  document.body.classList.remove('tp155-r4-panel-open');
+  document.body.style.overflow=bodyOverflow;bodyOverflow='';
+  if(restoreFocus&&Number.isFinite(restoreY)&&Math.abs((window.scrollY||0)-restoreY)>.5)try{window.scrollTo(0,restoreY)}catch(_){}
+  window.tp155R4DecorateNavigation();
+  if(restoreFocus&&trigger?.isConnected)try{trigger.focus({preventScroll:true})}catch(_){}
+  return true;
+ };
+
+ window.tp155R4OpenPanel=function(type,trigger){
+  if(type==='ble')return false;
+  if(type!=='calendar')closeDay(false);
+  if(!PANEL_ROUTES.has(type)||!panelDomSupported)return false;
+  if(currentPanel===type&&panelHost)return true;
+  if(type==='replan')window.TrainPilot110?.resetReplan();
+  replanCalendarReturn=type==='replan'&&currentPanel==='calendar'?{trigger:panelTrigger,scrollTop:panelHost.querySelector('.tp155-r4-panel')?.scrollTop||0}:null;
+  if(!currentPanel){panelOpenScrollY=window.scrollY||window.pageYOffset||0;bodyOverflow=document.body.style.overflow||'';document.body.style.overflow='hidden'}
+  currentPanel=type;panelTrigger=trigger||document.activeElement||null;
+  if(!panelHost){
+   panelHost=document.createElement('div');panelHost.id='tp155R4PanelHost';panelHost.className='tp155-r4-panel-host';
+   panelHost.innerHTML='<section class="tp155-r4-panel" role="region" tabindex="-1" onclick="event.stopPropagation()"><button type="button" class="tp155-r4-panel-close" aria-label="'+esc(tp149T('common.close'))+'" onclick="tp155R4ClosePanel()">×</button><div class="tp155-r4-panel-content"></div></section>';
+   panelHost.addEventListener('click',function(e){if(e.target===panelHost)window.tp155R4ClosePanel()});
+   panelHost.addEventListener('keydown',function(e){
+    if(e.key!=='Escape'||currentPanel!=='replan')return;
+    e.preventDefault();e.stopPropagation();
+    const select=panelHost.querySelector('.tp-select.open');
+    if(select){rf260CloseSelects();select.querySelector('.tp-select-trigger')?.focus();return;}
+    window.tp155R4ClosePanel();
+   },true);
+   document.body.appendChild(panelHost);
+  }
+  document.documentElement.classList.add('tp155-r4-panel-open');document.body.classList.add('tp155-r4-panel-open');
+  panelHost.dataset.panel=type;
+  window.tp155R4RefreshPanel();
+  if(type==='replan'){
+   const panel=panelHost.querySelector('.tp155-r4-panel'),content=panelHost.querySelector('.tp155-r4-panel-content');
+   if(panel)panel.scrollTop=0;if(content)content.scrollTop=0;
+  }
+  panelHost.querySelector('.tp155-r4-panel')?.focus?.({preventScroll:true});
+  return true;
+ };
+
+ window.tp155R4TogglePanel=function(type,trigger){
+  if(currentPanel===type)return window.tp155R4ClosePanel();
+  return window.tp155R4OpenPanel(type,trigger);
+ };
+
+ // Calendar remains represented by the existing nav button, but opens the panel instead of a route.
+ const goBase=go;
+ go=function(route){
+  const key=String(route||'home'),target=window.TrainPilotRoutes?.[key]||key;
+  if(panelDomSupported&&target==='calendar')return window.tp155R4TogglePanel('calendar',document.activeElement);
+  if(panelDomSupported&&target==='settings')return window.tp155R4TogglePanel('settings',document.activeElement);
+  if(currentPanel&&!state.session)window.tp155R4ClosePanel(false);
+  return goBase.apply(this,arguments);
+ };
+ window.TrainPilotNavigate=go;
+
+ // Coach is reached through direct rf233CoachScreen() calls across the app.
+ rf233CoachScreen=function(){return panelDomSupported?window.tp155R4TogglePanel('coach',document.activeElement):coachBase.apply(this,arguments)};
+ rf220CoachScreen=rf233CoachScreen;
+
+ if(typeof tp153OpenCoachTarget==='function'){
+  const targetBase=tp153OpenCoachTarget;
+  tp153OpenCoachTarget=function(){window.tp155R4ClosePanel(false);return targetBase.apply(this,arguments)};
+ }
+
+ // Starting (or confirming replacement of) a workout releases both calendar surfaces.
+ const calendarWorkoutBase=renderWorkout;
+ renderWorkout=function(){
+  if(dayHost&&state.session&&state.session!==daySessionAtOpen)window.tp155R4ClosePanel(false);
+  return calendarWorkoutBase.apply(this,arguments);
+ };
+
+ // Calendar/planner/settings actions commonly call render(); keep the underlying full page
+ // and refresh the still-open panel from the new state.
+ const renderBase=render;
+ render=function(custom){
+  const out=renderBase.apply(this,arguments);
+  window.tp155R4DecorateNavigation();
+  // Pickers keep their editable controls across an ordinary page redraw.
+  // Their filter handlers and explicit RefreshPanel calls update them directly.
+  const keepPicker=custom==null&&['quick','exercises'].includes(currentPanel);
+  if(currentPanel&&!keepPicker&&!window.TrainPilotUIRefresh?.isBackground?.())window.tp155R4RefreshPanel();
+  return out;
+ };
+
+ const backBase=window.TrainPilotAndroidBack;
+ window.TrainPilotAndroidBack=function(){
+  if(currentPanel){
+   if(dayHost&&!dayNestedPicker()){
+    const select=dayHost.querySelector('.tp-select.open');if(select){rf260CloseSelects();select.querySelector('.tp-select-trigger')?.focus();return true;}
+    if(state.tp151EditingScheduleId){tp151CancelCalendarEdit();return true;}return closeDay();
+   }
+   if(panelHost?.querySelector?.('.tp-select.open')){try{rf260CloseSelects()}catch(_){}return true}
+   if(typeof rf260TemporalPicker!=='undefined'&&rf260TemporalPicker)return typeof backBase==='function'?backBase.apply(this,arguments):true;
+   if(document.querySelector?.('#tpTemporalPicker,#tp2628Dialog,.video-modal,.video-overlay'))return typeof backBase==='function'?backBase.apply(this,arguments):true;
+   if(!dayHost&&state.rf260MovingScheduleId){window.tp155CancelCalendarMove();return true;}
+   if(state?.rf151HistoryEdit||state?.tp151EditingScheduleId)return typeof backBase==='function'?backBase.apply(this,arguments):true;
+   const opened=panelHost?[...panelHost.querySelectorAll('details[open]')].reverse():[];
+   if(opened.length){opened[0].open=false;return true}
+   return window.tp155R4ClosePanel();
+  }
+  return typeof backBase==='function'?backBase.apply(this,arguments):false;
+ };
+
+ window.addEventListener?.('resize',positionPanel,{passive:true});
+ window.addEventListener?.('scroll',positionPanel,{passive:true});
+
+ const style=document.createElement('style');style.id='tp155Round3PanelNavigationCss';style.textContent=[
+  '.tp155-r4-panel-host{position:fixed;z-index:14500;left:0;right:0;bottom:0;padding:7px max(8px,env(safe-area-inset-right,0px)) max(8px,env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px));background:rgba(3,7,11,.46);display:flex;align-items:flex-start;justify-content:center;overflow:hidden}',
+  '.tp155-r4-panel{position:relative;width:min(760px,100%);max-height:calc(100% - 2px);overflow:auto;overscroll-behavior:contain;border:1px solid color-mix(in srgb,var(--accent) 42%,var(--line));border-radius:0 0 18px 18px;background:color-mix(in srgb,var(--card) 97%,transparent);box-shadow:0 16px 46px rgba(0,0,0,.42);padding:10px 10px max(12px,env(safe-area-inset-bottom,0px));outline:none}',
+  '.tp155-r4-panel-close{position:sticky;top:0;z-index:5;float:right;width:36px;height:36px;margin:0 0 -36px 8px;border:1px solid var(--line);border-radius:11px;background:color-mix(in srgb,var(--card2) 94%,transparent);color:var(--text);font:800 22px/1 sans-serif;display:grid;place-items:center}',
+  '.tp155-r4-panel-content{clear:both}.tp155-r4-panel-content>main{margin:0!important;padding:2px 0 0!important;max-width:none!important;min-height:0!important}',
+  '.tp155-r4-calendar-panel-main>.tp151-calendar-frame{margin-top:0!important}.tp155-r4-calendar-panel-main>.tp151-day-panel{margin-top:10px!important}.tp155-r4-planner-bottom{margin-top:10px}.tp155-r4-planner-bottom>.rf2211-planner{margin:0!important}',
+  '.tp155-r4-calendar-panel-main .calendar-head{padding-right:40px}',
+  'html[data-tp-theme-family="basic"] .tp155-r4-panel{box-shadow:0 14px 34px rgba(0,0,0,.28)!important;border-color:color-mix(in srgb,var(--accent) 42%,var(--line))!important}',
+  '.top.tp154-nav-grid .tp154-settings-action .tp151-nav-label{display:block!important}',
+  'body>:is(#tpTemporalPicker,#tp2628Dialog,#videoModal,#rf130PhotoModal,.tp-temporal-modal,.video-modal,.video-overlay){z-index:17000!important}',
+  '@media(max-width:390px){.tp155-r4-panel-host{padding-inline:6px}.tp155-r4-panel{padding-inline:8px;border-radius:0 0 15px 15px}.tp155-r4-panel-close{width:34px;height:34px}}'
+ ].join('');
+ document.head.appendChild(style);
+
+ window.tp155R4DecorateNavigation();
+ window.TrainPilot155PanelNavigation={version:'1.5.5-round3-panels',order:['home','plan','health','programs','history','calendar','coach','settings'],calendarPanel:true,coachPanel:true,settingsSheet:true};
+})();
+// @endsection trainpilot-155-round3-panel-navigation.js
+
+// @section trainpilot-160-light-navigation-motion.js
+/* RepForge 1.6: lightweight page/panel reveal without forced synchronous layout. */
+(function(){
+ 'use strict';
+ const FULL=new Set(['home','plan','health','programs','history']);
+ const goBase=go;
+ go=function(route){
+  const key=String(route||'home'),target=window.TrainPilotRoutes?.[key]||key;
+  const out=goBase.apply(this,arguments);
+  if(FULL.has(target)&&!state.session){
+   document.querySelector('#app main')?.classList.add('tp160-page-reveal');
+  }
+  return out;
+ };
+ window.TrainPilotNavigate=go;
+
+ const style=document.createElement('style');style.id='tp160LightNavigationMotionCss';style.textContent=[
+  '@keyframes tp160PageReveal{from{opacity:.72;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}',
+  '@keyframes tp160PanelReveal{from{opacity:.78;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}',
+  '@keyframes tp160BackdropIn{from{background:rgba(3,7,11,0)}to{background:rgba(3,7,11,.46)}}',
+  '#app main.tp160-page-reveal{animation:tp160PageReveal 110ms ease-out both}',
+  '.tp155-r4-panel-host{animation:tp160BackdropIn 100ms ease-out both}',
+  '.tp155-r4-panel{animation:tp160PanelReveal 110ms ease-out both}',
+  // Settings is a top-level destination, not a dialog reveal: present it on tap.
+  '#tp155R4PanelHost[data-panel="settings"],#tp155R4PanelHost[data-panel="settings"] .tp155-r4-panel{animation:none!important;transform:none!important;transition:none!important}',
+  '@media(prefers-reduced-motion:reduce){#app main.tp160-page-reveal,.tp155-r4-panel-host,.tp155-r4-panel{animation:none!important;transform:none!important;transition:none!important}}'
+ ].join('');
+ document.head.appendChild(style);
+ window.RepForge160Motion={version:'1.6.0',forcedLayout:false,clipPath:false,backdropBlur:false};
+})();
+// @endsection trainpilot-160-light-navigation-motion.js
+
+// @section trainpilot-155-round3-stopwatch-layout.js
+/* TrainPilot 1.5.5 Round 3 phone fix:
+ * timed / per-side stopwatch belongs above the workout action grid, never inside it.
+ */
+(function(){
+ 'use strict';
+
+ window.tp155R4NormalizeStopwatchLayout=function(){
+  const main=document.querySelector('main.tp153-workout,main.tp149-workout');
+  if(!main)return false;
+  const card=main.querySelector('#rf110Stopwatch'),actions=main.querySelector('.tp153-workout-actions'),firstSet=main.querySelector('.tp153-set-row,.row');
+  if(!card||!actions)return false;
+  const target=firstSet||actions;
+  if(card.parentElement===actions||card.nextElementSibling!==target){
+   target.parentNode.insertBefore(card,target);
+  }
+  card.classList.add('tp155-r4-stopwatch-fullrow');
+  return true;
+ };
+
+ if(typeof renderWorkout==='function'){
+  const workoutBase=renderWorkout;
+  renderWorkout=function(){
+   const out=workoutBase.apply(this,arguments);
+   window.tp155R4NormalizeStopwatchLayout();
+   return out;
+  };
+ }
+
+ const style=document.createElement('style');style.id='tp155Round3StopwatchLayoutCss';style.textContent=[
+  '.tp153-workout>.rf110-stopwatch.tp155-r4-stopwatch-fullrow{display:block!important;position:static!important;inset:auto!important;float:none!important;z-index:auto!important;transform:none!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;margin:10px 0 14px!important;grid-column:1/-1!important;overflow:visible!important}',
+  '.tp153-workout-actions>.rf110-stopwatch{grid-column:1/-1!important;width:100%!important}',
+  '.tp153-workout-actions{position:relative!important;z-index:1!important;clear:both!important}.tp153-workout-actions .btn{position:relative!important;z-index:1!important}',
+  '.tp1481-side-stopwatch .tp1481-side-grid{min-width:0}',
+  '.tp1481-side-stopwatch .tp1481-side-card{min-width:0;max-width:100%;box-sizing:border-box}',
+  '.tp1481-side-stopwatch .tp1481-side-actions{min-width:0}',
+  '.tp1481-side-stopwatch .tp1481-side-actions .btn{min-width:0;white-space:normal}',
+  '@media(max-width:430px){.tp1481-side-stopwatch .tp1481-side-grid{grid-template-columns:1fr!important}.tp1481-side-stopwatch .tp1481-side-actions{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr)!important}}'
+ ].join('');
+ document.head.appendChild(style);
+ window.tp155R4NormalizeStopwatchLayout();
+ window.TrainPilot155StopwatchLayout={version:'1.5.5-round3-stopwatch-layout',outsideActionGrid:true,perSideResponsive:true};
+})();
+// @endsection trainpilot-155-round3-stopwatch-layout.js
+
+// @section trainpilot-155-round3-panel-select-anchor.js
+/* TrainPilot 1.5.5 Round 3 phone fix:
+ * fixed-position custom select menus must stay anchored to their trigger inside
+ * Calendar / Coach / Settings panels. The panel reveal transform is removed
+ * after animation so fixed descendants use viewport coordinates again.
+ */
+(function(){
+ 'use strict';
+
+ let settleTimer=null;
+ const settlePanel=function(panel){
+  if(!panel)return;
+  panel.classList.add('tp155-r4-panel-settled');
+  clearTimeout(settleTimer);
+  settleTimer=null;
+  try{
+   if(typeof rf260RepositionOpenSelects==='function')requestAnimationFrame(()=>rf260RepositionOpenSelects());
+  }catch(_){}
+ };
+
+ if(typeof window.tp155R4OpenPanel==='function'){
+  const openBase=window.tp155R4OpenPanel;
+  window.tp155R4OpenPanel=function(){
+   const out=openBase.apply(this,arguments);
+   const panel=document.querySelector?.('#tp155R4PanelHost .tp155-r4-panel');
+   if(panel){
+    if(panel.closest('#tp155R4PanelHost[data-panel="settings"]')){
+     // No 230 ms wait for an animation that Settings no longer runs.
+     settlePanel(panel);
+    }else{
+     panel.classList.remove('tp155-r4-panel-settled');
+     panel.addEventListener?.('animationend',()=>settlePanel(panel),{once:true});
+     clearTimeout(settleTimer);
+     settleTimer=setTimeout(()=>settlePanel(panel),230);
+    }
+   }
+   return out;
+  };
+ }
+
+ if(typeof rf260PositionSelect==='function'){
+  const positionBase=rf260PositionSelect;
+  rf260PositionSelect=function(wrap){
+   const panel=wrap?.closest?.('.tp155-r4-panel');
+   if(panel&&!panel.classList.contains('tp155-r4-panel-settled'))settlePanel(panel);
+   return positionBase.apply(this,arguments);
+  };
+ }
+
+ const existing=document.querySelector?.('#tp155R4PanelHost .tp155-r4-panel');
+ if(existing)settlePanel(existing);
+
+ const style=document.createElement('style');style.id='tp155Round3PanelSelectAnchorCss';style.textContent=[
+  '.tp155-r4-panel.tp155-r4-panel-settled{animation:none!important;transform:none!important;will-change:auto!important}',
+  '.tp155-r4-panel .tp-select-menu{max-width:min(calc(100vw - 16px),720px)}'
+ ].join('');
+ document.head.appendChild(style);
+
+ window.TrainPilot155PanelSelectAnchor={version:'1.5.5-round3-panel-select-anchor',viewportAnchored:true};
+})();
+// @endsection trainpilot-155-round3-panel-select-anchor.js
+
+// @section trainpilot-155-round3-home-calendar-priority.js
+/* TrainPilot 1.5.5 Round 3 phone fix:
+ * Home must honor today's unfinished Calendar workout for the whole local day,
+ * even after its planned clock time has passed.
+ */
+(function(){
+ 'use strict';
+
+ const isDone=function(x){
+  return !!(x&&(x.status==='completed'||history().some(function(h){return h.scheduleId===x.id})));
+ };
+ const isPlanned=function(x){
+  return !!(x&&!x.cancelled&&(x.status||'planned')==='planned'&&!isDone(x));
+ };
+
+ const nextPlannedBase=nextPlanned;
+ nextPlanned=function(){
+  const all=scheduled().filter(isPlanned).sort(function(a,b){return Date.parse(a.start)-Date.parse(b.start)});
+  const today=typeof localDateKey==='function'?localDateKey(new Date()):'';
+  const todayItem=today?all.find(function(x){
+   const d=new Date(x.start);
+   return Number.isFinite(d.getTime())&&localDateKey(d)===today;
+  }):null;
+  if(todayItem)return todayItem;
+  const now=Date.now();
+  return all.find(function(x){return Date.parse(x.start)>=now})||null;
+ };
+
+ window.TrainPilot155HomeCalendarPriority={
+  version:'1.5.5-round3-home-calendar-priority',
+  todayScheduleWins:true,
+  preservesPastClockTime:true,
+  previous:nextPlannedBase
+ };
+})();
+// @endsection trainpilot-155-round3-home-calendar-priority.js
+
+// @section trainpilot-155-next-12-mods.js
+/* Targeted phone-test follow-ups. Reuse the existing Round 3 panels, calendar
+ * model, quick-workout builder, exercise cards and stopwatch persistence. */
+(function(){
+ 'use strict';
+ const lang=function(){return typeof rf212Lang==='function'?rf212Lang():'hu'};
+ const text={
+  hu:{done:'Elvégezve',log:'Edzésnapló',stats:'Statisztikák',edit:'Szerkesztés',closeEdit:'Szerkesztés bezárása',search:'Keresés',muscle:'Izomcsoport',gear:'Felszerelés',all:'Összes'},
+  en:{done:'Completed',log:'Workout log',stats:'Statistics',edit:'Edit',closeEdit:'Close edit',search:'Search',muscle:'Muscle group',gear:'Equipment',all:'All'},
+  de:{done:'Erledigt',log:'Trainingstagebuch',stats:'Statistiken',edit:'Bearbeiten',closeEdit:'Bearbeiten schließen',search:'Suche',muscle:'Muskelgruppe',gear:'Ausrüstung',all:'Alle'},
+  ro:{done:'Finalizat',log:'Jurnal antrenamente',stats:'Statistici',edit:'Editează',closeEdit:'Închide editarea',search:'Căutare',muscle:'Grupă musculară',gear:'Echipament',all:'Toate'}
+ };
+ const t=function(key){return text[lang()]?.[key]||text.hu[key]||key};
+ if(typeof window==='undefined'||typeof tp151ScheduleCard!=='function'||typeof window.tp155R4OpenPanel!=='function')return;
+
+ /* #9: open the existing date picker directly; preserve time, identity and duration. */
+ rf260OpenScheduleMove=function(id,button){
+  const item=scheduled().find(function(x){return x.id===id&&!x.cancelled});if(!item)return false;
+  const start=new Date(item.start),input=document.createElement('input');
+  input.type='date';input.className='field';input.hidden=true;input.value=localDateKey(Number.isNaN(start.getTime())?new Date():start);input.dataset.tp152Temp='calendar';input.dataset.tp155MoveSchedule=id;
+  document.body.appendChild(input);state.rf260MovingScheduleId=id;rf260SetMoveButtonState(id,true);
+  input.addEventListener('change',function(){
+   const date=input.value;input.remove();if(!date)return;
+   const rows=scheduled(),i=rows.findIndex(function(x){return x.id===id&&!x.cancelled});if(i<0)return;
+   const old=rows[i],oldStart=new Date(old.start),time=Number.isNaN(oldStart.getTime())?'18:00':oldStart.toTimeString().slice(0,5);
+   try{
+    const next=dateAt(date,time),duration=Math.max(60000,Date.parse(old.end)-Date.parse(old.start));
+    rows[i]=Object.assign({},old,{start:next.toISOString(),end:new Date(next.getTime()+duration).toISOString(),updatedAt:Date.now()});
+    db.set('scheduled',rows);state.rf260MovingScheduleId=null;rf260SetMoveButtonState(id,false);if(typeof cloudChanged==='function')cloudChanged();render();
+   }catch(error){alert(error?.message||rf260MoveText().invalid)}
+  },{once:true});
+  rf260OpenTemporal(input,button||document.activeElement);return true;
+ };
+ const moveTemporalCloseBase=rf260TemporalClose;
+ rf260TemporalClose=function(){
+  const moveId=rf260TemporalPicker?.input?.dataset?.tp155MoveSchedule||state.rf260MovingScheduleId,out=moveTemporalCloseBase.apply(this,arguments);
+  if(moveId){state.rf260MovingScheduleId=null;rf260SetMoveButtonState(moveId,false)}return out;
+ };
+
+ /* #10: correction action reconciles existing history and never creates a log. */
+ window.tp155MarkScheduleCompleted=function(id){
+  const rows=scheduled(),i=rows.findIndex(function(x){return x.id===id&&!x.cancelled});if(i<0)return false;
+  const item=rows[i],date=localDateKey(new Date(item.start)),logs=history();
+  let changedHistory=false,match=logs.find(function(h){return h.scheduleId===id});
+  if(!match){
+   match=logs.find(function(h){
+    const sameDate=localDateKey(new Date(h.started))===date;
+    const sameProgram=!item.programId||!h.programId||h.programId===item.programId;
+    const sameDay=String(h.dayId||h.workout||'')===String(item.dayId||item.workout||'');
+    return sameDate&&sameProgram&&sameDay;
+   });
+   if(match&&!match.scheduleId){match.scheduleId=id;changedHistory=true}
+  }
+  rows[i]=Object.assign({},item,{status:'completed',completedAt:item.completedAt||new Date().toISOString(),updatedAt:Date.now()});
+  db.set('scheduled',rows);if(changedHistory)db.set('history',logs);if(typeof cloudChanged==='function')cloudChanged();render();return true;
+ };
+ const calendarCardBase=tp151ScheduleCard;
+ tp151ScheduleCard=function(item){
+  let html=String(calendarCardBase(item)),done=typeof rf209ScheduleDone==='function'&&rf209ScheduleDone(item);
+  html=html.replace('onclick="rf260OpenScheduleMove(\''+item.id+'\',this)"','data-tp-move-id="'+esc(item.id)+'" onclick="rf260OpenScheduleMove(\''+esc(item.id)+'\',this)"');
+  if(!done){
+   const action='<button class="btn secondary tp155-complete-schedule" onclick="tp155MarkScheduleCompleted(\''+esc(item.id)+'\')">'+esc(t('done'))+'</button>';
+   html=html.replace(/(<button class="btn secondary" onclick="skipSchedule)/,action+'$1');
+  }
+  return html;
+ };
+
+ /* #5: the existing Statistics view now has Journal tabs and parent navigation. */
+ const journalTabs=function(active){return '<nav class="tp155-journal-tabs" aria-label="'+esc(t('log'))+'"><button class="'+(active==='log'?'active':'')+'" onclick="go(\'history\')">'+esc(t('log'))+'</button><button class="'+(active==='stats'?'active':'')+'" onclick="tp155OpenJournalStats()">'+esc(t('stats'))+'</button></nav>'};
+ const historyBase=historyScreen;
+ historyScreen=function(){return String(historyBase.apply(this,arguments)).replace(/(<main[^>]*>)/,function(m){return m+journalTabs('log')})};
+ const statsBase=typeof tp2627OpenStats==='function'?tp2627OpenStats:function(){if(typeof rf221StatsScreen==='function')rf221StatsScreen()};
+ window.tp155OpenJournalStats=function(){
+  statsBase();const main=document.querySelector('#app main');if(main&&!main.querySelector('.tp155-journal-tabs'))main.insertAdjacentHTML('afterbegin',journalTabs('stats'));
+  window.tp155R4DecorateNavigation?.();
+ };
+ window.tp2627OpenStats=window.tp155OpenJournalStats;
+
+ /* #8: mount the existing inline Quick Workout choices in the shared panel. */
+ window.tp155QuickPanelHtml=function(){
+  const query=String(state.tp155QuickQuery||'');

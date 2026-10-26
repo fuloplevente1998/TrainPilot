@@ -1,0 +1,196 @@
+var rf221RemoveProgramStats = function rf221RemoveProgramStats(){setTimeout(()=>{if(state.tab!=='programs')return;const main=document.querySelector('main');if(!main)return;main.querySelectorAll('button,.card,[role="button"]').forEach(el=>{const txt=(el.textContent||'').trim(),oc=el.getAttribute('onclick')||'';if(/statsScreen\s*\(/.test(oc)||/^(Statisztikák|Statistics|Statistiken|Statistici)$/.test(txt)){const card=el.closest('.card');if(card&&/Gyakorlat|Exercise|Übung|Exerci/i.test(card.textContent||''))el.remove();else if(el.tagName==='BUTTON')el.remove()}})},0)};
+var rf221CompactHome = function rf221CompactHome(){setTimeout(()=>{if(state.tab!=='home')return;const main=document.querySelector('main');if(!main||!main.querySelector('#rf220CoachCard'))return;main.classList.add('rf221-home');const c=main.querySelector('#rf220CoachCard');if(c&&!c.classList.contains('tp166-home-coach')){const t=rf220L(),x=rf221T(),r=rf220Readiness();c.innerHTML=`<div class="rf221-coach-head"><strong>${t.coach}</strong><span class="badge">${r.score}/100</span></div><div class="small muted rf221-coach-line">${t[r.level]} • ${esc(rf220CoachText(r))}</div><div class="grid2 rf221-coach-actions"><button class="btn secondary" onclick="rf220CoachScreen()">${x.details}</button><button class="btn secondary" onclick="tp2627OpenStats()">${x.stats}</button></div>`}main.querySelectorAll('.card').forEach(el=>{if(el===c)return;const s=el.textContent||'';if(/Gyors elérés|Quick access|Schnellzugriff|Acces rapid/i.test(s))el.remove()})},0)};
+var rf221Css = function rf221Css(){if(document.querySelector('#rf221Css'))return;const s=document.createElement('style');s.id='rf221Css';s.textContent=`body:has(main.rf221-home){overflow:hidden}main.rf221-home{height:calc(100dvh - 122px);max-height:calc(100dvh - 122px);overflow:hidden;display:flex;flex-direction:column;gap:7px;padding-bottom:4px}main.rf221-home>.hero{margin:0!important;padding:10px 12px!important;min-height:0}main.rf221-home>.hero h1{margin:0 0 3px!important;font-size:clamp(20px,5.5vw,27px)!important}main.rf221-home>.hero p,main.rf221-home>.hero .muted{margin:0!important;font-size:12px!important;line-height:1.25!important}main.rf221-home>.card{margin:0!important;padding:9px 11px!important;min-height:0}main.rf221-home>.grid2{gap:7px!important;margin:0!important}main.rf221-home .stat{padding:8px 9px!important;min-height:0!important}main.rf221-home .stat strong{font-size:18px!important}main.rf221-home .section{margin:3px 0!important}#rf220CoachCard{margin-top:auto!important}.rf221-coach-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.rf221-coach-line{margin:4px 0 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rf221-coach-actions{gap:7px!important}.rf221-coach-actions .btn{padding:7px 9px!important;min-height:34px!important}@media(max-height:700px){main.rf221-home{gap:5px;height:calc(100dvh - 112px);max-height:calc(100dvh - 112px)}main.rf221-home>.hero{padding:7px 10px!important}.rf221-coach-line{display:none}main.rf221-home>.card{padding:7px 9px!important}}`;document.head.appendChild(s)};
+/* TrainPilot 2.2.1: compact non-scrolling home dashboard + Coach/Statistics hierarchy. */
+const RF221_VERSION='2.2.1';
+const RF221_I18N={hu:{stats:'Statisztikák',details:'Részletek'},en:{stats:'Statistics',details:'Details'},de:{stats:'Statistiken',details:'Details'},ro:{stats:'Statistici',details:'Detalii'}};
+
+
+const rf221Home=home;home=function(){const x=rf221Home();rf221Css();rf221CompactHome();return x};
+const rf221Go=go;go=function(t){if(t==='progress')return rf221StatsScreen();const r=rf221Go(t);setTimeout(()=>{rf221RemoveProgramStats();if(state.tab==='home'){rf221Css();rf221CompactHome()}},0);return r};
+
+rf221Css();rf221CompactHome();rf221RemoveProgramStats();
+
+// @endsection v221.js
+
+// @section v222.js
+var rf222T = function rf222T(){const k=typeof rf212Lang==='function'?rf212Lang():'hu';return RF222_TEXT[k]||RF222_TEXT.hu};
+var rf222Locale = function rf222Locale(){const k=typeof rf212Lang==='function'?rf212Lang():'hu';return k==='de'?'de-DE':k==='ro'?'ro-RO':k==='en'?'en-GB':'hu-HU'};
+var rf222Time = function rf222Time(v){const d=new Date(v);return Number.isNaN(d.getTime())?'—':d.toLocaleTimeString(rf222Locale(),{hour:'2-digit',minute:'2-digit'})};
+var rf222Duration = function rf222Duration(m){const n=Math.max(0,Math.round(Number(m)||0)),h=Math.floor(n/60),r=n%60;return h?`${h} h ${r} min`:`${r} min`};
+var rf222SessionName = function rf222SessionName(s){const t=rf222T();return String(s?.title||'').trim()||`${t.unknown} #${s?.exerciseType??'—'}`};
+var rf222Timeline = function rf222Timeline(d){const t=rf222T(),rows=Array.isArray(d?.exerciseSessions)?d.exerciseSessions.slice():[];rows.sort((a,b)=>Date.parse(a.start||0)-Date.parse(b.start||0));if(!rows.length)return `<div class="card"><h2>${t.timeline}</h2><p class="small muted">${t.none}</p></div>`;return `<div class="card"><h2>${t.timeline}</h2>${rows.map(s=>`<div class="weight-row"><div><strong>${esc(rf222SessionName(s))}</strong><div class="small muted">${rf222Time(s.start)}–${rf222Time(s.end)} • ${rf222Duration(s.durationMinutes)}</div></div><span class="badge">HC</span></div>`).join('')}</div>`};
+var rf222Diagnostics = function rf222Diagnostics(d){const t=rf222T(),x=d?.diagnostics||{};return `<details class="card"><summary><strong>${t.diagnostics}</strong></summary><p class="small muted">${t.raw}</p><div class="grid2"><div class="stat"><small>${t.heart}</small><strong>${Number(x.heartRateRecords)||0}</strong></div><div class="stat"><small>${t.cal}</small><strong>${Number(x.activeCaloriesRecords)||0}</strong></div><div class="stat"><small>${t.sessions}</small><strong>${Number(x.exerciseSessionRecords)||0}</strong></div><div class="stat"><small>${t.selected}</small><strong>${Number(x.selectedSourceExerciseSessions)||0}</strong></div></div></details>`};
+/* TrainPilot 2.2.2: Health Connect workout sessions + daily activity diagnostics */
+const RF222_VERSION='2.2.2';
+const RF222_TEXT={
+ hu:{title:'Mai aktivitás',source:'Forrás',active:'Aktív energia',avg:'Átlagpulzus',max:'Max. pulzus',samples:'Pulzusminták',workouts:'Edzések',minutes:'Aktív edzésidő',timeline:'Mai edzések',none:'A kiválasztott forrásból ma nem érkezett ExerciseSession rekord.',refresh:'Mai adatok frissítése',diagnostics:'Health Connect diagnosztika',raw:'Beolvasott rekordok',heart:'Pulzus rekord',cal:'Aktívkalória rekord',sessions:'Edzés rekord',selected:'Kiválasztott forrás edzései',measured:'Health Connect mérés',unknown:'Edzés'},
+ en:{title:'Today activity',source:'Source',active:'Active energy',avg:'Average heart rate',max:'Max. heart rate',samples:'Heart-rate samples',workouts:'Workouts',minutes:'Active workout time',timeline:'Today workouts',none:'No ExerciseSession records arrived today from the selected source.',refresh:'Refresh today data',diagnostics:'Health Connect diagnostics',raw:'Records read',heart:'Heart-rate records',cal:'Active-calorie records',sessions:'Exercise records',selected:'Selected-source workouts',measured:'Health Connect measurement',unknown:'Workout'},
+ de:{title:'Heutige Aktivität',source:'Quelle',active:'Aktive Energie',avg:'Durchschnittspuls',max:'Max. Puls',samples:'Pulsmessungen',workouts:'Trainings',minutes:'Aktive Trainingszeit',timeline:'Heutige Trainings',none:'Von der ausgewählten Quelle sind heute keine ExerciseSession-Daten angekommen.',refresh:'Heutige Daten aktualisieren',diagnostics:'Health Connect Diagnose',raw:'Gelesene Datensätze',heart:'Puls-Datensätze',cal:'Aktivkalorien-Datensätze',sessions:'Trainings-Datensätze',selected:'Trainings der Quelle',measured:'Health Connect Messung',unknown:'Training'},
+ ro:{title:'Activitatea de azi',source:'Sursă',active:'Energie activă',avg:'Puls mediu',max:'Puls maxim',samples:'Probe puls',workouts:'Antrenamente',minutes:'Timp activ de antrenament',timeline:'Antrenamente azi',none:'Nu au sosit înregistrări ExerciseSession azi din sursa selectată.',refresh:'Actualizează datele de azi',diagnostics:'Diagnostic Health Connect',raw:'Înregistrări citite',heart:'Înregistrări puls',cal:'Înregistrări calorii active',sessions:'Înregistrări antrenament',selected:'Antrenamente sursă selectată',measured:'Măsurare Health Connect',unknown:'Antrenament'}
+};
+
+
+const rf222OldDailyCard=rf207DailyCard;
+rf207DailyCard=function(){
+ const d=rf207HealthDaily(),t=rf222T();
+ if(!d)return rf222OldDailyCard();
+ const sources=Array.isArray(d.sources)?d.sources:[];
+ const options=sources.length>1?`<label class="small">${t.source}<select class="field" onchange="rf207ChangeSource(this.value)">${sources.map(x=>`<option value="${esc(x)}" ${x===d.source?'selected':''}>${esc(d.sourceLabels?.[x]||x)}</option>`).join('')}</select></label>`:'';
+ const count=Number(d.exerciseSessionCount)||((d.exerciseSessions||[]).length||0),mins=Number(d.exerciseMinutes)||0;
+ return `<div class="card"><h2>${t.title} • Health Connect</h2><p class="small muted">${t.source}: ${esc(rf207SourceLabel(d))}${d.readAt?' • '+rf222Time(d.readAt):''} • ${t.measured}</p>${options}<div class="grid2"><div class="stat"><small>${t.active}</small><strong>${d.activeCalories==null?'—':rf207FmtNum(d.activeCalories,' kcal')}</strong></div><div class="stat"><small>${t.workouts}</small><strong>${count}</strong></div><div class="stat"><small>${t.minutes}</small><strong>${mins?rf222Duration(mins):'—'}</strong></div><div class="stat"><small>${t.avg}</small><strong>${d.averageHeartRate==null?'—':rf207FmtNum(d.averageHeartRate,' bpm')}</strong></div><div class="stat"><small>${t.max}</small><strong>${d.maxHeartRate==null?'—':rf207FmtNum(d.maxHeartRate,' bpm')}</strong></div><div class="stat"><small>${t.samples}</small><strong>${rf207FmtNum(d.heartRateSamples)}</strong></div></div><button class="btn secondary block" onclick="rf207ReadTodayHealth()">${t.refresh}</button></div>${rf222Timeline(d)}${rf222Diagnostics(d)}`;
+};
+
+render();
+
+
+// @endsection v222.js
+
+// @section v223.js
+var rf223T = function rf223T(){const k=typeof rf212Lang==='function'?rf212Lang():'hu';return RF223_TEXT[k]||RF223_TEXT.hu};
+var rf223Weight = function rf223Weight(){try{const w=typeof weights==='function'?weights():[];if(!Array.isArray(w)||!w.length)return null;const a=w.slice().sort((x,y)=>Date.parse(y.date||0)-Date.parse(x.date||0));return Number(a[0]?.kg)||null}catch(_){return null}};
+var rf223Daily = function rf223Daily(){try{return typeof rf207HealthDaily==='function'?rf207HealthDaily():null}catch(_){return null}};
+var rf223StatusHtml = function rf223StatusHtml(){const t=rf223T(),d=rf223Daily(),kg=rf223Weight();const mins=Math.max(0,Math.round(Number(d?.exerciseMinutes)||0));const kcal=d?.activeCalories==null?null:Math.round(Number(d.activeCalories)||0);const n=Number(d?.exerciseSessionCount)||((d?.exerciseSessions||[]).length||0);return `<div class="card rf223-today" id="rf223Today"><div class="rf223-title"><strong>${t.today}</strong>${!d?`<span class="small muted">${t.noData}</span>`:''}</div><div class="rf223-grid"><button class="rf223-stat" onclick="go('health')"><small>${t.activity}</small><strong>${mins?rf222Duration(mins):'—'}</strong></button><button class="rf223-stat" onclick="go('health')"><small>${t.cal}</small><strong>${kcal==null?'—':kcal+' kcal'}</strong></button><button class="rf223-stat" onclick="go('health')"><small>${t.workouts}</small><strong>${d?n:'—'}</strong></button><button class="rf223-stat" onclick="rf215WeightScreen()"><small>${t.weight}</small><strong>${kg==null?'—':kg.toLocaleString(rf222Locale(),{maximumFractionDigits:1})+' kg'}</strong></button></div></div>`};
+var rf223Apply = function rf223Apply(){if(window.TrainPilotBoot?.loading)return;setTimeout(()=>{if(state.tab!=='home')return;const main=document.querySelector('main.rf221-home')||document.querySelector('main');if(!main||main.querySelector('#rf223Today'))return;const coach=main.querySelector('#rf220CoachCard');if(!coach)return;coach.insertAdjacentHTML('beforebegin',rf223StatusHtml());},0)};
+var rf223Css = function rf223Css(){if(document.querySelector('#rf223Css'))return;const s=document.createElement('style');s.id='rf223Css';s.textContent=`main.rf221-home .rf223-today{padding:8px 10px!important}.rf223-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}.rf223-title .muted{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rf223-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.rf223-stat{appearance:none;border:1px solid var(--border,#2d3440);background:rgba(255,255,255,.025);border-radius:10px;padding:7px 5px;color:inherit;text-align:center;min-width:0}.rf223-stat small{display:block;font-size:10px;line-height:1.1;opacity:.72;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rf223-stat strong{display:block;margin-top:3px;font-size:14px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}@media(max-width:360px){.rf223-grid{gap:4px}.rf223-stat{padding:6px 3px}.rf223-stat strong{font-size:12px}}@media(max-height:700px){main.rf221-home .rf223-today{padding:6px 8px!important}.rf223-title{margin-bottom:4px}.rf223-stat{padding:5px 3px}}`;document.head.appendChild(s)};
+/* TrainPilot 2.2.3: compact Today status card on the non-scrolling Home dashboard. */
+const RF223_VERSION='2.2.3';
+const RF223_TEXT={
+ hu:{today:'Mai állapot',activity:'Aktivitás',cal:'Aktív kcal',workouts:'Edzések',weight:'Testsúly',noData:'Nincs mai Health Connect adat'},
+ en:{today:'Today status',activity:'Activity',cal:'Active kcal',workouts:'Workouts',weight:'Body weight',noData:'No Health Connect data today'},
+ de:{today:'Heutiger Status',activity:'Aktivität',cal:'Aktive kcal',workouts:'Trainings',weight:'Körpergewicht',noData:'Heute keine Health Connect Daten'},
+ ro:{today:'Starea de azi',activity:'Activitate',cal:'Kcal active',workouts:'Antrenamente',weight:'Greutate',noData:'Nu există date Health Connect azi'}
+};
+
+
+const rf223Home=home;home=function(){const x=rf223Home();rf223Css();rf223Apply();return x};
+const rf223Go=go;go=function(t){const r=rf223Go(t);if(t==='home')rf223Apply();return r};
+
+rf223Css();rf223Apply();
+
+// @endsection v223.js
+
+// @section v224.js
+var rf224T = function rf224T(){const k=typeof rf212Lang==='function'?rf212Lang():'hu';return RF224_TEXT[k]||RF224_TEXT.hu};
+var rf224DayChoice = function rf224DayChoice(date){
+ const items=scheduleOnDate(date).filter(x=>!x.cancelled);
+ if(items.length){rf209DeleteSchedule(items[0].id);return;}
+ const p=activeProgram(),days=p?.days||[];if(!days.length)return;
+ const t=rf224T(),labels=days.map((d,i)=>`${i+1}. ${d.name||d.id}`).join('\n');
+ const raw=prompt(`${t.choose}\n\n${labels}`,'1');if(raw===null)return;
+ const n=Number(raw),d=Number.isInteger(n)&&n>=1&&n<=days.length?days[n-1]:days.find(x=>String(x.id).toLowerCase()===String(raw).trim().toLowerCase());
+ if(!d){alert(t.cancel);return;}
+ const s=plannerSettings(),item=makeScheduleItem(p,date,s.time,s.minutes,d.id);addScheduleBatch([item]);render();
+};
+var rf224PlannerStrip = function rf224PlannerStrip(){const s=plannerSettings(),t=rf224T();return `<details class="card rf224-settings"><summary><strong>${t.settings}</strong></summary><div class="grid2 rf224-setgrid"><label class="small">${t.time}<input id="rf224Time" class="field" type="time" value="${esc(s.time)}" onchange="rf224SaveQuick()"></label><label class="small">${t.minutes} (min)<input id="rf224Minutes" class="field" type="number" min="10" max="240" value="${s.minutes}" onchange="rf224SaveQuick()"></label></div></details>`};
+var rf224SaveQuick = function rf224SaveQuick(){const s=plannerSettings(),time=document.querySelector('#rf224Time')?.value||s.time,minutes=Math.max(10,Math.min(240,Number(document.querySelector('#rf224Minutes')?.value)||s.minutes));db.set('plannerSettings',{...s,mode:'custom',time,minutes});};
+var rf224Css = function rf224Css(){if(document.querySelector('#rf224Css'))return;const s=document.createElement('style');s.id='rf224Css';s.textContent=`.rf224-hero{margin-bottom:8px!important}.rf224-settings{margin:0 0 8px!important;padding:8px 10px!important}.rf224-settings summary{cursor:pointer}.rf224-setgrid{margin-top:8px;gap:8px}.rf224-setgrid .field{margin-top:4px}.calendar-wrap{margin-top:4px!important}`;document.head.appendChild(s)};
+/* TrainPilot 2.2.4: calendar-first planning + explicit program-day selection. */
+const RF224_VERSION='2.2.4';
+const RF224_TEXT={
+ hu:{title:'Edzésnaptár',hint:'Koppints egy napra, majd válaszd ki az edzésnapot.',planned:'Tervezett edzések',choose:'Melyik edzésnap kerüljön erre a napra?',remove:'Törlés',cancel:'Mégse',settings:'Tervezési beállítások',time:'Alap időpont',minutes:'Időtartam',empty:'Még nincs tervezett edzés.'},
+ en:{title:'Workout calendar',hint:'Tap a date, then choose the workout day.',planned:'Planned workouts',choose:'Which workout day should be added?',remove:'Delete',cancel:'Cancel',settings:'Planning settings',time:'Default time',minutes:'Duration',empty:'No planned workouts yet.'},
+ de:{title:'Trainingskalender',hint:'Tippe auf einen Tag und wähle dann den Trainingstag.',planned:'Geplante Trainings',choose:'Welcher Trainingstag soll eingetragen werden?',remove:'Löschen',cancel:'Abbrechen',settings:'Planungseinstellungen',time:'Standardzeit',minutes:'Dauer',empty:'Noch keine geplanten Trainings.'},
+ ro:{title:'Calendar antrenamente',hint:'Atinge o zi, apoi alege ziua de antrenament.',planned:'Antrenamente planificate',choose:'Ce zi de antrenament vrei să adaugi?',remove:'Șterge',cancel:'Anulează',settings:'Setări planificare',time:'Ora implicită',minutes:'Durată',empty:'Nu există antrenamente planificate.'}
+};
+
+
+toggleCalendarDay=rf224DayChoice;
+
+
+calendarScreen=function(){const t=rf224T();return shell(`<main><div class="hero rf224-hero"><h1>${t.title}</h1><div class="muted">${t.hint}</div></div>${rf224PlannerStrip()}<div class="calendar-wrap"><div class="calendar-head"><button class="btn secondary" onclick="changeCalendarMonth(-1)">‹</button><strong>${new Date(state.calendarMonth+'-01T12:00').toLocaleDateString(rf222Locale(),{year:'numeric',month:'long'})}</strong><button class="btn secondary" onclick="changeCalendarMonth(1)">›</button></div><div class="cal-weekdays">${['H','K','Sze','Cs','P','Szo','V'].map(x=>`<span>${x}</span>`).join('')}</div><div class="calendar-grid">${calendarGrid()}</div></div><div class="section">${t.planned}</div>${scheduleListHtml()}</main>`)};
+
+
+rf224Css();render();
+
+
+// @endsection v224.js
+
+// @section v225.js
+var rf225Number = function rf225Number(v){return v==null||v===''?null:Number.isFinite(Number(v))?Number(v):null;};
+var rf225Warnings = function rf225Warnings(result){return Array.isArray(result?.warnings)?result.warnings:[];};
+var rf225HealthMessage = function rf225HealthMessage(result,success){const warnings=rf225Warnings(result);return success+(warnings.length?' Részleges olvasás: '+warnings.join(' • '):'');};
+var rf225ReadDaily = async function rf225ReadDaily(p,preferred=null){
+ const range=rf207TodayRange();
+ let r=await p.readWorkout({...range,source:preferred||state.health.dailySource||''});
+ const sources=Array.isArray(r.sources)?r.sources:[];
+ const source=preferred||(sources.includes(r.source)?r.source:rf207PickSource(r));
+ if(source&&r.source!==source)r=await p.readWorkout({...range,source});
+ state.health.dailySource=source||'';
+ state.health.daily={...r,source:source||'',readAt:new Date().toISOString()};
+ if(r.permissions)state.health.permissions=r.permissions;
+ return rf225HealthMessage(r,source?'Mai Health Connect adatok frissítve.':'Nincs megosztott mai aktivitásadat. Ellenőrizd az óra és a Samsung Health szinkronját.');
+};
+var rf225ReadRecovery = async function rf225ReadRecovery(p){
+ const end=new Date(),start=new Date(end.getTime()-7*24*3600000);
+ const result=await p.readRecovery({start:start.toISOString(),end:end.toISOString()});
+ state.health.recovery=result;
+ if(result.permissions)state.health.permissions=result.permissions;
+ return rf225HealthMessage(result,result.sleepMinutes!=null||result.hrvRmssdMs!=null?'Regenerációs adatok frissítve.':'Nincs megosztott alvás/HRV adat az elmúlt 7 napban.');
+};
+var rf225ConnectHealth = async function rf225ConnectHealth(){
+ await healthAction(async p=>{
+  const status=await p.requestRead();
+  state.health.permissions=status.permissions||(await p.getStatus()).permissions;
+  const messages=[];
+  for(const read of [rf225ReadDaily,rf225ReadRecovery]){
+   try{messages.push(await read(p));}catch(e){messages.push(e?.message||'Az adatolvasás nem sikerült.');}
+  }
+  return messages.join(' ');
+ });
+};
+var rf225ConnectionCard = function rf225ConnectionCard(){const h=state.health,p=h.permissions;return `<div class="card" id="rf225Connection"><h2>Health Connect kapcsolat</h2><p class="small muted">Az óra alkalmazása → Health Connect → TrainPilot. Csak a megosztott adattípusok érkeznek meg; ez nem élő mérés.</p>${p?`<p>${Object.entries(rf225PermissionNames).map(([k,v])=>`${v}: ${p[k]?'engedélyezve':'nincs engedély'}`).join(' • ')}</p>`:''}<div class="grid2"><button class="btn" onclick="rf225ConnectHealth()" ${h.busy?'disabled':''}>Kapcsolódás és frissítés</button><button class="btn secondary" onclick="healthSettings()" ${h.busy?'disabled':''}>Engedélyek kezelése</button></div>${h.busy?'<p role="status">Adatok beolvasása…</p>':''}</div>`;};
+var rf225Prescription = function rf225Prescription(e,p){return {sets:p.experience==='beginner'||p.activity==='physical'||p.minutes<=30?2:3,reps:e.repUnit.includes('mp')?'20–40 mp':p.goal==='strength'&&e.compound?'5–8':p.goal==='muscle'?'8–15':'8–12',weight:0,rest:p.goal==='strength'?150:p.goal==='muscle'?90:75,trial:true,rir:p.experience==='beginner'?3:2};};
+/* Health routes must survive background renders and asynchronous reads. */
+let rf225HealthPage='hub';
+const rf225Hub=rf206HealthHub;
+rf206HealthHub=function(){rf225HealthPage='hub';state.healthView=false;return rf225Hub();};
+const rf225Details=healthScreen;
+healthScreen=function(){state.tab='health';rf225HealthPage='details';return rf225Details();};
+const rf225Weight=rf215WeightScreen;
+rf215WeightScreen=function(){rf225HealthPage='weight';state.healthView=false;return rf225Weight();};
+
+const rf225Render=render;
+render=function(custom){
+ if(!custom&&state.tab==='health'){
+  if(rf225HealthPage==='details')return healthScreen();
+  if(rf225HealthPage==='weight')return rf215WeightScreen();
+  return rf206HealthHub();
+ }
+ return rf225Render(custom);
+};
+const rf225Go=go;
+go=function(tab){
+ if(tab==='health')rf225HealthPage='hub';
+ return rf225Go(tab);
+};
+const rf225Shell=shell;
+shell=function(content){
+ if(state.tab==='health'&&rf225HealthPage==='hub'){
+  content=content.replace('</main>',`<p role="status">${esc(state.health.message||'')}</p></main>`);
+ }
+ return rf225Shell(content);
+};
+healthAction=async function(fn){
+ if(state.health.busy)return;
+ const tab=state.tab,page=rf225HealthPage;
+ const stillHere=()=>tab==='health'&&state.tab===tab&&rf225HealthPage===page&&!state.session;
+ state.health.busy=true;state.health.message='Kapcsolódás…';
+ try{
+  if(stillHere())render();
+  state.health.message=await fn(healthPlugin());
+ }catch(e){state.health.message=e?.message||'A Health Connect művelet nem sikerült.';}
+ finally{state.health.busy=false;if(stillHere())render();}
+};
+
+// Partial Health Connect access is usable; missing metrics remain unknown.
+
+
+rf207ReadTodayHealth=async function(preferred=null){await healthAction(p=>rf225ReadDaily(p,preferred));};
+
+readRecoveryHealth=async function(){await healthAction(rf225ReadRecovery);};
+
+healthPermission=async function(){await healthAction(async p=>{
+ const s=await p.requestRead();state.health.permissions=s.permissions;
+ return s.granted?'Olvasás engedélyezve.': 'Csak a megadott adattípusokat olvassuk. A többi engedélyt az Engedélyek kezelése alatt módosíthatod.';
+});};

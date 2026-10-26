@@ -1,0 +1,201 @@
+(function(){const st=document.createElement('style');st.id='rf130PhotoCss';st.textContent=`.rf130-photo-section{margin:16px 0;padding:14px;border:1px solid var(--line);border-radius:16px}.rf130-photo-head{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap}.rf130-photo-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}.rf130-photo-card{min-width:0}.rf130-photo-preview{width:100%;aspect-ratio:4/3;border:1px solid var(--line);border-radius:14px;background:var(--card);color:inherit;overflow:hidden;display:grid;place-items:center;padding:0;cursor:pointer}.rf130-photo-preview img{width:100%;height:100%;object-fit:cover;display:block}.rf130-photo-preview.rf130-cloud-only{border-style:dashed}.rf130-labels{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.rf130-labels .btn{position:relative;transition:background .16s ease,border-color .16s ease,box-shadow .16s ease,transform .08s ease}.rf130-labels .btn[aria-pressed="true"]{background:color-mix(in srgb,var(--accent) 28%,var(--card2));border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent),0 0 0 1px color-mix(in srgb,var(--accent) 24%,transparent);color:var(--text);font-weight:950}.rf130-labels .btn[aria-pressed="true"]::before{content:"✓ ";color:var(--accent);font-weight:950}.rf130-labels .btn:active{transform:scale(.985)}.rf130-photo-view img{display:block;max-width:100%;max-height:70vh;margin:12px auto;border-radius:14px}.rf130-photo-dialog{max-width:560px}@media(max-width:520px){.rf130-photo-grid{grid-template-columns:1fr}.rf130-labels{grid-template-columns:1fr}}`;document.head.appendChild(st)})();
+(function(){const st=document.createElement('style');st.id='rf2625HistoryHealthCss';st.textContent=`.rf-history-health{margin-top:10px}.rf-history-health-result,.rf-history-health-loading,.rf-history-health-error,.rf-history-health-empty{background:color-mix(in srgb,var(--card2) 72%,var(--card));border:1px solid var(--line);border-radius:14px;padding:12px}.rf-history-health-head{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.rf-history-health-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.rf-history-health-grid .stat{padding:10px}.rf-history-health-grid .stat strong{font-size:17px}.rf-history-health-error{border-color:color-mix(in srgb,var(--bad) 55%,var(--line))}@media(max-width:420px){.rf-history-health-grid{grid-template-columns:1fr}}`;document.head.appendChild(st)})();
+(function(){const st=document.createElement('style');st.id='rf2626HistoryHealthCss';st.textContent=`.rf-history-health-panel{margin-top:8px;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--card2) 68%,var(--card));overflow:hidden}.rf-history-health-toggle{appearance:none;width:100%;border:0;background:transparent;color:inherit;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;text-align:left;cursor:pointer}.rf-history-health-toggle .muted{margin-left:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rf-history-health-chevron{font-size:16px;line-height:1;transition:transform .15s ease}.rf-history-health-panel.collapsed .rf-history-health-chevron{transform:rotate(-90deg)}.rf-history-health-body[hidden]{display:none!important}.rf-history-health{margin:0!important}.rf-history-health-result,.rf-history-health-loading,.rf-history-health-error,.rf-history-health-empty{border:0!important;border-top:1px solid var(--line)!important;border-radius:0!important;background:transparent!important;padding:8px 10px!important}.rf-history-health-head{margin-bottom:6px!important}.rf-history-health-head>strong{display:none}.rf-history-health-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important}.rf-history-health-grid .stat{padding:6px!important;min-height:0!important}.rf-history-health-grid .stat small{font-size:10px;line-height:1.15}.rf-history-health-grid .stat strong{font-size:14px!important;line-height:1.2}.rf-history-health-result>p:last-child{margin:6px 0 0}.rf-history-health-refresh{width:calc(100% - 20px)!important;margin:0 10px 8px!important;padding:7px 9px!important;min-height:34px!important}@media(max-width:430px){.rf-history-health-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.rf-history-health-toggle{align-items:flex-start;flex-wrap:wrap}.rf-history-health-toggle .muted{width:calc(100% - 24px);margin-left:0}}`;document.head.appendChild(st)})();
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('rf130PhotoModal'))rf130ClosePhotoModal()});
+// @endsection trainpilot-130-workout-photos.js
+
+// @section trainpilot-140-progression-2.js
+/* TrainPilot 1.4.0: Progressive Overload 2.0 — prescription-aware, trend-based and exercise-specific. */
+const TP140_VERSION='1.4.0';
+const TP140_ISOLATION=new Set(['lateral-raise','db-reverse-fly','face-pull','db-curl','hammer-curl','cable-curl','oh-triceps','cable-triceps','leg-extension','leg-curl','calf-raise']);
+const TP140_BODY_PROGRESSIONS={
+ pushup:'nehezebb fekvőtámasz-variáció, lassabb excentrikus szakasz, alsó szünet vagy nagyobb ROM',
+ 'close-pushup':'nehezebb fekvőtámasz-variáció, lassabb tempó vagy alsó szünet',
+ crunch:'lassabb tempó, felső megtartás vagy nehezebb hasprés-variáció',
+ plank:'hosszabb kontrollált tartás, nehezebb plank-variáció vagy nagyobb feszítés',
+ 'side-plank':'hosszabb kontrollált tartás vagy nehezebb oldalsó plank-variáció'
+};
+var tp140ParseTarget=function tp140ParseTarget(text,rirValue=null){
+ const raw=String(text??'').trim(),t=raw.toLowerCase().replaceAll('−','-').replaceAll('–','-'),explicitRir=/\brir\b/i.test(t);
+ const rir=t.match(/(\d+(?:[.,]\d+)?)\s*-\s*(\d+(?:[.,]\d+)?)\s*rir\b/i)||t.match(/(\d+(?:[.,]\d+)?)\s*rir\b/i);
+ const rirA=rir?Number(String(rir[1]).replace(',','.')):(rirValue!==null&&rirValue!==undefined&&rirValue!==''&&Number.isFinite(Number(rirValue))?Number(rirValue):null),rirB=rir?.[2]!=null?Number(String(rir[2]).replace(',','.')):rirA;
+ // A pure "2–3 RIR" target has no repetition ceiling. Program prescriptions may also
+ // carry a separate numeric RIR alongside a normal rep range; keep both in that case.
+ if(explicitRir&&/^\s*\d+(?:[.,]\d+)?(?:\s*-\s*\d+(?:[.,]\d+)?)?\s*rir\s*$/i.test(t))return {kind:'rir',min:null,max:null,rirMin:Math.min(rirA,rirB),rirMax:Math.max(rirA,rirB),raw};
+ const timed=/\b(mp|másodperc|sec|second)\b/i.test(t),range=t.match(/(\d+)\s*-\s*(\d+)/),single=t.match(/(^|\D)(\d+)(?!\d)/);
+ if(range){const min=Number(range[1]),max=Number(range[2]);return {kind:timed?'time':'reps',min:Math.min(min,max),max:Math.max(min,max),rirMin:rirA==null?null:Math.min(rirA,rirB),rirMax:rirA==null?null:Math.max(rirA,rirB),raw};}
+ if(single){const n=Number(single[2]);return {kind:timed?'time':'reps',min:n,max:n,rirMin:rirA==null?null:rirA,rirMax:rirA==null?null:rirB,raw};}
+ return {kind:explicitRir?'rir':timed?'time':'open',min:null,max:null,rirMin:rirA,rirMax:rirB,raw};
+};
+var tp140Program=function tp140Program(programId=null){
+ const id=programId||state.session?.programId||(typeof activeProgramId==='function'?activeProgramId():null);
+ return (id&&typeof programById==='function'?programById(id):null)||(typeof activeProgram==='function'?activeProgram():null);
+};
+var tp140Prescription=function tp140Prescription(id,sessionExercise=null,programId=null){
+ const lib=byId(id)||{},p=tp140Program(programId),rx=sessionExercise?.prescription||p?.prescriptions?.[id]||{},text=String(rx.reps??sessionExercise?.progressionPrescription?.reps??lib.reps??'');
+ const parsed=tp140ParseTarget(text,rx.rir);
+ return {...parsed,reps:text,sets:Number(rx.sets??sessionExercise?.progressionPrescription?.sets??sessionExercise?.sets?.length??lib.sets)||null,rest:Number(rx.rest)||null,source:(sessionExercise?.prescription||p?.prescriptions?.[id])?'program':'library',programId:p?.id||programId||null};
+};
+var tp140Recent=function tp140Recent(id,programId=null,limit=3){
+ const rows=[];for(const h of history()){const e=(h.exercises||[]).find(x=>x.id===id);if(e)rows.push({workout:h,exercise:e});}
+ if(!programId)return rows.slice(0,limit);
+ const same=rows.filter(r=>(r.workout.programId||'home-basic')===programId);
+ return (same.length>=2?same:rows).slice(0,limit);
+};
+var tp140Median=function tp140Median(a){const x=a.filter(Number.isFinite).sort((m,n)=>m-n);if(!x.length)return 0;const i=Math.floor(x.length/2);return x.length%2?x[i]:(x[i-1]+x[i])/2;};
+var tp140Occurrence=function tp140Occurrence(row,target){
+ const e=row?.exercise||{},allSets=e.sets||[],done=allSets.filter(s=>s.done),reps=done.map(s=>Number(s.reps)).filter(Number.isFinite),weights=done.map(s=>Number(s.weight)).filter(Number.isFinite),effort=e.effort||row?.workout?.feedback?.effort||null;
+ const allDone=!!allSets.length&&done.length===allSets.length&&(!target.sets||done.length>=target.sets),weight=tp140Median(weights),minRep=reps.length?Math.min(...reps):null,maxRep=reps.length?Math.max(...reps):null,avgRep=reps.length?reps.reduce((a,b)=>a+b,0)/reps.length:null;
+ const metricKind=target.kind==='time'?'time':target.kind==='reps'?'reps':target.kind;
+ const hitTop=(metricKind==='reps'||metricKind==='time')&&allDone&&target.max!=null&&minRep!=null&&minRep>=target.max;
+ const overTop=(metricKind==='reps'||metricKind==='time')&&allDone&&target.max!=null&&minRep!=null&&minRep>target.max;
+ const belowMin=(metricKind==='reps'||metricKind==='time')&&target.min!=null&&minRep!=null&&minRep<target.min;
+ const safeEffort=['easy','light','good'].includes(effort),adverse=['challenging','hard','pain'].includes(effort);
+ return {row,e,done,reps,allDone,weight,minRep,maxRep,avgRep,effort,hitTop,overTop,belowMin,safeEffort,adverse};
+};
+var tp140ObservedStep=function tp140ObservedStep(id,loadType){
+ const vals=[];for(const h of history())for(const e of h.exercises||[])if(e.id===id&&(e.loadType||byId(id)?.loadType)===loadType)for(const s of e.sets||[])if(s.done&&Number(s.weight)>0)vals.push(Number(s.weight));
+ const uniq=[...new Set(vals.map(x=>Math.round(x*100)/100))].sort((a,b)=>a-b),diffs=[];for(let i=1;i<uniq.length;i++){const d=Math.round((uniq[i]-uniq[i-1])*100)/100;if(d>=0.25&&d<=10)diffs.push(d);}return diffs.length?Math.min(...diffs):null;
+};
+var tp140DefaultStep=function tp140DefaultStep(lib,base){
+ const t=lib?.loadType||'bodyweight',id=lib?.id||'';if(t==='bodyweight')return 0;
+ if(TP140_ISOLATION.has(id))return t==='total'?1:0.5;
+ if(t==='per_hand')return base<5?0.5:1;
+ if(t==='single_dumbbell')return base<5?0.5:1;
+ if(t==='total')return base<20?2:2.5;
+ return 1;
+};
+var tp140Step=function tp140Step(lib,base){
+ const cfg=settings()?.progressionSteps||{},isolation=TP140_ISOLATION.has(lib?.id),override=Number(isolation?cfg.isolation:cfg[lib?.loadType]),observed=tp140ObservedStep(lib?.id,lib?.loadType),fallback=tp140DefaultStep(lib,base);
+ if(Number.isFinite(override)&&override>=0.25&&override<=10)return override;
+ if(Number.isFinite(observed)&&observed>=0.25&&observed<=(isolation?fallback:Math.max(fallback*2,1)))return observed;
+ return fallback;
+};
+var tp140NextWeight=function tp140NextWeight(lib,base,dir=1){const step=tp140Step(lib,base);return Math.max(0,Math.round((base+dir*step)*4)/4);};
+var tp140NextRepTargets=function tp140NextRepTargets(reps,target){
+ if(!Array.isArray(reps)||!reps.length||target.max==null)return [];
+ const out=reps.map(x=>Math.min(target.max,Math.max(target.min??0,Number(x)||0))),min=Math.min(...out);if(min>=target.max)return out;
+ for(let i=0;i<out.length;i++)if(out[i]===min)out[i]=Math.min(target.max,out[i]+1);return out;
+};
+var tp140RepText=function tp140RepText(reps,target){
+ const next=tp140NextRepTargets(reps,target);if(!next.length)return 'előbb növeld fokozatosan a szabályos ismétléseket';
+ return `következő cél: ${next.join('–')} ${target.kind==='time'?'mp':'ism.'}`;
+};
+var tp140BodyRecommendation=function tp140BodyRecommendation(id,target,recent,latest){
+ const goal=TP140_BODY_PROGRESSIONS[id]||'nehezebb variáció, lassabb tempó, szünet vagy nagyobb mozgástartomány';
+ if(!latest)return {action:'start',weight:0,autoApply:false,text:'Nincs még elég előzmény. Kezdd kontrollált, szabályos sorozatokkal.'};
+ if(latest.effort==='pain')return {action:'pain',weight:0,autoApply:false,text:'Fájdalom / kellemetlenség volt: nincs progresszió. Csak fájdalommentes kivitelezéssel folytasd.'};
+ if(!latest.allDone)return {action:'hold',weight:0,autoApply:false,text:'A legutóbbi alkalom részleges volt, ezért most nem lépünk tovább.'};
+ if(['challenging','hard'].includes(latest.effort))return {action:'hold',weight:0,autoApply:false,text:'Maradjon a jelenlegi testsúlyos változat és ismétlésszám; előbb legyen stabil, szabályos végrehajtás.'};
+ if(target.kind==='rir'){
+  const rir=`${target.rirMin}${target.rirMax!==target.rirMin?'–'+target.rirMax:''} RIR`;
+  if(['easy','light'].includes(latest.effort))return {action:'reps',weight:0,autoApply:false,text:`Maradjon a ${rir} elv: a következő alkalommal legfeljebb 1 szabályos ismétléssel növeld a sorozatokat, de állj meg, amikor még ${rir} tartalék marad.`};
+  return {action:'hold',weight:0,autoApply:false,text:`A cél nem ismétléstartomány, hanem ${rir}. Tartsd ezt a tartalékot; ne kezeld a „${target.reps}” értéket ${target.rirMax} ismétléses felső határként.`};
+ }
+ const same=recent.filter(x=>Math.abs(x.weight-latest.weight)<0.01),stableTop=same.slice(0,3).filter(x=>x.hitTop&&x.safeEffort).length>=2;
+ if(stableTop)return {action:'variation',weight:0,autoApply:false,text:`A felső cél legalább 2 alkalommal stabil volt. Súlynövelés helyett jöhet ${goal}.`};
+ if(latest.hitTop)return {action:'hold',weight:0,autoApply:false,text:'Elérted a felső célt, de előbb ismételd meg stabilan még egy alkalommal; utána jöhet nehezebb testsúlyos progresszió.'};
+ if((target.kind==='reps'||target.kind==='time')&&latest.reps.length)return {action:'reps',weight:0,autoApply:false,text:`Maradjon a jelenlegi változat; ${tp140RepText(latest.reps,target)}. A nehezítés csak stabil felső teljesítés után jön.`};
+ return {action:'hold',weight:0,autoApply:false,text:'Maradjon a jelenlegi testsúlyos változat; előbb stabilizáld a szabályos teljesítést.'};
+};
+var rf152RepRange=function rf152RepRange(id){const t=tp140Prescription(id);return {min:t.kind==='reps'||t.kind==='time'?t.min:null,max:t.kind==='reps'||t.kind==='time'?t.max:null,kind:t.kind,rirMin:t.rirMin,rirMax:t.rirMax};};
+var rf152Step=function rf152Step(e){return tp140Step(e,Number(e?.weight)||0);};
+rf152Recommendation=function rf152Recommendation(id,sessionExercise=null){
+ const lib=byId(id),programId=state.session?.programId||(typeof activeProgramId==='function'?activeProgramId():null),target=tp140Prescription(id,sessionExercise,programId),rows=tp140Recent(id,target.programId,3),recent=rows.map(r=>tp140Occurrence(r,target)),latest=recent[0];
+ if(!lib)return {action:'hold',weight:0,autoApply:false,text:'A gyakorlat adatai nem érhetők el.'};
+ if(lib.loadType==='bodyweight')return {...tp140BodyRecommendation(id,target,recent,latest),target,historyCount:recent.length};
+ if(!latest)return {action:'start',weight:Number(lib.weight)||0,autoApply:false,target,historyCount:0,text:'Nincs még elég előzmény. Indulj kontrollált, kényelmes terheléssel.'};
+ const base=latest.weight||rf152BaseWeight(latest.e),sameLoad=recent.filter(x=>Math.abs(x.weight-base)<0.01),stableTop=sameLoad.slice(0,3).filter(x=>x.hitTop&&x.safeEffort).length>=2,recentAdverse=sameLoad.slice(0,2).some(x=>x.adverse),next=tp140NextWeight(lib,base),unit=loadLabel(lib.loadType);
+ if(latest.effort==='pain')return {action:'pain',weight:base,autoApply:false,target,historyCount:recent.length,text:'Fájdalom / kellemetlenség volt: nincs terhelésemelés. Maradj fájdalommentes kivitelezésnél.'};
+ if(!latest.allDone)return {action:'hold',weight:base,autoApply:false,target,historyCount:recent.length,text:'A legutóbbi edzés részleges volt, ezért most nem változtatunk terhelést.'};
+ if(latest.effort==='challenging')return {action:'hold',weight:base,autoApply:false,target,historyCount:recent.length,text:`Kicsit nehéz volt. Maradjon ${base} ${unit}; előbb legyen stabil a jelenlegi teljesítés.`};
+ if(latest.effort==='hard'){
+  const hardCount=sameLoad.slice(0,3).filter(x=>x.effort==='hard').length;
+  if(latest.belowMin||hardCount>=2){const down=tp140NextWeight(lib,base,-1);return {action:'reduce',weight:down,autoApply:false,target,historyCount:recent.length,text:`Túl nehéz volt${hardCount>=2?' több alkalommal is':''}. Súlynövelés nincs; indokolt lehet ${down} ${unit} vagy kisebb volumen, amíg újra stabil nem lesz a technika.`};}
+  return {action:'hold',weight:base,autoApply:false,target,historyCount:recent.length,text:`Túl nehéz volt. Maradjon ${base} ${unit}; ha a következő alkalommal is így alakul vagy az alsó ismétléshatár sem tartható, csökkents terhelést/volument.`};
+ }
+ if(target.kind==='rir')return {action:'hold',weight:base,autoApply:false,target,historyCount:recent.length,text:`A cél ${target.rirMin}–${target.rirMax} RIR, nem ismétléstartomány. A terhelést csak a RIR-cél stabil teljesítése alapján módosítsd.`};
+ if(target.kind!=='reps'&&target.kind!=='time')return {action:'hold',weight:base,autoApply:false,target,historyCount:recent.length,text:`Maradjon ${base} ${unit}; ehhez a célhoz nincs megbízható ismétléstartomány.`};
+ if(latest.hitTop&&latest.safeEffort&&!recentAdverse){
+  if(stableTop)return {action:'increase',weight:next,autoApply:true,target,historyCount:recent.length,text:`Stabil felső teljesítés (${Math.min(3,sameLoad.length)} alkalom alapján). Következő terhelés: ${next} ${unit}.`};
+  return {action:'increase',weight:next,autoApply:false,target,historyCount:recent.length,text:`A felső határt elérted${latest.overTop?' és túl is teljesítetted':''}; ${next} ${unit} lehet a következő kis lépés, de az app egyetlen alkalom alapján még nem írja át automatikusan a súlyt.`};
+ }
+ if(latest.reps.length)return {action:'reps',weight:base,autoApply:false,target,historyCount:recent.length,text:`Maradjon ${base} ${unit}; ${tp140RepText(latest.reps,target)}. Súlyt csak stabil felső teljesítés után emelünk.`};
+ return {action:'hold',weight:base,autoApply:false,target,historyCount:recent.length,text:`Maradjon ${base} ${unit}; előbb legyen stabil, teljes értékű teljesítés.`};
+};
+rf152ApplySuggestions=function rf152ApplySuggestions(){
+ if(!state.session)return;
+ for(const e of state.session.exercises||[]){
+  const target=tp140Prescription(e.id,e,state.session.programId);e.progressionPrescription={sets:target.sets,reps:target.reps,kind:target.kind,rirMin:target.rirMin,rirMax:target.rirMax,source:target.source};
+  const r=rf152Recommendation(e.id,e);
+  if(typeof tp197TrainingModes==='function'&&tp197TrainingModes(state.session.programId).explicitChoice){
+   // #197: explicit modes supersede the legacy auto-apply path, even at workout start.
+   e.rf152Recommendation={...r,action:'hold',autoApply:false,text:'A kiválasztott progressziós mód külön Coach-jóváhagyást kér.'};
+  }else{
+   e.rf152Recommendation=r;
+   if(r.action==='increase'&&r.autoApply===true&&Number.isFinite(r.weight)&&!e.sets?.some(s=>s.previousValues228))for(const s of e.sets||[])s.weight=r.weight;
+  }
+ }
+ persistDraft();
+};
+rf152FeedbackHtml=function rf152FeedbackHtml(e){
+ rf232Css();const r=e.rf152Recommendation||rf152Recommendation(e.id,e),sel=e.effort||'',t=rf232L(),count=Number(r.historyCount)||0,target=r.target;
+ const scale=RF232_EFFORT_KEYS.map((k,i)=>`<button class="btn ${sel===k?'':'secondary'}" onclick="rf152SetEffort('${k}')"><span class="n">${i+1}</span><span class="lbl">${esc(t[k])}</span></button>`).join('');
+ const meta=target?`<div class="small muted" style="margin-top:6px">Cél: ${esc(target.reps||target.kind)} • előzmény: ${count}/3 alkalom</div>`:'';
+ return `<div class="card" id="rf152Feedback"><strong>Progresszív terhelés 2.0</strong><p class="small muted">${esc(r.text)}</p>${meta}<div class="small" style="margin:10px 0 8px">${esc(t.prompt)}</div><div class="rf232-effort">${scale}</div><button class="btn ${sel==='pain'?'':'secondary'} block rf232-pain" onclick="rf152SetEffort('pain')">${esc(t.pain)}</button></div>`;
+};
+const tp140SettingsScreenBase=settingsScreen;
+settingsScreen=function(){
+ const s=settings(),d={isolation:0.5,per_hand:1,single_dumbbell:1,total:2.5},x={...d,...(s.progressionSteps||{})};let html=tp140SettingsScreenBase();
+ const panel=`<div class="setting" id="tp140ProgressionSteps"><label>Progresszív terhelés • tényleges súlylépcsők</label><p class="small muted">Állítsd a felszereléseddel ténylegesen kirakható legkisebb növelést. A kézisúlyzós értékek a kijelzett egységre vonatkoznak.</p><div class="grid2"><label>Izolációs gyakorlat (kg)<input id="tp140StepIsolation" class="field" type="number" min="0.25" max="10" step="0.25" value="${x.isolation}"></label><label>Kézisúlyzó / kar (kg/kar)<input id="tp140StepPerHand" class="field" type="number" min="0.25" max="10" step="0.25" value="${x.per_hand}"></label><label>Egy kézisúlyzó (kg)<input id="tp140StepSingle" class="field" type="number" min="0.25" max="10" step="0.25" value="${x.single_dumbbell}"></label><label>Rúd / összsúly (kg)<input id="tp140StepTotal" class="field" type="number" min="0.25" max="10" step="0.25" value="${x.total}"></label></div><br><button class="btn secondary block" onclick="saveSettings()">Súlylépcsők mentése</button></div>`;
+ return html.replace('</main>',panel+'</main>');
+};
+saveSettings=function(){
+ const clamp=(id,fallback)=>{const n=Number(document.getElementById(id)?.value);return Number.isFinite(n)?Math.max(.25,Math.min(10,Math.round(n*4)/4)):fallback},cur=settings();
+ db.set('settings',{...cur,rest:Math.max(30,Math.min(300,Number(document.getElementById('rest')?.value)||cur.rest||90)),progressionSteps:{isolation:clamp('tp140StepIsolation',cur.progressionSteps?.isolation??.5),per_hand:clamp('tp140StepPerHand',cur.progressionSteps?.per_hand??1),single_dumbbell:clamp('tp140StepSingle',cur.progressionSteps?.single_dumbbell??1),total:clamp('tp140StepTotal',cur.progressionSteps?.total??2.5)}});alert('Mentve.');
+};
+
+// @endsection trainpilot-140-progression-2.js
+
+
+// @section trainpilot-141-coach-entry.js
+/* TrainPilot 1.4.1: Home and Health open the same Coach screen/context. */
+const TP141_VERSION='1.4.1';
+const tp141CoachScreen=rf233CoachScreen;
+var tp141OpenCoach=function tp141OpenCoach(){
+ state.tab='health';
+ state.healthView=true;
+ if(typeof rf245CoachVisible!=='undefined')rf245CoachVisible=true;
+ return tp141CoachScreen();
+};
+// Home/legacy entry points use Health context so Home-only decorators cannot rewrite/freeze Coach.
+rf220CoachScreen=tp141OpenCoach;
+
+// @endsection trainpilot-141-coach-entry.js
+
+
+var tp2627OpenStats=function tp2627OpenStats(){
+ state.tab='stats';
+ state.healthView=false;
+ if(typeof rf245CoachVisible!=='undefined')rf245CoachVisible=false;
+ rf221StatsScreen();
+ window.scrollTo?.(0,0);
+ if(typeof rf260ScrollState==='function')rf260ScrollState();
+};
+
+
+var tp2628ProfileScreenBase=profileScreen;
+profileScreen=function(){
+ state.tab='profile';state.healthView=false;
+ if(typeof rf245CoachVisible!=='undefined')rf245CoachVisible=false;
+ const r=tp2628ProfileScreenBase();
+ window.scrollTo?.(0,0);if(typeof rf260ScrollState==='function')rf260ScrollState();
+ return r;
+};
+
+
+var tp2628DialogEscape=function tp2628DialogEscape(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));};
+var tp2628DialogRemove=function tp2628DialogRemove(){document.getElementById('tp2628Dialog')?.remove();};
+var tp2628Confirm=function tp2628Confirm(message,opts={}){
+ tp2628DialogRemove();
+ return new Promise(resolve=>{

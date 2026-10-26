@@ -1,0 +1,269 @@
+  'html body :is(.tp152-active-program>summary>.tp152-chevron,.tp152-program-card>summary>.tp152-program-chevron,.tp152-program-day>summary>.tp152-chevron,.tp152-day>summary .tp152-chevron,.tp152-exercise>summary .tp152-chevron,.tp146-exercise>summary .tp146-exercise-chevron,.tp152-quick-row>summary .tp152-chevron,.tp152-inline-add>summary>.tp152-chevron,.tp152-accordion>summary>.tp152-chevron,.rf103-history>summary .rf103-history-chevron,.rf-history-health-toggle .rf-history-health-chevron,.tp1511-training>summary i){box-sizing:border-box!important;display:inline-grid!important;place-items:center!important;width:18px!important;height:18px!important;min-width:18px!important;min-height:18px!important;max-width:18px!important;max-height:18px!important;flex:0 0 18px!important;margin-left:6px!important;padding:0!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;color:transparent!important;font-size:0!important;line-height:0!important;transform:none!important;overflow:visible!important}',
+  'html body details.tp146-exercise[open]>summary .tp146-exercise-chevron,html body details.tp152-exercise[open]>summary .tp152-chevron,html body details.tp152-day[open]>summary .tp152-chevron,html body details.tp152-active-program[open]>summary>.tp152-chevron,html body details.tp152-program-card[open]>summary>.tp152-program-chevron,html body details.tp152-program-day[open]>summary>.tp152-chevron,html body details.tp152-quick-row[open]>summary .tp152-chevron,html body details.tp152-inline-add[open]>summary>.tp152-chevron,html body details.tp152-accordion[open]>summary>.tp152-chevron,html body details.tp1511-training[open]>summary i,html body details.rf263-history[open]>summary .rf103-history-chevron{transform:none!important}',
+  'html body :is(.tp152-active-program>summary>.tp152-chevron,.tp152-program-card>summary>.tp152-program-chevron,.tp152-program-day>summary>.tp152-chevron,.tp152-day>summary .tp152-chevron,.tp152-exercise>summary .tp152-chevron,.tp146-exercise>summary .tp146-exercise-chevron,.tp152-quick-row>summary .tp152-chevron,.tp152-inline-add>summary>.tp152-chevron,.tp152-accordion>summary>.tp152-chevron,.rf103-history>summary .rf103-history-chevron,.rf-history-health-toggle .rf-history-health-chevron,.tp1511-training>summary i)::before{content:""!important;display:block!important;width:9px!important;height:12px!important;background:var(--text)!important;clip-path:polygon(0 0,100% 50%,0 100%)!important;transform:rotate(0deg)!important;transform-origin:50% 50%!important;transition:transform .15s ease!important}',
+  'html body details[open]>summary :is(.tp152-chevron,.tp152-program-chevron,.tp146-exercise-chevron,.rf103-history-chevron,.tp1511-training summary i)::before{transform:rotate(90deg)!important}',
+  'html body .rf-history-health-toggle[aria-expanded="true"] .rf-history-health-chevron::before{transform:rotate(90deg)!important}html body .rf-history-health-toggle[aria-expanded="false"] .rf-history-health-chevron::before{transform:rotate(0deg)!important}',
+  'html body .tp-library-card>summary::after{content:""!important;box-sizing:border-box!important;display:block!important;width:9px!important;height:12px!important;min-width:9px!important;min-height:12px!important;max-width:9px!important;max-height:12px!important;flex:0 0 9px!important;margin-left:8px!important;padding:0!important;border:0!important;border-radius:0!important;background:var(--text)!important;box-shadow:none!important;clip-path:polygon(0 0,100% 50%,0 100%)!important;transform:rotate(0deg)!important;transform-origin:50% 50%!important;transition:transform .15s ease!important}html body .tp-library-card[open]>summary::after{transform:rotate(90deg)!important}',
+  'html body .tp-select-trigger::after{content:""!important;box-sizing:border-box!important;display:block!important;width:9px!important;height:12px!important;min-width:9px!important;min-height:12px!important;max-width:9px!important;max-height:12px!important;flex:0 0 9px!important;padding:0!important;border:0!important;border-radius:0!important;background:var(--text)!important;box-shadow:none!important;clip-path:polygon(0 0,100% 50%,0 100%)!important;transform:rotate(0deg)!important;transform-origin:50% 50%!important;transition:transform .15s ease!important}html body .tp-select.open .tp-select-trigger::after{transform:rotate(90deg)!important}',
+  'html body .rf148-profile-accordion>summary::after{content:""!important;box-sizing:border-box!important;display:inline-block!important;float:right!important;width:9px!important;height:12px!important;min-width:9px!important;min-height:12px!important;max-width:9px!important;max-height:12px!important;margin:3px 0 0 8px!important;padding:0!important;border:0!important;border-radius:0!important;background:var(--text)!important;box-shadow:none!important;clip-path:polygon(0 0,100% 50%,0 100%)!important;transform:rotate(0deg)!important;transform-origin:50% 50%!important;transition:transform .15s ease!important}html body .rf148-profile-accordion[open]>summary::after{transform:rotate(90deg)!important}',
+  '.tp151-calendar>.tp151-page-head,.tp151-health>.tp151-page-head{border:1px solid var(--line)!important;border-radius:16px!important;background:color-mix(in srgb,var(--card) 82%,transparent)!important;padding:10px 12px!important;margin:3px 0 10px!important}',
+  '.tp152-program-card>summary{grid-template-columns:minmax(0,1fr) 38px!important}.tp152-program-day>summary{grid-template-columns:minmax(0,1fr) auto 38px!important}.tp152-quick-row>summary{grid-template-columns:44px minmax(0,1fr) 38px!important}',
+  '@media(max-width:390px){.top.tp154-nav-grid,html.tp-nav-compact .top.tp154-nav-grid{gap:6px!important;padding-inline:7px!important;grid-auto-rows:minmax(54px,auto)!important}.top.tp154-nav-grid .tp154-nav-cell,html.tp-nav-compact .top.tp154-nav-grid .tp154-nav-cell{min-height:54px!important}.top.tp154-nav-grid .tp151-nav-label,html.tp-nav-compact .top.tp154-nav-grid .tp151-nav-label{font-size:11.5px!important}}'
+ ].join('');
+ document.head.appendChild(s);
+})();
+window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerNavLabels:true,unifiedDisclosure:true};
+// @endsection trainpilot-155-nav-consistency.js
+
+// @section trainpilot-155-coach-health-polish.js
+/* TrainPilot 1.5.5: 2026-09-20 Health panel alignment + concise per-exercise Coach guidance. */
+(function(){
+ 'use strict';
+ const TP155_TODAY_POLISH_VERSION='1.5.5-2026-09-20';
+ const COPY={
+  hu:{coach:'Coach javaslat',target:'Célterhelés:',reps:'Cél: +1–2 szabályos ismétlés/sorozat.',hold:'Tartsd a jelenlegi terhelést; célozz +1 ismétlést.',light:'Kezdj könnyebben; ma ne erőltesd a progressziót.',pain:'Ne emelj; csak fájdalommentes végrehajtással folytasd.',start:'Kezdj kontrollált, kényelmes terheléssel.'},
+  en:{coach:'Coach suggestion',target:'Target load:',reps:'Target: +1–2 clean reps per set.',hold:'Keep the current load; aim for +1 rep.',light:'Start lighter; do not force progression today.',pain:'Do not increase; continue only pain-free.',start:'Start with a controlled, comfortable load.'},
+  de:{coach:'Coach-Hinweis',target:'Zielbelastung:',reps:'Ziel: +1–2 saubere Wdh. pro Satz.',hold:'Belastung halten; +1 Wdh. anstreben.',light:'Leichter starten; heute keine Progression erzwingen.',pain:'Nicht steigern; nur schmerzfrei fortsetzen.',start:'Kontrolliert mit angenehmer Belastung starten.'},
+  ro:{coach:'Sugestie Coach',target:'Sarcină țintă:',reps:'Țintă: +1–2 repetări corecte pe serie.',hold:'Păstrează sarcina; urmărește +1 repetare.',light:'Începe mai ușor; nu forța progresia azi.',pain:'Nu crește sarcina; continuă doar fără durere.',start:'Începe controlat, cu o sarcină confortabilă.'},
+  sk:{coach:'Odporúčanie Coach',target:'Cieľová záťaž:',reps:'Cieľ: +1–2 čisté opakovania na sériu.',hold:'Zachovaj záťaž; cieľ je +1 opakovanie.',light:'Začni ľahšie; dnes netlač progresiu.',pain:'Nezvyšuj záťaž; pokračuj iba bez bolesti.',start:'Začni kontrolovane s pohodlnou záťažou.'},
+  pl:{coach:'Sugestia Coach',target:'Obciążenie docelowe:',reps:'Cel: +1–2 poprawne powtórzenia na serię.',hold:'Utrzymaj obciążenie; celuj w +1 powtórzenie.',light:'Zacznij lżej; dziś nie wymuszaj progresji.',pain:'Nie zwiększaj obciążenia; kontynuuj tylko bez bólu.',start:'Zacznij kontrolowanie, z komfortowym obciążeniem.'}
+ };
+ var lang=function(){try{return typeof rf212Lang==='function'?rf212Lang():'hu'}catch(_){return 'hu'}};
+ var copy=function(){return COPY[lang()]||COPY.hu};
+ window.tp155CoachShortAdvice=function(id,decision,existing){
+  var advice=existing||null,rec=null;
+  try{if(!advice&&typeof rf233ExerciseAdvice==='function')advice=rf233ExerciseAdvice(id,decision||rf233Decision(rf220Readiness()))}catch(_){}
+  try{if(typeof rf152Recommendation==='function')rec=rf152Recommendation(id)}catch(_){}
+  var action=advice&&advice.action||rec&&rec.action||'start',c=copy(),text=c.start;
+  if(action==='pain')text=c.pain;
+  else if(action==='easy')text=c.light;
+  else if(action==='increase'){
+   var w=Number(rec&&rec.weight);
+   if(Number.isFinite(w)&&w>0){
+    var unit='';try{unit=tp149LoadLabel((byId(id)||{}).loadType)||''}catch(_){}
+    text=c.target+' '+String(Math.round(w*10)/10)+(unit?' '+unit:'');
+   }else text=c.reps;
+  }else if(action==='reps')text=c.reps;
+  else if(action==='hold')text=c.hold;
+  return {action:action,label:advice&&advice.label||'',text:text};
+ };
+
+ if(typeof rf233ExerciseRows==='function'){
+  rf233ExerciseRows=function(plan){
+   var t=rf233L();if(!plan||!plan.exercises||!plan.exercises.length)return '<p class="muted">'+esc(t.unknown)+'</p>';
+   return plan.exercises.map(function(x){
+    var a=window.tp155CoachShortAdvice(x.id,plan.decision,x.advice);
+    return '<div class="card rf233-ex tp155-coach-ex"><div class="rf233-exhead"><strong>'+esc(x.name)+'</strong><span class="badge">'+esc(a.label)+'</span></div><div class="small muted tp155-coach-short">'+esc(a.text)+'</div></div>';
+   }).join('');
+  };
+ }
+
+ window.tp155NormalizeHealthBottomPanels=function(){
+  var main=document.querySelector('main.rf263-health');if(!main)return;
+  var panels=[].slice.call(main.querySelectorAll(':scope > details.card')).slice(-3);
+  panels.forEach(function(panel){panel.classList.add('tp151-details','tp155-health-bottom-panel')});
+ };
+ if(typeof rf263HealthHub==='function'){
+  const tp155HealthHubBase=rf263HealthHub;
+  rf263HealthHub=function(){var r=tp155HealthHubBase.apply(this,arguments);window.tp155NormalizeHealthBottomPanels();return r};
+ }
+
+ window.tp155InjectWorkoutCoach=function(){
+  var main=document.querySelector('main.tp153-workout'),head=main&&main.querySelector('.tp153-workout-head');
+  if(!head||head.querySelector('.tp155-workout-coach')||!state.session)return;
+  var i=Math.max(0,Math.min(Number(state.current)||0,(state.session.exercises||[]).length-1)),se=(state.session.exercises||[])[i];if(!se)return;
+  var decision=null,advice=null;try{decision=rf233Decision(rf220Readiness());advice=rf233ExerciseAdvice(se.id,decision)}catch(_){}
+  var a=window.tp155CoachShortAdvice(se.id,decision,advice),c=copy(),box=document.createElement('div');
+  box.className='tp155-workout-coach';
+  box.innerHTML='<span class="tp155-workout-coach-kicker">'+esc(c.coach)+'</span>'+(a.label?'<strong>'+esc(a.label)+'</strong>':'')+'<p>'+esc(a.text)+'</p>';
+  var anchor=head.querySelector('.tp153-workout-prescription');if(anchor)anchor.insertAdjacentElement('afterend',box);else head.appendChild(box);
+ };
+ if(typeof renderWorkout==='function'){
+  const tp155RenderWorkoutBase=renderWorkout;
+  renderWorkout=function(){var r=tp155RenderWorkoutBase.apply(this,arguments);window.tp155InjectWorkoutCoach();return r};
+ }
+
+ const style=document.createElement('style');style.id='tp155TodayPolishCss';style.textContent=[
+  'main.rf263-health>details.tp155-health-bottom-panel{box-sizing:border-box!important;width:100%!important;max-width:none!important;margin-left:0!important;margin-right:0!important;padding:10px!important;align-self:stretch!important}',
+  'main.rf263-health>details.tp155-health-bottom-panel>summary{box-sizing:border-box!important;width:100%!important;min-height:30px!important;margin:0!important;padding:0!important;align-items:center!important}',
+  '.tp155-coach-short{line-height:1.32!important}',
+  '.tp155-workout-coach{margin:9px 0 2px;padding:9px 10px;border:1px solid color-mix(in srgb,var(--accent) 34%,var(--line));border-radius:12px;background:color-mix(in srgb,var(--accent) 10%,var(--card2));display:grid;gap:2px}',
+  '.tp155-workout-coach-kicker{font-size:10px;font-weight:850;letter-spacing:.07em;text-transform:uppercase;color:var(--accent)}',
+  '.tp155-workout-coach strong{font-size:13px}.tp155-workout-coach p{margin:0;font-size:12px;line-height:1.32;color:var(--muted)}'
+ ].join('');
+ document.head.appendChild(style);
+ window.TrainPilotTodayPolish={version:TP155_TODAY_POLISH_VERSION,healthPanels:true,shortCoach:true,workoutCoach:true};
+})();
+// @endsection trainpilot-155-coach-health-polish.js
+
+// @section trainpilot-155-home-calendar-round2.js
+/* TrainPilot 1.5.5 test round 2:
+ * - highlighted compact two-column active-program card on Home
+ * - single, larger Calendar day-selection hint
+ */
+(function(){
+ 'use strict';
+ const TP155_ROUND2='1.5.5-test-round2';
+
+ var tp155Round2NextHtml=function(){
+  try{
+   const p=activeProgram(),np=typeof nextPlanned==='function'?nextPlanned():null,next=typeof nextWorkout==='function'?nextWorkout():null;
+   const nextProgram=np?programById(np.programId):p;
+   const nextDay=np?programDay(nextProgram,np.dayId):p?programDay(p,next):null;
+   if(!nextProgram||!nextDay)return '';
+   const title=typeof tp146ProgramDayTitle==='function'?tp146ProgramDayTitle(nextProgram,nextDay):((nextProgram.name||'')+' • '+(nextDay.name||nextDay.id||''));
+   const meta=np&&np.start?tp149FormatDateTime(np.start):tp149Plural('exercise.count',(nextDay.exercises||[]).length);
+   const label=typeof tp149T==='function'?tp149T('home.nextLabel'):'Következő';
+   return '<div class="tp146-next tp155-home-next"><span class="small muted">'+esc(label)+'</span><strong class="tp146-next-title">'+esc(title)+'</strong><span class="small muted tp146-next-time">'+esc(meta)+'</span></div>';
+  }catch(_){return ''}
+ };
+
+ window.tp155Round2EnhanceHome=function(){
+  if(state.tab!=='home')return;
+  const main=document.querySelector('main.rf221-home');if(!main)return;
+  const hero=main.querySelector(':scope > .hero');if(!hero)return;
+  hero.classList.add('tp155-home-active-card');
+
+  let grid=hero.querySelector(':scope > .tp155-home-active-grid');
+  if(!grid){
+   const badge=hero.querySelector(':scope > .badge');
+   const title=hero.querySelector(':scope > h1');
+   if(!title)return;
+
+   const left=document.createElement('div');left.className='tp155-home-program-left';
+   if(badge)left.appendChild(badge);
+   left.appendChild(title);
+
+   let next=hero.querySelector(':scope > .tp146-next');
+   if(!next){
+    const directMuted=[...hero.children].find(function(el){return el.classList&&el.classList.contains('muted')&&el!==title});
+    if(directMuted){next=directMuted;next.classList.add('tp155-home-next')}
+   }
+   if(!next){
+    const wrap=document.createElement('div');wrap.innerHTML=tp155Round2NextHtml();next=wrap.firstElementChild;
+   }
+   const right=document.createElement('div');right.className='tp155-home-program-right';
+   if(next)right.appendChild(next);
+
+   grid=document.createElement('div');grid.className='tp155-home-active-grid';
+   grid.appendChild(left);grid.appendChild(right);
+   hero.insertBefore(grid,hero.firstChild);
+   [...hero.children].forEach(function(el){if(el.tagName==='BR')el.remove()});
+  }
+ };
+
+ if(typeof tp151CalendarDayPanel==='function'){
+  const tp155Round2CalendarDayPanelBase=tp151CalendarDayPanel;
+  tp151CalendarDayPanel=function(){
+   const date=typeof rf2211Selected==='function'?rf2211Selected():(state.rf2211CalendarDate||'');
+   if(!date)return '';
+   return tp155Round2CalendarDayPanelBase.apply(this,arguments);
+  };
+ }
+
+ const tp155Round2RenderBase=render;
+ render=function(custom){
+  const out=tp155Round2RenderBase.apply(this,arguments);
+  window.tp155Round2EnhanceHome();
+  return out;
+ };
+
+ const style=document.createElement('style');style.id='tp155Round2Css';style.textContent=[
+  'main.rf221-home>.hero.tp155-home-active-card{box-sizing:border-box!important;border:2px solid color-mix(in srgb,var(--tp-program-accent,var(--accent)) 72%,var(--line))!important;background:color-mix(in srgb,var(--tp-program-accent,var(--accent)) 8%,var(--card))!important;border-radius:18px!important;padding:10px 12px!important}',
+  '.tp155-home-active-grid{display:grid!important;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr)!important;gap:12px!important;align-items:center!important;width:100%!important}',
+  '.tp155-home-program-left,.tp155-home-program-right{min-width:0!important}',
+  '.tp155-home-program-left h1{margin:4px 0 0!important;font-size:clamp(22px,5.9vw,29px)!important;line-height:1.08!important}',
+  '.tp155-home-program-left>.badge{border-color:color-mix(in srgb,var(--tp-program-accent,var(--accent)) 72%,var(--line))!important;background:color-mix(in srgb,var(--tp-program-accent,var(--accent)) 16%,var(--card2))!important}',
+  '.tp155-home-program-right{border-left:1px solid color-mix(in srgb,var(--tp-program-accent,var(--accent)) 42%,var(--line))!important;padding-left:11px!important}',
+  '.tp155-home-program-right .tp146-next{margin:0!important;padding:0!important;min-height:0!important}',
+  '.tp155-home-program-right .tp146-next-title{display:block!important;font-size:18px!important;line-height:1.16!important;margin:2px 0!important}',
+  '.tp155-home-program-right .tp146-next-time{display:block!important;font-size:11px!important;line-height:1.2!important}',
+  'main.rf221-home>.hero.tp155-home-active-card>.btn{margin-top:8px!important;min-height:40px!important}',
+  'main.tp151-calendar>.tp151-page-head p{font-size:16px!important;line-height:1.32!important;font-weight:750!important;color:var(--text)!important;opacity:.86!important;margin-top:5px!important}',
+  '@media(max-width:350px){.tp155-home-active-grid{gap:8px!important}.tp155-home-program-right{padding-left:8px!important}.tp155-home-program-left h1{font-size:21px!important}.tp155-home-program-right .tp146-next-title{font-size:13px!important}}'
+ ].join('');
+ document.head.appendChild(style);
+
+ window.TrainPilot155Round2={version:TP155_ROUND2,homeActiveProgram:true,calendarHint:true};
+})();
+// @endsection trainpilot-155-home-calendar-round2.js
+
+// @section trainpilot-155-theme-family-polish.js
+/* TrainPilot 1.5.5 Round 2: Basic themes are calm/flat; colored selection frames belong to Neon themes. */
+(function(){
+ 'use strict';
+
+ if(typeof TP1511_TX==='object'){
+  TP1511_TX.sk=Object.assign({},TP1511_TX.sk||{},{vivid:'Neónové farby',themeHelp:'Základné farby zostávajú čisté a nenápadné; Neónové farby používajú výraznejšie farebné zvýraznenia.'});
+  TP1511_TX.pl=Object.assign({},TP1511_TX.pl||{},{vivid:'Kolory neonowe',themeHelp:'Kolory podstawowe pozostają spokojne i proste; Kolory neonowe używają mocniejszych kolorowych wyróżnień.'});
+ }
+
+ Object.assign(RF200_THEMES,{
+  classicBlue:{name:'Kék',accent:'#4f7db8',accent2:'#7ea5d3'},
+  classicGreen:{name:'Zöld',accent:'#4f8a67',accent2:'#78ad8d'},
+  classicRed:{name:'Piros',accent:'#b65b5b',accent2:'#d18181'},
+  classicOrange:{name:'Narancs',accent:'#b87845',accent2:'#d49a68'},
+  classicPurple:{name:'Lila',accent:'#76659a',accent2:'#9a8ab9'},
+  graphite:{name:'Grafit',accent:'#778291',accent2:'#a2abb8'}
+ });
+
+ const tp155ThemeApplyBase=rf200ApplyTheme;
+ rf200ApplyTheme=function(k=rf200ThemeKey()){
+  const r=tp155ThemeApplyBase.apply(this,arguments);
+  const el=typeof document!=='undefined'?document.documentElement:null;
+  const family=TP1511_BASIC.includes(k)?'basic':'vivid';
+  if(el?.dataset)el.dataset.tpThemeFamily=family;
+  else el?.setAttribute?.('data-tp-theme-family',family);
+  return r;
+ };
+
+ const style=document.createElement('style');style.id='tp155ThemeFamilyCss';style.textContent=[
+  'html[data-tp-theme-family="basic"] :is(.card,.setting,.tp151-nav-dock,.tp151-calendar-frame,.tp151-day-panel,.tp152-active-program,.tp152-day,.tp152-program-card,.tp152-program-day,.tp152-exercise,.tp152-quick-row,.tp152-inline-add,.tp152-accordion){box-shadow:none!important;border-color:var(--line)!important}',
+  'html[data-tp-theme-family="basic"] body main.rf221-home>.hero.tp155-home-active-card{border:1px solid var(--line)!important;background:var(--card)!important;box-shadow:none!important}',
+  'html[data-tp-theme-family="basic"] .tp155-home-program-right{border-left-color:var(--line)!important}',
+  'html[data-tp-theme-family="basic"] :is(.tp152-chevron,.tp146-exercise-chevron,.rf103-history-chevron,.rf-history-health-chevron,.tp1511-training summary i){border-color:transparent!important;background:transparent!important;box-shadow:none!important;color:var(--text)!important}',
+  'html[data-tp-theme-family="basic"] :is(.tp-library-card .tp-play-btn,.tp146-exercise .tp-play-btn,.tp153-video-launch){border-color:var(--line)!important;background:var(--card2)!important;box-shadow:none!important;filter:none!important}',
+  'html[data-tp-theme-family="basic"] :is(.tp151-nav-item.active,.tp151-top-icon.active,.tp-selected,[aria-pressed="true"]){box-shadow:none!important;filter:none!important;border-color:transparent!important}',
+  'html[data-tp-theme-family="basic"] .tp151-nav-item.active{background:var(--card2)!important}',
+  'html[data-tp-theme-family="basic"] .tp1511-theme-chip.active{border-color:var(--line)!important;box-shadow:none!important;background:color-mix(in srgb,var(--text) 7%,var(--card2))!important}',
+  'html[data-tp-theme-family="basic"] :focus-visible{outline-color:var(--text)!important;box-shadow:none!important}',
+  'html[data-tp-theme-family="vivid"] body main.rf221-home>.hero.tp155-home-active-card{box-shadow:0 0 18px color-mix(in srgb,var(--accent) 10%,transparent)!important}',
+  'html[data-tp-theme-family="vivid"] .tp1511-theme-chip.active{border-color:var(--accent)!important;box-shadow:inset 0 0 0 1px var(--accent)!important}'
+ ].join('');
+ document.head.appendChild(style);
+
+ rf200ApplyTheme(rf200ThemeKey());
+ window.TrainPilot155ThemeFamily={version:'1.5.5-round2',basicFlat:true,neonHighlights:true};
+})();
+// @endsection trainpilot-155-theme-family-polish.js
+
+// @section trainpilot-155-round3-ui-polish.js
+/* TrainPilot 1.5.5 Round 3 test polish
+ * - brighter matte Basic palette, no accent glow
+ * - natural no-scroll Home when content fits
+ * - larger nav iconography without taller 2x4 cells
+ * - inline Journal date filter
+ * - one-tap language dropdown
+ * - upward time picker with blurred backdrop
+ */
+(function(){
+ 'use strict';
+ const TP155_R3_VERSION='1.5.5-round3-test';
+
+ // Brighter but deliberately non-neon Basic palette.
+ Object.assign(RF200_THEMES,{
+  classicBlue:{name:'Kék',accent:'#4d8fbe',accent2:'#7cb4d6'},
+  classicGreen:{name:'Zöld',accent:'#4d946a',accent2:'#7ab18d'},
+  classicRed:{name:'Piros',accent:'#b95f63',accent2:'#d58a8d'},
+  classicOrange:{name:'Narancs',accent:'#c07d45',accent2:'#d9a06e'},
+  classicPurple:{name:'Lila',accent:'#8567b1',accent2:'#a58cc9'},
+  graphite:{name:'Grafit',accent:'#687989',accent2:'#96a4b1'},
+  classicTeal:{name:'Türkiz',accent:'#3f918a',accent2:'#75b6b1'},
+  classicRose:{name:'Rózsaszín',accent:'#b45f82',accent2:'#d38aa5'},
+  classicAmber:{name:'Arany',accent:'#ae843c',accent2:'#cca45f'},
+  classicCyan:{name:'Cián',accent:'#4c8fa5',accent2:'#77b0c0'}
+ });
+ if(typeof TP1511_BASIC!=='undefined'){
+  TP1511_BASIC.splice(0,TP1511_BASIC.length,'classicBlue','classicGreen','classicRed','classicOrange','classicPurple','graphite','classicTeal','classicRose','classicAmber','classicCyan');
+ }
+ if(typeof TP1511_BASIC_NAMES==='object')Object.assign(TP1511_BASIC_NAMES,{

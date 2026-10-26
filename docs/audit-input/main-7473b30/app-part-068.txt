@@ -1,0 +1,223 @@
+ 'barbell-row':['kBWAon7ItDw','Jeremy Ethier'],
+ 'goblet-squat':['MeIiIdhvXT4','ScottHermanFitness'],
+ 'bulgarian-split-squat':['2C-uNgKwPLE','ScottHermanFitness'],
+ 'db-pullover':['ieFKuQAGYIA','The Active Life'],
+ 'cable-curl':['NFzTWp2qpiE','Fit Father Project'],
+
+ // Restore exact direct demos that #80 previously demoted because their old
+ // credit string was generic. These are reviewed exercise-specific tutorials.
+ 'side-plank':['XeN4pEZZJNI','Well+Good'],
+ 'db-rdl':['hQgFixeXdZo','Mike | J2FIT Strength & Conditioning'],
+ 'db-reverse-fly':['lPt0GqwaqEw','Mind Pump TV'],
+
+ // v1.4.8 library expansion: keep every catalog exercise on a concrete,
+ // reviewed direct tutorial instead of falling through to a YouTube search.
+ 'pullup':['9yVGh3XbJ34','National Academy of Sports Medicine (NASM)'],
+ 'chinup':['e1YSApl-QcM','Simonster Strength'],
+ 'negative-pullup':['koEwdlmUxoM','Battle Bunker'],
+ 'scapular-pullup':['1yxFXaH3rtE','Gymless Fitness'],
+ 'inverted-row':['wRp2hCv_4ZQ','Mike Doyle'],
+ 'dip':['B6eMPQN7ej4','Calistenia Brasil'],
+ 'bench-dip':['WVeZDBhZwLA','National Academy of Sports Medicine (NASM)'],
+ 'diamond-pushup':['_4EGPVJuqfA','Tykato Fitness'],
+ 'pseudo-planche-pushup':['i-gSmqe9tNw','Minus The Gym'],
+ 'hanging-knee-raise':['G6a5267YpHM','FIT.nl'],
+ 'hanging-leg-raise':['Pr1ieGZ5atk','ATHLEAN-X'],
+ 'hollow-hold':['hK7QTWGRBu0','The Bodyweight Process'],
+ 'superman-hold':['g0Kr9Wd3CeQ','FIT.nl'],
+ 'mountain-climber':['cnyTQDSE884','Well+Good'],
+
+ 'band-row':['LSkyinhmA8k','Get Healthy U'],
+ 'band-lat-pulldown':['VxCt-KKvzBQ','Hammer Fitness'],
+ 'band-chest-press':['Fj1WkCwt-nk','Elite Fitness Downtown'],
+ 'band-overhead-press':['0VjBZALMJD0','Ryan Sersaw Health & Fitness'],
+ 'band-face-pull':['guG4eqBOfwA','Fitness Freedom Athletes'],
+ 'band-biceps-curl':['A0yEHB67kbI','BodyTorque'],
+ 'band-triceps-pushdown':['gjq9dmxU9fk','FlexXP'],
+ 'band-pallof-press':['BvSB4tvgLGc','Functional Bodybuilding'],
+
+ 'kb-goblet-squat':['aNDUbH_Uv4g','Zack Henderson'],
+ 'kb-deadlift':['MJPGkNqAXzg','National Academy of Sports Medicine (NASM)'],
+ 'kb-swing':['jYtimecuwuw','Mind Pump TV'],
+ 'kb-clean':['pDtRBx1fm70','Sport-Thieme'],
+ 'kb-press':['gjr-QAdsq4o','Onnit'],
+ 'kb-row':['l5qelXL5nfs','Coach Lynda / exercise demonstration'],
+ 'kb-reverse-lunge':['y2jz7ot6r2I','Greg Brookes'],
+ 'kb-halo':['Sci3lijQBmk','Brittany van Schravendijk'],
+
+ 'barbell-back-squat':['gcNh17Ckjgg','Jeremy Ethier'],
+ 'conventional-deadlift':['1nvAUJVmFZY','Rogue Fitness'],
+ 'bench-press':['rT7DgCr-3pg','ScottHermanFitness'],
+ 'incline-bench-press':['BjGLs6KGWUc','National Academy of Sports Medicine (NASM)'],
+ 'barbell-overhead-press':['cGnhixvC8uA','National Academy of Sports Medicine (NASM)'],
+ 'assisted-pullup-machine':['gx0RWT7WbmA','Colossus Fitness'],
+ 'pec-deck':['XZg28DIf1oc','Machine Chest Fly tutorial'],
+ 'cable-lateral-raise':['qitQHqNZbeM','Colossus Fitness'],
+ 'hack-squat':['hrciyIRwFzs','Coach Kelly'],
+ 'standing-calf-raise':['KVZ3qtJA4AU','Standing Calf Raise tutorial']
+};
+const sourceBase=demoInfo;
+const openBase=openDemo;
+const unverified=/^(?:YouTube\s*[–-]|Zi\s*workout)/i;
+const text={
+ hu:{unverified:'Ehhez a gyakorlathoz nincs ellenőrzött, pontos videó. A korábbi nem ellenőrzött bemutatót eltávolítottuk.',source:'Szakmai útmutató megnyitása',search:'Valódi bemutató keresése',offline:'Offline: a szöveges gyakorlati útmutató továbbra is elérhető.',guide:'Gyakorlat végrehajtása',close:'Bezárás',official:'Muscle & Strength • videós gyakorlatleírás',library:'NASM • hivatalos gyakorlatkönyvtár'},
+ en:{unverified:'No verified exact video is available for this exercise. The previous unverified demo has been removed.',source:'Open professional exercise guide',search:'Search for a real demonstration',offline:'Offline: written exercise instructions remain available.',guide:'Exercise instructions',close:'Close',official:'Muscle & Strength • video exercise guide',library:'NASM • official exercise library'},
+ de:{unverified:'Für diese Übung ist kein genaues, überprüftes Video verfügbar. Das bisherige ungeprüfte Video wurde entfernt.',source:'Professionelle Übungsanleitung öffnen',search:'Echte Vorführung suchen',offline:'Offline: Die schriftliche Anleitung bleibt verfügbar.',guide:'Übungsanleitung',close:'Schließen',official:'Muscle & Strength • Übungsvideo',library:'NASM • offizielle Übungsbibliothek'},
+ ro:{unverified:'Nu există un videoclip exact verificat pentru acest exercițiu. Clipul neverificat anterior a fost eliminat.',source:'Deschide ghidul de exerciții',search:'Caută o demonstrație reală',offline:'Offline: instrucțiunile scrise rămân disponibile.',guide:'Instrucțiuni',close:'Închide',official:'Muscle & Strength • ghid video',library:'NASM • biblioteca oficială'}
+};
+function lang(){const k=typeof rf212Lang==='function'?rf212Lang():'hu';return text[k]||text.hu}
+function nameOf(id){const e=typeof byId==='function'?byId(id):null;return e&&e.en||e&&e.hu||id}
+function searchUrl(id){return 'https://www.youtube.com/results?search_query='+encodeURIComponent(nameOf(id)+' exercise tutorial real trainer')}
+demoInfo=function(id){
+ const d=sourceBase(id);if(!d)return d;
+ const replacement=verifiedVideos[id];
+ if(replacement)return {...d,provider:'youtube',videoId:replacement[0],credit:replacement[1],source:'https://www.youtube.com/watch?v='+replacement[0],sourceVerified:true};
+ if(Object.prototype.hasOwnProperty.call(verifiedGuides,id))return {...d,provider:null,videoId:null,credit:lang().official,source:verifiedGuides[id],sourceVerified:true,sourceKind:'verified-guide'};
+ if(unverified.test(String(d.credit||''))){
+  return {...d,provider:null,videoId:null,credit:lang().unverified,source:searchUrl(id),sourceVerified:false,sourceKind:'unverified-search'};
+ }
+ return d;
+};
+openDemo=function(id){
+ const d=demoInfo(id);if(!d)return;
+ if(!d.sourceKind)return openBase(id);
+ const tr=lang(),e=typeof byId==='function'?byId(id):null;
+ const title=e?(typeof tp149ExerciseName==='function'?tp149ExerciseName(e):e.hu||e.en):id;
+ const notes=e&&e.notes||'';
+ if(typeof closeDemo==='function')closeDemo();
+ const m=document.createElement('div');m.id='videoModal';m.className='video-modal';
+ const offline=navigator.onLine===false;
+ const verified=d.sourceKind==='verified-guide';
+ const sourceLabel=verified?tr.source:d.sourceKind==='library-search'?tr.source:tr.search;
+ const alt=searchUrl(id);
+ m.innerHTML='<div class="video-dialog" role="dialog" aria-modal="true" aria-label="'+esc(title)+'">'+
+  '<button class="btn secondary video-close" data-tp-video-close type="button" onclick="closeDemo()">✕ '+esc(tr.close)+'</button>'+
+  '<h2>'+esc(title)+'</h2>'+
+  (!verified?'<p class="tp80-source-warning">'+esc(tr.unverified)+'</p>':'')+
+  (!window.TrainPilotDemo15&&notes?'<div class="tp80-guide"><strong>'+esc(tr.guide)+'</strong><p>'+esc(notes)+'</p></div>':'')+
+  '<p class="small muted">'+esc(d.credit)+'</p>'+
+  (offline?'<p class="small muted">'+esc(tr.offline)+'</p>':
+   '<button type="button" class="btn block" data-tp80-source>'+esc(sourceLabel)+'</button>'+
+   (verified?'':'<button type="button" class="btn secondary block" data-tp80-search>'+esc(tr.search)+'</button>'))+
+  '</div>';
+ document.body.appendChild(m);
+ m.querySelector('[data-tp-video-close]')?.focus();
+ m.querySelector('[data-tp80-source]')?.addEventListener('click',()=>openVideoLink(d.source));
+ m.querySelector('[data-tp80-search]')?.addEventListener('click',()=>openVideoLink(alt));
+};
+window.TrainPilotIssue80={version:'80.2',officialRow,officialLibrary,searchUrl,verifiedVideos};
+})();
+// @endsection issue80-video-source-safety.js
+
+// @section publication-105.js
+/* Publication data policy: local Health data survives sync, export requires explicit consent. */
+var tp105Text=function(key){
+ const rows={
+ data:['Adatok és adatvédelem','Data and privacy','Daten und Datenschutz','Date și confidențialitate'],
+ health:['Health Connect-adatok a kézi mentésekben és Drive-szinkronban','Include Health Connect data in manual backups and Drive sync','Health-Connect-Daten in Sicherungen und Drive-Synchronisierung','Include date Health Connect în copii și sincronizarea Drive'],
+ healthHelp:['Alapból kikapcsolva. Az egészségadatok helyben megmaradnak. A korábbi exportok és felhőmentések tartalmát ez nem törli. A JSON csak fotóhivatkozásokat tartalmaz; a ZIP a fotófájlokat is.','Off by default. Health data remains on this device. This does not erase previous exports or cloud backups. JSON contains photo references; ZIP also includes photo files.','Standardmäßig aus. Gesundheitsdaten bleiben lokal. Frühere Exporte und Cloud-Sicherungen werden dadurch nicht gelöscht. JSON enthält Fotoverweise; ZIP auch Fotodateien.','Dezactivat implicit. Datele de sănătate rămân pe dispozitiv. Exporturile și copiile vechi nu sunt șterse. JSON conține referințe foto; ZIP include și fotografiile.'],
+ healthConfirm:['Engedélyezed az egészségadatok mentését? Alvás, pulzus, HRV és más Health Connect-adatok is a kiválasztott fájlba vagy saját Google Drive-odba kerülhetnek.','Allow health data in backups? Sleep, heart rate, HRV and other Health Connect data may be copied to the selected file or your Google Drive.','Gesundheitsdaten sichern? Schlaf, Puls, HRV und weitere Health-Connect-Daten können in die Datei oder dein Google Drive kopiert werden.','Permiți salvarea datelor de sănătate? Somnul, pulsul, HRV și alte date Health Connect pot fi copiate în fișier sau în Google Drive.'],
+ zip:['Teljes ZIP-mentés fotókkal','Full ZIP backup with photos','Vollständige ZIP-Sicherung mit Fotos','Copie ZIP completă cu fotografii'],
+ unzip:['ZIP visszatöltése','Restore ZIP','ZIP wiederherstellen','Restaurează ZIP'],
+ native:['Ez a funkció az Android-alkalmazásban érhető el.','This feature is available in the Android app.','Diese Funktion ist in der Android-App verfügbar.','Funcția este disponibilă în aplicația Android.'],
+ privacy:['Adatkezelési tájékoztató','Privacy policy','Datenschutzerklärung','Politica de confidențialitate'],
+ revoke:['Google-engedélyek visszavonása','Revoke Google permissions','Google-Berechtigungen widerrufen','Revocă permisiunile Google'],
+ revokeConfirm:['Visszavonod a TrainPilot Google-engedélyeit és leállítod a szinkront? A helyi és a felhőadatok megmaradnak.','Revoke TrainPilot Google permissions and stop sync? Local and cloud data will remain.','TrainPilot-Berechtigungen widerrufen und Sync stoppen? Lokale und Cloud-Daten bleiben erhalten.','Revoci permisiunile TrainPilot și oprești sincronizarea? Datele locale și cloud rămân.'],
+ driveDelete:['TrainPilot-adatok törlése a Drive-ról','Delete TrainPilot data from Drive','TrainPilot-Daten aus Drive löschen','Șterge datele TrainPilot din Drive'],
+ driveConfirm:['Végleg törlöd e Google-fiók összes TrainPilot/RepForge mentését és naplófotóját az app saját Drive-mappájából? A helyi adatok megmaradnak. Más eszközök újra feltölthetnek: azokon is állítsd le a szinkront.','Permanently delete all TrainPilot/RepForge backups and journal photos in this account’s app Drive folder? Local data remains. Stop sync on other devices too: they can upload again.','Alle TrainPilot/RepForge-Sicherungen und Fotos im App-Drive-Ordner dieses Kontos endgültig löschen? Lokale Daten bleiben. Sync auch auf anderen Geräten stoppen; sie können erneut hochladen.','Ștergi definitiv copiile TrainPilot/RepForge și fotografiile din folderul Drive al aplicației? Datele locale rămân. Oprește sincronizarea și pe alte dispozitive: pot încărca din nou.'],
+ calendarDelete:['TrainPilot-naptár törlése','Delete TrainPilot calendar','TrainPilot-Kalender löschen','Șterge calendarul TrainPilot'],
+ calendarConfirm:['Törlöd a TrainPilot által létrehozott Google-naptárt és annak eseményeit? A helyi tervek megmaradnak. A kézzel más naptárba mentett eseményeket ez nem törli.','Delete the Google calendar created by TrainPilot and its events? Local plans remain. Events manually saved in other calendars are not deleted.','Den von TrainPilot erstellten Google-Kalender und seine Termine löschen? Lokale Pläne bleiben. Manuell in anderen Kalendern gespeicherte Termine werden nicht gelöscht.','Ștergi calendarul Google creat de TrainPilot și evenimentele sale? Planurile locale rămân. Evenimentele salvate manual în alte calendare nu sunt șterse.'],
+ localDelete:['Minden helyi adat törlése','Erase all local data','Alle lokalen Daten löschen','Șterge toate datele locale'],
+ localConfirm:['Végleg törlöd az összes helyi edzést, testsúlyadatot, saját programot, vázlatot, fotót, Health-adatot és beállítást? Előbb készíts ZIP-mentést. A korábbi exportok, Google Drive/Naptár és Health Connect bejegyzések külön törlendők.','Permanently erase all local workouts, weights, custom programs, drafts, photos, health data and settings? Make a ZIP backup first. Previous exports, Google Drive/Calendar and Health Connect records must be deleted separately.','Alle lokalen Trainings-, Gewichts-, Programm-, Entwurfs-, Foto-, Gesundheitsdaten und Einstellungen endgültig löschen? Zuerst ZIP-Sicherung erstellen. Exporte, Google Drive/Kalender und Health-Connect-Einträge sind separat zu löschen.','Ștergi definitiv antrenamentele, greutățile, programele, ciornele, fotografiile, datele de sănătate și setările locale? Creează întâi o copie ZIP. Exporturile, Google Drive/Calendar și Health Connect se șterg separat.'],
+ done:['A művelet befejeződött.','Operation completed.','Vorgang abgeschlossen.','Operațiune finalizată.'],
+ busy:['Előbb fejezd be az edzést és a szinkront.','Finish the workout and sync first.','Training und Synchronisierung zuerst beenden.','Finalizează întâi antrenamentul și sincronizarea.'],
+ account:['A helyi napló közös ezen az eszközön. Másik Google-fiók kapcsolásakor ugyanazok az adatok szinkronizálódhatnak.','This device has one shared local journal. Connecting a different Google account may sync the same data.','Dieses Gerät hat ein gemeinsames lokales Tagebuch. Ein anderes Google-Konto kann dieselben Daten synchronisieren.','Dispozitivul are un singur jurnal local. Conectarea altui cont Google poate sincroniza aceleași date.']
+ };const i={hu:0,en:1,de:2,ro:3}[rf212Lang()]??1;return rows[key]?.[i]||key;
+};
+var tp105AccountSummary=function(){const count=history().length,weight=weights().length,custom=programs().filter(function(p){return !p.builtin;}).length;const labels={hu:['Helyi edzések','Testsúlyadatok','Saját programok'],en:['Local workouts','Weight entries','Custom programs'],de:['Lokale Trainings','Gewichtseinträge','Eigene Programme'],ro:['Antrenamente locale','Înregistrări de greutate','Programe proprii']}[rf212Lang()]||['Local workouts','Weight entries','Custom programs'];return labels[0]+': '+count+' · '+labels[1]+': '+weight+' · '+labels[2]+': '+custom;};
+var tp105ArchiveBridge=function(){const p=window.Capacitor?.Plugins?.BackupArchive||window.Capacitor?.registerPlugin?.('BackupArchive');if(!p)throw Error(tp105Text('native'));return p;};
+// Snapshot retention only touches remote backups; it does not mutate this phone's dataset/photos.
+var tp105DataSyncBusy=function(){return cloudBusy&&cloudActiveOperation!=='maintenance'||state.health?.busy||window.TrainPilotHealthJournal?.isSyncing?.()===true||window.TrainPilotWearSync?.isApplyingCommand?.()===true;};
+var tp105RestoreOwner=null;
+var tp105WithRestoreLock=async function(work){
+ if(state.session||tp105DataSyncBusy()||window.TrainPilotBackupBusy)throw Error(tp105Text('busy'));
+ const owner={};tp105RestoreOwner=owner;window.TrainPilotBackupBusy=true;
+ try{await window.TrainPilotPhoneExecution162?.block?.(true);return await work(owner);}
+ finally{try{await window.TrainPilotPhoneExecution162?.block?.(false);}finally{tp105RestoreOwner=null;window.TrainPilotBackupBusy=false;releaseCloudBackup();if(!cloudBusy)finishCloud();}}
+};
+var tp105HealthConsent=function(){return db.get('privacyPrefs',{}).includeHealth===true;};
+var tp105Project=function(data,includeHealth){
+ const d=JSON.parse(JSON.stringify(data));d.appVersion=TRAINPILOT_VERSION;d.healthIncluded=includeHealth===true;
+ if(!includeHealth){d.recoveryHistory=[];delete d.healthLedger;delete d.wellnessLatest;delete d.healthJournal;d.history=(d.history||[]).map(function(h){delete h.health240;delete h.healthWear129;return h;});}
+ return d;
+};
+
+
+syncData=function(){const d=makeBackup();delete d.healthLedger;delete d.wellnessLatest;delete d.healthJournal;return d;};
+var tp105DataKeys=function(d){return ['history','weights','settings','exercises','plan','scheduled','programs','activeProgramId','plannerSettings','exerciseFavorites','themeAccent','language',...(d.healthIncluded===true&&tp105HealthConsent()?['recoveryHistory']:[])];};
+canonicalSyncData=function(d){const p=tp105Project(d,tp105HealthConsent());return canonical(Object.fromEntries(tp105DataKeys(p).map(function(k){return [k,p[k]];})));};
+var tp105PreserveLocalHealth=function(data){
+ const d=JSON.parse(JSON.stringify(data));if(d.healthIncluded===true&&tp105HealthConsent())return d;
+ const local=new Map(history().map(function(h){return [h.id||h.started+'|'+h.workout,h];}));
+ for(const h of d.history||[]){delete h.health240;delete h.healthWear129;const old=local.get(h.id||h.started+'|'+h.workout);if(old&&old.started===h.started&&old.finished===h.finished){if(old.health240)h.health240=old.health240;if(old.healthWear129)h.healthWear129=old.healthWear129;}}
+ return d;
+};
+var tp105MergeExtras=function(out,local,remotes,base,choose){
+ for(const k of ['exerciseFavorites','themeAccent','language']){
+  let v=local[k];for(const r of remotes||[]){if(r[k]===undefined||canonical(r[k])===canonical(v)||base&&canonical(r[k])===canonical(base[k]))continue;if(base&&canonical(v)===canonical(base[k]))v=r[k];else v=choose(k,v,r[k])?v:r[k];}if(v!==undefined)out[k]=v;
+ }
+ if(tp105HealthConsent()){
+  const rows=new Map();for(const d of [base,local,...remotes])for(const x of d?.recoveryHistory||[]){const old=rows.get(x.day);if(!old||String(x.syncedAt||x.readAt||x.updatedAt||'')>=String(old.syncedAt||old.readAt||old.updatedAt||''))rows.set(x.day,x);}
+  out.recoveryHistory=[...rows.values()].sort(function(a,b){return String(b.day).localeCompare(String(a.day));});
+ }
+ return tp105Project(out,tp105HealthConsent());
+};
+const tp105MergeBase=mergeSync;
+mergeSync=function(local,remotes,base,choose){const select=function(k,a,b){const x=choose(k,a,b);return typeof x==='boolean'?(x?a:b):x;};return tp105MergeExtras(tp105MergeBase(local,remotes,base,select),local,remotes,base,function(k,a,b){return canonical(select(k,a,b))===canonical(a);});};
+const tp105ValidateBase=validateBackup;
+validateBackup=function(d){
+ tp105ValidateBase(d);
+ if(d.healthJournal!==undefined&&(d.healthIncluded!==true||!d.healthJournal||d.healthJournal.schemaVersion!==1||!Array.isArray(d.healthJournal.records)||!Array.isArray(d.healthJournal.days)||d.healthJournal.records.length>100000||d.healthJournal.days.length>20000))throw Error('Invalid health journal backup.');
+ if(d.exerciseFavorites!==undefined&&(!Array.isArray(d.exerciseFavorites)||d.exerciseFavorites.length>2000||d.exerciseFavorites.some(function(x){return typeof x!=='string'||x.length>100;})))throw Error('Invalid favorites.');
+ if(d.language!==undefined&&!['hu','en','de','ro','system'].includes(d.language))throw Error('Invalid language.');
+ if(d.themeAccent!==undefined&&!Object.hasOwn(RF200_THEMES,d.themeAccent))throw Error('Invalid theme.');
+ if(d.recoveryHistory!==undefined&&(!Array.isArray(d.recoveryHistory)||d.recoveryHistory.length>10000||d.recoveryHistory.some(function(x){return !x||typeof x!=='object'||!/^\d{4}-\d{2}-\d{2}$/.test(x.day);})))throw Error('Invalid recovery history.');
+ return d;
+};
+restoreText=async function(text,archiveToken=null,restoreOwner=null){
+ if(!archiveToken&&!restoreOwner)return tp105WithRestoreLock(owner=>restoreText(text,null,owner));
+ const ownsLock=restoreOwner!==null&&restoreOwner===tp105RestoreOwner;
+ if(state.session||tp105DataSyncBusy()||window.TrainPilotBackupBusy&&!archiveToken&&!ownsLock)throw Error(tp105Text('busy'));
+ if(String(text).length>20*1024*1024)throw Error('Maximum 20 MB.');
+ const d=validateBackup(JSON.parse(String(text).replace(/^\uFEFF/,'')));
+ if(!await tp2628Confirm(tp149T('dialog.restore.message',{workouts:d.history.length,weights:d.weights.length}),{title:tp149T('dialog.restore.title'),confirmText:tp149T('backup.restore'),danger:true}))return false;
+ if(state.session||tp105DataSyncBusy()||window.TrainPilotBackupBusy&&!archiveToken&&!ownsLock)throw Error(tp105Text('busy'));
+ // Manual restore replaces this dataset; cloud sync alone preserves local Health enrichment.
+ const next={...d,programs:d.programs||rf12BuiltinPrograms(),activeProgramId:d.activeProgramId||'home-basic',plannerSettings:d.plannerSettings||plannerSettings(),scheduled:d.scheduled||[],draft:null};
+ for(const h of next.history||[])for(const photo of h.photos||[])if(archiveToken&&!photo.deletedAt)photo.driveFileId=null;
+ const keys=[...tp105DataKeys({...d,healthIncluded:false}),'recoveryHistory','healthLedgerV1','healthSyncMetaV1','wellnessLatest','draft','schemaVersion'];
+ const old=new Map(keys.map(function(k){return [k,localStorage.getItem('repforge:'+k)];}));let installed=false,healthInstalled=false,healthToken=null;
+ const journal=await window.TrainPilotHealthJournal?.ready();
+ if(journal){const snapshot=d.healthJournal||window.TrainPilotHealthJournal.legacySnapshot(d);healthToken=(await journal.prepareRestore({snapshot})).token;}
+
+ try{
+  if(healthToken)localStorage.setItem('repforge:healthRestore120',JSON.stringify({token:healthToken,old:[...old]}));
+  if(archiveToken){localStorage.setItem('repforge:archiveRestore105',JSON.stringify({token:archiveToken,old:[...old]}));await tp105ArchiveBridge().install({token:archiveToken});installed=true;}
+  for(const k of keys){let v=k==='schemaVersion'?RF12_SCHEMA:k==='healthSyncMetaV1'?null:k==='healthLedgerV1'?(d.healthLedger||null):k==='wellnessLatest'?(d.wellnessLatest||null):k==='recoveryHistory'?(d.recoveryHistory||[]):next[k];if(v!==undefined)localStorage.setItem('repforge:'+k,JSON.stringify(v));}
+  if(healthToken){await journal.installRestore({token:healthToken});healthInstalled=true;}
+ }catch(e){if(healthToken)await journal.finishRestore({token:healthToken,commit:false});localStorage.removeItem('repforge:healthRestore120');for(const [k,v]of old){if(v===null)localStorage.removeItem('repforge:'+k);else localStorage.setItem('repforge:'+k,v);}if(archiveToken&&localStorage.getItem('repforge:archiveRestore105'))await tp105ArchiveBridge().rollback({token:archiveToken});localStorage.removeItem('repforge:archiveRestore105');throw e;}
+ if(installed)await tp105ArchiveBridge().commit({token:archiveToken});
+ if(healthInstalled)await journal.finishRestore({token:healthToken,commit:true});
+ if(installed)localStorage.removeItem('repforge:archiveRestore105');localStorage.removeItem('repforge:healthRestore120');
+ if(journal)await window.TrainPilotHealthJournal.refresh();
+ state.health={};migrateTo12();document.documentElement.lang=rf212Lang();rf200ApplyTheme?.();alert(tp149T('backup.restoreDone'));render();return true;
+};
+const tp105ChooseImportBase=chooseImport;
+chooseImport=async function(){
+ if(!isNative())return tp105ChooseImportBase.apply(this,arguments);
+ try{return await tp105WithRestoreLock(async owner=>{const result=await nativeFiles().open();if(!result.cancelled)return restoreText(result.data,null,owner);});}
+ catch(error){alert(tp149T('backup.restoreFailed')+'\n'+(error?.message||error));}
+};
+importData=async function(file){
+ if(!file)return;
+ try{return await tp105WithRestoreLock(async owner=>{if(file.size>20*1024*1024)throw Error(tp149T('backup.maxSize'));return restoreText(await file.text(),null,owner);});}

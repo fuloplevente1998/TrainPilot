@@ -1,0 +1,346 @@
+   const theme=RF200_THEMES[key];
+   return '<button type="button" class="tp155-theme-option '+(key===current?'active':'')+'" data-theme="'+esc(key)+'" aria-pressed="'+(key===current?'true':'false')+'" onclick="event.preventDefault();event.stopPropagation();tp162ChooseTheme(\''+esc(key)+'\')"><span class="tp155-theme-swatch" style="background:'+esc(theme.accent)+'"></span><span>'+esc(tp1511ThemeName(key))+'</span><i aria-hidden="true">✓</i></button>';
+  }).join('');
+ };
+ window.tp162ThemeDropdownHtml=function(){
+  const lang=typeof rf212Lang==='function'?rf212Lang():'hu';
+  const basic=lang==='hu'?'Alap színek':tp1511T('basic'),vivid=lang==='hu'?'Élénk színek':tp1511T('vivid');
+  return '<div class="tp155-theme-list tp162-theme-columns"><section class="tp162-theme-column"><div class="small muted tp155-theme-group">'+esc(basic)+'</div><div class="tp162-theme-options">'+themeOptions162(TP1511_BASIC)+'</div></section><section class="tp162-theme-column"><div class="small muted tp155-theme-group">'+esc(vivid)+'</div><div class="tp162-theme-options">'+themeOptions162(TP1511_VIVID)+'</div></section></div>';
+ };
+ window.tp162ThemeToggle=function(button){
+  const el=button.closest('.tp162-theme-dropdown'),open=!el.classList.contains('open');
+  rf260CloseSelects(el);el.classList.toggle('open',open);button.setAttribute('aria-expanded',String(open));
+  state.tp162ThemeOpen=open;
+  if(!open)return;
+  requestAnimationFrame(function(){
+   const trigger=el.querySelector('.tp-select-trigger'),menu=el.querySelector('.tp-select-menu');if(!trigger||!menu)return;
+   const r=trigger.getBoundingClientRect(),vh=window.visualViewport?.height||window.innerHeight||720;
+   const below=Math.max(0,vh-r.bottom-8),above=Math.max(0,r.top-8),openTop=below<220&&above>below,available=openTop?above:below;
+   menu.dataset.placement=openTop?'top':'bottom';
+   menu.style.setProperty('--tp162-theme-max-height',Math.max(120,Math.min(300,vh*.44,Math.max(120,available-8)))+'px');
+  });
+ };
+ window.tp162ThemeKeydown=function(ev){
+  const wrap=ev.target.closest('.tp162-theme-dropdown'),trigger=wrap.querySelector('.tp-select-trigger');
+  if(ev.key==='ArrowDown'&&!wrap.classList.contains('open')){ev.preventDefault();trigger.click();wrap.querySelector('.tp155-theme-option.active')?.focus()}
+ };
+ window.tp162ChooseTheme=function(key){if(!RF200_THEMES[key])return;state.tp162ThemeOpen=false;rf200SetTheme(key)};
+ rf200ThemePanel=function(){
+  const key=rf200ThemeKey(),theme=RF200_THEMES[key];
+  return '<div class="setting tp1511-card tp155-theme-setting tp162-theme-setting"><div class="tp1511-head"><b>◐</b><div><strong>'+esc(tp152T('theme'))+'</strong><p class="small muted">'+esc(tp1511T('themeHelp'))+'</p></div></div><div class="tp-select tp162-theme-dropdown '+(state.tp162ThemeOpen?'open':'')+'"><button type="button" class="tp-select-trigger tp155-theme-open" aria-expanded="'+!!state.tp162ThemeOpen+'" aria-controls="tp162ThemeMenu" onkeydown="tp162ThemeKeydown(event)" onclick="event.stopPropagation();tp162ThemeToggle(this)"><span class="tp-select-value"><span class="tp155-theme-swatch" style="background:'+esc(theme.accent)+'"></span><span>'+esc(tp1511ThemeName(key))+'</span></span></button><div id="tp162ThemeMenu" class="tp-select-menu" role="group" aria-label="'+esc(tp152T('theme'))+'">'+window.tp162ThemeDropdownHtml()+'</div></div></div>';
+ };
+ window.tp162CloseThemeDropdown=function(){
+  const d=document.querySelector('.tp162-theme-dropdown');if(!d?.classList.contains('open'))return false;d.classList.remove('open');d.querySelector('button').setAttribute('aria-expanded','false');state.tp162ThemeOpen=false;return true;
+ };
+ document.addEventListener('click',function(ev){const d=document.querySelector('.tp162-theme-dropdown');if(d&&!d.contains(ev.target)){tp162CloseThemeDropdown();state.tp162ThemeOpen=false}});
+ document.addEventListener('keydown',function(ev){if(ev.key==='Escape'&&tp162CloseThemeDropdown()){document.querySelector('.tp162-theme-dropdown .tp-select-trigger')?.focus();ev.preventDefault()}});
+ if(typeof window.TrainPilotAndroidBack==='function'){
+  const tp162AndroidBackBase=window.TrainPilotAndroidBack;
+  window.TrainPilotAndroidBack=function(){if(tp162CloseThemeDropdown())return true;return tp162AndroidBackBase.apply(this,arguments)};
+ }
+
+ // Run after the established render stack so removed chrome does not reserve any layout height.
+ const renderBase162=render;
+ render=function(custom){
+  const out=renderBase162.apply(this,arguments);
+  cleanupChrome();
+  return out;
+ };
+ cleanupChrome();
+
+ const style=document.createElement('style');style.id='tp162FollowupCss';style.textContent=[
+  '#tp155R4PanelHost:is([data-panel="calendar"],[data-panel="coach"],[data-panel="settings"],[data-panel="exercises"],[data-panel="stats"]) .tp155-r4-panel-close{position:sticky!important;top:8px!important;right:auto!important;float:right!important;margin:0 4px -36px 8px!important;z-index:20!important}',
+  '#tp155R4PanelHost[data-panel="coach"] .tp151-coach-recommendation{margin-top:10px!important}',
+  '#tp155R4PanelHost[data-panel="quick"] .tp155-quick-panel>:is(.hero,.tp151-page-head){display:none!important}',
+  '#tp155R4PanelHost[data-panel="quick"] .tp160-quick-context{font-size:15px!important;font-weight:850!important;line-height:1.2!important}',
+  'body.tp-home-view main.rf221-home{min-height:0!important;height:auto!important;max-height:none!important;padding-bottom:max(12px,env(safe-area-inset-bottom,0px))!important}',
+  'main.rf221-home>.onboarding{padding:6px 11px 9px!important;gap:5px!important}',
+  'main.rf221-home>.onboarding h2{margin:0!important}',
+  'main.rf221-home>.onboarding p{margin:0!important}',
+  '.tp162-theme-setting{overflow:visible!important}.tp162-theme-dropdown{position:relative;margin-top:8px;z-index:21}.tp162-theme-dropdown .tp155-theme-open{display:flex!important;grid-template-columns:none!important;margin:0!important}.tp162-theme-dropdown .tp-select-value{display:flex;align-items:center;gap:8px}.tp162-theme-dropdown.open .tp155-theme-open{border-color:var(--accent)!important;box-shadow:0 0 0 2px rgba(var(--accent-rgb),.18)!important}',
+  // The outer menu owns scrolling; the legacy modal list must not contain its gestures.
+  '.tp162-theme-dropdown>.tp-select-menu{position:absolute!important;left:0!important;right:0!important;top:calc(100% + 4px)!important;width:100%!important;max-height:var(--tp162-theme-max-height,min(300px,44dvh))!important;overflow-y:auto!important;overflow-x:hidden!important;padding:8px!important}.tp162-theme-dropdown>.tp-select-menu[data-placement="top"]{top:auto!important;bottom:calc(100% + 4px)!important}.tp162-theme-columns{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;padding:0!important;overflow:visible;overscroll-behavior:auto}',
+  '.tp162-theme-column{min-width:0;border:1px solid var(--line);border-radius:12px;background:var(--card2);padding:7px}',
+  '.tp162-theme-column .tp155-theme-group{margin:0 0 6px!important;padding:0 2px!important;font-size:12px!important;font-weight:800!important}',
+  '.tp162-theme-options{display:grid;gap:5px}',
+  '.tp162-theme-dropdown .tp155-theme-option{box-sizing:border-box;min-width:0!important;min-height:40px!important;padding:6px 7px!important;gap:6px!important;border:1px solid var(--line)!important;border-radius:10px!important;background:var(--card)!important;font-size:12px!important;line-height:1.15!important;white-space:normal!important;text-align:left!important}',
+  '.tp162-theme-dropdown .tp155-theme-option>span:nth-child(2){min-width:0;overflow-wrap:anywhere}',
+  '.tp162-theme-dropdown .tp155-theme-option.active{border-color:var(--accent)!important;box-shadow:inset 0 0 0 1px var(--accent)!important;background:color-mix(in srgb,var(--accent) 12%,var(--card))!important}',
+  '.tp162-theme-dropdown .tp155-theme-option i{margin-left:auto!important}',
+  '.tp162-theme-dropdown .tp155-theme-swatch{flex:0 0 14px!important;width:14px!important;height:14px!important}',
+  '@media(max-width:340px){.tp162-theme-columns{gap:6px!important}.tp162-theme-column{padding:6px!important}.tp162-theme-dropdown .tp155-theme-option{padding:5px 6px!important;font-size:11.5px!important}}'
+ ].join('');
+ document.head?.appendChild(style);
+
+ window.TrainPilot162Followup={stickyPanelClose:true,coachSpacing:true,quickWorkoutParent:true,quickTitleSingle:true,healthHeaderRemoved:true,brandStripRemoved:true,trainPilotCalendarBrand:true,inlineTwoColumnThemePicker:true,floatingScrollableThemePicker:true,calendarGeometryUntouched:true};
+})();
+// @endsection trainpilot-162-followup.js
+
+// @section trainpilot-164-issue12-side-set-fields.js
+/* TrainPilot issue #12: keep bilateral timed set rows as two permanent side fields.
+ * The legacy compatibility reps value remains in session data for old consumers, but
+ * it is no longer rendered as the editable row value for mp/oldal exercises.
+ */
+(function(){
+ 'use strict';
+
+ const TP164_ISSUE12='1.6.4-issue12';
+
+ var tp164SideLabel=function(side){
+  const key=side==='right'?'stopwatch.right':'stopwatch.left';
+  const fallback=side==='right'?'Jobb oldal':'Bal oldal';
+  try{return typeof tp149T==='function'?tp149T(key):fallback}catch(_){return fallback}
+ };
+ var tp164SecondUnit=function(){
+  try{return typeof tp149T==='function'?tp149T('unit.second.short'):'mp'}catch(_){return 'mp'}
+ };
+ var tp164Rows=function(){
+  const main=document.querySelector('main.tp153-workout,main.tp149-workout,main');
+  if(!main)return [];
+  const modern=[...main.querySelectorAll('.tp153-set-row')];
+  return modern.length?modern:[...main.querySelectorAll('.row')];
+ };
+
+ window.tp164SyncPerSideRow=function tp164SyncPerSideRow(setIndex){
+  const ex=state.session?.exercises?.[state.current];if(!ex||!tp1481IsPerSideTimed(ex))return;
+  const set=ex.sets?.[setIndex],row=tp164Rows()[setIndex];if(!set||!row)return;
+  const sides=tp1481SyncPerSideReps(set);
+  for(const side of ['left','right']){
+   const input=row.querySelector('.tp164-side-set-input[data-side="'+side+'"]');
+   const stored=side==='right'?sides.right:sides.left;
+   if(input&&document.activeElement!==input)input.value=stored||'';
+   if(input){
+    input.setAttribute('aria-label',tp164SideLabel(side));
+    input.placeholder='—';
+   }
+  }
+  const check=row.querySelector('button.check');
+  if(check){
+   const ready=sides.left>0&&sides.right>0;
+   check.disabled=!set.done&&!ready;
+   check.setAttribute('aria-disabled',check.disabled?'true':'false');
+   check.title=!set.done&&!ready?(typeof tp149T==='function'?tp149T('stopwatch.sideBothRequired'):'Mindkét oldal ideje szükséges.'):'';
+  }
+ };
+
+ window.tp164SetSideSeconds=function tp164SetSideSeconds(setIndex,side,value){
+  const ex=state.session?.exercises?.[state.current];if(!ex||!tp1481IsPerSideTimed(ex))return;
+  const set=ex.sets?.[setIndex];if(!set)return;
+  tp1481SetSideSeconds(setIndex,side,value);
+  const sides=tp1481SyncPerSideReps(set);
+  if(set.done&&(sides.left<1||sides.right<1)){set.done=false;persistDraft();}
+  window.tp164SyncPerSideRow(setIndex);
+ };
+
+ window.tp164DecoratePerSideRows=function tp164DecoratePerSideRows(){
+  const ex=state.session?.exercises?.[state.current];if(!ex||!tp1481IsPerSideTimed(ex))return false;
+  const rows=tp164Rows();if(!rows.length)return false;
+  rows.forEach(function(row,setIndex){
+   const set=ex.sets?.[setIndex];if(!set)return;
+   row.classList.add('tp164-per-side-row');
+   let fields=row.querySelector('.tp164-side-set-fields');
+   if(!fields){
+    const repInput=[...row.querySelectorAll('input.field')].find(function(input){
+     return input.getAttribute('inputmode')==='numeric'&&String(input.getAttribute('oninput')||'').includes("'reps'");
+    })||row.querySelector('input.field[inputmode="numeric"]');
+    const oldLabel=repInput?.closest('label');if(!oldLabel)return;
+    fields=document.createElement('div');fields.className='tp164-side-set-fields';
+    fields.innerHTML=['left','right'].map(function(side){
+     const value=tp1481StoredSide(set,side)||'';
+     return '<label class="small tp164-side-set-field"><span class="tp164-side-set-label">'+esc(tp164SideLabel(side))+'</span><span class="tp164-side-set-unit">'+esc(tp164SecondUnit())+'</span><input class="field tp164-side-set-input" data-side="'+side+'" inputmode="numeric" pattern="[0-9]*" min="0" step="1" aria-label="'+esc(tp164SideLabel(side))+'" placeholder="—" value="'+esc(value)+'" oninput="tp164SetSideSeconds('+setIndex+',\''+side+'\',this.value)"></label>';
+    }).join('');
+    oldLabel.replaceWith(fields);
+   }
+   window.tp164SyncPerSideRow(setIndex);
+  });
+  return true;
+ };
+
+ // Existing 1.6.1 timer wrappers call this function dynamically, so replacing it
+ // prevents the old compatibility value from overwriting the visible right-side input.
+ window.tp161SyncPerSideRow=window.tp164SyncPerSideRow;
+
+ if(typeof renderWorkout==='function'){
+  const tp164RenderWorkoutBase=renderWorkout;
+  renderWorkout=function(){
+   const out=tp164RenderWorkoutBase.apply(this,arguments);
+   window.tp164DecoratePerSideRows();
+   return out;
+  };
+ }
+
+ const style=document.createElement('style');style.id='tp164Issue12Css';style.textContent=[
+  '.tp153-set-row.tp164-per-side-row{grid-template-columns:44px minmax(0,1fr) 52px!important;grid-template-areas:"num meta check" "fields fields fields";gap:7px 8px!important;align-items:center!important;padding-block:8px!important}',
+  '.tp164-per-side-row>.num{grid-area:num}.tp164-per-side-row>.tp153-bodyweight{grid-area:meta;min-width:0}.tp164-per-side-row>label:not(.tp164-side-set-field){grid-area:meta;min-width:0}.tp164-per-side-row>.check{grid-area:check;align-self:center}',
+  '.tp164-side-set-fields{grid-area:fields;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%;min-width:0}',
+  '.tp164-side-set-field{min-width:0;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"label unit" "input input";column-gap:6px;row-gap:5px;padding:8px 9px;border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));border-radius:11px;background:color-mix(in srgb,var(--accent) 5%,var(--card2))}',
+  '.tp164-side-set-label{grid-area:label;min-width:0;font-weight:800;white-space:normal;overflow-wrap:anywhere;line-height:1.15}.tp164-side-set-unit{grid-area:unit;color:var(--muted);font-size:11px;align-self:center}.tp164-side-set-field>.field{grid-area:input;width:100%;min-width:0;margin:0!important;text-align:center;font-variant-numeric:tabular-nums}',
+  '.tp164-per-side-row>.check:disabled{opacity:.42!important;filter:saturate(.55)!important;cursor:not-allowed!important}',
+  '@media(max-width:340px){.tp164-side-set-fields{grid-template-columns:1fr}.tp153-set-row.tp164-per-side-row{grid-template-columns:40px minmax(0,1fr) 48px!important}}'
+ ].join('');
+ document.head?.appendChild(style);
+
+
+ // Journal is a safe read-only detour during an active workout: persist the draft,
+ // then leave the in-memory session and open Journal immediately.
+ const tp164GoBase=go;
+ go=function(route){
+  const key=String(route||'home'),target=window.TrainPilotRoutes?.[key]||key;
+  if(state.session&&target==='history')return (async()=>{
+   if(!await window.TrainPilotWorkoutPause201.pause(state.session))return;
+   rf110StopwatchHalt(true);tp1481HaltSide(true);
+   state.session=null;
+   return tp164GoBase(route);
+  })();
+  return tp164GoBase.apply(this,arguments);
+ };
+ window.TrainPilotNavigate=go;
+
+window.TrainPilot164Issue12={version:TP164_ISSUE12,separateSetSideFields:true,noCompatibilityOverwrite:true,bothSidesRequired:true,journalDuringWorkout:true};
+window.tp164DecoratePerSideRows();
+})();
+// @endsection trainpilot-164-issue12-side-set-fields.js
+
+// @section trainpilot-165-journal-data-recovery.js
+/* TrainPilot 1.6.5: legacy/partial workout rows must never prevent Journal opening. */
+(function(){
+ 'use strict';
+
+ window.tp165SafeHistoryRecord=function tp165SafeHistoryRecord(value,index){
+  const source=value&&typeof value==='object'&&!Array.isArray(value)?value:{};
+  const exercises=Array.isArray(source.exercises)?source.exercises:[];
+  return Object.assign({},source,{
+   started:source.started||source.finished||new Date(0).toISOString(),
+   exercises:exercises.filter(function(e){return e&&typeof e==='object'}).map(function(e){
+    return Object.assign({},e,{
+     id:String(e.id||'legacy-exercise-'+index),
+     hu:String(e.hu||e.name||e.en||'Korábbi gyakorlat'),
+     en:String(e.en||''),
+     sets:Array.isArray(e.sets)?e.sets.filter(function(s){return s&&typeof s==='object'}):[]
+    });
+   })
+  });
+ };
+
+ const tp165HistoryBase=history;
+ window.tp165RawHistory=function tp165RawHistory(){
+  try{const rows=tp165HistoryBase();return Array.isArray(rows)?rows:[]}catch(_){return []}
+ };
+ history=function(){
+  return window.tp165RawHistory().map(function(row,index){return window.tp165SafeHistoryRecord(row,index)});
+ };
+
+ const filteredBase=rf263FilteredHistory;
+ rf263FilteredHistory=function(){
+  try{
+   const rows=filteredBase.apply(this,arguments);
+   return Array.isArray(rows)?rows.map(function(row){return {x:window.tp165SafeHistoryRecord(row?.x,row?.index),index:Number.isInteger(row?.index)?row.index:0}}):[];
+  }catch(_){
+   const rows=typeof history==='function'?history():[];
+   return (Array.isArray(rows)?rows:[]).map(function(x,index){return {x:window.tp165SafeHistoryRecord(x,index),index:index}});
+  }
+ };
+
+ window.tp165DeleteBrokenHistory=function tp165DeleteBrokenHistory(index){
+  const rows=typeof window.tp165RawHistory==='function'?window.tp165RawHistory():(typeof history==='function'?history():[]);
+  if(!Array.isArray(rows)||index<0||index>=rows.length)return;
+  const remove=function(){const next=rows.slice();next.splice(index,1);db.set('history',next);if(typeof cloudChanged==='function')cloudChanged();render(historyScreen());window.TrainPilotFeedback?.deleted()};
+  try{
+   const ask=typeof tp2628Confirm==='function'?tp2628Confirm('Törlöd ezt a sérült naplóbejegyzést?',{title:'Naplóbejegyzés törlése',confirmText:'Törlés',danger:true}):Promise.resolve(false);
+   Promise.resolve(ask).then(function(ok){if(ok)remove()});
+  }catch(error){try{console.error('[TrainPilot] Journal delete confirm unavailable',error)}catch(_){}}
+ };
+
+ const itemBase=rf263HistoryItem;
+ rf263HistoryItem=function(x,originalIndex,visibleIndex){
+  const safe=window.tp165SafeHistoryRecord(x,originalIndex);
+  try{return itemBase.call(this,safe,originalIndex,visibleIndex)}catch(error){
+   try{console.error('[TrainPilot] Journal row recovery',originalIndex,error)}catch(_){}
+   const date=typeof fmtDate==='function'?fmtDate(safe.started):'';
+   return '<div class="history card tp165-history-recovery" role="status"><strong>Korábbi naplóbejegyzés</strong><p class="small muted">'+esc(date)+'<br>Ez a régi bejegyzés hiányos, ezért egyszerűsített nézetben jelent meg. A többi naplóadat továbbra is elérhető.</p><button type="button" class="btn danger block" onclick="tp165DeleteBrokenHistory('+Number(originalIndex||0)+')">Sérült bejegyzés törlése</button></div>';
+  }
+ };
+
+ window.TrainPilot165JournalRecovery={version:'1.6.5',legacyRows:true,partialRows:true,rowIsolation:true,safeHistoryReads:true};
+})();
+// @endsection trainpilot-165-journal-data-recovery.js
+
+// @section trainpilot-166-issue13-home-coach-card.js
+/* TrainPilot #13: Home Coach mirrors the Coach recommendation card and the whole card opens Coach. */
+(function(){
+ 'use strict';
+ const TP166_ISSUE13='1.6.6-issue13';
+
+ window.tp166HomeCoachMarkup=function tp166HomeCoachMarkup(){
+  let plan=null;
+  try{plan=typeof rf233CoachPlan==='function'?rf233CoachPlan():null}catch(_){}
+  const t=typeof rf233L==='function'?rf233L():(typeof rf220L==='function'?rf220L():{coach:'TrainPilot Coach'});
+  const r=plan?.readiness||(typeof rf220Readiness==='function'?rf220Readiness():{score:null,level:'medium'});
+  const target=plan?.target||null;
+  const title=plan?.decision?.title||(t?.[r?.level]||t?.coach||'TrainPilot Coach');
+  const text=plan?.decision?.text||(typeof rf220CoachText==='function'?rf220CoachText(r):'');
+  const score=r?.score==null?'—':(typeof tp149FormatNumber==='function'?tp149FormatNumber(r.score):String(r.score));
+  let targetTitle='',targetName='',targetSub='';
+  try{
+   targetTitle=target&&typeof rf233TargetTitle==='function'?rf233TargetTitle(target):'';
+   targetSub=target&&typeof rf233TargetSub==='function'?rf233TargetSub(target):'';
+   if(target?.day)targetName=target.program&&typeof tp149ProgramDayName==='function'?tp149ProgramDayName(target.program,target.day):String(target.day.name||target.day.id||'');
+  }catch(_){}
+  const kicker=typeof tp151T==='function'?tp151T('todayAdvice'):(t?.today||t?.advice||'Mai javaslat');
+  const readiness=typeof tp149T==='function'?tp149T('coach.readiness'):(typeof rf220L==='function'?rf220L().readiness:'Mai készenlét');
+  const targetHtml=targetTitle?'<span><small>'+esc(targetTitle)+'</small><strong>'+esc(targetName||'—')+'</strong></span>':'';
+  return '<span class="tp151-kicker">'+esc(kicker)+'</span>'+
+   '<div class="tp166-home-coach-copy"><div><h2>'+esc(title)+'</h2><p>'+esc(text)+'</p></div><span class="tp166-home-coach-chevron" aria-hidden="true">›</span></div>'+
+   '<div class="tp151-coach-target tp166-home-coach-target"><span><small>'+esc(readiness)+'</small><strong>'+esc(score)+'/100</strong></span>'+targetHtml+'</div>'+
+   (targetSub?'<p class="small muted tp166-home-coach-sub">'+esc(targetSub)+'</p>':'');
+ };
+
+ window.tp166OpenHomeCoach=function tp166OpenHomeCoach(){
+  if(typeof rf220CoachScreen==='function')return rf220CoachScreen();
+  if(typeof rf233CoachScreen==='function')return rf233CoachScreen();
+  return false;
+ };
+
+ window.tp166DecorateHomeCoach=function tp166DecorateHomeCoach(){
+  if(state?.tab!=='home')return false;
+  const card=document.querySelector('#rf220CoachCard');if(!card)return false;
+  card.className='card tp151-coach-recommendation tp155-r4-accent-surface tp166-home-coach';
+  card.setAttribute('role','button');
+  card.setAttribute('tabindex','0');
+  card.setAttribute('aria-label',typeof tp149T==='function'?tp149T('coach.title'):'TrainPilot Coach');
+  card.innerHTML=window.tp166HomeCoachMarkup();
+  if(card.dataset.tp166Bound!=='1'){
+   card.dataset.tp166Bound='1';
+   let start=null,moved=false;
+   card.addEventListener('pointerdown',function(e){start={x:e.clientX,y:e.clientY};moved=false;});
+   card.addEventListener('pointermove',function(e){if(!start)return;if(Math.abs(e.clientX-start.x)>10||Math.abs(e.clientY-start.y)>10)moved=true;},{passive:true});
+   card.addEventListener('pointercancel',function(){start=null;moved=false;});
+   card.addEventListener('click',function(e){if(moved){moved=false;start=null;return;}start=null;e.preventDefault();window.tp166OpenHomeCoach();});
+   card.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();window.tp166OpenHomeCoach();}});
+  }
+  return true;
+ };
+
+ // The clean runtime and legacy route wrappers all converge on tp120AfterRender().
+ // Decorating here keeps the Home Coach card synchronous and paint-stable while also
+ // covering language-specific Home builders that bypass newer render wrappers.
+ const afterRenderBase=tp120AfterRender;
+ tp120AfterRender=function(){
+  const out=afterRenderBase.apply(this,arguments);
+  window.tp166DecorateHomeCoach();
+  return out;
+ };
+
+ // The 1.4.9/1.5.0 localization compatibility layer intentionally repaints the
+ // non-Hungarian Home Coach on a zero-delay callback. Preserve that translation
+ // refresh, then immediately re-apply the #13 card contract to the fresh node.
+ if(typeof tp149RepaintLocalizedHomeCoach==='function'){
+  const localizedRepaintBase=tp149RepaintLocalizedHomeCoach;
+  tp149RepaintLocalizedHomeCoach=function(){
+   const out=localizedRepaintBase.apply(this,arguments);
+   window.tp166DecorateHomeCoach();
+   return out;
+  };
+ }
+
+ const style=document.createElement('style');style.id='tp166Issue13Css';style.textContent=[

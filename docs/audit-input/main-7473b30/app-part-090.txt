@@ -1,0 +1,256 @@
+  panel.querySelector('[data-tp220-status]').textContent=tracking?tr('tracking'):done?tr('saved'):meters>0||seconds>0?tr('notSaved'):tr('ready');
+  panel.classList.toggle('tp220-recorded',!!done);
+ }
+ const originalRender=renderWorkout;
+ renderWorkout=function(){
+  const result=originalRender.apply(this,arguments),main=document.querySelector('main.tp153-workout'),e=state.session?.exercises?.[state.current];
+  if(!main||!tp106IsDistance(e))return result;
+  main.classList.add('tp220-distance-workout');
+  main.querySelector('.tp153-workout-prescription')?.remove();
+  const title=main.querySelector('.tp153-sets-title');
+  if(!title)return result;
+  const metrics=document.createElement('section');
+  metrics.className='card tp220-distance-readout';
+  metrics.id='tp220-distance-readout';
+  metrics.innerHTML='<div class="tp220-measurements">'+
+   '<div><small>'+esc(tr('distance'))+'</small><strong data-tp220-distance>0 km</strong></div>'+
+   '<div><small>'+esc(tr('duration'))+'</small><strong data-tp220-time>00:00</strong></div>'+
+   '<div><small>'+esc(tr('pace'))+'</small><strong data-tp220-pace>—</strong></div>'+
+   '</div><p class="small tp220-measurement-status" data-tp220-status role="status"></p>';
+  const manual=document.createElement('details');
+  manual.className='tp220-manual';
+  manual.innerHTML='<summary>'+esc(tr('manual'))+'</summary>';
+  title.before(metrics,manual);
+  title.textContent=tr('segments');
+  manual.appendChild(title);
+  main.querySelectorAll('.tp153-set-row').forEach(row=>manual.appendChild(row));
+  paint();
+  return result;
+ };
+ const originalGpsPaint=tp106PaintGPS;
+ tp106PaintGPS=function(){const result=originalGpsPaint.apply(this,arguments);paint();return result;};
+ const originalIndoorPaint=tp107PaintIndoor;
+ tp107PaintIndoor=function(){const result=originalIndoorPaint.apply(this,arguments);paint();return result;};
+ const css=document.createElement('style');css.id='tp220DistanceStyle';
+ css.textContent=
+  '.tp220-quick-info{margin:0 0 10px;padding:8px 0}'+
+  '.tp220-distance-workout .tp220-distance-readout{padding:12px 14px!important;margin:8px 0 10px!important}'+
+  '.tp220-measurements{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}'+
+  '.tp220-measurements>div{min-width:0;display:flex;flex-direction:column;gap:5px}'+
+  '.tp220-measurements small{color:var(--muted);font-size:12px}'+
+  '.tp220-measurements strong{font-size:clamp(16px,4.5vw,23px);overflow-wrap:anywhere;font-variant-numeric:tabular-nums}'+
+  '.tp220-measurement-status{margin:9px 0 0;color:var(--muted)}'+
+  '.tp220-recorded .tp220-measurement-status{color:var(--accent2);font-weight:750}'+
+  '.tp220-manual{margin:5px 0 12px}.tp220-manual>summary{cursor:pointer;min-height:44px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;color:var(--muted);font-size:13px}'+
+  '.tp220-manual[open]>.tp153-sets-title{margin-top:10px}';
+ document.head.appendChild(css);
+ window.TrainPilotDistance220={paint};
+})();
+// @endsection distance-activity-flow-220.js
+
+// @section training-modes-197.js
+/* #197: read-only mode resolver. Explicitly chosen modes are not yet wired to
+ * Coach or workout prescriptions; an absent/invalid selection is legacy. */
+var tp197TrainingModes=function tp197TrainingModes(programId=null){
+ const has=(obj,key)=>Object.prototype.hasOwnProperty.call(obj,key);
+ const object=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
+ const defaults={trainingStyle:'normal',progressionMode:'double'};
+ const valid=choice=>object(choice)&&
+  (choice.trainingStyle==='normal'||choice.trainingStyle==='hit')&&
+  (choice.progressionMode==='double'||choice.progressionMode==='linear'||choice.progressionMode==='rir');
+ const pid=typeof programId==='string'&&programId.trim()?programId:
+  (state.session?.programId||(typeof activeProgramId==='function'?activeProgramId():null)||null);
+ const result=(choice,source)=>({
+  schemaVersion:1,programId:pid,trainingStyle:choice.trainingStyle,
+  progressionMode:choice.progressionMode,explicitChoice:source!=='legacy',
+  source
+ });
+ const legacy=()=>result(defaults,'legacy');
+ const saved=settings()?.trainingModes197;
+ if(!object(saved)||saved.schemaVersion!==1||typeof saved.explicitChoice!=='boolean'||!valid(saved.defaults))return legacy();
+ // A program's explicit choice wins. A malformed override never silently
+ // enables the global policy in its place.
+ if(has(saved,'byProgram')&&!object(saved.byProgram))return legacy();
+ const by=object(saved.byProgram)?saved.byProgram:null;
+ const hasOverride=!!by&&typeof pid==='string'&&has(by,pid);
+ if(hasOverride){
+  const override=by[pid];
+  if(!object(override)||typeof override.explicitChoice!=='boolean')return legacy();
+  if(override.explicitChoice){
+   if(!valid(override))return legacy();
+   return result(override,'program');
+  }
+ }
+ if(saved.explicitChoice)return result(saved.defaults,'global');
+ return legacy();
+};
+// @endsection training-modes-197.js
+
+// @section progression-modes-197.js
+/* #197, phase 3: read-only progression proposals. Not wired to workout/session writes. */
+var tp197ComputePreview=function tp197ComputePreview(input={}) {
+ const mode=input?.modes||{}, target=input?.target||{}, exercise=input?.exercise||{}, history=Array.isArray(input?.recent)?input.recent.slice(0,4):[];
+ const chosen=mode.explicitChoice===true&&['global','program'].includes(mode.source)&&
+  ['normal','hit'].includes(mode.trainingStyle)&&['double','linear','rir'].includes(mode.progressionMode);
+ const empty={schemaVersion:1,handled:false,previewOnly:true,autoApply:false,action:'legacy',reasonCode:'legacy',trainingStyle:'normal',progressionMode:'double',historyCount:0,baseline:null,proposed:null};
+ if(!chosen)return empty;
+ const clamp=(x,lo,hi)=>Number.isFinite(x)?Math.min(hi,Math.max(lo,x)):null;
+ const bounded=(value,lo,hi)=>value===null||value===undefined||value===''?null:clamp(Number(value),lo,hi);
+ const sets=bounded(target.sets,1,12),min=bounded(target.min,1,200),max=bounded(target.max,1,200);
+ const recent=history.filter(x=>x&&typeof x==='object');
+ const latest=recent[0]||null,base=latest&&Number.isFinite(Number(latest.weight))&&Number(latest.weight)>0?Number(latest.weight):null;
+ const step=Number(input.step),isBody=exercise.loadType==='bodyweight';
+ const effectiveSets=mode.trainingStyle==='hit'&&sets!==null?Math.min(sets,input.isolation===true?1:2):sets;
+ const normalReps=Array.isArray(latest?.reps)?latest.reps.filter(x=>Number.isFinite(Number(x))&&Number(x)>0).map(Number):[];
+ const old={sets,repsMin:min,repsMax:max,rest:Number.isFinite(Number(target.rest))&&Number(target.rest)>0?Number(target.rest):null,weight:isBody?0:base,rirMin:target.rirMin??null,rirMax:target.rirMax??null};
+ const proposal={...old,sets:effectiveSets,repTargets:null};
+ const result={schemaVersion:1,handled:true,previewOnly:true,autoApply:false,action:'hold',reasonCode:'insufficient-history',trainingStyle:mode.trainingStyle,progressionMode:mode.progressionMode,historyCount:recent.length,baseline:old,proposed:proposal};
+ const set=(action,reason)=>({...result,action,reasonCode:reason});
+ if(exercise.measurementType==='distance'||exercise.repUnit==='mp'||exercise.repUnit==='sec'||target.kind!=='reps')return set('hold','non-strength-activity');
+ if(sets===null||min===null||max===null||min>max)return set('hold','invalid-target');
+ if(!latest)return set('hold','insufficient-history');
+ const pain=recent.slice(0,3).some(x=>x.pain===true||x.effort==='pain'||x.feedbackRating==='pain');
+ if(pain)return set('hold','pain');
+ const recovery=input.readiness;
+ if(recovery&&Number(recovery.parts)>0&&Number.isFinite(Number(recovery.score))&&Number(recovery.score)<55)return set('hold','low-readiness');
+ if(!latest.allDone)return set('hold','incomplete');
+ if(['hard','challenging'].includes(latest.effort)||latest.feedbackRating==='hard')return set('hold','high-effort');
+ if(latest.belowMin===true||Number.isFinite(Number(latest.minRep))&&Number(latest.minRep)<min)return set('hold','below-target');
+ const safe=x=>x?.allDone===true&&x?.pain!==true&&x?.feedbackRating!=='pain'&&
+  ['good','light','easy'].includes(x?.effort)&&x?.belowMin!==true&&!['hard','pain'].includes(x?.feedbackRating);
+ const same=x=>isBody||base!==null&&Number.isFinite(Number(x?.weight))&&Math.abs(Number(x.weight)-base)<.01;
+ const streak=(n,additional)=>recent.length>=n&&recent.slice(0,n).every(x=>safe(x)&&same(x)&&(!additional||additional(x)));
+ const canIncrease=isBody||(base!==null&&base>0&&Number.isFinite(step)&&step>=.25&&step<=10);
+ const increase=(reason)=> {
+  if(!canIncrease)return set('hold','missing-load-step');
+  if(isBody)return set('variation',reason);
+  proposal.weight=Math.round((base+step)*4)/4;
+  return set('increase',reason);
+ };
+ const atTop=x=>x?.hitTop===true&&Number.isFinite(Number(x?.minRep))&&Number(x.minRep)>=max;
+ if(mode.progressionMode==='double'){
+  if(streak(3,atTop))return increase('double-stable-top');
+  if(atTop(latest))return set('hold','double-await-stability');
+  if(!safe(latest))return set('hold','uncertain-effort');
+  if(!normalReps.length)return set('hold','missing-repetitions');
+  const out=normalReps.map(x=>Math.min(max,Math.max(min,x))),lowest=Math.min(...out);
+  if(lowest>=max)return set('hold','double-await-stability');
+  for(let i=0;i<out.length;i++)if(out[i]===lowest){out[i]=Math.min(max,out[i]+1);break;}
+  proposal.repTargets=out;
+  return set('reps','double-next-repetition');
+ }
+ if(mode.progressionMode==='linear'){
+  if(streak(2,x=>Number.isFinite(Number(x.minRep))&&Number(x.minRep)>=min))return increase('linear-stable-performance');
+  return set('hold','linear-await-stability');
+ }
+ // RIR feedback is *actual* recorded reserve, never prescription.rir.
+ const validRir=x=>x?.actualRir!==null&&x?.actualRir!==undefined&&
+  x?.actualRir!==''&&Number.isFinite(Number(x.actualRir))&&Number(x.actualRir)>=0&&Number(x.actualRir)<=10;
+ const lo=target.rirMin,hi=target.rirMax;
+ if(!Number.isFinite(lo)||!Number.isFinite(hi)||lo<0||hi>10||lo>hi)return set('hold','rir-target-missing');
+ if(!validRir(latest))return set('hold','rir-feedback-missing');
+ const actual=Number(latest.actualRir);
+ if(actual<lo)return set('hold','rir-overexertion');
+ if(streak(2,x=>validRir(x)&&Number(x.actualRir)>hi+1&&Number.isFinite(Number(x.minRep))&&Number(x.minRep)>=min))return increase('rir-stable-reserve');
+ return set('hold',actual>hi?'rir-await-stability':'rir-on-target');
+};
+var tp197ExercisePreview=function tp197ExercisePreview(id,programId=null,previewModes=null) {
+ const pid=typeof programId==='string'&&programId.trim()?programId:
+  (state.session?.programId||(typeof activeProgramId==='function'?activeProgramId():null));
+ const modes=previewModes?.explicitChoice===true?previewModes:tp197TrainingModes(pid);
+ if(!modes.explicitChoice)return tp197ComputePreview({modes});
+ const e=byId(id);
+ if(!e)return tp197ComputePreview({modes,exercise:{},target:{},recent:[]});
+ const se=state.session?.programId===pid?state.session.exercises?.find(x=>x.id===id):null;
+ const target=tp140Prescription(id,se,pid);
+ const rows=typeof tp128Rows==='function'?tp128Rows(id,pid,4):[];
+ const recent=rows.map(row=>{
+  const item=tp140Occurrence(row,target);
+  const effort=item.effort||null,feedbackRating=row.workout?.feedback?.rating||null;
+  // The prescribed RIR is NOT a measurement. Only an explicit recorded RIR is considered.
+  const reported=typeof tp229RirObservation==='function'?tp229RirObservation(row.exercise):row.exercise?.actualRir??row.exercise?.feedback?.rir??null;
+  return {
+   allDone:item.allDone===true,weight:item.weight,minRep:item.minRep,reps:item.reps,
+   hitTop:item.hitTop===true,belowMin:item.belowMin===true,effort,feedbackRating,
+   pain:effort==='pain'||feedbackRating==='pain',actualRir:reported
+  };
+ });
+ let readiness=null;
+ try{if(typeof rf220Readiness==='function')readiness=rf220Readiness();}catch(_){}
+ const p=programById(pid),rx=p?.prescriptions?.[id]||{},lib={...e,...rx};
+ return tp197ComputePreview({modes,exercise:lib,target,recent,readiness,
+  isolation:typeof TP140_ISOLATION!=='undefined'&&TP140_ISOLATION.has(id),
+  step:typeof tp140Step==='function'?tp140Step(lib,Number(recent[0]?.weight)||0):null});
+};
+// @endsection progression-modes-197.js
+
+// @section training-modes-ui-197.js
+/* #197 step 4: ephemeral, read-only mode selection and explained preview.
+ * Actual program/settings changes require a separate confirmed step (#197 5/7). */
+var TP197_UI_LABELS={
+ hu:{title:"Edzésstílus és progresszió",global:"Alapértelmezett edzésmód",program:"Program edzésmódja",style:"Edzésstílus",progress:"Progressziós szabály",normal:"Normál hipertrófia",hit:"HIT-inspirált (kis volumen)",double:"Dupla progresszió",linear:"Lineáris progresszió",rir:"RIR / Coach",normalInfo:"2–3 munkasorozat, szabályos ismétlések; a bukás nem kötelező.",hitInfo:"Kevesebb, kontrollált munkasorozat bemelegítés után; nincs kötelező bukás.",doubleInfo:"Előbb több jó ismétlés, majd stabil felső cél után kis súlylépés.",linearInfo:"Két megfelelő edzés után óvatos súlylépés, rossz teljesítésnél tartás.",rirInfo:"Csak naplózott tényleges RIR esetén igazít; hiányzó adatnál tartás.",preview:"Előnézet (nem alkalmazott)",current:"Jelenlegi",proposed:"Javasolt",sets:"Munkasorozat",load:"Súly",example:"Példa",action:"Ajánlás",restore:"Előnézet visszaállítása",notice:"Kísérleti választó: itt semmit nem mentünk, és a Coach/edzés sem változik. A jóváhagyás a következő fejlesztési lépés.",noHistory:"Nincs megfelelő edzéselőzmény; még nincs terhelésajánlás.",hold:"Terhelés tartása",increase:"Kis súlyemelés javasolt",reps:"Ismétlések növelése",variation:"Nehezebb változat mérlegelése",pain:"Fájdalom vagy kedvezőtlen jel: nincs emelés",insufficient:"Nincs elég megbízható adat",noExercise:"Nincs megfelelő erősítő gyakorlat a programban",unknown:"—"},
+ en:{title:"Training style and progression",global:"Default training mode",program:"Program training mode",style:"Training style",progress:"Progression method",normal:"Normal hypertrophy",hit:"HIT-inspired (low volume)",double:"Double progression",linear:"Linear progression",rir:"RIR / Coach",normalInfo:"2–3 working sets with clean reps; failure is not required.",hitInfo:"Fewer controlled working sets after warm-up; no forced failure.",doubleInfo:"Build good repetitions first, then increase load after a stable upper target.",linearInfo:"Small load increases after two strong workouts; hold on difficult days.",rirInfo:"Uses recorded actual RIR only; holds when data are missing.",preview:"Preview (not applied)",current:"Current",proposed:"Proposed",sets:"Working sets",load:"Weight",example:"Example",action:"Suggestion",restore:"Reset preview",notice:"Experimental selector: nothing is saved and Coach/workouts are unchanged. Confirmation comes in the next development step.",noHistory:"No compatible workout history yet; no load recommendation.",hold:"Hold load",increase:"Suggest a small load increase",reps:"Increase repetitions",variation:"Consider a harder variation",pain:"Pain or adverse signal: no increase",insufficient:"Insufficient reliable data",noExercise:"No eligible strength exercise in this program",unknown:"—"},
+ de:{title:"Trainingsstil und Progression",global:"Standard-Trainingsmodus",program:"Trainingsmodus für dieses Programm",style:"Trainingsstil",progress:"Progressionsmethode",normal:"Normale Hypertrophie",hit:"HIT-inspiriert (geringes Volumen)",double:"Doppelte Progression",linear:"Lineare Progression",rir:"RIR / Coach",normalInfo:"2–3 Arbeitssätze mit sauberer Technik; Muskelversagen ist nicht Pflicht.",hitInfo:"Weniger kontrollierte Arbeitssätze nach dem Aufwärmen; kein erzwungenes Versagen.",doubleInfo:"Erst saubere Wiederholungen steigern, dann bei stabilem oberem Ziel das Gewicht.",linearInfo:"Kleine Gewichtsschritte nach zwei guten Einheiten; bei Schwierigkeiten halten.",rirInfo:"Nur tatsächlich protokollierte RIR; bei fehlenden Daten halten.",preview:"Vorschau (nicht angewendet)",current:"Aktuell",proposed:"Vorschlag",sets:"Arbeitssätze",load:"Gewicht",example:"Beispiel",action:"Empfehlung",restore:"Vorschau zurücksetzen",notice:"Test-Auswahl: Es wird nichts gespeichert und Coach/Training bleiben unverändert. Die Bestätigung folgt im nächsten Entwicklungsschritt.",noHistory:"Noch kein geeigneter Trainingsverlauf; keine Lastempfehlung.",hold:"Last halten",increase:"Kleine Gewichtserhöhung vorschlagen",reps:"Wiederholungen steigern",variation:"Schwerere Variante erwägen",pain:"Schmerz oder Warnsignal: keine Steigerung",insufficient:"Zu wenig verlässliche Daten",noExercise:"Keine geeignete Kraftübung im Programm",unknown:"—"},
+ ro:{title:"Stil de antrenament și progresie",global:"Mod implicit de antrenament",program:"Mod pentru acest program",style:"Stil de antrenament",progress:"Metodă de progresie",normal:"Hipertrofie normală",hit:"Inspirat de HIT (volum redus)",double:"Progresie dublă",linear:"Progresie liniară",rir:"RIR / Coach",normalInfo:"2–3 serii de lucru cu execuție corectă; eșecul muscular nu este obligatoriu.",hitInfo:"Mai puține serii controlate după încălzire; fără eșec forțat.",doubleInfo:"Mai întâi crești repetările bune, apoi greutatea după atingerea stabilă a limitei.",linearInfo:"Creșteri mici după două antrenamente bune; menții greutatea când e greu.",rirInfo:"Folosește doar RIR real înregistrat; menține greutatea dacă lipsesc date.",preview:"Previzualizare (neaplicată)",current:"Actual",proposed:"Propus",sets:"Serii de lucru",load:"Greutate",example:"Exemplu",action:"Recomandare",restore:"Resetează previzualizarea",notice:"Selector experimental: nimic nu se salvează, iar Coach/antrenamentele rămân neschimbate. Confirmarea urmează în pasul următor.",noHistory:"Nu există încă istoric compatibil; fără recomandare de sarcină.",hold:"Menține greutatea",increase:"Propune o creștere mică a greutății",reps:"Crește repetările",variation:"Ia în calcul o variantă mai dificilă",pain:"Durere sau semnal nefavorabil: fără creștere",insufficient:"Date fiabile insuficiente",noExercise:"Nu există exercițiu de forță potrivit în program",unknown:"—"}
+};
+var tp197UiText=function(){const lang=typeof rf212Lang==="function"?rf212Lang():"hu";return TP197_UI_LABELS[lang]||TP197_UI_LABELS.en;};
+var tp197UiPending=Object.create(null);
+var tp197UiKey=function(scope,pid){return scope==="program"?"program:"+String(pid):"global";};
+var tp197UiChoice=function(scope,pid){
+ const key=tp197UiKey(scope,pid);
+ if(tp197UiPending[key])return {...tp197UiPending[key]};
+ const inherited=tp197TrainingModes(pid),raw=settings()?.trainingModes197;
+ const valid=x=>x&&["normal","hit"].includes(x.trainingStyle)&&["double","linear","rir"].includes(x.progressionMode);
+ const global=raw?.schemaVersion===1&&raw.explicitChoice===true&&valid(raw.defaults)?raw.defaults:null;
+ const personal=scope==="program"&&raw?.schemaVersion===1&&raw.byProgram&&
+  Object.prototype.hasOwnProperty.call(raw.byProgram,pid)&&raw.byProgram[pid]?.explicitChoice===true&&valid(raw.byProgram[pid])?raw.byProgram[pid]:null;
+ const original=personal||global||inherited;
+ return {trainingStyle:original.trainingStyle,progressionMode:original.progressionMode};
+};
+var tp197UiSample=function(scope,pid,choice){
+ const p=(pid&&typeof programById==="function"?programById(pid):null)||activeProgram();
+ const id=p?.days?.flatMap(d=>d.exercises||[]).find(id=>{
+  const e=byId(id);
+  return !!e&&!(typeof tp106IsDistance==="function"&&tp106IsDistance(e))&&!/mp|sec|second/i.test(String(e.repUnit||""));
+ });
+ if(!id)return null;
+ const result=tp197ExercisePreview(id,p.id,{
+  schemaVersion:1,programId:p.id,explicitChoice:true,source:scope,
+  trainingStyle:choice.trainingStyle,progressionMode:choice.progressionMode
+ });
+ return {id,name:byId(id)?.hu||byId(id)?.en||id,result};
+};
+var TP197_UI_REASONS={
+ hu:{
+  pain:'A gyakorlat legutóbbi három figyelembe vett edzéselőzményében fájdalomjelzés szerepel. Ilyenkor egyik progressziós mód sem növel terhelést.',
+  'low-readiness':'A regenerációs becslés 55/100 alatti. Előbb regeneráció szükséges, nem terhelésnövelés.',
+  incomplete:'A legutóbbi gyakorlat sorozatai nem teljesültek hiánytalanul.',
+  'high-effort':'A legutóbbi gyakorlat túl nagy erőfeszítéssel teljesült.',
+  'below-target':'A legutóbbi teljesítés nem érte el az előírt minimális ismétlésszámot.',
+  'insufficient-history':'Még nincs megfelelő korábbi teljesítés, ezért nincs megalapozott súlyajánlás.',
+  'double-await-stability':'Dupla mód: három egymást követő, szabályos felső ismétléscél szükséges az emeléshez.',
+  'linear-await-stability':'Lineáris mód: két egymást követő, megfelelő edzés szükséges az emeléshez.',
+  'rir-feedback-missing':'RIR mód: nincs naplózott tényleges ismétléstartalék (RIR). A megadott cél-RIR nem mérés.',
+  'rir-target-missing':'RIR mód: hiányzik az érvényes cél-RIR tartomány.',
+  'rir-overexertion':'RIR mód: a tényleges ismétléstartalék alacsonyabb a célnál.',
+  'rir-await-stability':'RIR mód: két egymást követő, megfelelő tartalékú teljesítés szükséges.',
+  'rir-on-target':'RIR mód: a tényleges tartalék a célértéken van, súlyemelés nem indokolt.',
+  'missing-load-step':'Nincs megfelelő, biztonságos súlylépcső beállítva.',
+  'missing-repetitions':'Hiányoznak a ténylegesen naplózott ismétlések.',
+  'uncertain-effort':'Nincs egyértelmű, biztonságos erőfeszítés-visszajelzés.',
+  'invalid-target':'Az előírt sorozat- vagy ismétléscél hibás vagy hiányzik.',
+  'non-strength-activity':'Távolság- vagy időalapú gyakorlat: súlyprogresszió nem alkalmazható.'
+ },
+ en:{pain:'Pain was recorded in the last three relevant exercise histories; load increases are blocked in every mode.','low-readiness':'Recovery readiness is below 55/100; do not increase load.','insufficient-history':'Not enough eligible completed workouts yet.','double-await-stability':'Double progression requires three stable top-range completions.','linear-await-stability':'Linear progression requires two stable successful workouts.','rir-feedback-missing':'RIR mode requires actual logged reserve; prescribed RIR is not a measurement.'},
+ de:{pain:'In den letzten drei relevanten Übungsverläufen wurden Schmerzen gemeldet; keine Gewichtserhöhung.','low-readiness':'Regeneration unter 55/100; keine Gewichtserhöhung.','insufficient-history':'Noch zu wenig passende abgeschlossene Einheiten.','double-await-stability':'Doppelte Progression: drei stabile obere Zielerfüllungen nötig.','linear-await-stability':'Lineare Progression: zwei stabile Einheiten nötig.','rir-feedback-missing':'RIR: Es fehlen tatsächlich erfasste RIR-Werte.'},
+ ro:{pain:'A fost raportată durere în ultimele trei antrenamente relevante; fără creștere a greutății.','low-readiness':'Recuperare sub 55/100; nu mări greutatea.','insufficient-history':'Nu sunt încă suficiente antrenamente compatibile.','double-await-stability':'Progresia dublă necesită trei performanțe stabile la limita superioară.','linear-await-stability':'Progresia liniară necesită două antrenamente stabile.','rir-feedback-missing':'RIR: lipsește rezerva reală de repetări înregistrată.'}
+};
+var tp197UiReason=function(reason){
+ const lang=typeof rf212Lang==='function'?rf212Lang():'hu';
+ const dictionary=TP197_UI_REASONS[lang]||TP197_UI_REASONS.hu;
+ return dictionary[reason]||TP197_UI_REASONS.hu[reason]||String(reason||'—');
+};
+var tp197UiPreview=function(scope,pid,choice){
+ const t=tp197UiText(),styleInfo=t[choice.trainingStyle+"Info"],modeInfo=t[choice.progressionMode+"Info"];
+ const sample=tp197UiSample(scope,pid,choice);
+ const fmt=v=>v===null||v===undefined||!Number.isFinite(Number(v))?t.unknown:String(v);

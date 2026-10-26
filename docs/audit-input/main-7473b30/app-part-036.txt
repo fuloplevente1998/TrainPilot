@@ -1,0 +1,223 @@
+  mixed:['Kezdő / középhaladó','Beginner / intermediate','Anfänger / Mittelstufe','Începător / intermediar']
+ }
+};
+const TP149_PROGRAM_ROWS={
+ 'home-basic':{name:['Otthoni A/B – Alap','Home A/B – Basic','Zuhause A/B – Basis','Acasă A/B – Bază'],location:'home',level:'beginner',days:{A:['A','A','A','A'],B:['B','B','B','B']}},
+ 'home-level2':{name:['Otthoni A/B – 2. szint','Home A/B – Level 2','Zuhause A/B – Stufe 2','Acasă A/B – Nivel 2'],location:'home',level:'intermediate',days:{A:['A','A','A','A'],B:['B','B','B','B']}},
+ 'home-varied':{name:['Otthoni változatos','Home variety','Zuhause abwechslungsreich','Acasă variat'],location:'home',level:'intermediate',days:{A:['Teljes test 1','Full body 1','Ganzkörper 1','Corp complet 1'],B:['Teljes test 2','Full body 2','Ganzkörper 2','Corp complet 2']}},
+ 'gym-fullbody':{name:['Konditermi Full Body','Gym Full Body','Studio Ganzkörper','Sală Full Body'],location:'gym',level:'beginner',days:{A:['Full Body','Full Body','Ganzkörper','Corp complet']}},
+ 'gym-ab':{name:['Konditermi A/B','Gym A/B','Studio A/B','Sală A/B'],location:'gym',level:'intermediate',days:{A:['A','A','A','A'],B:['B','B','B','B']}},
+ 'home-upper-ab':{name:['Otthoni felsőtest A/B','Home upper body A/B','Zuhause Oberkörper A/B','Acasă partea superioară A/B'],location:'home',level:'mixed',days:{A:['Mell / hát / váll','Chest / back / shoulders','Brust / Rücken / Schultern','Piept / spate / umeri'],B:['Hát / mell / kar','Back / chest / arms','Rücken / Brust / Arme','Spate / piept / brațe']}},
+ 'home-quick-30':{name:['Otthoni gyors 30 perc','Home quick 30 min','Zuhause schnell 30 Min.','Acasă rapid 30 min'],location:'home',level:'beginner',days:{A:['Gyors A','Quick A','Schnell A','Rapid A'],B:['Gyors B','Quick B','Schnell B','Rapid B']}},
+ 'calisthenics-ab':{name:['Calisthenics A/B','Calisthenics A/B','Calisthenics A/B','Calisthenics A/B'],location:'calisthenics',level:'intermediate',days:{A:['Toló / húzó','Push / pull','Drücken / Ziehen','Împins / tras'],B:['Technika / törzs','Technique / core','Technik / Rumpf','Tehnică / trunchi']}},
+ 'bands-ab':{name:['Gumiszalagos A/B','Resistance-band A/B','Widerstandsband A/B','Bandă elastică A/B'],location:'bands',level:'beginner',days:{A:['Felsőtest A','Upper body A','Oberkörper A','Partea superioară A'],B:['Felsőtest B','Upper body B','Oberkörper B','Partea superioară B']}},
+ 'kettlebell-ab':{name:['Kettlebell Full Body A/B','Kettlebell Full Body A/B','Kettlebell Ganzkörper A/B','Kettlebell Full Body A/B'],location:'kettlebell',level:'mixed',days:{A:['Full Body A','Full Body A','Ganzkörper A','Corp complet A'],B:['Full Body B','Full Body B','Ganzkörper B','Corp complet B']}},
+ 'gym-upper-lower':{name:['Konditermi felső / alsó','Gym upper / lower','Studio Oberkörper / Unterkörper','Sală superior / inferior'],location:'gym',level:'intermediate',days:{A:['Felsőtest A','Upper body A','Oberkörper A','Partea superioară A'],B:['Alsótest A','Lower body A','Unterkörper A','Partea inferioară A'],C:['Felsőtest B','Upper body B','Oberkörper B','Partea superioară B'],D:['Alsótest B','Lower body B','Unterkörper B','Partea inferioară B']}},
+ 'gym-ppl':{name:['Konditermi Push / Pull / Legs','Gym Push / Pull / Legs','Studio Push / Pull / Beine','Sală Push / Pull / Picioare'],location:'gym',level:'intermediate',days:{A:['Push','Push','Drücken','Împins'],B:['Pull','Pull','Ziehen','Tras'],C:['Legs','Legs','Beine','Picioare']}},
+ 'gym-strength-abc':{name:['Konditermi erő A/B/C','Gym strength A/B/C','Studio Kraft A/B/C','Sală forță A/B/C'],location:'gym',level:'intermediate',days:{A:['Guggolás / nyomás','Squat / press','Kniebeuge / Drücken','Genuflexiune / împins'],B:['Felhúzás / váll','Deadlift / shoulders','Kreuzheben / Schultern','Îndreptări / umeri'],C:['Vegyes','Mixed','Gemischt','Mixt']}}
+};
+var tp149LangIndex=function tp149LangIndex(lang=rf212Lang()){return ({hu:0,en:1,de:2,ro:3})[lang]??1;};
+var tp149GeneratedDayKey=function tp149GeneratedDayKey(program,day){
+ if(day?.i18nKey)return day.i18nKey;
+ const split=program?.i18n?.effectiveSplit||program?.effectiveSplit;
+ const id=String(day?.id||'');
+ if(split==='upper')return id==='A'?'upperA':id==='B'?'upperB':id;
+ if(split==='upperlower')return id==='A'?'upper':id==='B'?'lowerCore':id;
+ if(split==='ppl')return id==='A'?'push':id==='B'?'pull':id==='C'?'legsCore':id;
+ return id||'A';
+};
+var tp149GeneratedExperience=function tp149GeneratedExperience(program){
+ const saved=program?.i18n?.experience;if(saved)return saved;
+ const raw=String(program?.level||'').toLocaleLowerCase('hu-HU');
+ return raw.includes('közép')||raw.includes('intermediate')||raw.includes('mittel')||raw.includes('intermediar')?'intermediate':'beginner';
+};
+var tp149ProgramMeta=function tp149ProgramMeta(program,field,lang=rf212Lang()){
+ if(!program)return '';
+ if(program.generated===true){
+  const split=program.i18n?.effectiveSplit||program.effectiveSplit||'full';
+  if(field==='name')return tp149T('planner.generatedName',{split:tp149PlannerRow('split',split,lang,split)},lang);
+  if(field==='location')return tp149T((program.i18n?.gear||program.gear||[]).length?'planner.locationSelected':'planner.locationBodyweight',{},lang);
+  if(field==='level')return tp149PlannerRow('level',tp149GeneratedExperience(program),lang,program.level||'');
+  return String(program[field]||'');
+ }
+ if(program.builtin!==true)return String(program[field]||'');
+ const row=TP149_PROGRAM_ROWS[program.id],idx=tp149LangIndex(lang);
+ if(field==='name'&&row?.name)return row.name[idx]||row.name[1]||row.name[0];
+ if(field==='location'&&row?.location)return TP149_PROGRAM_META.locations[row.location]?.[idx]||String(program.location||'');
+ if(field==='level'&&row?.level)return TP149_PROGRAM_META.levels[row.level]?.[idx]||String(program.level||'');
+ return String(program[field]||'');
+};
+var tp149ProgramDayName=function tp149ProgramDayName(program,day,lang=rf212Lang()){
+ if(!program||!day)return '';
+ const templateId=program.sourceTemplateId||program.id;
+ if(['profile-template','coach'].includes(program.sourceType)&&['home-basic','home-level2'].includes(templateId)&&(!day.name||day.name===day.id)){
+  const labels=templateId==='home-basic'?['Alap','Basic','Basis','Bază']:['2. szint','Level 2','Stufe 2','Nivel 2'];
+  return labels[tp149LangIndex(lang)]+' '+String(day.id||'');
+ }
+ if(program.generated===true){
+  const key=tp149GeneratedDayKey(program,day),defaults=[day.id,...['hu','en','de','ro'].map(l=>tp149PlannerRow('generatedDay',key,l,day.id||''))];
+  if(day.name&&!defaults.includes(day.name))return String(day.name);
+  return tp149PlannerRow('generatedDay',key,lang,day.name||day.id||'');
+ }
+ if(program.builtin!==true)return String(day.name||day.id||'');
+ const row=TP149_PROGRAM_ROWS[program.id]?.days?.[day.id],idx=tp149LangIndex(lang);
+ return row?.[idx]||row?.[1]||String(day.name||day.id||'');
+};
+
+
+var tp149GeneratedReasons=function tp149GeneratedReasons(program,lang=rf212Lang()){
+ if(!program?.generated)return Array.isArray(program?.reasons)?program.reasons.slice():[];
+ const meta=program.i18n||{};
+ const gear=meta.gear||program.gear||[];
+ const focus=meta.focus||program.focus||'balanced';
+ const avoidAreas=meta.avoidAreas||program.avoidAreas||[];
+ const minutes=Number(meta.minutes||settings()?.profile?.minutes||45);
+ const capacity=Number(meta.capacity||rf148Capacity(minutes));
+ const equipment=gear.length?gear.map(function(k){return tp149PlannerGear(k,lang);}).join(' + '):tp149T('planner.locationBodyweight',{},lang);
+ const areas=avoidAreas.map(function(k){return tp149PlannerRow('area',k,lang,k);}).join(', ');
+ const avoid=areas?tp149T('planner.reasonAvoid',{areas:areas},lang):'';
+ return [
+  tp149T('planner.reasonAvailable',{equipment:equipment},lang),
+  tp149T('planner.reasonFocus',{focus:tp149PlannerRow('focus',focus,lang,focus),avoid:avoid},lang),
+  tp149T('planner.reasonTime',{minutes:tp149FormatNumber(minutes,{},lang),capacity:tp149FormatNumber(capacity,{},lang)},lang),
+  tp149T(meta.changed?'planner.reasonAdjusted':'planner.reasonMatched',{},lang),
+  tp149T('planner.reasonProgression',{},lang)
+ ];
+};
+var tp149PlannerAudit=function tp149PlannerAudit(){
+ const missing=[];
+ const required={
+  goal:['fitness','muscle','strength','fatloss'],experience:['beginner','intermediate'],
+  activity:['sedentary','mixed','physical'],cadence:['alternate','weekly','custom'],
+  split:['auto','full','upper','upperlower','ppl'],focus:['balanced','upper','chestback','shoulderarms','core','legs'],
+  area:['legs','chest','back','shoulders','arms','core'],
+  gear:typeof GEAR132==='undefined'?[]:Object.keys(GEAR132),
+  generatedDay:['A','B','upperA','upperB','upper','lowerCore','push','pull','legsCore'],
+  level:['beginner','intermediate']
+ };
+ for(const [group,keys] of Object.entries(required))for(const key of keys){
+  const row=TP149_PLANNER_ROWS[group]?.[key];
+  if(!Array.isArray(row)||row.length!==4||row.some(function(x){return !String(x||'').trim();}))missing.push(group+':'+key);
+ }
+ return {missing:missing};
+};
+
+const TP149_EX_NOTE_EN={
+ "db-squat": "Hold one dumbbell at each side. Stand about shoulder-width apart, move the hips back and down, then stand up. Keep the core braced.",
+ "db-floor-press": "Lie on your back, lower the elbows under control until they touch the floor, then press the dumbbells back up.",
+ "one-arm-row": "Use a stable support and pull the dumbbell toward the hip or lower ribs. Do not rotate your torso.",
+ "rdl": "Keep the knees slightly bent and the back neutral. Push the hips back and lower only as far as you can maintain control.",
+ "db-curl": "Keep the elbows by your sides. Curl without swinging, then lower the dumbbells under control.",
+ "reverse-lunge": "Hold one dumbbell at each side. Step back, lower the rear knee, then drive through the front leg to return. Enter weight per arm and repetitions per leg.",
+ "db-ohp": "Press the dumbbells overhead from shoulder height, then lower them slowly under control.",
+ "barbell-row": "Brace the core and keep the back neutral. Pull the bar toward the abdomen or lower ribs.",
+ "pushup": "Keep the body in a straight line. Stop when you feel you could still perform about 2–3 clean repetitions.",
+ "oh-triceps": "Hold one light dumbbell with both hands, lower it behind the head, then extend the elbows to raise it again.",
+ "crunch": "Lie on your back and lift the shoulder blades off the floor. You do not need to sit all the way up.",
+ "plank": "Support yourself on the forearms and toes. Brace the abs and glutes, keep the body straight, and do not let the lower back sag.",
+ "goblet-squat": "Hold one dumbbell in front of the chest. Sit the hips down, let the knees track with the toes, then stand up.",
+ "bulgarian-split-squat": "Support the rear foot. Lower the hips vertically and drive back up through the front leg. Count repetitions per leg.",
+ "db-pullover": "Lie on your back and hold one dumbbell with both hands. Lower it behind the head under control, then pull it back over the chest.",
+ "lateral-raise": "With the elbows slightly bent, raise the dumbbells out to the sides to about shoulder height without swinging.",
+ "hammer-curl": "Use a neutral grip with the palms facing each other. Keep the elbows close to the torso.",
+ "close-pushup": "Place the hands closer than shoulder width. Keep the torso braced and lower yourself under control.",
+ "leg-press": "Keep the lower back against the pad. Lower the load under control, then press it back without forcefully locking the knees.",
+ "machine-chest-press": "Keep the shoulder blades stable against the pad. Press the handles forward, then return under control.",
+ "lat-pulldown": "Lean back slightly and pull the bar toward the upper chest. Do not jerk the weight or pull behind the neck.",
+ "seated-cable-row": "Keep the torso neutral, pull the handle toward the abdomen and squeeze the shoulder blades, then return under control.",
+ "leg-curl": "Keep the hips stable. Flex the knees under control, then slowly return to the starting position.",
+ "machine-shoulder-press": "Keep the back supported. Press the handles upward, then lower them under control.",
+ "cable-triceps": "Keep the elbows close to the torso. Extend the forearms downward, then return under control.",
+ "cable-curl": "Keep the elbows close to the torso. Flex the elbows without using momentum.",
+ "incline-pushup": "Keep the body in a straight line with the hands on a stable raised surface. Lower the chest toward the support under control.",
+ "modified-pushup": "From the knees, keep a straight line from knees to head. Let the elbows travel at roughly a 45-degree angle.",
+ "decline-pushup": "Place the feet on a stable raised surface. Keep the core braced and control the elbow position.",
+ "pike-pushup": "From an inverted-V position, lower the head toward the floor under control, then press back up.",
+ "plyo-pushup": "Use only after you have a stable basic push-up. Push explosively away from the floor and land softly with bent elbows.",
+ "archer-pushup": "Use a wide hand position and load mainly one arm while the other reaches out to the side. Alternate sides.",
+ "prisoner-squat": "Keep the hands behind the head and the chest open. Squat under control with the knees tracking the toes.",
+ "single-leg-squat": "Stand on one leg and use a stable support if needed. Lower only as far as you can keep the knee and pelvis controlled.",
+ "squat-jump": "Jump explosively from a squat, then land softly with bent knees. Do not continue to complete exhaustion.",
+ "lunge-jump": "Jump from a lunge and switch legs in the air. Land softly and keep the knee from collapsing inward.",
+ "jumping-jacks": "Open and close the legs rhythmically while raising the arms. Land softly; use a stepping version for lower impact.",
+ "box-jump": "Jump only onto a stable surface that cannot tip. Land softly on both feet and preferably step down.",
+ "db-front-squat": "Hold one dumbbell at each shoulder. Keep the chest up and let the knees track with the feet.",
+ "single-arm-db-press": "Lie on a bench and press with one arm. Brace the core so the pelvis and chest do not rotate.",
+ "single-arm-incline-press": "Press with one arm on an incline bench without rotating the torso. Start with a light trial weight.",
+ "single-leg-press": "Press the platform with one leg under control. Do not lock the knee or let it collapse inward.",
+ "seated-leg-curl": "Set the pad above the ankle and keep the back against the support. Curl and return under control.",
+ "single-leg-seated-curl": "Curl with one leg under control while keeping the pelvis stable. Use the same technique on both sides.",
+ "leg-press-calf": "Keep only the forefoot securely on the platform. Raise and lower the heel through the ankle while keeping the knee controlled.",
+ "close-grip-bench": "Use a grip narrower than your normal bench press, but not extremely narrow. Lower the bar under control.",
+ "pullup": "Use a stable bar and pull the chest toward it without swinging. Do not let the shoulders roll forward at the top.",
+ "chinup": "Use an underhand grip and a braced torso. Avoid swinging and shrugging the shoulders.",
+ "negative-pullup": "Start at the top and lower yourself under control for 3–5 seconds. Begin from a safe step or platform.",
+ "scapular-pullup": "With straight arms, draw only the shoulder blades down and back, then return under control.",
+ "inverted-row": "Keep the body straight, pull the chest toward the stable bar, then lower slowly.",
+ "dip": "Use stable parallel bars, lower the body under control, then press back up. Do not force a depth that is uncomfortable for the shoulders.",
+ "bench-dip": "Make sure the bench is stable. Lower only through a pain-free shoulder range and keep the elbows moving backward.",
+ "diamond-pushup": "Keep the hands close together below the chest. Brace the core and control the elbows.",
+ "pseudo-planche-pushup": "Shift the shoulders slightly in front of the hands while keeping the torso braced. Use only after developing stable push-up technique.",
+ "hanging-knee-raise": "Without swinging, draw the knees toward the chest and slightly tuck the pelvis.",
+ "hanging-leg-raise": "Raise straight or slightly bent legs without swinging. Progress to this only after a stable hang and knee raise.",
+ "hollow-hold": "Gently press the lower back toward the floor. Shorten the arm position or bend the knees if the lower back lifts.",
+ "superman-hold": "Lie face down and raise the arms and legs through a small range while keeping the neck neutral. Do not overarch the back.",
+ "mountain-climber": "From a push-up position, alternate driving the knees forward. Keep the pelvis and shoulders stable.",
+ "band-row": "Anchor the band securely. Pull the elbows back, squeeze the shoulder blades, then return slowly.",
+ "band-lat-pulldown": "Anchor the band securely at a high point. Pull the elbows down alongside the torso.",
+ "band-chest-press": "Anchor the band securely behind you. Press the arms forward while keeping the rib cage controlled.",
+ "band-overhead-press": "Stand on the middle of the band, brace the torso, and press the hands overhead.",
+ "band-face-pull": "Anchor the band around face height and pull toward the forehead while keeping the elbows high.",
+ "band-biceps-curl": "Stand on the band, keep the elbows by the torso, and curl without swinging.",
+ "band-triceps-pushdown": "Keep the elbows by the torso and extend only the forearms downward.",
+ "band-pallof-press": "With the band pulling from the side, press the hands forward from the chest without letting the torso rotate.",
+ "kb-goblet-squat": "Hold the kettlebell in front of the chest. Squat under control and let the knees track with the feet.",
+ "kb-deadlift": "Push the hips back, keep the back neutral, then stand up by extending the hips.",
+ "kb-swing": "Drive explosively through the hips instead of lifting with the arms. Use only after learning a stable hip-hinge technique.",
+ "kb-clean": "Keep the kettlebell close to the body and let it land softly in the rack position. This is a technical movement, so start light.",
+ "kb-press": "Press the kettlebell overhead from the rack position with a braced torso. Do not overarch the lower back.",
+ "kb-row": "In a stable hip-hinge position, pull the elbow toward the hip. Do not rotate the torso.",
+ "kb-reverse-lunge": "Hold the kettlebell in a goblet or rack position, step back, then stand up through the front leg.",
+ "kb-halo": "With a light weight, guide the kettlebell around the head under control. Keep the rib cage and pelvis stable.",
+ "barbell-back-squat": "Start from a safe rack. Keep the torso braced and the knees tracking the feet. Safety arms are recommended.",
+ "conventional-deadlift": "Keep the bar close to the legs and the spine neutral. Take the slack out of the bar before lifting.",
+ "bench-press": "Keep the shoulder blades stable and the feet on the floor. Safety arms or a spotter are recommended.",
+ "incline-bench-press": "Use a moderate bench angle and keep the shoulder blades stable. Safety arms or a spotter are recommended.",
+ "barbell-overhead-press": "Brace the glutes and abs while pressing the bar overhead. Do not compensate by excessively arching the lower back.",
+ "assisted-pullup-machine": "Set an appropriate amount of assistance, pull the chest upward, and return under control.",
+ "pec-deck": "Keep the shoulders down and back. Bring the arms together under control without jerking the weight.",
+ "cable-lateral-raise": "Use a light load and raise the arm to around shoulder height. Do not swing.",
+ "hack-squat": "Keep the back and pelvis against the pad. Lower under control, then press the platform back up.",
+ "standing-calf-raise": "Move the ankle through a full pain-free range. Briefly contract the calves at the top.",
+ "bodyweight-squat": "Stand in a stable stance, lower the hips, then stand up. Let the knees track with the feet.",
+ "glute-bridge": "Lie on your back with the knees bent and raise the hips. Squeeze the glutes, then lower under control.",
+ "dead-bug": "Lie on your back with the arms raised and knees bent. Alternately extend the opposite arm and leg while keeping the trunk stable.",
+ "bird-dog": "From all fours, extend the opposite arm and leg. Keep the pelvis level.",
+ "side-plank": "Lie on your side, support yourself on the forearm, and raise the hips. Train both sides and record time per side.",
+ "calf-raise": "Using a stable support, rise onto the toes, then slowly lower the heels.",
+ "db-step-up": "Step onto a stable platform with one leg, then step back down under control. Count repetitions per leg and make sure the platform cannot tip.",
+ "db-rdl": "With the knees slightly bent, push the hips back. Keep the dumbbells close to the legs and the back neutral.",
+ "db-bench-press": "Lie on a stable bench, press the dumbbells over the chest, then lower them under control. Keep the feet firmly on the floor.",
+ "incline-db-press": "With the back supported on an incline bench, press the dumbbells up. Do not use momentum or lift the hips.",
+ "db-reverse-fly": "With a stable hinged torso, raise light dumbbells out to the sides. Keep the elbows slightly bent and do not swing the torso.",
+ "face-pull": "Pull the rope toward the face so the hands finish beside it. Return under control without swinging the torso.",
+ "leg-extension": "Adjust the machine to your body size. From a stable seated position, extend the knees under control, then lower slowly.",
+ "cable-fly": "With the elbows slightly bent, bring the arms together in front of the chest, then open under control. Enter the load for one side of the cable."
+};
+const TP149_EQUIPMENT_ROWS={
+ 'testsúly':['testsúly','bodyweight','Körpergewicht','greutatea corpului'],
+ 'testsúly + stabil támasz':['testsúly + stabil támasz','bodyweight + stable support','Körpergewicht + stabile Stütze','greutatea corpului + suport stabil'],
+ 'testsúly + opcionális stabil támasz':['testsúly + opcionális stabil támasz','bodyweight + optional stable support','Körpergewicht + optionale stabile Stütze','greutatea corpului + suport stabil opțional'],
+ 'testsúly + pad':['testsúly + pad','bodyweight + bench','Körpergewicht + Bank','greutatea corpului + bancă'],
+ 'testsúly + stabil pad/támasz':['testsúly + stabil pad/támasz','bodyweight + stable bench/support','Körpergewicht + stabile Bank/Stütze','greutatea corpului + bancă/suport stabil'],
+ '1 kézisúlyzó':['1 kézisúlyzó','1 dumbbell','1 Kurzhantel','1 ganteră'],
+ '1 kézisúlyzó + pad':['1 kézisúlyzó + pad','1 dumbbell + bench','1 Kurzhantel + Bank','1 ganteră + bancă'],
+ '1 kézisúlyzó + támasz':['1 kézisúlyzó + támasz','1 dumbbell + support','1 Kurzhantel + Stütze','1 ganteră + suport'],
+ '1 kézisúlyzó + állítható pad':['1 kézisúlyzó + állítható pad','1 dumbbell + adjustable bench','1 Kurzhantel + verstellbare Bank','1 ganteră + bancă reglabilă'],
+ '2 kézisúlyzó':['2 kézisúlyzó','2 dumbbells','2 Kurzhanteln','2 gantere'],
+ '2 kézisúlyzó + támasz':['2 kézisúlyzó + támasz','2 dumbbells + support','2 Kurzhanteln + Stütze','2 gantere + suport'],
+ '2 kézisúlyzó + stabil fellépő':['2 kézisúlyzó + stabil fellépő','2 dumbbells + stable step','2 Kurzhanteln + stabile Stufe','2 gantere + treaptă stabilă'],
+ '2 kézisúlyzó + vízszintes pad':['2 kézisúlyzó + vízszintes pad','2 dumbbells + flat bench','2 Kurzhanteln + Flachbank','2 gantere + bancă orizontală'],
+ '2 kézisúlyzó + állítható pad':['2 kézisúlyzó + állítható pad','2 dumbbells + adjustable bench','2 Kurzhanteln + verstellbare Bank','2 gantere + bancă reglabilă'],
+ 'kétkezes rúd':['kétkezes rúd','barbell','Langhantel','bară'],
+ 'kétkezes rúd + pad':['kétkezes rúd + pad','barbell + bench','Langhantel + Bank','bară + bancă'],

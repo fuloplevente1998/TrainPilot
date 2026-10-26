@@ -1,0 +1,244 @@
+ if(tp1481SideStopwatch.running&&tp1481SideStopwatch.exerciseIndex===state.current&&tp1481SideStopwatch.setIndex===setIndex&&tp1481SideStopwatch.side===side)tp1481PauseSide();
+ const set=ex.sets?.[setIndex];if(!set)return;
+ set[tp1481SideField(side)]=Math.max(0,Math.floor(Number(String(value).replace(',','.'))||0));
+ tp1481SyncPerSideReps(set);persistDraft();tp1481SidePaint();
+};
+var tp1481ResetSide=function tp1481ResetSide(side){
+ const ex=state.session?.exercises?.[state.current];if(!tp1481IsPerSideTimed(ex))return;
+ const setIndex=ex.sets.findIndex(s=>!s.done);if(setIndex<0)return;
+ if(tp1481SideStopwatch.running&&tp1481SideStopwatch.exerciseIndex===state.current&&tp1481SideStopwatch.setIndex===setIndex&&tp1481SideStopwatch.side===side)tp1481PauseSide();
+ const set=ex.sets[setIndex];set[tp1481SideField(side)]=0;tp1481SyncPerSideReps(set);persistDraft();
+ if(tp1481SideStopwatch.exerciseIndex===state.current&&tp1481SideStopwatch.setIndex===setIndex&&tp1481SideStopwatch.side===side){tp1481SideStopwatch.elapsedMs=0;tp1481SideStopwatch.startedAt=0;tp1481SideStopwatch.running=false;tp1481SideStopwatch.lastSecond=-1}
+ tp1481SidePaint();
+};
+var tp1481DecoratePerSide=function tp1481DecoratePerSide(){
+ const ex=state.session?.exercises?.[state.current],exercise=ex?byId(ex.id):null;
+ if(!tp1481IsPerSideTimed(ex)||!exercise)return;
+ rf110StopwatchHalt(true);
+ const setIndex=ex.sets.findIndex(s=>!s.done);if(setIndex<0){tp1481HaltSide(true);return}
+ if(tp1481SideStopwatch.exerciseIndex!==state.current||tp1481SideStopwatch.setIndex!==setIndex)tp1481HaltSide(true);
+ if(document.querySelector('#rf110Stopwatch')){tp1481SidePaint();return}
+ const set=ex.sets[setIndex],left=tp1481StoredSide(set,'left'),right=tp1481StoredSide(set,'right');
+ const main=document.querySelector('main');if(!main)return;
+ const card=document.createElement('div');card.id='rf110Stopwatch';card.className='card rf110-stopwatch rf142-stopwatch-top tp1481-side-stopwatch';
+ card.innerHTML=`<div class="rf110-stopwatch-head"><div><strong>Stopper • ${setIndex+1}. sorozat • oldalanként</strong><div class="small muted">Cél: ${esc(exercise.reps||'időre végzett sorozat')}</div></div></div>
+ <div class="tp1481-side-grid">
+  <div class="tp1481-side-card"><strong>Bal oldal</strong><div id="tp1481SideTime-left" class="rf110-stopwatch-time">${rf110FormatStopwatch(left)}</div><label class="small">Másodperc<input id="tp1481SideInput-left" class="field" inputmode="numeric" min="0" step="1" value="${left||''}" oninput="tp1481SetSideSeconds(${setIndex},'left',this.value)"></label><div class="tp1481-side-actions"><button id="tp1481SideToggle-left" class="btn" onclick="tp1481ActivateSide('left')">${left>0?'Folytatás':'Indítás'}</button><button class="btn secondary" onclick="tp1481ResetSide('left')">Nullázás</button></div></div>
+  <div class="tp1481-side-card"><strong>Jobb oldal</strong><div id="tp1481SideTime-right" class="rf110-stopwatch-time">${rf110FormatStopwatch(right)}</div><label class="small">Másodperc<input id="tp1481SideInput-right" class="field" inputmode="numeric" min="0" step="1" value="${right||''}" oninput="tp1481SetSideSeconds(${setIndex},'right',this.value)"></label><div class="tp1481-side-actions"><button id="tp1481SideToggle-right" class="btn" onclick="tp1481ActivateSide('right')">${right>0?'Folytatás':'Indítás'}</button><button class="btn secondary" onclick="tp1481ResetSide('right')">Nullázás</button></div></div>
+ </div><p class="small muted" id="tp1481SideStatus">Mérd a két oldalt külön. A sorozat csak mindkét oldal rögzítése után jelölhető késznek.</p>`;
+ const hero=main.querySelector('.hero'),nav=[...main.querySelectorAll('button')].find(b=>/Következő gyakorlat|Edzés befejezése/.test(String(b.textContent||'')));
+ if(hero)hero.insertAdjacentElement('afterend',card);else if(nav?.parentNode)nav.parentNode.insertBefore(card,nav);else main.appendChild(card);
+ tp1481SidePaint();
+};
+rf110DecorateTimedWorkout=function rf110DecorateTimedWorkout(){
+ const ex=state.session?.exercises?.[state.current];
+ if(tp1481IsPerSideTimed(ex))return tp1481DecoratePerSide();
+ tp1481HaltSide(true);return tp1481TimedWorkoutBase();
+};
+
+toggleSet=function toggleSet(ei,si){
+ const ex=state.session?.exercises?.[ei];
+ if(!tp1481IsPerSideTimed(ex))return tp1481ToggleSetBase(ei,si);
+ const set=ex?.sets?.[si];if(!set)return;
+ if(!set.done){
+  if(tp1481SideStopwatch.running&&tp1481SideStopwatch.exerciseIndex===ei&&tp1481SideStopwatch.setIndex===si)tp1481PauseSide();
+  const sides=tp1481SyncPerSideReps(set);
+  if(sides.left<1||sides.right<1){alert('Mérd meg külön a bal és a jobb oldalt is, mielőtt késznek jelölöd a sorozatot.');persistDraft();return}
+ }
+ set.done=!set.done;persistDraft();if(set.done)startRest();renderWorkout();
+};
+
+formatSet=function formatSet(e,s){
+ const perSide=String(e?.repUnit||'').replace(/\s+/g,'').toLowerCase()==='mp/oldal';
+ if(!perSide)return tp1481FormatSetBase(e,s);
+ const left=tp1481StoredSide(s,'left'),right=tp1481StoredSide(s,'right');
+ if(!left&&!right)return tp1481FormatSetBase(e,s);
+ const value=`Bal ${left||'—'} mp • Jobb ${right||'—'} mp`;
+ return e.loadType==='bodyweight'?value:`${s.weight||0} ${loadLabel(e.loadType)} × ${value}`;
+};
+
+(function tp1481SideCss(){
+ if(document.querySelector?.('#tp1481SideCss'))return;
+ const style=document.createElement('style');style.id='tp1481SideCss';style.textContent=`
+ .tp1481-side-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+ .tp1481-side-card{min-width:0;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--card2)}
+ .tp1481-side-card>strong{display:block;margin-bottom:8px}.tp1481-side-card .rf110-stopwatch-time{text-align:center;margin:8px 0 10px}
+ .tp1481-side-actions{display:grid;grid-template-columns:1.2fr 1fr;gap:8px;margin-top:8px}.tp1481-side-actions .btn{min-height:44px}
+ .tp1481-side-card .field{margin-top:5px}
+ @media(max-width:430px){.tp1481-side-grid{grid-template-columns:1fr}.tp1481-side-card .rf110-stopwatch-time{font-size:34px}}
+ `;document.head?.appendChild?.(style);
+})();
+window.TrainPilotHotfix={...(window.TrainPilotHotfix||{}),perSideStopwatch:true};
+// @endsection trainpilot-1481-per-side-stopwatch.js
+
+
+// @section trainpilot-1481-home-coach-overflow.js
+/* TrainPilot 1.4.8.1: never clip the dynamic Home Coach card on shorter/mobile viewports. */
+(function tp1481HomeCoachOverflowCss(){
+ if(document.querySelector?.('#tp1481HomeCoachOverflowCss'))return;
+ const style=document.createElement('style');style.id='tp1481HomeCoachOverflowCss';style.textContent=`
+  body:has(main.rf221-home){overflow-x:hidden!important;overflow-y:auto!important}
+  main.rf221-home{
+    height:auto!important;
+    max-height:none!important;
+    overflow:visible!important;
+    padding-bottom:max(104px,calc(24px + env(safe-area-inset-bottom,0px)))!important;
+  }
+  main.rf221-home #rf220CoachCard{
+    flex:0 0 auto!important;
+    margin-top:0!important;
+    overflow:visible!important;
+    padding:10px 11px!important;
+  }
+  main.rf221-home .rf221-coach-line{
+    display:-webkit-box!important;
+    -webkit-box-orient:vertical!important;
+    -webkit-line-clamp:2!important;
+    white-space:normal!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    line-height:1.25!important;
+    max-height:2.5em!important;
+    margin:4px 0 6px!important;
+  }
+  main.rf221-home .rf221-coach-actions{
+    margin-top:6px!important;
+  }
+  main.rf221-home .rf221-coach-actions .btn{
+    min-height:36px!important;
+    padding:7px 9px!important;
+  }
+ `;document.head?.appendChild?.(style);
+})();
+window.TrainPilotHotfix={...(window.TrainPilotHotfix||{}),homeCoachOverflow:true};
+// @endsection trainpilot-1481-home-coach-overflow.js
+
+
+// @section trainpilot-149-complete-i18n.js
+/* TrainPilot 1.4.9: complete four-language runtime localization.
+ * Hungarian remains the canonical source language. English, German and Romanian are
+ * rendered from one final translation pass so later feature layers cannot bypass i18n.
+ */
+const TP149_VERSION='1.4.9-dev';
+const TP149_LANGS={system:'System',hu:'Magyar',en:'English',de:'Deutsch',ro:'Română'};
+const TP149_LOCALES={hu:'hu-HU',en:'en-US',de:'de-DE',ro:'ro-RO'};
+
+/* 1.4.9 phase 1: key-based i18n core. Legacy text replacement remains only as
+ * a compatibility bridge while screens are migrated to tp149T()/t().
+ */
+const TP149_KEY_ROWS={
+ 'nav.home':['Kezdőlap','Home','Start','Acasă'],
+ 'nav.workout':['Edzés','Workout','Training','Antrenament'],
+ 'nav.calendar':['Naptár','Calendar','Kalender','Calendar'],
+ 'nav.programs':['Programok','Programs','Programme','Programe'],
+ 'nav.log':['Napló','Log','Protokoll','Jurnal'],
+ 'nav.health':['Egészség','Health','Gesundheit','Sănătate'],
+ 'nav.settings':['Beállítások','Settings','Einstellungen','Setări'],
+ 'common.back':['Vissza','Back','Zurück','Înapoi'],
+ 'common.close':['Bezárás','Close','Schließen','Închide'],
+ 'common.cancel':['Mégse','Cancel','Abbrechen','Anulează'],
+ 'common.ok':['OK','OK','OK','OK'],
+ 'common.save':['Mentés','Save','Speichern','Salvează'],
+ 'common.delete':['Törlés','Delete','Löschen','Șterge'],
+ 'common.edit':['Szerkesztés','Edit','Bearbeiten','Editează'],
+ 'common.refresh':['Frissítés','Refresh','Aktualisieren','Actualizează'],
+ 'common.search':['Keresés','Search','Suche','Căutare'],
+ 'common.all':['Összes','All','Alle','Toate'],
+ 'language.title':['Nyelv','Language','Sprache','Limbă'],
+ 'language.system':['Rendszer nyelve','System language','Systemsprache','Limba sistemului'],
+ 'language.help':['Alapértelmezésként a telefon rendszerének nyelvét használja. Bármikor felülírható.','By default, the phone system language is used. You can override it at any time.','Standardmäßig wird die Systemsprache des Telefons verwendet. Sie kann jederzeit geändert werden.','Implicit se folosește limba sistemului telefonului. Poate fi schimbată oricând.'],
+ 'language.hu':['Magyar','Hungarian','Ungarisch','Maghiară'],
+ 'language.en':['English','English','Englisch','Engleză'],
+ 'language.de':['Deutsch','German','Deutsch','Germană'],
+ 'language.ro':['Română','Romanian','Rumänisch','Română'],
+ 'settings.title':['Beállítások','Settings','Einstellungen','Setări'],
+ 'workout.start':['Edzés indítása','Start workout','Training starten','Pornește antrenamentul'],
+ 'workout.startScheduled':['Tervezett edzés indítása','Start scheduled workout','Geplantes Training starten','Pornește antrenamentul planificat'],
+ 'workout.finish':['Edzés befejezése','Finish workout','Training beenden','Încheie antrenamentul'],
+ 'workout.nextExercise':['Következő gyakorlat','Next exercise','Nächste Übung','Următorul exercițiu'],
+ 'workout.previous':['Előző','Previous','Zurück','Anterior'],
+ 'workout.rest':['Pihenő','Rest','Pause','Pauză'],
+ 'workout.sets':['Sorozatok','Sets','Sätze','Serii'],
+ 'planner.help.title':['Nem tudod, hogyan kezdd?','Not sure how to start?','Du weißt nicht, wie du anfangen sollst?','Nu știi cum să începi?'],
+ 'planner.help.cta':['Segíts elkezdeni','Help me get started','Beim Start helfen','Ajută-mă să încep'],
+ 'planner.focus':['Fókusz','Focus','Fokus','Accent'],
+ 'planner.avoidAreas':['Kerülendő területek','Areas to avoid','Zu vermeidende Bereiche','Zone de evitat'],
+ 'planner.excludeExercises':['Egyedi gyakorlatkizárás','Individual exercise exclusions','Einzelne Übungsausschlüsse','Excluderi individuale de exerciții'],
+ 'backup.title':['Biztonsági mentés','Backup','Sicherung','Copie de siguranță'],
+ 'backup.saveFile':['Mentés fájlba','Save to file','In Datei speichern','Salvează în fișier'],
+ 'backup.restore':['Visszatöltés','Restore','Wiederherstellen','Restaurează'],
+ 'backup.none':['Még nincs ellenőrzött fájlmentés.','No verified file backup yet.','Noch keine überprüfte Dateisicherung.','Nu există încă o copie de siguranță verificată.'],
+ 'backup.lastVerified':['Utolsó ellenőrzött mentés: {name} • {date}','Last verified backup: {name} • {date}','Letzte überprüfte Sicherung: {name} • {date}','Ultima copie verificată: {name} • {date}'],
+ 'exercise.library':['Gyakorlatkönyvtár','Exercise library','Übungsbibliothek','Bibliotecă de exerciții'],
+ 'exercise.demo':['Gyakorlat bemutatóvideó','Exercise demo video','Übungs-Demovideo','Videoclip demonstrativ exercițiu'],
+ 'exercise.count.one':['{count} gyakorlat','{count} exercise','{count} Übung','{count} exercițiu'],
+ 'exercise.count.few':['{count} gyakorlat','{count} exercises','{count} Übungen','{count} exerciții'],
+ 'exercise.count.other':['{count} gyakorlat','{count} exercises','{count} Übungen','{count} exerciții'],
+ 'unit.second.short':['mp','sec','Sek.','sec'],
+ 'unit.minute.short':['perc','min','Min.','min'],
+ 'unit.kilogram.short':['kg','kg','kg','kg'],
+ 'unit.repetition.short':['ism.','reps','Wdh.','rep.'],
+ 'dialog.confirm.title':['Megerősítés','Confirmation','Bestätigung','Confirmare'],
+ 'exercise.backPrograms':['Vissza a Programokhoz','Back to Programs','Zurück zu Programme','Înapoi la Programe'],
+ 'exercise.libraryBadge':['GYAKORLATKÖNYVTÁR','EXERCISE LIBRARY','ÜBUNGSBIBLIOTHEK','BIBLIOTECĂ DE EXERCIȚII'],
+ 'exercise.librarySubtitle':['Súlyzós, gépes, calisthenics, gumiszalagos és kettlebell gyakorlatok egy helyen.','Dumbbell, machine, calisthenics, resistance-band and kettlebell exercises in one place.','Kurzhantel-, Geräte-, Calisthenics-, Widerstandsband- und Kettlebell-Übungen an einem Ort.','Exerciții cu gantere, aparate, calisthenics, benzi elastice și kettlebell într-un singur loc.'],
+ 'exercise.primaryMuscle':['Fő izomcsoport','Primary muscle group','Primäre Muskelgruppe','Grupă musculară principală'],
+ 'exercise.additionalMuscles':['További izomcsoportok','Additional muscle groups','Weitere Muskelgruppen','Grupe musculare suplimentare'],
+ 'exercise.addToProgram':['Hozzáadás saját programhoz','Add to custom program','Zum eigenen Programm hinzufügen','Adaugă la programul personalizat'],
+ 'exercise.noDescription':['Ehhez a gyakorlathoz még nincs külön technikai leírás.','No separate technique description is available for this exercise yet.','Für diese Übung ist noch keine separate Technikbeschreibung verfügbar.','Nu există încă o descriere tehnică separată pentru acest exercițiu.'],
+ 'exercise.noResults':['Nincs találat. Próbálj másik szűrőt vagy keresőkifejezést.','No results. Try another filter or search term.','Keine Treffer. Versuche einen anderen Filter oder Suchbegriff.','Niciun rezultat. Încearcă alt filtru sau alt termen de căutare.'],
+ 'exercise.resultCount':['{shown} / {total} gyakorlat','{shown} / {total} exercises','{shown} / {total} Übungen','{shown} / {total} exerciții'],
+ 'exercise.search':['Keresés','Search','Suche','Căutare'],
+ 'exercise.searchPlaceholder':['Gyakorlat vagy felszerelés','Exercise or equipment','Übung oder Ausrüstung','Exercițiu sau echipament'],
+ 'exercise.muscleGroup':['Izomcsoport','Muscle group','Muskelgruppe','Grupă musculară'],
+ 'exercise.equipment':['Felszerelés','Equipment','Ausrüstung','Echipament'],
+ 'exercise.all':['Összes','All','Alle','Toate'],
+ 'exercise.libraryTitle':['Gyakorlatok / Izomcsoportok','Exercises / Muscle groups','Übungen / Muskelgruppen','Exerciții / Grupe musculare'],
+ 'exercise.librarySummary':['{count} gyakorlat • súlyzós, gépes, calisthenics és gumiszalagos variációk','{count} exercises • free-weight, machine, calisthenics and resistance-band variations','{count} Übungen • freie Gewichte, Geräte, Calisthenics und Widerstandsband-Varianten','{count} exerciții • variante cu greutăți libere, aparate, calisthenics și benzi elastice'],
+ 'exercise.demoSuffix':['bemutatóvideó','demo video','Demovideo','videoclip demonstrativ'],
+ 'program.active':['Aktív','Active','Aktiv','Activ'],
+ 'program.activate':['Aktiválás','Activate','Aktivieren','Activează'],
+ 'program.activeBadge':['AKTÍV PROGRAM','ACTIVE PROGRAM','AKTIVES PROGRAMM','PROGRAM ACTIV'],
+ 'program.workoutDayBadge':['EDZÉSNAP','WORKOUT DAY','TRAININGSTAG','ZI DE ANTRENAMENT'],
+ 'program.cardStats':['{days} napos ciklus • {counts} gyakorlat','{days}-day cycle • {counts} exercises','{days}-Tage-Zyklus • {counts} Übungen','Ciclu de {days} zile • {counts} exerciții'],
+ 'program.cycle':['{count} napos ciklus','{count}-day cycle','{count}-Tage-Zyklus','Ciclu de {count} zile'],
+ 'program.tapDetails':['{count} gyakorlat • koppints a részletekhez','{count} exercises • tap for details','{count} Übungen • für Details tippen','{count} exerciții • atinge pentru detalii'],
+ 'program.chooseAnother':['Másik program választása','Choose another program','Anderes Programm wählen','Alege alt program'],
+ 'program.addExercise':['Gyakorlat hozzáadása','Add exercise','Übung hinzufügen','Adaugă exercițiu'],
+ 'program.noActive':['Nincs aktív program','No active program','Kein aktives Programm','Niciun program activ'],
+ 'program.noActiveHelp':['Válassz programot a Programok fülön.','Choose a program on the Programs tab.','Wähle im Tab Programme ein Programm aus.','Alege un program din fila Programe.'],
+ 'program.choose':['Program választása','Choose program','Programm wählen','Alege program'],
+ 'planner.back':['Vissza','Back','Zurück','Înapoi'],
+ 'planner.title':['Segíts elkezdeni','Help me get started','Beim Start helfen','Ajută-mă să încep'],
+ 'planner.intro':['A terv a te célodból, tapasztalatodból, eszközeidből és preferenciáidból épül fel. Először átnézheted, csak utána aktiválod.','The plan is built from your goal, experience, available equipment and preferences. You can review it before activating it.','Der Plan wird aus deinem Ziel, deiner Erfahrung, deiner verfügbaren Ausrüstung und deinen Präferenzen erstellt. Du kannst ihn vor der Aktivierung prüfen.','Planul este construit pe baza obiectivului, experienței, echipamentului disponibil și preferințelor tale. Îl poți verifica înainte de activare.'],
+ 'planner.age':['Életkor','Age','Alter','Vârstă'],
+ 'planner.height':['Magasság (cm)','Height (cm)','Größe (cm)','Înălțime (cm)'],
+ 'planner.weight':['Testsúly (kg)','Body weight (kg)','Körpergewicht (kg)','Greutate corporală (kg)'],
+ 'planner.goal':['Cél','Goal','Ziel','Obiectiv'],
+ 'planner.experience':['Tapasztalat','Experience','Erfahrung','Experiență'],
+ 'planner.activity':['Munka és napi aktivitás','Work and daily activity','Arbeit und tägliche Aktivität','Muncă și activitate zilnică'],
+ 'planner.minutes':['Idő egy edzésre','Time per workout','Zeit pro Training','Timp per antrenament'],
+ 'planner.cadence':['Beosztás','Schedule','Rhythmus','Programare'],
+ 'planner.split':['Edzésfelosztás','Workout split','Trainingsaufteilung','Împărțirea antrenamentului'],
+ 'planner.avoidHelp':['Ezeket a területeket a generátor nem próbálja kötelezően visszatenni más felosztás miatt.','The generator will not force these areas back into the plan because of another split.','Der Generator erzwingt diese Bereiche nicht wegen einer anderen Aufteilung.','Generatorul nu va reintroduce forțat aceste zone din cauza altei împărțiri.'],
+ 'planner.excludeHelp':['Finomhangolásként egyenként is kizárhatsz gyakorlatokat.','For fine tuning, you can exclude individual exercises as well.','Zur Feinabstimmung kannst du einzelne Übungen ausschließen.','Pentru reglaj fin poți exclude și exerciții individuale.'],
+ 'planner.storageHelp':['A profil a telefonon tárolódik. A személyes generátor nem egy másik felhasználó A/B programjából indul.','The profile is stored on the phone. The personal generator does not start from another user’s A/B program.','Das Profil wird auf dem Telefon gespeichert. Der persönliche Generator basiert nicht auf dem A/B-Programm eines anderen Nutzers.','Profilul este stocat pe telefon. Generatorul personal nu pornește de la programul A/B al altui utilizator.'],
+ 'planner.build':['Személyes terv összeállítása','Build personal plan','Persönlichen Plan erstellen','Creează planul personal'],
+ 'planner.gearTitle':['Mivel edzenél?','What will you train with?','Womit möchtest du trainieren?','Cu ce vei face antrenamentul?'],
+ 'planner.gearHelp':['A saját testsúlyos gyakorlatok mindig használhatók. Jelöld az összes valóban elérhető eszközt.','Bodyweight exercises are always available. Select every piece of equipment you actually have access to.','Körpergewichtsübungen sind immer verfügbar. Wähle alle Geräte aus, die dir tatsächlich zur Verfügung stehen.','Exercițiile cu greutatea corpului sunt întotdeauna disponibile. Selectează toate echipamentele la care ai acces în mod real.'],
+ 'planner.gearMore':['Gumiszalag, húzódzkodórúd, tolódzkodó és kettlebell is használható a személyes tervezőben.','Resistance bands, a pull-up bar, dip bars and kettlebells can also be used by the personal planner.','Widerstandsbänder, Klimmzugstange, Dip-Barren und Kettlebells können ebenfalls im persönlichen Planer verwendet werden.','Benzile elastice, bara de tracțiuni, barele paralele și kettlebellurile pot fi folosite și în planificatorul personal.'],
+ 'planner.presetBodyweight':['Csak saját testsúly','Bodyweight only','Nur Körpergewicht','Doar greutatea corpului'],
+ 'planner.presetDumbbell':['Kézisúlyzó','Dumbbells','Kurzhanteln','Gantere'],
+ 'planner.presetCalisthenics':['Calisthenics','Calisthenics','Calisthenics','Calisthenics'],
+ 'planner.presetAll':['Minden eszköz','All equipment','Alle Geräte','Tot echipamentul'],
+ 'planner.previewLabel':['Javaslat • még nincs aktiválva','Suggestion • not activated yet','Vorschlag • noch nicht aktiviert','Sugestie • încă neactivată'],
+ 'planner.trialHelp':['Az első alkalommal könnyű próbasorozattal válassz terhelést, és rögzítsd a súlyt. A mező kezdetben üres.','On the first session, use a light trial set to choose the load and record the weight. The field starts empty.','Wähle beim ersten Training die Belastung mit einem leichten Testsatz und trage das Gewicht ein. Das Feld ist anfangs leer.','La prima sesiune, alege încărcarea cu o serie ușoară de probă și înregistrează greutatea. Câmpul este inițial gol.'],
+ 'planner.activate':['Terv mentése és aktiválása','Save and activate plan','Plan speichern und aktivieren','Salvează și activează planul'],
+ 'planner.saved':['A terv kész. A naptárban válaszd ki a kezdőnapot és az alkalmakat.','The plan is ready. Choose the start date and sessions in the calendar.','Der Plan ist fertig. Wähle im Kalender den Starttag und die Trainingseinheiten aus.','Planul este gata. Alege în calendar data de început și sesiunile.'],
+ 'planner.saveFailed':['Nem sikerült menteni. A korábbi terv megmaradt.','Could not save. The previous plan was kept.','Speichern fehlgeschlagen. Der bisherige Plan wurde beibehalten.','Salvarea a eșuat. Planul anterior a fost păstrat.'],
+ 'planner.generatedName':['Személyes terv – {split}','Personal plan – {split}','Persönlicher Plan – {split}','Plan personal – {split}'],
+ 'planner.locationSelected':['Választott felszerelés','Selected equipment','Ausgewählte Ausrüstung','Echipament selectat'],
+ 'planner.locationBodyweight':['Saját testsúly','Bodyweight','Körpergewicht','Greutatea corpului'],
+ 'planner.reasonAvailable':['Elérhető: {equipment}.','Available: {equipment}.','Verfügbar: {equipment}.','Disponibil: {equipment}.'],
+ 'planner.reasonFocus':['Fókusz: {focus}.{avoid}','Focus: {focus}.{avoid}','Fokus: {focus}.{avoid}','Accent: {focus}.{avoid}'],
+ 'planner.reasonAvoid':[' Kerülendő: {areas}.',' Avoid: {areas}.',' Zu vermeiden: {areas}.',' De evitat: {areas}.'],

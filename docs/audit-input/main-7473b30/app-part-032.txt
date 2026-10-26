@@ -1,0 +1,281 @@
+ const allowed={goal:['fitness','muscle','strength','fatloss'],experience:['beginner','intermediate'],activity:['sedentary','mixed','physical'],location:['home','gym'],cadence:['alternate','weekly','custom'],split:['auto','full','upperlower','ppl'],focus:Object.keys(RF148_FOCUS_LABELS)};
+ for(const k of Object.keys(allowed))if(!allowed[k].includes(out[k]))throw Error('Érvénytelen profilválasztás.');
+ if(!Number.isInteger(out.minutes)||out.minutes<20||out.minutes>120||out.minutes%5!==0)throw Error('Az edzésidő 20 és 120 perc között, 5 perces lépésekben adható meg.');
+ if(!Array.isArray(out.gear)||out.gear.some(function(x){return !Object.hasOwn(GEAR132,x);})||new Set(out.gear).size!==out.gear.length)throw Error('Érvénytelen felszereléslista.');
+ if(!Array.isArray(out.excluded)||out.excluded.some(function(id){return !exercises().some(function(e){return e.id===id;})&&!(rf148BackupValidationIds&&rf148BackupValidationIds.has(id));}))throw Error('Érvénytelen gyakorlatkizárás.');
+ if(new Set(out.avoidAreas).size!==out.avoidAreas.length||out.avoidAreas.some(function(x){return !Object.hasOwn(RF148_AREA_LABELS,x);}))throw Error('Érvénytelen kerülendő terület.');
+ return out;
+};
+var rf148ExerciseAvoided=function rf148ExerciseAvoided(e,p){
+ const avoided=new Set((p.avoidAreas||[]).flatMap(function(a){return RF148_AREA_PATTERNS[a]||[];}));
+ return avoided.has(e.movementPattern);
+};
+var rf148FocusRoles=function rf148FocusRoles(focus){
+ return ({upper:['push','pull','shoulder','bi','tri'],chestback:['push','pull'],shoulderarms:['shoulder','bi','tri'],core:['core','stability'],legs:['leg','hinge'],balanced:[]})[focus]||[];
+};
+var rf148FocusOrder=function rf148FocusOrder(roles,focus){
+ const first=rf148FocusRoles(focus),out=[];
+ first.concat(roles).forEach(function(x){if(!out.includes(x))out.push(x);});
+ return out;
+};
+var rf148Capacity=function rf148Capacity(minutes){
+ if(minutes<=25)return 3;if(minutes<=40)return 4;if(minutes<=55)return 5;if(minutes<=70)return 6;if(minutes<=85)return 7;if(minutes<=100)return 8;if(minutes<=110)return 9;return 10;
+};
+var rf148Prescription=function rf148Prescription(e,p){
+ let sets=p.experience==='beginner'?2:3;
+ if(p.minutes>=75)sets++;
+ if(p.activity==='physical')sets=Math.max(2,sets-1);
+ if(p.minutes<=30)sets=2;
+ let rest=p.goal==='strength'?150:p.goal==='muscle'?90:75;
+ if(e.movementPattern==='conditioning')rest=45;
+ let reps=e.repUnit==='mp'?(e.reps||'20–40 mp'):(p.goal==='strength'&&e.compound?'5–8':p.goal==='muscle'?'8–15':'8–12');
+ return {sets:sets,reps:reps,weight:0,rest:rest,trial:true,rir:p.experience==='beginner'?3:2};
+};
+var rf148RolePools=function rf148RolePools(lib,p){
+ const out={};
+ for(const entry of Object.entries(RF148_ROLE_PATTERNS)){
+  const role=entry[0],patterns=entry[1];
+  out[role]=lib.filter(function(e){return patterns.includes(e.movementPattern);}).sort(function(a,b){return rf14Score(b.id,p,role)-rf14Score(a.id,p,role)||a.id.localeCompare(b.id);});
+ }
+ return out;
+};
+var rf148Layout=function rf148Layout(p,pools){
+ const lower=pools.leg.length+pools.hinge.length>0,pull=pools.pull.length>0;
+ let effective=p.split;
+ if(effective==='auto')effective=p.experience==='intermediate'&&lower&&pull?'upperlower':'full';
+ if((effective==='ppl'||effective==='upperlower')&&!lower)effective='upper';
+ if(effective==='ppl'&&!pull)effective='full';
+ if(effective==='full'&&!lower)effective='upper';
+ const layouts={
+  full:[['A',['leg','push','pull','core','hinge','shoulder','bi','conditioning']],['B',['hinge','pull','push','core','leg','shoulder','tri','conditioning']]],
+  upper:[['Felsőtest A',['push','pull','shoulder','bi','tri','core','stability','conditioning']],['Felsőtest B',['pull','push','shoulder','tri','bi','core','stability','conditioning']]],
+  upperlower:[['Felsőtest',['push','pull','shoulder','bi','tri','core']],['Alsótest és törzs',['leg','hinge','core','stability','conditioning']]],
+  ppl:[['Toló',['push','shoulder','tri','core']],['Húzó',['pull','bi','core','stability']],['Láb és törzs',['leg','hinge','core','conditioning']]]
+ };
+ return {effective:effective,days:layouts[effective]||layouts.full};
+};
+generatePersonalProgram=function(input){
+ const p=validateProfile(input),gear=profileGear132(p);
+ const lib=exercises().filter(function(e){return available132(e.id,p)&&!rf148ExerciseAvoided(e,p)&&(p.experience!=='beginner'||e.beginnerSafe);});
+ if(lib.length<3)throw Error('A választott felszerelés és kizárások mellett kevesebb mint 3 használható gyakorlat maradt. Engedélyezz több eszközt, területet vagy gyakorlatot.');
+ const pools=rf148RolePools(lib,p),layout=rf148Layout(p,pools),capacity=Math.min(rf148Capacity(p.minutes),lib.length),prescriptions={};
+ const focusRoles=rf148FocusRoles(p.focus);
+ const fallback=lib.slice().sort(function(a,b){
+  const ar=Object.keys(RF148_ROLE_PATTERNS).find(function(r){return RF148_ROLE_PATTERNS[r].includes(a.movementPattern);});
+  const br=Object.keys(RF148_ROLE_PATTERNS).find(function(r){return RF148_ROLE_PATTERNS[r].includes(b.movementPattern);});
+  const af=focusRoles.includes(ar)?1:0,bf=focusRoles.includes(br)?1:0;
+  return bf-af||Number(b.compound)-Number(a.compound)||Number(b.beginnerSafe)-Number(a.beginnerSafe)||a.id.localeCompare(b.id);
+ });
+ const days=layout.days.map(function(spec,di){
+  const name=spec[0],roles=rf148FocusOrder(spec[1],p.focus),ids=[];
+  for(const role of roles){
+   if(ids.length>=capacity)break;
+   const available=(pools[role]||[]).filter(function(e){return !ids.includes(e.id);});
+   if(!available.length)continue;
+   const e=available[di%available.length];ids.push(e.id);
+  }
+  for(const e of fallback){
+   if(ids.length>=capacity)break;
+   if(!ids.includes(e.id))ids.push(e.id);
+  }
+  if(ids.length<3)throw Error('Nem maradt legalább 3 különböző gyakorlat egy használható edzésnaphoz.');
+  ids.forEach(function(id){prescriptions[id]=rf148Prescription(exercises().find(function(e){return e.id===id;}),p);});
+  return {id:String.fromCharCode(65+di),name:name,exercises:ids};
+ });
+ const splitNames={full:'Teljes test A/B',upper:'Felsőtest A/B',upperlower:'Felső / alsó',ppl:'Toló / húzó / láb'};
+ const avoided=(p.avoidAreas||[]).map(function(x){return RF148_AREA_LABELS[x];});
+ const changed=p.split!=='auto'&&layout.effective!==p.split;
+ const reasons=[
+  'Elérhető: '+(gear.length?gear.map(function(k){return GEAR132[k];}).join(' + '):'saját testsúly')+'.',
+  'Fókusz: '+RF148_FOCUS_LABELS[p.focus]+(avoided.length?'. Kerülendő: '+avoided.join(', ')+'.':'.'),
+  p.minutes+' perc: legfeljebb '+capacity+' gyakorlat/nap; a hosszabb időkeret több gyakorlatot és szükség esetén több munkasorozatot enged.',
+  changed?'A kért felosztást a rendelkezésre álló gyakorlatokhoz igazítottuk, hogy ne legyen kötelező hiányzó vagy kerülendő edzésnap.':'A felosztás a jelenlegi profilhoz és elérhető mozgásmintákhoz igazodik.',
+  'A progresszió a saját teljesített sorozataidból és visszajelzéseidből folytatódik; a kezdősúlyt próbasorozattal állítsd be.'
+ ];
+ return {id:'personal-'+crypto.randomUUID(),name:'Személyes terv – '+splitNames[layout.effective],location:gear.length?'Választott felszerelés':'Saját testsúly',level:p.experience==='beginner'?'Kezdő':'Középhaladó',builtin:false,generated:true,generatorVersion:RF148_VERSION,effectiveSplit:layout.effective,gear:gear.slice(),focus:p.focus,avoidAreas:(p.avoidAreas||[]).slice(),days:days,prescriptions:prescriptions,reasons:reasons,createdAt:new Date().toISOString()};
+};
+previewProfile=function(){
+ state.tp128PreviewToken=null;
+ try{
+  const p={age:Number($('#pfAge').value),height:Number($('#pfHeight').value),weight:Number($('#pfWeight').value),goal:$('#pfGoal').value,experience:$('#pfExperience').value,activity:$('#pfActivity').value,location:'home',gear:[...document.querySelectorAll('input[name=pfGear]:checked')].map(function(x){return x.value;}),minutes:Number($('#pfMinutes').value),cadence:$('#pfCadence').value,split:$('#pfSplit').value,focus:$('#pfFocus').value,avoidAreas:[...document.querySelectorAll('input[name=pfAvoidArea]:checked')].map(function(x){return x.value;}),excluded:[...document.querySelectorAll('input[name=pfExclude]:checked')].map(function(x){return x.value;})};
+  state.profilePreview=validateProfile(p);state.programPreview=generatePersonalProgram(state.profilePreview);showPersonalPreview();
+ }catch(e){alert(e.message);}
+};
+
+const rf148ValidateBackupBase=validateBackup;
+validateBackup=function(d){
+ const backupExercises=Array.isArray(d&&d.exercises)?d.exercises:[],added=[];
+ const previousIds=rf148BackupValidationIds;
+ rf148BackupValidationIds=new Set(backupExercises.map(function(e){return e&&e.id;}).filter(Boolean));
+ for(const e of backupExercises){
+  if(!e||!e.custom||!e.id||MUSCLE_MAP[e.id])continue;
+  MUSCLE_MAP[e.id]=[rf148CustomMuscle(e)];added.push(e.id);
+ }
+ try{return rf148ValidateBackupBase(d);}
+ finally{for(const id of added)delete MUSCLE_MAP[id];rf148BackupValidationIds=previousIds;}
+};
+
+customExerciseScreen=function(){
+ const patterns=Object.entries(RF148_PATTERN_LABELS).map(function(kv){return '<option value="'+esc(kv[0])+'">'+esc(kv[1])+'</option>';}).join('');
+ const styles=Object.entries(RF148_STYLE_LABELS).map(function(kv){return '<option value="'+esc(kv[0])+'">'+esc(kv[1])+'</option>';}).join('');
+ const muscles=Object.entries(MUSCLES).map(function(kv){return '<option value="'+esc(kv[0])+'">'+esc(kv[1])+'</option>';}).join('');
+ const gears=Object.entries(GEAR132).map(function(kv){return '<label class="exclude-row"><input type="checkbox" name="ceGear" value="'+esc(kv[0])+'">'+esc(kv[1])+'</label>';}).join('');
+ render(shell('<main><button class="btn secondary" onclick="go(\'programs\')">← Vissza</button><div class="hero"><h1>Saját gyakorlat</h1><p>Adj hozzá saját gyakorlatot a könyvtárhoz. A mozgásminta és a kategória külön mező.</p></div><div class="setting"><label>Magyar név<input id="ceHu" class="field" maxlength="80"></label><label>Angol név<input id="ceEn" class="field" maxlength="80"></label><label>Felszerelés leírása<input id="ceEq" class="field" maxlength="80" value="testsúly"></label><label>Fő izomcsoport<select id="ceMuscle" class="field">'+muscles+'</select></label><label>Mozgásminta<select id="cePattern" class="field">'+patterns+'</select></label><label>Kategória / stílus<select id="ceStyle" class="field">'+styles+'</select></label><label>Nehézség<select id="ceDifficulty" class="field"><option value="beginner">Kezdő</option><option value="intermediate">Középhaladó</option><option value="advanced">Haladó</option></select></label><details><summary>Szükséges felszerelés</summary><p class="small muted">Csak azt jelöld, ami nélkül a gyakorlat nem végezhető el.</p>'+gears+'</details><label>Technikai jegyzet<textarea id="ceNotes" class="field" maxlength="500"></textarea></label><button class="btn block" onclick="saveCustomExercise14()">Gyakorlat mentése</button></div></main>'));
+};
+saveCustomExercise14=function(){
+ const hu=$('#ceHu').value.trim(),en=$('#ceEn').value.trim(),pattern=$('#cePattern').value,style=$('#ceStyle').value,muscle=$('#ceMuscle').value,gearNeeds=[...document.querySelectorAll('input[name=ceGear]:checked')].map(function(x){return x.value;});
+ if(hu.length<2||en.length<2){alert('Adj meg magyar és angol nevet.');return;}
+ if(!Object.hasOwn(RF148_PATTERN_LABELS,pattern)||!Object.hasOwn(RF148_STYLE_LABELS,style)||!Object.hasOwn(MUSCLES,muscle)){alert('Érvénytelen gyakorlatadat.');return;}
+ const difficulty=$('#ceDifficulty').value;if(!['beginner','intermediate','advanced'].includes(difficulty)){alert('Érvénytelen nehézség.');return;}
+ const goals=style==='conditioning'?['fitness','fatloss']:style==='mobility'?['fitness']:style==='bodybuilding'?['fitness','muscle']:['fitness','muscle','strength'];
+ const compound=!['chest-isolation','shoulder-isolation','rear-delt','elbow-flexion','elbow-extension','knee-extension','knee-flexion','calf','core-bracing','core-flexion','core-stability','other'].includes(pattern);
+ let loadType='bodyweight';if(gearNeeds.includes('dumbbells'))loadType='per_hand';else if(gearNeeds.includes('dumbbell')||gearNeeds.includes('kettlebell'))loadType='single_dumbbell';else if(gearNeeds.length)loadType='total';
+ const id='custom-'+crypto.randomUUID(),e={id:id,hu:hu,en:en,equipment:$('#ceEq').value.trim()||'testsúly',target:MUSCLES[muscle],notes:$('#ceNotes').value.trim(),sets:2,reps:'8–12',weight:0,loadType:loadType,repUnit:'ism.',movementPattern:pattern,difficulty:difficulty,beginnerSafe:difficulty==='beginner',complexity:difficulty==='beginner'?'low':difficulty==='intermediate'?'medium':'high',compound:compound,goalTags:goals,style:style,gearNeeds:gearNeeds,muscleGroup:muscle,custom:true};
+ MUSCLE_MAP[id]=[muscle];NEEDS132[id]=gearNeeds.slice();db.set('exercises',[...exercises(),e]);alert('Saját gyakorlat hozzáadva.');go('programs');
+};
+
+const rf148DemoInfoBase=demoInfo;
+demoInfo=function(id){
+ const found=rf148DemoInfoBase(id);if(found)return found;
+ if(!RF148_NEW_IDS.has(id))return null;
+ const e=exercises().find(function(x){return x.id===id;});
+ return {provider:null,videoId:null,credit:'YouTube keresés',source:'https://www.youtube.com/results?search_query='+encodeURIComponent((e&&e.en||id)+' exercise tutorial')};
+};
+
+if(typeof libraryResults==='function'){
+ libraryResults=function(group,gear,q){
+  const es=exercises().filter(function(e){return libraryMatch(e,group,gear,q);});
+  return '<p class="muted">'+es.length+' / '+exercises().length+' gyakorlat</p>'+((es.map(function(e){
+   const groups=muscleGroups(e.id),secondary=groups.slice(1).map(function(x){return MUSCLES[x];}).filter(Boolean).join(' / ');
+   return '<details class="card tp-library-card"><summary><div class="tp-library-summary-main"><h3>'+esc(e.hu)+'</h3><p class="small">'+esc(e.equipment)+' • Fő izomcsoport: '+esc(MUSCLES[groups[0]]||e.target)+'</p></div>'+rf260VideoButton(e.id)+'</summary><div class="tp-library-body"><p class="small muted">'+esc(rf148PatternLabel(e.movementPattern))+' • '+esc(rf148StyleLabel(e))+'</p>'+(secondary?'<p class="small muted">További izomcsoportok: '+esc(secondary)+'</p>':'')+'<p>'+esc(e.notes||'Ehhez a gyakorlathoz még nincs külön technikai leírás.')+'</p><button class="btn secondary block" onclick="chooseLibraryPlacement(\''+esc(e.id)+'\')">Hozzáadás saját programhoz</button></div></details>';
+  }).join(''))||'<p>Nincs találat. Próbálj másik szűrőt vagy keresőkifejezést.</p>');
+ };
+}
+if(typeof rf203ExerciseLibrary==='function'){
+ rf203ExerciseLibrary=function(){
+  const list=exercises();
+  render(shell('<main><button class="btn secondary" onclick="go(\'programs\')">← Vissza a Programokhoz</button><div class="hero"><span class="badge">GYAKORLATKÖNYVTÁR</span><h1>'+list.length+' gyakorlat</h1><div class="muted">Súlyzós, gépes, calisthenics, gumiszalagos és kettlebell gyakorlatok egy helyen.</div></div>'+list.map(function(e,i){return '<div class="exercise" onclick="rf203ExerciseDetail(\''+esc(e.id)+'\')"><div class="num">'+(i+1)+'</div><div><div class="ex-name">'+esc(e.hu)+'</div><div class="en">'+esc(e.en||'')+'</div><div class="meta">'+esc(e.target||'')+(e.equipment?' • '+esc(e.equipment):'')+' • '+esc(rf148PatternLabel(e.movementPattern))+'</div></div><div class="tp-exercise-actions">'+rf260VideoButton(e.id)+'<div class="chev" aria-hidden="true">›</div></div></div>';}).join('')+'</main>'));
+ };
+}
+libraryGear=function(e){
+ const mapped=e&&RF148_NEEDS[e.id],needs=Array.isArray(mapped)?mapped:(Array.isArray(e&&e.gearNeeds)?e.gearNeeds:[]);
+ if(needs.includes('bands'))return 'bands';
+ if(needs.includes('pullupbar'))return 'pullupbar';
+ if(needs.includes('dipbars'))return 'dipbars';
+ if(needs.includes('kettlebell'))return 'kettlebell';
+ if(needs.includes('machines'))return 'machine';
+ if(needs.includes('barbell'))return 'barbell';
+ if(needs.includes('dumbbell')||needs.includes('dumbbells'))return 'dumbbells';
+ if(e&&e.gear)return e.gear;
+ if(e&&e.loadType==='bodyweight')return 'bodyweight';
+ if(/rúd/.test(e&&e.equipment||''))return 'barbell';
+ if(/gép|csiga|lehúzó/.test(e&&e.equipment||''))return 'machine';
+ return 'dumbbells';
+};
+muscleLibrary=function(group='all'){
+ state.libraryFilter={group:group,gear:'all',q:''};
+ const gearOptions={all:'Összes',bodyweight:'Saját testsúly',dumbbells:'Kézisúlyzó',barbell:'Kétkezes rúd',machine:'Gép / csiga',bands:'Gumiszalag',pullupbar:'Húzódzkodórúd',dipbars:'Tolódzkodó',kettlebell:'Kettlebell'};
+ render(shell('<main><button class="btn secondary" onclick="go(\'programs\')">← Programok</button><div class="hero"><h1>Gyakorlatok / Izomcsoportok</h1><p>'+exercises().length+' gyakorlat • súlyzós, gépes, calisthenics és gumiszalagos variációk</p></div><div class="setting"><label>Keresés<input id="libraryQuery" class="field" type="search" placeholder="Gyakorlat vagy felszerelés" oninput="filterLibrary()"></label><label>Izomcsoport<select id="libraryMuscle" class="field" onchange="filterLibrary()"><option value="all">Összes</option>'+Object.entries(MUSCLES).map(function(kv){return '<option value="'+esc(kv[0])+'" '+(group===kv[0]?'selected':'')+'>'+esc(kv[1])+'</option>';}).join('')+'</select></label><label>Felszerelés<select id="libraryGear" class="field" onchange="filterLibrary()">'+Object.entries(gearOptions).map(function(kv){return '<option value="'+esc(kv[0])+'">'+esc(kv[1])+'</option>';}).join('')+'</select></label></div><div id="libraryResults">'+libraryResults(group,'all','')+'</div></main>'));
+};
+
+(function rf148UiPolish(){
+ if(document.querySelector?.('#rf148UiPolish'))return;
+ const st=document.createElement('style');st.id='rf148UiPolish';
+ st.textContent=[
+  '.rf148-profile-accordion{display:block;margin:14px 0!important;border:1px solid color-mix(in srgb,#ef4444 38%,var(--line));border-radius:14px;background:color-mix(in srgb,#ef4444 8%,var(--card));overflow:hidden}',
+  '.rf148-profile-accordion+.rf148-profile-accordion{margin-top:18px!important}',
+  '.rf148-profile-accordion>summary{display:block;list-style:none;cursor:pointer;padding:14px 13px;font-weight:900;line-height:1.3;min-height:48px;color:color-mix(in srgb,#ff6b6b 72%,var(--text))}',
+  '.rf148-profile-accordion>summary::-webkit-details-marker{display:none}',
+  ".rf148-profile-accordion>summary::after{content:'⌄';float:right;color:#ff6b6b;font-size:18px;transition:transform .15s ease}",
+  '.rf148-profile-accordion[open]>summary::after{transform:rotate(180deg)}',
+  '.rf148-profile-accordion-body{padding:0 13px 13px;border-top:1px solid color-mix(in srgb,#ef4444 28%,var(--line))}',
+  '.rf148-profile-accordion-body>.small{margin-top:12px}'
+ ].join('');
+ document.head?.appendChild(st);
+})();
+window.TrainPilotAdaptivePlanner={version:RF148_VERSION,exerciseTarget:100,adaptiveAvoidAreas:true,maxMinutes:120};
+// @endsection trainpilot-148-adaptive-planner.js
+
+
+// @section trainpilot-1481-resume-hotfix.js
+/* TrainPilot 1.4.8.1 hotfix: draft resume routing + release metadata. */
+const TP1481_VERSION='1.4.8.1';
+window.TrainPilotHotfix={version:TP1481_VERSION,resumeDraftRoute:true};
+// @endsection trainpilot-1481-resume-hotfix.js
+
+
+// @section trainpilot-1481-per-side-stopwatch.js
+/* TrainPilot 1.4.8.1: independent left/right timers for mp/oldal exercises. */
+const tp1481TimedWorkoutBase=rf110DecorateTimedWorkout;
+const tp1481ToggleSetBase=toggleSet;
+const tp1481FormatSetBase=formatSet;
+let tp1481SideStopwatch={exerciseIndex:-1,setIndex:-1,side:null,elapsedMs:0,startedAt:0,running:false,timer:null,lastSecond:-1};
+
+var tp1481IsPerSideTimed=function tp1481IsPerSideTimed(sessionExercise){
+ const e=sessionExercise?byId(sessionExercise.id):null;
+ return String(sessionExercise?.repUnit||e?.repUnit||'').replace(/\s+/g,'').toLowerCase()==='mp/oldal';
+};
+var tp1481SideField=function tp1481SideField(side){return side==='right'?'rightSeconds':'leftSeconds'};
+var tp1481StoredSide=function tp1481StoredSide(set,side){
+ const n=Number(set?.[tp1481SideField(side)]);return Number.isFinite(n)&&n>0?Math.floor(n):0;
+};
+var tp1481SyncPerSideReps=function tp1481SyncPerSideReps(set){
+ const left=tp1481StoredSide(set,'left'),right=tp1481StoredSide(set,'right');
+ set.reps=left>0&&right>0?String(Math.min(left,right)):'';
+ return {left,right};
+};
+var tp1481SideSeconds=function tp1481SideSeconds(){
+ const total=tp1481SideStopwatch.elapsedMs+(tp1481SideStopwatch.running?Math.max(0,Date.now()-tp1481SideStopwatch.startedAt):0);
+ return Math.max(0,Math.floor(total/1000));
+};
+var tp1481PersistSide=function tp1481PersistSide(sec){
+ if(!state.session||tp1481SideStopwatch.exerciseIndex<0||tp1481SideStopwatch.setIndex<0||!tp1481SideStopwatch.side)return;
+ const ex=state.session.exercises?.[tp1481SideStopwatch.exerciseIndex];if(!tp1481IsPerSideTimed(ex))return;
+ const set=ex?.sets?.[tp1481SideStopwatch.setIndex];if(!set)return;
+ set[tp1481SideField(tp1481SideStopwatch.side)]=Math.max(0,Math.floor(Number(sec)||0));
+ tp1481SyncPerSideReps(set);persistDraft();
+};
+var tp1481SidePaint=function tp1481SidePaint(){
+ const ex=state.session?.exercises?.[state.current],setIndex=ex?.sets?.findIndex(s=>!s.done),set=ex?.sets?.[setIndex];
+ const owns=tp1481SideStopwatch.exerciseIndex===state.current&&tp1481SideStopwatch.setIndex===setIndex;
+ const sec=tp1481SideSeconds(),active=owns?tp1481SideStopwatch.side:null;
+ if(active&&tp1481SideStopwatch.running&&sec!==tp1481SideStopwatch.lastSecond){tp1481SideStopwatch.lastSecond=sec;tp1481PersistSide(sec)}
+ for(const side of ['left','right']){
+  const stored=side===active&&tp1481SideStopwatch.running?sec:tp1481StoredSide(set,side);
+  const display=document.querySelector('#tp1481SideTime-'+side),input=document.querySelector('#tp1481SideInput-'+side),button=document.querySelector('#tp1481SideToggle-'+side);
+  if(display)display.textContent=rf110FormatStopwatch(stored);
+  if(input&&document.activeElement!==input)input.value=stored||'';
+  if(button){
+   const isRunning=tp1481SideStopwatch.running&&active===side;
+   button.textContent=isRunning?'Stop és rögzítés':stored>0?'Folytatás':'Indítás';
+  }
+ }
+};
+var tp1481PauseSide=function tp1481PauseSide(){
+ if(!tp1481SideStopwatch.running)return;
+ tp1481SideStopwatch.elapsedMs+=Math.max(0,Date.now()-tp1481SideStopwatch.startedAt);
+ tp1481SideStopwatch.startedAt=0;tp1481SideStopwatch.running=false;
+ if(tp1481SideStopwatch.timer){clearInterval(tp1481SideStopwatch.timer);tp1481SideStopwatch.timer=null}
+ tp1481PersistSide(tp1481SideSeconds());tp1481SidePaint();
+};
+var tp1481HaltSide=function tp1481HaltSide(clear=false){
+ tp1481PauseSide();
+ if(clear){tp1481SideStopwatch={exerciseIndex:-1,setIndex:-1,side:null,elapsedMs:0,startedAt:0,running:false,timer:null,lastSecond:-1}}
+};
+var tp1481ActivateSide=function tp1481ActivateSide(side){
+ const ex=state.session?.exercises?.[state.current];if(!tp1481IsPerSideTimed(ex))return;
+ const setIndex=ex.sets.findIndex(s=>!s.done);if(setIndex<0)return;
+ const same=tp1481SideStopwatch.exerciseIndex===state.current&&tp1481SideStopwatch.setIndex===setIndex&&tp1481SideStopwatch.side===side;
+ if(same&&tp1481SideStopwatch.running){
+  tp1481PauseSide();const set=ex.sets[setIndex];
+  if(!set.done&&Number(set.leftSeconds)>0&&Number(set.rightSeconds)>0)return toggleSet(state.current,setIndex);
+  return;
+ }
+ if(tp1481SideStopwatch.running)tp1481PauseSide();
+ const set=ex.sets[setIndex];
+ tp1481SideStopwatch.exerciseIndex=state.current;tp1481SideStopwatch.setIndex=setIndex;tp1481SideStopwatch.side=side;
+ tp1481SideStopwatch.elapsedMs=tp1481StoredSide(set,side)*1000;tp1481SideStopwatch.startedAt=Date.now();tp1481SideStopwatch.running=true;tp1481SideStopwatch.lastSecond=-1;
+ tp1481SideStopwatch.timer=setInterval(tp1481SidePaint,250);tp1481SidePaint();
+};
+var tp1481SetSideSeconds=function tp1481SetSideSeconds(setIndex,side,value){
+ const ex=state.session?.exercises?.[state.current];if(!tp1481IsPerSideTimed(ex))return;

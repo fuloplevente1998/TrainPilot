@@ -1,0 +1,264 @@
+ state.tab='home';render(shell('<main class="tp128-welcome"><div class="card"><h1>'+esc(tp128T('welcome'))+'</h1><p>'+esc(tp128T('intro'))+'</p><button class="btn block" onclick="tp128BeginOnboarding()">'+esc(tp128T('begin'))+'</button><button class="btn secondary block" onclick="tp128SkipOnboarding()">'+esc(tp128T('skip'))+'</button></div></main>'));
+};
+var tp128BeginOnboarding=function(){state.tp128Onboarding=true;state.tp128TemplateChoice='recommended';profileScreen()};
+var tp128SkipOnboarding=function(){db.set('settings',{...settings(),onboarding128:'skipped'});state.tp128Onboarding=false;go('home')};
+// An accepted preview may explicitly continue compatible earlier exercise history.
+// Unrelated programs never enter progression without these bounded references.
+var tp128Rows=function(id,programId,limit=4){
+ const p=programById(programId),rx=p?.prescriptions?.[id]||{},raw=exercises().find(e=>e.id===id),basis=p?.history128?.entries?.[id];
+ const inherited=tp128BasisMatches(raw,rx,basis)?new Set(basis.sources.map(s=>s.programId+'|'+s.key)):new Set();
+ const seen=new Set();
+ return history().filter(h=>{const pid=h.programId||'home-basic',key=pid+'|'+tp128HistoryKey(h);if(seen.has(key)||!tp128RecentWorkout(h)||(pid!==programId&&!inherited.has(key)))return false;const e=(h.exercises||[]).find(e=>tp128Compatible(e,raw,rx));if(!e)return false;seen.add(key);return true;}).map(h=>({workout:h,exercise:h.exercises.find(e=>tp128Compatible(e,raw,rx))})).sort((a,b)=>tp128Finished(b.workout)-tp128Finished(a.workout)).slice(0,limit);
+};
+var tp128RecommendationBase=rf152Recommendation;
+rf152Recommendation=function(id,se=null){
+ if(typeof tp106IsDistance==='function'&&tp106IsDistance(se||{id}))return tp128RecommendationBase(id,se);
+ const programId=state.session?.programId||activeProgramId(),p=programById(programId),rx=se?.prescription||p?.prescriptions?.[id]||{};
+ const lib={...byId(id),...rx},target=tp140Prescription(id,se,programId),rows=tp128Rows(id,programId),recent=rows.map(r=>tp140Occurrence(r,target)),latest=recent[0];
+ const oldRecent=tp140Recent;let result;
+ tp140Recent=function(eid,pid,limit){return eid===id&&pid===programId?rows.slice(0,limit):oldRecent(eid,pid,limit)};
+ try{result=tp128RecommendationBase(id,se)}finally{tp140Recent=oldRecent;}
+ if(!latest)return {...result,action:'start',autoApply:false,historyCount:0,target,text:tp149T('progress.noHistory')};
+ const base=latest.weight||0,hold=(key)=>({...result,action:'hold',weight:base,autoApply:false,historyCount:recent.length,target,text:tp128T(key)});
+ if(recent.slice(0,3).some(x=>x.effort==='pain'||x.row.workout.feedback?.rating==='pain'))return {...hold('pain'),action:'pain'};
+ const readiness=rf220Readiness();
+ if(Number(readiness.parts)>0&&Number(readiness.score)<55)return {...hold('recovery'),rirMin:2,rirMax:3};
+ if(!latest.allDone||latest.effort==='challenging'||latest.row.workout.feedback?.rating==='hard')return hold('hold');
+ const bad=recent.slice(0,3),sameLoad=bad.every(x=>Math.abs(x.weight-base)<.01);
+ const declining=bad.length===3&&sameLoad&&bad.every(x=>x.allDone&&(x.effort==='hard'||x.belowMin))&&bad[0].avgRep<=bad[1].avgRep&&bad[1].avgRep<=bad[2].avgRep;
+ if(latest.effort==='hard'||latest.belowMin){
+  if(declining&&lib.loadType!=='bodyweight'&&base>0)return {...hold('declining'),action:'reduce',weight:tp140NextWeight(lib,base,-1)};
+  return hold('hold');
+ }
+ const stable=bad.length===3&&sameLoad&&bad.every(x=>x.hitTop&&x.safeEffort&&!x.adverse);
+ if(lib.loadType==='bodyweight'){
+  if(!stable)return {...result,action:result.action==='variation'?'hold':result.action,autoApply:false,historyCount:recent.length,target};
+  const next=tp128NextVariation(id,rx);return {...hold('hold'),action:'variation',nextVariation:next,text:tp128T('variation',{next:tp128VariationLabel(id,next)}),historyCount:recent.length};
+ }
+ if(stable)return {...result,action:'increase',weight:tp140NextWeight(lib,base),autoApply:true,historyCount:recent.length,target,text:tp128T('trend',{count:recent.length,reason:tp128T('stable')})};
+ if(result.action==='increase')return {...result,autoApply:false,historyCount:recent.length,target};
+ return {...result,historyCount:recent.length,target,autoApply:false};
+};
+var tp128NextVariation=function(id,rx){
+ if(['pushup','modified-pushup','incline-pushup'].includes(id))return {id:'decline-pushup',variation:'',level:1};
+ if(id==='decline-pushup')return {id:'decline-pushup',variation:'paused',level:2};
+ if(['plank','side-plank'].includes(id)&&!rx.variation)return {id,variation:'longLever',level:1};
+ return {id,variation:'weighted',level:2};
+};
+var tp128VariationLabel=function(id,next){return next.variation?tp128T(next.variation):tp149ExerciseName(byId(next.id))};
+var tp128VariationPreview=function(id){
+ const p=activeProgram(),profile=trainingProfile(),rec=rf152Recommendation(id);if(!p||!profile||rec.action!=='variation'||state.session)return;
+ let next=rec.nextVariation;
+ if(profile.excluded?.includes(id)||rf148ExerciseAvoided(byId(next.id),profile))return;
+ if(!available132(next.id,profile)||profile.excluded?.includes(next.id))next={id,variation:'paused',level:1};
+ if(next.variation==='weighted'&&!profileGear132(profile).some(k=>['dumbbell','dumbbells','barbell'].includes(k)))return;
+ const out=JSON.parse(JSON.stringify(p));out.id='personal-'+crypto.randomUUID();out.builtin=false;out.generated=true;out.sourceType='coach';out.parentProgramId=p.id;
+ out.days.forEach(d=>{d.exercises=d.exercises.map(e=>e===id?next.id:e)});
+ if(out.history128)delete out.history128.entries[id];
+ out.prescriptions=out.prescriptions||{};out.prescriptions[next.id]={...tp128Rx(next.id,profile),variation:next.variation,progressionLevel:next.level,...(next.variation==='weighted'?{loadType:'single_dumbbell'}:{})};
+ state.programPreview=out;state.profilePreview=profile;state.tp128PreviewToken=tp128PreviewToken();showPersonalPreview();
+};
+var tp128AdviceBase=rf233ExerciseAdvice;
+rf233ExerciseAdvice=function(id,decision){
+ const rec=rf152Recommendation(id),base=tp128AdviceBase(id,decision);
+ if(rec.action==='pain')return {...base,action:'pain',text:rec.text};
+ if(decision?.mode==='light'||decision?.mode==='reduced')return base;
+ if(['variation','reduce'].includes(rec.action))return {action:rec.action,label:tp128T(rec.action==='variation'?'variationButton':'declining'),text:rec.text};
+ return {...base,text:rec.text};
+};
+var tp128ShortAdviceBase=window.tp155CoachShortAdvice;
+window.tp155CoachShortAdvice=function(id,decision,existing){
+ const out=tp128ShortAdviceBase(id,decision,existing),rec=rf152Recommendation(id);
+ return ['variation','reduce'].includes(rec.action)?{...out,action:rec.action,text:rec.text}:out;
+};
+// The old whole-workout feedback must also use the same trend rules.
+progressionSuggestion=function(h,rating){
+ if(rating==='pain')return {action:'none',text:tp128T('pain')};
+ return {action:'none',text:rating==='hard'?tp128T('hold'):tp149T('progress.goalNote')};
+};
+// One canonical end-of-workout answer, shared by phone and watch. Replays cannot
+// replace an answer; editing from the Journal remains an explicit phone action.
+var TrainPilotWorkoutFeedback=window.TrainPilotWorkoutFeedback=(function(){
+ const key='workoutFeedbackPending';
+ const id=h=>String(h?.syncId||h?.id||h?.workoutId||h?.started||'');
+ const matches=(h,expected)=>id(h)===expected||h?.started===expected;
+ const valid=f=>f&&typeof f==='object'&&(RF232_EFFORT_KEYS.includes(f.effort)||f.effort==='pain'||f.skipped===true);
+ function pending(){
+  const p=db.get(key,null),h=p&&history().find(h=>matches(h,p.workoutId)&&h.finished);
+  return h&&!h.feedback?.rating&&!h.feedback?.skipped?{workoutId:id(h),started:h.started}:null;
+ }
+ function accept(expected,f,source='watch',replace=false){
+  if(!valid(f)||window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending)return false;
+  const rows=history(),h=rows.find(h=>matches(h,expected)&&h.finished);if(!h)return false;
+  if(!h.feedback?.applied&&(replace||!h.feedback?.rating&&!h.feedback?.skipped)){
+   const effort=f.skipped===true?null:f.effort;
+   const rating=effort==='pain'?'pain':['challenging','hard'].includes(effort)?'hard':effort==='good'?'right':'easy';
+   h.feedback=effort?{effort,effortScore:rf232EffortScore(effort),rating,suggestion:progressionSuggestion(h,rating),source,updatedAt:Date.now()}:{skipped:true,source,updatedAt:Date.now()};
+   db.set('history',rows);
+  }
+  const p=db.get(key,null);if(p&&matches(h,p.workoutId))db.set(key,null);
+  if(source==='watch'&&state.feedbackStarted===h.started&&document.querySelector('.tp122-feedback'))go('home');
+  return true;
+ }
+ function afterFinish(h,options={}){
+  if(valid(options?.wearFeedback)&&accept(id(h),options.wearFeedback)){if(options.wearSilent!==true&&options.silent!==true&&options.wearConfirmed!==true)go('home');return;}
+  db.set(key,{workoutId:id(h),started:h.started});if(options.wearSilent!==true&&options.silent!==true&&options.wearConfirmed!==true)feedbackScreen(h.started);
+ }
+ function skip(){
+  // Leaving a Journal review is not an instruction to delete its saved answer.
+  if(state.feedbackEditing===true){go('home');return;}
+  if(accept(String(state.feedbackStarted||''),{skipped:true},'phone')){go('home');void window.TrainPilotWearSync?.syncHomeNow?.({force:true});}
+ }
+ function historyButton(h,index){
+  const l=rf232L(),title={hu:'Edzésértékelés',en:'Workout feedback',de:'Trainingsbewertung',ro:'Evaluare antrenament'}[rf212Lang()]||'Edzésértékelés';
+  const answer=l[h.feedback?.effort]||({easy:l.easy,right:l.good,hard:l.hard,pain:l.pain}[h.feedback?.rating])||'';
+  return `<button class="btn secondary block" onclick="feedbackFromHistory(${Number(index)})">${esc(title)}${answer?' · '+esc(answer):''}</button>`;
+ }
+ return {pending,accept,afterFinish,skip,valid,historyButton};
+})();
+feedbackScreen=function(started){
+ const h=history().find(h=>h.started===started);if(!h)return;state.feedbackStarted=started;state.feedbackEditing=!!(h.feedback?.rating||h.feedback?.skipped);
+ const l=rf232L(),lang=rf212Lang(),title={hu:'Milyen volt az edzés?',en:'How was the workout?',de:'Wie war das Training?',ro:'Cum a fost antrenamentul?'}[lang]||'Milyen volt az edzés?';
+ const skip={hu:'Most kihagyom',en:'Skip for now',de:'Jetzt überspringen',ro:'Omite acum'}[lang]||'Most kihagyom';
+ render(shell(`<main class="tp122-feedback"><div class="hero"><h1>${esc(title)}</h1><p>${esc(h.programName||'Edzés')} • ${sessionDuration(h)}</p></div>${h.feedback?.suggestion?`<div class="card"><p>${esc(h.feedback.suggestion.text)}</p>${h.feedback.suggestion.action!=='none'&&!h.feedback.applied&&programById(h.programId)?.generated?'<button class="btn block" onclick="applyProgression()">Javaslat alkalmazása a programra</button>':''}</div>`:''}<div class="card"><div class="rf232-effort">${RF232_EFFORT_KEYS.map((k,i)=>`<button class="btn secondary" onclick="saveFeedback('${k}')"><span class="n">${i+1}</span><span class="lbl">${esc(l[k])}</span></button>`).join('')}</div><button class="btn secondary block rf232-pain" onclick="saveFeedback('pain')">${esc(l.pain)}</button></div><div class="grid2 tp122-feedback-actions"><button class="btn secondary block" onclick="healthScreen()">${esc(tp149T('journal.healthData'))}</button><button class="btn secondary block" onclick="TrainPilotWorkoutFeedback.skip()">${esc(skip)}</button></div></main>`));
+};
+saveFeedback=function(effort){
+ // Keep old callers/backup ratings readable without conflating the five scores.
+ if(effort==='right')effort='good';
+ if(TrainPilotWorkoutFeedback.accept(String(state.feedbackStarted||''),{effort},'phone',state.feedbackEditing===true)){
+  go('home');window.TrainPilotFeedback?.saved();void window.TrainPilotWearSync?.syncHomeNow?.({force:true});
+ }
+};
+const tpWorkoutFeedbackHistoryItem=rf263HistoryItem;
+rf263HistoryItem=function(h,index,visibleIndex){
+ const html=String(tpWorkoutFeedbackHistoryItem.apply(this,arguments)),button=TrainPilotWorkoutFeedback.historyButton(h,index);
+ return html.replace(/(<div class="[^"]*\bhistory-body\b[^"]*"[^>]*>)/,'$1'+button);
+};
+var tp128ValidateBase=validateBackup;
+validateBackup=function(d){
+ const out=tp128ValidateBase(d);
+ for(const p of d.programs||[]){
+  if(p.sourceType!==undefined&&!['template','profile-template','personal','coach'].includes(p.sourceType))throw Error('Invalid program source.');
+  if(p.templateVersion!==undefined&&(!Number.isInteger(p.templateVersion)||p.templateVersion<1||p.templateVersion>100))throw Error('Invalid template version.');
+  if(p.sourceTemplateId!==undefined&&typeof p.sourceTemplateId!=='string')throw Error('Invalid template reference.');
+  if(p.profileSnapshot)validateProfile(p.profileSnapshot);
+  if(p.history128!==undefined){
+   const b=p.history128,obj=x=>x&&typeof x==='object'&&!Array.isArray(x),fail=()=>{throw Error('Invalid history continuity.');};
+   if(!obj(b)||b.version!==1||!obj(b.entries)||Object.keys(b.entries).length>100||!Array.isArray(b.reductions)||b.reductions.length>30)fail();
+   const ids=new Set((p.days||[]).flatMap(d=>d.exercises||[]));
+   for(const [id,e] of Object.entries(b.entries)){
+    if(!ids.has(id)||!obj(e)||!['total','per_hand','single_dumbbell','bodyweight'].includes(e.loadType)||!['','paused','longLever','weighted'].includes(e.variation)||!['reps','time'].includes(e.metric)||!['adapted','review'].includes(e.status)||!Array.isArray(e.sources)||e.sources.length<1||e.sources.length>4)fail();
+    const seen=new Set();for(const source of e.sources){if(!obj(source)||typeof source.programId!=='string'||source.programId.length<1||source.programId.length>80||typeof source.key!=='string'||source.key.length<1||source.key.length>200||/[\u0000-\u001f]/.test(source.programId+source.key))fail();const key=source.programId+'|'+source.key;if(seen.has(key))fail();seen.add(key);}
+   }
+   for(const r of b.reductions)if(!obj(r)||typeof r.dayId!=='string'||r.dayId.length>80||!['time','equipment'].includes(r.reason)||['fromExercises','toExercises','fromSets','toSets'].some(k=>!Number.isInteger(r[k])||r[k]<0||r[k]>300))fail();
+  }
+  for(const r of Object.values(p.prescriptions||{})){
+   if(r.variation!==undefined&&!['','paused','longLever','weighted'].includes(r.variation))throw Error('Invalid variation.');
+   if(r.loadType!==undefined&&!['bodyweight','single_dumbbell','per_hand','total'].includes(r.loadType))throw Error('Invalid load type.');
+   if(r.rir!==undefined&&(!Number.isFinite(r.rir)||r.rir<0||r.rir>10))throw Error('Invalid RIR.');
+   for(const k of ['rirMin','rirMax'])if(r[k]!==undefined&&(!Number.isFinite(r[k])||r[k]<0||r[k]>10))throw Error('Invalid RIR.');
+   if(r.rirMin!==undefined&&r.rirMax!==undefined&&r.rirMin>r.rirMax)throw Error('Invalid RIR range.');
+  }
+ }
+ return out;
+};
+window.TrainPilot128={version:'128.2',template:tp128Template,generate:generatePersonalProgram,relevantHistory:tp128Rows};
+
+// User-owned ordering changes only the selected stored program day.
+var tp128OrderT=function(key){const rows={title:['Gyakorlatok sorrendje','Exercise order','Übungsreihenfolge','Ordinea exercițiilor'],button:['Sorrend','Order','Reihenfolge','Ordine'],help:['A fel/le gombokkal rendezd a gyakorlatokat, majd mentsd.','Use the up/down buttons to arrange exercises, then save.','Ordne die Übungen mit den Pfeiltasten und speichere.','Aranjează exercițiile cu butoanele sus/jos, apoi salvează.'],up:['Feljebb','Move up','Nach oben','Mai sus'],down:['Lejjebb','Move down','Nach unten','Mai jos'],changed:['Közben megváltozott az edzésnap. Nyisd meg újra a sorrendet.','The workout day changed. Reopen the order editor.','Der Trainingstag wurde geändert. Öffne die Reihenfolge erneut.','Ziua de antrenament s-a schimbat. Redeschide editorul de ordine.']};return rows[key]?.[['hu','en','de','ro'].indexOf(rf212Lang())]||rows[key]?.[0]||key};
+var tp128OrderButton=function(p,d){return '<button type="button" class="btn secondary tp128-order-open" data-tp128-order-day="'+esc(d.id)+'" onclick="'+esc('event.preventDefault();event.stopPropagation();tp128OrderOpen('+JSON.stringify(p.id)+','+JSON.stringify(d.id)+')')+'">↕ '+esc(tp128OrderT('button'))+'</button>'};
+var tp128OrderDayBase=tp152DayBlock;
+tp152DayBlock=function(p,d,di){return tp128OrderDayBase.apply(this,arguments).replace('<span class="tp152-chevron" aria-hidden="true">',tp128OrderButton(p,d)+'<span class="tp152-chevron" aria-hidden="true">')};
+var tp128OrderOpen=function(programId,dayId){
+ if(state.session){alert(tp105Text('busy'));return;}
+ const p=programById(programId),day=p?.days?.find(d=>d.id===dayId);if(!day||!Array.isArray(day.exercises)||day.exercises.length<2)return;
+ const original=JSON.stringify(day.exercises),draft=day.exercises.slice(),trigger=document.activeElement;
+ const answer=tp2628Confirm(tp128OrderT('help'),{title:tp128OrderT('title')+' · '+tp149ProgramDayName(p,day),confirmText:tp149T('common.save'),cancelText:tp149T('common.cancel')});
+ const host=document.getElementById('tp2628Dialog'),dialog=host?.querySelector('.tp2628-dialog');if(!dialog)return;
+ dialog.classList.add('tp128-order-dialog');const list=document.createElement('div');list.className='tp128-order-list';list.setAttribute('role','list');list.setAttribute('aria-label',tp128OrderT('title'));dialog.querySelector('.tp2628-dialog-actions').before(list);
+ const paint=()=>{list.innerHTML=draft.map((id,i)=>{const e=byId(id),name=e?tp149ExerciseName(e):id;return '<div class="tp128-order-row" role="listitem"><span class="num">'+(i+1)+'</span><strong>'+esc(name)+'</strong>'+[-1,1].map(delta=>'<button type="button" class="btn secondary" data-order-index="'+i+'" data-order-delta="'+delta+'" aria-label="'+esc(tp128OrderT(delta<0?'up':'down')+': '+name)+'" '+(i+delta<0||i+delta>=draft.length?'disabled':'')+'>'+(delta<0?'↑':'↓')+'</button>').join('')+'</div>'}).join('')};
+ list.addEventListener('click',event=>{const button=event.target.closest('[data-order-index]');if(!button||button.disabled)return;const i=Number(button.dataset.orderIndex),delta=Number(button.dataset.orderDelta),j=i+delta;if(!Number.isInteger(i)||![-1,1].includes(delta)||j<0||j>=draft.length)return;[draft[i],draft[j]]=[draft[j],draft[i]];const scroll=list.scrollTop;paint();list.scrollTop=scroll;let focus=list.querySelector('[data-order-index="'+j+'"][data-order-delta="'+delta+'"]');if(focus?.disabled)focus=list.querySelector('[data-order-index="'+j+'"][data-order-delta="'+(-delta)+'"]');focus?.focus({preventScroll:true});focus?.scrollIntoView({block:'nearest'});});paint();
+ void answer.then(ok=>{
+  if(!ok){if(trigger?.isConnected)trigger.focus({preventScroll:true});return;}
+  const ps=programs(),live=ps.find(x=>x.id===programId),target=live?.days?.find(d=>d.id===dayId);
+  if(state.session||!target||JSON.stringify(target.exercises)!==original){alert(tp128OrderT('changed'));return;}
+  if(JSON.stringify(draft)!==original){target.exercises=draft.slice();try{db.set('programs',ps)}catch(_){alert(tp149T('planner.saveFailed'));return;}cloudChanged();}
+  render();window.TrainPilotFeedback?.saved();
+ });
+};
+
+// @endsection profile-training-128.js
+
+
+// @section navigation-motion-137.js
+/* One selection update per navigation transaction, compositor-only motion, and
+ * one content surface regardless of the number of Journal entries. */
+window.addEventListener?.('DOMContentLoaded',function(){
+ 'use strict';
+ const groups=[['navigation','.top.tp154-nav-grid','.tp154-nav-cell'],['journal','.tp177-journal-tabs','button'],['statistics','.tp107-statistics-tabs','button'],['period','.tp177-periods','button']];
+ const reduced=window.matchMedia('(prefers-reduced-motion: reduce)');
+ const duration=230,easing='cubic-bezier(.22,.8,.25,1)';
+ let records=new Map(),rendering=0,navigating=0,contentAnimation=null,theme='',appearanceCache=new Map();
+ const resizeObserver=typeof ResizeObserver==='function'?new ResizeObserver(()=>{
+  if([...records.values()].some(row=>{
+   if(!row.active.isConnected)return false;
+   const r=box(row.active,row.group);return ['x','y','width','height'].some(k=>Math.abs(r[k]-row.target[k])>.5);
+  }))settle();
+ }):null;
+ const style=document.createElement('style');style.id='tp137NavigationMotionCss';
+ style.textContent=`
+  .tp137-motion-group:not(.top){position:relative;isolation:isolate}
+  .tp137-selection{position:absolute;z-index:-1;box-sizing:border-box;pointer-events:none;display:block;transform-origin:0 0}
+  html[data-tp-theme-family] body .top.tp154-nav-grid.tp137-motion-group .tp154-nav-cell.tp137-selected,
+  html body #app .tp137-motion-group button.tp137-selected{background:transparent!important;border-color:transparent!important;box-shadow:none!important}
+  html body .tp137-motion-group button{position:relative;z-index:2!important;transform:none!important;transition:none!important}
+  html body .top.tp137-motion-group .tp154-nav-cell{z-index:2!important;transform:none!important;transition:none!important}
+  /* Commit the navigation color with its page, never with pointer-down. */
+  html body .top.tp137-motion-group .tp154-nav-cell:is(:hover,:active){filter:none!important;opacity:1!important}
+  .tp137-motion-group .tp137-selected::before,.tp137-motion-group .tp137-selected::after{box-shadow:none!important;background:transparent!important}
+  html body #app main.tp160-page-reveal{animation:none!important}
+ `;
+ document.head.appendChild(style);
+ function box(element,group){
+  const r=element.getBoundingClientRect(),g=group.getBoundingClientRect();
+  return {x:r.left-g.left-group.clientLeft+group.scrollLeft,y:r.top-g.top-group.clientTop+group.scrollTop,width:r.width,height:r.height};
+ }
+ function snapshot(){
+  const result=new Map();
+  records.forEach((row,name)=>{
+   if(!row.group.isConnected)return;
+   // WAAPI's eased progress describes the current transform; no layout read is
+   // needed to continue a rapidly interrupted slide from its visible position.
+   const progress=row.animation?.effect.getComputedTiming().progress;
+   const moving=row.animation?.playState==='running',rect={...row.target};
+   if(progress!=null&&row.from)for(const k of ['x','y','width','height'])rect[k]=row.from[k]+(row.target[k]-row.from[k])*progress;
+   result.set(name,{key:row.key,rect,remaining:moving?Math.max(0,Number(row.animation.effect.getTiming().duration)-Number(row.animation.currentTime||0)):0});
+  });
+  return result;
+ }
+ function content(groupKey){
+  contentAnimation?.cancel();
+  contentAnimation=null;
+  // Root-page opacity promotes the entire WebView page and competes with the
+  // legacy CSS reveal. Keep that surface opaque during route/Journal changes.
+  if(groupKey==='navigation'||groupKey==='journal')return;
+  const main=document.querySelector('#app main');
+  const surface=groupKey==='period'?main?.querySelector('.tp177-trend'):
+   groupKey==='statistics'?main?.querySelector('.tp107-personal-records,.tp107-cardio'):main;
+  // Opacity preserves the tab bar and disclosure geometry; a single surface
+  // avoids hundreds of card promotions for a long workout history.
+  if(surface)contentAnimation=surface.animate([{opacity:.84},{opacity:1}],{duration:160,easing});
+ }
+ function sync(before=new Map(),animate=true){
+  if(rendering||navigating)return;
+  const token=rf200ThemeKey()+'|'+document.documentElement.dataset.tpThemeFamily+'|'+document.documentElement.classList.contains('tp-nav-compact');
+  if(theme!==token){theme=token;appearanceCache.clear();}
+  const prepared=[];
+  // Prepare classes together, then measure every destination before writing
+  // indicator styles. This avoids alternating layout reads and writes.
+  for(const [name,selector,buttonSelector] of groups){
+   const group=document.querySelector(selector);if(!group)continue;
+   const buttons=[...group.querySelectorAll(buttonSelector)],active=buttons.find(b=>b.classList.contains('active'));
+   if(!active){group.querySelector(':scope > .tp137-selection')?.remove();continue;}
+   const key=active.getAttribute('onclick')||active.dataset.period||String(buttons.indexOf(active)),cacheKey=name+'|'+key;
+   group.classList.add('tp137-motion-group');

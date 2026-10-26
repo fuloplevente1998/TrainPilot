@@ -1,0 +1,320 @@
+const RF143_NEEDS={'incline-pushup':[],'modified-pushup':[],'decline-pushup':['bench'],'pike-pushup':[],'plyo-pushup':[],'archer-pushup':[],'prisoner-squat':[],'single-leg-squat':[],'squat-jump':[],'lunge-jump':[],'jumping-jacks':[],'box-jump':['step'],'db-front-squat':['dumbbells'],'single-arm-db-press':['dumbbell','bench'],'single-arm-incline-press':['dumbbell','bench'],'single-leg-press':['machines'],'seated-leg-curl':['machines'],'single-leg-seated-curl':['machines'],'leg-press-calf':['machines'],'close-grip-bench':['barbell','bench']};
+for(const e of RF143_NEW_EXERCISES){if(typeof EXTRA_EXERCISES!=='undefined'&&!EXTRA_EXERCISES.some(x=>x.id===e.id))EXTRA_EXERCISES.push({...e});if(typeof MUSCLE_MAP!=='undefined')MUSCLE_MAP[e.id]=RF143_MUSCLES[e.id]||[];if(typeof NEEDS132!=='undefined')NEEDS132[e.id]=RF143_NEEDS[e.id]||[];if(typeof RF14_PATTERNS!=='undefined')RF14_PATTERNS[e.id]=e.movementPattern;if(typeof RF14_COMPOUND!=='undefined'&&e.compound)RF14_COMPOUND.add(e.id);if(typeof RF14_ADVANCED!=='undefined'&&!e.beginnerSafe)RF14_ADVANCED.add(e.id);if(typeof RF14_BEGINNER_FAVOR!=='undefined'&&e.beginnerSafe)RF14_BEGINNER_FAVOR.add(e.id);if(typeof DEMOS!=='undefined')DEMOS[e.id]=[null,'youtube',RF143_DEMOS[e.id],'NASM'];}
+
+const rf143Home=home;home=function(){let html=rf143Home();if(db.get('draft',null))html=html.replace('<button class="btn block" onclick="resumeDraft()">Edzés folytatása</button>','<div class="grid2"><button class="btn block" onclick="resumeDraft()">Edzés folytatása</button><button class="btn secondary" onclick="discardDraft143()">Félbehagyott edzés törlése</button></div>');return html;};
+const rf143Generate=generatePersonalProgram;generatePersonalProgram=function(input){const p=validateProfile(input),out=rf143Generate(input),newPool=RF143_NEW_EXERCISES.filter(e=>available132(e.id,p)&&e.movementPattern!=='conditioning');const used=new Set(out.days.flatMap(d=>d.exercises));for(let di=0;di<out.days.length;di++){const day=out.days[di];for(let i=0;i<day.exercises.length;i++){const old=exercises().find(e=>e.id===day.exercises[i]);if(!old)continue;const candidates=newPool.filter(e=>e.movementPattern===old.movementPattern&&!used.has(e.id)&&(p.experience!=='beginner'||e.beginnerSafe));if(!candidates.length||(di+i)%2!==0)continue;const n=candidates[(di+i)%candidates.length],oldId=day.exercises[i],rx=out.prescriptions[oldId];day.exercises[i]=n.id;used.add(n.id);if(rx){out.prescriptions[n.id]={...rx,reps:n.repUnit.includes('mp')?'20–40 mp':rx.reps,weight:0,trial:true};delete out.prescriptions[oldId];}}}out.reasons=[...(out.reasons||[]),'A v1.4.3 kibővített, 60 gyakorlatos könyvtárából a felszerelésedhez és tapasztalatodhoz illő új variációk is bekerülhetnek.'];return out;};
+const rf143Shell=shell;shell=function(content){return rf143Shell(content).replaceAll('1.4.2','1.4.3');};render();
+
+
+// @endsection v143.js
+
+// @section v144.js
+var rf144Favorites = function rf144Favorites(){const x=db.get(RF144_FAV_KEY,[]);return Array.isArray(x)?x:[];};
+var isExerciseFavorite144 = function isExerciseFavorite144(id){return rf144Favorites().includes(id);};
+var toggleExerciseFavorite144 = function toggleExerciseFavorite144(id){const s=new Set(rf144Favorites());s.has(id)?s.delete(id):s.add(id);db.set(RF144_FAV_KEY,[...s]);render();};
+var rf144RenameLibrary = function rf144RenameLibrary(html){return typeof html==='string'?html.replaceAll('Izomcsoportok','Gyakorlatkönyvtár'):html;};
+var rf144FavoriteButtons = function rf144FavoriteButtons(html){if(typeof html!=='string')return html;return html.replace(/(<button[^>]*onclick="demo\('([^']+)'\)"[^>]*>)/g,(m,button,id)=>`<button class="btn secondary" onclick="event.stopPropagation();toggleExerciseFavorite144('${id}')">${isExerciseFavorite144(id)?'★ Kedvenc':'☆ Kedvenc'}</button>${button}`);};
+/* RepForge 1.4.4: exercise favorites and clearer Exercise Library naming. */
+const RF144_VERSION='1.4.4';
+const RF144_FAV_KEY='exerciseFavorites';
+
+
+if(typeof muscleScreen==='function'){const old=muscleScreen;muscleScreen=function(...a){return rf144RenameLibrary(rf144FavoriteButtons(old.apply(this,a)));};}
+if(typeof exerciseLibrary==='function'){const old=exerciseLibrary;exerciseLibrary=function(...a){return rf144RenameLibrary(rf144FavoriteButtons(old.apply(this,a)));};}
+if(typeof exercisesScreen==='function'){const old=exercisesScreen;exercisesScreen=function(...a){return rf144RenameLibrary(rf144FavoriteButtons(old.apply(this,a)));};}
+const rf144Shell=shell;shell=function(content){let h=rf144Shell(content).replaceAll('1.4.3','1.4.4');h=rf144RenameLibrary(h);return h;};
+
+render();
+
+
+// @endsection v144.js
+
+// @section v145.js
+var rf145UpgradeHomePrograms = function rf145UpgradeHomePrograms(){
+  if(db.get('homeFocus145',false))return;
+  const ps=programs();
+  let changed=false;
+  for(const p of ps){
+    const spec=RF145_HOME_PROGRAMS[p.id];
+    if(!spec||p.builtin!==true)continue;
+    for(const d of p.days||[]){
+      if(spec[d.id]){d.exercises=[...spec[d.id]];changed=true;}
+    }
+  }
+  if(changed)db.set('programs',ps);
+  db.set('homeFocus145',true);
+};
+var rf145Groups = function rf145Groups(id){
+  if(typeof muscleGroups==='function')return muscleGroups(id)||[];
+  const e=typeof byId==='function'?byId(id):null;
+  const p=e?.movementPattern||'';
+  if(['horizontal-push','chest-isolation'].includes(p))return['chest'];
+  if(['horizontal-pull','vertical-pull','rear-delt'].includes(p))return['back'];
+  if(['vertical-push','shoulder-isolation'].includes(p))return['shoulders'];
+  if(['squat','lunge','hinge','knee-flexion','knee-extension','calf'].includes(p))return['legs'];
+  if(String(p).startsWith('core-'))return['core'];
+  return[];
+};
+var rf145MuscleSets = function rf145MuscleSets(){
+  const out={};
+  for(const h of history())for(const e of h.exercises||[]){
+    const done=(e.sets||[]).filter(s=>s.done).length;
+    if(!done)continue;
+    for(const g of rf145Groups(e.id))out[g]=(out[g]||0)+done;
+  }
+  return out;
+};
+var rf145MuscleLabel = function rf145MuscleLabel(k){
+  if(typeof MUSCLES!=='undefined'&&MUSCLES[k])return MUSCLES[k];
+  if(typeof MUSCLE_LABELS!=='undefined'&&MUSCLE_LABELS[k])return MUSCLE_LABELS[k];
+  return ({chest:'Mell',back:'Hát',shoulders:'Váll',biceps:'Bicepsz',triceps:'Tricepsz',legs:'Láb / far',core:'Törzs'})[k]||k;
+};
+/* RepForge 1.4.5: chest/shoulder/core-focused home plans, full-body balance, better muscle statistics. */
+const RF145_VERSION='1.4.5';
+
+const RF145_HOME_PROGRAMS={
+  'home-basic':{
+    A:['db-squat','db-floor-press','one-arm-row','db-ohp','db-rdl','plank'],
+    B:['reverse-lunge','pushup','barbell-row','lateral-raise','glute-bridge','crunch']
+  },
+  'home-level2':{
+    A:['goblet-squat','db-floor-press','one-arm-row','db-ohp','db-rdl','side-plank'],
+    B:['bulgarian-split-squat','pushup','db-pullover','lateral-raise','glute-bridge','dead-bug']
+  },
+  'home-varied':{
+    A:['db-front-squat','incline-pushup','one-arm-row','pike-pushup','db-rdl','side-plank'],
+    B:['prisoner-squat','pushup','barbell-row','lateral-raise','glute-bridge','dead-bug']
+  }
+};
+
+
+rf145UpgradeHomePrograms();
+
+
+const rf145GeneratePrev=generatePersonalProgram;
+generatePersonalProgram=function(input){
+  const p=validateProfile(input),plan=rf145GeneratePrev(input);
+  plan.generatorVersion=RF145_VERSION;
+  const isFull=(p.split==='full')||(p.split==='auto'&&plan.days?.some(d=>d.id==='A')&&plan.days?.some(d=>d.id==='B'));
+  if(!isFull||p.minutes<35)return plan;
+  const candidates={
+    chest:['db-floor-press','db-bench-press','pushup','incline-pushup','modified-pushup','single-arm-db-press'],
+    back:['one-arm-row','barbell-row','db-pullover','seated-cable-row','lat-pulldown'],
+    legs:['db-squat','goblet-squat','reverse-lunge','db-rdl','bodyweight-squat','prisoner-squat','db-front-squat'],
+    shoulders:['db-ohp','lateral-raise','pike-pushup','db-reverse-fly','face-pull'],
+    core:['plank','dead-bug','crunch','side-plank','bird-dog']
+  };
+  const available=id=>exercises().some(e=>e.id===id)&&(!p.excluded||!p.excluded.includes(id))&&(typeof available132!=='function'||available132(id,p));
+  for(const [di,d] of (plan.days||[]).entries()){
+    const ids=[...(d.exercises||[])];
+    const has=g=>ids.some(id=>rf145Groups(id).includes(g));
+    for(const g of ['chest','back','legs','shoulders','core']){
+      if(has(g))continue;
+      const pool=(candidates[g]||[]).filter(available).filter(id=>!ids.includes(id));
+      if(!pool.length)continue;
+      const chosen=pool[di%pool.length];
+      if(ids.length<7)ids.push(chosen);
+      else{
+        const replace=ids.findIndex(id=>!['chest','back','legs','shoulders','core'].some(x=>rf145Groups(id).includes(x)));
+        if(replace>=0)ids[replace]=chosen;
+      }
+    }
+    d.exercises=ids;
+  }
+  plan.reasons=[...(plan.reasons||[]),'1.4.5 fókusz: teljes testes A/B, kiemelt mell–váll–törzs munkával; hát és láb minden ciklusban megmarad.'];
+  return plan;
+};
+
+statsScreen=function(){
+  const hs=history(),wa=rf14WeeklyWeights(),vol=hs.reduce((s,h)=>s+rf14WorkoutVolume(h),0),mv=rf14MuscleVolume(),ms=rf145MuscleSets();
+  render(shell(`<main><button class="btn secondary" onclick="go('home')">← Vissza</button><div class="hero"><h1>Statisztikák</h1><p>Edzés- és testsúlytrendek a helyi naplóból.</p></div><div class="grid2"><div class="stat"><small>Edzések</small><strong>${hs.length}</strong></div><div class="stat"><small>Súlyzós volumen</small><strong>${Math.round(vol)} kg·ism.</strong></div></div><div class="section">Heti testsúlyátlag</div>${wa.length?wa.slice(0,8).map(x=>`<div class="weight-row"><strong>${x.avg.toFixed(1)} kg</strong><div class="small muted">${x.week} • ${x.count} mérés</div></div>`).join(''):'<p class="muted">Még nincs elég testsúlyadat.</p>'}<div class="section">Munkasorozatok izomcsoportonként</div><p class="small muted">A testsúlyos és időalapú gyakorlatok is beleszámítanak.</p>${Object.entries(ms).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="weight-row"><strong>${esc(rf145MuscleLabel(k))}</strong><div>${v} sorozat</div></div>`).join('')||'<p class="muted">Még nincs adat.</p>'}<div class="section">Súlyzós volumen izomcsoport szerint</div><p class="small muted">A kg × ismétlés csak terheléses gyakorlatok összevetésére alkalmas.</p>${Object.entries(mv).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="weight-row"><strong>${esc(rf145MuscleLabel(k))}</strong><div>${Math.round(v)} kg·ism.</div></div>`).join('')||'<p class="muted">Még nincs adat.</p>'}</main>`));
+};
+
+const rf145ShellPrev=shell;
+shell=function(content){return rf145ShellPrev(content).replaceAll('1.4.4','1.4.5');};
+
+
+// @endsection v145.js
+
+// @section v146.js
+var rf146EquipmentRank = function rf146EquipmentRank(id){if(RF146_BODYWEIGHT.has(id))return 2;if(RF146_BARBELL.has(id))return 1;return 0;};
+var rf146Order = function rf146Order(ids){return [...ids].map((id,i)=>({id,i,r:rf146EquipmentRank(id)})).sort((a,b)=>a.r-b.r||a.i-b.i).map(x=>x.id);};
+var rf146UpgradeHomePrograms = function rf146UpgradeHomePrograms(){
+  if(db.get('homeEquipmentOrder146',false))return;
+  const ps=programs(); let changed=false;
+  for(const p of ps){
+    if(p.builtin!==true||!['home-basic','home-level2','home-varied'].includes(p.id))continue;
+    for(const d of p.days||[]){
+      const source=p.id==='home-level2'&&RF146_LEVEL2[d.id]?RF146_LEVEL2[d.id]:d.exercises;
+      d.exercises=rf146Order(source||[]); changed=true;
+    }
+  }
+  if(changed)db.set('programs',ps);
+  db.set('homeEquipmentOrder146',true);
+};
+/* RepForge 1.4.6: 7-exercise Level 2 arm split + equipment-change-friendly ordering for all home plans. */
+const RF146_VERSION='1.4.6';
+
+const RF146_LEVEL2={
+  A:['goblet-squat','db-floor-press','one-arm-row','db-ohp','db-rdl','db-curl','side-plank'],
+  B:['bulgarian-split-squat','db-pullover','lateral-raise','oh-triceps','glute-bridge','pushup','dead-bug']
+};
+const RF146_BODYWEIGHT=new Set(['bodyweight-squat','prisoner-squat','single-leg-squat','squat-jump','lunge-jump','jumping-jacks','incline-pushup','modified-pushup','decline-pushup','pike-pushup','plyo-pushup','archer-pushup','pushup','close-pushup','glute-bridge','plank','dead-bug','crunch','side-plank','bird-dog','calf-raise']);
+const RF146_BARBELL=new Set(['barbell-row','rdl','close-grip-bench']);
+
+
+rf146UpgradeHomePrograms();
+
+const rf146GeneratePrev=generatePersonalProgram;
+generatePersonalProgram=function(input){
+  const plan=rf146GeneratePrev(input),p=validateProfile(input); plan.generatorVersion=RF146_VERSION;
+  if((p.split==='full'||p.split==='auto')&&p.minutes>=45&&Array.isArray(plan.days)){
+    const arms={A:['db-curl','hammer-curl','cable-curl'],B:['oh-triceps','close-pushup','cable-triceps','close-grip-bench']};
+    const available=id=>exercises().some(e=>e.id===id)&&(!p.excluded||!p.excluded.includes(id))&&(typeof available132!=='function'||available132(id,p));
+    for(const d of plan.days){
+      if(!arms[d.id])continue;
+      const ids=[...(d.exercises||[])],pool=arms[d.id].filter(available).filter(id=>!ids.includes(id));
+      if(pool.length&&ids.length<7)ids.push(pool[0]);
+      d.exercises=rf146Order(ids);
+    }
+    plan.reasons=[...(plan.reasons||[]),'1.4.6: a 7. gyakorlat közvetlen karmunka — A napon bicepsz, B napon tricepsz.','Gyakorlatsorrend: kézisúlyzós blokk → kétkezes/rudas blokk → saját testsúlyos blokk, hogy kevesebbet kelljen átszerelni a súlyzószettet.'];
+  }
+  return plan;
+};
+const rf146ShellPrev=shell;shell=function(content){return rf146ShellPrev(content).replaceAll('1.4.5','1.4.6');};
+
+
+// @endsection v146.js
+
+// @section v150.js
+var rf150Upgrade = function rf150Upgrade(){
+ if(db.get('homeAB150',false))return;
+ const ps=programs(); let changed=false;
+ for(const p of ps){
+  if(p.builtin!==true||!['home-basic','home-level2'].includes(p.id))continue;
+  for(const d of p.days||[])if(RF150_HOME[d.id]){d.exercises=rf146Order(RF150_HOME[d.id]);changed=true;}
+ }
+ if(changed)db.set('programs',ps);
+ db.set('homeAB150',true);
+};
+/* RepForge 1.5.0: beginner A/B full-body foundation. */
+const RF150_VERSION='1.5.0';
+const RF150_HOME={
+ A:['goblet-squat','db-floor-press','one-arm-row','db-ohp','db-rdl','db-curl','side-plank'],
+ B:['bulgarian-split-squat','db-pullover','lateral-raise','oh-triceps','barbell-row','pushup','dead-bug']
+};
+
+rf150Upgrade();
+const rf150Gen=generatePersonalProgram;
+generatePersonalProgram=function(input){
+ const plan=rf150Gen(input),p=validateProfile(input); plan.generatorVersion=RF150_VERSION;
+ if((p.split==='full'||p.split==='auto')&&Array.isArray(plan.days)){
+  for(const d of plan.days){
+   if(RF150_HOME[d.id]) d.exercises=rf146Order(RF150_HOME[d.id].filter(id=>exercises().some(e=>e.id===id)&&(!p.excluded||!p.excluded.includes(id))&&(typeof available132!=='function'||available132(id,p))));
+  }
+  plan.reasons=[...(plan.reasons||[]),'1.5.0: 7 gyakorlatos, minden második edzésen váltott A/B full-body alap; mell-váll-core prioritás, A-n direkt bicepsz, B-n direkt tricepsz.'];
+ }
+ return plan;
+};
+const rf150Shell=shell;shell=function(content){return rf150Shell(content).replaceAll('1.4.6','1.5.0').replaceAll('1.4.5','1.5.0');};
+
+
+// @endsection v150.js
+
+// @section v151.js
+var rf151Clone = function rf151Clone(x){return JSON.parse(JSON.stringify(x));};
+var rf151Edit = function rf151Edit(){return state.rf151HistoryEdit||null;};
+var rf151SetMeta = function rf151SetMeta(e){
+ const lib=byId(e.id)||{};
+ return {...e,hu:e.hu||lib.hu||e.id,en:e.en||lib.en||'',loadType:e.loadType||lib.loadType,repUnit:e.repUnit||lib.repUnit||'ism.'};
+};
+var rf151NewSet = function rf151NewSet(e,n){
+ const lib=byId(e.id)||{};
+ const last=findLastExercise(e.id);
+ const prev=last?.sets?.[Math.max(0,n-1)];
+ return {set:n,weight:prev?.weight??lib.weight??0,reps:'',done:true};
+};
+var rf151Renumber = function rf151Renumber(e){(e.sets||[]).forEach((s,i)=>s.set=i+1);};
+var rf151HistoryEditor = function rf151HistoryEditor(key){
+ const ed=rf151Edit(); if(!ed||ed.key!==key){editHistoryWorkout(key);return;}
+ const x=ed.workout;
+ const opts=exercises().filter(e=>!x.exercises.some(v=>v.id===e.id));
+ render(shell(`<main><button class="btn secondary" onclick="rf151CancelHistoryEdit()">← Vissza</button><div class="hero"><h1>Edzés módosítása</h1><p>${esc(x.programName||'Edzés')} • ${esc(x.dayId||x.workout||'')}</p></div>
+ <div class="card"><label>Kezdés<input class="field" id="rf151Start" type="datetime-local" value="${esc(rf142LocalInputValue(x.started))}"></label><label>Befejezés<input class="field" id="rf151End" type="datetime-local" value="${esc(rf142LocalInputValue(x.finished))}"></label></div>
+ <div class="section">Gyakorlatok</div>${x.exercises.map((raw,ei)=>{const e=rf151SetMeta(raw);return `<div class="card"><div style="display:flex;gap:8px;align-items:center;justify-content:space-between"><div><strong>${esc(e.hu)}</strong><div class="en">${esc(e.en||'')}</div></div><button class="btn secondary" onclick="rf151RemoveExercise(${ei})">Törlés</button></div><br>${(e.sets||[]).map((s,si)=>`<div class="row"><div class="num">${si+1}</div>${e.loadType==='bodyweight'?'<span class="small muted">Testsúly</span>':`<label class="small">${loadLabel(e.loadType)}<input class="field" inputmode="decimal" value="${Number(s.weight)||0}" oninput="rf151SetValue(${ei},${si},'weight',this.value)"></label>`}<label class="small">${esc(e.repUnit||'ism.')}<input class="field" inputmode="numeric" value="${esc(s.reps||'')}" oninput="rf151SetValue(${ei},${si},'reps',this.value)"></label><button class="check ${s.done?'done':''}" onclick="rf151ToggleDone(${ei},${si})">${s.done?'✓':'OK'}</button><button class="btn secondary" onclick="rf151RemoveSet(${ei},${si})">−</button></div>`).join('')}<br><button class="btn secondary block" onclick="rf151AddSet(${ei})">+ Sorozat hozzáadása</button></div>`;}).join('')}
+ <div class="card"><strong>Gyakorlat hozzáadása</strong><select class="field" id="rf151Exercise"><option value="">Válassz gyakorlatot…</option>${opts.map(e=>`<option value="${esc(e.id)}">${esc(e.hu)}${e.en?' — '+esc(e.en):''}</option>`).join('')}</select><br><br><button class="btn secondary block" onclick="rf151AddExercise()">+ Gyakorlat hozzáadása</button></div>
+ <button class="btn block" onclick="rf151SaveHistory(false)">Módosítások mentése</button><br><button class="btn secondary block" onclick="rf151SaveHistory(true)">Mentés + órás adatok frissítése</button><br><button class="btn secondary block" onclick="deleteHistoryWorkout('${esc(key)}')">Edzés törlése</button></main>`));
+};
+var rf151CancelHistoryEdit = function rf151CancelHistoryEdit(){state.rf151HistoryEdit=null;go('history');};
+var rf151SetValue = function rf151SetValue(ei,si,k,v){const s=rf151Edit()?.workout?.exercises?.[ei]?.sets?.[si];if(!s)return;s[k]=k==='weight'?Math.max(0,Number(String(v).replace(',','.'))||0):String(v);};
+var rf151ToggleDone = function rf151ToggleDone(ei,si){const s=rf151Edit()?.workout?.exercises?.[ei]?.sets?.[si];if(!s)return;if(!s.done&&(!/^\d+$/.test(String(s.reps))||Number(s.reps)<1)){alert('Írd be a tényleges ismétlésszámot vagy másodpercet.');return;}s.done=!s.done;rf151HistoryEditor(rf151Edit().key);};
+var rf151AddSet = function rf151AddSet(ei){const e=rf151Edit()?.workout?.exercises?.[ei];if(!e)return;e.sets=e.sets||[];e.sets.push(rf151NewSet(e,e.sets.length+1));rf151HistoryEditor(rf151Edit().key);};
+var rf151RemoveSet = function rf151RemoveSet(ei,si){const e=rf151Edit()?.workout?.exercises?.[ei];if(!e)return;if((e.sets||[]).length<=1){alert('Egy gyakorlatnál legalább 1 sorozat maradjon. A teljes gyakorlatot külön törölheted.');return;}e.sets.splice(si,1);rf151Renumber(e);rf151HistoryEditor(rf151Edit().key);};
+var rf151RemoveExercise = function rf151RemoveExercise(ei){const ed=rf151Edit();if(!ed)return;if(ed.workout.exercises.length<=1){alert('Az edzésben legalább 1 gyakorlat maradjon.');return;}ed.workout.exercises.splice(ei,1);rf151HistoryEditor(ed.key);};
+var rf151AddExercise = function rf151AddExercise(){
+ const ed=rf151Edit(),id=$('#rf151Exercise')?.value;if(!ed||!id)return;
+ if(ed.workout.exercises.some(e=>e.id===id)){alert('Ez a gyakorlat már szerepel az edzésben.');return;}
+ const lib=byId(id);if(!lib){alert('A gyakorlat nem található.');return;}
+ const e={id,hu:lib.hu,en:lib.en,loadType:lib.loadType,repUnit:lib.repUnit,sets:[]};
+ for(let i=1;i<=Math.max(1,Number(lib.sets)||1);i++)e.sets.push(rf151NewSet(e,i));
+ ed.workout.exercises.push(e);rf151HistoryEditor(ed.key);
+};
+var rf151SaveHistory = async function rf151SaveHistory(refreshHealth){
+ try{
+  const ed=rf151Edit();if(!ed)throw Error('Nincs szerkesztett edzés.');
+  const i=rf142FindHistoryIndex(ed.key);if(i<0)throw Error('Az edzés nem található.');
+  const started=rf142IsoFromLocal($('#rf151Start')?.value),finished=rf142IsoFromLocal($('#rf151End')?.value);rf142ValidWindow(started,finished);
+  if(!ed.workout.exercises.length)throw Error('Az edzésben legalább 1 gyakorlatnak maradnia kell.');
+  for(const e of ed.workout.exercises){if(!(e.sets||[]).length)throw Error('Minden gyakorlatnál legalább 1 sorozat szükséges.');rf151Renumber(e);}
+  const h=history(),old=h[i];h[i]={...ed.workout,started,finished,editedAt:new Date().toISOString()};h.sort((a,b)=>String(b.started||'').localeCompare(String(a.started||'')));db.set('history',h);
+  if(state.feedbackStarted===old.started)state.feedbackStarted=started;
+  if(state.health){if(state.health.workout===old.started)state.health.workout=started;state.health.summary=null;}
+  state.rf151HistoryEdit=null;
+  const saved=h.find(x=>x.started===started&&x.finished===finished);
+  if(refreshHealth){await rf142ReadHealthForWorkout(saved);return;}
+  alert('Az edzés módosításai mentve.');go('history');
+ }catch(e){alert(e.message||'Az edzés mentése nem sikerült.');}
+};
+/* RepForge 1.5.1: full history workout editing (time, exercises and sets). */
+const RF151_VERSION='1.5.1';
+
+
+const rf151OldEditHistoryWorkout=editHistoryWorkout;
+editHistoryWorkout=function(key){
+ const i=rf142FindHistoryIndex(key),x=history()[i]; if(!x){alert('Az edzés nem található.');return;}
+ state.rf151HistoryEdit={key,workout:rf151Clone(x)};
+ rf151HistoryEditor(key);
+};
+
+
+const rf151Shell=shell;shell=function(content){return rf151Shell(content).replaceAll('1.5.0','1.5.1');};
+
+render();
+
+
+// @endsection v151.js
+
+// @section v152.js
+var rf152DoneSets = function rf152DoneSets(e){return (e?.sets||[]).filter(s=>s.done);};
+var rf152AllDone = function rf152AllDone(e){return !!(e?.sets?.length)&&e.sets.every(s=>s.done);};
+var rf152Last = function rf152Last(id){for(const h of history()){const e=(h.exercises||[]).find(x=>x.id===id);if(e)return {workout:h,exercise:e};}return null;};
+var rf152RepRange = function rf152RepRange(id){
+ const txt=String(byId(id)?.reps||'');
+ const m=txt.match(/(\d+)\s*[–-]\s*(\d+)/);if(m)return {min:Number(m[1]),max:Number(m[2])};
+ const n=txt.match(/(\d+)/);return n?{min:Number(n[1]),max:Number(n[1])}:{min:null,max:null};
+};
+var rf152Step = function rf152Step(e){
+ const id=e?.id||'';
+ if(e?.loadType==='bodyweight')return 0;
+ if(['lateral-raise','db-reverse-fly','face-pull','db-curl'].includes(id))return 0.5;
+ if(e?.loadType==='per_hand')return 1;
+ if(e?.loadType==='single_dumbbell')return 1;
+ return 2;
+};
+var rf152BaseWeight = function rf152BaseWeight(e){
+ const d=rf152DoneSets(e);if(!d.length)return 0;
+ const vals=d.map(s=>Number(s.weight)||0);return vals[Math.min(vals.length-1,0)]||vals[0]||0;
+};
+var rf152Recommendation = function rf152Recommendation(id){
+ const last=rf152Last(id),lib=byId(id);if(!last||!lib)return {action:'start',weight:Number(lib?.weight)||0,text:'Nincs még elég előzmény. Indulj kontrollált, kényelmes terheléssel.'};
+ const e=last.exercise,d=rf152DoneSets(e),all=rf152AllDone(e),effort=e.effort||null,base=rf152BaseWeight(e),range=rf152RepRange(id),reps=d.map(s=>Number(s.reps)||0);

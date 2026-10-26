@@ -1,0 +1,215 @@
+ window.TrainPilotEnergy184={refresh,decorate,html,summary,reading:()=>current,hasResult:()=>attempted};
+ window.addEventListener?.('DOMContentLoaded',()=>{
+  const base=render;render=function(){const result=base.apply(this,arguments);decorate();return result;};window.render=render;
+  const syncBase=rf250Pipeline;rf250Pipeline=async function(){const result=await syncBase.apply(this,arguments);await refresh({force:true});return result;};
+  const recoveryBase=window.tp153OpenRecovery;
+  window.tp153OpenRecovery=function(){recoveryOpen=true;const result=recoveryBase?.apply(this,arguments);decorate();return result;};
+  if(window.TrainPilot168Health){const base=window.TrainPilot168Health.decorate;window.TrainPilot168Health.decorate=function(){const result=base.apply(this,arguments);decorate();return result;};}
+  decorate();void refresh();
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)void refresh();});
+ });
+})();
+// @endsection samsung-energy-access-184.js
+
+
+// @section workout-records-226.js
+/* #226: saved-workout PR badges reuse the canonical Progress model. No writes or celebrations. */
+(function(){
+ 'use strict';
+ const words={
+  hu:{badge:'Új PR',details:'Rekordrészletek',previous:'Korábbi',current:'Új',weight:'Súly',reps:'Ismétlés',time:'Idő',left:'Bal oldal',right:'Jobb oldal',repsUnit:'ism.',seconds:'mp'},
+  en:{badge:'New PR',details:'Record details',previous:'Previous',current:'New',weight:'Weight',reps:'Reps',time:'Time',left:'Left side',right:'Right side',repsUnit:'reps',seconds:'s'},
+  de:{badge:'Neuer PR',details:'Rekorddetails',previous:'Vorher',current:'Neu',weight:'Gewicht',reps:'Wiederholungen',time:'Zeit',left:'Links',right:'Rechts',repsUnit:'Wdh.',seconds:'s'},
+  ro:{badge:'PR nou',details:'Detalii record',previous:'Anterior',current:'Nou',weight:'Greutate',reps:'Repetări',time:'Timp',left:'Stânga',right:'Dreapta',repsUnit:'rep.',seconds:'s'}
+ };
+ const language=()=>typeof rf212Lang==='function'?rf212Lang():'hu';
+ const copy=()=>words[language()]||words.en;
+ function aliases(row,key){
+  const out=[key,row?.id,row?.syncId,row?.workoutId,row?.started];
+  try{if(typeof rf142WorkoutKey==='function')out.push(rf142WorkoutKey(row));}catch(_){}
+  return [...new Set(out.filter(x=>x!==null&&x!==undefined&&String(x)!=='').map(String))];
+ }
+ function index(rows,model=window.TrainPilot177Model,isDeleted){
+  const result=new Map();
+  if(typeof model?.prepare!=='function')return result;
+  for(const workout of model.prepare(rows,{isDeleted})){
+   const records=(workout.pr||[]).filter(r=>Number.isFinite(r.previous)&&Number.isFinite(r.value)&&r.value>r.previous);
+   for(const key of aliases(workout.source,workout.key)){
+    if(!result.has(key)||records.length)result.set(key,records);
+   }
+  }
+  return result;
+ }
+ let signature=null,cached=new Map(),cachedRows=[],cachedRowByAlias=new Map();
+ function data(){
+  let next=null;
+  try{next=[localStorage.getItem('repforge:history'),localStorage.getItem('repforge:phase3HistoryTombstones')].join('\n');}catch(_){}
+  if(next===null||next!==signature){
+   cachedRows=typeof history==='function'?history():[];
+   cachedRowByAlias=new Map();
+   cachedRows.forEach((row,position)=>{for(const alias of aliases(row)){if(!cachedRowByAlias.has(alias))cachedRowByAlias.set(alias,{row,position});}});
+   cached=index(cachedRows,window.TrainPilot177Model,typeof window.tp3HistoryIsDeleted==='function'?window.tp3HistoryIsDeleted:undefined);
+   signature=next;
+  }
+  return cached;
+ }
+ function recordsFor(row,map=data()){
+  for(const key of aliases(row)){const records=map.get(key);if(records)return records;}
+  return [];
+ }
+ const fmt=value=>Number(value).toLocaleString(({hu:'hu-HU',en:'en-US',de:'de-DE',ro:'ro-RO'})[language()]||'en-US',{maximumFractionDigits:2});
+ function details(records,existing){
+  const node=existing||document.createElement('details'),t=copy(),open=!!existing?.open;
+  node.className='tp226-pr-details';
+  if(!existing)node.addEventListener('toggle',()=>{
+   const badge=node.closest('details[data-tp152-history-key]')?.querySelector(':scope > summary .tp226-pr-badge');
+   badge?.setAttribute('aria-expanded',String(node.open));
+   if(!node.open&&node.contains(document.activeElement))badge?.focus({preventScroll:true});
+  });
+  const mark=JSON.stringify([language(),records]);
+  if(node.dataset.records===mark)return node;
+  node.dataset.records=mark;node.replaceChildren();
+  const summary=document.createElement('summary');summary.textContent=t.details+' · '+records.length;node.appendChild(summary);
+  const list=document.createElement('div');list.className='tp226-pr-list';
+  for(const record of records){
+   const item=document.createElement('div');item.className='tp226-pr-record';item.dataset.kind=record.kind;
+   const title=document.createElement('strong');title.textContent=typeof rf220ExerciseName==='function'?rf220ExerciseName(record.id):record.id;
+   const unit=record.kind==='reps'?t.repsUnit:record.unit==='mp'?t.seconds:record.unit;
+   const value=document.createElement('span');
+   value.textContent=(t[record.kind]||record.kind)+' · '+t.previous+': '+fmt(record.previous)+' '+unit+' → '+t.current+': '+fmt(record.value)+' '+unit;
+   if(record.kind==='reps'&&record.weight>0)value.textContent+=' ('+fmt(record.weight)+' kg)';
+   item.append(title,value);list.appendChild(item);
+  }
+  node.appendChild(list);node.open=open;return node;
+ }
+ function paintCard(card,map){
+  const key=String(card.dataset.tp152HistoryKey||''),entry=cachedRowByAlias.get(key),row=entry?.row,records=row?recordsFor(row,map):[];
+  if(!records.length){card.querySelectorAll('.tp226-pr-badge,.tp226-pr-details').forEach(x=>x.remove());return;}
+  const host=card.querySelector(':scope > summary .history-badges');if(!host)return;
+  let badge=host.querySelector('.tp226-pr-badge');
+  if(!badge){
+   badge=document.createElement('button');badge.type='button';badge.className='tp226-pr-badge';badge.dataset.workoutKey=key;
+   badge.addEventListener('click',event=>{
+    event.preventDefault();event.stopPropagation();
+    const current=cachedRowByAlias.get(key);if(!current)return;
+    const expand=!(card.open&&card.querySelector('.tp226-pr-details')?.open);
+    card.open=true;
+    const position=current.position;
+    window.tp3EnsureHistoryBody?.(card,position,key);
+    paint();
+    const panel=card.querySelector('.tp226-pr-details');
+    if(panel){
+     panel.open=expand;badge.setAttribute('aria-expanded',String(expand));
+     (expand?panel.querySelector('summary'):badge)?.focus({preventScroll:true});
+    }
+   });
+   host.appendChild(badge);
+  }
+  badge.textContent='★ '+copy().badge+' · '+records.length;badge.setAttribute('aria-label',copy().badge+' · '+records.length+' · '+copy().details);
+  const body=card.querySelector(':scope > .tp3-combined-history-body');
+  if(body?.dataset.tp3Hydrated==='true'){
+   const old=body.querySelector(':scope > .tp226-pr-details'),panel=details(records,old);
+   if(!old)body.prepend(panel);
+  }
+  badge.setAttribute('aria-expanded',String(!!card.querySelector('.tp226-pr-details')?.open));
+ }
+ function paint(){
+  if(typeof document==='undefined')return;
+  const cards=typeof state!=='undefined'&&state.tab==='history'?[...document.querySelectorAll('details[data-tp152-history-key]')]:[];
+  const feedback=document.querySelector('main.tp122-feedback');
+  if(!cards.length&&!feedback)return;
+  const map=data();
+  for(const card of cards)paintCard(card,map);
+  if(feedback){
+   const row=cachedRows.find(x=>x.started===state.feedbackStarted),records=row?recordsFor(row,map):[];
+   const old=feedback.querySelector('.tp226-pr-feedback');
+   if(!records.length){old?.remove();return;}
+   const panel=details(records,old);panel.classList.add('tp226-pr-feedback');
+   if(!old)(feedback.querySelector('.hero')||feedback).appendChild(panel);
+  }
+ }
+ function install(){
+  if(api.installed)return;api.installed=true;
+  const renderBase=window.render;
+  if(typeof renderBase==='function')window.render=function(){const value=renderBase.apply(this,arguments);paint();return value;};
+  const ensure=window.tp3EnsureHistoryBody;
+  if(typeof ensure==='function')window.tp3EnsureHistoryBody=function(){const value=ensure.apply(this,arguments);paint();return value;};
+  paint();
+ }
+ const api=window.TrainPilotRecords226={index,aliases,recordsFor,paint,installed:false};
+ if(typeof document!=='undefined'){
+  if(document.readyState==='complete')install();
+  else window.addEventListener?.('DOMContentLoaded',install,{once:true});
+ }
+})();
+// @endsection workout-records-226.js
+
+
+// @section set-haptic-227.js
+/* Explicit manual recording feedback; never an interval or sync event. */
+(function(){
+ 'use strict';
+ const words={
+ hu:['Rezgés sorozat rögzítésekor','Rövid visszajelzés sikeres kézi OK után. A pihenő jelzéseit külön kezeli az app.'],
+ en:['Vibrate when recording a set','Short feedback after a successful manual OK. Rest cues remain separate.'],
+ de:['Vibration beim Speichern eines Satzes','Kurzes Feedback nach erfolgreichem manuellem OK. Pausensignale bleiben separat.'],
+ ro:['Vibrație la înregistrarea seriei','Feedback scurt după un OK manual reușit. Semnalele de pauză rămân separate.']
+ };
+ const seen=new Set();
+ function permitted(session,set,receipt,enabled){
+  return enabled!==false&&!!receipt?.recordId&&receipt.setId===set?.setId&&set?.done===true&&
+   receipt.workoutId===String(session?.syncId||session?.started||'')&&
+   (session?.timerOwner||'phone')==='phone'&&!session?.ownershipAwaitingResume193&&
+   !(session?.ownershipProtocol193===1&&session.timerOwner!=='phone')&&
+   !session?.automatic162?.enabled;
+ }
+ function success(session,set){
+  if(typeof state==='undefined'||state.session!==session||window.TrainPilotBackupBusy||
+   window.TrainPilotRestore105Pending||window.TrainPilotWearSync?.isApplyingCommand?.())return false;
+  const receipt=session.lastRecord188;
+  if(!permitted(session,set,receipt,settings().setHaptic227))return false;
+  const token=receipt.workoutId+'|'+receipt.recordId;if(seen.has(token))return false;
+  seen.add(token);if(seen.size>100)seen.delete(seen.values().next().value);
+  try{
+   if(window.Capacitor?.isNativePlatform?.()){
+    const plugin=window.Capacitor.Plugins?.AppFeedback||window.Capacitor.registerPlugin?.('AppFeedback');
+    Promise.resolve(plugin?.setRecorded?.()).catch(()=>{});
+   }else if(typeof navigator!=='undefined'&&typeof navigator.vibrate==='function')navigator.vibrate(40);
+  }catch(_){}
+  return true;
+ }
+ function paint(){
+  const host=document.querySelector('.tp1511-training-body');if(!host||host.querySelector('.tp227-haptic-setting'))return;
+  const text=words[typeof rf212Lang==='function'?rf212Lang():'hu']||words.en;
+  const label=document.createElement('label');label.className='tp227-haptic-setting tp155-sync-check';
+  const input=document.createElement('input');input.type='checkbox';input.checked=settings().setHaptic227!==false;
+  const body=document.createElement('span'),title=document.createElement('strong'),note=document.createElement('small');
+  title.textContent=text[0];note.textContent=text[1];body.append(title,note);label.append(input,body);
+  input.addEventListener('change',()=>{
+   const before=settings();
+   try{db.set('settings',{...before,setHaptic227:input.checked});if(typeof cloudChanged==='function')cloudChanged();}
+   catch(_){input.checked=before.setHaptic227!==false;input.setAttribute('aria-invalid','true');}
+  });
+  host.appendChild(label);
+ }
+ window.TrainPilotSetHaptic227={permitted,success,paint};
+ if(typeof document!=='undefined')window.addEventListener?.('DOMContentLoaded',()=>{
+  const base=window.render;if(typeof base==='function')window.render=function(){const result=base.apply(this,arguments);paint();return result;};
+  paint();
+ });
+})();
+// @endsection set-haptic-227.js
+
+
+// @section ready.js
+(function(){
+ // Inline/DCL modules install the final renderer and its read scope. Rendering
+ // before those listeners ran repeatedly parsed the whole journal on cold boot.
+ const ready=()=>{
+  window.TrainPilotBoot.waitingForModules=false;
+  if(!window.TrainPilotRestore105Pending&&!localStorage.getItem('repforge:healthRestore120'))window.TrainPilotBoot.finish();
+ };
+ if(window.TrainPilotBoot.waitingForModules)window.addEventListener('DOMContentLoaded',ready,{once:true});
+ else ready();
+})();
+// @endsection ready.js

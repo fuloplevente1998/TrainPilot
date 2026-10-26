@@ -1,0 +1,225 @@
+createCustomProgram=function(){tp106ProgramId='';return window.tp155R4OpenPanel('custom-program',document.activeElement);};
+var tp106SaveProgram=function(){
+ const input=document.getElementById('tp106ProgramName'),name=String(input?.value||'').trim(),count=Number(document.getElementById('tp106ProgramDays')?.value);
+ if(!name){input?.setCustomValidity(tp149T('dialog.customProgram.name'));input?.reportValidity();return;}if(!Number.isInteger(count)||count<1||count>7)return;
+ const p={id:'custom-'+crypto.randomUUID(),name:name.slice(0,80),location:'Egyéni',level:'Egyéni',builtin:false,days:Array.from({length:count},function(_,i){return {id:String.fromCharCode(65+i),name:String.fromCharCode(65+i),exercises:DEFAULT_PLAN.A.slice(0,3)};})};
+ db.set('programs',[...programs(),p]);tp106ProgramId=p.id;render();window.TrainPilotFeedback?.saved();
+};
+editCustomProgram=function(id){const p=programById(id);if(!p||p.builtin)return;tp106ProgramId=id;if(!window.tp155R4OpenPanel('custom-program',document.activeElement))return;window.tp155R4RefreshPanel();};
+var tp106DistanceBridge=function(){return window.Capacitor?.Plugins?.DistanceTracker||window.Capacitor?.registerPlugin?.('DistanceTracker');};
+var tp106GpsState={active:false},tp106GpsBusy=false,tp106GpsPolling=false,tp106GpsTimer=null;
+var tp106GpsOwner=function(trip){
+ if(!trip)return null;
+ const draft=state.session?null:db.get('draft',null),session=state.session||draft?.session,e=session?.exercises?.[trip.exerciseIndex];
+ if(session?.started!==trip.started||e?.id!==trip.exerciseId||!Array.isArray(e?.sets))return null;
+ let set=trip.setId?e.sets.find(function(s){return s.setId===trip.setId;}):e.sets[trip.setIndex];
+ if(!set)return null;
+ // Upgrade an already running 1.0.6 trip before any structural set edit.
+ if(!trip.setId){
+  set.setId=set.setId||crypto.randomUUID();trip.setId=set.setId;
+  if(draft)db.set('draft',draft);else persistDraft();
+  db.set('gpsTrip106',trip);
+ }
+ return {session,e,set,draft};
+};
+var tp106BeforeSetRemoval=async function(session,exercise,set){
+ if(tp106GpsBusy){alert(tp106T('busy'));return false;}
+ const trip=db.get('gpsTrip106',null),owner=tp106GpsOwner(trip);
+ if(owner?.session===session&&owner.e===exercise&&owner.set===set)return await tp106StopGPS();
+ return true;
+};
+var tp106ApplyGPS=function(result){
+ tp106GpsState=result||{active:false};const trip=db.get('gpsTrip106',null),owner=tp106GpsOwner(trip);
+ if(!trip||result?.key!==trip.key||!owner)return false;
+ const meters=Number(result.distanceMeters),seconds=Number(result.elapsedSeconds);if(!Number.isFinite(meters)||meters<0||meters>2000000||!Number.isFinite(seconds)||seconds<0)return false;
+ owner.e.measurementType='distance';owner.set.distanceMeters=Math.min(2000000,Math.round((trip.baseMeters+meters)*10)/10);owner.set.distanceSource='gps';owner.set.reps=String(Math.round(trip.baseSeconds+seconds));
+ if(owner.draft){owner.draft.savedAt=new Date().toISOString();db.set('draft',owner.draft);}else persistDraft();
+ if(!result.active)localStorage.removeItem('repforge:gpsTrip106');
+ return true;
+};
+var tp106PaintGPS=function(){
+ const status=document.getElementById('tp106GpsStatus');if(status){status.textContent=tp106GpsBusy?tp106T('busy'):tp106GpsState.active?(tp106GpsState.hasFix?tp106T('tracking'):tp106T('signal')):tp106T('stopped');}
+ const button=document.getElementById('tp106GpsButton');if(button){button.disabled=tp106GpsBusy;button.textContent=tp106GpsState.active?({hu:'Mérés befejezése',en:'Finish GPS',de:'GPS beenden',ro:'Oprește GPS'}[rf212Lang()]||tp106T('stop')):tp106T('gps');}
+ const trip=db.get('gpsTrip106',null),owner=tp106GpsOwner(trip);
+ document.querySelectorAll('[data-tp106-distance]').forEach(function(input){const index=Number(input.dataset.tp106Distance),set=state.session?.exercises?.[state.current]?.sets?.[index],locked=tp106GpsState.active&&owner?.set===set;input.disabled=locked;if(set&&document.activeElement!==input)input.value=Object.hasOwn(set,'distanceMeters')?String(Math.round(set.distanceMeters)/1000):'';});
+ document.querySelectorAll('.tp153-set-row').forEach(function(row,si){const set=state.session?.exercises?.[state.current]?.sets?.[si],time=row.querySelector('input[oninput*="reps"]');if(time){time.disabled=!!(tp106GpsState.active&&owner?.set===set);if(set&&document.activeElement!==time)time.value=set.reps;}});
+};
+var tp106SyncGPS=async function(){
+ if(!isNative()||tp106GpsBusy||tp106GpsPolling)return;const bridge=tp106DistanceBridge();if(!bridge?.status)return;tp106GpsPolling=true;
+ try{const result=await bridge.status();if(tp106GpsBusy)return;const trip=db.get('gpsTrip106',null);if(result.active&&(!tp106GpsOwner(trip)||result.key!==trip?.key)){tp106ApplyGPS(await bridge.stop());}else tp106ApplyGPS(result);if(!result.active&&trip&&(!tp106GpsOwner(trip)||result.key!==trip.key))localStorage.removeItem('repforge:gpsTrip106');tp106PaintGPS();if(tp106GpsState.active&&!tp106GpsTimer)tp106GpsTimer=setInterval(tp106SyncGPS,1000);if(!tp106GpsState.active&&tp106GpsTimer){clearInterval(tp106GpsTimer);tp106GpsTimer=null;}}catch(_){}finally{tp106GpsPolling=false;}
+};
+var tp106StartGPS=async function(){
+ if(tp106GpsBusy)return;if(!isNative()){alert(tp106T('native'));return;}
+ const session=state.session,exerciseIndex=state.current,e=session?.exercises?.[exerciseIndex],setIndex=e?.sets?.findIndex(function(s){return !s.done;});if(!e||!tp106IsDistance(e)||setIndex<0)return;
+ tp106GpsBusy=true;tp106PaintGPS();let trip=null;
+ try{
+  const bridge=tp106DistanceBridge(),previous=await bridge.status();tp106ApplyGPS(previous);if(previous.active){alert(tp106T('busy'));return;}if(state.session!==session)return;
+  const set=e.sets[setIndex];set.setId=set.setId||crypto.randomUUID();persistDraft();
+  trip={key:session.started+'|'+e.id+'|'+setIndex+'|'+Date.now().toString(36),started:session.started,exerciseIndex,exerciseId:e.id,setIndex,setId:set.setId,baseMeters:Number(set.distanceMeters)||0,baseSeconds:Number(set.reps)||0};
+  db.set('gpsTrip106',trip);const result=await bridge.start({key:trip.key,name:tp149ExerciseName(byId(e.id)||e),language:rf212Lang()});
+  if(!tp106GpsOwner(trip)){await bridge.stop();localStorage.removeItem('repforge:gpsTrip106');return;}
+  rf110StopwatchHalt?.(true);tp106ApplyGPS(result);if(!tp106GpsTimer)tp106GpsTimer=setInterval(tp106SyncGPS,1000);
+ }catch(error){if(trip)localStorage.removeItem('repforge:gpsTrip106');alert(error?.message||String(error));}
+ finally{tp106GpsBusy=false;if(state.session)renderWorkout();}
+};
+
+var tp106StopGPS=async function(){
+ if(tp106GpsBusy){alert(tp106T('busy'));return false;}if(!tp106GpsState.active&&!db.get('gpsTrip106',null))return true;
+ tp106GpsBusy=true;tp106PaintGPS();try{tp106ApplyGPS(await tp106DistanceBridge().stop());if(tp106GpsTimer){clearInterval(tp106GpsTimer);tp106GpsTimer=null;}return true;}catch(error){alert(error?.message||String(error));return false;}finally{tp106GpsBusy=false;tp106PaintGPS();}
+};
+// #206: only an explicit, successful user STOP may complete an owned GPS distance leg.
+var tp206CompleteStoppedGps=function(trip,owner,status){
+ if(!trip||!owner||!status||status.active!==false||status.key!==trip.key)return false;
+ const session=state.session,e=session?.exercises?.[trip.exerciseIndex],set=e?.sets?.find(function(v){return v.setId===trip.setId;});
+ if(!session||session!==owner.session||session.started!==trip.started||e!==owner.e||set!==owner.set||!tp106IsDistance(e))return false;
+ if(set.done)return false; // idempotent: late native frames or repeated STOP never add records.
+ const meters=Number(status.distanceMeters),seconds=Number(status.elapsedSeconds);
+ if(!Number.isFinite(meters)||!Number.isFinite(seconds)||meters<=0||seconds<=0||set.distanceSource!=='gps'||!(Number(set.distanceMeters)>0)||!(Number(set.reps)>0))return false;
+ set.done=true;
+ persistDraft();
+ return true;
+};
+var tp106ToggleGPS=async function(){
+ if(tp106GpsState.active){
+  const trip=db.get('gpsTrip106',null),owner=tp106GpsOwner(trip);
+  const success=await tp106StopGPS();
+  if(success)tp206CompleteStoppedGps(trip,owner,tp106GpsState);
+  if(state.session)renderWorkout();
+  return success;
+ }
+ return tp106StartGPS();
+};
+var tp106WorkoutDistance=function(ei,si,value,input){
+ const set=state.session?.exercises?.[ei]?.sets?.[si];if(!set||tp106GpsState.active&&tp106GpsOwner(db.get('gpsTrip106',null))?.set===set)return;
+ try{tp106SetDistance(set,value);input?.setCustomValidity?.('');persistDraft();}catch(error){input?.setCustomValidity?.(error.message);}
+};
+const tp106RenderWorkoutBase=renderWorkout;
+renderWorkout=function(){
+ for(const e of state.session?.exercises||[]){
+  if(tp106IsDistance(e))e.measurementType='distance';
+  else if(e.measurementType==='distance'){const definition=byId(e.id);e.measurementType=definition?.measurementType||(definition?.repUnit==='mp'?'time':'reps');}
+  for(const set of e.sets||[])if(set.distanceMeters==null||set.distanceMeters==='')delete set.distanceMeters;
+ }
+ const result=tp106RenderWorkoutBase.apply(this,arguments),e=state.session?.exercises?.[state.current];
+ if(tp106GpsState.active&&tp106GpsOwner(db.get('gpsTrip106',null))?.e!==e)void tp106StopGPS();
+ if(!tp106IsDistance(e))return result;
+ const main=document.querySelector('main.tp153-workout');if(!main)return result;
+ document.getElementById('rf110Stopwatch')?.remove();rf110StopwatchHalt?.(true);
+ main.querySelectorAll('.tp153-set-row').forEach(function(row,si){
+  const load=row.querySelector('.tp153-bodyweight');if(!load)return;const set=e.sets[si];
+  load.outerHTML='<label class="small tp106-distance-label">'+esc(tp106T('km'))+'<input class="field" data-tp106-distance="'+si+'" aria-label="'+esc(tp106T('km'))+'" inputmode="decimal" placeholder="0,00" value="'+esc(Object.hasOwn(set,'distanceMeters')?String(set.distanceMeters/1000):'')+'" oninput="tp106WorkoutDistance('+state.current+','+si+',this.value,this)"></label>';
+ });
+ const panel=document.createElement('div');panel.id='tp106GPS';panel.className='tp206-source-anchor';panel.innerHTML='<p class="small tp206-gps-status" id="tp106GpsStatus" aria-live="polite"></p><button type="button" id="tp106GpsButton" class="btn secondary block" onclick="tp106ToggleGPS()">'+esc(tp106T('start'))+'</button>';
+ main.querySelector('.tp153-sets-title')?.before(panel);tp106PaintGPS();return result;
+};
+var tp106DistanceInputsValid=function(){const bad=document.querySelector('[data-tp106-distance]:invalid');if(bad){bad.reportValidity?.();return false;}return true;};
+const tp106ToggleSetBase=toggleSet;
+toggleSet=function(ei,si){if(!tp106DistanceInputsValid())return;const e=state.session?.exercises?.[ei],set=e?.sets?.[si];if(tp106IsDistance(e)&&!set?.done){if(!(Number(set.distanceMeters)>0)&&!(Number(set.reps)>0)){alert(tp106T('needDistance'));return;}if(tp106GpsBusy){alert(tp106T('busy'));return;}if(tp106GpsState.active)return tp106StopGPS().then(function(ok){if(ok)tp106ToggleSetBase(ei,si);});}return tp106ToggleSetBase.apply(this,arguments);};
+const tp106NextBase=nextExercise;
+nextExercise=function(){if(!tp106DistanceInputsValid())return;if(tp106GpsBusy){alert(tp106T('busy'));return;}if(tp106GpsState.active||db.get('gpsTrip106',null))return tp106StopGPS().then(function(ok){if(ok)return tp106NextBase();});return tp106NextBase.apply(this,arguments);};
+const tp106PrevBase=prevExercise;
+prevExercise=function(){if(tp106GpsBusy){alert(tp106T('busy'));return;}if(tp106GpsState.active||db.get('gpsTrip106',null))return tp106StopGPS().then(function(ok){if(ok)return tp106PrevBase();});return tp106PrevBase.apply(this,arguments);};
+const tp106QuickStartBase=tp152StartQuickInline;
+tp152StartQuickInline=async function(){if(tp106GpsBusy){alert(tp106T('busy'));return;}if((tp106GpsState.active||db.get('gpsTrip106',null))&&!await tp106StopGPS())return;return tp106QuickStartBase.apply(this,arguments);};
+const tp106FormatSetBase=formatSet;
+formatSet=function(e,set){if(!tp106IsDistance(e)&&!(tp106HasDistance(set)&&Number(set.distanceMeters)>0))return tp106FormatSetBase(e,set);const seconds=Number(set.reps)||0;return (tp106HasDistance(set)&&!(set.distanceSource==='gps'&&Number(set.distanceMeters)===0)?tp106Km(set.distanceMeters)+' km':'— km')+(seconds>0?' · '+rf110FormatStopwatch(seconds):'');};
+const tp106ValidateBase=validateBackup;
+validateBackup=function(d){
+ tp106ValidateBase(d);
+ for(const e of [...d.exercises,...d.history.flatMap(function(h){return h.exercises||[];})]){
+  if(e.measurementType!==undefined&&!['reps','time','distance'].includes(e.measurementType))throw Error('Invalid measurement type.');
+  if(e.measurementType==='distance'&&(e.loadType!=='bodyweight'||e.repUnit!=='mp'))throw Error('Invalid distance exercise.');
+  for(const set of Array.isArray(e.sets)?e.sets:[]){if(set.distanceMeters!==undefined&&(typeof set.distanceMeters!=='number'||!Number.isFinite(set.distanceMeters)||set.distanceMeters<0||set.distanceMeters>2000000))throw Error('Invalid distance.');if(set.distanceSource!==undefined&&!['manual','gps'].includes(set.distanceSource))throw Error('Invalid distance source.');}
+ }
+ return d;
+};
+document.addEventListener('visibilitychange',function(){if(!document.hidden){void tp106SyncGPS();if(tp106GpsState.active&&!tp106GpsTimer)tp106GpsTimer=setInterval(tp106SyncGPS,1000);}});
+setTimeout(function(){void tp106SyncGPS();},0);
+
+// Health Connect steps belong to the whole workout's active windows, never to GPS kilometres.
+var TP106_STEPS_TEXT={
+ hu:{title:'Edzés lépései',note:'Aktív edzés · percenként frissül. Nem GPS-táv.',refresh:'Lépések frissítése',grant:'Lépésengedély kérése',busy:'Lépések lekérése…',pending:'Még nincs megosztott lépésadat ehhez az edzéshez.',permission:'A lépések olvasási engedélye hiányzik. Engedélyezd itt vagy az Egészség → Engedélyek alatt.',unavailable:'Health Connect az Android alkalmazásban érhető el.',error:'A lépések nem frissültek. Próbáld újra; az előző adat megmaradt.',read:'Utolsó lekérés',timeOnly:'Beltéren GPS nélkül is rögzítheted az időt. Ismert távolságot kézzel adhatsz meg.'},
+ en:{title:'Workout steps',note:'Active workout · updates every minute. Not GPS distance.',refresh:'Refresh steps',grant:'Allow step access',busy:'Reading steps…',pending:'No shared step data for this workout yet.',permission:'Step read permission is missing. Allow it here or in Health → Permissions.',unavailable:'Health Connect is available in the Android app.',error:'Steps could not be refreshed. Retry; the previous reading was kept.',read:'Last read',timeOnly:'Indoors you can record time without GPS. Enter a known distance manually.'},
+ de:{title:'Trainingsschritte',note:'Aktives Training · jede Minute aktualisiert. Keine GPS-Strecke.',refresh:'Schritte aktualisieren',grant:'Schrittzugriff erlauben',busy:'Schritte werden gelesen…',pending:'Noch keine geteilten Schrittdaten für dieses Training.',permission:'Die Berechtigung zum Lesen von Schritten fehlt. Hier oder unter Gesundheit → Berechtigungen erlauben.',unavailable:'Health Connect ist in der Android-App verfügbar.',error:'Schritte konnten nicht aktualisiert werden. Erneut versuchen; der letzte Wert bleibt erhalten.',read:'Zuletzt gelesen',timeOnly:'Innen kannst du Zeit ohne GPS erfassen. Eine bekannte Strecke kannst du manuell eingeben.'},
+ ro:{title:'Pașii antrenamentului',note:'Antrenament activ · actualizare pe minut. Fără conversie în distanță GPS.',refresh:'Actualizează pașii',grant:'Permite accesul la pași',busy:'Se citesc pașii…',pending:'Încă nu există pași partajați pentru acest antrenament.',permission:'Lipsește permisiunea de citire a pașilor. Permite-o aici sau în Sănătate → Permisiuni.',unavailable:'Health Connect este disponibil în aplicația Android.',error:'Pașii nu au fost actualizați. Reîncearcă; valoarea anterioară a fost păstrată.',read:'Ultima citire',timeOnly:'În interior poți înregistra timpul fără GPS. Introdu manual o distanță cunoscută.'}
+};
+var tp106StepsT=function(key){return (TP106_STEPS_TEXT[rf212Lang()]||TP106_STEPS_TEXT.hu)[key];};
+var tp106StepsView={session:null,at:0,busy:false,status:'',permissionDenied:false},tp106StepsTimer=null;
+var tp106StepsWindows=function(session,end=new Date().toISOString()){
+ if(!session||!Number.isFinite(Date.parse(session.started))||Date.parse(end)<=Date.parse(session.started))return [];
+ const active=Array.isArray(session.activeIntervals)?session.activeIntervals:[{start:session.started,end:null}];
+ return window.TrainPilotIssue79.intervals({...session,finished:end,activeIntervals:active.map(i=>({...i,end:i.end||end}))});
+};
+var tp106PaintSteps=function(){
+ const root=document.getElementById('tp106Steps');if(!root)return;
+ const same=tp106StepsView.session===state.session,data=state.session?.health240;
+ const count=root.querySelector('[data-tp106-steps-count]');if(count)count.textContent=data?.steps==null?'—':tp149FormatNumber(data.steps,{maximumFractionDigits:0});
+ const status=root.querySelector('[data-tp106-steps-status]');if(status)status.textContent=same&&tp106StepsView.busy?tp106StepsT('busy'):same&&tp106StepsView.status?tp106StepsView.status:data?.steps==null?tp106StepsT('pending'):'';
+ const read=root.querySelector('[data-tp106-steps-read]');if(read)read.textContent=data?.stepsReadAt?tp106StepsT('read')+': '+tp149FormatDateTime(data.stepsReadAt):'';
+ const refresh=root.querySelector('[data-tp106-steps-refresh]');if(refresh)refresh.disabled=!!(same&&tp106StepsView.busy);
+ const grant=root.querySelector('[data-tp106-steps-grant]');if(grant){grant.hidden=!(same&&tp106StepsView.permissionDenied);grant.disabled=!!(same&&tp106StepsView.busy);}
+};
+var tp106RefreshSteps=async function(force=false){
+ const session=state.session;if(!session)return false;
+ if(tp106StepsView.busy)return false;
+ if(tp106StepsView.session!==session)tp106StepsView={session,at:0,busy:false,status:'',permissionDenied:false};
+ if(!force&&Date.now()-tp106StepsView.at<60000)return false;
+ tp106StepsView.at=Date.now();const plugin=rf240Native();
+ if(!plugin?.readStepsWindow){tp106StepsView.status=tp106StepsT('unavailable');tp106PaintSteps();return false;}
+ const end=new Date().toISOString(),windows=tp106StepsWindows(session,end);if(!windows.length)return false;
+ const view=tp106StepsView;view.busy=true;tp106PaintSteps();let timeout;
+ // The operation has one owner and deadline, so retries cannot apply an old response to another workout.
+ try{
+  const result=await Promise.race([(async()=>{
+   let steps=0;for(const w of windows){
+    if(!view.busy||state.session!==session)throw Error("Obsolete step read");
+    const part=await plugin.readStepsWindow({start:w.start,end:w.end,language:rf212Lang()});
+    if(part?.permissions?.READ_STEPS===false)return {status:tp106StepsT('permission'),permissionDenied:true};
+    if(part?.warnings?.length)throw Error('Health Connect steps unavailable');
+    if(part?.steps==null)return {status:tp106StepsT('pending')};
+    if(typeof part.steps!=='number'||!Number.isSafeInteger(part.steps)||part.steps<0)throw Error('Invalid steps');
+    steps+=part.steps;if(!Number.isSafeInteger(steps))throw Error('Invalid steps');
+   }return {steps,permissionDenied:false};
+  })(),new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('Health Connect timeout')),35000);})]);
+  if(state.session!==session||tp106StepsView!==view||JSON.stringify(tp106StepsWindows(session,end))!==JSON.stringify(windows))return false;
+  view.status=result.status||'';view.permissionDenied=!!result.permissionDenied;
+  if(result.steps!=null){
+   session.health240={...session.health240,steps:result.steps,stepsReadAt:new Date().toISOString(),windowStart:session.started,windowEnd:end,activeIntervals:windows.map(({start,end})=>({start,end})),syncedAt:new Date().toISOString(),source:'all',sources:['all'],sourceLabels:{all:'Health Connect'}};
+   persistDraft();return true;
+  }return false;
+ }catch(_){if(state.session===session&&tp106StepsView===view)view.status=tp106StepsT('error');return false;}
+ finally{clearTimeout(timeout);view.busy=false;if(tp106StepsView===view)tp106PaintSteps();}
+};
+var tp106RequestSteps=async function(){
+ const session=state.session;if(!session)return false;
+ if(tp106StepsView.session!==session)tp106StepsView={session,at:0,busy:false,status:'',permissionDenied:true};
+ if(tp106StepsView.busy)return false;const plugin=rf240Native(),view=tp106StepsView;
+ if(!plugin?.requestSteps){view.status=tp106StepsT('permission');view.permissionDenied=true;tp106PaintSteps();return false;}
+ view.busy=true;tp106PaintSteps();let granted=false;
+ try{
+  const result=await plugin.requestSteps({language:rf212Lang()});
+  if(state.session!==session||tp106StepsView!==view)return false;
+  granted=result?.granted===true||result?.permissions?.READ_STEPS===true;
+  view.permissionDenied=!granted;view.status=granted?'':tp106StepsT('permission');
+ }catch(_){if(state.session===session&&tp106StepsView===view){view.permissionDenied=true;view.status=tp106StepsT('permission');}}
+ finally{view.busy=false;if(tp106StepsView===view)tp106PaintSteps();}
+ if(granted&&state.session===session){await tp106RefreshSteps(true);return true;}return false;
+};
+const tp106StepsRenderBase=renderWorkout;
+renderWorkout=function(){
+ const result=tp106StepsRenderBase.apply(this,arguments),gps=document.getElementById('tp106GPS');if(!gps)return result;
+ const note=document.createElement('p');note.className='small muted';note.textContent=tp106StepsT('timeOnly');gps.appendChild(note);
+ const panel=document.createElement('section');panel.id='tp106Steps';panel.className='card tp106-gps-card tp106-steps-card';
+ panel.innerHTML='<div class="tp106-steps-heading"><strong>'+esc(tp106StepsT('title'))+'</strong><small>Health Connect</small></div><div class="tp106-steps-actions"><strong data-tp106-steps-count>—</strong><button type="button" data-tp106-steps-refresh class="btn secondary" onclick="tp106RefreshSteps(true)">'+esc(tp106StepsT('refresh'))+'</button></div><p class="small muted tp106-steps-note">'+esc(tp106StepsT('note'))+'</p><p class="small" data-tp106-steps-status role="status"></p><p class="small muted" data-tp106-steps-read></p><button type="button" data-tp106-steps-grant class="btn secondary block" hidden onclick="tp106RequestSteps()">'+esc(tp106StepsT('grant'))+'</button>';
+ gps.after(panel);tp106PaintSteps();void tp106RefreshSteps();
+ if(!tp106StepsTimer)tp106StepsTimer=setInterval(function(){if(!state.session||!document.getElementById('tp106Steps')){clearInterval(tp106StepsTimer);tp106StepsTimer=null;return;}if(!document.hidden)void tp106RefreshSteps();},60000);
+ return result;
+};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&document.getElementById('tp106Steps'))void tp106RefreshSteps();});
+
+// @endsection custom-exercise-distance-106.js
+
+// @section training-107.js
+/* Shared prescription editor, distance statistics and a draft-persisted indoor clock. */
+var TP107_TEXT={
+ hu:{save:'Mentés',cancel:'Visszaállítás',dirty:'Módosítva – még nincs mentve',saved:'Mentve',cardio:'Kardióstatisztika',week:'Heti kilométer',previous:'Előző hét',pace:'Átlagtempó',duration:'Rögzített idő',records:'Azonos távú rekordok',nextBest:'Második legjobb',difference:'Különbség',rule:'Azonos mozgás és méterre kerekített táv; a rövidebb idő jobb. Nem számolunk át más távra.',empty:'Még nincs rögzített kardióadat.',timeOnly:'Idő távolság nélkül',all:'Minden mozgás',indoor:'Beltéri időmérés · GPS nélkül',start:'Időmérés indítása',pause:'Szünet és rögzítés',resume:'Időmérés folytatása',reset:'Nullázás',timerNote:'Az idő az aktuális sorozatba kerül. A távolság megadható kézzel; GPS-engedély nem szükséges.',stopGps:'Előbb állítsd le a GPS-mérést.',timerRunning:'Időmérés fut',timerPaused:'Idő rögzítve',distance:'Összes távolság'},

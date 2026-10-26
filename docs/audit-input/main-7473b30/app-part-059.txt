@@ -1,0 +1,347 @@
+   '<div class="tp155-journal-actions"><button type="button" class="btn secondary" onclick="event.preventDefault();event.stopPropagation();tp155R4JournalClear()" '+(active?'':'disabled')+'>'+esc(c.clear)+'</button><button type="button" class="btn secondary" onclick="event.preventDefault();event.stopPropagation();tp155R4JournalToday()">'+esc(c.today)+'</button></div></div>';
+ };
+
+ // #236: fixed first DOM page, full-range filter and incremental card mounting.
+ const TP236_PAGE_SIZE=32;
+ let tp236Shown=TP236_PAGE_SIZE,tp236Range='',tp236LastCount=-1;
+ const tp236MoreCopy={hu:'További edzések',en:'More workouts',de:'Weitere Trainings',ro:'Mai multe antrenamente',sk:'Ďalšie tréningy',pl:'Więcej treningów'};
+ const tp236MoreText=()=>tp236MoreCopy[typeof rf212Lang==='function'?rf212Lang():'hu']||tp236MoreCopy.hu;
+ const tp236MoreButton=total=>tp236Shown<total?'<button id="tp236HistoryMore" type="button" class="btn secondary block" onclick="tp236HistoryMore()" aria-controls="tp236HistoryRows">'+esc(tp236MoreText())+' ('+tp236Shown+' / '+total+')</button>':'';
+ window.tp236HistoryMore=function(){
+  const host=document.getElementById('tp236HistoryRows'),button=document.getElementById('tp236HistoryMore');
+  if(!host||!button||state.tab!=='history'||state.tp177JournalView==='stats'||state.tp177JournalView==='progress')return false;
+  const filtered=rf263FilteredHistory(),start=tp236Shown,end=Math.min(filtered.length,start+TP236_PAGE_SIZE);
+  if(end<=start){button.remove();return false;}
+  host.insertAdjacentHTML('beforeend',filtered.slice(start,end).map((row,i)=>rf263HistoryItem(row.x,row.index,start+i)).join(''));
+  tp236Shown=end;
+  window.TrainPilotRecords226?.paint?.();
+  if(end===filtered.length)button.remove();else button.textContent=tp236MoreText()+' ('+end+' / '+filtered.length+')';
+  const first=host.querySelectorAll(':scope > details.rf263-history')[start]?.querySelector(':scope > summary');
+  if(first){first.setAttribute('tabindex','-1');first.focus({preventScroll:true});first.scrollIntoView({block:'start'});}
+  return true;
+ };
+ historyScreen=function(){
+  const all=history(),filtered=rf263FilteredHistory(),a=committed(),start=pending(),c=copy(),from=start||a.from||'',to=start?'':a.to||'';
+  const range=JSON.stringify([a.from,a.to,start]);
+  if(range!==tp236Range||all.length!==tp236LastCount||!document.getElementById('tp236HistoryRows')){tp236Range=range;tp236Shown=TP236_PAGE_SIZE;}
+  tp236LastCount=all.length;
+  const status=(from||to)?'<span class="small muted tp155-journal-range-summary">'+esc(c.from)+': '+esc(fmt(from))+' • '+esc(c.to)+': '+esc(fmt(to))+'</span>':'';
+  const filter='<details class="card tp155-journal-filter '+((a.from&&a.to)?'tp155-range-active':'')+'" '+(state.tp155JournalFilterOpen?'open':'')+' ontoggle="state.tp155JournalFilterOpen=!!this.open"><summary><div><strong>'+esc(c.filter)+'</strong>'+status+'</div><span class="tp160-journal-disclosure" aria-hidden="true"></span></summary>'+calendarHtml()+'</details><p class="small muted rf263-history-count">'+esc(tp149T('journal.count',{shown:filtered.length,total:all.length}))+'</p>';
+  const rows=filtered.length?'<div id="tp236HistoryRows">'+filtered.slice(0,tp236Shown).map(function(row,i){return rf263HistoryItem(row.x,row.index,i)}).join('')+'</div>'+tp236MoreButton(filtered.length):(window.TrainPilot110?window.TrainPilot110.empty('log',!!all.length):(all.length?'<div class="card muted">'+esc(tp149T('journal.noneRange'))+'</div>':'<div class="muted">'+esc(tp149T('journal.none'))+'</div>'));
+  return shell('<main class="tp150-journal-compact">'+filter+rows+'</main>');
+ };
+
+ const style=document.createElement('style');style.id='tp155Round3JournalRangeCss';style.textContent=[
+  '.tp155-journal-range-head{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 4px}.tp155-journal-range-head>div{display:grid;gap:2px;padding:8px 10px;border:1px solid var(--line);border-radius:11px;background:var(--card2)}.tp155-journal-range-head span{font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.tp155-journal-range-head strong{font-size:13px}.tp155-journal-range-help{margin:5px 1px 8px!important}',
+  '.tp155-journal-day.is-range{background:color-mix(in srgb,var(--accent) 11%,var(--card2));border-color:color-mix(in srgb,var(--accent) 34%,var(--line))}.tp155-journal-day.is-start,.tp155-journal-day.is-end{background:color-mix(in srgb,var(--accent) 25%,var(--card2));border-color:var(--accent);font-weight:900}',
+  'html[data-tp-theme-family="basic"] .tp155-journal-filter.tp155-range-active{box-shadow:none!important;border-color:color-mix(in srgb,var(--accent) 58%,var(--line))!important;background:color-mix(in srgb,var(--accent) 6%,var(--card))!important}'
+ ].join('');
+ document.head.appendChild(style);
+ window.TrainPilot155JournalRange={version:'1.5.5-round3-range',inclusive:true,twoDateSelection:true};
+})();
+// @endsection trainpilot-155-round3-journal-range.js
+
+// @section trainpilot-155-round3-highlight-surfaces.js
+/* TrainPilot 1.5.5 Round 3: shared active/high-priority accent surface language. */
+(function(){
+ 'use strict';
+
+ window.tp155R4ApplyHighlightSurfaces=function(root=document){
+  const q=(sel,base=root)=>base?.querySelector?.(sel)||null;
+  const qa=(sel,base=root)=>[...(base?.querySelectorAll?.(sel)||[])];
+
+  // Home — active program.
+  q('main.rf221-home>.hero.tp155-home-active-card')?.classList.add('tp155-r4-accent-surface');
+
+  // Workout — current exercise + next unfinished set.
+  const workout=q('main.tp153-workout');
+  if(workout){
+   q('.tp153-workout-head',workout)?.classList.add('tp155-r4-accent-surface');
+   const rows=qa('.tp153-set-row',workout);
+   rows.forEach(x=>x.classList.remove('tp155-r4-accent-surface-lite'));
+   const sets=state.session?.exercises?.[Math.max(0,Math.min(Number(state.current)||0,(state.session?.exercises?.length||1)-1))]?.sets||[];
+   let active=sets.findIndex(x=>!x?.done);if(active<0&&rows.length)active=rows.length-1;
+   if(rows[active])rows[active].classList.add('tp155-r4-accent-surface-lite');
+  }
+
+  // Calendar — selected day details.
+  q('.tp151-day-panel')?.classList.add('tp155-r4-accent-surface');
+
+  // Journal — completed active range only.
+  q('.tp155-journal-filter.tp155-range-active')?.classList.add('tp155-r4-accent-surface');
+
+  // Programs — active program in the library.
+  qa('.tp152-program-card.active-program').forEach(x=>x.classList.add('tp155-r4-accent-surface'));
+
+  // Health — today's main summary / recovery state.
+  const health=q('main.rf263-health');
+  if(health){
+   const today=q(':scope > .tp151-health-card',health);
+   if(today)today.classList.add('tp155-r4-accent-surface');
+  }
+
+  // Coach — recommendation card remains the visual reference.
+  q('.tp151-coach-recommendation')?.classList.add('tp155-r4-accent-surface');
+ };
+
+ const renderBase=render;
+ render=function(custom){
+  const out=renderBase.apply(this,arguments);
+  window.tp155R4ApplyHighlightSurfaces(document);
+  return out;
+ };
+
+ // renderWorkout has its own post-render wrappers, so re-apply after that path as well.
+ if(typeof renderWorkout==='function'){
+  const workoutBase=renderWorkout;
+  renderWorkout=function(){
+   const out=workoutBase.apply(this,arguments);
+   window.tp155R4ApplyHighlightSurfaces(document);
+   return out;
+  };
+ }
+
+ const style=document.createElement('style');style.id='tp155Round3HighlightCss';style.textContent=[
+  '.tp155-r4-accent-surface{box-sizing:border-box!important;border:1px solid color-mix(in srgb,var(--accent) 56%,var(--line))!important;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 11%,var(--card)) 0%,color-mix(in srgb,var(--accent2) 5%,var(--card)) 56%,var(--card) 100%)!important}',
+  '.tp155-r4-accent-surface-lite{box-sizing:border-box!important;border-color:color-mix(in srgb,var(--accent) 43%,var(--line))!important;background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 8%,var(--card2)),var(--card2))!important}',
+  'html[data-tp-theme-family="basic"] .tp155-r4-accent-surface,html[data-tp-theme-family="basic"] .tp155-r4-accent-surface-lite{box-shadow:none!important;filter:none!important}',
+  'html[data-tp-theme-family="basic"] .tp155-r4-accent-surface{border-color:color-mix(in srgb,var(--accent) 58%,var(--line))!important;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 9%,var(--card)) 0%,color-mix(in srgb,var(--accent2) 4%,var(--card)) 58%,var(--card) 100%)!important}',
+  'html[data-tp-theme-family="basic"] .tp155-r4-accent-surface-lite{border-color:color-mix(in srgb,var(--accent) 40%,var(--line))!important;background:color-mix(in srgb,var(--accent) 7%,var(--card2))!important}',
+  'html[data-tp-theme-family="vivid"] .tp155-r4-accent-surface{border-color:color-mix(in srgb,var(--accent) 76%,var(--line))!important;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 16%,var(--card)) 0%,color-mix(in srgb,var(--accent2) 8%,var(--card)) 60%,var(--card) 100%)!important;box-shadow:0 0 18px color-mix(in srgb,var(--accent) 16%,transparent)!important}',
+  'html[data-tp-theme-family="vivid"] .tp155-r4-accent-surface-lite{box-shadow:0 0 12px color-mix(in srgb,var(--accent) 10%,transparent)!important}',
+  '.tp153-set-row.tp155-r4-accent-surface-lite{border-style:solid!important;border-width:1px!important;border-radius:12px!important;padding-inline:5px!important}',
+  '.tp151-day-panel.tp155-r4-accent-surface,.tp155-journal-filter.tp155-r4-accent-surface,.tp152-program-card.tp155-r4-accent-surface{border-radius:16px!important}'
+ ].join('');
+ document.head.appendChild(style);
+ window.tp155R4ApplyHighlightSurfaces(document);
+ window.TrainPilot155HighlightSurfaces={version:'1.5.5-round3-highlight',shared:true,basicMatte:true,neonGlow:true};
+})();
+// @endsection trainpilot-155-round3-highlight-surfaces.js
+
+// @section trainpilot-155-round3-panel-navigation.js
+/* TrainPilot 1.5.5 Round 3: reordered 2x4 navigation + Calendar/Coach/Settings panel surfaces. */
+(function(){
+ 'use strict';
+
+ let currentPanel='',panelHost=null,panelTrigger=null,bodyOverflow='',panelOpenScrollY=0,replanCalendarReturn=null;
+ const panelDomSupported=(()=>{try{const x=document?.createElement?.('div');return !!(x&&typeof x.addEventListener==='function'&&document?.body&&typeof document.body.appendChild==='function')}catch(_){return false}})();
+ const PANEL_ROUTES=new Set(['calendar','coach','settings','quick','exercises','stats','custom-exercise','custom-program','cardio','goals','replan','ble','health-journal']);
+ const FULL_ROUTES=new Set(['home','plan','health','programs','history']);
+
+ const routeFromButton=function(btn){
+  const oc=String(btn?.getAttribute?.('onclick')||'');
+  const m=oc.match(/go\(['"]([^'"]+)['"]\)/);
+  return m?m[1]:'';
+ };
+ const extractMain=function(html,selector='main'){
+  const t=document.createElement('template');t.innerHTML=String(html||'').trim();
+  const main=t.content.querySelector(selector)||t.content.querySelector('main');
+  return main?main.outerHTML:'';
+ };
+
+ window.tp155R4DecorateNavigation=function(){
+  const top=document.querySelector('.top.tp154-nav-grid');if(!top)return;
+  const buttons=[...top.querySelectorAll('.tp151-nav-item')];
+  const order={home:1,plan:2,health:3,programs:4,history:5,calendar:6};
+  buttons.forEach(function(btn){
+   const route=routeFromButton(btn);if(order[route])btn.style.order=String(order[route]);
+   const active=!currentPanel&&(route===state.tab||(route==='history'&&state.tab==='stats')||(route==='home'&&state.tab==='profile'));
+   btn.classList.toggle('active',!!active);
+  });
+  const coach=top.querySelector('.tp154-coach-action'),settings=top.querySelector('.tp154-settings-action');
+  if(coach){
+   coach.style.order='7';coach.classList.toggle('active',currentPanel==='coach');
+   coach.setAttribute('aria-expanded',currentPanel==='coach'?'true':'false');
+   coach.setAttribute('onclick',"tp155R4TogglePanel('coach',this)");
+  }
+  if(settings){
+   settings.style.order='8';settings.classList.toggle('active',currentPanel==='settings');
+   settings.setAttribute('aria-expanded',currentPanel==='settings'?'true':'false');
+   settings.setAttribute('onclick',"tp155R4TogglePanel('settings',this)");
+   if(!settings.querySelector('.tp151-nav-label'))settings.insertAdjacentHTML('beforeend','<span class="tp151-nav-label">'+esc(tp151T('settings'))+'</span>');
+  }
+  const calendar=buttons.find(x=>routeFromButton(x)==='calendar');
+  if(calendar){
+   const calendarOpen=currentPanel==='calendar'||currentPanel==='replan'&&!!replanCalendarReturn;
+   calendar.classList.toggle('active',calendarOpen);
+   calendar.setAttribute('aria-expanded',calendarOpen?'true':'false');
+  }
+ };
+
+ // A selected day has its own surface; its contents never compete with the fixed month/planner.
+ let dayHost=null,dayTrigger=null,dayDate='',dayBackground=[],daySessionAtOpen=null,dayMarkup='',dayFocusId='';
+ const dayNestedPicker=()=>!!document.querySelector('#tpTemporalPicker,#tp2628Dialog,.video-modal,.video-overlay');
+ const markCalendarDays=function(){
+  panelHost?.querySelectorAll('.cal-cell[onclick]').forEach(button=>{
+   const date=button.getAttribute('onclick').match(/toggleCalendarDay\(['"]([^'"]+)['"]\)/)?.[1];if(!date)return;
+   button.setAttribute('aria-haspopup','dialog');button.setAttribute('aria-expanded',String(!!dayHost&&date===dayDate));
+  });
+ };
+ const closeDay=function(restoreFocus=true){
+  if(!dayHost)return false;
+  if(typeof rf260TemporalPicker!=='undefined'&&rf260TemporalPicker)rf260TemporalClose(false);
+  rf260CloseSelects();dayHost.remove();dayHost=null;dayMarkup='';dayFocusId='';state.tp151EditingScheduleId=null;
+  for(const [node,inert] of dayBackground)if(node.isConnected)node.inert=inert;dayBackground=[];
+  markCalendarDays();
+  const trigger=dayTrigger?.isConnected?dayTrigger:panelHost?.querySelector('.cal-cell[onclick*="'+dayDate+'"]');dayTrigger=null;
+  if(restoreFocus)trigger?.focus({preventScroll:true});return true;
+ };
+ const refreshDay=function(){
+  if(!dayHost)return;
+  if(currentPanel!=='calendar'){closeDay(false);return;}
+  const content=dayHost.querySelector('.tp108-day-content'),y=content.scrollTop;
+  const html=tp151CalendarDayPanel();if(html===dayMarkup){markCalendarDays();return;}
+  const focusNode=document.activeElement,hadFocus=content.contains(focusNode);
+  // Rebuilding an edited day can otherwise discard its unsaved inputs and move focus
+  // to the dialog itself. Preserve only the same schedule's draft across this redraw.
+  const editingId=state.tp151EditingScheduleId;
+  const editFields=editingId?['tp151ScheduleDay','tp151ScheduleTime','tp151ScheduleMinutes']:[];
+  if(!editingId)dayFocusId='';
+  const fieldDraft=editFields.map(id=>[id,content.querySelector('#'+id)?.value]).filter(([,value])=>value!==undefined);
+  const focusId=hadFocus&&focusNode?.id&&editFields.includes(focusNode.id)?focusNode.id:
+   (editingId&&editFields.includes(dayFocusId)?dayFocusId:'');
+  if(focusId)dayFocusId=focusId;
+  content.innerHTML=html;dayMarkup=html;
+  if(editingId&&editingId===state.tp151EditingScheduleId){
+   for(const [id,value] of fieldDraft){
+    const field=content.querySelector('#'+id);
+    if(field)field.value=value;
+   }
+  }
+  const heading=content.querySelector('.tp151-day-title h2');if(heading)heading.id='tp108DayTitle';
+  rf260EnhanceSelects();rf260EnhanceTemporalFields();tp149TranslateFreshDom?.(content);
+  window.tp155R4ApplyHighlightSurfaces?.(content);
+  content.scrollTop=Math.min(y,Math.max(0,content.scrollHeight-content.clientHeight));markCalendarDays();
+  if(hadFocus||focusId){
+   const target=focusId?content.querySelector('#'+focusId):null;
+   (target||dayHost.querySelector('.tp108-day-dialog'))?.focus({preventScroll:true});
+  }
+  if(focusId){
+   const owner=dayHost;
+   // Other render decorators can repaint a second time in the same turn. Restore
+   // only the still-edited field, after those synchronous decorators complete.
+   Promise.resolve().then(()=>{
+    if(dayHost!==owner||state.tp151EditingScheduleId!==editingId||dayNestedPicker())return;
+    const field=owner.querySelector('#'+focusId);
+    if(field&&field.isConnected&&document.activeElement!==field)field.focus({preventScroll:true});
+   });
+  }
+ };
+ const openDay=function(date,trigger){
+  if(currentPanel!=='calendar'||!/^\d{4}-\d{2}-\d{2}$/.test(date))return false;
+  state.rf2211CalendarDate=date;state.tp151EditingScheduleId=null;dayDate=date;dayTrigger=trigger;daySessionAtOpen=state.session;
+  const grid=panelHost.querySelector('.calendar-grid');if(grid)grid.innerHTML=calendarGrid();
+  if(!dayHost){
+   dayHost=document.createElement('div');dayHost.id='tp108CalendarDay';dayHost.className='tp108-day-backdrop';
+   dayHost.innerHTML='<section class="tp108-day-dialog" role="dialog" aria-modal="true" aria-labelledby="tp108DayTitle" tabindex="-1"><button type="button" class="tp108-day-close tp-modal-close" aria-label="'+esc(tp149T('common.close'))+'" onclick="TrainPilotCalendarDay.close()">×</button><div class="tp108-day-content"></div></section>';
+   dayHost.addEventListener('click',event=>{if(event.target===dayHost)closeDay();});
+   dayHost.addEventListener('focusin',event=>{
+    if(['tp151ScheduleDay','tp151ScheduleTime','tp151ScheduleMinutes'].includes(event.target?.id))
+     dayFocusId=event.target.id;
+   });
+   dayHost.addEventListener('keydown',event=>{
+    if(dayNestedPicker())return;
+    if(event.key==='Escape'){
+     event.preventDefault();event.stopPropagation();
+     const select=dayHost.querySelector('.tp-select.open');if(select){rf260CloseSelects();select.querySelector('.tp-select-trigger')?.focus();return;}
+     if(state.tp151EditingScheduleId){tp151CancelCalendarEdit();return;}closeDay();return;
+    }
+    if(event.key==='Tab'){
+     const nodes=[...dayHost.querySelectorAll('button,input,select,[tabindex="0"]')].filter(node=>!node.disabled&&node.getClientRects().length&&getComputedStyle(node).visibility!=='hidden');
+     const first=nodes[0],last=nodes.at(-1),active=document.activeElement;
+     if(event.shiftKey&&(active===first||active===dayHost.querySelector('.tp108-day-dialog'))){event.preventDefault();last?.focus();}
+     else if(!event.shiftKey&&(active===last||active===dayHost.querySelector('.tp108-day-dialog'))){event.preventDefault();first?.focus();}
+    }
+   },true);
+   document.body.appendChild(dayHost);
+   dayBackground=[document.getElementById('app'),panelHost].filter(Boolean).map(node=>[node,node.inert]);
+   dayBackground.forEach(([node])=>{node.inert=true;});
+  }
+  refreshDay();dayHost.querySelector('.tp108-day-dialog').focus({preventScroll:true});return true;
+ };
+ window.TrainPilotCalendarDay={open:openDay,close:closeDay,isOpen:()=>!!dayHost};
+
+ const calendarHtml=function(){
+  const month=tp149FormatDate(new Date(state.calendarMonth+'-01T12:00'),{year:'numeric',month:'long'}),weekdays=tp149Weekdays();
+  const planner=typeof rf2211Planner==='function'?rf2211Planner():'';
+  return '<main class="tp151-calendar tp155-r4-calendar-panel-main">'+
+   '<section class="tp151-calendar-frame tp155-r4-calendar-frame"><div class="calendar-head"><button class="btn secondary" onclick="changeCalendarMonth(-1)">‹</button><strong>'+esc(month)+'</strong><button class="btn secondary" onclick="changeCalendarMonth(1)">›</button></div><div class="cal-weekdays">'+weekdays.map(x=>'<span>'+esc(x)+'</span>').join('')+'</div><div class="calendar-grid">'+calendarGrid()+'</div></section>'+
+   '<div class="tp155-r4-planner-bottom">'+planner+'</div>'+
+   '</main>';
+ };
+
+ const settingsHtml=function(){
+  try{return extractMain(settingsScreen(),'main.tp1511-settings,main.tp152-settings')}catch(_){return ''}
+ };
+
+ const coachBase=rf233CoachScreen;
+ const coachHtml=function(){
+  const oldTab=state.tab,oldHealth=state.healthView;
+  const hadVisible=typeof rf245CoachVisible!=='undefined',oldVisible=hadVisible?rf245CoachVisible:undefined;
+  const hadReturn=typeof tp153CoachReturn!=='undefined',oldReturn=hadReturn?tp153CoachReturn:undefined;
+  const liveRender=render;let captured='';
+  try{
+   render=function(custom){captured=String(custom||'');return custom};
+   coachBase();
+  }catch(_){captured=''}
+  finally{
+   render=liveRender;state.tab=oldTab;state.healthView=oldHealth;
+   if(hadVisible)rf245CoachVisible=oldVisible;
+   if(hadReturn)tp153CoachReturn=oldReturn;
+  }
+  if(!captured)return '';
+  const t=document.createElement('template');t.innerHTML=captured;
+  const main=t.content.querySelector('main.tp151-coach')||t.content.querySelector('main');
+  main?.querySelector('.tp151-back-row')?.remove();
+  return main?main.outerHTML:'';
+ };
+
+ const panelHtml=function(type){
+  if(type==='health-journal')return window.TrainPilotHealthJournal?.html()||'';
+  if(type==='ble')return ''; // Experimental watch UI is retired; protocol code remains available.
+  if(type==='goals')return window.TrainPilot110?.goalsHtml()||'';
+  if(type==='replan')return window.TrainPilot110?.replanHtml()||'';
+  if(type==='calendar')return calendarHtml();
+  if(type==='settings')return settingsHtml();
+  if(type==='coach')return coachHtml();
+  if(type==='quick')return typeof window.tp155QuickPanelHtml==='function'?window.tp155QuickPanelHtml():'';
+  if(type==='exercises')return typeof window.tp155ExercisePanelHtml==='function'?window.tp155ExercisePanelHtml():'';
+  if(type==='custom-exercise')return typeof window.tp106CustomExercisePanelHtml==='function'?window.tp106CustomExercisePanelHtml():'';
+  if(type==='custom-program')return typeof window.tp106CustomProgramPanelHtml==='function'?window.tp106CustomProgramPanelHtml():'';
+  return '';
+ };
+
+ const positionPanel=function(){
+  if(!panelHost)return;
+  const top=document.querySelector('.top.tp154-nav-grid');
+  const r=top?.getBoundingClientRect?.(),edge=r?Math.max(0,Math.min(innerHeight-80,r.bottom)):0;
+  panelHost.style.top=Math.round(edge)+'px';
+ };
+
+ window.tp155R4RefreshPanel=function(){
+  if(!currentPanel||!panelHost)return;
+  const panel=panelHost.querySelector('.tp155-r4-panel'),content=panelHost.querySelector('.tp155-r4-panel-content');
+  if(!panel||!content)return;
+  const y=panel.scrollTop;
+  // Position from the existing navigation geometry before replacing panel DOM.
+  positionPanel();
+  const builder=['custom-exercise','custom-program','goals','replan','ble','health-journal'].includes(currentPanel);
+  let header=panel.querySelector('.tp106-builder-header');
+  if(builder&&!header){header=document.createElement('div');header.className='tp106-builder-header';header.innerHTML='<strong id="tp106BuilderTitle"></strong>';header.appendChild(panel.querySelector('.tp155-r4-panel-close'));panel.prepend(header);}
+  if(!builder&&header){panel.prepend(header.querySelector('.tp155-r4-panel-close'));header.remove();}
+  if(builder){header.querySelector('strong').textContent=currentPanel==='health-journal'?window.TrainPilotHealthJournal.t('title'):currentPanel==='ble'?window.TrainPilotBle.t('title'):currentPanel==='goals'?window.TrainPilot110.t('goals'):currentPanel==='replan'?window.TrainPilot110.t('replanTitle'):currentPanel==='custom-exercise'?tp149T('customExercise.title'):(tp106ProgramId?programById(tp106ProgramId)?.name:tp149T('dialog.customProgram.title'));}
+  content.innerHTML=panelHtml(currentPanel);
+  try{if(typeof rf260EnhanceSelects==='function')rf260EnhanceSelects()}catch(_){}
+  try{if(typeof rf260EnhanceTemporalFields==='function')rf260EnhanceTemporalFields()}catch(_){}
+  try{if(typeof tp149TranslateFreshDom==='function')tp149TranslateFreshDom(content)}catch(_){}
+  try{if(typeof window.tp155R4ApplyHighlightSurfaces==='function')window.tp155R4ApplyHighlightSurfaces(content)}catch(_){}
+  // Native scrolling clamps the preserved offset without two forced geometry reads.
+  panel.scrollTop=y;
+  window.tp155R4DecorateNavigation();markCalendarDays();refreshDay();
+  if(currentPanel==='replan')window.TrainPilot110?.previewReplan();
+ };
+
+ window.tp155R4ClosePanel=function(restoreFocus=true){
+  closeDay(false);
+  if(!currentPanel&&!panelHost)return false;
+  window.tp162CloseThemeDropdown?.();

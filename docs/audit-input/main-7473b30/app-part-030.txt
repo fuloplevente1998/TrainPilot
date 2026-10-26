@@ -1,0 +1,163 @@
+ html=html.replace(/<div class="muted">Következő:[\s\S]*?<\/div><br>/,block).replace(/<div class="muted">Következő ciklusnap:[\s\S]*?<\/div><br>/,block);
+ return html;
+};
+
+scheduleListHtml=function(){
+ const isDone=x=>typeof rf209ScheduleDone==='function'?rf209ScheduleDone(x):(x.status==='completed'||history().some(h=>h.scheduleId===x.id));
+ const items=scheduled().filter(x=>!x.cancelled&&!isDone(x)).sort((a,b)=>Date.parse(a.start)-Date.parse(b.start)).slice(-120);
+ return items.length?items.map(x=>{const p=programById(x.programId||'home-basic'),d=programDay(p,x.dayId||x.workout),skipped=x.status==='skipped',moving=state?.rf260MovingScheduleId===x.id;return `<div class="card schedule-card tp146-schedule-card"><div class="tp146-schedule-copy"><strong class="tp146-schedule-title">${esc(tp146ProgramDayTitle(p,d))}</strong><div class="small muted">${esc(fmtDate(x.start))} • ${skipped?'Kihagyva':'Tervezett'}</div></div><div class="schedule-actions tp146-schedule-actions"><div class="tp146-schedule-primary"><button class="btn" onclick="startScheduledById('${esc(x.id)}')">Indítás</button><button class="btn secondary ${moving?'tp-action-active':''}" data-tp-move-id="${esc(x.id)}" aria-pressed="${moving?'true':'false'}" onclick="rf260OpenScheduleMove('${esc(x.id)}',this)">Áthelyezés</button></div><div class="tp146-schedule-side"><button class="btn danger" onclick="rf209DeleteSchedule('${esc(x.id)}')">Törlés</button><button class="btn secondary ${skipped?'tp-selected':''}" aria-pressed="${skipped?'true':'false'}" onclick="skipSchedule('${esc(x.id)}')">${skipped?'Vissza':'Kihagyás'}</button></div></div></div>`}).join(''):'<div class="muted">Még nincs tervezett edzés.</div>';
+};
+
+var tp146CompactHealthCards=function tp146CompactHealthCards(){
+ const main=document.querySelector?.('main.rf263-health');if(!main)return;
+ main.querySelectorAll?.(':scope > .card')?.forEach(card=>{const h=card.querySelector?.(':scope > h2');if(!h)return;const text=String(h.textContent||'').trim();if(/^(Mai állapot|Today status|Heutiger Status|Starea de azi|Test és fittség|Body and fitness|Körper und Fitness|Corp și fitness)$/i.test(text))card.classList.add('tp146-health-compact')});
+};
+if(typeof rf263HealthHub==='function'){
+ const tp146HealthHubBase=rf263HealthHub;
+ rf263HealthHub=function(){const r=tp146HealthHubBase.apply(this,arguments);tp146CompactHealthCards();return r};
+}
+
+if(typeof rf130DeletePhoto==='function'){
+ rf130DeletePhoto=async function(key,id){
+  const q=rf130FindPhoto(key,id);if(!q.p||q.p.deletedAt)return;
+  const ok=await tp2628Confirm('Törlöd ezt a naplófotót? A következő Drive-szinkron a felhőből is eltávolítja.',{title:'Naplófotó törlése',confirmText:'Törlés',danger:true});
+  if(!ok)return;
+  try{await rf130PhotoPlugin()?.delete?.({id})}catch(_){}
+  q.p.deletedAt=new Date().toISOString();q.p.updatedAt=Date.now();db.set('history',q.h);cloudChanged();render();window.TrainPilotFeedback?.deleted();
+ };
+}
+
+window.TrainPilotUiUnify={version:'2630-main',nativeDialogAudit:true};
+window.TrainPilotInlineCompact={version:'2630'};
+const TP146_UI_VERSION='1.4.6';
+
+
+// @endsection trainpilot-146-inline-compact.js
+
+// @section trainpilot-146-layout-hotfix.js
+// TrainPilot 1.4.6 main hotfix: restore calendar action layout and place the A/B marker inside the workout title.
+(function(){
+  'use strict';
+
+  var tp146HotfixProgramBaseTitle=function(program,day){
+    const full=typeof tp146ProgramDayTitle==='function'?String(tp146ProgramDayTitle(program,day)||''):String(program?.name||'Program');
+    const label=String(day?.name||day?.id||'').trim();
+    const suffix=label?` - ${label}`:'';
+    if(suffix&&full.endsWith(suffix))return full.slice(0,-suffix.length);
+    return String(program?.name||'Program').replace(/\s*[–—]\s*/g,' - ').replace(/\s+-\s+/g,' - ').trim();
+  };
+  var tp146HotfixDayBadge=function(day){return String(day?.name||day?.id||'').trim()};
+  var tp146HotfixDayHeading=function(program,day){
+    const base=esc(tp146HotfixProgramBaseTitle(program,day)),badge=esc(tp146HotfixDayBadge(day));
+    return `<div class="tp146-day-headingline"><h2 class="tp146-day-title">${base}${badge?` <span class="tp146-day-sep">-</span> <span class="tp146-day-letter" aria-label="${badge}">${badge}</span>`:''}</h2></div>`;
+  };
+
+  planScreen=function(){
+    const p=activeProgram();
+    if(!p)return shell(`<main><div class="hero"><h1>Nincs aktív program</h1><div class="muted">Válassz programot a Programok fülön.</div></div><button class="btn block" onclick="go('programs')">Program választása</button></main>`);
+    return shell(`<main class="tp146-plan"><div class="hero"><span class="badge">AKTÍV PROGRAM</span><h1>${esc(p.name)}</h1><div class="muted">${esc(p.location||'')} ${p.level?`• ${esc(p.level)}`:''} • ${p.days?.length||0} napos ciklus</div><br><button class="btn secondary block" onclick="go('programs')">Másik program választása</button></div>${(p.days||[]).map(d=>`<div class="card tp146-day-head"><div class="tp146-day-copy"><span class="badge">EDZÉSNAP</span>${tp146HotfixDayHeading(p,d)}<div class="small muted">${d.exercises?.length||0} gyakorlat • koppints a részletekhez</div></div></div>${(d.exercises||[]).map((id,i)=>rf201ExerciseRow(d.id,id,i)).join('')}<button class="btn secondary block" onclick="rf154AddScreen('${esc(d.id)}')">+ Gyakorlat hozzáadása</button><br><button class="btn block" onclick="startWorkout('${esc(d.id)}')">Edzés indítása</button>`).join('<br>')}</main>`);
+  };
+
+  showWorkout=function(dayId){
+    state.workout=dayId;state.tab='plan';const p=activeProgram(),d=programDay(p,dayId);if(!p||!d){render();return;}
+    render(shell(`<main class="tp146-plan"><button class="btn secondary" onclick="go('plan')">← ${esc(p.name)}</button><div class="hero"><span class="badge">AKTÍV PROGRAM</span><div class="tp146-workout-hero-title">${tp146HotfixDayHeading(p,d)}</div><div class="muted">${d.exercises?.length||0} gyakorlat</div></div>${(d.exercises||[]).map((id,i)=>rf201ExerciseRow(d.id,id,i)).join('')}<br><button class="btn secondary block" onclick="rf154AddScreen('${esc(d.id)}')">+ Gyakorlat hozzáadása</button><br><button class="btn block" onclick="startWorkout('${esc(d.id)}')">Edzés indítása</button></main>`));
+  };
+
+  scheduleListHtml=function(){
+    const isDone=x=>typeof rf209ScheduleDone==='function'?rf209ScheduleDone(x):(x.status==='completed'||history().some(h=>h.scheduleId===x.id));
+    const items=scheduled().filter(x=>!x.cancelled&&!isDone(x)).sort((a,b)=>Date.parse(a.start)-Date.parse(b.start)).slice(-120);
+    return items.length?items.map(x=>{
+      const p=programById(x.programId||'home-basic'),d=programDay(p,x.dayId||x.workout),skipped=x.status==='skipped',moving=state?.rf260MovingScheduleId===x.id;
+      return `<div class="card schedule-card tp146-schedule-card"><div class="tp146-schedule-head"><div class="tp146-schedule-copy"><strong class="tp146-schedule-title">${esc(tp146ProgramDayTitle(p,d))}</strong><div class="small muted">${esc(fmtDate(x.start))} • ${skipped?'Kihagyva':'Tervezett'}</div></div><button class="btn danger tp146-schedule-delete" onclick="rf209DeleteSchedule('${esc(x.id)}')">Törlés</button></div><div class="schedule-actions tp146-schedule-actions-row"><button class="btn" onclick="startScheduledById('${esc(x.id)}')">Indítás</button><button class="btn secondary ${moving?'tp-action-active':''}" data-tp-move-id="${esc(x.id)}" aria-pressed="${moving?'true':'false'}" onclick="rf260OpenScheduleMove('${esc(x.id)}',this)">Áthelyezés</button><button class="btn secondary ${skipped?'tp-selected':''}" aria-pressed="${skipped?'true':'false'}" onclick="skipSchedule('${esc(x.id)}')">${skipped?'Vissza':'Kihagyás'}</button></div></div>`;
+    }).join(''):'<div class="muted">Még nincs tervezett edzés.</div>';
+  };
+
+  const style=document.createElement('style');
+  style.id='tp146-layout-hotfix-css';
+  style.textContent=`
+    .tp146-day-head{justify-content:flex-start!important}
+    .tp146-day-headingline{display:flex;align-items:center;min-width:0}
+    .tp146-day-title{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:5px 0 2px!important}
+    .tp146-day-title .tp146-day-letter{display:inline-grid!important;place-items:center;flex:0 0 36px;width:36px;height:36px;border-radius:11px;border:1px solid color-mix(in srgb,var(--accent) 72%,var(--line));background:color-mix(in srgb,var(--accent) 14%,var(--card));color:var(--accent2);font-size:20px;font-weight:950;vertical-align:middle}
+    .tp146-day-sep{color:var(--muted);font-weight:700}
+    .tp146-workout-hero-title .tp146-day-title{font-size:clamp(26px,7vw,38px)!important;line-height:1.1;margin:8px 0 6px!important}
+    .tp146-workout-hero-title .tp146-day-title .tp146-day-letter{width:42px;height:42px;flex-basis:42px;font-size:22px;border-radius:13px}
+    .tp146-schedule-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+    .tp146-schedule-copy{min-width:0;flex:1}
+    .tp146-schedule-delete{flex:0 0 auto;min-height:34px!important;padding:7px 12px!important;margin:0!important;align-self:flex-start}
+    .tp146-schedule-actions-row{display:flex!important;grid-template-columns:none!important;gap:6px!important;flex-wrap:wrap!important;align-items:stretch}
+    .tp146-schedule-actions-row .btn{flex:1 1 90px;min-height:40px!important;padding:9px 10px!important;margin:0!important}
+    @media(max-width:380px){.tp146-schedule-delete{padding:7px 9px!important}.tp146-schedule-actions-row .btn{flex-basis:82px}}
+  `;
+  document.head.appendChild(style);
+
+  window.TrainPilotUiHotfix={version:'2630b',calendarActionsRestored:true,inlineDayBadge:true};
+  if(window.TrainPilotBoot?.finished)render();
+})();
+// @endsection trainpilot-146-layout-hotfix.js
+
+// @section trainpilot-148-adaptive-planner.js
+/* TrainPilot 1.4.8 development: adaptive personal planner + 100-exercise library. */
+const RF148_VERSION='1.4.8';
+var rf148PlanDayHeading=function rf148PlanDayHeading(program,day){
+ const base=esc(typeof tp146ProgramDayTitle==='function'?tp146ProgramDayTitle(program,{id:'',name:''}):String(program?.name||'Program'));
+ const badge=esc(String(day?.id||day?.name||'').trim());
+ return '<div class="tp146-day-headingline"><h2 class="tp146-day-title">'+base+(badge?' <span class="tp146-day-sep">-</span> <span class="tp146-day-letter" aria-label="'+badge+'">'+badge+'</span>':'')+'</h2></div>';
+};
+planScreen=function(){
+ const p=activeProgram();
+ if(!p)return shell('<main><div class="hero"><h1>Nincs aktív program</h1><div class="muted">Válassz programot a Programok fülön.</div></div><button class="btn block" onclick="go(\'programs\')">Program választása</button></main>');
+ return shell('<main class="tp146-plan"><div class="hero"><span class="badge">AKTÍV PROGRAM</span><h1>'+esc(p.name)+'</h1><div class="muted">'+esc(p.location||'')+(p.level?' • '+esc(p.level):'')+' • '+(p.days?.length||0)+' napos ciklus</div><br><button class="btn secondary block" onclick="go(\'programs\')">Másik program választása</button></div>'+(p.days||[]).map(function(d){return '<div class="card tp146-day-head"><div class="tp146-day-copy"><span class="badge">EDZÉSNAP</span>'+rf148PlanDayHeading(p,d)+'<div class="small muted">'+(d.exercises?.length||0)+' gyakorlat • koppints a részletekhez</div></div></div>'+(d.exercises||[]).map(function(id,i){return rf201ExerciseRow(d.id,id,i);}).join('')+'<button class="btn secondary block" onclick="rf154AddScreen(\''+esc(d.id)+'\')">+ Gyakorlat hozzáadása</button><br><button class="btn block" onclick="startWorkout(\''+esc(d.id)+'\')">Edzés indítása</button>';}).join('<br>')+'</main>');
+};
+showWorkout=function(dayId){
+ state.workout=dayId;state.tab='plan';const p=activeProgram(),d=programDay(p,dayId);if(!p||!d){render();return;}
+ render(shell('<main class="tp146-plan"><button class="btn secondary" onclick="go(\'plan\')">← '+esc(p.name)+'</button><div class="hero"><span class="badge">AKTÍV PROGRAM</span><div class="tp146-workout-hero-title">'+rf148PlanDayHeading(p,d)+'</div><div class="muted">'+(d.exercises?.length||0)+' gyakorlat</div></div>'+(d.exercises||[]).map(function(id,i){return rf201ExerciseRow(d.id,id,i);}).join('')+'<br><button class="btn secondary block" onclick="rf154AddScreen(\''+esc(d.id)+'\')">+ Gyakorlat hozzáadása</button><br><button class="btn block" onclick="startWorkout(\''+esc(d.id)+'\')">Edzés indítása</button></main>'));
+};
+const RF148_PATTERN_LABELS={
+ squat:'Guggolás',hinge:'Csípődomináns',lunge:'Kitörés','horizontal-push':'Vízszintes tolás','horizontal-pull':'Vízszintes húzás',
+ 'vertical-push':'Függőleges tolás','vertical-pull':'Függőleges húzás','chest-isolation':'Mell izoláció','shoulder-isolation':'Váll izoláció',
+ 'rear-delt':'Hátsó váll','elbow-flexion':'Bicepsz','elbow-extension':'Tricepsz','knee-extension':'Térdnyújtás','knee-flexion':'Térdhajlítás',
+ calf:'Vádli','core-bracing':'Törzsfeszítés','core-flexion':'Törzshajlítás','core-stability':'Törzsstabilizáció',conditioning:'Kondicionálás',other:'Egyéb'
+};
+const RF148_STYLE_LABELS={strength:'Erősítés',bodybuilding:'Testépítés',calisthenics:'Calisthenics',conditioning:'Kondicionálás',mobility:'Mobilitás',other:'Egyéb'};
+const RF148_FOCUS_LABELS={balanced:'Kiegyensúlyozott',upper:'Felsőtest',chestback:'Mell / hát',shoulderarms:'Váll / kar',core:'Törzs',legs:'Láb'};
+const RF148_AREA_LABELS={legs:'Láb',chest:'Mell',back:'Hát',shoulders:'Váll',arms:'Kar',core:'Törzs'};
+const RF148_AREA_PATTERNS={
+ legs:['squat','hinge','lunge','knee-extension','knee-flexion','calf'],
+ chest:['horizontal-push','chest-isolation'],
+ back:['horizontal-pull','vertical-pull'],
+ shoulders:['vertical-push','shoulder-isolation','rear-delt'],
+ arms:['elbow-flexion','elbow-extension'],
+ core:['core-bracing','core-flexion','core-stability']
+};
+const RF148_ROLE_PATTERNS={
+ leg:['squat','lunge','knee-extension','calf'],
+ hinge:['hinge','knee-flexion'],
+ push:['horizontal-push','chest-isolation'],
+ pull:['horizontal-pull','vertical-pull'],
+ shoulder:['vertical-push','shoulder-isolation','rear-delt'],
+ bi:['elbow-flexion'],tri:['elbow-extension'],
+ core:['core-bracing','core-flexion'],stability:['core-stability'],conditioning:['conditioning']
+};
+const RF148_NEW_EXERCISES=[
+{id:'pullup',hu:'Húzódzkodás',en:'Pull-Up',equipment:'húzódzkodórúd',loadType:'bodyweight',target:'Hát / bicepsz',notes:'Stabil rúdon, lendítés nélkül húzd a mellkast a rúd felé. A váll ne essen előre a felső helyzetben.',sets:3,reps:'4–10',weight:0,repUnit:'ism.',movementPattern:'vertical-pull',difficulty:'intermediate',complexity:'medium',beginnerSafe:false,compound:true,goalTags:['fitness','muscle','strength'],style:'calisthenics'},
+{id:'chinup',hu:'Húzódzkodás alsó fogással',en:'Chin-Up',equipment:'húzódzkodórúd',loadType:'bodyweight',target:'Hát / bicepsz',notes:'Alsó fogással, feszes törzzsel húzd magad fel. Kerüld a lendítést és a váll felhúzását.',sets:3,reps:'4–10',weight:0,repUnit:'ism.',movementPattern:'vertical-pull',difficulty:'intermediate',complexity:'medium',beginnerSafe:false,compound:true,goalTags:['fitness','muscle','strength'],style:'calisthenics'},
+{id:'negative-pullup',hu:'Negatív húzódzkodás',en:'Negative Pull-Up',equipment:'húzódzkodórúd',loadType:'bodyweight',target:'Hát / bicepsz',notes:'Felső helyzetből 3–5 másodperc alatt engedd le magad kontrolláltan. Biztonságos fellépőről indulj.',sets:3,reps:'3–6',weight:0,repUnit:'ism.',movementPattern:'vertical-pull',difficulty:'beginner',complexity:'medium',beginnerSafe:true,compound:true,goalTags:['fitness','muscle','strength'],style:'calisthenics'},
+{id:'scapular-pullup',hu:'Lapockás húzódzkodás',en:'Scapular Pull-Up',equipment:'húzódzkodórúd',loadType:'bodyweight',target:'Hát / lapocka',notes:'Nyújtott karral csak a lapockákat húzd lefelé és hátra, majd kontrolláltan engedd vissza.',sets:2,reps:'8–15',weight:0,repUnit:'ism.',movementPattern:'vertical-pull',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:false,goalTags:['fitness','muscle'],style:'calisthenics'},
+{id:'inverted-row',hu:'Fordított evezés',en:'Inverted Row',equipment:'stabil alacsony rúd / heveder',loadType:'bodyweight',target:'Hát / bicepsz',notes:'A test maradjon egyenes, húzd a mellkast a stabil rúd felé, majd lassan engedd vissza.',sets:3,reps:'6–15',weight:0,repUnit:'ism.',movementPattern:'horizontal-pull',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:true,goalTags:['fitness','muscle','strength'],style:'calisthenics'},
+{id:'dip',hu:'Tolódzkodás',en:'Parallel Bar Dip',equipment:'tolódzkodó korlát',loadType:'bodyweight',target:'Mell / tricepsz',notes:'Stabil korláton kontrolláltan engedd a tested, majd nyomd vissza. Ne erőltesd a váll számára kényelmetlen mélységet.',sets:3,reps:'5–12',weight:0,repUnit:'ism.',movementPattern:'horizontal-push',difficulty:'intermediate',complexity:'medium',beginnerSafe:false,compound:true,goalTags:['fitness','muscle','strength'],style:'calisthenics'},
+{id:'bench-dip',hu:'Pados tolódzkodás',en:'Bench Dip',equipment:'stabil pad',loadType:'bodyweight',target:'Tricepsz / mell',notes:'A pad legyen stabil. Csak fájdalommentes vállmozgástartományban engedd magad, a könyök hátrafelé haladjon.',sets:2,reps:'6–12',weight:0,repUnit:'ism.',movementPattern:'horizontal-push',difficulty:'intermediate',complexity:'medium',beginnerSafe:false,compound:true,goalTags:['fitness','muscle'],style:'calisthenics'},
+{id:'diamond-pushup',hu:'Gyémánt fekvőtámasz',en:'Diamond Push-Up',equipment:'testsúly',loadType:'bodyweight',target:'Tricepsz / mell',notes:'A kezek közel legyenek egymáshoz a mellkas alatt. Tartsd feszesen a törzset és kontrolláld a könyököt.',sets:3,reps:'6–15',weight:0,repUnit:'ism.',movementPattern:'horizontal-push',difficulty:'intermediate',complexity:'medium',beginnerSafe:false,compound:true,goalTags:['fitness','muscle','strength'],style:'calisthenics'},
+{id:'pseudo-planche-pushup',hu:'Pseudo planche fekvőtámasz',en:'Pseudo Planche Push-Up',equipment:'testsúly',loadType:'bodyweight',target:'Mell / váll / tricepsz',notes:'A vállakat enyhén told a kéz elé, a törzs maradjon feszes. Csak stabil fekvőtámasz-technika után.',sets:3,reps:'4–10',weight:0,repUnit:'ism.',movementPattern:'horizontal-push',difficulty:'advanced',complexity:'high',beginnerSafe:false,compound:true,goalTags:['fitness','muscle','strength'],style:'calisthenics'},
+{id:'hanging-knee-raise',hu:'Függésben térdemelés',en:'Hanging Knee Raise',equipment:'húzódzkodórúd',loadType:'bodyweight',target:'Törzs',notes:'Lendítés nélkül húzd a térdeket a mellkas felé, a medencét enyhén billentsd hátra.',sets:3,reps:'6–15',weight:0,repUnit:'ism.',movementPattern:'core-flexion',difficulty:'intermediate',complexity:'medium',beginnerSafe:false,compound:false,goalTags:['fitness','muscle'],style:'calisthenics'},
+{id:'hanging-leg-raise',hu:'Függésben lábemelés',en:'Hanging Leg Raise',equipment:'húzódzkodórúd',loadType:'bodyweight',target:'Törzs',notes:'Nyújtott vagy enyhén hajlított lábbal emelj lendítés nélkül. Csak stabil függés és térdemelés után.',sets:3,reps:'5–12',weight:0,repUnit:'ism.',movementPattern:'core-flexion',difficulty:'advanced',complexity:'high',beginnerSafe:false,compound:false,goalTags:['fitness','muscle','strength'],style:'calisthenics'},
+{id:'hollow-hold',hu:'Hollow tartás',en:'Hollow Body Hold',equipment:'testsúly',loadType:'bodyweight',target:'Törzs',notes:'A derekat finoman szorítsd a talajhoz. Rövidítsd a kartartást vagy hajlítsd a térdet, ha a derék elemelkedik.',sets:3,reps:'20–40 mp',weight:0,repUnit:'mp',movementPattern:'core-bracing',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:false,goalTags:['fitness','strength'],style:'calisthenics'},
+{id:'superman-hold',hu:'Superman tartás',en:'Superman Hold',equipment:'testsúly',loadType:'bodyweight',target:'Hát / törzs',notes:'Hason fekve kis mozgástartományban emeld a kart és lábat, a nyak maradjon semleges. Ne homoríts túl.',sets:2,reps:'15–30 mp',weight:0,repUnit:'mp',movementPattern:'core-stability',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:false,goalTags:['fitness'],style:'calisthenics'},
+{id:'mountain-climber',hu:'Hegymászó',en:'Mountain Climber',equipment:'testsúly',loadType:'bodyweight',target:'Törzs / kondíció',notes:'Fekvőtámasz-helyzetben váltva húzd a térdeket előre. Tartsd stabilan a medencét és a vállat.',sets:3,reps:'30–60 mp',weight:0,repUnit:'mp',movementPattern:'conditioning',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:true,goalTags:['fitness','fatloss'],style:'conditioning'},
+
+{id:'band-row',hu:'Gumiszalagos evezés',en:'Resistance Band Row',equipment:'gumiszalag',loadType:'bodyweight',target:'Hát / bicepsz',notes:'A szalagot stabil ponthoz rögzítsd. Könyökkel húzz hátra, zárd a lapockát, majd lassan engedd vissza.',sets:3,reps:'10–20',weight:0,repUnit:'ism.',movementPattern:'horizontal-pull',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:true,goalTags:['fitness','muscle'],style:'strength'},
+{id:'band-lat-pulldown',hu:'Gumiszalagos lehúzás',en:'Resistance Band Lat Pulldown',equipment:'gumiszalag + magas rögzítés',loadType:'bodyweight',target:'Hát / bicepsz',notes:'A szalagot biztonságosan magas ponthoz rögzítsd. A könyököt húzd lefelé a törzs mellé.',sets:3,reps:'10–20',weight:0,repUnit:'ism.',movementPattern:'vertical-pull',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:true,goalTags:['fitness','muscle'],style:'strength'},
+{id:'band-chest-press',hu:'Gumiszalagos mellnyomás',en:'Resistance Band Chest Press',equipment:'gumiszalag + stabil rögzítés',loadType:'bodyweight',target:'Mell / tricepsz',notes:'A szalag stabilan legyen mögötted rögzítve. Nyomd előre a karokat, a bordakosár maradjon kontrollált.',sets:3,reps:'10–20',weight:0,repUnit:'ism.',movementPattern:'horizontal-push',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:true,goalTags:['fitness','muscle'],style:'strength'},
+{id:'band-overhead-press',hu:'Gumiszalagos vállnyomás',en:'Resistance Band Overhead Press',equipment:'gumiszalag',loadType:'bodyweight',target:'Váll / tricepsz',notes:'Állj a szalag közepére, tarts stabil törzset és nyomd a kezeket fej fölé.',sets:3,reps:'10–20',weight:0,repUnit:'ism.',movementPattern:'vertical-push',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:true,goalTags:['fitness','muscle'],style:'strength'},
+{id:'band-face-pull',hu:'Gumiszalagos face pull',en:'Resistance Band Face Pull',equipment:'gumiszalag + stabil rögzítés',loadType:'bodyweight',target:'Hátsó váll / hát',notes:'Arc magasságában rögzített szalagot húzz a homlok felé, a könyök maradjon magasan.',sets:3,reps:'12–20',weight:0,repUnit:'ism.',movementPattern:'rear-delt',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:false,goalTags:['fitness','muscle'],style:'bodybuilding'},
+{id:'band-biceps-curl',hu:'Gumiszalagos bicepszezés',en:'Resistance Band Biceps Curl',equipment:'gumiszalag',loadType:'bodyweight',target:'Bicepsz',notes:'Állj a szalagra, a könyök maradjon a törzs mellett és hajlíts lendítés nélkül.',sets:3,reps:'10–20',weight:0,repUnit:'ism.',movementPattern:'elbow-flexion',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:false,goalTags:['fitness','muscle'],style:'bodybuilding'},

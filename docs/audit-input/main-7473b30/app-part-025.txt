@@ -1,0 +1,267 @@
+   .tp-exercise-actions{gap:4px}.tp-play-btn{width:40px;height:40px;min-width:40px;border-radius:12px!important}
+   .tp-modal{place-items:end center;padding-top:max(10px,env(safe-area-inset-top,0px));padding-bottom:max(10px,env(safe-area-inset-bottom,0px))}
+   .tp-modal-card{width:100%;max-height:min(92dvh,720px);border-radius:20px 20px 14px 14px;padding:14px}
+   .tp-modal-grid{grid-template-columns:1fr}.tp-modal-grid .field{min-height:46px;font-size:16px}
+  }
+  @media(max-width:360px){
+   .tp-modal-actions{grid-template-columns:1fr}
+  }
+  @media(prefers-reduced-motion:reduce){
+   .top,.top .brand,.top .tag,.tabs,.tab,.btn,.check,.tp-select-trigger,.tp-select-trigger::after,.tp-select-menu,.tp-select-option,.rf208-settings-btn,.rf223-stat,.card[onclick],.exercise[onclick]{transition:none!important}
+  }
+ `;document.head?.appendChild?.(s);
+})();
+
+
+// Edzés: every current exercise resolves its video dynamically from the current exercise ID.
+if(typeof rf201ExerciseRow==='function'){
+ rf201ExerciseRow=function(dayId,id,i){
+  const e=byId(id),play=rf260VideoButton(id);
+  return `<div class="exercise" onclick="rf154EditSlot('${esc(dayId)}',${i})">
+    <div class="num">${i+1}</div>
+    <div><div class="ex-name">${esc(e?.hu||id)}</div><div class="en">${esc(e?.en||'')}</div><div class="meta">${e?.sets||''}${e?.sets?' × ':''}${esc(e?.reps||'')} ${e?.weight?`• ${e.weight} ${esc(e.unit||'kg')}`:''}</div></div>
+    <div class="tp-exercise-actions">${play}<div class="chev" aria-hidden="true">›</div></div>
+  </div>`;
+ };
+}
+
+// Full exercise library: the small play action is independent from opening exercise details.
+if(typeof rf203ExerciseLibrary==='function'){
+ rf203ExerciseLibrary=function(){
+  const list=exercises();
+  render(shell(`<main>
+   <button class="btn secondary" onclick="go('programs')">← Vissza a Programokhoz</button>
+   <div class="hero"><span class="badge">GYAKORLATKÖNYVTÁR</span><h1>${list.length} gyakorlat</h1><div class="muted">Otthoni és konditermi gyakorlatok egy helyen. A ▶ gomb az adott gyakorlat aktuális bemutatóját nyitja.</div></div>
+   ${list.map((e,i)=>`<div class="exercise" onclick="rf203ExerciseDetail('${esc(e.id)}')"><div class="num">${i+1}</div><div><div class="ex-name">${esc(e.hu)}</div><div class="en">${esc(e.en||'')}</div><div class="meta">${esc(e.target||'')} ${e.equipment?`• ${esc(e.equipment)}`:''}</div></div><div class="tp-exercise-actions">${rf260VideoButton(e.id)}<div class="chev" aria-hidden="true">›</div></div></div>`).join('')}
+  </main>`));
+ };
+}
+
+// Filterable legacy library uses the same compact dynamic play action instead of a fixed row URL.
+if(typeof libraryResults==='function'){
+ libraryResults=function(group,gear,q){
+  const es=exercises().filter(e=>libraryMatch(e,group,gear,q));
+  return `<p class="muted">${es.length} / ${exercises().length} gyakorlat</p>${es.map(e=>{const groups=muscleGroups(e.id),secondary=groups.slice(1).map(x=>MUSCLES[x]).filter(Boolean).join(' / ');return `<details class="card tp-library-card"><summary><div class="tp-library-summary-main"><h3>${esc(e.hu)}</h3><p class="small">${esc(e.equipment)} • Fő izomcsoport: ${esc(MUSCLES[groups[0]]||e.target)}</p></div>${rf260VideoButton(e.id)}</summary><div class="tp-library-body">${secondary?`<p class="small muted">További izomcsoportok: ${esc(secondary)}</p>`:''}<p>${esc(e.notes||'Ehhez a gyakorlathoz még nincs külön technikai leírás.')}</p><button class="btn secondary block" onclick="chooseLibraryPlacement('${esc(e.id)}')">Hozzáadás saját programhoz</button></div></details>`}).join('')||'<p>Nincs találat. Próbálj másik szűrőt vagy keresőkifejezést.</p>'}`;
+ };
+}
+
+// Naptár: preserve the existing "today" outline and add persistent selected-day state.
+if(typeof calendarGrid==='function'){
+ const rf260CalendarGridBase=calendarGrid;
+ calendarGrid=function(){
+  let html=rf260CalendarGridBase();
+  // 2.6.1: a completed scheduled workout is history now; in the calendar a checkmark is enough.
+  html=html.replace(/(<button class="[^"]*\bcompleted\b[^"]*"[^>]*><span>\d+<\/span>)<b>[^<]*<\/b>(<\/button>)/g,'$1<b>✓</b>$2');
+  const selected=typeof rf2211Selected==='function'?rf2211Selected():(state?.rf2211CalendarDate||'');
+  if(!selected)return html;
+  const needle=`onclick="toggleCalendarDay('${selected}')"`;
+  const at=html.indexOf(needle);if(at<0)return html;
+  const start=html.lastIndexOf('<button class="',at),end=start>=0?html.indexOf('"',start+15):-1;
+  if(start>=0&&end>start){const cls=html.slice(start+15,end);html=html.slice(0,start+15)+cls+' tp-selected-day'+html.slice(end);const oc=html.indexOf(needle,start);if(oc>=0)html=html.slice(0,oc)+`aria-pressed="true" ${needle}`+html.slice(oc+needle.length);}
+  return html;
+ };
+}
+
+// Scheduled item states: skipped and move mode stay visibly selected while active.
+if(typeof scheduleListHtml==='function'){
+ scheduleListHtml=function(){
+  const isDone=x=>typeof rf209ScheduleDone==='function'?rf209ScheduleDone(x):(x.status==='completed'||history().some(h=>h.scheduleId===x.id));
+  const items=scheduled().filter(x=>!x.cancelled&&!isDone(x)).sort((a,b)=>Date.parse(a.start)-Date.parse(b.start)).slice(-120);
+  return items.length?items.map(x=>{
+   const p=programById(x.programId||'home-basic'),d=programDay(p,x.dayId||x.workout),done=false,skipped=x.status==='skipped',moving=state?.rf260MovingScheduleId===x.id;
+   return `<div class="card schedule-card"><div><strong>${esc(p?.name||'Program')} • ${esc(d?.name||x.dayId||x.workout)}</strong><div class="small muted">${esc(fmtDate(x.start))} • ${done?'Teljesítve':skipped?'Kihagyva':'Tervezett'}</div></div><div class="schedule-actions">${!done?`<button class="btn" onclick="startScheduledById('${esc(x.id)}')">Indítás</button>`:''}<button class="btn secondary ${moving?'tp-action-active':''}" data-tp-move-id="${esc(x.id)}" aria-pressed="${moving?'true':'false'}" onclick="rf260OpenScheduleMove('${esc(x.id)}',this)">Áthelyezés</button><button class="btn secondary ${skipped?'tp-selected':''}" aria-pressed="${skipped?'true':'false'}" onclick="skipSchedule('${esc(x.id)}')">${skipped?'Vissza':'Kihagyás'}</button><button class="btn danger" onclick="rf209DeleteSchedule('${esc(x.id)}')">Törlés</button></div></div>`;
+  }).join(''):'<div class="muted">Még nincs tervezett edzés.</div>';
+ };
+}
+
+
+let rf260MoveReturnFocus=null;
+
+
+if(typeof editSchedulePrompt==='function')editSchedulePrompt=function(id){return rf260OpenScheduleMove(id)};
+
+// Health source labels: package IDs are implementation details, never primary UI copy.
+
+if(typeof rf243FriendlySource==='function')rf243FriendlySource=rf260FriendlyHealthSource;
+if(typeof healthSourceName==='function')healthSourceName=function(source){return rf260FriendlyHealthSource(source,state.health?.summary?.sourceLabels?.[source])};
+if(typeof rf207SourceLabel==='function')rf207SourceLabel=function(d){return d?.source?rf260FriendlyHealthSource(d.source,d.sourceLabels?.[d.source]):'Nincs kiválasztott adatforrás'};
+
+
+// 2.6 semantic-role correction: the starter profile is an optional preset, not a destructive action.
+
+if(typeof rf252ApplyButtonHierarchy==='function')rf252ApplyButtonHierarchy=function(root=document){
+ const buttons=root?.querySelectorAll?.('button.btn')||[];buttons.forEach(el=>{el.classList.remove('tp-primary','tp-emphasis');const role=rf260SemanticRole(el);if(el.dataset)el.dataset.tpRole=role;if(role==='primary')el.classList.add('tp-primary');else if(role==='emphasis')el.classList.add('tp-emphasis');else if(role==='danger')el.classList.add('danger');if(rf253ActionCall?.(el).name==='resetStarter')el.classList.remove('danger')});
+};
+rf252ButtonRole=rf260SemanticRole;
+
+// Main-view navigation can be triggered from the compact sticky header at any scroll depth.
+// Open the destination from its top without requiring the user to manually scroll back first.
+const rf260GoBase=go;
+go=function(route){
+ const target=window.TrainPilotRoutes?.[String(route||'')]||String(route||'');const r=rf260GoBase(route);
+ if(String(state?.tab||'')===String(target))setTimeout(()=>{window.scrollTo?.(0,0);rf260ScrollState()},0);
+ return r;
+};
+if(typeof rf206HealthHub==='function'){
+ const rf260HealthHubBase=rf206HealthHub;
+ rf206HealthHub=function(...args){const r=rf260HealthHubBase(...args);setTimeout(()=>{window.scrollTo?.(0,0);rf260ScrollState()},0);return r};
+}
+
+
+// One final 2.6 post-render layer. Existing data/navigation behavior remains untouched.
+const rf260RenderBase=render;
+render=function(custom){const r=rf260RenderBase(custom);rf260EnhanceSelects();rf260EnhanceTemporalFields();rf260AfterRender();return r};
+
+
+let rf260NavCompact=false;
+const RF260_NAV_COMPACT_ENTER=56,RF260_NAV_COMPACT_EXIT=8;
+
+window.addEventListener?.('scroll',()=>{rf260ScrollState();rf260CloseSelects()},{passive:true});
+window.addEventListener?.('resize',()=>{rf260CloseSelects();rf260ScrollState()},{passive:true});
+window.visualViewport?.addEventListener?.('resize',()=>rf260RepositionOpenSelects(),{passive:true});
+window.visualViewport?.addEventListener?.('scroll',()=>rf260RepositionOpenSelects(),{passive:true});
+document.addEventListener?.('click',()=>rf260CloseSelects());
+document.addEventListener?.('keydown',e=>{if(e.key==='Tab')rf260TrapModalFocus(e);if(e.key==='Escape'){if(document.querySelector?.('#tpTemporalPicker'))rf260TemporalClose();else if(document.querySelector?.('#tpScheduleMoveModal'))rf260CloseScheduleMove();else rf260CloseSelects()}});
+rf260ScrollState();
+
+
+// @endsection v260.js
+
+// @section v263.js
+var rf263FriendlySource = function rf263FriendlySource(pkg,label=''){
+ if(typeof rf260FriendlyHealthSource==='function')return rf260FriendlyHealthSource(pkg,label);
+ if(typeof rf243FriendlySource==='function')return rf243FriendlySource(pkg,label);
+ return /samsung|shealth/i.test(String(pkg||'')+' '+String(label||''))?'Samsung Health':'Health Connect';
+};
+var rf263SourceNames = function rf263SourceNames(){
+ const names=new Set(),ledger=rf240Ledger();
+ const add=(pkg,label='')=>{if(pkg)names.add(rf263FriendlySource(pkg,label))};
+ for(const d of Object.values(ledger.days||{})){
+  const labels=d?.sourceLabels||{};
+  for(const pkg of d?.sources||[])add(pkg,labels[pkg]);
+  add(d?.hrvSource,labels[d?.hrvSource]);
+  for(const session of d?.sleepSessions||[])add(session?.source,labels[session?.source]);
+ }
+ for(const r of rf229RecoveryHistory())add(r?.sleepSource);
+ return [...names].filter(Boolean).sort();
+};
+var rf263TargetDay = function rf263TargetDay(offset){const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()-offset);return rf240DayKey(d)};
+var rf263NightWindow = function rf263NightWindow(offset){
+ const end=new Date();end.setHours(12,0,0,0);end.setDate(end.getDate()-offset);
+ if(end.getTime()>Date.now())end.setTime(Date.now());
+ const start=new Date(end);start.setDate(start.getDate()-1);
+ return {start:start.toISOString(),end:end.toISOString()};
+};
+var rf263RecoveryRow = function rf263RecoveryRow(day,r,prior){
+ const stage=prior?.sleepStageBased===true&&rf240Num(prior?.sleepMinutes)!=null;
+ return {
+  day,
+  sleepMinutes:stage?rf240Num(prior.sleepMinutes):rf240Num(r?.sleepMinutes),
+  sleepStart:stage?prior.sleepStart||null:r?.sleepStart||null,
+  sleepEnd:stage?prior.sleepEnd||null:r?.sleepEnd||null,
+  sleepSource:stage?prior.sleepSource||null:r?.sleepSource||null,
+  sleepStageBased:stage,
+  sleepStageCount:stage?(prior.sleepStageCount||0):0,
+  hrvRmssdMs:rf240Num(r?.hrvRmssdMs),
+  hrvTime:r?.hrvTime||prior?.hrvTime||null,
+  hrvSource:r?.hrvSource||prior?.hrvSource||null,
+  hrvSamples:Number(r?.hrvSamples)||0,
+  readAt:new Date().toISOString()
+ };
+};
+var rf263RefreshRecovery = async function rf263RefreshRecovery(p){
+ const old=rf229RecoveryHistory(),oldMap=new Map(old.map(x=>[x?.day,x])),recent=new Set(),fresh=[],failed=new Set();let successful=0;
+ for(let i=0;i<RF263_RECOVERY_DAYS;i++){
+  const day=rf263TargetDay(i);recent.add(day);rf245Progress(`Alvás és HRV: ${i+1}/${RF263_RECOVERY_DAYS}`);
+  try{
+   const r=await p.readRecovery(rf263NightWindow(i));successful++;
+   const row=rf263RecoveryRow(day,r,oldMap.get(day));
+   if(row.sleepMinutes!=null||row.hrvRmssdMs!=null)fresh.push(row);
+  }catch(_){failed.add(day)}
+ }
+ if(!successful)throw new Error('A regenerációs adatok nem olvashatók.');
+ const keep=old.filter(x=>!recent.has(x?.day)||failed.has(x?.day));
+ db.set('recoveryHistory',[...keep,...fresh].sort((a,b)=>String(b.day).localeCompare(String(a.day))));
+ rf229ApplyLatestRecovery();
+ return {saved:fresh.length,sleepDays:fresh.filter(x=>x.sleepMinutes!=null).length,stageDays:fresh.filter(x=>x.sleepStageBased).length,hrvDays:fresh.filter(x=>x.hrvRmssdMs!=null).length,failedDays:failed.size};
+};
+var rf263UpdateRecoveryStage = function rf263UpdateRecoveryStage(report,summary,error=''){
+ if(!Array.isArray(report?.stages))return;
+ let s=report.stages.find(x=>x?.name==='Alvás és HRV');if(!s){s={name:'Alvás és HRV'};report.stages.push(s)}
+ if(error){s.status='partial';s.detail='A napi Health-adatok megmaradtak, de az éjszakai regenerációs ellenőrzés nem frissült teljesen.';return}
+ s.status=summary.failedDays?'partial':'ok';
+ s.detail=`14 napos éjszakai ellenőrzés • ${summary.sleepDays} alvásnap • ${summary.hrvDays} HRV-nap${summary.stageDays?` • ${summary.stageDays} sleep-stage alapú`:''}`;
+};
+var rf263Sync = function rf263Sync(options={}){
+ if(rf263SyncFlight)return rf263SyncFlight;
+ rf263SyncFlight=(async()=>{
+  const p=options.plugin||healthPlugin(),report=await rf250Sync({...options,plugin:p});
+  if(!report||report.status==='error')return report;
+  state.health=state.health||{};state.health.busy=true;rf245Paint();
+  let summary={saved:0,sleepDays:0,stageDays:0,hrvDays:0,failedDays:0},recoveryError='';
+  try{summary=await rf263RefreshRecovery(p);rf263UpdateRecoveryStage(report,summary)}catch(e){
+   recoveryError=rf245Message(e);rf263UpdateRecoveryStage(report,summary,recoveryError);report.errors=report.errors||[];report.errors.push('Regenerációs ellenőrzés: '+recoveryError);
+  }
+  const diag=rf244Diag();
+  diag.permissions=state.health.permissions||diag.permissions||{};diag.lastAt=new Date().toISOString();diag.recoverySaved=summary.saved;diag.recoveryWindowAt=diag.lastAt;diag.recoverySleepDays=summary.sleepDays;diag.recoveryHrvDays=summary.hrvDays;diag.recoveryFailedDays=summary.failedDays;diag.sources=rf263SourceNames();diag.error=recoveryError?'A regenerációs adatok frissítése nem sikerült.':summary.failedDays?`${summary.failedDays} regenerációs nap nem frissült; a korábbi érvényes adat megmaradt.`:null;rf244SaveDiag(diag);
+  report.finishedAt=new Date().toISOString();report.status=(report.errors||[]).length||summary.failedDays?'partial':'ok';db.set(RF250_REPORT,report);db.set(RF245_REPORT,report);state.health.message=report.status==='ok'?'Szinkron befejezve.':'Részleges szinkron – a korábbi érvényes adatok megmaradtak.';return report;
+ })().finally(()=>{state.health=state.health||{};state.health.busy=false;rf263SyncFlight=null;rf245Paint()});
+ return rf263SyncFlight;
+};
+var rf263PermissionRows = function rf263PermissionRows(){
+ const p=state.health?.permissions||rf244Diag().permissions||{};
+ return Object.entries(RF263_PERMISSION_NAMES).map(([key,label])=>{
+  const v=p[key],txt=v===true?'Engedélyezve':v===false?'Nincs engedély':'Nincs ellenőrizve';
+  return `<div class="history-ex rf263-permission-row"><strong>${esc(label)}</strong><div class="small muted">${esc(txt)}</div></div>`;
+ }).join('');
+};
+var rf263DiagHtml = function rf263DiagHtml(){
+ const diag=rf244Diag(),ledger=rf240Ledger(),sources=rf263SourceNames(),p=state.health?.permissions||diag.permissions||{},granted=Object.entries(RF263_PERMISSION_NAMES).filter(([k])=>p[k]===true).length;
+ const locale=typeof rf233Locale==='function'?rf233Locale():'hu-HU';
+ const last=ledger.lastSyncAt?new Date(ledger.lastSyncAt).toLocaleString(locale):'Még nem volt sikeres szinkron';
+ const src=sources.length?sources.join(', '):'Még nincs azonosított adatforrás';
+ return `<details class="card" id="rf263HealthDiagnostics"><summary><strong>Kapcsolat és támogatott adatok</strong></summary><p class="small muted">Források: ${esc(src)}<br>Engedélyezett adattípusok: ${granted}/${Object.keys(RF263_PERMISSION_NAMES).length}<br>Utolsó sikeres szinkron: ${esc(last)}${diag.recoveryWindowAt?`<br>Regeneráció ellenőrizve: ${esc(new Date(diag.recoveryWindowAt).toLocaleString(locale))}`:''}${diag.error?`<br>${esc(diag.error)}`:''}</p><div class="rf263-permission-list">${rf263PermissionRows()}</div></details>`;
+};
+var rf263HealthHub = function rf263HealthHub(){
+ state.tab='health';state.healthView=false;if(typeof rf225HealthPage!=='undefined')rf225HealthPage='hub';rf240ApplyLedger();
+ const ledger=rf240Ledger(),today=ledger.days?.[rf240DayKey(new Date())]||{},rec=state.health?.recovery||{},w=state.health?.wellness||{},manualWeight=(()=>{const a=typeof rf215All==='function'?rf215All():[];const n=Number(a.at?.(-1)?.kg);return Number.isFinite(n)?n:null})(),healthWeight=w.weightKg==null?null:Number(w.weightKg),shownWeight=Number.isFinite(healthWeight)?healthWeight:manualWeight,weightSource=Number.isFinite(healthWeight)?'Health Connect':shownWeight!=null?(({hu:'Kézi adat',en:'Local entry',de:'Lokaler Eintrag',ro:'Înregistrare locală'}[typeof rf212Lang==='function'?rf212Lang():'hu'])||'Kézi adat'):'',coach=typeof rf235HealthCoachCard==='function'?rf235HealthCoachCard():'';
+ const locale=typeof rf233Locale==='function'?rf233Locale():'hu-HU';
+ const syncAt=ledger.lastSyncAt?new Date(ledger.lastSyncAt).toLocaleString(locale):'Még nem volt';
+ const sleepSub=rec.sleepMinutes==null?'':rec.sleepStageBased?'sleep stage alapján':(rec.sleepSource?'session-időtartam • '+rf263FriendlySource(rec.sleepSource):'session-időtartam');
+ const bp=w.bloodPressureSystolic==null||w.bloodPressureDiastolic==null?'—':`${Math.round(w.bloodPressureSystolic)}/${Math.round(w.bloodPressureDiastolic)} mmHg`,busy=!!state.health?.busy;
+ const body=`<main class="rf263-health"><div class="hero"><h1>Egészség</h1><div class="muted">Health Connect, regeneráció, Health-adatok és Coach egy közös adatfolyamban.</div></div><div class="card rf263-sync-card"><div class="grid2 rf263-sync-actions"><button class="btn block" data-tp-role="primary" onclick="rf244UnifiedSync()" ${busy?'disabled':''}>Szinkronizálás</button><button class="btn secondary block" data-tp-role="secondary" onclick="healthSettings()" ${busy?'disabled':''}>Engedélyek</button></div><p class="small muted">Utolsó sikeres szinkron: ${esc(syncAt)}</p>${state.health?.message?`<p class="small" role="status">${esc(state.health.message)}</p>`:''}</div>${coach}<div class="card"><h2>Mai állapot</h2><div class="grid2">${rf244Stat('Alvás',rf244SleepText(rec.sleepMinutes),sleepSub)}${rf244Stat('HRV',rec.hrvRmssdMs==null?'—':Math.round(rec.hrvRmssdMs)+' ms')}${rf244Stat('Lépések',today.steps==null?'—':Math.round(today.steps).toLocaleString('hu-HU'))}${rf244Stat('Aktív energia',today.activeCalories==null?'—':Math.round(today.activeCalories)+' kcal')}${rf244Stat('Átlagpulzus',today.averageHeartRate==null?'—':Math.round(today.averageHeartRate)+' bpm')}${rf244Stat('Nyugalmi pulzus',today.restingHeartRate==null?'—':Math.round(today.restingHeartRate)+' bpm')}</div></div><div class="card"><h2>Test és fittség</h2><div class="grid2">${rf244Stat('Testsúly',rf250Fmt(shownWeight,1,' kg'),weightSource)}${rf244Stat('Testzsír',rf250Fmt(w.bodyFatPercent,1,' %'))}${rf244Stat('SpO₂',rf250Fmt(w.oxygenSaturationPercent,1,' %'))}${rf244Stat('VO₂max',rf250Fmt(w.vo2Max,1))}</div><button id="rf251WeightJournal" class="btn secondary block rf251-weight-btn" onclick="rf215WeightScreen()">Testsúly napló és grafikon</button></div><details class="card"><summary><strong>További Health-adatok</strong></summary><div class="grid2">${rf244Stat('Vérnyomás',bp)}${rf244Stat('Vércukor',rf250Fmt(w.bloodGlucoseMmolL,1,' mmol/L'))}${rf244Stat('Légzésszám',rf250Fmt(w.respiratoryRate,1,' /perc'))}${rf244Stat('Távolság',rf250Fmt(today.distanceMeters==null?null:today.distanceMeters/1000,2,' km'))}</div></details><details class="card"><summary><strong>Regenerációs előzmények</strong></summary>${rf244RecoveryRows()}</details>${rf263DiagHtml()}</main>`;
+ render(shell(body));
+};
+var rf263HistoryDay = function rf263HistoryDay(value){
+ if(typeof rf233DayKey==='function')return rf233DayKey(value);
+ const d=new Date(value);if(!Number.isFinite(d.getTime()))return '';
+ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+};
+var rf263SetHistoryFilter = function rf263SetHistoryFilter(key,value){
+ if(key!=='from'&&key!=='to')return;
+ if(value&&!rf263ParseDate(value))return;
+ const next={...rf263HistoryFilter,[key]:value||''};
+ if(next.from&&next.to&&next.from>next.to)return;
+ rf263HistoryFilter=next;render(historyScreen());
+};
+var rf263ClearHistoryFilter = function rf263ClearHistoryFilter(){rf263HistoryFilter={from:'',to:''};render(historyScreen())};
+var rf263FilteredHistory = function rf263FilteredHistory(){
+ const all=history(),from=rf263HistoryFilter.from,to=rf263HistoryFilter.to;
+ return all.map((x,index)=>({x,index})).filter(({x})=>{const day=rf263HistoryDay(x.started);return (!from||day>=from)&&(!to||day<=to)});
+};
+var rf263HistoryItem = function rf263HistoryItem(x,originalIndex,visibleIndex){
+ const c=completedSets(x),title=x.programName?`${x.programName} • ${x.dayId||x.workout}`:`Full Body ${x.workout}`,key=rf142WorkoutKey(x);
+ return `<details class="history rf263-history rf103-history"><summary><div class="history-head"><div class="history-title-row"><div><div class="history-title">${esc(title)}</div><div class="history-date">${fmtDate(x.started)}</div></div><div class="rf103-history-side"><span class="badge">${x.exercises.length} gyakorlat</span><span class="rf103-history-chevron" aria-hidden="true">⌄</span></div></div><div class="history-badges"><span class="history-badge">⏱ ${sessionDuration(x)}</span><span class="history-badge">✓ ${c.done}/${c.total} sorozat</span></div></div></summary><div class="history-body"><div class="grid2"><button class="btn secondary" onclick="editHistoryWorkout('${esc(key)}')">Edzés módosítása</button><button class="btn secondary" onclick="healthFromHistory(${originalIndex})">Health adatok</button></div><br><button class="btn secondary" onclick="calendarIntent(${originalIndex})">Hozzáadás a naptárhoz</button>${x.exercises.map(e=>`<div class="history-ex"><div class="history-ex-name">${esc(e.hu)}</div><div class="en">${esc(e.en||'')}</div><div class="history-setchips">${(e.sets||[]).map(s=>`<span class="setchip">${esc(formatSet(e,s))}${s.done?' ✓':' • nincs kész'}</span>`).join('')}</div></div>`).join('')}</div></details>`;
+};
+var rf263ParseDate = function rf263ParseDate(value){
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(value||''))return null;
+ const [y,m,d]=value.split('-').map(Number),date=new Date(y,m-1,d,12);
+ return y>=1900&&y<=2100&&date.getFullYear()===y&&date.getMonth()===m-1&&date.getDate()===d?date:null;
+};
+var rf263DateKey = function rf263DateKey(date){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`};
+var rf263DateField = function rf263DateField(key,label,value){
+ const date=rf263ParseDate(value),text=date?date.toLocaleDateString('hu-HU'):'Dátum kiválasztása';
+ return `<div><span class="small muted" id="rf263-${key}-label">${label}</span><button type="button" id="rf263-${key}-date" class="tp-select-trigger rf263-date-trigger" aria-haspopup="dialog" aria-labelledby="rf263-${key}-label rf263-${key}-value" onclick="rf263OpenDate('${key}')"><span id="rf263-${key}-value">${esc(text)}</span><span aria-hidden="true">▦</span></button></div>`;
+};
+var rf263DateAllowed = function rf263DateAllowed(key,value){
+ if(!rf263ParseDate(value))return false;

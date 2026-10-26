@@ -1,0 +1,154 @@
+ const keys=['health.title','health.sync','health.permissions','health.todayStatus','health.bodyFitness','health.more','health.recoveryHistory','coach.title','coach.today','coach.next','coach.openHealth','coach.why','coach.exercisePlan','coach.approx'];
+ const missing={hu:[],en:[],de:[],ro:[]};
+ for(const lang of Object.keys(missing))for(const key of keys)if(!TP149_CATALOG[lang]?.[key])missing[lang].push(key);
+ return missing;
+};
+// @endsection trainpilot-149-health-coach-i18n.js
+
+
+// @section trainpilot-149-workout-progression-i18n.js
+/* TrainPilot 1.4.9: direct workout, progression, rest timer, stopwatch and demo localization. */
+(function(){
+ const rows={
+  'workout.target':['Cél','Target','Ziel','Țintă'],
+  'workout.sets':['Sorozatok','Sets','Sätze','Serii'],
+  'workout.bodyweight':['Testsúly','Body weight','Körpergewicht','Greutatea corpului'],
+  'workout.reps':['Ismétlés','Reps','Wdh.','Repetări'],
+  'workout.seconds':['Másodperc','Seconds','Sekunden','Secunde'],
+  'workout.perArm':['/kar','/ arm','/ Arm','/ braț'],
+  'workout.perLeg':['/láb','/ leg','/ Bein','/ picior'],
+  'workout.finish':['Edzés befejezése','Finish workout','Training beenden','Finalizează antrenamentul'],
+  'workout.next':['Következő gyakorlat','Next exercise','Nächste Übung','Exercițiul următor'],
+  'workout.previous':['Előző','Previous','Zurück','Anterior'],
+  'workout.invalidReps':['Írd be a tényleges ismétlésszámot vagy másodpercet.','Enter the actual repetitions or seconds.','Gib die tatsächlichen Wiederholungen oder Sekunden ein.','Introdu numărul real de repetări sau secunde.'],
+  'workout.rest':['Pihenő','Rest','Pause','Pauză'],
+  'workout.skipRest':['Kihagyás','Skip','Überspringen','Omite'],
+  'workout.load.per_hand':['kg/kar','kg/arm','kg/Arm','kg/braț'],
+  'workout.load.total':['kg összesen','kg total','kg gesamt','kg total'],
+  'workout.load.single_dumbbell':['kg (1 súlyzó)','kg (1 dumbbell)','kg (1 Hantel)','kg (1 ganteră)'],
+  'workout.load.bodyweight':['testsúly','body weight','Körpergewicht','greutatea corpului'],
+  'progress.title':['Progresszív cél','Progressive goal','Progressives Ziel','Obiectiv progresiv'],
+  'progress.goalNote':['Az edzéselőzményeid alapján számolt következő fejlődési lépcső. A Coach a napi regenerációd alapján ettől eltérhet.','The next progression step calculated from your workout history. Coach may adjust it based on today’s recovery.','Der nächste Entwicklungsschritt aus deinem Trainingsverlauf. Der Coach kann ihn anhand deiner heutigen Regeneration anpassen.','Următorul pas de progres calculat din istoricul antrenamentelor. Coach îl poate ajusta în funcție de recuperarea de azi.'],
+  'progress.history':['előzmény: {count}/3 alkalom','history: {count}/3 sessions','Verlauf: {count}/3 Einheiten','istoric: {count}/3 sesiuni'],
+  'progress.noExercise':['A gyakorlat adatai nem érhetők el.','Exercise data is unavailable.','Übungsdaten sind nicht verfügbar.','Datele exercițiului nu sunt disponibile.'],
+  'progress.noHistory':['Nincs még elég előzmény. Indulj kontrollált, kényelmes terheléssel.','There is not enough history yet. Start with a controlled, comfortable load.','Noch nicht genug Verlauf. Starte mit einer kontrollierten, angenehmen Belastung.','Nu există încă suficient istoric. Începe cu o încărcare controlată și confortabilă.'],
+  'progress.painLoad':['Fájdalom / kellemetlenség volt: nincs terhelésemelés. Maradj fájdalommentes kivitelezésnél.','Pain / discomfort was reported: do not increase the load. Continue only with pain-free execution.','Schmerz / Beschwerden wurden gemeldet: Belastung nicht erhöhen. Nur schmerzfrei weitertrainieren.','A fost semnalată durere / disconfort: nu crește încărcarea. Continuă doar fără durere.'],
+  'progress.partialLoad':['A legutóbbi edzés részleges volt, ezért most nem változtatunk terhelést.','The last workout was incomplete, so the load stays unchanged for now.','Das letzte Training war unvollständig, daher bleibt die Belastung vorerst unverändert.','Ultimul antrenament a fost incomplet, deci încărcarea rămâne neschimbată deocamdată.'],
+  'progress.challenging':['Kicsit nehéz volt. Maradjon {weight} {unit}; előbb legyen stabil a jelenlegi teljesítés.','It was slightly hard. Keep {weight} {unit}; first make the current performance stable.','Es war etwas schwer. Bleib bei {weight} {unit}; stabilisiere zuerst die aktuelle Leistung.','A fost puțin greu. Păstrează {weight} {unit}; stabilizează mai întâi performanța actuală.'],
+  'progress.hardReduce':['Túl nehéz volt{repeat}. Súlynövelés nincs; indokolt lehet {weight} {unit} vagy kisebb volumen, amíg újra stabil nem lesz a technika.','It was too hard{repeat}. Do not increase the load; {weight} {unit} or lower volume may be appropriate until technique is stable again.','Es war zu schwer{repeat}. Keine Steigerung; {weight} {unit} oder weniger Volumen kann sinnvoll sein, bis die Technik wieder stabil ist.','A fost prea greu{repeat}. Nu crește încărcarea; {weight} {unit} sau un volum mai mic poate fi potrivit până când tehnica devine din nou stabilă.'],
+  'progress.repeat':[' több alkalommal is',' on multiple sessions',' in mehreren Einheiten',' în mai multe sesiuni'],
+  'progress.hardHold':['Túl nehéz volt. Maradjon {weight} {unit}; ha a következő alkalommal is így alakul vagy az alsó ismétléshatár sem tartható, csökkents terhelést/volument.','It was too hard. Keep {weight} {unit}; if this happens again or the lower rep target cannot be maintained, reduce load or volume.','Es war zu schwer. Bleib bei {weight} {unit}; wenn es erneut so läuft oder die untere Wiederholungsgrenze nicht gehalten wird, reduziere Belastung oder Volumen.','A fost prea greu. Păstrează {weight} {unit}; dacă se repetă sau nu poți menține limita inferioară de repetări, redu încărcarea sau volumul.'],
+  'progress.rirLoad':['Ținta este {rir} RIR, nu un interval de repetări. Modifică încărcarea doar pe baza atingerii stabile a țintei RIR.','The target is {rir} RIR, not a repetition range. Adjust the load only after consistently meeting the RIR target.','Das Ziel sind {rir} RIR, kein Wiederholungsbereich. Ändere die Belastung nur bei stabiler Erfüllung des RIR-Ziels.','Ținta este {rir} RIR, nu un interval de repetări. Modifică încărcarea doar pe baza atingerii stabile a țintei RIR.'],
+  'progress.openTarget':['Maradjon {weight} {unit}; ehhez a célhoz nincs megbízható ismétléstartomány.','Keep {weight} {unit}; this target has no reliable repetition range.','Bleib bei {weight} {unit}; für dieses Ziel gibt es keinen verlässlichen Wiederholungsbereich.','Păstrează {weight} {unit}; această țintă nu are un interval de repetări fiabil.'],
+  'progress.stableTop':['Stabil felső teljesítés ({count} alkalom alapján). Következő terhelés: {weight} {unit}.','Stable top-end performance (based on {count} sessions). Next load: {weight} {unit}.','Stabile Leistung am oberen Ziel (basierend auf {count} Einheiten). Nächste Belastung: {weight} {unit}.','Performanță stabilă la limita superioară (pe baza a {count} sesiuni). Următoarea încărcare: {weight} {unit}.'],
+  'progress.hitTop':['Elérted a felső határt{over}; {weight} {unit} lehet a következő kis lépés, de az app egyetlen alkalom alapján még nem írja át automatikusan a súlyt.','You reached the upper target{over}; {weight} {unit} can be the next small step, but the app will not auto-change the load from a single session.','Du hast das obere Ziel erreicht{over}; {weight} {unit} kann der nächste kleine Schritt sein, aber die App ändert die Belastung nach nur einer Einheit nicht automatisch.','Ai atins limita superioară{over}; {weight} {unit} poate fi următorul pas mic, dar aplicația nu modifică automat greutatea după o singură sesiune.'],
+  'progress.over':[' és túl is teljesítetted',' and exceeded it',' und sogar überschritten',' și ai depășit-o'],
+  'progress.repsLoad':['Maradjon {weight} {unit}; {next}. Súlyt csak stabil felső teljesítés után emelünk.','Keep {weight} {unit}; {next}. Increase load only after stable top-end performance.','Bleib bei {weight} {unit}; {next}. Erhöhe die Belastung erst nach stabiler Leistung am oberen Ziel.','Păstrează {weight} {unit}; {next}. Crește greutatea doar după o performanță stabilă la limita superioară.'],
+  'progress.holdLoad':['Maradjon {weight} {unit}; előbb legyen stabil, teljes értékű teljesítés.','Keep {weight} {unit}; first establish stable, complete performance.','Bleib bei {weight} {unit}; erreiche zuerst eine stabile, vollständige Leistung.','Păstrează {weight} {unit}; obține mai întâi o performanță stabilă și completă.'],
+  'progress.nextGeneric':['előbb növeld fokozatosan a szabályos ismétléseket','first increase clean repetitions gradually','steigere zuerst schrittweise die sauberen Wiederholungen','crește mai întâi treptat repetările corecte'],
+  'progress.nextTarget':['következő cél: {values} {unit}','next target: {values} {unit}','nächstes Ziel: {values} {unit}','următoarea țintă: {values} {unit}'],
+  'progress.body.noHistory':['Nincs még elég előzmény. Kezdd kontrollált, szabályos sorozatokkal.','There is not enough history yet. Start with controlled, clean sets.','Noch nicht genug Verlauf. Beginne mit kontrollierten, sauberen Sätzen.','Nu există încă suficient istoric. Începe cu serii controlate și corecte.'],
+  'progress.body.pain':['Fájdalom / kellemetlenség volt: nincs progresszió. Csak fájdalommentes kivitelezéssel folytasd.','Pain / discomfort was reported: do not progress. Continue only pain-free.','Schmerz / Beschwerden wurden gemeldet: keine Progression. Nur schmerzfrei fortfahren.','A fost semnalată durere / disconfort: fără progresie. Continuă doar fără durere.'],
+  'progress.body.partial':['A legutóbbi alkalom részleges volt, ezért most nem lépünk tovább.','The last session was incomplete, so do not progress yet.','Die letzte Einheit war unvollständig, daher noch keine Progression.','Ultima sesiune a fost incompletă, deci nu progresa încă.'],
+  'progress.body.hard':['Maradjon a jelenlegi testsúlyos változat és ismétlésszám; előbb legyen stabil, szabályos végrehajtás.','Keep the current bodyweight variation and reps; first establish stable, clean execution.','Behalte die aktuelle Körpergewichtsvariante und Wiederholungszahl bei; stabilisiere zuerst die saubere Ausführung.','Păstrează varianta actuală cu greutatea corpului și repetările; stabilizează mai întâi execuția corectă.'],
+  'progress.body.rirReps':['Maradjon a {rir} elv: a következő alkalommal legfeljebb 1 szabályos ismétléssel növeld a sorozatokat, de állj meg, amikor még {rir} tartalék marad.','Keep the {rir} principle: next time add at most 1 clean rep per set, stopping while {rir} remains in reserve.','Behalte das {rir}-Prinzip bei: erhöhe beim nächsten Mal jeden Satz um höchstens 1 saubere Wiederholung und stoppe mit {rir} Reserve.','Păstrează principiul {rir}: data viitoare adaugă cel mult 1 repetare corectă pe serie și oprește-te când mai rămân {rir} în rezervă.'],
+  'progress.body.rirHold':['A cél nem ismétléstartomány, hanem {rir}. Tartsd ezt a tartalékot; ne kezeld a „{target}” értéket ismétléses felső határként.','The target is not a repetition range but {rir}. Keep that reserve; do not treat “{target}” as a repetition ceiling.','Das Ziel ist kein Wiederholungsbereich, sondern {rir}. Halte diese Reserve; behandle „{target}“ nicht als Wiederholungsobergrenze.','Ținta nu este un interval de repetări, ci {rir}. Păstrează această rezervă; nu trata „{target}” ca limită superioară de repetări.'],
+  'progress.body.variation':['A felső cél legalább 2 alkalommal stabil volt. Súlynövelés helyett jöhet {goal}.','The upper target was stable for at least 2 sessions. Instead of adding weight, use {goal}.','Das obere Ziel war mindestens 2 Einheiten stabil. Statt Zusatzgewicht nutze {goal}.','Ținta superioară a fost stabilă în cel puțin 2 sesiuni. În loc să adaugi greutate, folosește {goal}.'],
+  'progress.body.hitTop':['Elérted a felső célt, de előbb ismételd meg stabilan még egy alkalommal; utána jöhet nehezebb testsúlyos progresszió.','You reached the upper target, but repeat it stably once more before progressing to a harder bodyweight variation.','Du hast das obere Ziel erreicht; wiederhole es noch einmal stabil, bevor du zu einer schwierigeren Körpergewichtsprogression wechselst.','Ai atins ținta superioară; repet-o stabil încă o dată înainte de o progresie mai dificilă cu greutatea corpului.'],
+  'progress.body.reps':['Maradjon a jelenlegi változat; {next}. A nehezítés csak stabil felső teljesítés után jön.','Keep the current variation; {next}. Progress only after stable top-end performance.','Behalte die aktuelle Variante bei; {next}. Steigere erst nach stabiler Leistung am oberen Ziel.','Păstrează varianta actuală; {next}. Progresează doar după o performanță stabilă la limita superioară.'],
+  'progress.body.hold':['Maradjon a jelenlegi testsúlyos változat; előbb stabilizáld a szabályos teljesítést.','Keep the current bodyweight variation; first stabilize clean performance.','Behalte die aktuelle Körpergewichtsvariante bei; stabilisiere zuerst die saubere Leistung.','Păstrează varianta actuală cu greutatea corpului; stabilizează mai întâi execuția corectă.'],
+  'progress.body.goal.generic':['nehezebb variáció, lassabb tempó, szünet vagy nagyobb mozgástartomány','a harder variation, slower tempo, pause, or greater range of motion','eine schwierigere Variante, langsameres Tempo, Pause oder größerer Bewegungsumfang','o variantă mai dificilă, tempo mai lent, pauză sau amplitudine mai mare'],
+  'progress.body.goal.pushup':['nehezebb fekvőtámasz-variáció, lassabb excentrikus szakasz, alsó szünet vagy nagyobb ROM','a harder push-up variation, slower eccentric, bottom pause, or greater ROM','eine schwierigere Liegestütz-Variante, langsamere Exzentrik, Pause unten oder größerer ROM','o variantă mai dificilă de flotare, coborâre mai lentă, pauză jos sau ROM mai mare'],
+  'progress.body.goal.close-pushup':['nehezebb fekvőtámasz-variáció, lassabb tempó vagy alsó szünet','a harder push-up variation, slower tempo, or bottom pause','eine schwierigere Liegestütz-Variante, langsameres Tempo oder Pause unten','o variantă mai dificilă de flotare, tempo mai lent sau pauză jos'],
+  'progress.body.goal.crunch':['lassabb tempó, felső megtartás vagy nehezebb hasprés-variáció','slower tempo, a hold at the top, or a harder crunch variation','langsameres Tempo, Halten oben oder eine schwierigere Crunch-Variante','tempo mai lent, menținere sus sau o variantă mai dificilă de crunch'],
+  'progress.body.goal.plank':['hosszabb kontrollált tartás, nehezebb plank-variáció vagy nagyobb feszítés','a longer controlled hold, harder plank variation, or greater tension','längeres kontrolliertes Halten, schwierigere Plank-Variante oder mehr Spannung','menținere controlată mai lungă, variantă de plank mai dificilă sau tensiune mai mare'],
+  'progress.body.goal.side-plank':['hosszabb kontrollált tartás vagy nehezebb oldalsó plank-variáció','a longer controlled hold or a harder side-plank variation','längeres kontrolliertes Halten oder eine schwierigere Side-Plank-Variante','menținere controlată mai lungă sau o variantă mai dificilă de side plank'],
+  'stopwatch.title':['Stopper • {set}. sorozat','Stopwatch • set {set}','Stoppuhr • Satz {set}','Cronometru • seria {set}'],
+  'stopwatch.timedTarget':['időre végzett sorozat','timed set','zeitbasierter Satz','serie cronometrată'],
+  'stopwatch.pauseSave':['Stop és rögzítés','Stop and save','Stoppen und speichern','Oprește și salvează'],
+  'stopwatch.resume':['Folytatás','Resume','Fortsetzen','Continuă'],
+  'stopwatch.start':['Indítás','Start','Starten','Pornește'],
+  'stopwatch.reset':['Nullázás','Reset','Zurücksetzen','Resetează'],
+  'stopwatch.help':['Az eltelt másodperc automatikusan bekerül az aktuális sorozat mezőjébe.','Elapsed seconds are automatically entered into the current set.','Die verstrichenen Sekunden werden automatisch in den aktuellen Satz eingetragen.','Secundele scurse sunt introduse automat în seria curentă.'],
+  'stopwatch.running':['Fut • {set}. sorozat • {sec} mp','Running • set {set} • {sec} sec','Läuft • Satz {set} • {sec} s','Rulează • seria {set} • {sec} sec'],
+  'stopwatch.saved':['{sec} mp rögzítve a {set}. sorozatba.','{sec} sec saved to set {set}.','{sec} s in Satz {set} gespeichert.','{sec} sec salvate în seria {set}.'],
+  'stopwatch.ready':['Indítsd a stoppert; leállításkor az idő automatikusan a sorozatba kerül.','Start the stopwatch; when stopped, the time is saved automatically to the set.','Starte die Stoppuhr; beim Stoppen wird die Zeit automatisch im Satz gespeichert.','Pornește cronometrul; la oprire, timpul este salvat automat în serie.'],
+  'video.badge':['VIDEÓBEMUTATÓ • INTERNET','VIDEO DEMO • INTERNET','VIDEO-DEMO • INTERNET','DEMO VIDEO • INTERNET'],
+  'video.player':['külön lejátszó','separate player','separater Player','player separat'],
+  'video.sourcePage':['videó a forrásoldalon','video on source page','Video auf Quellseite','video pe pagina sursă'],
+  'video.openDemo':['▶ Bemutató megnyitása','▶ Open demo','▶ Demo öffnen','▶ Deschide demonstrația'],
+  'video.openBrowser':['▶ Videó a böngészőben','▶ Video in browser','▶ Video im Browser','▶ Video în browser']
+ };
+ // Correct HU row for RIR load (kept separately to avoid accidental mixed-language source text).
+ rows['progress.rirLoad'][0]='A cél {rir} RIR, nem ismétléstartomány. A terhelést csak a RIR-cél stabil teljesítése alapján módosítsd.';
+ for(const [key,row] of Object.entries(rows)){
+  TP149_KEY_ROWS[key]=row;
+  TP149_CATALOG.hu[key]=row[0];TP149_CATALOG.en[key]=row[1];TP149_CATALOG.de[key]=row[2];TP149_CATALOG.ro[key]=row[3];
+ }
+})();
+
+var tp149LoadLabel=function tp149LoadLabel(type){
+ const key={'per_hand':'workout.load.per_hand','total':'workout.load.total','single_dumbbell':'workout.load.single_dumbbell','bodyweight':'workout.load.bodyweight'}[type];
+ return key?tp149T(key):'kg';
+};
+loadLabel=function(type){return tp149LoadLabel(type);};
+
+var tp149RepUnit=function tp149RepUnit(unit){
+ const x=String(unit||'');
+ if(x==='mp'||/sec|second/i.test(x))return tp149T('workout.seconds');
+ if(x==='/kar'||/arm/i.test(x))return tp149T('workout.perArm');
+ if(x==='/láb'||/leg/i.test(x))return tp149T('workout.perLeg');
+ if(x==='ism.'||/rep/i.test(x))return tp149T('workout.reps');
+ return x||tp149T('workout.reps');
+};
+var tp149ProgressionNext=function tp149ProgressionNext(reps,target){
+ const next=tp140NextRepTargets(reps,target);
+ if(!next.length)return tp149T('progress.nextGeneric');
+ return tp149T('progress.nextTarget',{values:next.join('–'),unit:target.kind==='time'?tp149T('workout.seconds').toLowerCase():tp149T('workout.reps').toLowerCase()});
+};
+var tp149BodyGoal=function tp149BodyGoal(id){
+ const suffix={'pushup':'pushup','close-pushup':'close-pushup','crunch':'crunch','plank':'plank','side-plank':'side-plank'}[id]||'generic';
+ return tp149T('progress.body.goal.'+suffix);
+};
+tp140RepText=function(reps,target){return tp149ProgressionNext(reps,target);};
+
+tp140BodyRecommendation=function(id,target,recent,latest){
+ if(!latest)return {action:'start',weight:0,autoApply:false,text:tp149T('progress.body.noHistory')};
+ if(latest.effort==='pain')return {action:'pain',weight:0,autoApply:false,text:tp149T('progress.body.pain')};
+ if(!latest.allDone)return {action:'hold',weight:0,autoApply:false,text:tp149T('progress.body.partial')};
+ if(['challenging','hard'].includes(latest.effort))return {action:'hold',weight:0,autoApply:false,text:tp149T('progress.body.hard')};
+ if(target.kind==='rir'){
+  const rir=String(target.rirMin)+(target.rirMax!==target.rirMin?'–'+target.rirMax:'')+' RIR';
+  if(['easy','light'].includes(latest.effort))return {action:'reps',weight:0,autoApply:false,text:tp149T('progress.body.rirReps',{rir:rir})};
+  return {action:'hold',weight:0,autoApply:false,text:tp149T('progress.body.rirHold',{rir:rir,target:target.reps})};
+ }
+ const same=recent.filter(function(x){return Math.abs(x.weight-latest.weight)<0.01;}),stableTop=same.slice(0,3).filter(function(x){return x.hitTop&&x.safeEffort;}).length>=2;
+ if(stableTop)return {action:'variation',weight:0,autoApply:false,text:tp149T('progress.body.variation',{goal:tp149BodyGoal(id)})};
+ if(latest.hitTop)return {action:'hold',weight:0,autoApply:false,text:tp149T('progress.body.hitTop')};
+ if((target.kind==='reps'||target.kind==='time')&&latest.reps.length)return {action:'reps',weight:0,autoApply:false,text:tp149T('progress.body.reps',{next:tp149ProgressionNext(latest.reps,target)})};
+ return {action:'hold',weight:0,autoApply:false,text:tp149T('progress.body.hold')};
+};
+
+rf152Recommendation=function(id,sessionExercise=null){
+ const lib=byId(id),programId=state.session?.programId||(typeof activeProgramId==='function'?activeProgramId():null),target=tp140Prescription(id,sessionExercise,programId),rows=tp140Recent(id,target.programId,3),recent=rows.map(function(r){return tp140Occurrence(r,target);}),latest=recent[0];
+ if(!lib)return {action:'hold',weight:0,autoApply:false,text:tp149T('progress.noExercise'),target:target,historyCount:recent.length};
+ if(lib.loadType==='bodyweight')return Object.assign({},tp140BodyRecommendation(id,target,recent,latest),{target:target,historyCount:recent.length});
+ if(!latest)return {action:'start',weight:Number(lib.weight)||0,autoApply:false,target:target,historyCount:0,text:tp149T('progress.noHistory')};
+ const base=latest.weight||rf152BaseWeight(latest.e),sameLoad=recent.filter(function(x){return Math.abs(x.weight-base)<0.01;}),stableTop=sameLoad.slice(0,3).filter(function(x){return x.hitTop&&x.safeEffort;}).length>=2,recentAdverse=sameLoad.slice(0,2).some(function(x){return x.adverse;}),next=tp140NextWeight(lib,base),unit=tp149LoadLabel(lib.loadType),fw=tp149FormatNumber(base,{maximumFractionDigits:2});
+ if(latest.effort==='pain')return {action:'pain',weight:base,autoApply:false,target:target,historyCount:recent.length,text:tp149T('progress.painLoad')};
+ if(!latest.allDone)return {action:'hold',weight:base,autoApply:false,target:target,historyCount:recent.length,text:tp149T('progress.partialLoad')};
+ if(latest.effort==='challenging')return {action:'hold',weight:base,autoApply:false,target:target,historyCount:recent.length,text:tp149T('progress.challenging',{weight:fw,unit:unit})};
+ if(latest.effort==='hard'){
+  const hardCount=sameLoad.slice(0,3).filter(function(x){return x.effort==='hard';}).length;
+  if(latest.belowMin||hardCount>=2){
+   const down=tp140NextWeight(lib,base,-1);
+   return {action:'reduce',weight:down,autoApply:false,target:target,historyCount:recent.length,text:tp149T('progress.hardReduce',{repeat:hardCount>=2?tp149T('progress.repeat'):'',weight:tp149FormatNumber(down,{maximumFractionDigits:2}),unit:unit})};
+  }
+  return {action:'hold',weight:base,autoApply:false,target:target,historyCount:recent.length,text:tp149T('progress.hardHold',{weight:fw,unit:unit})};
+ }
+ if(target.kind==='rir'){
+  const rir=String(target.rirMin)+(target.rirMax!==target.rirMin?'–'+target.rirMax:'');
+  return {action:'hold',weight:base,autoApply:false,target:target,historyCount:recent.length,text:tp149T('progress.rirLoad',{rir:rir})};
+ }
+ if(target.kind!=='reps'&&target.kind!=='time')return {action:'hold',weight:base,autoApply:false,target:target,historyCount:recent.length,text:tp149T('progress.openTarget',{weight:fw,unit:unit})};
+ if(latest.hitTop&&latest.safeEffort&&!recentAdverse){

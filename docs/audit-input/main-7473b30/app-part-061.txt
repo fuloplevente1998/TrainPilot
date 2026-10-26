@@ -1,0 +1,204 @@
+  return '<main class="tp150-quick-picker tp155-quick-panel"><div class="hero"><span class="badge">'+esc(tp150qwT('quickBadge'))+'</span><h1>'+esc(tp150qwT('title'))+'</h1><p class="small muted">'+esc(tp150qwT('subtitle'))+'</p></div><div class="tp155-panel-sticky"><label>'+esc(t('search'))+'<input id="tp155QuickQuery" class="field" type="search" value="'+esc(query)+'" oninput="tp155QuickFilter(this.value)"></label></div><div id="tp150QuickResults" class="tp155-panel-scroll">'+tp150QuickResults(query)+'</div></main>';
+ };
+ window.tp155QuickFilter=function(value){state.tp155QuickQuery=String(value||'');const host=document.getElementById('tp150QuickResults');if(host)host.innerHTML=tp150QuickResults(state.tp155QuickQuery);try{rf260EnhanceSelects()}catch(_){}};
+ const quickCardBase=tp150CompactQuickCard;
+ tp150CompactQuickCard=function(){return String(quickCardBase()).replace('onclick="tp150QuickPicker()"','onclick="tp155R4TogglePanel(\'quick\',this)"')};
+
+ /* #12: preserve the exercise filters/cards, changing only their outer shell. */
+ const libraryState=function(){return state.libraryFilter||{group:'all',gear:'all',q:''}};
+ window.tp155ExercisePanelHtml=function(){
+  const f=libraryState();state.libraryFilter=f;
+  const muscles=Object.keys(MUSCLES).map(function(key){return '<option value="'+esc(key)+'" '+(f.group===key?'selected':'')+'>'+esc(tp149MuscleGroupLabel(key))+'</option>'}).join('');
+  const gears=Object.entries(TP149_LIBRARY_GEAR_ROWS).map(function(row){return '<option value="'+esc(row[0])+'" '+(f.gear===row[0]?'selected':'')+'>'+esc(tp149RowValue(row[1]))+'</option>'}).join('');
+  return '<main class="tp155-exercise-panel"><div class="hero"><h1>'+esc(tp149T('exercise.libraryTitle'))+'</h1><p>'+esc(tp149T('exercise.librarySummary',{count:exercises().length}))+'</p></div><div class="setting tp155-library-filters"><label>'+esc(t('search'))+'<input id="libraryQuery" class="field" type="search" value="'+esc(f.q||'')+'" placeholder="'+esc(tp149T('exercise.searchPlaceholder'))+'" oninput="tp155LibraryFilter()"></label><div class="tp155-filter-row"><label>'+esc(t('muscle'))+'<select id="libraryMuscle" class="field" onchange="tp155LibraryFilter()"><option value="all">'+esc(t('all'))+'</option>'+muscles+'</select></label><label>'+esc(t('gear'))+'<select id="libraryGear" class="field" onchange="tp155LibraryFilter()">'+gears+'</select></label></div></div><div id="libraryResults" class="tp155-library-results">'+libraryResults(f.group||'all',f.gear||'all',f.q||'')+'</div></main>';
+ };
+ window.tp155LibraryFilter=function(){
+  const f={group:document.getElementById('libraryMuscle')?.value||'all',gear:document.getElementById('libraryGear')?.value||'all',q:document.getElementById('libraryQuery')?.value||''};state.libraryFilter=f;
+  const host=document.getElementById('libraryResults');if(host)host.innerHTML=libraryResults(f.group,f.gear,f.q);
+ };
+ muscleLibrary=function(group='all'){state.libraryFilter={group:group,gear:'all',q:''};return window.tp155R4OpenPanel('exercises',document.activeElement)};
+
+ /* #3: reorder only the four existing Home blocks when a draft exists. */
+ window.tp155OrderHomeCards=function(){
+  if(state.tab!=='home')return;const main=document.querySelector('main.rf221-home');if(!main)return;
+  const resume=main.querySelector('button[onclick*="resumeDraft"]'),draft=resume?.closest('.card'),coach=main.querySelector('#rf220CoachCard'),program=main.querySelector('.hero'),today=main.querySelector('#rf223Today');
+  if(!draft||!coach||!program||!today)return;
+  draft.dataset.tp155HomeOrder='1';coach.dataset.tp155HomeOrder='2';program.dataset.tp155HomeOrder='3';today.dataset.tp155HomeOrder='4';
+  draft.after(coach);coach.after(program);program.after(today);
+ };
+
+ /* #4: keep persisted side fields; show manual correction only on demand. */
+ window.tp155ToggleSideEdit=function(side,button){
+  const card=button?.closest('.tp1481-side-card'),editing=!card?.classList.contains('tp155-side-editing');if(!card)return;
+  card.classList.toggle('tp155-side-editing',editing);button.textContent=editing?t('closeEdit'):t('edit');if(editing)card.querySelector('input')?.focus?.();
+ };
+ const sideDecoratorBase=tp1481DecoratePerSide;
+ tp1481DecoratePerSide=function(){
+  const out=sideDecoratorBase.apply(this,arguments);document.querySelectorAll('.tp1481-side-card').forEach(function(card){
+   const side=card.querySelector('[id^="tp1481SideTime-"]')?.id.split('-').pop(),label=card.querySelector('label.small');if(!side||!label||card.querySelector('.tp155-side-edit'))return;
+   label.classList.add('tp155-side-manual');const button=document.createElement('button');button.type='button';button.className='btn secondary tp155-side-edit';button.textContent=t('edit');button.setAttribute('onclick','tp155ToggleSideEdit(\''+side+'\',this)');label.before(button);
+  });return out;
+ };
+
+ const renderBase=render;
+ render=function(){
+  const transientPanel=document.querySelector('#tp155R4PanelHost[data-panel="quick"],#tp155R4PanelHost[data-panel="exercises"]');
+  if(transientPanel&&arguments[0]!=null&&!window.TrainPilotUIRefresh?.isBackground?.())window.tp155R4ClosePanel(false);
+  const out=renderBase.apply(this,arguments);window.tp155OrderHomeCards();setTimeout(window.tp155OrderHomeCards,0);
+  document.querySelector('#rf2211First')?.closest('.tp-select')?.classList.add('tp155-attached-select');return out;
+ };
+
+ const style=document.createElement('style');style.id='tp155Next12ModsCss';style.textContent=[
+  '.tp155-r4-panel{border-top:0!important;box-shadow:0 18px 42px rgba(0,0,0,.38),inset 0 9px 16px -18px rgba(var(--accent-rgb),.72)!important;margin-top:-2px}',
+  '.tp155-r4-panel::before{content:"";position:absolute;left:10px;right:10px;top:0;height:10px;pointer-events:none;background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 12%,transparent),transparent);opacity:.55}',
+  '.rf2211-planbody label:has(#rf2211First) .tp-select-trigger::after,.rf2211-planbody label:has(#rf2211Time) .tp-temporal-icon{display:none!important}',
+  '.tp155-attached-select{position:relative!important}.tp155-attached-select .tp-select-menu{position:absolute!important;left:0!important;right:auto!important;top:calc(100% + 4px)!important;bottom:auto!important;width:100%!important;max-height:220px!important}',
+  '.tp-temporal-modal{display:grid!important;place-items:center!important;padding:max(14px,env(safe-area-inset-top,0px)) 12px max(14px,env(safe-area-inset-bottom,0px))!important}',
+  '.tp-temporal-modal .tp-temporal-card{position:relative!important;inset:auto!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;margin:auto!important;max-height:min(82dvh,680px)!important}',
+  '.tp-temporal-modal .tp152-time-card{max-height:min(62dvh,430px)!important}',
+  '.tp155-journal-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:0 0 12px;padding:4px;border:1px solid var(--line);border-radius:14px;background:var(--card2)}',
+  '.tp155-journal-tabs button{min-height:40px;border:0;border-radius:10px;background:transparent;color:var(--muted);font-weight:850}.tp155-journal-tabs button.active{background:color-mix(in srgb,var(--accent) 18%,var(--card));color:var(--text)}',
+  '.tp155-quick-panel,.tp155-exercise-panel{display:flex!important;flex-direction:column;min-height:0!important;height:100%}.tp155-quick-panel .hero,.tp155-exercise-panel .hero{padding:8px 4px 6px;margin:0}',
+  '#tp155R4PanelHost[data-panel="quick"] .tp155-r4-panel,#tp155R4PanelHost[data-panel="exercises"] .tp155-r4-panel{overflow:hidden!important;display:flex;flex-direction:column;height:calc(100% - 2px)}#tp155R4PanelHost[data-panel="quick"] .tp155-r4-panel-content,#tp155R4PanelHost[data-panel="exercises"] .tp155-r4-panel-content{display:flex;flex:1;min-height:0;overflow:hidden}#tp155R4PanelHost[data-panel="quick"] .tp155-r4-panel-content>main,#tp155R4PanelHost[data-panel="exercises"] .tp155-r4-panel-content>main{flex:1;min-height:0}',
+  '.tp155-panel-sticky,.tp155-library-filters{position:sticky;top:0;z-index:4;margin:0 0 8px!important;padding:8px!important;background:color-mix(in srgb,var(--card) 96%,transparent);backdrop-filter:blur(8px)}',
+  '.tp155-exercise-panel .tp155-library-filters{position:relative;top:auto;z-index:auto;flex:0 0 auto}.tp155-exercise-panel .tp155-library-results{position:relative;z-index:1;flex:1 1 auto;scroll-padding-top:8px}',
+  '#tp155R4PanelHost[data-panel="exercises"] .tp155-r4-panel-content{height:100%}.tp155-exercise-panel{display:grid!important;grid-template-rows:auto auto minmax(0,1fr);height:100%!important;overflow:hidden}',
+  '@media(max-height:500px){#tp155R4PanelHost:is([data-panel="exercises"],[data-panel="quick"]){top:0!important}.tp155-exercise-panel>.hero{display:none}.tp155-exercise-panel{grid-template-rows:auto minmax(0,1fr)}.tp155-exercise-panel .tp155-library-filters{display:grid;grid-template-columns:1fr 2fr;gap:8px;padding-right:40px!important}.tp155-library-filters label{margin:0!important}.tp155-quick-panel>.hero{display:none}}',
+  '.tp155-filter-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.tp155-library-filters label{font-size:12px}.tp155-library-filters .field,.tp155-library-filters .tp-select-trigger{min-height:38px!important;padding-block:7px!important}',
+  '.tp155-panel-scroll,.tp155-library-results{min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-bottom:8px}.tp155-library-results .tp-library-card{margin:7px 0!important}',
+  '.tp1481-side-stopwatch{padding:10px!important}.tp1481-side-stopwatch .rf110-stopwatch-head{margin-bottom:4px}.tp1481-side-stopwatch .tp1481-side-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important;margin-top:7px!important}',
+  '.tp1481-side-stopwatch .tp1481-side-card{padding:9px!important}.tp1481-side-stopwatch .rf110-stopwatch-time{font-size:30px!important;margin:5px 0!important}.tp1481-side-stopwatch .tp1481-side-actions{grid-template-columns:1fr 1fr!important;gap:5px!important;margin-top:6px!important}.tp1481-side-stopwatch .tp1481-side-actions .btn,.tp155-side-edit{min-height:38px!important;padding:7px 5px!important;font-size:12px!important}',
+  '.rf110-stopwatch:not(.tp1481-side-stopwatch){padding:10px!important;margin:8px 0 10px!important}.rf110-stopwatch:not(.tp1481-side-stopwatch) .rf110-stopwatch-time{font-size:32px!important}.rf110-stopwatch:not(.tp1481-side-stopwatch) .rf110-stopwatch-actions{margin-top:7px!important;gap:7px!important}.rf110-stopwatch:not(.tp1481-side-stopwatch) .rf110-stopwatch-actions .btn{min-height:40px!important}',
+  '.tp155-side-manual{display:none!important}.tp155-side-editing .tp155-side-manual{display:block!important}.tp155-side-edit{width:100%;margin-top:5px}',
+  '@media(max-width:330px){.tp1481-side-stopwatch .tp1481-side-grid,.tp155-filter-row{grid-template-columns:1fr!important}}'
+ ].join('');document.head.appendChild(style);
+ window.TrainPilot155Next12={version:'1.5.5-next-12',calendarMove:true,manualCalendarComplete:true,sideStopwatchCompact:true,journalStatistics:true,quickPanel:true,exercisePanel:true};
+})();
+// @endsection trainpilot-155-next-12-mods.js
+
+// @section trainpilot-155-phone-round4-fixes.js
+/* TrainPilot 1.5.5 phone-test follow-ups after NEXT12.
+ * Keep this layer deliberately small: reuse existing screens, panel shell, planner,
+ * history deletion logic and calendar state instead of introducing new systems. */
+(function(){
+ 'use strict';
+ const lang=function(){return typeof rf212Lang==='function'?rf212Lang():'hu'};
+ const copy={
+  hu:{customHint:'Koppints a naptárban arra a napra, amelyikre edzést szeretnél tenni.',moveHint:'Áthelyezés: válaszd ki az új napot a fenti naptárban.',cancel:'Mégse',deleteWorkout:'Törlés'},
+  en:{customHint:'Tap the calendar day where you want to place a workout.',moveHint:'Move workout: choose the new day in the calendar above.',cancel:'Cancel',deleteWorkout:'Delete'},
+  de:{customHint:'Tippe im Kalender auf den Tag, an dem du trainieren möchtest.',moveHint:'Training verschieben: Wähle oben im Kalender den neuen Tag.',cancel:'Abbrechen',deleteWorkout:'Löschen'},
+  ro:{customHint:'Atinge în calendar ziua în care vrei să programezi antrenamentul.',moveHint:'Mută antrenamentul: alege noua zi în calendarul de mai sus.',cancel:'Anulează',deleteWorkout:'Șterge'},
+  sk:{customHint:'Ťukni v kalendári na deň, na ktorý chceš pridať tréning.',moveHint:'Presun tréningu: vyber nový deň v kalendári vyššie.',cancel:'Zrušiť',deleteWorkout:'Odstrániť'},
+  pl:{customHint:'Dotknij dnia w kalendarzu, na który chcesz dodać trening.',moveHint:'Przenieś trening: wybierz nowy dzień w kalendarzu powyżej.',cancel:'Anuluj',deleteWorkout:'Usuń'}
+ };
+ const tx=function(key){const l=lang();return copy[l]?.[key]||copy.hu[key]||key};
+
+ if(typeof rf221StatsScreen==='function'){
+  const statsScreenBase=rf221StatsScreen;
+  rf221StatsScreen=function(){
+   const out=statsScreenBase.apply(this,arguments),main=document.querySelector('#app main')||document.querySelector('main');
+   if(main){
+    const directBack=[...main.children].find(function(el){return el.tagName==='BUTTON'&&String(el.getAttribute('onclick')||'').includes("go('home')")});
+    directBack?.remove();
+    const hero=[...main.children].find(function(el){return el.classList?.contains('hero')});hero?.remove();
+   }
+   return out;
+  };
+ }
+
+ rf230PlannerMode=function(){const m=plannerSettings()?.mode;return ['daily','alternate','weekly','custom'].includes(m)?m:'alternate'};
+ window.tp155SavePlannerBasics=function(){
+  const s=plannerSettings(),mode=document.querySelector('#rf230Mode')?.value||rf230PlannerMode(),time=document.querySelector('#rf2211Time')?.value||s.time||'18:00';
+  const minutes=Math.max(10,Math.min(240,Number(document.querySelector('#rf2211Minutes')?.value)||Number(s.minutes)||45));
+  const weekdayInputs=[...document.querySelectorAll('input[name="rf2211Weekday"]')],weekdays=mode==='weekly'&&weekdayInputs.length?weekdayInputs.filter(x=>x.checked).map(x=>Number(x.value)):s.weekdays;
+  db.set('plannerSettings',Object.assign({},s,{mode:mode,time:time,minutes:minutes,weekdays:weekdays}));if(typeof cloudChanged==='function')cloudChanged();
+ };
+ rf230ModeChanged=function(){
+  const mode=document.querySelector('#rf230Mode')?.value||'alternate';window.tp155SavePlannerBasics();
+  document.querySelectorAll('.tp155-auto-plan-only').forEach(function(el){el.style.display=mode==='custom'?'none':''});
+  const row=document.querySelector('#rf230Weekdays');if(row)row.style.display=mode==='weekly'?'flex':'none';
+  const hint=document.querySelector('.tp155-custom-plan-hint');if(hint)hint.style.display=mode==='custom'?'block':'none';
+ };
+ rf2211Planner=function(){
+  const s=plannerSettings(),p=activeProgram(),days=rf2211Days(),today=new Date().toISOString().slice(0,10),mode=rf230PlannerMode(),custom=mode==='custom';
+  const customLabel=typeof tp149PlannerRow==='function'?tp149PlannerRow('cadence','custom'):'Naptárban kijelölöm';
+  return '<details class="card rf2211-planner"><summary><strong>'+esc(tp149T('calendar.planningSettings'))+'</strong><span class="small muted"> • '+esc(tp149T('calendar.weeksAhead'))+'</span></summary><div class="rf2211-planbody"><p class="small muted">'+esc(tp149T('calendar.rhythmHelp'))+'</p><label class="small">'+esc(tp149T('calendar.rhythm'))+'<select class="field" id="rf230Mode" onchange="rf230ModeChanged()"><option value="alternate" '+(mode==='alternate'?'selected':'')+'>'+esc(tp149T('calendar.cadence.alternate'))+'</option><option value="daily" '+(mode==='daily'?'selected':'')+'>'+esc(tp149T('calendar.cadence.daily'))+'</option><option value="weekly" '+(mode==='weekly'?'selected':'')+'>'+esc(tp149T('calendar.cadence.weekly'))+'</option><option value="custom" '+(custom?'selected':'')+'>'+esc(customLabel)+'</option></select></label><div class="grid2"><label class="small tp155-auto-plan-only" style="'+(custom?'display:none':'')+'">'+esc(tp149T('calendar.startDate'))+'<input class="field" id="rf2211Start" type="date" value="'+today+'"></label><label class="small">'+esc(tp149T('calendar.time'))+'<input class="field" id="rf2211Time" type="time" value="'+esc(s.time)+'" onchange="tp155SavePlannerBasics()"></label><label class="small">'+esc(tp149T('calendar.duration'))+'<input class="field" id="rf2211Minutes" type="number" min="10" max="240" value="'+s.minutes+'" onchange="tp155SavePlannerBasics()"></label><label class="small tp155-auto-plan-only" style="'+(custom?'display:none':'')+'">'+esc(tp149T('calendar.weeks'))+'<input class="field" id="rf2211Weeks" type="number" min="1" max="12" value="4"></label></div><label class="small tp155-auto-plan-only" style="'+(custom?'display:none':'')+'">'+esc(tp149T('calendar.firstDay'))+'<select class="field" id="rf2211First">'+days.map(function(d,i){return '<option value="'+i+'">'+esc(tp149ProgramDayName(p,d))+'</option>';}).join('')+'</select></label>'+rf230WeekdayRow(mode)+'<p class="small muted tp155-custom-plan-hint" style="'+(custom?'display:block':'display:none')+'">'+esc(tx('customHint'))+'</p><button class="btn block tp155-auto-plan-only" style="'+(custom?'display:none':'')+'" onclick="rf2211PlanWeeks()">'+esc(tp149T('calendar.plan'))+'</button></div></details>';
+ };
+ const planWeeksBase=rf2211PlanWeeks;
+ rf2211PlanWeeks=function(){if((document.querySelector('#rf230Mode')?.value||rf230PlannerMode())==='custom'){window.tp155SavePlannerBasics();return}return planWeeksBase.apply(this,arguments)};
+
+ const calendarDayBase=toggleCalendarDay;
+ rf260OpenScheduleMove=function(id){
+  const item=scheduled().find(function(x){return x.id===id&&!x.cancelled});if(!item)return false;
+  window.TrainPilotCalendarDay?.close(false);
+  if(state.rf260MovingScheduleId===id){state.rf260MovingScheduleId=null;render();return true}
+  state.rf260MovingScheduleId=id;state.tp151EditingScheduleId=null;state.rf2211CalendarDate=localDateKey(new Date(item.start));render();return true;
+ };
+ window.tp155CancelCalendarMove=function(){if(!state.rf260MovingScheduleId)return;state.rf260MovingScheduleId=null;render()};
+ toggleCalendarDay=function(date){
+  const id=state.rf260MovingScheduleId;
+  if(!id)return calendarDayBase.apply(this,arguments);
+  const rows=scheduled(),i=rows.findIndex(function(x){return x.id===id&&!x.cancelled});if(i<0){state.rf260MovingScheduleId=null;return calendarDayBase.apply(this,arguments)}
+  const old=rows[i],oldDate=localDateKey(new Date(old.start));
+  if(date===oldDate){state.rf260MovingScheduleId=null;state.rf2211CalendarDate=date;render();return}
+  if(rows.some(function(x,j){return j!==i&&!x.cancelled&&localDateKey(new Date(x.start))===date})){alert(tp149T('calendar.error.noEmpty'));return}
+  const oldStart=new Date(old.start),time=Number.isNaN(oldStart.getTime())?'18:00':oldStart.toTimeString().slice(0,5),duration=Math.max(60000,Date.parse(old.end)-Date.parse(old.start));
+  try{
+   const next=dateAt(date,time);rows[i]=Object.assign({},old,{start:next.toISOString(),end:new Date(next.getTime()+duration).toISOString(),updatedAt:Date.now()});
+   db.set('scheduled',rows);state.rf260MovingScheduleId=null;state.rf2211CalendarDate=date;if(typeof cloudChanged==='function')cloudChanged();render();window.TrainPilotFeedback?.saved();
+  }catch(error){alert(error?.message||tp149T('calendar.error.dateTime'))}
+ };
+
+ if(typeof rf263HistoryItem==='function'){
+  const historyItemBase=rf263HistoryItem;
+  rf263HistoryItem=function(x,originalIndex,visibleIndex){
+   const key=rf142WorkoutKey(x);let html=String(historyItemBase.apply(this,arguments));if(html.includes('tp155-history-delete'))return html;
+   const marker='<div class="rf-history-health-panel"';
+   const action='<button type="button" class="btn danger block tp155-history-delete" onclick="event.stopPropagation();deleteHistoryWorkout(\''+esc(key)+'\')">'+esc(typeof tp149T==='function'?tp149T('common.delete'):tx('deleteWorkout'))+'</button>';
+   const i=html.indexOf(marker);if(i>=0)html=html.slice(0,i)+action+html.slice(i);return html;
+  };
+ }
+
+ const decorate=function(){
+  document.querySelector('#rf2211First')?.closest('.tp-select')?.classList.add('tp155-attached-select');
+  document.querySelector('.tp155-language-select')?.closest('.tp-select')?.classList.add('tp155-attached-select','tp155-language-attached');
+  const host=document.getElementById('tp155R4PanelHost');
+  if(host?.dataset?.panel==='calendar'&&state.rf260MovingScheduleId){
+   const main=host.querySelector('.tp155-r4-calendar-panel-main'),frame=main?.querySelector('.tp151-calendar-frame');
+   if(frame&&!main.querySelector('.tp155-move-banner'))frame.insertAdjacentHTML('beforebegin','<div class="tp155-move-banner" role="status"><span>'+esc(tx('moveHint'))+'</span><button type="button" class="btn secondary" onclick="tp155CancelCalendarMove()">'+esc(tx('cancel'))+'</button></div>');
+  }
+ };
+ if(typeof window.tp155R4RefreshPanel==='function'){
+  const refreshBase=window.tp155R4RefreshPanel;window.tp155R4RefreshPanel=function(){const out=refreshBase.apply(this,arguments);decorate();return out};
+ }
+ if(typeof window.tp155R4ClosePanel==='function'){
+  const closeBase=window.tp155R4ClosePanel;window.tp155R4ClosePanel=function(){state.rf260MovingScheduleId=null;return closeBase.apply(this,arguments)};
+ }
+ const renderPhoneBase=render;
+ render=function(){const out=renderPhoneBase.apply(this,arguments);decorate();return out};
+ decorate();
+
+ const style=document.createElement('style');style.id='tp155PhoneRound4Css';style.textContent=[
+  '.rf2211-planbody label:has(#rf2211Start) .tp-temporal-trigger::after,.rf2211-planbody label:has(#rf2211Time) .tp-temporal-trigger::after{display:none!important}',
+  '#tp155R4PanelHost:is([data-panel="calendar"],[data-panel="coach"],[data-panel="settings"]) .tp155-r4-panel-close{display:none!important}',
+  '.tp155-language-attached{position:relative!important}.tp155-language-attached .tp-select-menu{position:absolute!important;left:0!important;right:auto!important;top:calc(100% + 4px)!important;bottom:auto!important;width:100%!important;max-height:min(300px,44dvh)!important}',
+  '.tp155-attached-select .tp-select-menu[data-placement="top"]{top:auto!important;bottom:calc(100% + 4px)!important}',
+  '.tp155-move-banner{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px;padding:9px 10px;border:1px solid color-mix(in srgb,var(--accent) 50%,var(--line));border-radius:12px;background:color-mix(in srgb,var(--accent) 8%,var(--card));font-size:13px;font-weight:700}.tp155-move-banner .btn{min-height:36px;padding:6px 10px;flex:0 0 auto}',
+  '.timer{position:static!important;left:auto!important;right:auto!important;bottom:auto!important;transform:none!important;width:auto!important;max-width:none!important;margin:10px max(12px,env(safe-area-inset-left,0px)) calc(12px + env(safe-area-inset-bottom,0px))!important;z-index:auto!important;pointer-events:auto!important;box-shadow:0 6px 18px #0004!important}',
+  '.tp155-history-delete{margin:10px 0!important}',
+  '.tp155-custom-plan-hint{margin:8px 0 2px;padding:8px 10px;border-radius:10px;background:color-mix(in srgb,var(--accent) 6%,var(--card2))}'
+ ].join('');document.head.appendChild(style);
+ window.TrainPilot155PhoneRound4={version:'1.5.5-phone-round4',statsClean:true,calendarCustom:true,calendarMoveInPlace:true,panelCloseHidden:true,languageAttached:true,restTimerFlow:true,historyDelete:true};
+})();
+// @endsection trainpilot-155-phone-round4-fixes.js
+
+// @section trainpilot-155-quick-filter-cleanup.js
+/* Phone-test cleanup: Quick Workout keeps the shared panel X and useful controls.
+ * Remove only the redundant Quick Workout header card; keep the collapsible
+ * muscle + equipment filter next to the persistent search field. */
+(function(){
+ 'use strict';
+ const labels={
+  hu:{filter:'Szűrő',search:'Keresés',muscle:'Izomcsoport',gear:'Felszerelés',all:'Összes'},
+  en:{filter:'Filter',search:'Search',muscle:'Muscle group',gear:'Equipment',all:'All'},
+  de:{filter:'Filter',search:'Suche',muscle:'Muskelgruppe',gear:'Ausrüstung',all:'Alle'},

@@ -1,0 +1,367 @@
+ if(effort==='pain')return {action:'pain',weight:base,text:'Legutóbb fájdalmat jelöltél. Ne emelj súlyt; csak fájdalommentes végrehajtással folytasd.'};
+ if(!all)return {action:'hold',weight:base,text:'A legutóbbi edzés részleges volt, ezért most nem emelünk.'};
+ if(effort==='hard')return {action:'hold',weight:base,text:'Legutóbb nagyon nehéz volt. Maradjon a súly, előbb legyen stabil a technika és az ismétlésszám.'};
+ if(lib.loadType==='bodyweight'){
+   if(effort==='easy'||(range.max&&reps.length&&Math.min(...reps)>=range.max))return {action:'reps',weight:0,text:'Következő cél: 1–2 szabályos ismétléssel több sorozatonként, súlynövelés nélkül.'};
+   return {action:'hold',weight:0,text:'Maradjon a jelenlegi változat; előbb stabilizáld az ismétléseket.'};
+ }
+ const hitTop=!!(range.max&&reps.length&&Math.min(...reps)>=range.max);
+ if(effort==='easy'||(effort==='good'&&hitTop)){
+   const step=rf152Step(lib),next=Math.max(0,Math.round((base+step)*2)/2);
+   return {action:'increase',weight:next,text:`Javasolt következő terhelés: ${next} ${loadLabel(lib.loadType)}. Ha a technika romlik, maradj az előző súlynál.`};
+ }
+ return {action:'hold',weight:base,text:`Maradjon ${base} ${loadLabel(lib.loadType)}; próbálj előbb több szabályos ismétlést.`};
+};
+var rf152ApplySuggestions = function rf152ApplySuggestions(){
+ if(!state.session)return;
+ for(const e of state.session.exercises||[]){
+   const r=rf152Recommendation(e.id);e.rf152Recommendation=r;
+   if(r.action==='increase'&&Number.isFinite(r.weight))for(const s of e.sets||[])s.weight=r.weight;
+ }
+ persistDraft();
+};
+var rf152FeedbackHtml = function rf152FeedbackHtml(e){
+ const r=e.rf152Recommendation||rf152Recommendation(e.id),sel=e.effort||'';
+ return `<div class="card" id="rf152Feedback"><strong>Adaptív progresszió</strong><p class="small muted">${esc(r.text)}</p><div class="small" style="margin-bottom:8px">Milyen nehéz volt ez a gyakorlat?</div><div class="grid2">${Object.entries(RF152_EFFORT).map(([k,v])=>`<button class="btn ${sel===k?'':'secondary'}" onclick="rf152SetEffort('${k}')">${v}</button>`).join('')}</div></div>`;
+};
+var rf152SetEffort = function rf152SetEffort(v){
+ const e=state.session?.exercises?.[state.current];if(!e||!RF152_EFFORT[v])return;e.effort=v;persistDraft();renderWorkout();
+};
+/* RepForge 1.5.2: adaptive exercise-by-exercise progression. */
+const RF152_VERSION='1.5.2';
+const RF152_EFFORT={easy:'Túl könnyű',good:'Pont jó',hard:'Nagyon nehéz',pain:'Fájdalom'};
+
+
+const rf152StartWorkout=startWorkout;
+startWorkout=function(w,scheduleId=null,programId=null){rf152StartWorkout(w,scheduleId,programId);if(!state.session)return;rf152ApplySuggestions();renderWorkout();};
+
+
+const rf152RenderWorkout=renderWorkout;
+renderWorkout=function(){
+ rf152RenderWorkout();
+ if(!state.session)return;
+ const e=state.session.exercises?.[state.current];if(!e)return;
+ const main=document.querySelector('main');if(!main||document.querySelector('#rf152Feedback'))return;
+ const nav=[...main.querySelectorAll('button')].find(b=>/Következő gyakorlat|Edzés befejezése/.test(b.textContent||''));
+ if(nav){const wrap=document.createElement('div');wrap.innerHTML=rf152FeedbackHtml(e);nav.parentNode.insertBefore(wrap.firstElementChild,nav);}
+};
+
+
+const rf152Shell=shell;shell=function(content){return rf152Shell(content).replaceAll('1.5.1','1.5.2');};
+
+render();
+
+
+// @endsection v152.js
+
+// @section v153.js
+var rf153MigratePlan = function rf153MigratePlan(){
+ if(db.get('rf153PlanMigrated',false))return;
+ const p=plan();let changed=false;
+ for(const w of ['A','B'])p[w]=(p[w]||[]).map(id=>{if(id==='dead-bug'){changed=true;return 'crunch';}return id;});
+ if(changed)db.set('plan',p);
+ db.set('rf153PlanMigrated',true);
+};
+var rf153Move = function rf153Move(w,i,d){
+ const p=plan(),a=p[w]||[],j=i+d;if(i<0||j<0||i>=a.length||j>=a.length)return;
+ [a[i],a[j]]=[a[j],a[i]];db.set('plan',p);editPlan(w);
+};
+var rf153Remove = function rf153Remove(w,i){
+ const p=plan(),a=p[w]||[];if(a.length<=1){alert('A programban legalább 1 gyakorlatnak maradnia kell.');return;}
+ a.splice(i,1);db.set('plan',p);editPlan(w);
+};
+var rf153Add = function rf153Add(w){
+ const id=$('#rf153AddExercise')?.value;if(!id)return;
+ const p=plan(),a=p[w]||[];if(a.includes(id)){alert('Ez a gyakorlat már szerepel ebben a programban.');return;}
+ a.push(id);db.set('plan',p);editPlan(w);
+};
+var rf153ResetDay = function rf153ResetDay(w){
+ if(!confirm(`Visszaállítod a Full Body ${w} gyári programját?`))return;
+ const p=plan();p[w]=DEFAULT_PLAN[w].map(id=>id==='dead-bug'?'crunch':id);db.set('plan',p);editPlan(w);
+};
+/* RepForge 1.5.3: editable A/B programs + restore crunch instead of dead bug. */
+const RF153_VERSION='1.5.3';
+
+
+rf153MigratePlan();
+
+
+editPlan=function(w){
+ const p=plan(),exs=exercises(),a=p[w]||[];
+ render(shell(`<main><button class="btn secondary" onclick="go('plan')">← Vissza</button><div class="section">Full Body ${w} szerkesztése</div>
+ <div class="card"><strong>Program felépítése</strong><p class="small muted">Gyakorlatot cserélhetsz, hozzáadhatsz, törölhetsz és átrendezhetsz. A módosítások automatikusan mentődnek.</p></div>
+ ${a.map((id,i)=>{const e=byId(id);return `<div class="setting">
+   <div style="display:flex;gap:8px;align-items:center;justify-content:space-between"><strong>${i+1}. ${esc(e.hu)}</strong><div><button class="btn secondary" onclick="rf153Move('${w}',${i},-1)" ${i===0?'disabled':''}>↑</button> <button class="btn secondary" onclick="rf153Move('${w}',${i},1)" ${i===a.length-1?'disabled':''}>↓</button> <button class="btn secondary" onclick="rf153Remove('${w}',${i})">Törlés</button></div></div>
+   <label>Gyakorlat cseréje</label><select class="field" onchange="changePlan('${w}',${i},this.value)">${exs.map(x=>`<option value="${x.id}" ${x.id===id?'selected':''}>${esc(x.hu)} — ${esc(x.en)}</option>`).join('')}</select>
+   <label>Célismétlés / időtartam</label><input class="field" value="${esc(e.reps)}" onchange="changeExerciseValue('${id}','reps',this.value)">
+   <label>Terhelés értelmezése</label><select class="field" onchange="changeExerciseValue('${id}','loadType',this.value);editPlan('${w}')">${['per_hand','total','single_dumbbell','bodyweight'].map(t=>`<option value="${t}" ${e.loadType===t?'selected':''}>${loadLabel(t)}</option>`).join('')}</select>
+   ${e.loadType!=='bodyweight'?`<label>Induló súly (${loadLabel(e.loadType)})</label><input class="field" inputmode="decimal" value="${e.weight}" onchange="changeExerciseValue('${id}','weight',this.value)">`:''}
+   <label>Sorozatok száma</label><select class="field" onchange="changeExerciseSets('${id}',this.value);editPlan('${w}')">${Array.from({length:10},(_,n)=>n+1).map(n=>`<option value="${n}" ${Number(e.sets)===n?'selected':''}>${n} sorozat</option>`).join('')}</select>
+ </div>`}).join('')}
+ <div class="card"><strong>Gyakorlat hozzáadása</strong><select class="field" id="rf153AddExercise"><option value="">Válassz gyakorlatot…</option>${exs.filter(e=>!a.includes(e.id)).map(e=>`<option value="${e.id}">${esc(e.hu)} — ${esc(e.en)}</option>`).join('')}</select><br><br><button class="btn secondary block" onclick="rf153Add('${w}')">+ Gyakorlat hozzáadása</button></div>
+ <button class="btn secondary block" onclick="rf153ResetDay('${w}')">Full Body ${w} gyári visszaállítása</button><br><button class="btn block" onclick="go('plan')">Kész</button></main>`));
+};
+
+const rf153Shell=shell;shell=function(content){return rf153Shell(content).replaceAll('1.5.2','1.5.3');};
+
+render();
+
+
+// @endsection v153.js
+
+// @section v154.js
+var rf154WorkoutList = function rf154WorkoutList(w){
+ const a=plan()[w]||[];
+ return `<main><button class="btn secondary" onclick="go('plan')">← Vissza</button><div class="hero"><h1>FULL BODY ${w}</h1><div class="muted">${a.length} gyakorlat • koppints egy gyakorlatra a módosításhoz</div></div>
+ ${a.map((id,i)=>{const e=byId(id);return `<div class="exercise" onclick="rf154EditSlot('${w}',${i})"><div class="num">${i+1}</div><div><div class="ex-name">${esc(e.hu)}</div><div class="en">${esc(e.en||'')}</div><div class="meta">${e.sets} × ${esc(e.reps)} • ${e.weight?e.weight+' '+esc(e.unit):esc(e.unit)}</div></div><div class="chev">›</div></div>`;}).join('')}
+ <br><button class="btn secondary block" onclick="rf154AddScreen('${w}')">+ Gyakorlat hozzáadása</button><br>
+ <button class="btn block" onclick="startWorkout('${w}')">Edzés indítása</button></main>`;
+};
+var rf154EditSlot = function rf154EditSlot(w,i){
+ const a=plan()[w]||[],id=a[i],e=byId(id),exs=exercises();if(!e)return;
+ render(shell(`<main><button class="btn secondary" onclick="showWorkout('${w}')">← Vissza</button><div class="hero"><span class="badge">FULL BODY ${w} • ${i+1}. gyakorlat</span><h1>${esc(e.hu)}</h1><div class="muted">Itt közvetlenül módosíthatod a kiválasztott programot.</div></div>
+ <div class="card"><label>Gyakorlat cseréje</label><select class="field" id="rf154Replacement">${exs.map(x=>`<option value="${x.id}" ${x.id===id?'selected':''}>${esc(x.hu)} — ${esc(x.en||'')}</option>`).join('')}</select><br><br><button class="btn block" onclick="rf154Replace('${w}',${i})">Csere mentése</button></div>
+ <div class="card"><strong>${esc(e.hu)}</strong><div class="small muted">${e.sets} × ${esc(e.reps)} • ${esc(e.target||'')}</div><br><button class="btn secondary block" onclick="editPlan('${w}')">Sorozat / ismétlés / súly részletes módosítása</button></div>
+ <button class="btn danger block" onclick="rf154Remove('${w}',${i})">Gyakorlat törlése a programból</button></main>`));
+};
+var rf154Replace = function rf154Replace(w,i){
+ const id=$('#rf154Replacement')?.value,p=plan(),a=p[w]||[];if(!id||!a[i])return;
+ if(a.includes(id)&&a[i]!==id){alert('Ez a gyakorlat már szerepel ebben a programban.');return;}
+ a[i]=id;db.set('plan',p);showWorkout(w);
+};
+var rf154Remove = function rf154Remove(w,i){
+ const p=plan(),a=p[w]||[];if(a.length<=1){alert('A programban legalább 1 gyakorlatnak maradnia kell.');return;}
+ if(!confirm('Törlöd ezt a gyakorlatot a programból?'))return;
+ a.splice(i,1);db.set('plan',p);showWorkout(w);
+};
+var rf154AddScreen = function rf154AddScreen(w){
+ const a=plan()[w]||[],opts=exercises().filter(e=>!a.includes(e.id));
+ render(shell(`<main><button class="btn secondary" onclick="showWorkout('${w}')">← Vissza</button><div class="hero"><h1>Gyakorlat hozzáadása</h1><div class="muted">Full Body ${w}</div></div><div class="card"><select class="field" id="rf154Add">${opts.length?opts.map(e=>`<option value="${e.id}">${esc(e.hu)} — ${esc(e.en||'')}</option>`).join(''):'<option value="">Nincs további gyakorlat</option>'}</select><br><br><button class="btn block" onclick="rf154Add('${w}')" ${opts.length?'':'disabled'}>+ Hozzáadás a programhoz</button></div></main>`));
+};
+var rf154Add = function rf154Add(w){
+ const id=$('#rf154Add')?.value;if(!id)return;const p=plan(),a=p[w]||[];
+ if(a.includes(id)){alert('Ez a gyakorlat már szerepel ebben a programban.');return;}
+ a.push(id);db.set('plan',p);showWorkout(w);
+};
+/* RepForge 1.5.4: inline editing from selected workout exercise list. */
+const RF154_VERSION='1.5.4';
+
+
+showWorkout=function(w){state.workout=w;state.tab='plan';render(shell(rf154WorkoutList(w)));};
+
+
+const rf154PlanScreen=planScreen;
+planScreen=function(){
+ const p=plan();
+ return shell(`<main><div class="hero"><h1>A/B edzésterv</h1><div class="muted">Koppints egy programra, majd a gyakorlatra: csere, törlés vagy hozzáadás közvetlenül ott.</div></div>
+ ${['A','B'].map(w=>`<div class="section">FULL BODY ${w}</div><button class="btn secondary block" onclick="showWorkout('${w}')">${p[w].length} gyakorlat • Megnyitás és szerkesztés</button>`).join('<br>')}</main>`);
+};
+
+const rf154Shell=shell;shell=function(content){return rf154Shell(content).replaceAll('1.5.3','1.5.4');};
+
+render();
+
+
+// @endsection v154.js
+
+// @section v155.js
+var rf155ProgramState = function rf155ProgramState(){
+ const ps=programs(),pid=activeProgramId(),pi=ps.findIndex(p=>p.id===pid);
+ return {ps,pid,pi,program:pi>=0?ps[pi]:null};
+};
+var rf155DayState = function rf155DayState(dayId){
+ const s=rf155ProgramState();
+ const di=s.program?.days?.findIndex(d=>d.id===dayId)??-1;
+ return {...s,di,day:di>=0?s.program.days[di]:null};
+};
+var rf155SaveDay = function rf155SaveDay(dayId,mutate){
+ const s=rf155DayState(dayId);if(!s.program||!s.day)throw Error('Az aktív program vagy edzésnap nem található.');
+ mutate(s.day,s.program);
+ db.set('programs',s.ps);
+ return s.day;
+};
+/* RepForge 1.5.5: fix inline program editing persistence against activeProgram/programs storage. */
+const RF155_VERSION='1.5.5';
+
+
+rf154Replace=function(w,i){
+ try{
+  const id=$('#rf154Replacement')?.value;if(!id)return;
+  rf155SaveDay(w,(day)=>{
+   const a=day.exercises||[];if(!a[i])throw Error('A kiválasztott gyakorlat nem található.');
+   if(a.includes(id)&&a[i]!==id)throw Error('Ez a gyakorlat már szerepel ebben a programban.');
+   a[i]=id;
+  });
+  showWorkout(w);
+ }catch(e){alert(e.message||'A csere nem sikerült.');}
+};
+
+rf154Remove=function(w,i){
+ try{
+  const s=rf155DayState(w),a=s.day?.exercises||[];
+  if(a.length<=1){alert('A programban legalább 1 gyakorlatnak maradnia kell.');return;}
+  if(!confirm('Törlöd ezt a gyakorlatot a programból?'))return;
+  rf155SaveDay(w,(day)=>{if(!day.exercises?.[i])throw Error('A kiválasztott gyakorlat nem található.');day.exercises.splice(i,1);});
+  showWorkout(w);
+ }catch(e){alert(e.message||'A törlés nem sikerült.');}
+};
+
+rf154Add=function(w){
+ try{
+  const id=$('#rf154Add')?.value;if(!id)return;
+  rf155SaveDay(w,(day)=>{day.exercises=day.exercises||[];if(day.exercises.includes(id))throw Error('Ez a gyakorlat már szerepel ebben a programban.');day.exercises.push(id);});
+  showWorkout(w);
+ }catch(e){alert(e.message||'A hozzáadás nem sikerült.');}
+};
+
+rf153Move=function(w,i,d){
+ try{
+  rf155SaveDay(w,(day)=>{const a=day.exercises||[],j=i+d;if(i<0||j<0||i>=a.length||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];});
+  editPlan(w);
+ }catch(e){alert(e.message||'Az átrendezés nem sikerült.');}
+};
+rf153Remove=function(w,i){
+ try{
+  const s=rf155DayState(w),a=s.day?.exercises||[];if(a.length<=1){alert('A programban legalább 1 gyakorlatnak maradnia kell.');return;}
+  rf155SaveDay(w,(day)=>day.exercises.splice(i,1));editPlan(w);
+ }catch(e){alert(e.message||'A törlés nem sikerült.');}
+};
+rf153Add=function(w){
+ try{
+  const id=$('#rf153AddExercise')?.value;if(!id)return;
+  rf155SaveDay(w,(day)=>{day.exercises=day.exercises||[];if(day.exercises.includes(id))throw Error('Ez a gyakorlat már szerepel ebben a programban.');day.exercises.push(id);});editPlan(w);
+ }catch(e){alert(e.message||'A hozzáadás nem sikerült.');}
+};
+
+const rf155ChangePlan=changePlan;
+changePlan=function(w,i,id){
+ try{
+  rf155SaveDay(w,(day)=>{const a=day.exercises||[];if(!a[i])throw Error('A kiválasztott gyakorlat nem található.');if(a.includes(id)&&a[i]!==id)throw Error('Ez a gyakorlat már szerepel ebben a programban.');a[i]=id;});
+  editPlan(w);
+ }catch(e){alert(e.message||'A csere nem sikerült.');}
+};
+
+const rf155Shell=shell;shell=function(content){return rf155Shell(content).replaceAll('1.5.4','1.5.5');};
+
+render();
+
+
+// @endsection v155.js
+
+// @section v200.js
+var rf200ThemeKey = function rf200ThemeKey(){const k=db.get('themeAccent','yellow');return RF200_THEMES[k]?k:'yellow';};
+var rf200ApplyTheme = function rf200ApplyTheme(k=rf200ThemeKey()){const t=RF200_THEMES[k]||RF200_THEMES.yellow;document.documentElement.style.setProperty('--accent',t.accent);document.documentElement.style.setProperty('--accent2',t.accent2);document.documentElement.style.setProperty('--accent-rgb',t.accent.match(/[a-f0-9]{2}/gi).map(h=>parseInt(h,16)).join(','));document.documentElement.style.setProperty('--accent2-rgb',t.accent2.match(/[a-f0-9]{2}/gi).map(h=>parseInt(h,16)).join(','));};
+var rf200SetTheme = function rf200SetTheme(k){if(!RF200_THEMES[k])return;db.set('themeAccent',k);rf200ApplyTheme(k);render();};
+var rf200ThemePanel = function rf200ThemePanel(){const current=rf200ThemeKey();return `<div class="setting rf200-theme-setting"><label>Témaszín</label><p class="small muted">Válaszd ki az alkalmazás kiemelőszínét.</p><select class="field rf200-theme-select" onchange="rf200SetTheme(this.value)">${Object.entries(RF200_THEMES).map(([k,t])=>`<option value="${k}" data-swatch="${t.accent}" ${current===k?'selected':''}>${t.name}</option>`).join('')}</select></div>`;};
+var rf200CleanVersionLabels = function rf200CleanVersionLabels(html){return String(html).replace(/<div class="tag">\s*\d+(?:\.\d+){1,2}\s*•\s*/g,'<div class="tag">').replace(/RepForge\s+\d+(?:\.\d+){1,2}\s*•\s*Edzésterv/g,'Edzésterv');};
+/* RepForge 2.0.0 */
+const RF200_VERSION='2.0.0';
+const RF200_THEMES={
+ yellow:{name:'Sárga',accent:'#f2bd45',accent2:'#ffd975'},
+ blue:{name:'Kék',accent:'#5ca8ff',accent2:'#8bc4ff'},
+ green:{name:'Zöld',accent:'#62d08a',accent2:'#92e6ad'},
+ purple:{name:'Lila',accent:'#a98cff',accent2:'#c6b5ff'},
+ orange:{name:'Narancs',accent:'#ff9b54',accent2:'#ffbd8d'},
+ cyan:{name:'Cián',accent:'#48c6ef',accent2:'#83dcf6'},
+ teal:{name:'Türkiz',accent:'#45c6b2',accent2:'#7de0d1'},
+ pink:{name:'Rózsaszín',accent:'#ff78b9',accent2:'#ffa6d0'},
+ indigo:{name:'Indigó',accent:'#7f96ff',accent2:'#a8b8ff'},
+ lime:{name:'Lime',accent:'#a8d75f',accent2:'#c7ea8b'},
+ red:{name:'Piros',accent:'#ff6b6b',accent2:'#ff9b9b'},
+ magenta:{name:'Magenta',accent:'#e66cff',accent2:'#f1a0ff'},
+ lavender:{name:'Levendula',accent:'#9a86ff',accent2:'#c0b4ff'},
+ sky:{name:'Égkék',accent:'#66c7ff',accent2:'#9adfff'},
+ mint:{name:'Menta',accent:'#63d9b1',accent2:'#96ead0'},
+ coral:{name:'Korall',accent:'#ff7f72',accent2:'#ffaaa0'}
+};
+
+
+const rf200SettingsScreen=settingsScreen;
+settingsScreen=function(){const html=rf200SettingsScreen();return html.replace('<div class="setting"><label>Pihenőidő',rf200ThemePanel()+'<div class="setting"><label>Pihenőidő');};
+
+const rf200Shell=shell;shell=function(content){return rf200CleanVersionLabels(rf200Shell(content));};
+
+rf200ApplyTheme();
+render();
+
+
+// @endsection v200.js
+
+// @section v201.js
+var rf201ExerciseRow = function rf201ExerciseRow(dayId,id,i){
+ const e=byId(id);
+ return `<div class="exercise" onclick="rf154EditSlot('${dayId}',${i})">
+   <div class="num">${i+1}</div>
+   <div><div class="ex-name">${esc(e?.hu||id)}</div><div class="en">${esc(e?.en||'')}</div><div class="meta">${e?.sets||''}${e?.sets?' × ':''}${esc(e?.reps||'')} ${e?.weight?`• ${e.weight} ${esc(e.unit||'kg')}`:''}</div></div>
+   <div class="chev">›</div>
+ </div>`;
+};
+/* RepForge 2.0.1: Edzés fül = kizárólag az aktuálisan betöltött program, egységes program-megjelenéssel. */
+const RF201_VERSION='2.0.1';
+
+
+planScreen=function(){
+ const p=activeProgram();
+ if(!p)return shell(`<main><div class="hero"><h1>Nincs aktív program</h1><div class="muted">Válassz programot a Programok fülön.</div></div><button class="btn block" onclick="go('programs')">Program választása</button></main>`);
+ return shell(`<main>
+   <div class="hero"><span class="badge">AKTÍV PROGRAM</span><h1>${esc(p.name)}</h1><div class="muted">${esc(p.location||'')} ${p.level?`• ${esc(p.level)}`:''} • ${p.days?.length||0} napos ciklus</div><br><button class="btn secondary block" onclick="go('programs')">Másik program választása</button></div>
+   ${(p.days||[]).map(d=>`<div class="card" style="margin-top:14px"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><div><span class="badge">${esc(d.name||d.id)}</span><h2 style="margin:8px 0 4px">${esc(p.name)}</h2><div class="small muted">${d.exercises?.length||0} gyakorlat • koppints a részletekhez</div></div></div></div>
+   ${(d.exercises||[]).map((id,i)=>rf201ExerciseRow(d.id,id,i)).join('')}
+   <button class="btn secondary block" onclick="rf154AddScreen('${d.id}')">+ Gyakorlat hozzáadása</button><br>
+   <button class="btn block" onclick="startWorkout('${d.id}')">${esc(d.name||d.id)} indítása</button>`).join('<br>')}
+ </main>`);
+};
+
+// Az Edzés fül minden szerkesztési művelet után az aktív program ugyanazon napjára térjen vissza.
+showWorkout=function(dayId){
+ state.workout=dayId;state.tab='plan';
+ const p=activeProgram(),d=programDay(p,dayId);
+ if(!p||!d){render();return;}
+ render(shell(`<main><button class="btn secondary" onclick="go('plan')">← ${esc(p.name)}</button><div class="hero"><span class="badge">AKTÍV PROGRAM</span><h1>${esc(d.name||dayId)}</h1><div class="muted">${esc(p.name)} • ${d.exercises?.length||0} gyakorlat</div></div>${(d.exercises||[]).map((id,i)=>rf201ExerciseRow(d.id,id,i)).join('')}<br><button class="btn secondary block" onclick="rf154AddScreen('${d.id}')">+ Gyakorlat hozzáadása</button><br><button class="btn block" onclick="startWorkout('${d.id}')">Edzés indítása</button></main>`));
+};
+
+
+render();
+
+
+// @endsection v201.js
+
+// @section v202.js
+
+/* RepForge 2.0.2: felhasználóbarát Beállítások, régi fejlesztői/verziószövegek nélkül. */
+const RF202_VERSION='2.0.2';
+
+// A funkciók és a visszafelé kompatibilitás megmaradnak; csak a felhasználónak nem releváns
+// belső verzió-/migráció-/Excel megfogalmazásokat távolítjuk el a Beállításokból.
+settingsScreen=function(){
+ const s=settings();
+ return shell(`<main>
+  <div class="hero"><h1>Beállítások</h1><div class="muted">Személyre szabás, mentés és szinkronizálás.</div></div>
+  <div class="setting"><label>Pihenőidő (másodperc)</label><input id="rest" class="field" type="number" min="30" max="300" value="${s.rest}"><br><br><button class="btn block" onclick="saveSettings()">Mentés</button></div>
+  <div class="setting"><label>Biztonsági mentés</label><p class="small muted">Mentsd az alkalmazás adatait fájlba, vagy állíts vissza egy korábbi mentést.</p><p class="small muted">${esc(backupStatus())}</p><div class="grid2"><button class="btn secondary" onclick="exportData()">Mentés fájlba</button><button class="btn secondary" onclick="chooseImport()">Visszatöltés</button></div><input id="importFile" type="file" accept=".json,application/json" hidden onchange="importData(this.files[0])"></div>
+  ${cloudPanel()}${plannerPanel()}
+  <div class="setting"><label>Edzésprofil</label><p class="small muted">A kímélő profil csökkenti az alap sorozatszámokat. Az alapértékek bármikor visszaállíthatók.</p><button class="btn secondary block" onclick="resetStarter()">Kímélő kezdőprofil (2 sorozat)</button><br><button class="btn danger block" onclick="resetPlan()">Alapértékek visszaállítása</button></div>
+ </main>`);
+};
+
+// A régi „Az 1.2-ben...” szöveg helyett időtálló felhasználói leírás.
+plannerPanel=function(){return `<div class="setting"><label>Edzésnaptár</label><p class="small muted">Tervezd meg az edzéseidet a vizuális naptárban.</p><button class="btn block" onclick="go('calendar')">Naptár és tervező megnyitása</button></div>`;};
+
+
+render();
+
+
+// @endsection v202.js
+
+// @section v203.js
+var rf203ExerciseLibrary = function rf203ExerciseLibrary(){
+ const list=exercises();
+ render(shell(`<main>
+  <button class="btn secondary" onclick="go('programs')">← Vissza a Programokhoz</button>
+  <div class="hero"><span class="badge">GYAKORLATKÖNYVTÁR</span><h1>${list.length} gyakorlat</h1><div class="muted">Otthoni és konditermi gyakorlatok egy helyen. Koppints egy gyakorlatra a részletekhez.</div></div>
+  ${list.map((e,i)=>`<div class="exercise" onclick="rf203ExerciseDetail('${e.id}')"><div class="num">${i+1}</div><div><div class="ex-name">${esc(e.hu)}</div><div class="en">${esc(e.en||'')}</div><div class="meta">${esc(e.target||'')} ${e.equipment?`• ${esc(e.equipment)}`:''}</div></div><div class="chev">›</div></div>`).join('')}
+ </main>`));
+};
+var rf203ExerciseDetail = function rf203ExerciseDetail(id){
+ const e=byId(id);if(!e)return;
+ render(shell(`<main>

@@ -1,0 +1,237 @@
+  'calendar.plannedDescription':['Tervezett edzés','Planned workout','Geplantes Training','Antrenament planificat'],
+  'calendar.noWorkout':['Nincs ilyen edzés.','Workout not found.','Training nicht gefunden.','Antrenamentul nu a fost găsit.'],
+  'calendar.invalidTimes':['Ehhez az edzéshez nincs érvényes kezdési/befejezési idő.','This workout has no valid start/end time.','Für dieses Training gibt es keine gültige Start-/Endzeit.','Acest antrenament nu are o oră validă de început/sfârșit.'],
+  'calendar.androidOnly':['A naptárgomb Androidon használható.','The calendar button is available on Android.','Die Kalenderschaltfläche ist auf Android verfügbar.','Butonul calendar este disponibil pe Android.'],
+  'calendar.opened':['A naptár ablaka megnyílt. Válaszd ki a naptárat, és ott mentsd el. A kézi bejegyzés nem kapcsolódik az automatikus szinkronhoz.','The calendar window opened. Choose the calendar and save it there. A manual entry is not linked to automatic sync.','Das Kalenderfenster wurde geöffnet. Wähle den Kalender aus und speichere dort. Ein manueller Eintrag ist nicht mit der automatischen Synchronisierung verknüpft.','Fereastra calendarului s-a deschis. Alege calendarul și salvează acolo. O înregistrare manuală nu este legată de sincronizarea automată.']
+ };
+ for(const [key,row] of Object.entries(rows)){
+  TP149_KEY_ROWS[key]=row;
+  TP149_CATALOG.hu[key]=row[0];TP149_CATALOG.en[key]=row[1];TP149_CATALOG.de[key]=row[2];TP149_CATALOG.ro[key]=row[3];
+ }
+})();
+
+cloudStatus=function(){
+ const s=db.get('cloudStatus',{});
+ return '<div id="cloudStatus" class="small muted">'+esc(cloudMessage||'')+(cloudDriveStage?'<p>'+esc(cloudDriveStage)+'</p>':'')+(s.drive?'<p>'+esc(tp149T('cloud.lastDrive',{date:tp149FormatDateTime(s.drive)}))+'</p>':'')+(s.calendar?'<p>'+esc(tp149T('cloud.lastCalendar',{date:tp149FormatDateTime(s.calendar)}))+'</p>':'')+'</div>';
+};
+const tp149CloudPanelBase=cloudPanel;
+const tp149CloudRecoveryControl=()=>'<details><summary>'+esc(tp149T('cloud.earlierBackups'))+'</summary><p class="small muted">'+esc(tp149T('cloud.earlierHelp'))+'</p><button class="btn secondary block" onclick="syncCloud(false,true)">'+esc(tp149T('cloud.earlierScan'))+'</button></details>';
+cloudPanel=function(){
+ if(rf212Lang()==='hu'){const html=tp149CloudPanelBase.apply(this,arguments);return cloudProfile?html.replace('<div id="cloudStatus"',tp149CloudRecoveryControl()+'<div id="cloudStatus"'):html;}
+ const p=cloudPrefs(),profile=cloudProfile;
+ const identity=profile?(esc(profile.name||profile.email)+(profile.name&&profile.email?' • '+esc(profile.email):'')):esc(tp149T('cloud.connectHelp'));
+ const controls=profile?
+  '<button class="btn secondary block" onclick="disconnectGoogle()">'+esc(tp149T('cloud.signOut'))+'</button><br>'+
+  '<label><input type="checkbox" '+(p.drive?'checked':'')+' onchange="setCloudOption(\'drive\',this.checked)"> '+esc(tp149T('cloud.autoDrive'))+'</label>'+
+  '<label><input type="checkbox" '+(p.calendar?'checked':'')+' onchange="setCloudOption(\'calendar\',this.checked)"> '+esc(tp149T('cloud.autoCalendar'))+'</label>'+
+  '<p class="small muted">'+esc(tp149T('cloud.autoHelp'))+'</p>'+
+  '<button class="btn block" onclick="syncCloud(false)">'+esc(tp149T('cloud.syncDriveNow'))+'</button><br>'+
+  '<button class="btn secondary block" onclick="syncCalendar(false)">'+esc(tp149T('cloud.syncCalendarNow'))+'</button>'+tp149CloudRecoveryControl():
+  '<button class="btn block" onclick="connectGoogle()">'+esc(tp149T('cloud.connect'))+'</button>';
+ return '<div class="setting"><label>'+esc(tp149T('cloud.title'))+'</label><p class="small muted">'+identity+'</p>'+controls+cloudStatus()+'</div>';
+};
+
+connectGoogle=async function(){
+ if(cloudBusy)return;
+ if(!isNative()){alert(tp149T('cloud.androidOnly'));return;}
+ const ok=await tp2628Confirm(tp149T('cloud.connectConfirm')+'\n\n'+tp105AccountSummary(),{title:tp149T('cloud.connectTitle'),confirmText:tp149T('cloud.connectAction')});
+ if(!ok)return;
+ cloudBusy=true;
+ try{
+  const r=await googleBridge().connect();cloudProfile=JSON.parse(r.profile);
+  db.set('cloudPrefs',{drive:false,calendar:false});db.set('cloudStatus',{});render();alert(tp149T('cloud.connected'));
+ }catch(e){alert(e.message);}finally{finishCloud();}
+};
+disconnectGoogle=async function(){
+ if(cloudBusy){alert(tp149T('cloud.busy'));return;}
+ const ok=await tp2628Confirm(tp149T('cloud.disconnectConfirm'),{title:tp149T('cloud.disconnectTitle'),confirmText:tp149T('cloud.signOut'),danger:true});
+ if(!ok)return;
+ try{await googleBridge().disconnect();if(cloudProfile?.sub)localStorage.removeItem('repforge:cloudCalendarSent:'+cloudProfile.sub);cloudProfile=null;db.set('cloudPrefs',{drive:false,calendar:false});db.set('cloudStatus',{});cloudMessage='';render();}catch(e){alert(e.message);}
+};
+
+validateSync=function(d){
+ validateBackup(d);
+ if(!Array.isArray(d.scheduled)||d.scheduled.length>500)throw Error(tp149T('cloud.invalidSchedules'));
+ for(const p of d.scheduled)if(!p||typeof p.id!=='string'||!/^[a-z0-9-]{8,80}$/.test(p.id)||!Number.isFinite(Date.parse(p.start))||!Number.isFinite(Date.parse(p.end))||Date.parse(p.end)<=Date.parse(p.start)||typeof p.updatedAt!=='number'||!Number.isFinite(p.updatedAt)||typeof p.cancelled!=='boolean')throw Error(tp149T('cloud.invalidSchedule'));
+ return d;
+};
+storeMerged=function(d){
+ const keys=tp105DataKeys(d),old=keys.map(function(k){return localStorage.getItem('repforge:'+k);});
+ try{const next=tp105PreserveLocalHealth(d);for(const k of keys)if(next[k]!==undefined)localStorage.setItem('repforge:'+k,JSON.stringify(next[k]));}
+ catch(e){for(const k of keys)localStorage.removeItem('repforge:'+k);keys.forEach(function(k,i){if(old[i]!=null)localStorage.setItem('repforge:'+k,old[i]);});throw Error(tp149T('cloud.noStorage'));}
+};
+var driveLatestHeads=function driveLatestHeads(latest){return Object.fromEntries([...latest].map(function(entry){return [entry[0],driveSnapshotHead(entry[1])];}));};
+var driveSnapshotHead=function driveSnapshotHead(file){return file.id+(/^\d+$/.test(String(file.version||''))?'@'+file.version:'');};
+var driveHeadsUnchanged=function driveHeadsUnchanged(current,previous){
+ if(!previous||!current||typeof previous!=='object')return false;
+ const keys=Object.keys(current),old=Object.keys(previous);
+ return keys.length===old.length&&keys.every(function(k){return Object.hasOwn(previous,k)&&previous[k]===current[k];});
+};
+var driveHasPendingPhotos=function driveHasPendingPhotos(rows){return rows.some(function(h){return (h.photos||[]).some(function(p){return p?.id&&(p.deletedAt?!!p.driveFileId:!p.driveFileId);});});};
+
+syncCloud=async function(silent=false){
+ if(cloudBusy||window.TrainPilotBackupBusy||!cloudProfile)return;
+ if(state.session){showCloudMessage(tp149T('cloud.driveAfterWorkout'));return;}
+ if(navigator.onLine===false){showCloudMessage(tp149T('cloud.offlineDrive'));return;}
+ cloudBusy=true;cloudActiveOperation='drive';
+ const stage=function(key,vars){cloudDriveStage=tp149T(key,vars);showCloudMessage(tp149T('cloud.syncingDrive'));};
+ stage('cloud.driveListing');
+ try{
+  const owner=cloudProfile.sub,bridge=googleBridge(),local=validateSync(syncData()),startState=canonicalSyncData(local),files=(await bridge.driveList({silent:silent})).files||[];
+  const latest=new Map();
+  for(const f of files){const m=/^repforge-sync-([a-z0-9-]{36})-/.exec(f.name);if(!m)continue;const old=latest.get(m[1]);if(!old||String(f.createdTime)>String(old.createdTime))latest.set(m[1],f);}
+  const current=[...latest.values()].sort(function(a,b){return String(a.createdTime).localeCompare(String(b.createdTime));});
+  const heads=driveLatestHeads(latest),base=db.get('cloudBase:'+owner,null);
+  stage('cloud.driveFound',{listed:files.length,current:current.length});
+  if(base&&driveHeadsUnchanged(heads,db.get('cloudHeads:'+owner,null))&&canonicalSyncData(local)===canonicalSyncData(base)&&!driveHasPendingPhotos(local.history||[])){
+   db.set('cloudStatus',Object.assign({},db.get('cloudStatus',{}),{drive:new Date().toISOString()}));
+   cloudDriveStage='';showCloudMessage(tp149T('cloud.driveUnchanged'));return;
+  }
+  const remotes=[];
+  for(let i=0;i<current.length;i++){
+   const f=current[i];stage('cloud.driveReading',{index:i+1,total:current.length});
+   const snap=JSON.parse((await bridge.driveRead({id:f.id,silent:silent})).data);
+   if(snap.app!=='RepForgeSync'||snap.schema!==1||snap.owner!==owner)throw Error(tp149T('cloud.unknownBackup'));
+   remotes.push(validateSync(tp105Project(snap.data,tp105HealthConsent())));
+  }
+  let merged,conflict=false;
+  try{merged=validateSync(mergeSync(local,remotes,base,function(){conflict=true;throw Error('__TP149_CLOUD_CONFLICT__');}));}
+  catch(e){if(e?.message!=='__TP149_CLOUD_CONFLICT__')throw e;}
+  if(conflict){
+   if(silent)throw Error(tp149T('cloud.manualConflict'));
+   const phone=await tp2628Confirm(tp149T('cloud.conflict'),{title:tp149T('cloud.conflictTitle'),confirmText:tp149T('cloud.phone'),cancelText:tp149T('cloud.cloud')});
+   merged=validateSync(mergeSync(local,remotes,base,function(){return phone;}));
+  }
+  if(typeof rf130SyncWorkoutPhotos==='function'){stage('cloud.drivePhotos');await rf130SyncWorkoutPhotos(merged,bridge,silent);}
+  if(state.session||canonicalSyncData(syncData())!==startState)throw Error(tp149T('cloud.changedDuringSync'));
+  let device=db.get('cloudDevice',null);if(!device){device=crypto.randomUUID();db.set('cloudDevice',device);}
+  if(!base||canonicalSyncData(merged)!==canonicalSyncData(base)||!files.length){
+   stage('cloud.driveWriting');
+   const r=await bridge.driveWrite({silent:silent,data:JSON.stringify({app:'RepForgeSync',schema:1,owner:owner,device:device,data:merged})});
+   if(!r.verified)throw Error(tp149T('cloud.verifyFailed'));
+   if(r.id)heads[device]=driveSnapshotHead(r);
+  }
+  await waitForCloudBackup();
+  if(state.session||canonicalSyncData(syncData())!==startState)throw Error(tp149T('cloud.changedLocal'));
+  storeMerged(merged);document.documentElement.lang=rf212Lang();rf200ApplyTheme();db.set('cloudBase:'+owner,merged);db.set('cloudHeads:'+owner,heads);db.set('cloudStatus',Object.assign({},db.get('cloudStatus',{}),{drive:new Date().toISOString()}));
+  cloudDriveStage='';showCloudMessage(tp149T('cloud.driveDone'));render();
+  if(typeof rf130DeleteSyncedPhotos==='function')await rf130DeleteSyncedPhotos(merged);
+ }catch(e){cloudDriveStage='';showCloudMessage(e.message);if(!silent)alert(cloudMessage);}finally{cloudDriveStage='';finishCloud();}
+};
+
+workoutDescription=function(h){
+ const lines=(h.exercises||[]).map(function(e){
+  const lib=e?.id?byId(e.id):null,name=lib&&!lib.custom?tp149ExerciseName(lib):String(e.hu||e.en||e.id||'');
+  return name+': '+(e.sets||[]).filter(function(s){return s.done;}).map(function(s){return formatSet(e,s);}).join('; ');
+ });
+ return 'TrainPilot – '+tp149T('calendar.completed')+'\n'+lines.join('\n');
+};
+calendarEvents=async function(){
+ const events=new Map();
+ for(const p of scheduled()){
+  const id=await eventId('plan:'+p.id),program=programById(p.programId||'home-basic'),day=programDay(program,p.dayId||p.workout);
+  const title=program&&day?tp149ProgramMeta(program,'name')+' • '+tp149ProgramDayName(program,day):String(p.dayId||p.workout||'');
+  events.set(id,p.cancelled?{id:id,cancelled:true}:{id:id,summary:'TrainPilot – '+title,description:tp149T('calendar.plannedDescription'),start:{dateTime:p.start},end:{dateTime:p.end},reminders:{useDefault:false,overrides:[{method:'popup',minutes:30}]}});
+ }
+ for(const h of history()){
+  if(!Number.isFinite(Date.parse(h.finished))||!Number.isFinite(Date.parse(h.started))||Date.parse(h.finished)<=Date.parse(h.started))continue;
+  const id=await eventId(h.scheduleId?'plan:'+h.scheduleId:'workout:'+recordKey('history',h));
+  events.set(id,{id:id,summary:'✓ TrainPilot – '+tp149HistoryTitle(h),description:workoutDescription(h),start:{dateTime:h.started},end:{dateTime:h.finished},reminders:{useDefault:false}});
+ }
+ return [...events.values()];
+};
+var calendarDelta=async function(events,previous,forceFull=false){
+ const hashes={},changes=[];
+ for(const event of events){
+  const bytes=new TextEncoder().encode(canonical(event)),digest=await crypto.subtle.digest('SHA-256',bytes);
+  const hash=Array.from(new Uint8Array(digest),x=>x.toString(16).padStart(2,'0')).join('');
+  hashes[event.id]=hash;
+  if(forceFull||!previous||previous.hashes[event.id]!==hash)changes.push(event);
+ }
+ if(previous)for(const id of Object.keys(previous.hashes))if(/^rf[0-9a-f]{64}$/.test(id)&&!Object.hasOwn(hashes,id))changes.push({id:id,cancelled:true});
+ return {hashes:hashes,changes:changes};
+};
+syncCalendar=async function(silent=false){
+ if(!cloudProfile||window.TrainPilotBackupBusy)return;
+ if(cloudBusy){if(!silent){if(cloudActiveOperation==='calendar')showCloudMessage(tp149T('cloud.calendarRunning'));else{calendarSyncPending=true;showCloudMessage(tp149T('cloud.calendarQueued'));}}else cloudDirty=true;return;}
+ if(navigator.onLine===false){showCloudMessage(tp149T('cloud.calendarWaiting'));return;}
+ cloudBusy=true;cloudActiveOperation='calendar';showCloudMessage(tp149T('cloud.calendarPreparing'));
+ try{
+  const owner=cloudProfile.sub,bridge=googleBridge(),prepared=await bridge.calendarPrepare({silent:silent}),events=await calendarEvents(),key='cloudCalendarSent:'+owner,stored=db.get(key,null);
+  const previous=stored?.schema===1&&stored.calendarId===prepared.id&&stored.hashes&&typeof stored.hashes==='object'?stored:null;
+  const full=!previous||!Number.isFinite(previous.fullAt)||Date.now()-previous.fullAt>=7*86400000||Date.now()<previous.fullAt;
+  const delta=await calendarDelta(events,previous,full);
+  if(!events.length&&!delta.changes.length){showCloudMessage(tp149T('cloud.noCalendarItems'));return;}
+  showCloudMessage(tp149T('cloud.calendarDelta',{changed:delta.changes.length,total:events.length}));
+  for(let i=0;i<delta.changes.length;i+=10){showCloudMessage(tp149T('cloud.calendarProgress',{done:i,total:delta.changes.length}));await googleBridge().calendarSync({silent:silent,calendarId:prepared.id,events:JSON.stringify(delta.changes.slice(i,i+10))});}
+  db.set(key,{schema:1,calendarId:prepared.id,fullAt:full?Date.now():previous.fullAt,hashes:delta.hashes});
+  db.set('cloudStatus',Object.assign({},db.get('cloudStatus',{}),{calendar:new Date().toISOString()}));showCloudMessage(tp149T('cloud.calendarDoneCount',{changed:delta.changes.length}));
+ }catch(e){showCloudMessage(e.message);if(!silent)alert(e.message);}finally{finishCloud();}
+};
+calendarIntent=async function(index,planned=false){
+ try{
+  const x=planned?scheduled()[index]:history()[index];if(!x)throw Error(tp149T('calendar.noWorkout'));
+  const start=Date.parse(planned?x.start:x.started),end=Date.parse(planned?x.end:x.finished);if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start)throw Error(tp149T('calendar.invalidTimes'));
+  if(!isNative())throw Error(tp149T('calendar.androidOnly'));
+  let title;
+  if(planned){const p=programById(x.programId||'home-basic'),d=programDay(p,x.dayId||x.workout);title=p&&d?tp149ProgramMeta(p,'name')+' • '+tp149ProgramDayName(p,d):String(x.dayId||x.workout||'');}
+  else title=tp149HistoryTitle(x);
+  await nativeFiles().addCalendarEvent({title:'TrainPilot – '+title,start:start,end:end,description:planned?tp149T('calendar.plannedDescription'):workoutDescription(x)});
+  alert(tp149T('calendar.opened'));
+ }catch(e){alert(e.message);}
+};
+
+window.TrainPilotI18n.cloudAudit=function(){
+ const keys=['cloud.title','cloud.connectHelp','cloud.autoDrive','cloud.autoCalendar','cloud.syncDriveNow','cloud.syncCalendarNow','cloud.connect','cloud.connectConfirm','cloud.disconnectConfirm','cloud.driveDone','cloud.calendarDone','cloud.conflict','calendar.completed','calendar.plannedDescription'];
+ const missing={hu:[],en:[],de:[],ro:[]};
+ for(const lang of Object.keys(missing))for(const key of keys)if(!TP149_CATALOG[lang]?.[key])missing[lang].push(key);
+ return missing;
+};
+// @endsection trainpilot-149-cloud-calendar-i18n.js
+
+
+// @section trainpilot-149-dialog-i18n.js
+/* TrainPilot 1.4.9: dialogs are localized before rendering; no DOM string-replacement required. */
+(function(){
+ const rows={
+  'dialog.input.title':['Adat megadása','Enter data','Daten eingeben','Introdu date'],
+  'dialog.restore.title':['Biztonsági mentés visszatöltése','Restore backup','Sicherung wiederherstellen','Restaurează copia de siguranță'],
+  'dialog.restore.message':['{workouts} edzés és {weights} testsúlyadat visszatöltése?\nEz lecseréli az app jelenlegi naplóját és tervét. A félbehagyott edzés törlődik.','Restore {workouts} workouts and {weights} body-weight entries?\nThis replaces the app’s current log and plan. An unfinished workout will be deleted.','{workouts} Trainings und {weights} Gewichtseinträge wiederherstellen?\nDadurch werden das aktuelle Protokoll und der aktuelle Plan ersetzt. Ein unvollständiges Training wird gelöscht.','Restaurezi {workouts} antrenamente și {weights} înregistrări de greutate?\nAceasta înlocuiește jurnalul și planul curent. Un antrenament neterminat va fi șters.'],
+  'dialog.newWorkout.title':['Új edzés indítása','Start new workout','Neues Training starten','Pornește antrenament nou'],
+  'dialog.newWorkout.message':['Új edzést indítasz? A félbehagyott edzés helyére ez kerül.','Start a new workout? It will replace the unfinished workout.','Neues Training starten? Es ersetzt das unvollständige Training.','Pornești un antrenament nou? Acesta va înlocui antrenamentul neterminat.'],
+  'dialog.partial.title':['Részleges edzés mentése','Save partial workout','Teiltraining speichern','Salvează antrenamentul parțial'],
+  'dialog.partial.message':['Vannak be nem fejezett sorozatok. Elmented a részleges edzést?','Some sets are unfinished. Save the partial workout?','Einige Sätze sind nicht abgeschlossen. Teiltraining speichern?','Unele serii nu sunt finalizate. Salvezi antrenamentul parțial?'],
+  'dialog.restoreDefaults.title':['Alapértékek visszaállítása','Restore defaults','Standardwerte wiederherstellen','Restaurează valorile implicite'],
+  'dialog.restoreDefaults.message':['Visszaállítod az alapértelmezett Otthoni A/B – Alap programot és gyakorlatértékeket? A napló megmarad.','Restore the default Home A/B – Basic program and exercise values? The workout log is kept.','Standardprogramm Home A/B – Basis und Übungswerte wiederherstellen? Das Trainingsprotokoll bleibt erhalten.','Restaurezi programul implicit Acasă A/B – De bază și valorile exercițiilor? Jurnalul de antrenament se păstrează.'],
+  'dialog.starter.title':['Kímélő profil','Gentle profile','Schonendes Profil','Profil ușor'],
+  'dialog.starter.message':['A gyakorlatok alap sorozat/ismétlés értékei a kímélő profilra állnak. A napló megmarad.','Default set/rep values will switch to the gentle profile. The workout log is kept.','Die Standardwerte für Sätze/Wiederholungen werden auf das schonende Profil gesetzt. Das Protokoll bleibt erhalten.','Valorile implicite pentru serii/repetări vor fi setate la profilul ușor. Jurnalul se păstrează.'],
+  'dialog.apply':['Alkalmazás','Apply','Anwenden','Aplică'],
+  'dialog.restoreAction':['Visszaállítás','Restore','Wiederherstellen','Restaurează'],
+  'dialog.activate.title':['Program aktiválása','Activate program','Programm aktivieren','Activează programul'],
+  'dialog.activate.message':['Aktiválod ezt a programot? A korábbi napló és tervezett alkalmak megmaradnak.','Activate this program? Previous log entries and scheduled sessions are kept.','Dieses Programm aktivieren? Frühere Protokolleinträge und geplante Einheiten bleiben erhalten.','Activezi acest program? Înregistrările anterioare și sesiunile planificate se păstrează.'],
+  'dialog.activate.action':['Aktiválás','Activate','Aktivieren','Activează'],
+  'dialog.customProgram.title':['Új saját program','New custom program','Neues eigenes Programm','Program personalizat nou'],
+  'dialog.customProgram.name':['Program neve:','Program name:','Programmname:','Numele programului:'],
+  'dialog.customProgram.default':['Saját program','Custom program','Eigenes Programm','Program personalizat'],
+  'dialog.customProgram.lengthTitle':['Program hossza','Program length','Programmlänge','Lungimea programului'],
+  'dialog.customProgram.length':['Hány napos ciklus? (1–7)','How many days in the cycle? (1–7)','Wie viele Tage hat der Zyklus? (1–7)','Câte zile are ciclul? (1–7)'],
+  'dialog.deleteProgram.title':['Saját program törlése','Delete custom program','Eigenes Programm löschen','Șterge programul personalizat'],
+  'dialog.deleteProgram.message':['Törlöd ezt a saját programot? A korábbi naplóbejegyzések megmaradnak.','Delete this custom program? Previous log entries are kept.','Dieses eigene Programm löschen? Frühere Protokolleinträge bleiben erhalten.','Ștergi acest program personalizat? Înregistrările anterioare se păstrează.'],
+  'dialog.deleteExercise.title':['Saját gyakorlat törlése','Delete custom exercise','Eigene Übung löschen','Șterge exercițiul personalizat'],
+  'dialog.deleteExercise.message':['Törlöd ezt a saját gyakorlatot? A korábbi naplóbejegyzéseket nem módosítjuk.','Delete this custom exercise? Previous log entries will not be changed.','Diese eigene Übung löschen? Frühere Protokolleinträge werden nicht geändert.','Ștergi acest exercițiu personalizat? Înregistrările anterioare nu vor fi modificate.'],
+  'dialog.deleteWorkout.title':['Edzés törlése','Delete workout','Training löschen','Șterge antrenamentul'],
+  'dialog.deleteWorkout.message':['Biztosan törlöd ezt az edzést?\n{date} • {duration}','Delete this workout?\n{date} • {duration}','Dieses Training wirklich löschen?\n{date} • {duration}','Ștergi acest antrenament?\n{date} • {duration}'],
+  'dialog.resetDay.title':['Programnap visszaállítása','Restore program day','Programmtag wiederherstellen','Restaurează ziua programului'],
+  'dialog.resetDay.message':['Visszaállítod a(z) {day} gyári programnapot?','Restore the default {day} program day?','Standard-Programmtag {day} wiederherstellen?','Restaurezi ziua implicită de program {day}?'],
+  'dialog.removeExercise.title':['Gyakorlat eltávolítása','Remove exercise','Übung entfernen','Elimină exercițiul'],
+  'dialog.removeExercise.message':['Törlöd ezt a gyakorlatot a programból?','Remove this exercise from the program?','Diese Übung aus dem Programm entfernen?','Elimini acest exercițiu din program?'],
+  'dialog.weightDelete.title':['Testsúlyadat törlése','Delete weight entry','Gewichtseintrag löschen','Șterge înregistrarea de greutate'],
+  'dialog.weightDelete.message':['Törlöd ezt a testsúlyadatot?','Delete this body-weight entry?','Diesen Gewichtseintrag löschen?','Ștergi această înregistrare de greutate?'],
+  'dialog.weightEdit.title':['Testsúly szerkesztése','Edit body weight','Körpergewicht bearbeiten','Editează greutatea corporală'],
+  'dialog.weightEdit.prompt':['Testsúly (kg)','Body weight (kg)','Körpergewicht (kg)','Greutate corporală (kg)'],
+  'dialog.scheduleMove.title':['Edzés áthelyezése','Move workout','Training verschieben','Mută antrenamentul'],
+  'dialog.scheduleMove.date':['Új dátum:','New date:','Neues Datum:','Data nouă:'],
+  'dialog.scheduleMove.time':['Új időpont:','New time:','Neue Uhrzeit:','Ora nouă:'],
+  'dialog.chooseDay.title':['Edzésnap kiválasztása','Choose workout day','Trainingstag auswählen','Alege ziua de antrenament'],
+  'dialog.chooseDay.prompt':['Válassz edzésnapot:','Choose a workout day:','Trainingstag auswählen:','Alege o zi de antrenament:'],
+  'dialog.scheduleDelete.title':['Tervezett edzés törlése','Delete scheduled workout','Geplantes Training löschen','Șterge antrenamentul planificat'],

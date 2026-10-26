@@ -1,0 +1,280 @@
+ ro:{title:'Coach • progresie',preview:'Propunere neaplicată',hold:'Menține greutatea',increase:'Creștere mică a greutății',reps:'Crește ținta de repetări',variation:'Variantă mai dificilă',mode:'Metoda aleasă',history:'Antrenamente recente',reason:'Motiv',current:'Greutate anterioară',proposed:'Greutate propusă',sets:'Serii de lucru propuse',reptarget:'Repetări propuse',action:'Verifică propunerea',approve:'Confirmă modificarea greutății',cancel:'Anulează',done:'Greutatea propusă este deja setată.',blocked:'Starea s-a schimbat sau ceasul controlează. Nimic modificat.',notice:'Greutatea și repetările ultimei zile identice din program sunt valori editabile. Finalizarea și RIR se înregistrează azi; propunerile Coach necesită confirmare.',reasonMap:{'pain':'Durere: fără creștere','low-readiness':'Recuperare slabă','high-effort':'Efort precedent prea mare','incomplete':'Antrenament incomplet','rir-feedback-missing':'RIR real lipsă','insufficient-history':'Istoric insuficient','double-stable-top':'Trei performanțe stabile la țintă','linear-stable-performance':'Două antrenamente stabile','rir-stable-reserve':'Rezervă RIR constant mai mare','double-next-repetition':'Crește repetările treptat','non-strength-activity':'Fără greutate pentru exerciții pe distanță/timp'}}
+};
+var tp197CoachT=function(){return TP197_COACH_I18N[typeof rf212Lang==='function'?rf212Lang():'hu']||TP197_COACH_I18N.hu};
+var tp197CoachInfo=function(id,pid){
+ const modes=tp197TrainingModes(pid);
+ if(!modes.explicitChoice)return null;
+ const preview=tp197ExercisePreview(id,pid);
+ if(!preview?.handled)return null;
+ const t=tp197CoachT(),action=t[preview.action]||t.hold,why=t.reasonMap[preview.reasonCode]||preview.reasonCode;
+ const labels=typeof tp197UiText==='function'?tp197UiText():{};
+ const method=(labels[modes.trainingStyle]||modes.trainingStyle)+' / '+(labels[modes.progressionMode]||modes.progressionMode);
+ const proposal=preview.proposed||{},base=preview.baseline||{};
+ const format=v=>Number.isFinite(Number(v))?String(v):'—';
+ const detail=(base.weight!=null?t.current+': '+format(base.weight)+' → '+t.proposed+': '+format(proposal.weight):'')+
+  (proposal.sets!=null?' · '+t.sets+': '+format(proposal.sets):'')+
+  (Array.isArray(proposal.repTargets)?' · '+t.reptarget+': '+proposal.repTargets.join(', '):'');
+ return {modes,preview,title:action,reason:why,method,detail,summary:action+'. '+why+'. '+detail,
+  action:preview.action,proposedWeight:proposal.weight,historyCount:preview.historyCount};
+};
+var tp197CoachAllowed=function(session,se,info){
+ if(!session||!se||!info||info.action!=='increase'||!info.modes?.explicitChoice)return false;
+ if(session.workoutPaused||session.ownershipAwaitingResume193||session.automatic162?.pending||
+  session.timerOwner==='watch'||session.ownershipProtocol193===1&&session.timerOwner!=='phone'||
+  window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending||window.TrainPilotWearSync?.isApplyingCommand?.())return false;
+ if(!session.programId||session.programId!==info.modes.programId||!Array.isArray(se.sets)||!se.sets.length)return false;
+ if(se.sets.some(s=>s.done||s.reps!==''&&s.reps!==null&&s.reps!==undefined&&!(typeof tp228Untouched==='function'&&tp228Untouched(s))||s.completedAt||s.gpsRouteKey193))return false;
+ const w=Number(info.proposedWeight),b=Number(info.preview?.baseline?.weight);
+ return Number.isFinite(w)&&Number.isFinite(b)&&w>b&&w-b<=10&&w>0;
+};
+var tp197CoachPending=null;
+var tp197CoachFingerprint=function(session,se,info){
+ return JSON.stringify({started:session?.started,programId:session?.programId,id:se?.id,
+  mode:info?.modes,proposed:info?.proposedWeight,reason:info?.preview?.reasonCode,
+  sets:se?.sets?.map(s=>[s.set,s.weight,s.reps,s.done,s.completedAt||null])});
+};
+var tp197CoachCancel=function(){tp197CoachPending=null;renderWorkout()};
+var tp197CoachRequest=function(){
+ const s=state.session,e=s?.exercises?.[state.current],info=e?tp197CoachInfo(e.id,s.programId):null;
+ if(!tp197CoachAllowed(s,e,info))return false;
+ tp197CoachPending={session:s,exercise:e,fingerprint:tp197CoachFingerprint(s,e,info)};
+ renderWorkout();return true;
+};
+var tp197CoachApply=function(){
+ const s=state.session,e=s?.exercises?.[state.current],info=e?tp197CoachInfo(e.id,s.programId):null,pending=tp197CoachPending;
+ tp197CoachPending=null;
+ if(!tp197CoachAllowed(s,e,info)||!pending||pending.session!==s||pending.exercise!==e||
+  pending.fingerprint!==tp197CoachFingerprint(s,e,info)){
+  alert(tp197CoachT().blocked);renderWorkout();return false;
+ }
+ const previous=e.sets.map(v=>v.weight);
+ try{
+  for(const set of e.sets)set.weight=Number(info.proposedWeight);
+  persistDraft();
+ }catch(error){e.sets.forEach((set,i)=>{set.weight=previous[i]});return false}
+ renderWorkout();
+ void window.TrainPilotWearSync?.syncNow?.();
+ return true;
+};
+var tp197CoachPanel=function(){
+ const s=state.session,e=s?.exercises?.[state.current],info=e?tp197CoachInfo(e.id,s.programId):null;
+ if(!info)return '';
+ const t=tp197CoachT(),can=tp197CoachAllowed(s,e,info),already=can&&e.sets.every(v=>Number(v.weight)===Number(info.proposedWeight));
+ const pending=tp197CoachPending&&tp197CoachPending.session===s&&tp197CoachPending.exercise===e&&
+  tp197CoachPending.fingerprint===tp197CoachFingerprint(s,e,info);
+ const controls=can&&!already?(pending?
+  '<div class="tp197-coach-buttons"><button type="button" class="btn" onclick="tp197CoachApply()">'+esc(t.approve)+'</button><button type="button" class="btn secondary" onclick="tp197CoachCancel()">'+esc(t.cancel)+'</button></div>':
+  '<button type="button" class="btn secondary" onclick="tp197CoachRequest()">'+esc(t.action)+'</button>'):
+  already?'<p class="small muted">'+esc(t.done)+'</p>':'';
+ return '<section class="card tp197-coach-advice" id="tp197CoachAdvice"><strong>'+esc(t.title)+'</strong>'+
+  '<p class="small muted">'+esc(t.mode)+': '+esc(info.method)+'</p>'+
+  '<p class="small"><b>'+esc(info.title)+'</b> · '+esc(info.reason)+'</p>'+
+  '<p class="small muted">'+esc(info.detail)+'</p>'+
+  '<p class="small muted">'+esc(t.history)+': '+String(info.historyCount)+'</p>'+controls+
+  '<p class="small muted">'+esc(t.notice)+'</p></section>';
+};
+(function(){
+ const originalAdvice=rf233ExerciseAdvice;
+ rf233ExerciseAdvice=function(id,decision){
+  const result=originalAdvice.apply(this,arguments),s=state.session,pid=s?.programId||(typeof activeProgramId==='function'?activeProgramId():null);
+  const info=tp197CoachInfo(id,pid);
+  if(!info||result?.action==='pain'||decision?.pain)return result;
+  return {...result,action:'hold',label:info.title,text:info.summary,proposal197:info.preview};
+ };
+ const oldShort=window.tp155CoachShortAdvice;
+ if(typeof oldShort==='function'){
+  window.tp155CoachShortAdvice=function(id,decision,existing){
+   const pid=state.session?.programId||(typeof activeProgramId==='function'?activeProgramId():null),info=tp197CoachInfo(id,pid);
+   if(info)return {action:'hold',label:info.title,text:info.summary};
+   return oldShort.apply(this,arguments);
+  };
+ }
+ const oldRender=renderWorkout;
+ renderWorkout=function(){
+  const result=oldRender.apply(this,arguments),head=document.querySelector('main.tp153-workout .tp153-workout-head');
+  if(head&&!head.querySelector('#tp197CoachAdvice'))head.insertAdjacentHTML('beforeend',tp197CoachPanel());
+  return result;
+ };
+ const style=document.createElement('style');style.id='tp197CoachStyle';
+ style.textContent='.tp197-coach-advice{margin:10px 0 4px;padding:12px}.tp197-coach-advice p{margin:6px 0;line-height:1.45;overflow-wrap:anywhere}.tp197-coach-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px}.tp197-coach-buttons button{min-height:44px;white-space:normal;overflow-wrap:anywhere}';
+ document.head.appendChild(style);
+})();
+// @endsection training-coach-197.js
+
+// @section training-actual-rir-197.js
+/* #229: optional per-set observations. Legacy exercise RIR is read, never expanded. */
+var TP197_RIR_WORDS={
+ hu:{title:'Tényleges RIR (ismétléstartalék)',note:'Hány szabályos ismétlés ment volna még? 0 = egy sem. Csak a saját becslésedet rögzítsd; nem kötelező.',missing:'Nincs megadva',unit:'ismétlés'},
+ en:{title:'Actual RIR (reps in reserve)',note:'How many more good reps could you have done? 0 = none. Optional self-report; not the target RIR.',missing:'Not recorded',unit:'reps'},
+ de:{title:'Tatsächlicher RIR (Wiederholungen in Reserve)',note:'Wie viele saubere Wiederholungen wären noch möglich? 0 = keine. Freiwillige Selbsteinschätzung, nicht der Soll-RIR.',missing:'Nicht erfasst',unit:'Wiederholungen'},
+ ro:{title:'RIR real (repetări în rezervă)',note:'Câte repetări corecte mai puteai face? 0 = niciuna. Estimare personală opțională, nu RIR țintă.',missing:'Neînregistrat',unit:'repetări'}
+};
+var tp197RirWords=function(){return TP197_RIR_WORDS[typeof rf212Lang==='function'?rf212Lang():'hu']||TP197_RIR_WORDS.hu};
+
+var tp229RirValid=function(value){return value!==null&&value!==undefined&&value!==''&&/^(?:10|[0-9])$/.test(String(value))};
+var tp229RirObservation=function(exercise){
+ const sets=Array.isArray(exercise?.sets)?exercise.sets:[],values=sets.filter(s=>s.done===true&&tp229RirValid(s.actualRir)).map(s=>Number(s.actualRir));
+ if(values.length)return Math.min(...values);
+ if(exercise?.setRir229===true||sets.some(s=>s.actualRir!==null&&s.actualRir!==undefined&&s.actualRir!==''))return null;
+ const legacy=exercise?.actualRir??exercise?.feedback?.rir;
+ return tp229RirValid(legacy)?Number(legacy):null;
+};
+var tp197RirEligible=function(session,exercise){
+ if(!session||!exercise||!Array.isArray(exercise.sets)||!exercise.sets.some(x=>x.done===true))return false;
+ if(session.timerOwner==='watch'||session.ownershipAwaitingResume193||
+  session.ownershipProtocol193===1&&session.timerOwner!=='phone'||
+  window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending||
+  window.TrainPilotWearSync?.isApplyingCommand?.())return false;
+ const modes=typeof tp197TrainingModes==='function'?tp197TrainingModes(session.programId):null;
+ if(!modes?.explicitChoice||modes.progressionMode!=='rir')return false;
+ const lib=typeof byId==='function'?byId(exercise.id)||{}:{};
+ if(typeof tp106IsDistance==='function'&&tp106IsDistance(exercise))return false;
+ if(['mp','sec','second','s'].includes(String(exercise.repUnit||lib.repUnit||'').toLowerCase()))return false;
+ if(['distance','time','gps'].includes(String(exercise.measurementType||lib.measurementType||'').toLowerCase()))return false;
+ return true;
+};
+
+var tp197RirSave=function(value,repaint=true,setId=null){
+ const session=state.session,exercise=session?.exercises?.[state.current];
+ if(!tp197RirEligible(session,exercise)||session.workoutPaused)return false;
+ const set=setId?exercise.sets.find(s=>s.setId===setId):exercise.sets.filter(s=>s.done===true).at(-1);
+ if(!set||set.done!==true)return false;
+ const raw=String(value);if(raw!==''&&!tp229RirValid(raw))return false;
+ const before=set.actualRir,marker=exercise.setRir229;
+ try{
+  if(raw==='')delete set.actualRir;else set.actualRir=Number(raw);
+  exercise.setRir229=true;persistDraft();
+ }catch(_){
+  if(before===undefined)delete set.actualRir;else set.actualRir=before;
+  if(marker===undefined)delete exercise.setRir229;else exercise.setRir229=marker;
+  return false;
+ }
+ void window.TrainPilotWearSync?.syncNow?.();
+ if(repaint)renderWorkout();return true;
+};
+var tp197RirHistory=function(exercise){
+ const t=tp197RirWords(),sets=Array.isArray(exercise?.sets)?exercise.sets:[],
+  rows=sets.flatMap((set,index)=>set.done===true&&tp229RirValid(set.actualRir)?[(index+1)+'.: <strong>'+Number(set.actualRir)+'</strong>']:[]);
+ const value=exercise?.actualRir;
+ const legacy=tp229RirValid(value)?'<p class="small muted tp197-rir-history">'+esc(t.title)+' (legacy): <strong>'+Number(value)+'</strong> '+esc(t.unit)+'</p>':'';
+ return (rows.length?'<p class="small muted tp197-rir-history">'+esc(t.title)+': '+rows.join(' · ')+' '+esc(t.unit)+'</p>':'')+legacy;
+};
+var tp197RirInput=function(input){
+ const value=String(input.value),valid=value===''||tp229RirValid(value);
+ const saved=tp197RirSave(valid?value:'',false,input.dataset?.setId||null);
+ input.setAttribute?.('aria-invalid',valid&&saved?'false':'true');return valid&&saved;
+};
+var tp197RirField=function(session,exercise){
+ if(!tp197RirEligible(session,exercise))return '';
+ const t=tp197RirWords(),rows=exercise.sets.map((set,index)=>({set,index})).filter(row=>row.set.done===true);
+ const last=rows.at(-1)?.set;
+ const labels={
+ hu:{set:'sorozat',summary:'A Coach a megadott kész sorozatok legkisebb RIR-jével számol. Hiányzó értéket nem találunk ki.',legacy:'Korábbi gyakorlat-RIR'},
+ en:{set:'set',summary:'Coach uses the lowest reported RIR among completed sets. Missing values are never inferred.',legacy:'Legacy exercise RIR'},
+ de:{set:'Satz',summary:'Coach verwendet den kleinsten gemeldeten RIR abgeschlossener Sätze. Fehlende Werte werden nicht geschätzt.',legacy:'Früherer Übungs-RIR'},
+ ro:{set:'serie',summary:'Coach folosește cel mai mic RIR raportat dintre seriile finalizate. Valorile lipsă nu sunt deduse.',legacy:'RIR anterior al exercițiului'}
+ };
+ const l=labels[typeof rf212Lang==='function'?rf212Lang():'hu']||labels.en;
+ return '<div class="tp197-rir-field tp229-rir"><strong>'+esc(t.title)+'</strong>'+
+ rows.map(({set,index})=>{
+  const id=set===last?'tp197ActualRir':'tp229ActualRir-'+index;
+  return '<label for="'+id+'">'+(index+1)+'. '+esc(l.set)+'</label>'+
+   '<input id="'+id+'" class="field" data-set-id="'+esc(set.setId||'')+'" type="number" inputmode="numeric" min="0" max="10" step="1" value="'+(tp229RirValid(set.actualRir)?Number(set.actualRir):'')+'" placeholder="'+esc(t.missing)+'" aria-describedby="tp197RirNote tp229RirSummary" oninput="tp197RirInput(this)">';
+ }).join('')+
+ '<p id="tp197RirNote" class="small muted">'+esc(t.note)+'</p><p id="tp229RirSummary" class="small muted">'+esc(l.summary)+'</p>'+
+ (tp229RirValid(exercise.actualRir)?'<p class="small muted">'+esc(l.legacy)+': '+Number(exercise.actualRir)+'</p>':'')+'</div>';
+};
+window.TrainPilotSetRir229={valid:tp229RirValid,observation:tp229RirObservation};
+(function(){
+ const previous=rf152FeedbackHtml;
+ rf152FeedbackHtml=function(exercise){
+  const html=String(previous.apply(this,arguments)),session=state.session,active=session?.exercises?.[state.current];
+  if(active!==exercise)return html;
+  const additional=tp197RirField(session,exercise);
+  return additional?html.replace(/<\/div>\s*$/,additional+'</div>'):html;
+ };
+ const css=document.createElement('style');css.id='tp197RirStyle';
+ css.textContent='.tp197-rir-field{display:grid;gap:7px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}.tp197-rir-field label{font-size:13px;font-weight:700}.tp197-rir-field input{box-sizing:border-box;width:100%;min-height:44px}.tp197-rir-field input[aria-invalid="true"]{border-color:var(--danger,#ff6b6b)}.tp197-rir-field p{margin:0;line-height:1.4}';
+ document.head.appendChild(css);
+})();
+// @endsection training-actual-rir-197.js
+
+// @section samsung-energy-access-184.js
+/* Samsung's daily score is an optional independent input, not a switch for
+ * the user's steps/calories provider. Automatic reads never open a consent UI. */
+(function(){
+ 'use strict';
+ const words={
+  hu:{title:'Samsung energiapontszám',idle:'Az elérhető mai Samsung-pontszámot automatikusan használjuk. Ha nincs ilyen adat, marad a TrainPilot saját becslése.',permission:'Az energiapontszámhoz külön Samsung Health olvasási engedély szükséges.',empty:'Ma még nincs elérhető Samsung-pontszám. A TrainPilot saját becslése marad.',error:'A Samsung-pontszám olvasása nem sikerült. A TrainPilot saját becslése marad.',ready:'Mai Samsung Health adat. Ezt használjuk az ajánláshoz; fájdalom vagy nagy terhelés továbbra is korlátozhat.',loading:'Samsung-pontszám olvasása…',refresh:'Samsung-pontszám frissítése / engedélyezése',unavailable:'Ehhez a közvetlen Samsung-kapcsolatot támogató Android app szükséges.'},
+  en:{title:'Samsung Energy Score',idle:'Today’s available Samsung score is used automatically. Otherwise TrainPilot keeps its own estimate.',permission:'A separate Samsung Health read permission is required for Energy Score.',empty:'No Samsung score is available for today. TrainPilot keeps its own estimate.',error:'Samsung Energy Score could not be read. TrainPilot keeps its own estimate.',ready:'Today’s Samsung Health data is used for advice; pain or high load can still limit it.',loading:'Reading Samsung Energy Score…',refresh:'Refresh / allow Samsung Energy Score',unavailable:'This requires the Android app with direct Samsung support.'},
+  de:{title:'Samsung Energiepunkte',idle:'Der verfügbare heutige Samsung-Wert wird automatisch verwendet. Sonst bleibt die TrainPilot-Schätzung.',permission:'Für Energiepunkte ist eine separate Samsung Health Leseberechtigung erforderlich.',empty:'Heute ist kein Samsung-Wert verfügbar. Die TrainPilot-Schätzung bleibt.',error:'Samsung Energiepunkte konnten nicht gelesen werden. Die TrainPilot-Schätzung bleibt.',ready:'Heutiger Samsung Health Wert; Schmerz oder hohe Belastung können Empfehlungen weiter begrenzen.',loading:'Samsung Energiepunkte werden gelesen…',refresh:'Samsung Energiepunkte aktualisieren / erlauben',unavailable:'Hierfür wird die Android-App mit direkter Samsung-Unterstützung benötigt.'},
+  ro:{title:'Scor de energie Samsung',idle:'Scorul Samsung disponibil pentru azi este utilizat automat. Altfel rămâne estimarea TrainPilot.',permission:'Scorul de energie necesită o permisiune separată de citire Samsung Health.',empty:'Nu este disponibil un scor Samsung pentru azi. Rămâne estimarea TrainPilot.',error:'Scorul Samsung nu a putut fi citit. Rămâne estimarea TrainPilot.',ready:'Datele Samsung Health de azi sunt utilizate; durerea sau efortul ridicat pot limita recomandările.',loading:'Se citește scorul Samsung…',refresh:'Actualizează / permite scorul Samsung',unavailable:'Este necesară aplicația Android cu suport Samsung direct.'}
+ };
+ const t=key=>(words[typeof rf212Lang==='function'?rf212Lang():'hu']||words.hu)[key]||key;
+ let current=null,status='idle',attempted=false,flight=null,lastAttempt=0,lastDay='',failure='',recoveryOpen=false;
+ const today=()=>rf240DayKey(new Date());
+ const hints={
+  hu:{access:'A Samsung Health nem enged hozzáférést a TrainPilotnak ehhez az adathoz. Ez alkalmazásszintű hozzáférési korlát.',update:'Frissítsd a Samsung Health alkalmazást, majd próbáld újra.',open:'Nyisd meg a Samsung Health alkalmazást, és fejezd be a beállítását.',retry:'Nyisd meg a Samsung Health alkalmazást, majd próbáld újra.',detail:'Kapcsolati hibakód'},
+  en:{access:'Samsung Health does not allow TrainPilot to access this data. This is an app access restriction.',update:'Update Samsung Health, then try again.',open:'Open Samsung Health and complete its setup.',retry:'Open Samsung Health, then try again.',detail:'Connection error code'},
+  de:{access:'Samsung Health erlaubt TrainPilot keinen Zugriff auf diese Daten. Der App-Zugriff ist eingeschränkt.',update:'Samsung Health aktualisieren und erneut versuchen.',open:'Samsung Health öffnen und die Einrichtung abschließen.',retry:'Samsung Health öffnen und erneut versuchen.',detail:'Verbindungsfehlercode'},
+  ro:{access:'Samsung Health nu permite TrainPilot să acceseze aceste date. Accesul aplicației este restricționat.',update:'Actualizează Samsung Health și încearcă din nou.',open:'Deschide Samsung Health și finalizează configurarea.',retry:'Deschide Samsung Health și încearcă din nou.',detail:'Cod de eroare al conexiunii'}
+ };
+ const hint=key=>(hints[typeof rf212Lang==='function'?rf212Lang():'hu']||hints.hu)[key];
+ function fail(error){
+  const code=String(error?.code||error||'');
+  failure=/^SAMSUNG_HEALTH_(?:[0-9]{4}|UNAVAILABLE)$/.test(code)?code:'SAMSUNG_HEALTH_UNAVAILABLE';
+  status=failure==='SAMSUNG_HEALTH_2000'?'permission':failure==='SAMSUNG_HEALTH_2003'?'access':failure==='SAMSUNG_HEALTH_3001'?'update':/^SAMSUNG_HEALTH_300[023]$/.test(failure)?'open':'error';
+ }
+ function summary(){return ['access','update','open'].includes(status)?hint(status)+' '+t('error'):t(status==='ready'&&!tp184EnergyToday()?'empty':status);}
+ function html(){
+  const score=tp184EnergyToday();
+  return '<section class="card tp184-energy-card"><h3>'+esc(t('title'))+'</h3><p class="tp184-energy-value"><strong>'+esc(tp184FormatScore(score?.value))+'</strong></p><p class="small muted" role="status">'+esc(summary())+'</p>'+(failure?'<p class="small muted tp184-energy-error">'+esc(hint('detail')+': '+failure)+'</p>':'')+'<button type="button" class="btn secondary block" onclick="TrainPilotEnergy184.refresh({manual:true})" '+(flight?'disabled':'')+'>'+esc(t('refresh'))+'</button></section>';
+ }
+ function decorate(){
+  // Whole-page background refresh intentionally stops behind open disclosures.
+  // Update this read-only value in place, preserving panels, drafts and scroll.
+  const tiles=document.querySelectorAll('#app .tp5-today-recovery .tp5-today-value');
+  if(tiles.length&&typeof window.tp5UnifiedTodayModel==='function'){
+   const model=window.tp5UnifiedTodayModel();
+   tiles.forEach(node=>{node.textContent=model.values.recovery;});
+  }
+  const main=document.querySelector('#app main.tp168-health');if(!main)return;
+  const recovery=main.querySelector('.tp168-recovery-history');if(!recovery)return;
+  main.querySelectorAll('.tp184-energy-card').forEach(node=>node.remove());
+  recovery.querySelector(':scope > summary')?.insertAdjacentHTML('afterend',html());
+  if(recoveryOpen){recovery.open=true;main.querySelector('.tp169-pulse-journal')?.classList.add('tp169-open');main.querySelector('.tp169-pulse-summary')?.setAttribute('aria-expanded','true');}
+ }
+ function paint(){const panel=document.querySelector('.tp168-recovery-history');if(panel)recoveryOpen=panel.open;window.TrainPilotUIRefresh?.refresh?.();decorate();}
+ async function refresh(options={}){
+  const manual=options.manual===true;
+  if(document.hidden||window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending||state.session||state.tp128Onboarding)return;
+  // A web-only page has no SDK. Do not redraw Home/onboarding just to
+  // announce an unavailable native provider.
+  if(!isNative()){status='unavailable';if(manual)decorate();return;}
+  if(flight)return manual?flight.then(()=>refresh({manual:true,force:true})):flight;
+  const day=today();if(!manual&&!options.force&&lastDay===day&&Date.now()-lastAttempt<10*60000)return;
+  lastAttempt=Date.now();lastDay=day;
+  flight=Promise.resolve().then(async()=>{
+   try{
+    if(!isNative()){status='unavailable';return;}
+    const p=window.Capacitor?.Plugins?.SamsungHealth||window.Capacitor?.registerPlugin?.('SamsungHealth');
+    if(!p){status='unavailable';return;}
+    failure='';status='loading';decorate();
+    const getStatus=()=>typeof p.getEnergyScoreStatus==='function'?p.getEnergyScoreStatus():p.getStatus();
+    let granted=await getStatus();
+    if(granted.permissions?.READ_ENERGY_SCORE!==true&&manual){
+     if(typeof p.requestEnergyScoreRead==='function')await p.requestEnergyScoreRead();else await p.requestRead();
+     granted=await getStatus();
+    }
+    attempted=true;current=null;
+    if(granted.permissions?.READ_ENERGY_SCORE!==true){status='permission';return;}
+    const result=await p.readEnergyScoreDay({...rf240DayBounds(day),day});
+    if(window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending)return;
+    if(day!==today()||result.day!==day){status='empty';return;}
+    if(result.failedFields?.includes('energyScore')){fail(result.errors?.energyScore);return;}
+    current=result;status=tp184EnergyToday()?'ready':'empty';
+   }catch(error){attempted=true;current=null;fail(error);}
+   finally{flight=null;paint();}
+  });
+  return flight;
+ }

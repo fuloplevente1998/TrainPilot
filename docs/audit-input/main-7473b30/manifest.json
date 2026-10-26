@@ -1,0 +1,2203 @@
+{
+  "sourceRef": "7473b30f387eda54186c1e31830304ca12bd104f",
+  "sourcePath": "www/app.js",
+  "sourceGitBlob": "b5567576bed9a8f93608a6bf1ed8db1dee4723f4",
+  "sourceBytes": 2199763,
+  "sourceSha256": "47750fd38905860aa5910a14ff52a46421a3c78e19059c34cc5025da2538106d",
+  "lineNumbering": "1-based original source, complete lines including original line endings; concatenate parts in numeric order to reconstruct exact bytes",
+  "parts": [
+    {
+      "file": "app-part-001.txt",
+      "startLine": 1,
+      "endLine": 331,
+      "bytes": 23966,
+      "sha256": "ae112558f2c1c4fccce4b6ac252b1cec6814bc9a78b8e7986d0b957959772a2d"
+    },
+    {
+      "file": "app-part-002.txt",
+      "startLine": 332,
+      "endLine": 511,
+      "bytes": 23801,
+      "sha256": "521c17a542e9fa783950d3c6f6934e396e035496c2d720f06c4aa4acabc25559"
+    },
+    {
+      "file": "app-part-003.txt",
+      "startLine": 512,
+      "endLine": 759,
+      "bytes": 23951,
+      "sha256": "4d783e0041bfbc5000c101dcf3b572ff7fcd1503410fc14a459829b64565a72d"
+    },
+    {
+      "file": "app-part-004.txt",
+      "startLine": 760,
+      "endLine": 939,
+      "bytes": 23228,
+      "sha256": "79940b0c5c02c9bfc60b1c3ca73a34eadcd8ba6df4151a0064f57844f1729f2f"
+    },
+    {
+      "file": "app-part-005.txt",
+      "startLine": 940,
+      "endLine": 1031,
+      "bytes": 23783,
+      "sha256": "c1acad6a26b04de6d0a6302f6c84fb1b5c318bc3e77b8ffa50ab181d439b9b23"
+    },
+    {
+      "file": "app-part-006.txt",
+      "startLine": 1032,
+      "endLine": 1088,
+      "bytes": 23636,
+      "sha256": "a83ba5d5ac39fad0be9444aeb97d56280960fd462d88272fcb30e2034fa7a507"
+    },
+    {
+      "file": "app-part-007.txt",
+      "startLine": 1089,
+      "endLine": 1229,
+      "bytes": 23848,
+      "sha256": "95711dd5493ca21b316b95348e1a9f961220788c30c438d86a94175efefc3380"
+    },
+    {
+      "file": "app-part-008.txt",
+      "startLine": 1230,
+      "endLine": 1335,
+      "bytes": 23969,
+      "sha256": "9009e889331a5008d1c8569e272575a4198d56b4df77109cb033b177885243ba"
+    },
+    {
+      "file": "app-part-009.txt",
+      "startLine": 1336,
+      "endLine": 1528,
+      "bytes": 23736,
+      "sha256": "8101ac1a58f0dd8505ab3ba5413fce1a310dc78002969bd04ded3b76b4cc5e6a"
+    },
+    {
+      "file": "app-part-010.txt",
+      "startLine": 1529,
+      "endLine": 1848,
+      "bytes": 23859,
+      "sha256": "8ef3bf5bf458ac77b41d881f582e3ca560a135dc4b9c52ea7995ac2545590aab"
+    },
+    {
+      "file": "app-part-011.txt",
+      "startLine": 1849,
+      "endLine": 2215,
+      "bytes": 23988,
+      "sha256": "5e0b25610ded38f7eb377b07897b4c43cd9f84e8c30264ea6f348729f44ccc8b"
+    },
+    {
+      "file": "app-part-012.txt",
+      "startLine": 2216,
+      "endLine": 2563,
+      "bytes": 23997,
+      "sha256": "9e8cf5c9bbfd1ff496f62eef6f9159e2298e354ebcd6361ea9c4eec93408905c"
+    },
+    {
+      "file": "app-part-013.txt",
+      "startLine": 2564,
+      "endLine": 2756,
+      "bytes": 23554,
+      "sha256": "18e6152cb1d8b7b3a43540eb1332aba6f07412b457226d84781e2596b616e5da"
+    },
+    {
+      "file": "app-part-014.txt",
+      "startLine": 2757,
+      "endLine": 2861,
+      "bytes": 23873,
+      "sha256": "2ec2015c346cdcb8a30045dad6587e476e88f13d602eeacbcfd8675823e296ce"
+    },
+    {
+      "file": "app-part-015.txt",
+      "startLine": 2862,
+      "endLine": 3057,
+      "bytes": 23951,
+      "sha256": "a2464e9cebfef81437e424a2922b92f68c5dbfb0178145ee0094f4330b113364"
+    },
+    {
+      "file": "app-part-016.txt",
+      "startLine": 3058,
+      "endLine": 3361,
+      "bytes": 23985,
+      "sha256": "e5b835747bb1a5722144821496480ce1f84a415c8c10476cfeb34192f85dcad1"
+    },
+    {
+      "file": "app-part-017.txt",
+      "startLine": 3362,
+      "endLine": 3577,
+      "bytes": 23844,
+      "sha256": "6783f3d9ecf1dabd1fd4408333896704d45661b0a6810cb1580f130892e784ec"
+    },
+    {
+      "file": "app-part-018.txt",
+      "startLine": 3578,
+      "endLine": 3714,
+      "bytes": 23266,
+      "sha256": "3139ff5b63b5090067ab06ecfcef536a24ffc0156162227039ca0e046ba64c02"
+    },
+    {
+      "file": "app-part-019.txt",
+      "startLine": 3715,
+      "endLine": 3851,
+      "bytes": 23953,
+      "sha256": "6bc21b4db5308fd9cbf6f65195ebee69f724dfd424540f50447cb3b120bdc3ef"
+    },
+    {
+      "file": "app-part-020.txt",
+      "startLine": 3852,
+      "endLine": 4107,
+      "bytes": 23692,
+      "sha256": "6f3034c7614c85f5f853500765701d0ddf4df86f522c9d07958c050c7a7ffed3"
+    },
+    {
+      "file": "app-part-021.txt",
+      "startLine": 4108,
+      "endLine": 4385,
+      "bytes": 23110,
+      "sha256": "00e9bc20e4d5a72d7cb7afe4bced805a781aee98b692f1cdb83484e0c72ade7a"
+    },
+    {
+      "file": "app-part-022.txt",
+      "startLine": 4386,
+      "endLine": 4689,
+      "bytes": 23997,
+      "sha256": "38ca3e425c4cdcdc935dcccc8588946e4a4f40fe66ed7e78c820cd011a2f6e68"
+    },
+    {
+      "file": "app-part-023.txt",
+      "startLine": 4690,
+      "endLine": 4901,
+      "bytes": 23767,
+      "sha256": "595166fc3298b65736d934b9dbb52ed2e757769f3efc9a52fbb13a4fa78d9bab"
+    },
+    {
+      "file": "app-part-024.txt",
+      "startLine": 4902,
+      "endLine": 5060,
+      "bytes": 23958,
+      "sha256": "b977f20d1db37d562232e8d440359cb14fdcc9e9b8d494d422855bb5a011eab1"
+    },
+    {
+      "file": "app-part-025.txt",
+      "startLine": 5061,
+      "endLine": 5327,
+      "bytes": 23920,
+      "sha256": "8393d96134d9fba47a57d1f05bc42ab1699b97325e63976dc922fad4a658364e"
+    },
+    {
+      "file": "app-part-026.txt",
+      "startLine": 5328,
+      "endLine": 5656,
+      "bytes": 23936,
+      "sha256": "030edac2313d373d378f6f09c2f74046dccbfe313b11d23be431d01f1bfac2d8"
+    },
+    {
+      "file": "app-part-027.txt",
+      "startLine": 5657,
+      "endLine": 5866,
+      "bytes": 22649,
+      "sha256": "4cb45b9a3c1e7845edb5cf2f0d9b6f684a310973e618f8453e32e94f709b51ba"
+    },
+    {
+      "file": "app-part-028.txt",
+      "startLine": 5867,
+      "endLine": 6067,
+      "bytes": 23947,
+      "sha256": "4332c59ef784e636442b261638c83cb78b3f0060bfad54042bf581b199be95c7"
+    },
+    {
+      "file": "app-part-029.txt",
+      "startLine": 6068,
+      "endLine": 6361,
+      "bytes": 23884,
+      "sha256": "5d474393ddbe3fc81f7cedf8eb63cf64e006327a2dce43a351f4c5b9e45b9852"
+    },
+    {
+      "file": "app-part-030.txt",
+      "startLine": 6362,
+      "endLine": 6524,
+      "bytes": 23640,
+      "sha256": "5df01472338fd7f158cf1106122e00406725e779d2dfc7365b103617e031f123"
+    },
+    {
+      "file": "app-part-031.txt",
+      "startLine": 6525,
+      "endLine": 6690,
+      "bytes": 23785,
+      "sha256": "61508e12b43f06ef73a9da0abe462b339bc95384a1a34f68ff48baf4ff0481db"
+    },
+    {
+      "file": "app-part-032.txt",
+      "startLine": 6691,
+      "endLine": 6971,
+      "bytes": 23950,
+      "sha256": "89a7c67071bd0995383209d232f436960e299ef35462154f19ae83410b2d3472"
+    },
+    {
+      "file": "app-part-033.txt",
+      "startLine": 6972,
+      "endLine": 7215,
+      "bytes": 23827,
+      "sha256": "d844c8d0c18879e0def9771bae3f2a0488dcc9bba14fc7a2dee1dc776e1f2451"
+    },
+    {
+      "file": "app-part-034.txt",
+      "startLine": 7216,
+      "endLine": 7294,
+      "bytes": 23205,
+      "sha256": "653bee8ee3081b95cfd7124d9a3fde7b7162902358919429a186e0b53628552e"
+    },
+    {
+      "file": "app-part-035.txt",
+      "startLine": 7295,
+      "endLine": 7420,
+      "bytes": 23937,
+      "sha256": "28c13ca9b06cddbff41cdd4c0ed7968791fabd94b524090f81d950dee14108b7"
+    },
+    {
+      "file": "app-part-036.txt",
+      "startLine": 7421,
+      "endLine": 7643,
+      "bytes": 23867,
+      "sha256": "d4c35a550f4eb19f21f4af756a5ace67dc89a1e905a665c59b4a14c4b961b4b2"
+    },
+    {
+      "file": "app-part-037.txt",
+      "startLine": 7644,
+      "endLine": 7858,
+      "bytes": 23996,
+      "sha256": "9d44250de7e3cf154f611f4893ed1e8f8d821a8b9536f70dc865fe34f14de72d"
+    },
+    {
+      "file": "app-part-038.txt",
+      "startLine": 7859,
+      "endLine": 8132,
+      "bytes": 23916,
+      "sha256": "d7a62c5e5111935839a026d5616113101e8d4d348b40a10d5e7f747d4355a3d1"
+    },
+    {
+      "file": "app-part-039.txt",
+      "startLine": 8133,
+      "endLine": 8336,
+      "bytes": 23969,
+      "sha256": "53f6db80ca233122da35996aa299232529a042d99ac7ff844898a2017a636721"
+    },
+    {
+      "file": "app-part-040.txt",
+      "startLine": 8337,
+      "endLine": 8536,
+      "bytes": 22037,
+      "sha256": "a84b8e959e6e22ec43952dbc46f1a3de2e926bdb9f3de3575ae87f92f533129d"
+    },
+    {
+      "file": "app-part-041.txt",
+      "startLine": 8537,
+      "endLine": 8750,
+      "bytes": 23985,
+      "sha256": "3267efaf6b28eddcbe83c19a8968a1089cc5801f5830d649961041017fa43a7c"
+    },
+    {
+      "file": "app-part-042.txt",
+      "startLine": 8751,
+      "endLine": 8904,
+      "bytes": 23995,
+      "sha256": "1647d11bf49a702f1b92dab3ccc6b5ccff6912c60f7462d1399ae39842d75768"
+    },
+    {
+      "file": "app-part-043.txt",
+      "startLine": 8905,
+      "endLine": 9058,
+      "bytes": 23963,
+      "sha256": "b30e0bded3d8378e30e026abb849ce4c40a69056e53f1de4d26077ad2f10d093"
+    },
+    {
+      "file": "app-part-044.txt",
+      "startLine": 9059,
+      "endLine": 9295,
+      "bytes": 23883,
+      "sha256": "7caecc9eb0659f71e7a7f29d74533ff9705555f6d7315440cc362cefc5213e9b"
+    },
+    {
+      "file": "app-part-045.txt",
+      "startLine": 9296,
+      "endLine": 9536,
+      "bytes": 23869,
+      "sha256": "2137b77b2076e6d485cc451b1b748594eceea327d091f39634ddef4ac7548088"
+    },
+    {
+      "file": "app-part-046.txt",
+      "startLine": 9537,
+      "endLine": 9738,
+      "bytes": 23972,
+      "sha256": "cd43c3e197c59c96d24c7510dcc60cc04a3bd0645ce8f16a82d93ed2011cb137"
+    },
+    {
+      "file": "app-part-047.txt",
+      "startLine": 9739,
+      "endLine": 9939,
+      "bytes": 23807,
+      "sha256": "51833c0d849f431e7d3927a2c5d5b4b1e74250f0fa53f8077867c0fccea2a36b"
+    },
+    {
+      "file": "app-part-048.txt",
+      "startLine": 9940,
+      "endLine": 10157,
+      "bytes": 23965,
+      "sha256": "2f187d82d46b320112f02861a29581ccb8ce700ecc7c6dc008a258ca9e4e3d48"
+    },
+    {
+      "file": "app-part-049.txt",
+      "startLine": 10158,
+      "endLine": 10466,
+      "bytes": 23934,
+      "sha256": "84299db6e0c8aa556abf0b8588139dd01f815d0dd4bfcb4a3d1211bbe4a4b7f3"
+    },
+    {
+      "file": "app-part-050.txt",
+      "startLine": 10467,
+      "endLine": 10653,
+      "bytes": 23895,
+      "sha256": "7cb9707301f91e535f96777dceeebb6269ad8c4245652b629a2af67c3172e098"
+    },
+    {
+      "file": "app-part-051.txt",
+      "startLine": 10654,
+      "endLine": 10715,
+      "bytes": 23971,
+      "sha256": "8b11e2fdf8b6b14b8006165154a7b25d9372c42e091eebefc809fc9bc367759d"
+    },
+    {
+      "file": "app-part-052.txt",
+      "startLine": 10716,
+      "endLine": 10826,
+      "bytes": 23831,
+      "sha256": "9d64be670f23a61b5a38b7db4ebc30bd7cb79d40c499f77a27f7b5593875aa31"
+    },
+    {
+      "file": "app-part-053.txt",
+      "startLine": 10827,
+      "endLine": 11006,
+      "bytes": 23365,
+      "sha256": "2aca9d23b3330c5b08a7564383381c3eb67f03b2655ea6a784b9c34c0f1912d1"
+    },
+    {
+      "file": "app-part-054.txt",
+      "startLine": 11007,
+      "endLine": 11128,
+      "bytes": 23199,
+      "sha256": "f6b1b0bb919dbc44aa9a45f559ed452e4ebc052199f4e8b706d851fe10529836"
+    },
+    {
+      "file": "app-part-055.txt",
+      "startLine": 11129,
+      "endLine": 11303,
+      "bytes": 23960,
+      "sha256": "2dec55d27c08832d8972b387691e140f9528bb53fefa95a7bc1a37f2f633a4f2"
+    },
+    {
+      "file": "app-part-056.txt",
+      "startLine": 11304,
+      "endLine": 11465,
+      "bytes": 23930,
+      "sha256": "193f623f46a0a0193af81cda53f11f6d04534521cfd5756ab5ef4584c1091ba7"
+    },
+    {
+      "file": "app-part-057.txt",
+      "startLine": 11466,
+      "endLine": 11734,
+      "bytes": 23973,
+      "sha256": "db3d7be66eeda317f3dbbe13575225f4980d4659f8413936689cfc0700bb0446"
+    },
+    {
+      "file": "app-part-058.txt",
+      "startLine": 11735,
+      "endLine": 11941,
+      "bytes": 23886,
+      "sha256": "0bae942084357cb015b497a4bac6b2969ff04eda2709346006567031b3c71780"
+    },
+    {
+      "file": "app-part-059.txt",
+      "startLine": 11942,
+      "endLine": 12288,
+      "bytes": 23991,
+      "sha256": "1776ed03257b8b5f127613f071e9049b6985ebc689d5e3a85e0384345a05eeef"
+    },
+    {
+      "file": "app-part-060.txt",
+      "startLine": 12289,
+      "endLine": 12686,
+      "bytes": 23529,
+      "sha256": "10e5e4702cc57b25d279964e5e93142f4f3b460e70ae54a1da8e7bd2684a157b"
+    },
+    {
+      "file": "app-part-061.txt",
+      "startLine": 12687,
+      "endLine": 12890,
+      "bytes": 23996,
+      "sha256": "7cbbe834113fe509cc348cede13e9e4e3dd62e0c4fafee04af69ecfc79f5841e"
+    },
+    {
+      "file": "app-part-062.txt",
+      "startLine": 12891,
+      "endLine": 13058,
+      "bytes": 23935,
+      "sha256": "03abd93167051bffb9e42350c36a1a888783bad81313c3e8bef8457b319a09f8"
+    },
+    {
+      "file": "app-part-063.txt",
+      "startLine": 13059,
+      "endLine": 13382,
+      "bytes": 23996,
+      "sha256": "45a42389fc0852772e172b5ea6ef4ca15c1e3ac0035bfb8a00f258fc4142748b"
+    },
+    {
+      "file": "app-part-064.txt",
+      "startLine": 13383,
+      "endLine": 13728,
+      "bytes": 23961,
+      "sha256": "443323dd75283d7767aedea8687177c1b3436076aae7626583c61b722b535aac"
+    },
+    {
+      "file": "app-part-065.txt",
+      "startLine": 13729,
+      "endLine": 14121,
+      "bytes": 23959,
+      "sha256": "1e4cd7e5f151fc390aa639e8fa1702b5e63f927b504bf899c0d85ce5ef6fb40f"
+    },
+    {
+      "file": "app-part-066.txt",
+      "startLine": 14122,
+      "endLine": 14394,
+      "bytes": 23946,
+      "sha256": "2ce69c368f9c8d8f8439a9979085aa197b595d4bf89442b50bb7bee3ce23294c"
+    },
+    {
+      "file": "app-part-067.txt",
+      "startLine": 14395,
+      "endLine": 14739,
+      "bytes": 23967,
+      "sha256": "95040741463cca5d1565829b5deb5395e2dc67cdda4b2a04c715217c512fffb9"
+    },
+    {
+      "file": "app-part-068.txt",
+      "startLine": 14740,
+      "endLine": 14962,
+      "bytes": 23970,
+      "sha256": "76c9fa8fcb04164cf6ac6922f3b98368db8c3508f1d6056f51c7caf6b9922db4"
+    },
+    {
+      "file": "app-part-069.txt",
+      "startLine": 14963,
+      "endLine": 15129,
+      "bytes": 23978,
+      "sha256": "87c9d187b8482a770998b3dd389853efa316756316bf337fedec4e0e6cb25a97"
+    },
+    {
+      "file": "app-part-070.txt",
+      "startLine": 15130,
+      "endLine": 15354,
+      "bytes": 23840,
+      "sha256": "52227731371dc8453cd254793f2317fd7df04a1e83817091247d43924f73246e"
+    },
+    {
+      "file": "app-part-071.txt",
+      "startLine": 15355,
+      "endLine": 15509,
+      "bytes": 23967,
+      "sha256": "7b379339b19913ad4637021a6dfaa9b075ce9631c2f90a620bf04980966d53da"
+    },
+    {
+      "file": "app-part-072.txt",
+      "startLine": 15510,
+      "endLine": 15700,
+      "bytes": 23380,
+      "sha256": "57ede086a4936fcfde3af226327598b37d17e440a439ba22da8d556caf1279a0"
+    },
+    {
+      "file": "app-part-073.txt",
+      "startLine": 15701,
+      "endLine": 15809,
+      "bytes": 23971,
+      "sha256": "a84c66af02a280d1915534360c2c7bb2e67e2160c9acfdfb1bc5670609ab01ba"
+    },
+    {
+      "file": "app-part-074.txt",
+      "startLine": 15810,
+      "endLine": 15885,
+      "bytes": 23999,
+      "sha256": "77bad997f84a81e776ab49692721a7e3c9a7632292e59c5a157e8fc9db2f1392"
+    },
+    {
+      "file": "app-part-075.txt",
+      "startLine": 15886,
+      "endLine": 16042,
+      "bytes": 22662,
+      "sha256": "291f88d6b7ef0045a2a3204f91452460b9553c74ac9744cd556f423512c70b3b"
+    },
+    {
+      "file": "app-part-076.txt",
+      "startLine": 16043,
+      "endLine": 16115,
+      "bytes": 23500,
+      "sha256": "2fc0f5af1727c1ed9061b8bba8601bc92a1603ef57f18c4d6d0232da02da9179"
+    },
+    {
+      "file": "app-part-077.txt",
+      "startLine": 16116,
+      "endLine": 16351,
+      "bytes": 23791,
+      "sha256": "4f246f8c60a17a4eeef366572dbc9ecdd413f9579c874ab83938abed8deefe03"
+    },
+    {
+      "file": "app-part-078.txt",
+      "startLine": 16352,
+      "endLine": 16533,
+      "bytes": 23959,
+      "sha256": "9e535def56ed18b508d0e4c110f32c2fb6b23700b09ec46f19e9062350c68a24"
+    },
+    {
+      "file": "app-part-079.txt",
+      "startLine": 16534,
+      "endLine": 16788,
+      "bytes": 23662,
+      "sha256": "69977ebbdb76569c92dd2c61658e5fa29a0dadea0cc26328ea44c0fa10ffff68"
+    },
+    {
+      "file": "app-part-080.txt",
+      "startLine": 16789,
+      "endLine": 17052,
+      "bytes": 23996,
+      "sha256": "5ba7d9f30ead0a6fc2b3b2c6b836adb25483bf85b43dcf5797eb8242c90b533e"
+    },
+    {
+      "file": "app-part-081.txt",
+      "startLine": 17053,
+      "endLine": 17371,
+      "bytes": 23996,
+      "sha256": "490079dacb746606b3c4e0cfae0685ed42ee555a349b41037bc284006b2b273f"
+    },
+    {
+      "file": "app-part-082.txt",
+      "startLine": 17372,
+      "endLine": 17782,
+      "bytes": 24000,
+      "sha256": "61da5f0d5d49eb67c9771bc1206a51abff50e423f21db67b64ec70514b0e8c5b"
+    },
+    {
+      "file": "app-part-083.txt",
+      "startLine": 17783,
+      "endLine": 18150,
+      "bytes": 23910,
+      "sha256": "97ea2ff36128d445cc258483107ac71336f03473db0c8f6ee6958ce6ad43f319"
+    },
+    {
+      "file": "app-part-084.txt",
+      "startLine": 18151,
+      "endLine": 18462,
+      "bytes": 23490,
+      "sha256": "756f7868732dbf1785947a17e1b5e00079a80b81e2168fc405093319c7ce0257"
+    },
+    {
+      "file": "app-part-085.txt",
+      "startLine": 18463,
+      "endLine": 18658,
+      "bytes": 23423,
+      "sha256": "5897a825129743f33ba9dfb912ec085d2f8b979ed2343ef0bd2841a9b4b3659f"
+    },
+    {
+      "file": "app-part-086.txt",
+      "startLine": 18659,
+      "endLine": 18794,
+      "bytes": 23805,
+      "sha256": "1d271385e755c06ad8004eb52e8f2a15d063937cf8ceecb36177d27b892b8ba0"
+    },
+    {
+      "file": "app-part-087.txt",
+      "startLine": 18795,
+      "endLine": 19042,
+      "bytes": 23929,
+      "sha256": "d1b60e8c14fd6cb598b5e0808767c372ccef4d5874fa38a4fbd332fefa145815"
+    },
+    {
+      "file": "app-part-088.txt",
+      "startLine": 19043,
+      "endLine": 19341,
+      "bytes": 23780,
+      "sha256": "22059f4a6c7c7654455786722fa776ee56f67553fb90d602c1ef00a292b66083"
+    },
+    {
+      "file": "app-part-089.txt",
+      "startLine": 19342,
+      "endLine": 19647,
+      "bytes": 23919,
+      "sha256": "0936cf7a94e2c9effe61c0add61ff12faa96b05734ec6d2d62aefb3fe9f51210"
+    },
+    {
+      "file": "app-part-090.txt",
+      "startLine": 19648,
+      "endLine": 19903,
+      "bytes": 23940,
+      "sha256": "668b9b86baf07e858d746bf4874424cd8e7b6a5eb414e62b6fbd8fb9e5cbd735"
+    },
+    {
+      "file": "app-part-091.txt",
+      "startLine": 19904,
+      "endLine": 20104,
+      "bytes": 22766,
+      "sha256": "d03302bc76d0a6ada801dbffd5e57f813812b9f274263001512134ff3f60f66d"
+    },
+    {
+      "file": "app-part-092.txt",
+      "startLine": 20105,
+      "endLine": 20384,
+      "bytes": 23921,
+      "sha256": "aeb48699f1a2566b229254fb0948718e3ad230c742dd7219636451db440ba0bf"
+    },
+    {
+      "file": "app-part-093.txt",
+      "startLine": 20385,
+      "endLine": 20599,
+      "bytes": 12369,
+      "sha256": "ae1c382e768babd1ed00d8e78a630f0a1ce8df5bf1996d50949a2a162b1da3fb"
+    }
+  ],
+  "sections": [
+    {
+      "name": "startup.js",
+      "startLine": 33,
+      "endLine": 125,
+      "parts": [
+        "app-part-001.txt"
+      ]
+    },
+    {
+      "name": "backup.js",
+      "startLine": 126,
+      "endLine": 262,
+      "parts": [
+        "app-part-001.txt"
+      ]
+    },
+    {
+      "name": "demos.js",
+      "startLine": 263,
+      "endLine": 317,
+      "parts": [
+        "app-part-001.txt"
+      ]
+    },
+    {
+      "name": "cloud.js",
+      "startLine": 318,
+      "endLine": 424,
+      "parts": [
+        "app-part-001.txt",
+        "app-part-002.txt"
+      ]
+    },
+    {
+      "name": "app.js",
+      "startLine": 425,
+      "endLine": 810,
+      "parts": [
+        "app-part-002.txt",
+        "app-part-003.txt",
+        "app-part-004.txt"
+      ]
+    },
+    {
+      "name": "v12.js",
+      "startLine": 811,
+      "endLine": 1036,
+      "parts": [
+        "app-part-004.txt",
+        "app-part-005.txt",
+        "app-part-006.txt"
+      ]
+    },
+    {
+      "name": "catalog131.js",
+      "startLine": 1037,
+      "endLine": 1063,
+      "parts": [
+        "app-part-006.txt"
+      ]
+    },
+    {
+      "name": "v13.js",
+      "startLine": 1064,
+      "endLine": 1192,
+      "parts": [
+        "app-part-006.txt",
+        "app-part-007.txt"
+      ]
+    },
+    {
+      "name": "library131.js",
+      "startLine": 1193,
+      "endLine": 1211,
+      "parts": [
+        "app-part-007.txt"
+      ]
+    },
+    {
+      "name": "onboarding132.js",
+      "startLine": 1212,
+      "endLine": 1252,
+      "parts": [
+        "app-part-007.txt",
+        "app-part-008.txt"
+      ]
+    },
+    {
+      "name": "v14.js",
+      "startLine": 1253,
+      "endLine": 1309,
+      "parts": [
+        "app-part-008.txt"
+      ]
+    },
+    {
+      "name": "v141.js",
+      "startLine": 1310,
+      "endLine": 1396,
+      "parts": [
+        "app-part-008.txt",
+        "app-part-009.txt"
+      ]
+    },
+    {
+      "name": "v142.js",
+      "startLine": 1397,
+      "endLine": 1500,
+      "parts": [
+        "app-part-009.txt"
+      ]
+    },
+    {
+      "name": "v143.js",
+      "startLine": 1501,
+      "endLine": 1538,
+      "parts": [
+        "app-part-009.txt",
+        "app-part-010.txt"
+      ]
+    },
+    {
+      "name": "v144.js",
+      "startLine": 1539,
+      "endLine": 1559,
+      "parts": [
+        "app-part-010.txt"
+      ]
+    },
+    {
+      "name": "v145.js",
+      "startLine": 1560,
+      "endLine": 1666,
+      "parts": [
+        "app-part-010.txt"
+      ]
+    },
+    {
+      "name": "v146.js",
+      "startLine": 1667,
+      "endLine": 1716,
+      "parts": [
+        "app-part-010.txt"
+      ]
+    },
+    {
+      "name": "v150.js",
+      "startLine": 1717,
+      "endLine": 1751,
+      "parts": [
+        "app-part-010.txt"
+      ]
+    },
+    {
+      "name": "v151.js",
+      "startLine": 1752,
+      "endLine": 1824,
+      "parts": [
+        "app-part-010.txt"
+      ]
+    },
+    {
+      "name": "v152.js",
+      "startLine": 1825,
+      "endLine": 1904,
+      "parts": [
+        "app-part-010.txt",
+        "app-part-011.txt"
+      ]
+    },
+    {
+      "name": "v153.js",
+      "startLine": 1905,
+      "endLine": 1959,
+      "parts": [
+        "app-part-011.txt"
+      ]
+    },
+    {
+      "name": "v154.js",
+      "startLine": 1960,
+      "endLine": 2014,
+      "parts": [
+        "app-part-011.txt"
+      ]
+    },
+    {
+      "name": "v155.js",
+      "startLine": 2015,
+      "endLine": 2098,
+      "parts": [
+        "app-part-011.txt"
+      ]
+    },
+    {
+      "name": "v200.js",
+      "startLine": 2099,
+      "endLine": 2137,
+      "parts": [
+        "app-part-011.txt"
+      ]
+    },
+    {
+      "name": "v201.js",
+      "startLine": 2138,
+      "endLine": 2176,
+      "parts": [
+        "app-part-011.txt"
+      ]
+    },
+    {
+      "name": "v202.js",
+      "startLine": 2177,
+      "endLine": 2203,
+      "parts": [
+        "app-part-011.txt"
+      ]
+    },
+    {
+      "name": "v203.js",
+      "startLine": 2204,
+      "endLine": 2238,
+      "parts": [
+        "app-part-011.txt",
+        "app-part-012.txt"
+      ]
+    },
+    {
+      "name": "v204.js",
+      "startLine": 2239,
+      "endLine": 2270,
+      "parts": [
+        "app-part-012.txt"
+      ]
+    },
+    {
+      "name": "v205.js",
+      "startLine": 2271,
+      "endLine": 2306,
+      "parts": [
+        "app-part-012.txt"
+      ]
+    },
+    {
+      "name": "v206.js",
+      "startLine": 2307,
+      "endLine": 2326,
+      "parts": [
+        "app-part-012.txt"
+      ]
+    },
+    {
+      "name": "v207.js",
+      "startLine": 2327,
+      "endLine": 2382,
+      "parts": [
+        "app-part-012.txt"
+      ]
+    },
+    {
+      "name": "v208.js",
+      "startLine": 2383,
+      "endLine": 2429,
+      "parts": [
+        "app-part-012.txt"
+      ]
+    },
+    {
+      "name": "v209.js",
+      "startLine": 2430,
+      "endLine": 2480,
+      "parts": [
+        "app-part-012.txt"
+      ]
+    },
+    {
+      "name": "v210.js",
+      "startLine": 2481,
+      "endLine": 2494,
+      "parts": [
+        "app-part-012.txt"
+      ]
+    },
+    {
+      "name": "v211.js",
+      "startLine": 2495,
+      "endLine": 2534,
+      "parts": [
+        "app-part-012.txt"
+      ]
+    },
+    {
+      "name": "v212.js",
+      "startLine": 2535,
+      "endLine": 2650,
+      "parts": [
+        "app-part-012.txt",
+        "app-part-013.txt"
+      ]
+    },
+    {
+      "name": "v213.js",
+      "startLine": 2651,
+      "endLine": 2731,
+      "parts": [
+        "app-part-013.txt"
+      ]
+    },
+    {
+      "name": "v214.js",
+      "startLine": 2732,
+      "endLine": 2779,
+      "parts": [
+        "app-part-013.txt",
+        "app-part-014.txt"
+      ]
+    },
+    {
+      "name": "v215.js",
+      "startLine": 2780,
+      "endLine": 2811,
+      "parts": [
+        "app-part-014.txt"
+      ]
+    },
+    {
+      "name": "v220.js",
+      "startLine": 2812,
+      "endLine": 2858,
+      "parts": [
+        "app-part-014.txt"
+      ]
+    },
+    {
+      "name": "v221.js",
+      "startLine": 2859,
+      "endLine": 2876,
+      "parts": [
+        "app-part-014.txt",
+        "app-part-015.txt"
+      ]
+    },
+    {
+      "name": "v222.js",
+      "startLine": 2877,
+      "endLine": 2909,
+      "parts": [
+        "app-part-015.txt"
+      ]
+    },
+    {
+      "name": "v223.js",
+      "startLine": 2910,
+      "endLine": 2933,
+      "parts": [
+        "app-part-015.txt"
+      ]
+    },
+    {
+      "name": "v224.js",
+      "startLine": 2934,
+      "endLine": 2969,
+      "parts": [
+        "app-part-015.txt"
+      ]
+    },
+    {
+      "name": "v225.js",
+      "startLine": 2970,
+      "endLine": 3103,
+      "parts": [
+        "app-part-015.txt",
+        "app-part-016.txt"
+      ]
+    },
+    {
+      "name": "v227.js",
+      "startLine": 3104,
+      "endLine": 3126,
+      "parts": [
+        "app-part-016.txt"
+      ]
+    },
+    {
+      "name": "v228.js",
+      "startLine": 3127,
+      "endLine": 3199,
+      "parts": [
+        "app-part-016.txt"
+      ]
+    },
+    {
+      "name": "v228a.js",
+      "startLine": 3200,
+      "endLine": 3212,
+      "parts": [
+        "app-part-016.txt"
+      ]
+    },
+    {
+      "name": "v228b.js",
+      "startLine": 3213,
+      "endLine": 3279,
+      "parts": [
+        "app-part-016.txt"
+      ]
+    },
+    {
+      "name": "v228c.js",
+      "startLine": 3280,
+      "endLine": 3319,
+      "parts": [
+        "app-part-016.txt"
+      ]
+    },
+    {
+      "name": "v229.js",
+      "startLine": 3320,
+      "endLine": 3417,
+      "parts": [
+        "app-part-016.txt",
+        "app-part-017.txt"
+      ]
+    },
+    {
+      "name": "v232.js",
+      "startLine": 3418,
+      "endLine": 3488,
+      "parts": [
+        "app-part-017.txt"
+      ]
+    },
+    {
+      "name": "v233.js",
+      "startLine": 3489,
+      "endLine": 3575,
+      "parts": [
+        "app-part-017.txt"
+      ]
+    },
+    {
+      "name": "v234.js",
+      "startLine": 3576,
+      "endLine": 3603,
+      "parts": [
+        "app-part-017.txt",
+        "app-part-018.txt"
+      ]
+    },
+    {
+      "name": "v235.js",
+      "startLine": 3604,
+      "endLine": 3664,
+      "parts": [
+        "app-part-018.txt"
+      ]
+    },
+    {
+      "name": "v240.js",
+      "startLine": 3665,
+      "endLine": 3741,
+      "parts": [
+        "app-part-018.txt",
+        "app-part-019.txt"
+      ]
+    },
+    {
+      "name": "v241.js",
+      "startLine": 3742,
+      "endLine": 3828,
+      "parts": [
+        "app-part-019.txt"
+      ]
+    },
+    {
+      "name": "v242.js",
+      "startLine": 3829,
+      "endLine": 3896,
+      "parts": [
+        "app-part-019.txt",
+        "app-part-020.txt"
+      ]
+    },
+    {
+      "name": "v243.js",
+      "startLine": 3897,
+      "endLine": 3962,
+      "parts": [
+        "app-part-020.txt"
+      ]
+    },
+    {
+      "name": "v244.js",
+      "startLine": 3963,
+      "endLine": 4002,
+      "parts": [
+        "app-part-020.txt"
+      ]
+    },
+    {
+      "name": "v245.js",
+      "startLine": 4003,
+      "endLine": 4274,
+      "parts": [
+        "app-part-020.txt",
+        "app-part-021.txt"
+      ]
+    },
+    {
+      "name": "v250.js",
+      "startLine": 4275,
+      "endLine": 4473,
+      "parts": [
+        "app-part-021.txt",
+        "app-part-022.txt"
+      ]
+    },
+    {
+      "name": "v251.js",
+      "startLine": 4474,
+      "endLine": 4572,
+      "parts": [
+        "app-part-022.txt"
+      ]
+    },
+    {
+      "name": "v252.js",
+      "startLine": 4573,
+      "endLine": 4633,
+      "parts": [
+        "app-part-022.txt"
+      ]
+    },
+    {
+      "name": "v253.js",
+      "startLine": 4634,
+      "endLine": 4745,
+      "parts": [
+        "app-part-022.txt",
+        "app-part-023.txt"
+      ]
+    },
+    {
+      "name": "v260.js",
+      "startLine": 4746,
+      "endLine": 5189,
+      "parts": [
+        "app-part-023.txt",
+        "app-part-024.txt",
+        "app-part-025.txt"
+      ]
+    },
+    {
+      "name": "v263.js",
+      "startLine": 5190,
+      "endLine": 5483,
+      "parts": [
+        "app-part-025.txt",
+        "app-part-026.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-110.js",
+      "startLine": 5484,
+      "endLine": 5619,
+      "parts": [
+        "app-part-026.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-120-clean-runtime.js",
+      "startLine": 5620,
+      "endLine": 5799,
+      "parts": [
+        "app-part-026.txt",
+        "app-part-027.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-130-workout-photos.js",
+      "startLine": 5800,
+      "endLine": 5872,
+      "parts": [
+        "app-part-027.txt",
+        "app-part-028.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-140-progression-2.js",
+      "startLine": 5873,
+      "endLine": 6026,
+      "parts": [
+        "app-part-028.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-141-coach-entry.js",
+      "startLine": 6027,
+      "endLine": 6091,
+      "parts": [
+        "app-part-028.txt",
+        "app-part-029.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-142-photo-stopwatch-ui.js",
+      "startLine": 6092,
+      "endLine": 6136,
+      "parts": [
+        "app-part-029.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-143-gallery-picker.js",
+      "startLine": 6137,
+      "endLine": 6143,
+      "parts": [
+        "app-part-029.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-144-capacitor-camera.js",
+      "startLine": 6144,
+      "endLine": 6308,
+      "parts": [
+        "app-part-029.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-146-inline-compact.js",
+      "startLine": 6309,
+      "endLine": 6397,
+      "parts": [
+        "app-part-029.txt",
+        "app-part-030.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-146-layout-hotfix.js",
+      "startLine": 6398,
+      "endLine": 6459,
+      "parts": [
+        "app-part-030.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-148-adaptive-planner.js",
+      "startLine": 6460,
+      "endLine": 6889,
+      "parts": [
+        "app-part-030.txt",
+        "app-part-031.txt",
+        "app-part-032.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-1481-resume-hotfix.js",
+      "startLine": 6890,
+      "endLine": 6896,
+      "parts": [
+        "app-part-032.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-1481-per-side-stopwatch.js",
+      "startLine": 6897,
+      "endLine": 7045,
+      "parts": [
+        "app-part-032.txt",
+        "app-part-033.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-1481-home-coach-overflow.js",
+      "startLine": 7046,
+      "endLine": 7087,
+      "parts": [
+        "app-part-033.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-149-complete-i18n.js",
+      "startLine": 7088,
+      "endLine": 8379,
+      "parts": [
+        "app-part-033.txt",
+        "app-part-034.txt",
+        "app-part-035.txt",
+        "app-part-036.txt",
+        "app-part-037.txt",
+        "app-part-038.txt",
+        "app-part-039.txt",
+        "app-part-040.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-149-calendar-history-i18n.js",
+      "startLine": 8380,
+      "endLine": 8553,
+      "parts": [
+        "app-part-040.txt",
+        "app-part-041.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-149-health-coach-i18n.js",
+      "startLine": 8554,
+      "endLine": 8758,
+      "parts": [
+        "app-part-041.txt",
+        "app-part-042.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-149-workout-progression-i18n.js",
+      "startLine": 8759,
+      "endLine": 8997,
+      "parts": [
+        "app-part-042.txt",
+        "app-part-043.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-149-cloud-calendar-i18n.js",
+      "startLine": 8998,
+      "endLine": 9250,
+      "parts": [
+        "app-part-043.txt",
+        "app-part-044.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-149-dialog-i18n.js",
+      "startLine": 9251,
+      "endLine": 9460,
+      "parts": [
+        "app-part-044.txt",
+        "app-part-045.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-149-weight-i18n.js",
+      "startLine": 9461,
+      "endLine": 9521,
+      "parts": [
+        "app-part-045.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-149-settings-backup-i18n.js",
+      "startLine": 9522,
+      "endLine": 9636,
+      "parts": [
+        "app-part-045.txt",
+        "app-part-046.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-149-shell-i18n.js",
+      "startLine": 9637,
+      "endLine": 9687,
+      "parts": [
+        "app-part-046.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-149-photo-i18n.js",
+      "startLine": 9688,
+      "endLine": 9795,
+      "parts": [
+        "app-part-046.txt",
+        "app-part-047.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-149-video-modal-i18n.js",
+      "startLine": 9796,
+      "endLine": 9833,
+      "parts": [
+        "app-part-047.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-149-home-program-editor-i18n.js",
+      "startLine": 9834,
+      "endLine": 10042,
+      "parts": [
+        "app-part-047.txt",
+        "app-part-048.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-149-settings-language-parity-hotfix.js",
+      "startLine": 10043,
+      "endLine": 10060,
+      "parts": [
+        "app-part-048.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-149-per-side-stopwatch-i18n-hotfix.js",
+      "startLine": 10061,
+      "endLine": 10153,
+      "parts": [
+        "app-part-048.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-149-narrow-i18n-layout-hotfix.js",
+      "startLine": 10154,
+      "endLine": 10163,
+      "parts": [
+        "app-part-048.txt",
+        "app-part-049.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-150-quick-workout.js",
+      "startLine": 10164,
+      "endLine": 10401,
+      "parts": [
+        "app-part-049.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-149-home-coach-repaint-hotfix.js",
+      "startLine": 10402,
+      "endLine": 10425,
+      "parts": [
+        "app-part-049.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-150-compact-ui-performance.js",
+      "startLine": 10426,
+      "endLine": 10591,
+      "parts": [
+        "app-part-049.txt",
+        "app-part-050.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-151-unified-design.js",
+      "startLine": 10592,
+      "endLine": 10703,
+      "parts": [
+        "app-part-050.txt",
+        "app-part-051.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-1511-ui-polish.js",
+      "startLine": 10704,
+      "endLine": 10808,
+      "parts": [
+        "app-part-051.txt",
+        "app-part-052.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-152-ux-hierarchy.js",
+      "startLine": 10809,
+      "endLine": 11052,
+      "parts": [
+        "app-part-052.txt",
+        "app-part-053.txt",
+        "app-part-054.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-152-audit-refinements.js",
+      "startLine": 11053,
+      "endLine": 11108,
+      "parts": [
+        "app-part-054.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-152-device-polish.js",
+      "startLine": 11109,
+      "endLine": 11220,
+      "parts": [
+        "app-part-054.txt",
+        "app-part-055.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-152-next-ui-functional.js",
+      "startLine": 11221,
+      "endLine": 11377,
+      "parts": [
+        "app-part-055.txt",
+        "app-part-056.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-154-mobile-nav-polish.js",
+      "startLine": 11378,
+      "endLine": 11450,
+      "parts": [
+        "app-part-056.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-155-nav-consistency.js",
+      "startLine": 11451,
+      "endLine": 11482,
+      "parts": [
+        "app-part-056.txt",
+        "app-part-057.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-155-coach-health-polish.js",
+      "startLine": 11483,
+      "endLine": 11563,
+      "parts": [
+        "app-part-057.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-155-home-calendar-round2.js",
+      "startLine": 11564,
+      "endLine": 11655,
+      "parts": [
+        "app-part-057.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-155-theme-family-polish.js",
+      "startLine": 11656,
+      "endLine": 11704,
+      "parts": [
+        "app-part-057.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-155-round3-ui-polish.js",
+      "startLine": 11705,
+      "endLine": 11861,
+      "parts": [
+        "app-part-057.txt",
+        "app-part-058.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-155-round3-journal-range.js",
+      "startLine": 11862,
+      "endLine": 11984,
+      "parts": [
+        "app-part-058.txt",
+        "app-part-059.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-155-round3-highlight-surfaces.js",
+      "startLine": 11985,
+      "endLine": 12061,
+      "parts": [
+        "app-part-059.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-155-round3-panel-navigation.js",
+      "startLine": 12062,
+      "endLine": 12429,
+      "parts": [
+        "app-part-059.txt",
+        "app-part-060.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-160-light-navigation-motion.js",
+      "startLine": 12430,
+      "endLine": 12461,
+      "parts": [
+        "app-part-060.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-155-round3-stopwatch-layout.js",
+      "startLine": 12462,
+      "endLine": 12506,
+      "parts": [
+        "app-part-060.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-155-round3-panel-select-anchor.js",
+      "startLine": 12507,
+      "endLine": 12568,
+      "parts": [
+        "app-part-060.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-155-round3-home-calendar-priority.js",
+      "startLine": 12569,
+      "endLine": 12605,
+      "parts": [
+        "app-part-060.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-155-next-12-mods.js",
+      "startLine": 12606,
+      "endLine": 12764,
+      "parts": [
+        "app-part-060.txt",
+        "app-part-061.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-155-phone-round4-fixes.js",
+      "startLine": 12765,
+      "endLine": 12880,
+      "parts": [
+        "app-part-061.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-155-quick-filter-cleanup.js",
+      "startLine": 12881,
+      "endLine": 12946,
+      "parts": [
+        "app-part-061.txt",
+        "app-part-062.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-155-main-panel-continuity.js",
+      "startLine": 12947,
+      "endLine": 12965,
+      "parts": [
+        "app-part-062.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-155-panel-close-system.js",
+      "startLine": 12966,
+      "endLine": 12984,
+      "parts": [
+        "app-part-062.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-155-exercise-library-layout.js",
+      "startLine": 12985,
+      "endLine": 13003,
+      "parts": [
+        "app-part-062.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-155-settings-controls.js",
+      "startLine": 13004,
+      "endLine": 13038,
+      "parts": [
+        "app-part-062.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-155-calendar-planner-compact.js",
+      "startLine": 13039,
+      "endLine": 13080,
+      "parts": [
+        "app-part-062.txt",
+        "app-part-063.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-155-workout-settings-compact.js",
+      "startLine": 13081,
+      "endLine": 13102,
+      "parts": [
+        "app-part-063.txt"
+      ]
+    },
+    {
+      "name": "repforge-160-phone-release-polish.js",
+      "startLine": 13103,
+      "endLine": 13126,
+      "parts": [
+        "app-part-063.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-161-minor-fixes.js",
+      "startLine": 13127,
+      "endLine": 13251,
+      "parts": [
+        "app-part-063.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-162-minor-ui.js",
+      "startLine": 13252,
+      "endLine": 13321,
+      "parts": [
+        "app-part-063.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-162-followup.js",
+      "startLine": 13322,
+      "endLine": 13460,
+      "parts": [
+        "app-part-063.txt",
+        "app-part-064.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-164-issue12-side-set-fields.js",
+      "startLine": 13461,
+      "endLine": 13585,
+      "parts": [
+        "app-part-064.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-165-journal-data-recovery.js",
+      "startLine": 13586,
+      "endLine": 13649,
+      "parts": [
+        "app-part-064.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-166-issue13-home-coach-card.js",
+      "startLine": 13650,
+      "endLine": 13750,
+      "parts": [
+        "app-part-064.txt",
+        "app-part-065.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-167-issues22-24-gui-journal.js",
+      "startLine": 13751,
+      "endLine": 13895,
+      "parts": [
+        "app-part-065.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-177-progress-model.js",
+      "startLine": 13896,
+      "endLine": 14067,
+      "parts": [
+        "app-part-065.txt"
+      ]
+    },
+    {
+      "name": "trainpilot-177-progress-ui.js",
+      "startLine": 14068,
+      "endLine": 14466,
+      "parts": [
+        "app-part-065.txt",
+        "app-part-066.txt",
+        "app-part-067.txt"
+      ]
+    },
+    {
+      "name": "issue63-section-icons.js",
+      "startLine": 14467,
+      "endLine": 14489,
+      "parts": [
+        "app-part-067.txt"
+      ]
+    },
+    {
+      "name": "issue67-fixes.js",
+      "startLine": 14490,
+      "endLine": 14586,
+      "parts": [
+        "app-part-067.txt"
+      ]
+    },
+    {
+      "name": "home-draft-compact.js",
+      "startLine": 14587,
+      "endLine": 14629,
+      "parts": [
+        "app-part-067.txt"
+      ]
+    },
+    {
+      "name": "issue79-health-active-intervals.js",
+      "startLine": 14630,
+      "endLine": 14729,
+      "parts": [
+        "app-part-067.txt"
+      ]
+    },
+    {
+      "name": "issue80-video-source-safety.js",
+      "startLine": 14730,
+      "endLine": 14850,
+      "parts": [
+        "app-part-067.txt",
+        "app-part-068.txt"
+      ]
+    },
+    {
+      "name": "publication-105.js",
+      "startLine": 14851,
+      "endLine": 15037,
+      "parts": [
+        "app-part-068.txt",
+        "app-part-069.txt"
+      ]
+    },
+    {
+      "name": "custom-exercise-distance-106.js",
+      "startLine": 15038,
+      "endLine": 15350,
+      "parts": [
+        "app-part-069.txt",
+        "app-part-070.txt"
+      ]
+    },
+    {
+      "name": "training-107.js",
+      "startLine": 15351,
+      "endLine": 15576,
+      "parts": [
+        "app-part-070.txt",
+        "app-part-071.txt",
+        "app-part-072.txt"
+      ]
+    },
+    {
+      "name": "features-110.js",
+      "startLine": 15577,
+      "endLine": 15873,
+      "parts": [
+        "app-part-072.txt",
+        "app-part-073.txt",
+        "app-part-074.txt"
+      ]
+    },
+    {
+      "name": "ble-discovery-111.js",
+      "startLine": 15874,
+      "endLine": 16035,
+      "parts": [
+        "app-part-074.txt",
+        "app-part-075.txt"
+      ]
+    },
+    {
+      "name": "health-journal-120.js",
+      "startLine": 16036,
+      "endLine": 16146,
+      "parts": [
+        "app-part-075.txt",
+        "app-part-076.txt",
+        "app-part-077.txt"
+      ]
+    },
+    {
+      "name": "samsung-health-provider.js",
+      "startLine": 16147,
+      "endLine": 16274,
+      "parts": [
+        "app-part-077.txt"
+      ]
+    },
+    {
+      "name": "health-details.js",
+      "startLine": 16275,
+      "endLine": 16371,
+      "parts": [
+        "app-part-077.txt",
+        "app-part-078.txt"
+      ]
+    },
+    {
+      "name": "cardio-daily.js",
+      "startLine": 16372,
+      "endLine": 16471,
+      "parts": [
+        "app-part-078.txt"
+      ]
+    },
+    {
+      "name": "profile-training-128.js",
+      "startLine": 16472,
+      "endLine": 16980,
+      "parts": [
+        "app-part-078.txt",
+        "app-part-079.txt",
+        "app-part-080.txt"
+      ]
+    },
+    {
+      "name": "navigation-motion-137.js",
+      "startLine": 16981,
+      "endLine": 17112,
+      "parts": [
+        "app-part-080.txt",
+        "app-part-081.txt"
+      ]
+    },
+    {
+      "name": "automatic-time-162.js",
+      "startLine": 17113,
+      "endLine": 17168,
+      "parts": [
+        "app-part-081.txt"
+      ]
+    },
+    {
+      "name": "phone-execution-162.js",
+      "startLine": 17169,
+      "endLine": 17462,
+      "parts": [
+        "app-part-081.txt",
+        "app-part-082.txt"
+      ]
+    },
+    {
+      "name": "workout-undo-188.js",
+      "startLine": 17463,
+      "endLine": 17502,
+      "parts": [
+        "app-part-082.txt"
+      ]
+    },
+    {
+      "name": "wear-sync.js",
+      "startLine": 17503,
+      "endLine": 18378,
+      "parts": [
+        "app-part-082.txt",
+        "app-part-083.txt",
+        "app-part-084.txt"
+      ]
+    },
+    {
+      "name": "history-duplicate-repair.js",
+      "startLine": 18379,
+      "endLine": 18439,
+      "parts": [
+        "app-part-084.txt"
+      ]
+    },
+    {
+      "name": "wear-health-details-129.js",
+      "startLine": 18440,
+      "endLine": 18450,
+      "parts": [
+        "app-part-084.txt"
+      ]
+    },
+    {
+      "name": "wear-journal-sources-160.js",
+      "startLine": 18451,
+      "endLine": 18576,
+      "parts": [
+        "app-part-084.txt",
+        "app-part-085.txt"
+      ]
+    },
+    {
+      "name": "wear-measurement-165.js",
+      "startLine": 18577,
+      "endLine": 18626,
+      "parts": [
+        "app-part-085.txt"
+      ]
+    },
+    {
+      "name": "intervals-162.js",
+      "startLine": 18627,
+      "endLine": 18767,
+      "parts": [
+        "app-part-085.txt",
+        "app-part-086.txt"
+      ]
+    },
+    {
+      "name": "automatic-workout-162.js",
+      "startLine": 18768,
+      "endLine": 18929,
+      "parts": [
+        "app-part-086.txt",
+        "app-part-087.txt"
+      ]
+    },
+    {
+      "name": "wear-automatic-162.js",
+      "startLine": 18930,
+      "endLine": 19041,
+      "parts": [
+        "app-part-087.txt"
+      ]
+    },
+    {
+      "name": "workout-pause-201.js",
+      "startLine": 19042,
+      "endLine": 19112,
+      "parts": [
+        "app-part-087.txt",
+        "app-part-088.txt"
+      ]
+    },
+    {
+      "name": "workout-ownership-193.js",
+      "startLine": 19113,
+      "endLine": 19327,
+      "parts": [
+        "app-part-088.txt"
+      ]
+    },
+    {
+      "name": "workout-ownership-ui-193.js",
+      "startLine": 19328,
+      "endLine": 19438,
+      "parts": [
+        "app-part-088.txt",
+        "app-part-089.txt"
+      ]
+    },
+    {
+      "name": "phone-recording-162.js",
+      "startLine": 19439,
+      "endLine": 19471,
+      "parts": [
+        "app-part-089.txt"
+      ]
+    },
+    {
+      "name": "phone-undo-188.js",
+      "startLine": 19472,
+      "endLine": 19528,
+      "parts": [
+        "app-part-089.txt"
+      ]
+    },
+    {
+      "name": "wear-gps-route-193.js",
+      "startLine": 19529,
+      "endLine": 19606,
+      "parts": [
+        "app-part-089.txt"
+      ]
+    },
+    {
+      "name": "distance-activity-flow-220.js",
+      "startLine": 19607,
+      "endLine": 19697,
+      "parts": [
+        "app-part-089.txt",
+        "app-part-090.txt"
+      ]
+    },
+    {
+      "name": "training-modes-197.js",
+      "startLine": 19698,
+      "endLine": 19735,
+      "parts": [
+        "app-part-090.txt"
+      ]
+    },
+    {
+      "name": "progression-modes-197.js",
+      "startLine": 19736,
+      "endLine": 19833,
+      "parts": [
+        "app-part-090.txt"
+      ]
+    },
+    {
+      "name": "training-modes-ui-197.js",
+      "startLine": 19834,
+      "endLine": 19983,
+      "parts": [
+        "app-part-090.txt",
+        "app-part-091.txt"
+      ]
+    },
+    {
+      "name": "training-mode-confirm-197.js",
+      "startLine": 19984,
+      "endLine": 20097,
+      "parts": [
+        "app-part-091.txt"
+      ]
+    },
+    {
+      "name": "training-coach-197.js",
+      "startLine": 20098,
+      "endLine": 20207,
+      "parts": [
+        "app-part-091.txt",
+        "app-part-092.txt"
+      ]
+    },
+    {
+      "name": "training-actual-rir-197.js",
+      "startLine": 20208,
+      "endLine": 20305,
+      "parts": [
+        "app-part-092.txt"
+      ]
+    },
+    {
+      "name": "samsung-energy-access-184.js",
+      "startLine": 20306,
+      "endLine": 20398,
+      "parts": [
+        "app-part-092.txt",
+        "app-part-093.txt"
+      ]
+    },
+    {
+      "name": "workout-records-226.js",
+      "startLine": 20399,
+      "endLine": 20531,
+      "parts": [
+        "app-part-093.txt"
+      ]
+    },
+    {
+      "name": "set-haptic-227.js",
+      "startLine": 20532,
+      "endLine": 20587,
+      "parts": [
+        "app-part-093.txt"
+      ]
+    },
+    {
+      "name": "ready.js",
+      "startLine": 20588,
+      "endLine": 20599,
+      "parts": [
+        "app-part-093.txt"
+      ]
+    }
+  ]
+}

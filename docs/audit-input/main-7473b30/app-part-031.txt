@@ -1,0 +1,166 @@
+{id:'band-triceps-pushdown',hu:'Gumiszalagos tricepsz lenyomás',en:'Resistance Band Triceps Pushdown',equipment:'gumiszalag + magas rögzítés',loadType:'bodyweight',target:'Tricepsz',notes:'A könyök maradjon a törzs mellett, csak az alkart nyújtsd lefelé.',sets:3,reps:'10–20',weight:0,repUnit:'ism.',movementPattern:'elbow-extension',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:false,goalTags:['fitness','muscle'],style:'bodybuilding'},
+{id:'band-pallof-press',hu:'Gumiszalagos Pallof-nyomás',en:'Resistance Band Pallof Press',equipment:'gumiszalag + oldalsó rögzítés',loadType:'bodyweight',target:'Törzs',notes:'Oldalról húzó szalaggal nyomd ki a kezeket a mellkas elől úgy, hogy a törzs ne forduljon el.',sets:3,reps:'8–15 / oldal',weight:0,repUnit:'/oldal',movementPattern:'core-stability',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:false,goalTags:['fitness','strength'],style:'strength'},
+
+{id:'kb-goblet-squat',hu:'Kettlebell goblet guggolás',en:'Kettlebell Goblet Squat',equipment:'kettlebell',loadType:'single_dumbbell',target:'Láb / far / törzs',notes:'A kettlebellt a mellkas előtt tartsd. Guggolj kontrolláltan, a térd kövesse a lábfejet.',sets:3,reps:'8–15',weight:0,repUnit:'ism.',movementPattern:'squat',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:true,goalTags:['fitness','muscle','strength'],style:'strength'},
+{id:'kb-deadlift',hu:'Kettlebell felhúzás',en:'Kettlebell Deadlift',equipment:'kettlebell',loadType:'single_dumbbell',target:'Far / combhajlító / hát',notes:'A csípőt told hátra, a hát maradjon semleges, majd csípőnyújtással állj fel.',sets:3,reps:'8–15',weight:0,repUnit:'ism.',movementPattern:'hinge',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:true,goalTags:['fitness','muscle','strength'],style:'strength'},
+{id:'kb-swing',hu:'Kettlebell swing',en:'Kettlebell Swing',equipment:'kettlebell',loadType:'single_dumbbell',target:'Far / combhajlító / törzs',notes:'Csípőből robbanékonyan nyújts, ne karból emeld a súlyt. Csak stabil csípőhajlítási technika után.',sets:3,reps:'10–20',weight:0,repUnit:'ism.',movementPattern:'hinge',difficulty:'intermediate',complexity:'high',beginnerSafe:false,compound:true,goalTags:['fitness','strength','fatloss'],style:'strength'},
+{id:'kb-clean',hu:'Kettlebell clean',en:'Kettlebell Clean',equipment:'kettlebell',loadType:'single_dumbbell',target:'Teljes test',notes:'A kettlebell közel haladjon a testhez és puhán érkezzen rack helyzetbe. Technikás gyakorlat, könnyű súllyal kezdd.',sets:3,reps:'5–10 / oldal',weight:0,repUnit:'/oldal',movementPattern:'hinge',difficulty:'advanced',complexity:'high',beginnerSafe:false,compound:true,goalTags:['fitness','strength'],style:'strength'},
+{id:'kb-press',hu:'Egykezes kettlebell vállnyomás',en:'Single-Arm Kettlebell Press',equipment:'kettlebell',loadType:'single_dumbbell',target:'Váll / tricepsz / törzs',notes:'Rack helyzetből, feszes törzzsel nyomd a kettlebellt fej fölé. Ne homoríts túl.',sets:3,reps:'6–12 / oldal',weight:0,repUnit:'/oldal',movementPattern:'vertical-push',difficulty:'intermediate',complexity:'medium',beginnerSafe:false,compound:true,goalTags:['fitness','muscle','strength'],style:'strength'},
+{id:'kb-row',hu:'Egykezes kettlebell evezés',en:'Single-Arm Kettlebell Row',equipment:'kettlebell',loadType:'single_dumbbell',target:'Hát / bicepsz',notes:'Stabil csípőhajlításban húzd a könyököt a csípő felé. A törzs ne forduljon el.',sets:3,reps:'8–15 / oldal',weight:0,repUnit:'/oldal',movementPattern:'horizontal-pull',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:true,goalTags:['fitness','muscle','strength'],style:'strength'},
+{id:'kb-reverse-lunge',hu:'Kettlebelles hátralépős kitörés',en:'Kettlebell Reverse Lunge',equipment:'kettlebell',loadType:'single_dumbbell',target:'Láb / far / törzs',notes:'A kettlebellt goblet vagy rack helyzetben tartva lépj hátra, majd az elöl lévő lábbal állj fel.',sets:3,reps:'6–12 / láb',weight:0,repUnit:'/láb',movementPattern:'lunge',difficulty:'beginner',complexity:'medium',beginnerSafe:true,compound:true,goalTags:['fitness','muscle','strength'],style:'strength'},
+{id:'kb-halo',hu:'Kettlebell halo',en:'Kettlebell Halo',equipment:'kettlebell',loadType:'single_dumbbell',target:'Váll / törzs',notes:'Könnyű súllyal vezesd a kettlebellt kontrolláltan a fej körül. A bordakosár és medence maradjon stabil.',sets:2,reps:'6–10 / irány',weight:0,repUnit:'/oldal',movementPattern:'shoulder-isolation',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:false,goalTags:['fitness'],style:'mobility'},
+
+{id:'barbell-back-squat',hu:'Guggolás rúddal',en:'Barbell Back Squat',equipment:'kétkezes rúd + biztonságos állvány',loadType:'total',target:'Láb / far / törzs',notes:'Biztonságos állványból indulj. A törzs maradjon feszes, a térd kövesse a lábfejet. Biztosítókar ajánlott.',sets:3,reps:'5–10',weight:0,repUnit:'ism.',movementPattern:'squat',difficulty:'intermediate',complexity:'high',beginnerSafe:false,compound:true,goalTags:['muscle','strength'],style:'strength'},
+{id:'conventional-deadlift',hu:'Hagyományos felhúzás',en:'Conventional Deadlift',equipment:'kétkezes rúd',loadType:'total',target:'Far / combhajlító / hát',notes:'A rúd maradjon közel a lábhoz, a gerinc semleges. Feszíts rá a rúdra az elemelés előtt.',sets:3,reps:'4–8',weight:0,repUnit:'ism.',movementPattern:'hinge',difficulty:'intermediate',complexity:'high',beginnerSafe:false,compound:true,goalTags:['muscle','strength'],style:'strength'},
+{id:'bench-press',hu:'Fekvenyomás rúddal',en:'Barbell Bench Press',equipment:'kétkezes rúd + pad',loadType:'total',target:'Mell / tricepsz / váll',notes:'A lapocka legyen stabil, a láb a talajon. Biztonsági bak vagy segítő ajánlott.',sets:3,reps:'5–10',weight:0,repUnit:'ism.',movementPattern:'horizontal-push',difficulty:'intermediate',complexity:'medium',beginnerSafe:false,compound:true,goalTags:['muscle','strength'],style:'strength'},
+{id:'incline-bench-press',hu:'Ferdepados fekvenyomás rúddal',en:'Incline Barbell Bench Press',equipment:'kétkezes rúd + ferde pad',loadType:'total',target:'Mell / váll / tricepsz',notes:'Mérsékelt pad-dőlésszöget használj, a lapocka maradjon stabil. Biztonsági bak vagy segítő ajánlott.',sets:3,reps:'6–12',weight:0,repUnit:'ism.',movementPattern:'horizontal-push',difficulty:'intermediate',complexity:'medium',beginnerSafe:false,compound:true,goalTags:['muscle','strength'],style:'bodybuilding'},
+{id:'barbell-overhead-press',hu:'Álló vállból nyomás rúddal',en:'Barbell Overhead Press',equipment:'kétkezes rúd',loadType:'total',target:'Váll / tricepsz / törzs',notes:'Feszes far- és hasizmokkal nyomd a rudat fej fölé. Ne kompenzálj túlzott homorítással.',sets:3,reps:'5–10',weight:0,repUnit:'ism.',movementPattern:'vertical-push',difficulty:'intermediate',complexity:'medium',beginnerSafe:false,compound:true,goalTags:['muscle','strength'],style:'strength'},
+{id:'assisted-pullup-machine',hu:'Rásegítéses húzódzkodás gépen',en:'Assisted Pull-Up Machine',equipment:'rásegítéses húzódzkodó gép',loadType:'total',target:'Hát / bicepsz',notes:'Állíts megfelelő rásegítést, húzd a mellkast felfelé és kontrolláltan engedd vissza.',sets:3,reps:'6–12',weight:0,repUnit:'ism.',movementPattern:'vertical-pull',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:true,goalTags:['fitness','muscle','strength'],style:'strength'},
+{id:'pec-deck',hu:'Tárogatás pec-deck gépen',en:'Pec Deck Fly',equipment:'pec-deck gép',loadType:'total',target:'Mell',notes:'A váll maradjon lent és hátul. Zárd a karokat kontrolláltan, ne rántsd össze a súlyt.',sets:3,reps:'10–15',weight:0,repUnit:'ism.',movementPattern:'chest-isolation',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:false,goalTags:['fitness','muscle'],style:'bodybuilding'},
+{id:'cable-lateral-raise',hu:'Csigás oldalemelés',en:'Cable Lateral Raise',equipment:'alsó csiga',loadType:'total',target:'Váll',notes:'Könnyű terheléssel emeld oldalra a kart vállmagasság közeléig. Ne lendíts.',sets:3,reps:'10–20',weight:0,repUnit:'ism.',movementPattern:'shoulder-isolation',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:false,goalTags:['fitness','muscle'],style:'bodybuilding'},
+{id:'hack-squat',hu:'Hack guggolás gépen',en:'Hack Squat Machine',equipment:'hack guggoló gép',loadType:'total',target:'Láb / far',notes:'A hát és medence maradjon a támlán. Engedd a térdet kontrolláltan, majd nyomd vissza a platformot.',sets:3,reps:'8–15',weight:0,repUnit:'ism.',movementPattern:'squat',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:true,goalTags:['fitness','muscle','strength'],style:'bodybuilding'},
+{id:'standing-calf-raise',hu:'Álló vádliemelés gépen',en:'Standing Calf Raise Machine',equipment:'álló vádligép',loadType:'total',target:'Vádli',notes:'A bokát teljes, fájdalommentes mozgástartományban mozgasd. Felül röviden feszíts rá.',sets:3,reps:'10–20',weight:0,repUnit:'ism.',movementPattern:'calf',difficulty:'beginner',complexity:'low',beginnerSafe:true,compound:false,goalTags:['fitness','muscle'],style:'bodybuilding'}
+];
+const RF148_NEW_IDS=new Set(RF148_NEW_EXERCISES.map(function(e){return e.id;}));
+const RF148_MUSCLES={
+ pullup:['back','biceps'],chinup:['back','biceps'],'negative-pullup':['back','biceps'],'scapular-pullup':['back'],'inverted-row':['back','biceps'],dip:['chest','triceps'], 'bench-dip':['triceps','chest'],'diamond-pushup':['triceps','chest'],'pseudo-planche-pushup':['chest','shoulders','triceps'],'hanging-knee-raise':['core'],'hanging-leg-raise':['core'],'hollow-hold':['core'],'superman-hold':['back','core'],'mountain-climber':['core','legs'],
+ 'band-row':['back','biceps'],'band-lat-pulldown':['back','biceps'],'band-chest-press':['chest','triceps'],'band-overhead-press':['shoulders','triceps'],'band-face-pull':['shoulders','back'],'band-biceps-curl':['biceps'],'band-triceps-pushdown':['triceps'],'band-pallof-press':['core'],
+ 'kb-goblet-squat':['legs','core'],'kb-deadlift':['legs','back'],'kb-swing':['legs','core'],'kb-clean':['legs','shoulders','core'],'kb-press':['shoulders','triceps','core'],'kb-row':['back','biceps'],'kb-reverse-lunge':['legs','core'],'kb-halo':['shoulders','core'],
+ 'barbell-back-squat':['legs','core'],'conventional-deadlift':['legs','back'],'bench-press':['chest','triceps','shoulders'],'incline-bench-press':['chest','shoulders','triceps'],'barbell-overhead-press':['shoulders','triceps'],'assisted-pullup-machine':['back','biceps'],'pec-deck':['chest'],'cable-lateral-raise':['shoulders'],'hack-squat':['legs'],'standing-calf-raise':['legs']
+};
+Object.assign(GEAR132,{bands:'Gumiszalag / erősítőszalag',pullupbar:'Húzódzkodórúd',dipbars:'Tolódzkodó korlát',kettlebell:'Kettlebell'});
+const RF148_NEEDS={
+ pullup:['pullupbar'],chinup:['pullupbar'],'negative-pullup':['pullupbar'],'scapular-pullup':['pullupbar'],'inverted-row':['pullupbar'],dip:['dipbars'],'bench-dip':['bench'],'diamond-pushup':[],'pseudo-planche-pushup':[],'hanging-knee-raise':['pullupbar'],'hanging-leg-raise':['pullupbar'],'hollow-hold':[],'superman-hold':[],'mountain-climber':[],
+ 'band-row':['bands'],'band-lat-pulldown':['bands'],'band-chest-press':['bands'],'band-overhead-press':['bands'],'band-face-pull':['bands'],'band-biceps-curl':['bands'],'band-triceps-pushdown':['bands'],'band-pallof-press':['bands'],
+ 'kb-goblet-squat':['kettlebell'],'kb-deadlift':['kettlebell'],'kb-swing':['kettlebell'],'kb-clean':['kettlebell'],'kb-press':['kettlebell'],'kb-row':['kettlebell'],'kb-reverse-lunge':['kettlebell'],'kb-halo':['kettlebell'],
+ 'barbell-back-squat':['barbell'],'conventional-deadlift':['barbell'],'bench-press':['barbell','bench'],'incline-bench-press':['barbell','bench'],'barbell-overhead-press':['barbell'],'assisted-pullup-machine':['machines'],'pec-deck':['machines'],'cable-lateral-raise':['machines'],'hack-squat':['machines'],'standing-calf-raise':['machines']
+};
+for(const e of RF148_NEW_EXERCISES){
+ if(!EXTRA_EXERCISES.some(function(x){return x.id===e.id;}))EXTRA_EXERCISES.push(Object.assign({},e));
+ MUSCLE_MAP[e.id]=RF148_MUSCLES[e.id]||[];
+ NEEDS132[e.id]=RF148_NEEDS[e.id]||[];
+ if(typeof RF14_PATTERNS!=='undefined')RF14_PATTERNS[e.id]=e.movementPattern;
+ if(typeof RF14_COMPOUND!=='undefined'&&e.compound)RF14_COMPOUND.add(e.id);
+ if(typeof RF14_ADVANCED!=='undefined'&&!e.beginnerSafe)RF14_ADVANCED.add(e.id);
+ if(typeof RF14_BEGINNER_FAVOR!=='undefined'&&e.beginnerSafe)RF14_BEGINNER_FAVOR.add(e.id);
+}
+
+var rf148PatternLabel=function rf148PatternLabel(pattern){return RF148_PATTERN_LABELS[pattern]||pattern||RF148_PATTERN_LABELS.other;};
+var rf148StyleLabel=function rf148StyleLabel(e){return RF148_STYLE_LABELS[e&&e.style]||RF148_STYLE_LABELS.strength;};
+var rf148CustomMuscle=function rf148CustomMuscle(e){
+ if(e&&Object.hasOwn(MUSCLES,e.muscleGroup))return e.muscleGroup;
+ const p=e&&e.movementPattern;
+ if(['squat','hinge','lunge','knee-extension','knee-flexion','calf'].includes(p))return 'legs';
+ if(['horizontal-push','chest-isolation'].includes(p))return 'chest';
+ if(['horizontal-pull','vertical-pull'].includes(p))return 'back';
+ if(['vertical-push','shoulder-isolation','rear-delt'].includes(p))return 'shoulders';
+ if(p==='elbow-flexion')return 'biceps';
+ if(p==='elbow-extension')return 'triceps';
+ if(['core-bracing','core-flexion','core-stability','conditioning'].includes(p))return 'core';
+ return 'core';
+};
+const rf148MuscleGroupsBase=muscleGroups;
+muscleGroups=function(id){
+ const e=exercises().find(function(x){return x.id===id;});
+ if(e&&e.custom)return [rf148CustomMuscle(e)];
+ return rf148MuscleGroupsBase(id);
+};
+const rf148AvailableBase=available132;
+available132=function(id,p){
+ const e=exercises().find(function(x){return x.id===id;});
+ if(e&&e.custom){
+  if(e.measurementType==='distance')return false;
+  if((p&&p.excluded||[]).includes(id))return false;
+  const needs=Array.isArray(e.gearNeeds)?e.gearNeeds:[];
+  const gear=profileGear132(p||{gear:[]});
+  return needs.every(function(k){return gear.includes(k)||(k==='dumbbell'&&gear.includes('dumbbells'));});
+ }
+ return rf148AvailableBase(id,p);
+};
+
+gearForm132=function(p){
+ const selected=profileGear132(p);
+ const rows=Object.entries(GEAR132).map(function(kv){return '<label class="exclude-row"><input name="pfGear" type="checkbox" value="'+esc(kv[0])+'" '+(selected.includes(kv[0])?'checked':'')+'>'+esc(kv[1])+'</label>';}).join('');
+ return '<div class="setting"><h2>Mivel edzenél?</h2><p>A saját testsúlyos gyakorlatok mindig használhatók. Jelöld az összes valóban elérhető eszközt.</p><div class="muscle-chips"><button type="button" class="btn secondary" onclick="gearPreset132(\'bodyweight\')">Csak saját testsúly</button><button type="button" class="btn secondary" onclick="gearPreset132(\'dumbbells\')">Kézisúlyzó</button><button type="button" class="btn secondary" onclick="gearPreset132(\'calisthenics\')">Calisthenics</button><button type="button" class="btn secondary" onclick="gearPreset132(\'mixed\')">Minden eszköz</button></div>'+rows+'<p class="small muted">Gumiszalag, húzódzkodórúd, tolódzkodó és kettlebell is használható a személyes tervezőben.</p></div>';
+};
+gearPreset132=function(preset){
+ const chosen=preset==='bodyweight'?[]:preset==='dumbbells'?['dumbbells','support']:preset==='calisthenics'?['pullupbar','dipbars']:Object.keys(GEAR132);
+ document.querySelectorAll('input[name=pfGear]').forEach(function(x){x.checked=chosen.includes(x.value);});
+};
+
+profileScreen=function(){
+ state.tab='profile';state.healthView=false;
+ if(typeof rf245CoachVisible!=='undefined')rf245CoachVisible=false;
+ const old=state.profilePreview||trainingProfile()||{};
+ const p=Object.assign({age:'',height:'',weight:'',goal:'fitness',experience:'beginner',activity:'mixed',minutes:45,location:'home',gear:[],cadence:'alternate',split:'auto',excluded:[],focus:'balanced',avoidAreas:[]},old);
+ const mins={};for(let m=20;m<=120;m+=5)mins[String(m)]=m+' perc';
+ const avoid=Object.entries(RF148_AREA_LABELS).map(function(kv){return '<label class="exclude-row"><input type="checkbox" name="pfAvoidArea" value="'+esc(kv[0])+'" '+((p.avoidAreas||[]).includes(kv[0])?'checked':'')+'>'+esc(kv[1])+'</label>';}).join('');
+ const html='<main><button class="btn secondary" onclick="go(\'home\')">← Vissza</button><div class="hero"><h1>Segíts elkezdeni</h1><p>A terv a te célodból, tapasztalatodból, eszközeidből és preferenciáidból épül fel. Először átnézheted, csak utána aktiválod.</p></div><div class="setting profile-grid">'+
+ '<label>Életkor<input id="pfAge" class="field" type="number" min="18" max="100" value="'+esc(p.age)+'"></label>'+
+ '<label>Magasság (cm)<input id="pfHeight" class="field" type="number" min="100" max="250" value="'+esc(p.height)+'"></label>'+
+ '<label>Testsúly (kg)<input id="pfWeight" class="field" type="number" step="0.1" min="30" max="350" value="'+esc(p.weight)+'"></label>'+
+ profileSelect('pfGoal','Cél',{fitness:'Általános fittség',muscle:'Izomépítés',strength:'Erősödés',fatloss:'Fogyás támogatása'},p.goal)+
+ profileSelect('pfExperience','Tapasztalat',{beginner:'Most kezdem / újrakezdem',intermediate:'Rendszeresen edzek'},p.experience)+
+ profileSelect('pfActivity','Munka és napi aktivitás',{sedentary:'Többnyire ülök',mixed:'Vegyes / sok séta',physical:'Fizikai munka'},p.activity)+
+ gearForm132(p)+
+ profileSelect('pfMinutes','Idő egy edzésre',mins,String(p.minutes))+
+ profileSelect('pfCadence','Beosztás',{alternate:'Minden második nap',weekly:'Fix heti napok',custom:'Naptárban kijelölöm'},p.cadence)+
+ profileSelect('pfSplit','Edzésfelosztás',{auto:'Válasszon az app',full:'Teljes test A/B',upperlower:'Felsőtest / alsótest',ppl:'Toló / húzó / láb'},p.split)+
+ profileSelect('pfFocus','Fókusz',RF148_FOCUS_LABELS,p.focus||'balanced')+
+ '<details class="rf148-profile-accordion"><summary>Kerülendő területek</summary><div class="rf148-profile-accordion-body"><p class="small muted">Ezeket a területeket a generátor nem próbálja kötelezően visszatenni más felosztás miatt.</p>'+avoid+'</div></details>'+
+ '<details class="rf148-profile-accordion"><summary>Egyedi gyakorlatkizárás</summary><div class="rf148-profile-accordion-body"><p class="small muted">Finomhangolásként egyenként is kizárhatsz gyakorlatokat.</p>'+exercises().map(function(e){return '<label class="exclude-row"><input type="checkbox" name="pfExclude" value="'+esc(e.id)+'" '+((p.excluded||[]).includes(e.id)?'checked':'')+'>'+esc(e.hu)+'</label>';}).join('')+'</div></details>'+
+ '<p class="small muted">A profil a telefonon tárolódik. A személyes generátor nem egy másik felhasználó A/B programjából indul.</p><button class="btn block" onclick="previewProfile()">Személyes terv összeállítása</button></div></main>';
+ render(shell(html));
+ window.scrollTo?.(0,0);if(typeof rf260ScrollState==='function')rf260ScrollState();
+};
+
+
+const RF148_EXTRA_PROGRAMS=[
+ {id:'home-upper-ab',name:'Otthoni felsőtest A/B',location:'Otthon',level:'Kezdő / középhaladó',builtin:true,category:'Felsőtest',days:[
+  {id:'A',name:'Mell / hát / váll',exercises:['db-floor-press','one-arm-row','db-ohp','db-curl','oh-triceps','plank']},
+  {id:'B',name:'Hát / mell / kar',exercises:['pushup','db-pullover','lateral-raise','hammer-curl','close-pushup','dead-bug']}
+ ]},
+ {id:'home-quick-30',name:'Otthoni gyors 30 perc',location:'Otthon',level:'Kezdő',builtin:true,category:'Rövid edzés',days:[
+  {id:'A',name:'Gyors A',exercises:['goblet-squat','db-floor-press','one-arm-row','plank']},
+  {id:'B',name:'Gyors B',exercises:['db-rdl','db-ohp','pushup','dead-bug']}
+ ]},
+ {id:'calisthenics-ab',name:'Calisthenics A/B',location:'Saját testsúly + rúd',level:'Középhaladó',builtin:true,category:'Calisthenics',days:[
+  {id:'A',name:'Toló / húzó',exercises:['pullup','dip','diamond-pushup','inverted-row','hanging-knee-raise','hollow-hold']},
+  {id:'B',name:'Technika / törzs',exercises:['chinup','pike-pushup','negative-pullup','pushup','hanging-leg-raise','superman-hold']}
+ ]},
+ {id:'bands-ab',name:'Gumiszalagos A/B',location:'Gumiszalag',level:'Kezdő',builtin:true,category:'Gumiszalag',days:[
+  {id:'A',name:'Felsőtest A',exercises:['band-chest-press','band-row','band-overhead-press','band-biceps-curl','band-triceps-pushdown','band-pallof-press']},
+  {id:'B',name:'Felsőtest B',exercises:['band-lat-pulldown','band-chest-press','band-face-pull','band-row','band-biceps-curl','band-pallof-press']}
+ ]},
+ {id:'kettlebell-ab',name:'Kettlebell Full Body A/B',location:'Kettlebell',level:'Kezdő / középhaladó',builtin:true,category:'Kettlebell',days:[
+  {id:'A',name:'Full Body A',exercises:['kb-goblet-squat','kb-row','kb-press','kb-deadlift','kb-halo','hollow-hold']},
+  {id:'B',name:'Full Body B',exercises:['kb-reverse-lunge','kb-row','kb-swing','kb-press','kb-halo','dead-bug']}
+ ]},
+ {id:'gym-upper-lower',name:'Konditermi felső / alsó',location:'Edzőterem',level:'Középhaladó',builtin:true,category:'Felső / alsó',days:[
+  {id:'A',name:'Felsőtest A',exercises:['bench-press','lat-pulldown','machine-shoulder-press','seated-cable-row','cable-curl','cable-triceps']},
+  {id:'B',name:'Alsótest A',exercises:['barbell-back-squat','leg-curl','leg-press','standing-calf-raise','plank']},
+  {id:'C',name:'Felsőtest B',exercises:['incline-bench-press','assisted-pullup-machine','cable-lateral-raise','seated-cable-row','hammer-curl','cable-triceps']},
+  {id:'D',name:'Alsótest B',exercises:['conventional-deadlift','hack-squat','leg-curl','standing-calf-raise','dead-bug']}
+ ]},
+ {id:'gym-ppl',name:'Konditermi Push / Pull / Legs',location:'Edzőterem',level:'Középhaladó',builtin:true,category:'PPL',days:[
+  {id:'A',name:'Push',exercises:['bench-press','incline-bench-press','barbell-overhead-press','pec-deck','cable-lateral-raise','cable-triceps']},
+  {id:'B',name:'Pull',exercises:['lat-pulldown','seated-cable-row','assisted-pullup-machine','barbell-row','cable-curl','band-face-pull']},
+  {id:'C',name:'Legs',exercises:['barbell-back-squat','leg-press','leg-curl','hack-squat','standing-calf-raise','plank']}
+ ]},
+ {id:'gym-strength-abc',name:'Konditermi erő A/B/C',location:'Edzőterem',level:'Középhaladó',builtin:true,category:'Erő',days:[
+  {id:'A',name:'Guggolás / nyomás',exercises:['barbell-back-squat','bench-press','barbell-row','plank']},
+  {id:'B',name:'Felhúzás / váll',exercises:['conventional-deadlift','barbell-overhead-press','lat-pulldown','dead-bug']},
+  {id:'C',name:'Vegyes',exercises:['leg-press','incline-bench-press','seated-cable-row','machine-shoulder-press','cable-curl','cable-triceps']}
+ ]}
+];
+const rf148ProgramsBase=programs;
+programs=function(){
+ const saved=rf148ProgramsBase();
+ const existing=new Set(saved.map(function(p){return p.id;}));
+ return saved.concat(RF148_EXTRA_PROGRAMS.filter(function(p){return !existing.has(p.id);}).map(function(p){return JSON.parse(JSON.stringify(p));}));
+};
+
+var rf148BackupValidationIds=null;
+validateProfile=function(p){
+ if(!p||!Number.isInteger(p.age)||p.age<18||p.age>100||!Number.isFinite(p.height)||p.height<100||p.height>250||!Number.isFinite(p.weight)||p.weight<30||p.weight>350)throw Error('Adj meg érvényes felnőtt életkort, magasságot és testsúlyt.');
+ const out=Object.assign({},p,{location:p.location||'home',gear:Array.isArray(p.gear)?p.gear:profileGear132(p),excluded:Array.isArray(p.excluded)?p.excluded:[],focus:p.focus||'balanced',avoidAreas:Array.isArray(p.avoidAreas)?p.avoidAreas:[]});

@@ -1,0 +1,218 @@
+ return '<div class="card" id="rf220CoachCard"><div class="rf221-coach-head"><strong>'+esc(tp149T('coach.title'))+'</strong><span class="badge">'+esc(score)+'</span></div><div class="small muted rf221-coach-line">'+esc(decision)+'</div><div class="grid2 rf221-coach-actions"><button class="btn secondary" onclick="rf233CoachScreen()">'+esc(tp149T('home.coachDetails'))+'</button><button class="btn secondary" onclick="tp2627OpenStats()">'+esc(tp149T('home.stats'))+'</button></div></div>';
+};
+
+const tp149HomeBase=home;
+const tp149BindCoachBase=tp120BindCoach;
+const tp149CompactHomeBase=tp120CompactHome;
+const tp149TodayCardBase=tp120TodayCard;
+const tp149RepairHomeCoachBase=rf251RepairHomeCoach;
+
+home=function(){
+ if(rf212Lang()==='hu')return tp149HomeBase.apply(this,arguments);
+ const h=history(),w=weights(),draft=db.get('draft',null),p=activeProgram(),np=nextPlanned(),next=nextWorkout(),latestW=w.length?Number(w[0].kg):null;
+ const pName=p?tp149ProgramMeta(p,'name'):tp149T('program.noActive'),nextDay=np?programDay(programById(np.programId),np.dayId):p?programDay(p,next):null,nextProgram=np?programById(np.programId):p;
+ const nextText=np?tp149T('home.next',{day:nextProgram&&nextDay?tp149ProgramDayName(nextProgram,nextDay):String(np.dayId||''),date:tp149FormatDateTime(np.start,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}):tp149T('home.nextCycle',{day:nextProgram&&nextDay?tp149ProgramDayName(nextProgram,nextDay):String(next||'')});
+ const nextBlock=nextProgram&&nextDay?'<div class="tp146-next"><span class="small muted">'+esc(tp149T('home.nextLabel'))+'</span><strong class="tp146-next-title">'+esc(tp146ProgramDayTitle(nextProgram,nextDay))+'</strong><span class="small muted tp146-next-time">'+esc(np?tp149FormatDateTime(np.start):tp149Plural('exercise.count',nextDay.exercises?.length||0))+'</span></div>':'<div class="muted">'+esc(nextText)+'</div>';
+ const hasProfile=!!trainingProfile();
+ const onboarding='<div class="card onboarding"><h2>'+esc(tp149T(hasProfile?'home.personalPlanner':'planner.help.title'))+'</h2><p>'+esc(tp149T('home.plannerIntro'))+'</p><button class="btn block" onclick="profileScreen()">'+esc(tp149T(hasProfile?'home.profileNewPlan':'planner.help.cta'))+'</button></div>';
+ const draftHtml=draft?'<div class="card"><strong>'+esc(tp149T('home.draft'))+'</strong><p class="small muted">'+esc(tp149HomeDraftName(draft))+' • '+esc(tp149T('home.draftHelp'))+'</p><button class="btn block" onclick="resumeDraft()">'+esc(tp149T('home.resume'))+'</button></div>':'';
+ const stats='<div class="grid2"><div class="stat" role="button" onclick="go(\'history\')"><small>'+esc(tp149T('home.completed'))+'</small><strong>'+esc(tp149FormatNumber(h.length))+'</strong></div><div class="stat" role="button" onclick="rf215WeightScreen()"><small>'+esc(tp149T('home.latestWeight'))+'</small><strong>'+(latestW==null?'—':esc(tp149FormatNumber(latestW,{maximumFractionDigits:1}))+' kg')+'</strong></div></div>';
+ const start=np?'<button class="btn block" onclick="startScheduledById(\''+esc(np.id)+'\')">'+esc(tp149T('home.startPlanned'))+'</button>':'<button class="btn block" onclick="startWorkout(\''+esc(next)+'\')">'+esc(tp149T('home.startWorkout'))+'</button>';
+ return shell('<main class="rf221-home">'+onboarding+draftHtml+'<div class="hero"><span class="badge">'+esc(tp149T('home.activeProgram'))+'</span><h1>'+esc(pName)+'</h1>'+nextBlock+'<br>'+start+'</div>'+stats+tp149HomeToday()+tp149HomeCoach()+'</main>');
+};
+/* The direct localized Home already contains both cards. Hungarian keeps the validated legacy Home/Coach path byte-compatible. */
+tp120BindCoach=function(){if(rf212Lang()==='hu')return tp149BindCoachBase.apply(this,arguments);};
+tp120CompactHome=function(){if(rf212Lang()==='hu')return tp149CompactHomeBase.apply(this,arguments);};
+tp120TodayCard=function(){if(rf212Lang()==='hu')return tp149TodayCardBase.apply(this,arguments);};
+rf251RepairHomeCoach=function(){if(rf212Lang()==='hu')return tp149RepairHomeCoachBase.apply(this,arguments);};
+
+programsScreen=function(){
+ const custom=exercises().filter(function(e){return e.custom;});
+ return shell('<main><div class="hero"><h1>'+esc(tp149T('programs.title'))+'</h1><div class="muted">'+esc(tp149T('programs.intro'))+'</div></div>'+programCards()+
+ '<div class="section">'+esc(tp149T('programs.custom'))+'</div><button class="btn block" onclick="createCustomProgram()">'+esc(tp149T('programs.create'))+'</button>'+
+ '<div class="section">'+esc(tp149T('programs.exerciseManagement'))+'</div><div class="grid2"><button class="btn secondary" onclick="customExerciseScreen()">'+esc(tp149T('programs.createExercise'))+'</button><button class="btn secondary" onclick="muscleLibrary()">'+esc(tp149T('programs.library'))+'</button></div>'+
+ (custom.length?'<div class="section">'+esc(tp149T('programs.customExercises'))+'</div>'+custom.map(function(e){return '<div class="custom-ex-row"><span>'+esc(tp149ExerciseName(e))+'</span><button class="btn danger" onclick="deleteCustomExercise14(\''+esc(e.id)+'\')">'+esc(tp149T('common.delete'))+'</button></div>';}).join(''):'')+'</main>');
+};
+
+editCustomProgram=function(id){
+ const p=programById(id);if(!p||p.builtin)return;
+ const options=function(selected){return exercises().map(function(e){return '<option value="'+esc(e.id)+'" '+(e.id===selected?'selected':'')+'>'+esc(tp149ExerciseName(e))+'</option>';}).join('');};
+ render(shell('<main><button class="btn secondary" onclick="go(\'programs\')">← '+esc(tp149T('programEdit.back'))+'</button><div class="hero"><h1>'+esc(p.name)+'</h1><div class="muted">'+esc(tp149T('programEdit.help'))+'</div></div>'+
+ p.days.map(function(d,di){return '<div class="setting"><label>'+esc(tp149T('programEdit.dayName'))+'</label><input class="field" value="'+esc(d.name)+'" onchange="customDayName(\''+esc(id)+'\','+di+',this.value)"><label>'+esc(tp149T('programEdit.exercises'))+'</label>'+
+ d.exercises.map(function(eid,ei){return '<div class="custom-ex-row"><select class="field" onchange="customExercise(\''+esc(id)+'\','+di+','+ei+',this.value)">'+options(eid)+'</select><button class="btn secondary" '+(ei===0?'disabled':'')+' onclick="moveCustomExercise14(\''+esc(id)+'\','+di+','+ei+',-1)">↑</button><button class="btn secondary" '+(ei===d.exercises.length-1?'disabled':'')+' onclick="moveCustomExercise14(\''+esc(id)+'\','+di+','+ei+',1)">↓</button><button class="btn danger" onclick="removeCustomExercise(\''+esc(id)+'\','+di+','+ei+')">×</button></div>';}).join('')+
+ '<button class="btn secondary block" onclick="addCustomExercise(\''+esc(id)+'\','+di+')">'+esc(tp149T('programEdit.add'))+'</button></div>';}).join('')+'</main>'));
+};
+
+rf154EditSlot=function(w,i){
+ const s=rf155DayState(w),a=s.day?.exercises||[],id=a[i],e=byId(id),exs=exercises(),p=s.program;if(!e||!p)return;
+ render(shell('<main><button class="btn secondary" onclick="showWorkout(\''+esc(w)+'\')">← '+esc(tp149T('programEdit.back'))+'</button><div class="hero"><span class="badge">'+esc(tp149ProgramDayName(p,s.day))+' • '+(i+1)+'</span><h1>'+esc(tp149ExerciseName(e))+'</h1><div class="muted">'+esc(tp149T('program.exercise.editHelp'))+'</div></div>'+
+ '<div class="card"><label>'+esc(tp149T('program.exercise.replace'))+'</label><select class="field" id="rf154Replacement">'+exs.map(function(x){return '<option value="'+esc(x.id)+'" '+(x.id===id?'selected':'')+'>'+esc(tp149ExerciseName(x))+'</option>';}).join('')+'</select><br><br><button class="btn block" onclick="rf154Replace(\''+esc(w)+'\','+i+')">'+esc(tp149T('program.exercise.saveReplace'))+'</button></div>'+
+ '<div class="card"><strong>'+esc(tp149ExerciseName(e))+'</strong><div class="small muted">'+esc([e.sets+' × '+e.reps,tp149Target(e)].filter(Boolean).join(' • '))+'</div><br><button class="btn secondary block" onclick="editPlan(\''+esc(w)+'\')">'+esc(tp149T('program.exercise.details'))+'</button></div>'+
+ '<button class="btn danger block" onclick="rf154Remove(\''+esc(w)+'\','+i+')">'+esc(tp149T('program.exercise.remove'))+'</button></main>'));
+};
+rf154AddScreen=function(w){
+ const s=rf155DayState(w),a=s.day?.exercises||[],opts=exercises().filter(function(e){return !a.includes(e.id);}),p=s.program;
+ render(shell('<main><button class="btn secondary" onclick="showWorkout(\''+esc(w)+'\')">← '+esc(tp149T('programEdit.back'))+'</button><div class="hero"><h1>'+esc(tp149T('program.exercise.addTitle'))+'</h1><div class="muted">'+esc(p&&s.day?tp149ProgramMeta(p,'name')+' • '+tp149ProgramDayName(p,s.day):String(w))+'</div></div><div class="card"><select class="field" id="rf154Add">'+(opts.length?opts.map(function(e){return '<option value="'+esc(e.id)+'">'+esc(tp149ExerciseName(e))+'</option>';}).join(''):'<option value="">'+esc(tp149T('program.exercise.none'))+'</option>')+'</select><br><br><button class="btn block" onclick="rf154Add(\''+esc(w)+'\')" '+(opts.length?'':'disabled')+'>'+esc(tp149T('program.exercise.addAction'))+'</button></div></main>'));
+};
+rf154Replace=function(w,i){
+ try{const id=$('#rf154Replacement')?.value;if(!id)return;rf155SaveDay(w,function(day){const a=day.exercises||[];if(!a[i])throw Error(tp149T('program.exercise.notFound'));if(a.includes(id)&&a[i]!==id)throw Error(tp149T('program.exercise.duplicate'));a[i]=id;});showWorkout(w);}
+ catch(e){alert(e.message||tp149T('program.exercise.replaceFailed'));}
+};
+rf154Remove=function(w,i){
+ try{const s=rf155DayState(w),a=s.day?.exercises||[];if(a.length<=1){alert(tp149T('program.exercise.oneRequired'));return;}void tp2628Confirm(tp149T('dialog.removeExercise.message'),{title:tp149T('dialog.removeExercise.title'),confirmText:tp149T('common.delete'),danger:true}).then(function(ok){if(!ok)return;try{rf155SaveDay(w,function(day){if(!day.exercises?.[i])throw Error(tp149T('program.exercise.notFound'));day.exercises.splice(i,1);});showWorkout(w);window.TrainPilotFeedback?.deleted();}catch(e){alert(e.message||tp149T('program.exercise.deleteFailed'));}});}
+ catch(e){alert(e.message||tp149T('program.exercise.deleteFailed'));}
+};
+rf154Add=function(w){
+ try{const id=$('#rf154Add')?.value;if(!id)return;rf155SaveDay(w,function(day){day.exercises=day.exercises||[];if(day.exercises.includes(id))throw Error(tp149T('program.exercise.duplicate'));day.exercises.push(id);});showWorkout(w);}
+ catch(e){alert(e.message||tp149T('program.exercise.addFailed'));}
+};
+
+customExerciseScreen=function(){
+ const patterns=Object.entries(RF148_PATTERN_LABELS).map(function(kv){return '<option value="'+esc(kv[0])+'">'+esc(rf212Lang()==='hu'?kv[1]:tp149MovementLabel(kv[0]))+'</option>';}).join('');
+ const styles=Object.entries(RF148_STYLE_LABELS).map(function(kv){return '<option value="'+esc(kv[0])+'">'+esc(rf212Lang()==='hu'?kv[1]:tp149StyleText({style:kv[0]}))+'</option>';}).join('');
+ const muscles=Object.keys(MUSCLES).map(function(k){return '<option value="'+esc(k)+'">'+esc(tp149MuscleGroupLabel(k))+'</option>';}).join('');
+ const gears=Object.keys(GEAR132).map(function(k){return '<label class="exclude-row"><input type="checkbox" name="ceGear" value="'+esc(k)+'">'+esc(tp149PlannerGear(k))+'</label>';}).join('');
+ render(shell('<main><button class="btn secondary" onclick="go(\'programs\')">← '+esc(tp149T('programEdit.back'))+'</button><div class="hero"><h1>'+esc(tp149T('customExercise.title'))+'</h1><p>'+esc(tp149T('customExercise.intro'))+'</p></div><div class="setting">'+
+ '<label>'+esc(tp149T('customExercise.name'))+'<input id="ceHu" class="field" maxlength="80"></label>'+
+ '<label>'+esc(tp149T('customExercise.equipment'))+'<input id="ceEq" class="field" maxlength="80"></label>'+
+ '<label>'+esc(tp149T('customExercise.muscle'))+'<select id="ceMuscle" class="field">'+muscles+'</select></label>'+
+ '<label>'+esc(tp149T('customExercise.pattern'))+'<select id="cePattern" class="field">'+patterns+'</select></label>'+
+ '<label>'+esc(tp149T('customExercise.style'))+'<select id="ceStyle" class="field">'+styles+'</select></label>'+
+ '<label>'+esc(tp149T('customExercise.difficulty'))+'<select id="ceDifficulty" class="field"><option value="beginner">'+esc(tp149T('customExercise.beginner'))+'</option><option value="intermediate">'+esc(tp149T('customExercise.intermediate'))+'</option><option value="advanced">'+esc(tp149T('customExercise.advanced'))+'</option></select></label>'+
+ '<details><summary>'+esc(tp149T('customExercise.gear'))+'</summary><p class="small muted">'+esc(tp149T('customExercise.gearHelp'))+'</p>'+gears+'</details>'+
+ '<label>'+esc(tp149T('customExercise.notes'))+'<textarea id="ceNotes" class="field" maxlength="500"></textarea></label><button class="btn block" onclick="saveCustomExercise14()">'+esc(tp149T('customExercise.save'))+'</button></div></main>'));
+};
+saveCustomExercise14=function(){
+ const name=$('#ceHu')?.value.trim()||'',pattern=$('#cePattern')?.value,style=$('#ceStyle')?.value,muscle=$('#ceMuscle')?.value,gearNeeds=[...document.querySelectorAll('input[name=ceGear]:checked')].map(function(x){return x.value;});
+ if(name.length<2){alert(tp149T('customExercise.nameError'));return;}
+ if(!Object.hasOwn(RF148_PATTERN_LABELS,pattern)||!Object.hasOwn(RF148_STYLE_LABELS,style)||!Object.hasOwn(MUSCLES,muscle)){alert(tp149T('customExercise.invalid'));return;}
+ const difficulty=$('#ceDifficulty')?.value;if(!['beginner','intermediate','advanced'].includes(difficulty)){alert(tp149T('customExercise.invalidDifficulty'));return;}
+ const measurement=$('#ceMeasure')?.value||'reps';if(!['reps','time','distance'].includes(measurement)){alert(tp149T('customExercise.invalid'));return;}
+ const goals=style==='conditioning'?['fitness','fatloss']:style==='mobility'?['fitness']:style==='bodybuilding'?['fitness','muscle']:['fitness','muscle','strength'];
+ const compound=!['chest-isolation','shoulder-isolation','rear-delt','elbow-flexion','elbow-extension','knee-extension','knee-flexion','calf','core-bracing','core-flexion','core-stability','other'].includes(pattern);
+ let loadType='bodyweight';if(gearNeeds.includes('dumbbells'))loadType='per_hand';else if(gearNeeds.includes('dumbbell')||gearNeeds.includes('kettlebell'))loadType='single_dumbbell';else if(gearNeeds.length)loadType='total';
+ const equipment=$('#ceEq')?.value.trim()||'',id='custom-'+crypto.randomUUID(),e={id:id,hu:name,en:name,equipment:equipment,target:MUSCLES[muscle],notes:$('#ceNotes')?.value.trim()||'',sets:measurement==='distance'?1:2,reps:measurement==='distance'?'300':measurement==='time'?'30':'8–12',weight:0,loadType:measurement==='distance'?'bodyweight':loadType,repUnit:measurement==='reps'?'ism.':'mp',measurementType:measurement,movementPattern:pattern,difficulty:difficulty,beginnerSafe:difficulty==='beginner',complexity:difficulty==='beginner'?'low':difficulty==='intermediate'?'medium':'high',compound:compound,goalTags:goals,style:style,gearNeeds:gearNeeds,muscleGroup:muscle,custom:true};
+ MUSCLE_MAP[id]=[muscle];NEEDS132[id]=gearNeeds.slice();db.set('exercises',[...exercises(),e]);alert(tp149T('customExercise.saved'));go('programs');
+};
+
+window.TrainPilotI18n.homeProgramAudit=function(){
+ const keys=['home.nextLabel','home.personalPlanner','home.plannerIntro','home.profileNewPlan','home.activeProgram','home.next','home.draft','home.resume','home.completed','home.today','home.coachDetails','home.stats','home.coachLowFresh','home.coachNoFresh','programs.title','programs.create','programs.exerciseManagement','programs.library','programEdit.help','program.exercise.replace','program.exercise.editAction','program.exercise.addTitle','customExercise.title','customExercise.name','customExercise.save'];
+ const missing={hu:[],en:[],de:[],ro:[]};for(const lang of Object.keys(missing))for(const key of keys)if(!TP149_CATALOG[lang]?.[key])missing[lang].push(key);return missing;
+};
+// @endsection trainpilot-149-home-program-editor-i18n.js
+
+// @section trainpilot-149-settings-language-parity-hotfix.js
+/* TrainPilot 1.4.9 integration hotfix: preserve the stable Hungarian Settings
+ * language selector placement while keeping direct key-based i18n for other languages.
+ */
+const tp149SettingsLanguageParityBase=settingsScreen;
+settingsScreen=function(){
+ const html=tp149SettingsLanguageParityBase.apply(this,arguments);
+ if(rf212Lang()!=='hu'||String(html).includes('rf212-language'))return html;
+ const panel=rf212LanguagePanel();
+ return String(html).replace(
+  /(<div class="hero"><h1>Beállítások<\/h1><div class="muted">[\s\S]*?<\/div>)(<\/div>)/,
+  '$1'+panel+'$2'
+ );
+};
+window.TrainPilotI18n=window.TrainPilotI18n||{};
+window.TrainPilotI18n.settingsLanguageParity=true;
+// @endsection trainpilot-149-settings-language-parity-hotfix.js
+
+// @section trainpilot-149-per-side-stopwatch-i18n-hotfix.js
+/* TrainPilot 1.4.9 integration: keep the 1.4.8.1 independent left/right
+ * stopwatch authoritative after the localized workout renderer is installed.
+ */
+(function(){
+ const rows={
+  'stopwatch.sideTitle':['Stopper • {set}. sorozat • oldalanként','Stopwatch • set {set} • per side','Stoppuhr • Satz {set} • pro Seite','Cronometru • seria {set} • pe fiecare parte'],
+  'stopwatch.left':['Bal oldal','Left side','Linke Seite','Partea stângă'],
+  'stopwatch.right':['Jobb oldal','Right side','Rechte Seite','Partea dreaptă'],
+  'stopwatch.leftShort':['Bal','Left','Links','Stânga'],
+  'stopwatch.rightShort':['Jobb','Right','Rechts','Dreapta'],
+  'stopwatch.sideHelp':['Mérd a két oldalt külön. A sorozat csak mindkét oldal rögzítése után jelölhető késznek.','Measure both sides separately. The set can be completed only after both sides are recorded.','Miss beide Seiten getrennt. Der Satz kann erst abgeschlossen werden, wenn beide Seiten erfasst sind.','Măsoară separat ambele părți. Seria poate fi finalizată numai după înregistrarea ambelor părți.'],
+  'stopwatch.sideBothRequired':['Mérd meg külön a bal és a jobb oldalt is, mielőtt késznek jelölöd a sorozatot.','Record both the left and right side before completing the set.','Erfasse die linke und rechte Seite, bevor du den Satz abschließt.','Înregistrează atât partea stângă, cât și partea dreaptă înainte de a finaliza seria.']
+ };
+ for(const [key,row] of Object.entries(rows)){
+  TP149_KEY_ROWS[key]=row;
+  TP149_CATALOG.hu[key]=row[0];TP149_CATALOG.en[key]=row[1];TP149_CATALOG.de[key]=row[2];TP149_CATALOG.ro[key]=row[3];
+ }
+})();
+
+const tp149PerSideTimedBase=rf110DecorateTimedWorkout;
+rf110DecorateTimedWorkout=function rf110DecorateTimedWorkout(){
+ const ex=state.session?.exercises?.[state.current];
+ if(tp1481IsPerSideTimed(ex))return tp1481DecoratePerSide();
+ tp1481HaltSide(true);return tp149PerSideTimedBase();
+};
+
+const tp149PerSideToggleBase=toggleSet;
+toggleSet=function toggleSet(ei,si){
+ const ex=state.session?.exercises?.[ei];
+ if(!tp1481IsPerSideTimed(ex))return tp149PerSideToggleBase(ei,si);
+ const set=ex?.sets?.[si];if(!set)return;
+ if(!set.done){
+  if(tp1481SideStopwatch.running&&tp1481SideStopwatch.exerciseIndex===ei&&tp1481SideStopwatch.setIndex===si)tp1481PauseSide();
+  const sides=tp1481SyncPerSideReps(set);
+  if(sides.left<1||sides.right<1){alert(tp149T('stopwatch.sideBothRequired'));persistDraft();return;}
+ }
+ set.done=!set.done;persistDraft();if(set.done)startRest();renderWorkout();
+};
+
+const tp149PerSideFormatBase=formatSet;
+formatSet=function formatSet(e,set){
+ const perSide=String(e?.repUnit||'').replace(/\s+/g,'').toLowerCase()==='mp/oldal';
+ if(!perSide)return tp149PerSideFormatBase(e,set);
+ const left=tp1481StoredSide(set,'left'),right=tp1481StoredSide(set,'right');
+ if(!left&&!right)return tp149PerSideFormatBase(e,set);
+ const value=tp149T('stopwatch.leftShort')+' '+(left||'—')+' '+tp149T('unit.second.short')+' • '+tp149T('stopwatch.rightShort')+' '+(right||'—')+' '+tp149T('unit.second.short');
+ return e.loadType==='bodyweight'?value:String(set.weight||0)+' '+tp149LoadLabel(e.loadType)+' × '+value;
+};
+
+tp1481SidePaint=function tp1481SidePaint(){
+ const ex=state.session?.exercises?.[state.current],setIndex=ex?.sets?.findIndex(s=>!s.done),set=ex?.sets?.[setIndex];
+ const owns=tp1481SideStopwatch.exerciseIndex===state.current&&tp1481SideStopwatch.setIndex===setIndex;
+ const sec=tp1481SideSeconds(),active=owns?tp1481SideStopwatch.side:null;
+ if(active&&tp1481SideStopwatch.running&&sec!==tp1481SideStopwatch.lastSecond){tp1481SideStopwatch.lastSecond=sec;tp1481PersistSide(sec);}
+ for(const side of ['left','right']){
+  const stored=side===active&&tp1481SideStopwatch.running?sec:tp1481StoredSide(set,side);
+  const display=document.querySelector('#tp1481SideTime-'+side),input=document.querySelector('#tp1481SideInput-'+side),button=document.querySelector('#tp1481SideToggle-'+side);
+  if(display)display.textContent=rf110FormatStopwatch(stored);
+  if(input&&document.activeElement!==input)input.value=stored||'';
+  if(button){
+   const isRunning=tp1481SideStopwatch.running&&active===side;
+   button.textContent=isRunning?tp149T('stopwatch.pauseSave'):(stored>0?tp149T('stopwatch.resume'):tp149T('stopwatch.start'));
+  }
+ }
+};
+
+tp1481DecoratePerSide=function tp1481DecoratePerSide(){
+ const ex=state.session?.exercises?.[state.current],exercise=ex?byId(ex.id):null;
+ if(!tp1481IsPerSideTimed(ex)||!exercise)return;
+ rf110StopwatchHalt(true);
+ const setIndex=ex.sets.findIndex(function(set){return !set.done;});
+ if(setIndex<0){tp1481HaltSide(true);return;}
+ if(tp1481SideStopwatch.exerciseIndex!==state.current||tp1481SideStopwatch.setIndex!==setIndex)tp1481HaltSide(true);
+ if(document.querySelector('#rf110Stopwatch')){tp1481SidePaint();return;}
+ const set=ex.sets[setIndex],left=tp1481StoredSide(set,'left'),right=tp1481StoredSide(set,'right');
+ const main=document.querySelector('main');if(!main)return;
+ const card=document.createElement('div');card.id='rf110Stopwatch';card.className='card rf110-stopwatch rf142-stopwatch-top tp1481-side-stopwatch';
+ const target=exercise.reps||tp149T('stopwatch.timedTarget');
+ const sideCard=function(side,value){
+  const label=tp149T(side==='left'?'stopwatch.left':'stopwatch.right');
+  return '<div class="tp1481-side-card"><strong>'+esc(label)+'</strong><div id="tp1481SideTime-'+side+'" class="rf110-stopwatch-time">'+rf110FormatStopwatch(value)+'</div><label class="small">'+esc(tp149T('workout.seconds'))+'<input id="tp1481SideInput-'+side+'" class="field" inputmode="numeric" min="0" step="1" value="'+(value||'')+'" oninput="tp1481SetSideSeconds('+setIndex+',\''+side+'\',this.value)"></label><div class="tp1481-side-actions"><button id="tp1481SideToggle-'+side+'" class="btn" onclick="tp1481ActivateSide(\''+side+'\')">'+esc(value>0?tp149T('stopwatch.resume'):tp149T('stopwatch.start'))+'</button><button class="btn secondary" onclick="tp1481ResetSide(\''+side+'\')">'+esc(tp149T('stopwatch.reset'))+'</button></div></div>';
+ };
+ card.innerHTML='<div class="rf110-stopwatch-head"><div><strong>'+esc(tp149T('stopwatch.sideTitle',{set:setIndex+1}))+'</strong><div class="small muted">'+esc(tp149T('workout.target'))+': '+esc(target)+'</div></div></div><div class="tp1481-side-grid">'+sideCard('left',left)+sideCard('right',right)+'</div><p class="small muted" id="tp1481SideStatus">'+esc(tp149T('stopwatch.sideHelp'))+'</p>';
+ const hero=main.querySelector('.hero'),nav=main.querySelector('[data-tp-workout-next]')||[...main.querySelectorAll('button')].find(function(btn){return /Következő gyakorlat|Edzés befejezése|Next exercise|Finish workout|Nächste Übung|Training beenden|Exercițiul următor|Finalizează antrenamentul/.test(String(btn.textContent||''));});
+ if(hero)hero.insertAdjacentElement('afterend',card);else if(nav?.parentNode)nav.parentNode.insertBefore(card,nav);else main.appendChild(card);
+ tp1481SidePaint();
+};
+
+window.TrainPilotI18n=window.TrainPilotI18n||{};
+window.TrainPilotI18n.perSideStopwatch=true;
+// @endsection trainpilot-149-per-side-stopwatch-i18n-hotfix.js
+
+// @section trainpilot-149-narrow-i18n-layout-hotfix.js
+/* TrainPilot 1.4.9: prevent translated Health actions from overflowing narrow screens. */
+(function(){
+ if(document.getElementById('tp149NarrowI18nLayoutCss'))return;

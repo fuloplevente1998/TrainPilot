@@ -1,0 +1,214 @@
+ return '<details class="history rf263-history rf103-history" ontoggle="if(this.open){rf130LoadHistoryPhotos(this);rfHistoryHealthEnsure('+originalIndex+')}"><summary><div class="history-head"><div class="history-title-row"><div><div class="history-title">'+esc(title)+'</div><div class="history-date">'+esc(tp149FormatDateTime(x.started))+'</div></div><div class="rf103-history-side"><span class="badge">'+esc(count)+'</span><span class="rf103-history-chevron" aria-hidden="true">⌄</span></div></div><div class="history-badges"><span class="history-badge">⏱ '+esc(sessionDuration(x))+'</span><span class="history-badge">✓ '+esc(tp149T('journal.setCount',{done:c.done,total:c.total}))+'</span></div></div></summary><div class="history-body"><div class="grid2"><button class="btn secondary" onclick="editHistoryWorkout(\''+esc(key)+'\')">'+esc(tp149T('journal.editWorkout'))+'</button><button class="btn secondary" onclick="calendarIntent('+originalIndex+')">'+esc(tp149T('journal.addCalendar'))+'</button></div><div class="rf-history-health-panel" data-rf-history-health-panel="'+originalIndex+'"><button type="button" class="rf-history-health-toggle" aria-expanded="true" onclick="event.stopPropagation();rfHistoryHealthToggle('+originalIndex+')"><strong>'+esc(tp149T('journal.healthData'))+'</strong><span class="small muted">'+esc(rfHistoryHealthWindow(x))+'</span><span class="rf-history-health-chevron" aria-hidden="true">⌄</span></button><div class="rf-history-health-body"><div class="rf-history-health" data-rf-history-health="'+originalIndex+'">'+rfHistoryHealthHtml(originalIndex)+'</div><button type="button" class="btn secondary block rf-history-health-refresh" onclick="event.stopPropagation();healthFromHistory('+originalIndex+')">'+esc(tp149T('common.refresh'))+'</button></div></div>'+rf130PhotoSection(x,key)+(x.exercises||[]).map(function(e){return '<div class="history-ex"><div class="history-ex-name">'+esc(tp149HistoryExerciseName(e))+'</div><div class="history-setchips">'+(e.sets||[]).map(function(s){return '<span class="setchip">'+esc(formatSet(e,s))+(s.done?' ✓':' • '+esc(tp149T('journal.notDone')))+'</span>';}).join('')+'</div>'+(typeof tp197RirHistory==='function'?tp197RirHistory(e):'')+'</div>';}).join('')+'</div></details>';
+};
+
+historyScreen=function(){
+ const all=history(),filtered=rf263FilteredHistory(),from=rf263HistoryFilter.from,to=rf263HistoryFilter.to,active=!!(from||to);
+ return shell('<main><div class="hero"><h1>'+esc(tp149T('journal.title'))+'</h1><div class="muted">'+esc(tp149T('journal.intro'))+'</div></div><div class="card"><div class="rf263-history-filter">'+rf263DateField('from',tp149T('journal.from'),from)+rf263DateField('to',tp149T('journal.to'),to)+'<button class="btn secondary rf263-clear-filter" onclick="rf263ClearHistoryFilter()" '+(active?'':'disabled')+'>'+esc(tp149T('journal.clearFilter'))+'</button></div><p class="small muted rf263-history-count">'+esc(tp149T('journal.count',{shown:filtered.length,total:all.length}))+'</p></div>'+(filtered.length?filtered.map(function(row,i){return rf263HistoryItem(row.x,row.index,i);}).join(''):(all.length?'<div class="card muted">'+esc(tp149T('journal.noneRange'))+'</div>':'<div class="muted">'+esc(tp149T('journal.none'))+'</div>'))+'</main>');
+};
+
+window.TrainPilotI18n.calendarJournalAudit=function(){
+ const keys=['calendar.title','calendar.intro','calendar.planningSettings','calendar.cadence.alternate','calendar.cadence.daily','calendar.cadence.weekly','calendar.planned','journal.title','journal.intro','journal.from','journal.to','journal.clearFilter','journal.none'];
+ const missing={hu:[],en:[],de:[],ro:[]};
+ for(const lang of Object.keys(missing))for(const key of keys)if(!TP149_CATALOG[lang]?.[key])missing[lang].push(key);
+ return missing;
+};
+// @endsection trainpilot-149-calendar-history-i18n.js
+
+
+// @section trainpilot-149-health-coach-i18n.js
+/* TrainPilot 1.4.9: direct Health hub and Coach localization. */
+(function(){
+ const rows={
+  'health.title':['Egészség','Health','Gesundheit','Sănătate'],
+  'health.intro':['Health Connect, regeneráció, Health-adatok és Coach egy közös adatfolyamban.','Health Connect, recovery, health data and Coach in one unified flow.','Health Connect, Regeneration, Gesundheitsdaten und Coach in einem gemeinsamen Ablauf.','Health Connect, recuperare, date de sănătate și Coach într-un singur flux.'],
+  'health.sync':['Szinkronizálás','Sync','Synchronisieren','Sincronizează'],
+  'health.permissions':['Engedélyek','Permissions','Berechtigungen','Permisiuni'],
+  'health.lastSync':['Utolsó sikeres szinkron: {time}','Last successful sync: {time}','Letzte erfolgreiche Synchronisierung: {time}','Ultima sincronizare reușită: {time}'],
+  'health.never':['Még nem volt','Never','Noch nie','Niciodată'],
+  'health.localEntry':['Kézi adat','Local entry','Lokaler Eintrag','Înregistrare locală'],
+  'health.todayStatus':['Mai állapot','Today status','Heutiger Status','Starea de azi'],
+  'health.bodyFitness':['Test és fittség','Body and fitness','Körper und Fitness','Corp și fitness'],
+  'health.sleep':['Alvás','Sleep','Schlaf','Somn'],
+  'health.sleepStage':['alvásfázisok alapján','based on sleep stages','basierend auf Schlafphasen','pe baza etapelor somnului'],
+  'health.sessionDuration':['alvási munkamenet időtartama','sleep-session duration','Dauer der Schlafsitzung','durata sesiunii de somn'],
+  'health.steps':['Lépések','Steps','Schritte','Pași'],
+  'health.activeEnergy':['Aktív energia','Active energy','Aktive Energie','Energie activă'],
+  'health.avgHeartRate':['Átlagpulzus','Average heart rate','Durchschnittspuls','Puls mediu'],
+  'health.restingHeartRate':['Nyugalmi pulzus','Resting heart rate','Ruhepuls','Puls în repaus'],
+  'health.weight':['Testsúly','Weight','Gewicht','Greutate'],
+  'health.bodyFat':['Testzsír','Body fat','Körperfett','Grăsime corporală'],
+  'health.weightJournal':['Testsúly napló és grafikon','Weight log and chart','Gewichtsprotokoll und Diagramm','Jurnal și grafic de greutate'],
+  'health.more':['További Health-adatok','More health data','Weitere Gesundheitsdaten','Mai multe date de sănătate'],
+  'health.bloodPressure':['Vérnyomás','Blood pressure','Blutdruck','Tensiune arterială'],
+  'health.bloodGlucose':['Vércukor','Blood glucose','Blutzucker','Glicemie'],
+  'health.respiratoryRate':['Légzésszám','Respiratory rate','Atemfrequenz','Frecvență respiratorie'],
+  'health.distance':['Távolság','Distance','Distanz','Distanță'],
+  'health.recoveryHistory':['Regenerációs előzmények','Recovery history','Regenerationsverlauf','Istoric recuperare'],
+  'health.permissionsOpened':['Health Connect engedélyek megnyitva.','Health Connect permissions opened.','Health-Connect-Berechtigungen geöffnet.','Permisiunile Health Connect au fost deschise.'],
+  'health.permissionsError':['A Health Connect engedélyek nem nyithatók meg.','Health Connect permissions could not be opened.','Die Health-Connect-Berechtigungen konnten nicht geöffnet werden.','Permisiunile Health Connect nu au putut fi deschise.'],
+  'coach.title':['TrainPilot Coach','TrainPilot Coach','TrainPilot Coach','TrainPilot Coach'],
+  'coach.today':['Mai edzés','Today’s workout','Heutiges Training','Antrenamentul de azi'],
+  'coach.next':['Következő edzés','Next workout','Nächstes Training','Următorul antrenament'],
+  'coach.suggested':['Javasolt edzés','Suggested workout','Empfohlenes Training','Antrenament recomandat'],
+  'coach.noPlan':['Nincs tervezett edzés','No planned workout','Kein Training geplant','Nu există antrenament planificat'],
+  'coach.start':['Edzés indítása','Start workout','Training starten','Pornește antrenamentul'],
+  'coach.calendar':['Naptár megnyitása','Open calendar','Kalender öffnen','Deschide calendarul'],
+  'coach.openHealth':['Egészség megnyitása','Open Health','Gesundheit öffnen','Deschide Sănătate'],
+  'coach.why':['Mi alapján?','Why?','Grundlage','Pe ce se bazează?'],
+  'coach.exercisePlan':['Gyakorlatonkénti javaslat','Exercise recommendations','Empfehlung je Übung','Recomandări pe exerciții'],
+  'coach.normal':['Normál terhelés','Normal load','Normale Belastung','Încărcare normală'],
+  'coach.reduced':['Kissé visszafogott terhelés','Slightly reduced load','Etwas reduzierte Belastung','Încărcare ușor redusă'],
+  'coach.light':['Könnyített nap','Light day','Leichter Tag','Zi ușoară'],
+  'coach.normalText':['A jelenlegi adatok alapján mehet a tervezett edzés. A progresszió csak ott lépjen tovább, ahol az előző teljesítés és visszajelzés is indokolja.','Current data supports the planned workout. Progress only where the previous performance and feedback support it.','Die aktuellen Daten sprechen für das geplante Training. Progression nur dort, wo Leistung und Rückmeldung dafür sprechen.','Datele actuale susțin antrenamentul planificat. Progresează doar unde performanța și feedbackul anterior justifică asta.'],
+  'coach.reducedText':['Kezdj óvatosabban. A korábban nehéznek jelölt gyakorlatoknál tartsd a terhelést; súlyemelést csak jó bemelegítés után válassz.','Start more conservatively. Hold load on exercises previously marked hard; increase only after a good warm-up.','Etwas vorsichtiger starten. Bei zuletzt schweren Übungen Belastung halten; nur nach gutem Aufwärmen steigern.','Începe mai prudent. Păstrează greutatea la exercițiile marcate anterior ca dificile; crește doar după o încălzire bună.'],
+  'coach.lightText':['A mai jelek alapján ne erőltesd a progressziót. Könnyített edzés vagy pihenő is megfelelő választás lehet.','Do not force progression today. A lighter session or rest can be appropriate.','Heute keine Progression erzwingen. Leichteres Training oder Pause kann passend sein.','Nu forța progresia azi. Un antrenament mai ușor sau odihna pot fi potrivite.'],
+  'coach.painText':['A közelmúltban fájdalom / kellemetlenség jelzés volt. Az érintett gyakorlatnál ne emelj terhelést.','A recent pain/discomfort flag exists. Do not increase load on the affected exercise.','Kürzlich wurde Schmerz/Beschwerden gemeldet. Bei der betroffenen Übung nicht steigern.','Există un semnal recent de durere/disconfort. Nu crește greutatea la exercițiul afectat.'],
+  'coach.sleep':['Alvás','Sleep','Schlaf','Somn'],'coach.hrv':['HRV','HRV','HRV','HRV'],
+  'coach.load':['Edzésterhelés','Training load','Trainingsbelastung','Încărcare'],
+  'coach.dataAge':['Regenerációs adat','Recovery data','Regenerationsdaten','Date recuperare'],
+  'coach.daysOld':['napos','days old','Tage alt','zile vechi'],
+  'coach.todayWord':['ma','today','heute','astăzi'],
+  'coach.noRecovery':['Nincs friss alvás/HRV adat','No recent sleep/HRV data','Keine aktuellen Schlaf-/HRV-Daten','Nu există date recente de somn/HRV'],
+  'coach.hold':['Tartás','Hold','Halten','Menține'],'coach.increase':['Emelhető','Can increase','Steigerbar','Poți crește'],
+  'coach.reps':['Ismétlés +','Reps +','Wdh. +','Repetări +'],'coach.easyStart':['Könnyebb kezdés','Start lighter','Leichter starten','Începe mai ușor'],
+  'coach.startLighter':['indulj könnyebben','start lighter','leichter starten','începe mai ușor'],
+  'coach.pain':['Ne emelj','Do not increase','Nicht steigern','Nu crește'],
+  'coach.startLoad':['Kezdő terhelés','Starting load','Startbelastung','Greutate inițială'],
+  'coach.unknown':['Nincs elég előzmény','Not enough history','Nicht genug Verlauf','Istoric insuficient'],
+  'coach.readiness':['Mai készenlét','Today readiness','Heutige Bereitschaft','Pregătire azi'],
+  'coach.approx':['A Coach tájékoztató edzéstámogatás, nem orvosi értékelés.','Coach guidance is informational and is not medical advice.','Coach-Hinweise sind informativ und keine medizinische Bewertung.','Recomandările Coach sunt informative, nu evaluare medicală.']
+ };
+ for(const [key,row] of Object.entries(rows)){
+  TP149_KEY_ROWS[key]=row;
+  TP149_CATALOG.hu[key]=row[0];TP149_CATALOG.en[key]=row[1];TP149_CATALOG.de[key]=row[2];TP149_CATALOG.ro[key]=row[3];
+ }
+})();
+
+var tp149HealthFmt=function tp149HealthFmt(value,digits,suffix){
+ const n=Number(value);if(!Number.isFinite(n))return '—';
+ return tp149FormatNumber(n,{minimumFractionDigits:digits,maximumFractionDigits:digits})+(suffix||'');
+};
+var tp149SleepText=function tp149SleepText(minutes){
+ const n=Number(minutes);if(!Number.isFinite(n))return '—';
+ const h=Math.floor(n/60),m=Math.round(n%60);
+ return (h?tp149FormatNumber(h)+' h ':'')+tp149FormatNumber(m)+' min';
+};
+
+healthSettings=async function(){
+ try{
+  await healthPlugin().openSettings();
+  state.health=state.health||{};state.health.message=tp149T('health.permissionsOpened');
+ }catch(e){
+  state.health=state.health||{};state.health.message=e?.message||tp149T('health.permissionsError');
+  if(state.tab==='health'&&!state.session)rf263HealthHub();
+ }
+};
+
+rf263HealthHub=function(){
+ state.tab='health';state.healthView=false;if(typeof rf225HealthPage!=='undefined')rf225HealthPage='hub';rf240ApplyLedger();
+ const ledger=rf240Ledger(),today=ledger.days?.[rf240DayKey(new Date())]||{},rec=state.health?.recovery||{},w=state.health?.wellness||{};
+ const manualWeight=(function(){const all=typeof rf215All==='function'?rf215All():[];const n=Number(all.at?.(-1)?.kg);return Number.isFinite(n)?n:null;})();
+ const healthWeight=w.weightKg==null?null:Number(w.weightKg),shownWeight=Number.isFinite(healthWeight)?healthWeight:manualWeight;
+ const weightSource=Number.isFinite(healthWeight)?'Health Connect':shownWeight!=null?tp149T('health.localEntry'):'';
+ const coach=typeof rf235HealthCoachCard==='function'?rf235HealthCoachCard():'';
+ const syncAt=ledger.lastSyncAt?tp149FormatDateTime(ledger.lastSyncAt):tp149T('health.never');
+ const sleepSub=rec.sleepMinutes==null?'':rec.sleepStageBased?tp149T('health.sleepStage'):(rec.sleepSource?tp149T('health.sessionDuration')+' • '+rf263FriendlySource(rec.sleepSource):tp149T('health.sessionDuration'));
+ const bp=w.bloodPressureSystolic==null||w.bloodPressureDiastolic==null?'—':tp149FormatNumber(Math.round(w.bloodPressureSystolic))+'/'+tp149FormatNumber(Math.round(w.bloodPressureDiastolic))+' mmHg';
+ const busy=!!state.health?.busy;
+ const body='<main class="rf263-health"><div class="hero"><h1>'+esc(tp149T('health.title'))+'</h1><div class="muted">'+esc(tp149T('health.intro'))+'</div></div><div class="card rf263-sync-card"><div class="grid2 rf263-sync-actions"><button class="btn block" data-tp-role="primary" onclick="rf244UnifiedSync()" '+(busy?'disabled':'')+'>'+esc(tp149T('health.sync'))+'</button><button class="btn secondary block" data-tp-role="secondary" onclick="healthSettings()" '+(busy?'disabled':'')+'>'+esc(tp149T('health.permissions'))+'</button></div><p class="small muted">'+esc(tp149T('health.lastSync',{time:syncAt}))+'</p>'+(state.health?.message?'<p class="small" role="status">'+esc(state.health.message)+'</p>':'')+'</div>'+coach+
+ '<div class="card"><h2>'+esc(tp149T('health.todayStatus'))+'</h2><div class="grid2">'+
+ rf244Stat(tp149T('health.sleep'),tp149SleepText(rec.sleepMinutes),sleepSub)+
+ rf244Stat('HRV',rec.hrvRmssdMs==null?'—':tp149FormatNumber(Math.round(rec.hrvRmssdMs))+' ms')+
+ rf244Stat(tp149T('health.steps'),today.steps==null?'—':tp149FormatNumber(Math.round(today.steps)))+
+ rf244Stat(tp149T('health.activeEnergy'),today.activeCalories==null?'—':tp149FormatNumber(Math.round(today.activeCalories))+' kcal')+
+ rf244Stat(tp149T('health.avgHeartRate'),today.averageHeartRate==null?'—':tp149FormatNumber(Math.round(today.averageHeartRate))+' bpm')+
+ rf244Stat(tp149T('health.restingHeartRate'),today.restingHeartRate==null?'—':tp149FormatNumber(Math.round(today.restingHeartRate))+' bpm')+
+ '</div></div><div class="card"><h2>'+esc(tp149T('health.bodyFitness'))+'</h2><div class="grid2">'+
+ rf244Stat(tp149T('health.weight'),tp149HealthFmt(shownWeight,1,' kg'),weightSource)+
+ rf244Stat(tp149T('health.bodyFat'),w.bodyFatPercent==null?'—':tp149HealthFmt(w.bodyFatPercent,1,' %'))+
+ rf244Stat('SpO₂',w.oxygenSaturationPercent==null?'—':tp149HealthFmt(w.oxygenSaturationPercent,1,' %'))+
+ rf244Stat('VO₂max',w.vo2Max==null?'—':tp149HealthFmt(w.vo2Max,1,''))+
+ '</div><button id="rf251WeightJournal" class="btn secondary block rf251-weight-btn" onclick="rf215WeightScreen()">'+esc(tp149T('health.weightJournal'))+'</button></div>'+
+ '<details class="card"><summary><strong>'+esc(tp149T('health.more'))+'</strong></summary><div class="grid2">'+
+ rf244Stat(tp149T('health.bloodPressure'),bp)+
+ rf244Stat(tp149T('health.bloodGlucose'),w.bloodGlucoseMmolL==null?'—':tp149HealthFmt(w.bloodGlucoseMmolL,1,' mmol/L'))+
+ rf244Stat(tp149T('health.respiratoryRate'),w.respiratoryRate==null?'—':tp149HealthFmt(w.respiratoryRate,1,' /min'))+
+ rf244Stat(tp149T('health.distance'),today.distanceMeters==null?'—':tp149HealthFmt(today.distanceMeters/1000,2,' km'))+
+ '</div></details><details class="card"><summary><strong>'+esc(tp149T('health.recoveryHistory'))+'</strong></summary>'+rf244RecoveryRows()+'</details>'+rf263DiagHtml()+'</main>';
+ render(shell(body));if(typeof tp146CompactHealthCards==='function')tp146CompactHealthCards();
+};
+
+rf250HealthHub=rf263HealthHub;
+rf206HealthHub=rf263HealthHub;
+
+rf233L=function(){
+ return {
+  coach:tp149T('coach.title'),today:tp149T('coach.today'),next:tp149T('coach.next'),suggested:tp149T('coach.suggested'),noPlan:tp149T('coach.noPlan'),
+  start:tp149T('coach.start'),calendar:tp149T('coach.calendar'),refresh:tp149T('coach.openHealth'),why:tp149T('coach.why'),exercisePlan:tp149T('coach.exercisePlan'),
+  normal:tp149T('coach.normal'),reduced:tp149T('coach.reduced'),light:tp149T('coach.light'),normalText:tp149T('coach.normalText'),reducedText:tp149T('coach.reducedText'),
+  lightText:tp149T('coach.lightText'),painText:tp149T('coach.painText'),sleep:tp149T('coach.sleep'),hrv:tp149T('coach.hrv'),load:tp149T('coach.load'),
+  dataAge:tp149T('coach.dataAge'),daysOld:tp149T('coach.daysOld'),noRecovery:tp149T('coach.noRecovery'),hold:tp149T('coach.hold'),increase:tp149T('coach.increase'),
+  reps:tp149T('coach.reps'),easyStart:tp149T('coach.easyStart'),startLighter:tp149T('coach.startLighter'),pain:tp149T('coach.pain'),startLoad:tp149T('coach.startLoad'),
+  unknown:tp149T('coach.unknown'),approx:tp149T('coach.approx')
+ };
+};
+
+rf233ExerciseAdvice=function(id,decision){
+ const t=rf233L();let rec=null,last=null,base=0,effort=null;
+ try{rec=rf152Recommendation(id);last=rf152Last(id);effort=last?.exercise?.effort||null;base=last?.exercise?rf152BaseWeight(last.exercise):0;}catch(_){}
+ if(effort==='pain')return {action:'pain',label:t.pain,text:rec?.text||t.painText};
+ if(decision.mode==='light')return {action:'easy',label:t.easyStart,text:base>0?t.lightText+' ('+base+' '+loadLabel(byId(id)?.loadType)+' → '+t.startLighter+'.)':t.lightText};
+ if(decision.mode==='reduced'&&(effort==='hard'||effort==='challenging'))return {action:'hold',label:t.hold,text:rec?.text||t.reducedText};
+ if(decision.mode==='reduced'&&rec?.action==='increase')return {action:'hold',label:t.hold,text:t.reducedText};
+ if(rec?.action==='increase')return {action:'increase',label:t.increase,text:rec.text};
+ if(rec?.action==='reps')return {action:'reps',label:t.reps,text:rec.text};
+ if(rec?.action==='hold')return {action:'hold',label:t.hold,text:rec.text};
+ if(rec?.action==='start')return {action:'start',label:t.startLoad,text:rec.text};
+ return {action:'unknown',label:t.unknown,text:rec?.text||t.unknown};
+};
+
+rf233CoachPlan=function(){
+ const readiness=rf220Readiness(),decision=rf233Decision(readiness),target=rf233TargetWorkout(),ids=target.day?.exercises||[];
+ return {readiness:readiness,decision:decision,target:target,exercises:ids.map(function(id){const e=byId(id);return {id:id,name:e?tp149ExerciseName(e):id,effort:rf233LastEffort(id),advice:rf233ExerciseAdvice(id,decision)};})};
+};
+
+rf233SignalHtml=function(plan){
+ if(window.TrainPilot110)return window.TrainPilot110.coachReasonsHtml(plan);
+ const t=rf233L(),r=plan.readiness,age=rf233RecoveryAgeDays(),rows=[];
+ rows.push(t.sleep+': '+(r.sleep==null?'—':tp149FormatNumber(Math.round(r.sleep/6)/10,{maximumFractionDigits:1})+' h'));
+ rows.push(t.hrv+': '+(r.hrv==null?'—':tp149FormatNumber(Math.round(r.hrv))+' ms')+(r.hrv!=null&&r.base?' / '+tp149FormatNumber(Math.round(r.base))+' ms':''));
+ rows.push(t.load+': '+tp149FormatNumber(r.load)+'/100');
+ rows.push(age==null?t.noRecovery:t.dataAge+': '+(age===0?tp149T('coach.todayWord'):tp149FormatNumber(age)+' '+t.daysOld));
+ return rows.map(function(x){return '<div class="rf233-signal">'+esc(x)+'</div>';}).join('');
+};
+
+rf233TargetSub=function(target){
+ if(!target.day)return '';
+ const p=target.program,bits=[p?tp149ProgramMeta(p,'name'):'',p?tp149ProgramDayName(p,target.day):(target.day?.name||target.day?.id||'')];
+ if(target.item?.start)bits.push(tp149FormatDateTime(target.item.start,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}));
+ return bits.filter(Boolean).join(' • ');
+};
+
+rf233CoachScreen=function(){
+ state.tab='health';state.healthView=true;
+ if(typeof rf245CoachVisible!=='undefined')rf245CoachVisible=true;
+ const t=rf233L(),p=rf233CoachPlan(),r=p.readiness,target=p.target;
+ const button=target.kind==='today'?'<button class="btn block" onclick="rf233StartTarget()">'+esc(t.start)+'</button>':target.kind==='next'?'<button class="btn secondary block" onclick="rf233StartTarget()">'+esc(t.calendar)+'</button>':target.kind==='suggested'?'<button class="btn block" onclick="rf233StartTarget()">'+esc(t.start)+'</button>':'<button class="btn secondary block" onclick="go(\'calendar\')">'+esc(t.calendar)+'</button>';
+ const targetName=target.day?(target.program?tp149ProgramDayName(target.program,target.day):(target.day.name||target.day.id||'—')):'—';
+ render(shell('<main><button class="btn secondary" onclick="go(\'home\')">← '+esc(tp149T('common.back'))+'</button><div class="hero"><h1>'+esc(t.coach)+'</h1><div class="muted">'+esc(p.decision.text)+'</div></div><div class="card rf233-today"><div class="rf233-score"><div><small>'+esc(tp149T('coach.readiness'))+'</small><strong>'+tp149FormatNumber(r.score)+'/100</strong></div><div><small>'+esc(rf233TargetTitle(target))+'</small><strong>'+esc(targetName)+'</strong></div></div><p><b>'+esc(p.decision.title)+'</b></p><p class="small muted">'+esc(rf233TargetSub(target))+'</p>'+button+'</div><div class="card"><strong>'+esc(t.why)+'</strong><div class="rf233-signals">'+rf233SignalHtml(p)+'</div><br><button class="btn secondary block" onclick="go(\'health\')">'+esc(tp149T('coach.openHealth'))+'</button></div><div class="section">'+esc(t.exercisePlan)+'</div>'+rf233ExerciseRows(p)+'<p class="small muted">'+esc(t.approx)+'</p>'+rf220ProgressHtml()+'</main>'));
+};
+rf220CoachScreen=rf233CoachScreen;
+
+rf233BindHome=function(){
+ if(window.TrainPilotBoot?.loading)return;
+ setTimeout(function(){
+  const main=document.querySelector('main');if(!main||main.querySelector('#rf220CoachCard'))return;
+  const p=rf233CoachPlan(),t=rf233L(),c=document.createElement('div'),targetName=p.target.day?(p.target.program?tp149ProgramDayName(p.target.program,p.target.day):(p.target.day.name||p.target.day.id||'—')):'—';
+  c.id='rf220CoachCard';c.className='card rf233-home';
+  c.innerHTML='<strong>'+esc(t.coach)+'</strong><div class="rf233-homegrid"><div><span class="small muted">'+esc(tp149T('coach.readiness'))+'</span><b>'+tp149FormatNumber(p.readiness.score)+'/100</b></div><div><span class="small muted">'+esc(rf233TargetTitle(p.target))+'</span><b>'+esc(targetName)+'</b></div></div><p class="small">'+esc(p.decision.title)+' • '+esc(p.decision.text)+'</p><button class="btn block" onclick="rf233CoachScreen()">'+esc(t.coach)+'</button>';
+  const hero=main.querySelector('.hero');if(hero)hero.insertAdjacentElement('afterend',c);else main.prepend(c);
+ },0);
+};
+rf220BindHome=rf233BindHome;
+
+window.TrainPilotI18n.healthCoachAudit=function(){

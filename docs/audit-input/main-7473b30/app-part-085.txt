@@ -1,0 +1,196 @@
+  de:{wear:'TrainPilot Uhr',group:'Messquelle des Trainings',missing:'TrainPilot Uhr: Für dieses Training ist keine separate Uhrenzusammenfassung angekommen. Quelle der folgenden Werte: {source}.',other:'Andere Quelle: vom Telefon gelesene Gesundheitsdaten. Diese Werte werden nicht zur Uhrenmessung addiert.',wearSource:'Quelle: TrainPilot Wear OS · Health Services. Direkt auf der Uhr gemessene Trainingsdaten.',empty:'Die Uhr hat noch keine nutzbaren Messdaten für dieses Training gesendet.',partial:'Teilweise Messung.',energy:'Gesamtenergie der Uhr und aktive Health Connect Kalorien unterscheiden sich und werden nicht addiert.',avg:'Ø Puls',min:'Min. Puls',max:'Max. Puls',samples:'Pulsmessungen',calories:'Gemessene Gesamtenergie im Training',steps:'Schritte',duration:'Aktive Messzeit',distance:'Distanz',speed:'Max. Geschwindigkeit',direct:'Samsung Health · direkt',mixed:'Samsung Health / Health Connect',unknown:'Geteilte Anwendung'},
+  ro:{wear:'Ceas TrainPilot',group:'Sursa măsurării antrenamentului',missing:'Ceas TrainPilot: nu a sosit un rezumat separat pentru acest antrenament. Sursa valorilor de mai jos: {source}.',other:'Altă sursă: date citite de telefon. Valorile nu se adună cu măsurarea ceasului.',wearSource:'Sursa: TrainPilot Wear OS · Health Services. Date măsurate direct pe ceas.',empty:'Ceasul nu a trimis încă măsurări utilizabile pentru acest antrenament.',partial:'Măsurare parțială.',energy:'Energia totală a ceasului diferă de caloriile active Health Connect; valorile nu se adună.',avg:'Puls mediu',min:'Puls minim',max:'Puls maxim',samples:'Mostre puls',calories:'Energia totală măsurată în antrenament',steps:'Pași',duration:'Timp de măsurare activ',distance:'Distanță',speed:'Viteză maximă',direct:'Samsung Health · direct',mixed:'Samsung Health / Health Connect',unknown:'Aplicație partajată'}
+ };
+ const lang=()=>typeof rf212Lang==='function'?rf212Lang():'hu';
+ const t=name=>(words[lang()]||words.hu)[name];
+ const sameTime=(a,b)=>typeof a==='string'&&typeof b==='string'&&Number.isFinite(Date.parse(a))&&Date.parse(a)===Date.parse(b);
+ function healthData(h){
+  if(!h)return null;
+  const cache=typeof rfHistoryHealthCache==='object'?rfHistoryHealthCache.get(h.started):null;
+  if(cache?.summary&&cache.workoutId===key(h)&&sameTime(cache.windowStart,h.started)&&sameTime(cache.windowEnd,h.finished))return cache.summary;
+  const data=h.health240;
+  return sameTime(data?.windowStart,h.started)&&sameTime(data?.windowEnd,h.finished)?data:null;
+ }
+ function channel(data){
+  if(data?.provider!=='samsung_health')return 'Health Connect';
+  const providers=Array.isArray(data.measurementProviders)?data.measurementProviders:Object.values(data.metricProviders||{});
+  if(providers.includes('health_connect')&&!providers.includes('samsung_health'))return 'Health Connect';
+  return providers.includes('health_connect')?t('mixed'):t('direct');
+ }
+ function sourceText(data){
+  const origins=[...new Set([...(Array.isArray(data?.sources)?data.sources:[]),data?.source].filter(s=>typeof s==='string'&&s&&!['all','@aggregate','health_connect','samsung_health'].includes(s)))];
+  const names=[...new Set(origins.map(origin=>{
+   if(origin==='com.sec.android.app.shealth')return 'Samsung Health';
+   const label=String(data?.sourceLabels?.[origin]||'').trim();
+   return label&&!/^(com|org|net)\./.test(label)?label:origin;
+  }))];
+  return channel(data)+(names.length?' · '+names.join(', '):'');
+ }
+ const measured=h=>{
+  const data=h?.healthWear129,id=key(h);
+  const same=data?.workoutId===id||(!h?.syncId&&!h?.id&&!h?.workoutId&&
+   Number.isFinite(Date.parse(id))&&Date.parse(data?.workoutId)===Date.parse(id));
+  if(!data||data.source!=='wear_health_services'||!data.watchId||!Number.isSafeInteger(data.revision)||data.revision<1||!id||!same)return null;
+  return data;
+ };
+ const textMetric=(value,digits=0,min=0,max=10000000)=>typeof value==='number'&&Number.isFinite(value)&&value>=min&&value<=max?
+  value.toLocaleString(({hu:'hu-HU',en:'en-US',de:'de-DE',ro:'ro-RO'})[lang()]||'hu-HU',{minimumFractionDigits:digits,maximumFractionDigits:digits}):null;
+ const card=(label,value)=>value===null?'':'<div class="stat"><small>'+esc(label)+'</small><strong>'+esc(value)+'</strong></div>';
+ function renderData(i){
+  const row=history()[i],wear=measured(row);
+  if(!wear){
+   const label=row?.finished?'<p class="small muted tp160-source-note">'+esc(t('missing').replace('{source}',channel(healthData(row))))+'</p>':'';
+   return label+original(i);
+  }
+  const id=key(row),view=picked.get(id)==='health_connect'?'health_connect':'wear';
+  const arg=esc(JSON.stringify(id));
+  const tab='<div class="tp160-journal-sources" role="group" aria-label="'+esc(t('group'))+'">'+
+   '<button type="button" class="btn secondary" aria-pressed="'+(view==='wear')+'" onclick="TrainPilotWearJournalSource.chooseKey('+arg+',\'wear\')">'+esc(t('wear'))+'</button>'+
+   '<button type="button" class="btn secondary" aria-pressed="'+(view==='health_connect')+'" onclick="TrainPilotWearJournalSource.chooseKey('+arg+',\'health_connect\')">'+esc(channel(healthData(row)))+'</button></div>';
+  if(view==='health_connect')return tab+'<p class="small muted">'+esc(t('other'))+'</p>'+original(i);
+  const stats=[
+   card(t('avg'),textMetric(wear.averageHeartRate,1,20,250)?.concat(' bpm')??null),
+   card(t('min'),textMetric(wear.minHeartRate,0,20,250)?.concat(' bpm')??null),
+   card(t('max'),textMetric(wear.maxHeartRate,0,20,250)?.concat(' bpm')??null),
+   card(t('samples'),Number.isInteger(wear.heartRateSamples)?textMetric(wear.heartRateSamples):null),
+   card(t('calories'),textMetric(wear.totalCalories)?.concat(' kcal')??null),
+   card(t('steps'),Number.isInteger(wear.steps)?textMetric(wear.steps):null),
+   card(t('duration'),textMetric(wear.activeDurationSeconds,1,0,604800)?.concat(' s')??null),
+   card(t('distance'),textMetric(wear.distanceMeters)?.concat(' m')??null),
+   card(t('speed'),textMetric(wear.maxSpeedMps,1,0,100)===null?null:textMetric(wear.maxSpeedMps*3.6,1)?.concat(' km/h'))
+  ].join('');
+  const gps=wear.gpsRoute193,words={hu:['GPS-minták az órán','Mentett GPS-pontok az órán'],en:['GPS fixes received on watch','GPS points saved on watch'],de:['GPS-Messungen auf der Uhr','Gespeicherte GPS-Punkte auf der Uhr'],ro:['Măsurători GPS primite pe ceas','Puncte GPS salvate pe ceas']}[lang()]||['GPS fixes received on watch','GPS points saved on watch'];
+  const gpsStats=gps?'<div class="rf-history-health-grid tp193-gps-counts">'+card(words[0],textMetric(gps.receivedFixes))+card(words[1],textMetric(gps.savedPoints))+'</div>':'';
+  return tab+'<div class="rf-history-health-result tp160-wear-history">'+
+   '<p class="small muted">'+esc(t('wearSource'))+'</p>'+
+   (stats?'<div class="rf-history-health-grid">'+stats+'</div>':'<p class="small muted">'+esc(t('empty'))+'</p>')+gpsStats+
+   (wear.partial?'<p class="small muted">'+esc(t('partial'))+'</p>':'')+
+   '<p class="small muted">'+esc(t('energy'))+'</p></div>';
+ }
+ rfHistoryHealthHtml=function(i){
+  const row=history()[i];if(!row)return '';
+  const data=healthData(row),partial=data?.partial===true||(Array.isArray(data?.warnings)&&data.warnings.length>0);
+  return '<div data-tp158-workout-key="'+esc(key(row))+'">'+renderData(i)+(partial&&(!measured(row)||picked.get(key(row))==='health_connect')?'<p class="small muted">'+esc(t('partial'))+'</p>':'')+'</div>';
+ };
+ rfHistoryHealthPaint=function(i){
+  const row=history()[i];if(!row)return;
+  if(typeof document.querySelectorAll!=='function')return originalPaint(i);
+  const nodes=[...document.querySelectorAll('[data-rf-history-health]')];
+  const keyed=nodes.filter(node=>node.querySelector('[data-tp158-workout-key]'));
+  if(!keyed.length)return originalPaint(i);
+  for(const node of keyed)if(node.querySelector('[data-tp158-workout-key]').dataset.tp158WorkoutKey===key(row)){
+   node.dataset.rfHistoryHealth=String(i);node.innerHTML=rfHistoryHealthHtml(i);
+  }
+ };
+ window.TrainPilotWearJournalSource={
+  choose(i,source){
+   const row=history()[i];if(!measured(row)||!['wear','health_connect'].includes(source))return false;
+   picked.set(key(row),source);rfHistoryHealthPaint(i);return true;
+  },
+  chooseKey(id,source){const i=history().findIndex(row=>key(row)===id);return i>=0?this.choose(i,source):false;},
+  toggleKey(id){
+   for(const node of document.querySelectorAll('[data-tp158-workout-key]'))if(node.dataset.tp158WorkoutKey===id){
+    const panel=node.closest('.rf-history-health-panel');if(!panel)continue;
+    const closed=panel.classList.toggle('collapsed');
+    panel.querySelector('.rf-history-health-body').hidden=closed;
+    panel.querySelector('.rf-history-health-toggle').setAttribute('aria-expanded',String(!closed));
+   }
+  },
+  async refresh(id){
+   const i=history().findIndex(row=>key(row)===id);if(i<0)return false;
+   if(measured(history()[i])&&picked.get(id)!=='health_connect'){
+    await window.TrainPilotWearSync?.drainCommands?.();
+    const next=history().findIndex(row=>key(row)===id);if(next>=0)rfHistoryHealthPaint(next);
+   }else await healthFromHistory(i);
+   return true;
+  },
+  measured,key,healthData,sourceText
+ };
+ const css=document.createElement('style');css.id='tp160WearJournalSourceCss';
+ css.textContent='.tp160-journal-sources{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:5px 0 12px}.tp160-journal-sources .btn{font-size:12px;min-height:44px;padding:8px 6px;white-space:normal}.tp160-journal-sources .btn[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 15%,var(--card2));color:var(--text);font-weight:700}@media(max-width:350px){.tp160-journal-sources{grid-template-columns:1fr}}';
+ document.head.appendChild(css);
+})();
+// @endsection wear-journal-sources-160.js
+
+// @section wear-measurement-165.js
+(function(){
+ 'use strict';
+ const labels={
+  hu:{title:'Órás mérés',waitingWorkout:'Edzés átadása az órának…',starting:'Mérés indítása…',reconnecting:'Újrakapcsolódás a méréshez…',active:'Mérés folyamatban',paused:'A mérés szünetel',ending:'Mérés lezárása…',ended:'Mérés befejezve',disabled:'Kapcsold be az órán az Órás méréseket.',permissionRequired:'Az órán szenzorengedély szükséges.',error:'Az órás mérés nem indult vagy megszakadt.',startTimeout:'Nincs mérési visszajelzés. Ellenőrizd az órát és a kapcsolatot.',stale:'Utolsó visszajelzés',retry:'Óra megnyitása'},
+  en:{title:'Watch measurement',waitingWorkout:'Sending workout to watch…',starting:'Starting measurement…',reconnecting:'Reconnecting to measurement…',active:'Measurement running',paused:'Measurement paused',ending:'Finishing measurement…',ended:'Measurement finished',disabled:'Enable measurements on your watch.',permissionRequired:'Sensor permission is needed on your watch.',error:'Watch measurement failed or stopped.',startTimeout:'No measurement acknowledgement. Check your watch and connection.',stale:'Last acknowledgement',retry:'Open watch'},
+  de:{title:'Uhrenmessung',waitingWorkout:'Training wird an die Uhr gesendet…',starting:'Messung startet…',reconnecting:'Messung wird neu verbunden…',active:'Messung läuft',paused:'Messung pausiert',ending:'Messung wird beendet…',ended:'Messung beendet',disabled:'Aktiviere Messungen auf der Uhr.',permissionRequired:'Sensorberechtigung auf der Uhr erforderlich.',error:'Uhrenmessung fehlgeschlagen oder unterbrochen.',startTimeout:'Keine Messbestätigung. Prüfe Uhr und Verbindung.',stale:'Letzte Bestätigung',retry:'Uhr öffnen'},
+  ro:{title:'Măsurare pe ceas',waitingWorkout:'Se trimite antrenamentul pe ceas…',starting:'Se pornește măsurarea…',reconnecting:'Se reconectează măsurarea…',active:'Măsurare în curs',paused:'Măsurare în pauză',ending:'Se încheie măsurarea…',ended:'Măsurare încheiată',disabled:'Activează măsurările pe ceas.',permissionRequired:'Este necesară permisiunea pentru senzori pe ceas.',error:'Măsurarea a eșuat sau s-a oprit.',startTimeout:'Fără confirmare de măsurare. Verifică ceasul și conexiunea.',stale:'Ultima confirmare',retry:'Deschide ceasul'}
+ };
+ const key=s=>String(s?.syncId||s?.started||'');
+ const t=k=>(labels[typeof rf212Lang==='function'?rf212Lang():'hu']||labels.en)[k]||k;
+ const metricLabels={hu:{steps:'lépés',distance:'Távolság',speed:'Sebesség',totals:'Edzés összesen'},en:{steps:'steps',distance:'Distance',speed:'Speed',totals:'Workout total'},de:{steps:'Schritte',distance:'Distanz',speed:'Geschwindigkeit',totals:'Training gesamt'},ro:{steps:'pași',distance:'Distanță',speed:'Viteză',totals:'Total antrenament'}};
+ const mt=k=>(metricLabels[typeof rf212Lang==='function'?rf212Lang():'hu']||metricLabels.en)[k];
+ function valid(value){
+  return !!value&&value.schema===1&&typeof value.workoutId==='string'&&!!value.workoutId&&value.workoutId.length<=512&&typeof value.watchId==='string'&&!!value.watchId&&value.watchId.length<=80&&Number.isSafeInteger(value.revision)&&value.revision>0&&Number.isFinite(value.updatedAt)&&value.updatedAt>0&&Object.hasOwn(labels.en,value.state)&&!['title','stale','retry'].includes(value.state)&&(!value.summary||value.summary.workoutId===value.workoutId);
+ }
+ function receive(value){
+  if(!valid(value))return false;
+  const id=value.workoutId,s=state.session;if(!s||key(s)!==id)return false;
+  const old=s.wearMeasurement165;
+  if(old?.watchId===value.watchId&&old.revision>=value.revision)return false;
+  s.wearMeasurement165={workoutId:id,watchId:value.watchId,revision:value.revision,state:value.state,updatedAt:value.updatedAt,receivedAt:Date.now(),message:typeof value.message==='string'?value.message.slice(0,240):''};
+  persistDraft();paint();return true;
+ }
+ function waiting(id){if(key(state.session)!==id)return;state.session.wearMeasurement165={...state.session.wearMeasurement165,workoutId:id,state:'waitingWorkout',receivedAt:Date.now(),message:''};persistDraft();paint();}
+ function paint(){
+  const s=state.session,data=s?.wearMeasurement165,head=document.querySelector?.('.tp153-workout-head');
+  if(!head)return;
+  let panel=head.querySelector?.('[data-wear-measurement165]');
+  if(!data||key(s)!==data.workoutId){panel?.remove();return;}
+  if(!panel){panel=document.createElement('div');panel.dataset.wearMeasurement165='';panel.className='small';panel.style.cssText='margin-top:8px;padding-top:7px;border-top:1px solid var(--line);line-height:1.4';head.append(panel);}
+  const stale=Date.now()-data.receivedAt>20000,phase=stale&&['waitingWorkout','starting'].includes(data.state)?'startTimeout':data.state;
+  const metrics=window.TrainPilotWearJournalSource.measured(s),values=[],movement=[];
+  const number=(value,digits=0)=>value.toLocaleString(({hu:'hu-HU',en:'en-GB',de:'de-DE',ro:'ro-RO'})[typeof rf212Lang==='function'?rf212Lang():'hu']||'en-GB',{maximumFractionDigits:digits});
+  const available=value=>typeof value==='number'&&Number.isFinite(value)&&value>=0;
+  if(metrics?.heartRate!=null)values.push(Math.round(metrics.heartRate)+' bpm');
+  if(metrics?.totalCalories!=null)values.push(Math.round(metrics.totalCalories)+' kcal');
+  if(available(metrics?.steps))movement.push(number(metrics.steps)+' '+mt('steps'));
+  if(available(metrics?.distanceMeters))movement.push(mt('distance')+': '+number(metrics.distanceMeters)+' m');
+  panel.innerHTML='<b>'+esc(t('title'))+'</b> · '+esc(t(phase))+(stale&&phase==='active'?' · '+esc(t('stale')):'')+(values.length?'<br>'+esc(values.join(' · ')):'')+(movement.length?'<br>'+esc(mt('totals')+': '+movement.join(' · ')):'')+(available(metrics?.speedMps)?'<br>'+esc(mt('speed')+': '+number(metrics.speedMps*3.6,1)+' km/h'):'')+(data.message?'<br>'+esc(data.message):'')+(['error','disabled','permissionRequired','startTimeout'].includes(phase)?'<br><button class="btn secondary" style="margin-top:5px;min-height:32px;padding:4px 10px" onclick="TrainPilotWearMeasurement165.retry()">'+esc(t('retry'))+'</button>':'');
+ }
+ async function retry(){
+  const s=state.session,id=key(s),api=window.Capacitor?.Plugins?.WearSync;if(!id||!api?.startWatchMeasurement)return;
+  try{await window.TrainPilotWearSync.syncNow();if(state.session!==s)return;waiting(id);await api.startWatchMeasurement({workoutId:id});}catch(_){if(state.session===s){s.wearMeasurement165={...s.wearMeasurement165,workoutId:id,state:'error',receivedAt:Date.now(),message:''};persistDraft();paint();}}
+ }
+ window.TrainPilotWearMeasurement165={valid,receive,waiting,paint,retry};
+ const original=renderWorkout;renderWorkout=function(){const result=original.apply(this,arguments);paint();return result;};
+})();
+// @endsection wear-measurement-165.js
+
+// @section intervals-162.js
+(function(){
+ 'use strict';
+ const MAX=86400000;
+ function config(v){if(!v)return null;const work=Number(v.work),rest=Number(v.rest),rounds=Number(v.rounds);if(!Number.isInteger(work)||work<1||work>3600||!Number.isInteger(rest)||rest<0||rest>3600||!Number.isInteger(rounds)||rounds<1||rounds>100||(work*rounds+rest*(rounds-1))*1000>MAX)return null;return {work,rest,rounds,sound:v.sound!==false,vibration:v.vibration!==false,autoAdvance:v.autoAdvance===true};}
+ function duration(steps,advance,i){const s=steps[i];return (s.work*s.rounds+s.rest*(s.rounds-1)+(advance&&i<steps.length-1?s.rest:0))*1000;}
+ function phase(steps,advance,milliseconds,initialRest=0,restOnly=false){
+  if(!Number.isInteger(initialRest)||initialRest<0||initialRest>3600||restOnly&&(steps?.length!==1||advance||initialRest!==0))return null;
+  if(!Array.isArray(steps)||!steps.length||steps.length>100||steps.some(s=>!config(s)))return null;
+  const totalMs=restOnly?steps[0].rest*1000:initialRest*1000+steps.reduce((n,s,i)=>n+duration(steps,advance,i),0);if(totalMs>MAX||!Number.isFinite(milliseconds))return null;
+  const elapsedMs=Math.max(0,Math.min(totalMs,milliseconds));let offset=elapsedMs;
+  if(restOnly)return {stepIndex:0,round:1,completed:elapsedMs===totalMs?1:0,elapsedMs,stepElapsedMs:0,remainingMs:totalMs-elapsedMs,totalMs,phase:elapsedMs===totalMs?'complete':'rest',token:'rest:'+String(elapsedMs===totalMs)};
+  if(elapsedMs===totalMs){const i=steps.length-1;return {stepIndex:i,round:steps[i].rounds,completed:steps.length,elapsedMs,stepElapsedMs:duration(steps,advance,i),remainingMs:0,totalMs,phase:'complete',token:i+':'+steps[i].rounds+':complete'};}
+  if(elapsedMs<initialRest*1000)return {stepIndex:0,round:1,completed:0,elapsedMs,stepElapsedMs:0,remainingMs:initialRest*1000-elapsedMs,totalMs,phase:'rest',token:'initial:rest'};offset-=initialRest*1000;
+  for(let i=0;i<steps.length;i++){const length=duration(steps,advance,i);if(offset>=length){offset-=length;continue;}const s=steps[i];let left=offset;for(let round=1;round<=s.rounds;round++){if(left<s.work*1000)return {stepIndex:i,round,completed:i,elapsedMs,stepElapsedMs:offset,remainingMs:s.work*1000-left,totalMs,phase:'work',token:i+':'+round+':work'};left-=s.work*1000;if(round<s.rounds||advance&&i<steps.length-1){if(left<s.rest*1000)return {stepIndex:i,round,completed:i,elapsedMs,stepElapsedMs:offset,remainingMs:s.rest*1000-left,totalMs,phase:'rest',token:i+':'+round+':rest'};left-=s.rest*1000;}}}return null;
+ }
+ function locate(session,step){const e=session?.exercises?.find(e=>e.id===step.exerciseId&&e.sets?.some(s=>s.setId===step.setId)),set=e?.sets.find(s=>s.setId===step.setId);return set?{e,set,index:session.exercises.indexOf(e)}:null;}
+ function owned(session,run){return !!run&&session?.started===run.started&&Array.isArray(run.steps)&&run.steps.length>0&&run.steps.every(s=>locate(session,s));}
+ function hapticCue(memory,p,running){
+  if(!running||!p)return 0;
+  const remaining=Math.ceil(p.remainingMs/1000);
+  if(p.token!==memory.token){const transition=!!memory.token;memory.token=p.token;memory.second=remaining;const duration=transition||p.phase==='complete'?1000:remaining>=1&&remaining<=3?80:100;memory.quietUntil=p.elapsedMs+duration;return duration;}
+  if(p.phase!=='complete'&&remaining>=1&&remaining<=3&&remaining!==memory.second){memory.second=remaining;if(p.elapsedMs>=memory.quietUntil){memory.quietUntil=p.elapsedMs+80;return 80;}}
+  return 0;
+ }
+ window.TrainPilotInterval162Core={config,duration,phase,locate,owned,hapticCue};
+ window.addEventListener?.('DOMContentLoaded',function(){
+  if(!window.TrainPilot110)return;
+  const COPY={
+   hu:{auto:'Automatikus sorozat- és gyakorlatléptetés',note:'Bekapcsolva minden hátralévő időalapú sorozatra ugyanez az intervallum érvényes. Ismétléses sorozatot te rögzítesz; Automata módban utána a pihenő léptet tovább. Az edzést a végén te mented el.',native:'A telefon lezárva is jelzi a váltásokat. GPS-méréssel együtt használható.',web:'Böngészőben tartsd nyitva az oldalt. Lezárt képernyőhöz használd a telefonos appot.',stop:'Időzítő leállítása',done:'Intervallumok teljesítve – az edzés menthető.',invalid:'Válassz egy befejezetlen, időalapú sorozatot.',busy:'Előbb állítsd le a futó intervallumidőzítőt.',interrupted:'Az időzítő megszakadt. Ellenőrizd az adatokat, majd indíts új időzítőt.',paused:'Szünetel – a GPS-mérés is szünetel.',running:'Az intervallumidőzítő fut.',failed:'Az időzítő nem indult el. Próbáld újra az app megnyitása után.',reset:'Leállítod az intervallumidőzítőt? A mért idő és távolság megmarad.',limit:'A teljes intervallumprogram legfeljebb 24 óra és 100 sorozat lehet.'},
+   en:{auto:'Automatically advance sets and exercises',note:'When enabled, this interval applies to every remaining timed set. Record repetition-based sets yourself; Automatic mode advances after their rest. Save the workout yourself.',native:'Phase cues continue with the phone locked. GPS tracking can run alongside.',web:'Keep this page open in a browser. Use the phone app for locked-screen cues.',stop:'Stop interval timer',done:'Intervals complete – you can save the workout.',invalid:'Select an unfinished timed set.',busy:'Stop the current interval timer first.',interrupted:'The timer was interrupted. Check the data, then start a new timer.',paused:'Paused – GPS tracking is paused too.',running:'Interval timer is running.',failed:'The timer could not start. Retry with the app open.',reset:'Stop the interval timer? Recorded time and distance are kept.',limit:'The full interval plan is limited to 24 hours and 100 sets.'},
+   de:{auto:'Sätze und Übungen automatisch weiterschalten',note:'Aktiviert gilt dieses Intervall für alle verbleibenden zeitbasierten Sätze. Wiederholungssätze selbst erfassen; im Automatikmodus folgt danach die Pause. Das Training selbst speichern.',native:'Phasensignale auch bei gesperrtem Telefon. GPS-Messung kann gleichzeitig laufen.',web:'Im Browser die Seite geöffnet lassen. Für Signale bei gesperrtem Bildschirm die Handy-App nutzen.',stop:'Intervalltimer stoppen',done:'Intervalle abgeschlossen – Training kann gespeichert werden.',invalid:'Einen offenen zeitbasierten Satz auswählen.',busy:'Zuerst den laufenden Intervalltimer stoppen.',interrupted:'Timer unterbrochen. Daten prüfen und einen neuen Timer starten.',paused:'Pausiert – auch die GPS-Messung pausiert.',running:'Der Intervalltimer läuft.',failed:'Timer konnte nicht starten. In der geöffneten App erneut versuchen.',reset:'Intervalltimer stoppen? Gemessene Zeit und Strecke bleiben erhalten.',limit:'Der gesamte Intervallplan ist auf 24 Stunden und 100 Sätze begrenzt.'},

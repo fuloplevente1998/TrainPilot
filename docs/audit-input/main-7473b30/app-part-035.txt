@@ -1,0 +1,126 @@
+['Guggolás','Squat','Kniebeuge','Genuflexiune'],['Csípődomináns','Hip hinge','Hüftdominant','Dominant șold'],['Kitörés','Lunge','Ausfallschritt','Fandare'],['Vízszintes tolás','Horizontal push','Horizontales Drücken','Împins orizontal'],['Vízszintes húzás','Horizontal pull','Horizontales Ziehen','Tras orizontal'],['Függőleges tolás','Vertical push','Vertikales Drücken','Împins vertical'],['Függőleges húzás','Vertical pull','Vertikales Ziehen','Tras vertical'],['Mell izoláció','Chest isolation','Brust-Isolation','Izolare piept'],['Váll izoláció','Shoulder isolation','Schulter-Isolation','Izolare umeri'],['Hátsó váll','Rear delts','Hintere Schulter','Deltoid posterior'],['Bicepsz','Biceps','Bizeps','Biceps'],['Tricepsz','Triceps','Trizeps','Triceps'],['Térdnyújtás','Knee extension','Kniestreckung','Extensie genunchi'],['Térdhajlítás','Knee flexion','Kniebeugung','Flexie genunchi'],['Vádli','Calves','Waden','Gambe'],['Törzsfeszítés','Core bracing','Rumpfspannung','Încordare trunchi'],['Törzshajlítás','Core flexion','Rumpfbeugung','Flexie trunchi'],['Törzsstabilizáció','Core stability','Rumpfstabilität','Stabilitate trunchi'],['Kondicionálás','Conditioning','Kondition','Condiționare'],['Erősítés','Strength','Kraft','Forță'],['Testépítés','Bodybuilding','Bodybuilding','Culturism'],['Mobilitás','Mobility','Mobilität','Mobilitate'],['Egyéb','Other','Sonstiges','Altele'],
+['Edzésnaptár','Workout calendar','Trainingskalender','Calendar de antrenament'],['Tervezési mód','Planning mode','Planungsmodus','Mod de planificare'],['Koppints egy napra, majd válassz az aktív program edzésnapjai közül. Több hét előre a Tervezési beállítások alatt tervezhetsz.','Tap a date, then choose a workout day from the active program. You can plan several weeks ahead under Planning settings.','Tippe auf einen Tag und wähle dann einen Trainingstag aus dem aktiven Programm. Unter Planungseinstellungen kannst du mehrere Wochen im Voraus planen.','Atinge o zi, apoi alege o zi de antrenament din programul activ. În Setări planificare poți planifica mai multe săptămâni în avans.'],['Tervezési beállítások','Planning settings','Planungseinstellungen','Setări planificare'],['több hét előre','several weeks ahead','mehrere Wochen im Voraus','mai multe săptămâni în avans'],['Válassz ritmust. A TrainPilot az aktív program napjait sorrendben forgatja.','Choose a rhythm. TrainPilot cycles through the active program days in order.','Wähle einen Rhythmus. TrainPilot durchläuft die Tage des aktiven Programms der Reihe nach.','Alege un ritm. TrainPilot parcurge în ordine zilele programului activ.'],['Tervezési ritmus','Planning rhythm','Planungsrhythmus','Ritm de planificare'],['Minden nap','Every day','Jeden Tag','În fiecare zi'],['Kijelölt heti napokon','Selected weekdays','An ausgewählten Wochentagen','În zilele săptămânii selectate'],['Első edzésnap','First workout day','Erster Trainingstag','Prima zi de antrenament'],['Edzések megtervezése','Plan workouts','Trainings planen','Planifică antrenamentele'],['Tervezve:','Planned:','Geplant:','Planificat:'],['Válassz edzésnapot:','Choose a workout day:','Trainingstag auswählen:','Alege o zi de antrenament:'],['Koppints egy napra, majd válaszd ki az edzésnapot.','Tap a date, then choose the workout day.','Tippe auf einen Tag und wähle dann den Trainingstag.','Atinge o zi, apoi alege ziua de antrenament.'],['Melyik edzésnap kerüljön erre a napra?','Which workout day should be added to this date?','Welcher Trainingstag soll an diesem Datum eingetragen werden?','Ce zi de antrenament să fie adăugată la această dată?'],['Egyéni naptár','Custom calendar','Eigener Kalender','Calendar personalizat'],['Kezdőnap','Start date','Startdatum','Data de început'],['Időpont','Time','Uhrzeit','Ora'],['Időtartam (perc)','Duration (minutes)','Dauer (Minuten)','Durată (minute)'],['Hetek száma','Number of weeks','Anzahl der Wochen','Număr de săptămâni'],['Első programnap','First program day','Erster Programmtag','Prima zi a programului'],['Terv generálása','Generate plan','Plan erstellen','Generează planul'],['Tervezett alkalmak','Scheduled sessions','Geplante Einheiten','Sesiuni planificate'],['Tervezett','Scheduled','Geplant','Planificat'],['Teljesítve','Completed','Abgeschlossen','Finalizat'],['Kihagyott','Skipped','Übersprungen','Omis'],['Áthelyezés','Move','Verschieben','Mută'],['Kihagyás','Skip','Überspringen','Omite'],['Visszaállítás','Restore','Wiederherstellen','Restaurează'],
+['Elvégzett edzések','Completed workouts','Abgeschlossene Trainings','Antrenamente finalizate'],['Legutóbbi testsúly','Latest body weight','Letztes Körpergewicht','Ultima greutate corporală'],['Testsúly napló','Body weight log','Körpergewichtsprotokoll','Jurnal greutate'],['Testsúly','Body weight','Körpergewicht','Greutate'],['Statisztikák','Statistics','Statistiken','Statistici'],['Részletek','Details','Details','Detalii'],
+['Mai állapot','Today status','Heutiger Status','Starea de azi'],['Aktivitás','Activity','Aktivität','Activitate'],['Aktív kcal','Active kcal','Aktive kcal','Kcal active'],['Edzések','Workouts','Trainings','Antrenamente'],['Nincs mai Health Connect adat','No Health Connect data today','Heute keine Health-Connect-Daten','Nu există date Health Connect azi'],
+['Regeneráció','Recovery','Erholung','Recuperare'],['Alvás','Sleep','Schlaf','Somn'],['Pulzus','Heart rate','Herzfrequenz','Puls'],['Átlagpulzus','Average heart rate','Durchschnittspuls','Puls mediu'],['Nyugalmi pulzus','Resting heart rate','Ruhepuls','Puls în repaus'],['Aktív energia','Active energy','Aktive Energie','Energie activă'],['Test és fittség','Body and fitness','Körper und Fitness','Corp și fitness'],['Testzsír','Body fat','Körperfett','Grăsime corporală'],['További Health-adatok','More Health data','Weitere Health-Daten','Mai multe date Health'],['Regenerációs előzmények','Recovery history','Erholungsverlauf','Istoric recuperare'],['Szinkronizálás','Sync','Synchronisieren','Sincronizează'],['Engedélyek','Permissions','Berechtigungen','Permisiuni'],['Engedélyek kezelése','Manage permissions','Berechtigungen verwalten','Gestionează permisiunile'],['Mindent szinkronizál','Sync everything','Alles synchronisieren','Sincronizează tot'],
+['Edzésfotók','Workout photos','Trainingsfotos','Fotografii antrenament'],['Fotó hozzáadása','Add photo','Foto hinzufügen','Adaugă fotografie'],['Edzés előtt','Before workout','Vor dem Training','Înainte de antrenament'],['Edzés után','After workout','Nach dem Training','După antrenament'],['Kamera','Camera','Kamera','Cameră'],['Kiválasztás','Choose','Auswählen','Alege'],
+['Gyakorlat hozzáadása','Add exercise','Übung hinzufügen','Adaugă exercițiu'],['koppints a részletekhez','tap for details','für Details antippen','apasă pentru detalii'],['Koppints a részletekhez','Tap for details','Für Details antippen','Apasă pentru detalii'],['közel maximum','near maximum','nahe am Maximum','aproape de maxim'],['súlyzó','dumbbell','Kurzhantel','ganteră'],['kar','arm','Arm','braț'],['láb','leg','Bein','picior'],['oldal','side','Seite','parte'],['mp','sec','Sek.','sec'],['Pihenő','Rest','Pause','Pauză'],['Sorozatok','Sets','Sätze','Serii'],['Következő gyakorlat','Next exercise','Nächste Übung','Următorul exercițiu'],['Előző','Previous','Zurück','Anterior'],['Edzés befejezése','Finish workout','Training beenden','Încheie antrenamentul'],['Túl könnyű','Too easy','Zu leicht','Prea ușor'],['Pont jó','Just right','Genau richtig','Potrivit'],['Nagyon nehéz','Very hard','Sehr schwer','Foarte greu'],['Fájdalom','Pain','Schmerz','Durere'],
+['Megerősítés','Confirmation','Bestätigung','Confirmare'],['Edzés elhagyása','Leave workout','Training verlassen','Părăsește antrenamentul'],['Kilépés','Leave','Verlassen','Ieși'],['Kilépsz a folyamatban lévő edzésből? A mentett vázlat megmarad, később folytathatod.','Leave the workout in progress? The saved draft will remain so you can continue later.','Laufendes Training verlassen? Der gespeicherte Entwurf bleibt erhalten und kann später fortgesetzt werden.','Părăsești antrenamentul în curs? Schița salvată rămâne și poate fi continuată mai târziu.'],
+['Biztonsági mentés','Backup','Sicherung','Copie de siguranță'],['Mentés fájlba','Save to file','In Datei speichern','Salvează în fișier'],['Visszatöltés','Restore','Wiederherstellen','Restaurează'],['Témaszín','Accent color','Akzentfarbe','Culoare de accent'],['Pihenőidő','Rest time','Pausenzeit','Timp de pauză'],['Súlylépcsők mentése','Save weight increments','Gewichtsschritte speichern','Salvează pașii de greutate'],
+['Sárga','Yellow','Gelb','Galben'],['Kék','Blue','Blau','Albastru'],['Zöld','Green','Grün','Verde'],['Lila','Purple','Violett','Mov'],['Narancs','Orange','Orange','Portocaliu'],['Cián','Cyan','Cyan','Cian'],['Türkiz','Teal','Türkis','Turcoaz'],['Rózsaszín','Pink','Rosa','Roz'],['Piros','Red','Rot','Roșu'],['Magenta','Magenta','Magenta','Magenta'],['Levendula','Lavender','Lavendel','Lavandă'],['Égkék','Sky blue','Himmelblau','Albastru cer'],['Menta','Mint','Minze','Mentă'],['Korall','Coral','Korall','Coral'],
+['Nincs adat','No data','Keine Daten','Fără date'],['Még nincs adat.','No data yet.','Noch keine Daten.','Nu există încă date.'],['Még nincs elmentett edzés.','No workouts saved yet.','Noch keine Trainings gespeichert.','Nu există încă antrenamente salvate.'],['Még nincs tervezett edzés.','No workouts scheduled yet.','Noch keine Trainings geplant.','Nu există încă antrenamente planificate.']
+];
+const TP149_MAPS={en:{},de:{},ro:{}};
+for(const row of TP149_ROWS){TP149_MAPS.en[row[0]]=row[1];TP149_MAPS.de[row[0]]=row[2];TP149_MAPS.ro[row[0]]=row[3];}
+
+const TP149_EX_DE={
+'db-squat':'Kurzhantel-Kniebeuge','db-floor-press':'Kurzhantel-Floor-Press','one-arm-row':'Einarmiges Kurzhantelrudern','rdl':'Rumänisches Kreuzheben mit Langhantel','db-curl':'Kurzhantel-Bizepscurls','reverse-lunge':'Rückwärts-Ausfallschritt mit Kurzhanteln','db-ohp':'Kurzhantel-Schulterdrücken','barbell-row':'Vorgebeugtes Langhantelrudern','pushup':'Liegestütz','oh-triceps':'Überkopf-Trizepsstrecken mit Kurzhantel','crunch':'Crunch','plank':'Unterarmstütz',
+'goblet-squat':'Goblet-Kniebeuge','bulgarian-split-squat':'Bulgarische Kniebeuge','db-pullover':'Kurzhantel-Pullover','lateral-raise':'Seitheben mit Kurzhanteln','hammer-curl':'Hammercurls','close-pushup':'Enger Liegestütz','leg-press':'Beinpresse','machine-chest-press':'Brustpresse','lat-pulldown':'Latzug','seated-cable-row':'Sitzendes Kabelrudern','leg-curl':'Beinbeuger','machine-shoulder-press':'Schulterpresse','cable-triceps':'Trizepsdrücken am Kabel','cable-curl':'Bizepscurls am Kabel',
+'incline-pushup':'Erhöhter Liegestütz','modified-pushup':'Kniender Liegestütz','decline-pushup':'Liegestütz mit erhöhten Füßen','pike-pushup':'Pike-Liegestütz','plyo-pushup':'Plyometrischer Liegestütz','archer-pushup':'Archer-Liegestütz','prisoner-squat':'Prisoner-Kniebeuge','single-leg-squat':'Einbeinige Kniebeuge','squat-jump':'Kniebeugensprung','lunge-jump':'Ausfallschrittsprung','jumping-jacks':'Hampelmann','box-jump':'Boxsprung','db-front-squat':'Frontkniebeuge mit Kurzhanteln','single-arm-db-press':'Einarmiges Kurzhantel-Brustdrücken','single-arm-incline-press':'Einarmiges Schrägbankdrücken mit Kurzhantel','single-leg-press':'Einbeinige Beinpresse','seated-leg-curl':'Sitzender Beinbeuger','single-leg-seated-curl':'Einbeiniger sitzender Beinbeuger','leg-press-calf':'Wadenheben an der Beinpresse','close-grip-bench':'Enges Bankdrücken',
+'pullup':'Klimmzug','chinup':'Klimmzug im Untergriff','negative-pullup':'Negativer Klimmzug','scapular-pullup':'Schulterblatt-Klimmzug','inverted-row':'Umgekehrtes Rudern','dip':'Barren-Dips','bench-dip':'Bank-Dips','diamond-pushup':'Diamant-Liegestütz','pseudo-planche-pushup':'Pseudo-Planche-Liegestütz','hanging-knee-raise':'Hängendes Knieheben','hanging-leg-raise':'Hängendes Beinheben','hollow-hold':'Hollow Hold','superman-hold':'Superman Hold','mountain-climber':'Mountain Climber',
+'band-row':'Rudern mit Widerstandsband','band-lat-pulldown':'Latzug mit Widerstandsband','band-chest-press':'Brustdrücken mit Widerstandsband','band-overhead-press':'Schulterdrücken mit Widerstandsband','band-face-pull':'Face Pull mit Widerstandsband','band-biceps-curl':'Bizepscurls mit Widerstandsband','band-triceps-pushdown':'Trizepsdrücken mit Widerstandsband','band-pallof-press':'Pallof Press mit Widerstandsband',
+'kb-goblet-squat':'Kettlebell-Goblet-Kniebeuge','kb-deadlift':'Kettlebell-Kreuzheben','kb-swing':'Kettlebell Swing','kb-clean':'Kettlebell Clean','kb-press':'Einarmiges Kettlebell-Schulterdrücken','kb-row':'Einarmiges Kettlebell-Rudern','kb-reverse-lunge':'Rückwärts-Ausfallschritt mit Kettlebell','kb-halo':'Kettlebell Halo',
+'barbell-back-squat':'Langhantel-Kniebeuge','conventional-deadlift':'Konventionelles Kreuzheben','bench-press':'Langhantel-Bankdrücken','incline-bench-press':'Schrägbankdrücken mit Langhantel','barbell-overhead-press':'Schulterdrücken mit Langhantel','assisted-pullup-machine':'Klimmzugmaschine mit Unterstützung','pec-deck':'Butterfly-Maschine','cable-lateral-raise':'Seitheben am Kabel','hack-squat':'Hackenschmidt-Kniebeuge','standing-calf-raise':'Stehendes Wadenheben',
+'bodyweight-squat':'Körpergewichts-Kniebeuge','glute-bridge':'Gesäßbrücke','dead-bug':'Dead Bug – diagonale Arm-Bein-Streckung','bird-dog':'Bird Dog – diagonale Arm-Bein-Streckung im Vierfüßlerstand','side-plank':'Seitstütz','calf-raise':'Stehendes Wadenheben mit Körpergewicht','db-step-up':'Kurzhantel-Step-Up','db-rdl':'Rumänisches Kreuzheben mit Kurzhanteln','db-bench-press':'Kurzhantel-Bankdrücken','incline-db-press':'Schrägbankdrücken mit Kurzhanteln','db-reverse-fly':'Vorgebeugtes Reverse Fly mit Kurzhanteln','face-pull':'Face Pull am Kabelzug','leg-extension':'Beinstrecker','cable-fly':'Stehendes Kabel-Fly'
+};
+const TP149_EX_RO={
+'db-squat':'Genuflexiune cu gantere','db-floor-press':'Împins cu gantere la sol','one-arm-row':'Ramat cu o ganteră','rdl':'Îndreptări românești cu bară','db-curl':'Flexii biceps cu gantere','reverse-lunge':'Fandare înapoi cu gantere','db-ohp':'Împins deasupra capului cu gantere','barbell-row':'Ramat aplecat cu bară','pushup':'Flotări','oh-triceps':'Extensie triceps deasupra capului cu ganteră','crunch':'Abdomene crunch','plank':'Planșă pe antebrațe',
+'goblet-squat':'Genuflexiune goblet','bulgarian-split-squat':'Genuflexiune bulgărească','db-pullover':'Pullover cu ganteră','lateral-raise':'Ridicări laterale cu gantere','hammer-curl':'Flexii ciocan','close-pushup':'Flotări cu priză îngustă','leg-press':'Presă pentru picioare','machine-chest-press':'Împins la aparat pentru piept','lat-pulldown':'Tracțiuni la helcometru','seated-cable-row':'Ramat la cablu din șezut','leg-curl':'Flexii pentru femurali la aparat','machine-shoulder-press':'Împins pentru umeri la aparat','cable-triceps':'Extensii triceps la cablu','cable-curl':'Flexii biceps la cablu',
+'incline-pushup':'Flotări înclinate','modified-pushup':'Flotări din genunchi','decline-pushup':'Flotări cu picioarele ridicate','pike-pushup':'Flotări pike','plyo-pushup':'Flotări pliometrice','archer-pushup':'Flotări archer','prisoner-squat':'Genuflexiune prisoner','single-leg-squat':'Genuflexiune pe un picior','squat-jump':'Săritură din genuflexiune','lunge-jump':'Săritură din fandare','jumping-jacks':'Sărituri jumping jack','box-jump':'Săritură pe cutie','db-front-squat':'Genuflexiune frontală cu gantere','single-arm-db-press':'Împins cu o ganteră pentru piept','single-arm-incline-press':'Împins înclinat cu o ganteră','single-leg-press':'Presă pe un picior','seated-leg-curl':'Flexii femurali din șezut','single-leg-seated-curl':'Flexii femurali pe un picior din șezut','leg-press-calf':'Ridicări pe vârfuri la presa de picioare','close-grip-bench':'Împins la bancă cu priză îngustă',
+'pullup':'Tracțiuni','chinup':'Tracțiuni cu priză supinată','negative-pullup':'Tracțiuni negative','scapular-pullup':'Tracțiuni scapulare','inverted-row':'Ramat invers','dip':'Dips la paralele','bench-dip':'Dips la bancă','diamond-pushup':'Flotări diamant','pseudo-planche-pushup':'Flotări pseudo planche','hanging-knee-raise':'Ridicări de genunchi din atârnat','hanging-leg-raise':'Ridicări de picioare din atârnat','hollow-hold':'Menținere hollow','superman-hold':'Menținere Superman','mountain-climber':'Mountain climber',
+'band-row':'Ramat cu bandă elastică','band-lat-pulldown':'Tracțiuni la piept cu bandă elastică','band-chest-press':'Împins pentru piept cu bandă elastică','band-overhead-press':'Împins deasupra capului cu bandă elastică','band-face-pull':'Face pull cu bandă elastică','band-biceps-curl':'Flexii biceps cu bandă elastică','band-triceps-pushdown':'Extensii triceps cu bandă elastică','band-pallof-press':'Pallof press cu bandă elastică',
+'kb-goblet-squat':'Genuflexiune goblet cu kettlebell','kb-deadlift':'Îndreptări cu kettlebell','kb-swing':'Kettlebell swing','kb-clean':'Kettlebell clean','kb-press':'Împins cu kettlebell cu un braț','kb-row':'Ramat cu kettlebell cu un braț','kb-reverse-lunge':'Fandare înapoi cu kettlebell','kb-halo':'Kettlebell halo',
+'barbell-back-squat':'Genuflexiune cu bară','conventional-deadlift':'Îndreptări convenționale','bench-press':'Împins la bancă cu bară','incline-bench-press':'Împins înclinat cu bară','barbell-overhead-press':'Împins deasupra capului cu bară','assisted-pullup-machine':'Tracțiuni asistate la aparat','pec-deck':'Fluturări la pec-deck','cable-lateral-raise':'Ridicări laterale la cablu','hack-squat':'Genuflexiune hack la aparat','standing-calf-raise':'Ridicări pe vârfuri din picioare',
+'bodyweight-squat':'Genuflexiune cu greutatea corpului','glute-bridge':'Pod fesier','dead-bug':'Dead bug – extensie braț-picior opus','bird-dog':'Bird dog – extensie braț-picior opus din patruped','side-plank':'Planșă laterală','calf-raise':'Ridicări pe vârfuri cu greutatea corpului','db-step-up':'Urcare pe treaptă cu gantere','db-rdl':'Îndreptări românești cu gantere','db-bench-press':'Împins la bancă cu gantere','incline-db-press':'Împins înclinat cu gantere','db-reverse-fly':'Fluturări inverse cu gantere din aplecat','face-pull':'Face pull la cablu','leg-extension':'Extensii de genunchi la aparat','cable-fly':'Fluturări la cabluri din picioare'
+};
+
+var tp149Locale=function tp149Locale(lang=rf212Lang()){return TP149_LOCALES[lang]||TP149_LOCALES.en;};
+
+
+const TP149_PLANNER_ROWS={
+ goal:{
+  fitness:['Általános fittség','General fitness','Allgemeine Fitness','Condiție fizică generală'],
+  muscle:['Izomépítés','Muscle gain','Muskelaufbau','Creștere musculară'],
+  strength:['Erősödés','Strength','Kraft','Forță'],
+  fatloss:['Fogyás támogatása','Support fat loss','Fettabbau unterstützen','Susținerea slăbirii']
+ },
+ experience:{
+  beginner:['Most kezdem / újrakezdem','Starting / restarting','Ich beginne / starte neu','Încep / reîncep'],
+  intermediate:['Rendszeresen edzek','I train regularly','Ich trainiere regelmäßig','Mă antrenez regulat']
+ },
+ activity:{
+  sedentary:['Többnyire ülök','Mostly sitting','Meist sitzend','Mai mult stau jos'],
+  mixed:['Vegyes / sok séta','Mixed / lots of walking','Gemischt / viel Gehen','Mixt / mult mers pe jos'],
+  physical:['Fizikai munka','Physical work','Körperliche Arbeit','Muncă fizică']
+ },
+ cadence:{
+  alternate:['Minden második nap','Every other day','Jeden zweiten Tag','La două zile'],
+  weekly:['Fix heti napok','Fixed weekdays','Feste Wochentage','Zile fixe ale săptămânii'],
+  custom:['Naptárban kijelölöm','Choose in calendar','Im Kalender auswählen','Selectez în calendar']
+ },
+ split:{
+  auto:['Válasszon az app','Let the app choose','App wählen lassen','Lasă aplicația să aleagă'],
+  full:['Teljes test A/B','Full body A/B','Ganzkörper A/B','Corp complet A/B'],
+  upper:['Felsőtest A/B','Upper body A/B','Oberkörper A/B','Partea superioară A/B'],
+  upperlower:['Felsőtest / alsótest','Upper / lower','Oberkörper / Unterkörper','Superior / inferior'],
+  ppl:['Toló / húzó / láb','Push / pull / legs','Drücken / Ziehen / Beine','Împins / tras / picioare']
+ },
+ focus:{
+  balanced:['Kiegyensúlyozott','Balanced','Ausgewogen','Echilibrat'],
+  upper:['Felsőtest','Upper body','Oberkörper','Partea superioară'],
+  chestback:['Mell / hát','Chest / back','Brust / Rücken','Piept / spate'],
+  shoulderarms:['Váll / kar','Shoulders / arms','Schultern / Arme','Umeri / brațe'],
+  core:['Törzs','Core','Rumpf','Trunchi'],
+  legs:['Láb','Legs','Beine','Picioare']
+ },
+ area:{
+  legs:['Láb','Legs','Beine','Picioare'],chest:['Mell','Chest','Brust','Piept'],
+  back:['Hát','Back','Rücken','Spate'],shoulders:['Váll','Shoulders','Schultern','Umeri'],
+  arms:['Kar','Arms','Arme','Brațe'],core:['Törzs','Core','Rumpf','Trunchi']
+ },
+ gear:{
+  dumbbell:['1 kézisúlyzó','1 dumbbell','1 Kurzhantel','1 ganteră'],
+  dumbbells:['2 kézisúlyzó','2 dumbbells','2 Kurzhanteln','2 gantere'],
+  barbell:['Kétkezes rúd','Barbell','Langhantel','Bară'],
+  bench:['Edzőpad','Bench','Trainingsbank','Bancă'],
+  support:['Stabil támasz az evezéshez','Stable support for rows','Stabile Stütze fürs Rudern','Suport stabil pentru ramat'],
+  step:['Stabil fellépő','Stable step','Stabile Stufe','Treaptă stabilă'],
+  machines:['Edzőgépek és csigák','Machines and cables','Geräte und Kabelzüge','Aparate și cabluri'],
+  bands:['Gumiszalag / erősítőszalag','Resistance band','Widerstandsband','Bandă elastică'],
+  pullupbar:['Húzódzkodórúd','Pull-up bar','Klimmzugstange','Bară de tracțiuni'],
+  dipbars:['Tolódzkodó korlát','Dip bars','Dip-Barren','Bare paralele'],
+  kettlebell:['Kettlebell','Kettlebell','Kettlebell','Kettlebell']
+ },
+ generatedDay:{
+  A:['A','A','A','A'],B:['B','B','B','B'],
+  upperA:['Felsőtest A','Upper body A','Oberkörper A','Partea superioară A'],
+  upperB:['Felsőtest B','Upper body B','Oberkörper B','Partea superioară B'],
+  upper:['Felsőtest','Upper body','Oberkörper','Partea superioară'],
+  lowerCore:['Alsótest és törzs','Lower body and core','Unterkörper und Rumpf','Partea inferioară și trunchi'],
+  push:['Toló','Push','Drücken','Împins'],pull:['Húzó','Pull','Ziehen','Tras'],legsCore:['Láb és törzs','Legs and core','Beine und Rumpf','Picioare și trunchi']
+ },
+ level:{
+  beginner:['Kezdő','Beginner','Anfänger','Începător'],
+  intermediate:['Középhaladó','Intermediate','Mittelstufe','Intermediar']
+ }
+};
+var tp149PlannerRow=function tp149PlannerRow(group,key,lang=rf212Lang(),fallback=''){
+ return tp149RowValue(TP149_PLANNER_ROWS[group]?.[key],lang,fallback||key);
+};
+var tp149PlannerOptions=function tp149PlannerOptions(group){
+ const out={};for(const key of Object.keys(TP149_PLANNER_ROWS[group]||{}))out[key]=tp149PlannerRow(group,key);return out;
+};
+var tp149PlannerGear=function tp149PlannerGear(key,lang=rf212Lang()){
+ return tp149PlannerRow('gear',key,lang,typeof GEAR132!=='undefined'?GEAR132[key]||key:key);
+};
+const TP149_PROGRAM_META={
+ locations:{
+  home:['Otthon','Home','Zuhause','Acasă'],
+  gym:['Edzőterem','Gym','Fitnessstudio','Sală'],
+  calisthenics:['Saját testsúly + rúd','Bodyweight + bar','Körpergewicht + Stange','Greutatea corpului + bară'],
+  bands:['Gumiszalag','Resistance band','Widerstandsband','Bandă elastică'],
+  kettlebell:['Kettlebell','Kettlebell','Kettlebell','Kettlebell']
+ },
+ levels:{
+  beginner:['Kezdő','Beginner','Anfänger','Începător'],
+  intermediate:['Középhaladó','Intermediate','Mittelstufe','Intermediar'],

@@ -1,0 +1,294 @@
+  const title=opts.title||'Megerősítés',confirmText=opts.confirmText||'OK',cancelText=opts.cancelText||'Mégse',danger=opts.danger===true;
+  const modal=document.createElement('div');modal.id='tp2628Dialog';modal.className='tp2628-dialog-backdrop';
+  modal.innerHTML=`<div class="tp2628-dialog" role="dialog" aria-modal="true" aria-labelledby="tp2628DialogTitle"><h2 id="tp2628DialogTitle">${tp2628DialogEscape(title)}</h2><p class="tp2628-dialog-message">${tp2628DialogEscape(message)}</p><div class="tp2628-dialog-actions"><button type="button" class="btn secondary" data-tp2628-cancel>${tp2628DialogEscape(cancelText)}</button><button type="button" class="btn ${danger?'danger':''}" data-tp2628-confirm>${tp2628DialogEscape(confirmText)}</button></div></div>`;
+  let finished=false;
+  const key=e=>{if(e.key==='Escape'){e.preventDefault();finish(false)}};
+  const finish=value=>{if(finished)return;finished=true;document.removeEventListener('keydown',key,true);modal.remove();resolve(value)};
+  modal.querySelector('[data-tp2628-cancel]').onclick=()=>finish(false);
+  modal.querySelector('[data-tp2628-confirm]').onclick=()=>finish(true);
+  modal.addEventListener('click',e=>{if(e.target===modal)finish(false)});
+  document.addEventListener('keydown',key,true);document.body.appendChild(modal);modal.querySelector('[data-tp2628-cancel]')?.focus();
+ });
+};
+var tp2628Notice=function tp2628Notice(message,title='TrainPilot'){
+ tp2628DialogRemove();
+ return new Promise(resolve=>{
+  const modal=document.createElement('div');modal.id='tp2628Dialog';modal.className='tp2628-dialog-backdrop';
+  modal.innerHTML=`<div class="tp2628-dialog" role="alertdialog" aria-modal="true" aria-labelledby="tp2628DialogTitle"><h2 id="tp2628DialogTitle">${tp2628DialogEscape(title)}</h2><p class="tp2628-dialog-message">${tp2628DialogEscape(message)}</p><div class="tp2628-dialog-actions single"><button type="button" class="btn" data-tp2628-ok>OK</button></div></div>`;
+  let finished=false;const finish=()=>{if(finished)return;finished=true;document.removeEventListener('keydown',key,true);modal.remove();resolve(true)};const key=e=>{if(e.key==='Escape'||e.key==='Enter'){e.preventDefault();finish()}};
+  modal.querySelector('[data-tp2628-ok]').onclick=finish;document.addEventListener('keydown',key,true);document.body.appendChild(modal);modal.querySelector('[data-tp2628-ok]')?.focus();
+ });
+};
+window.alert=function(message){void tp2628Notice(String(message??''));};
+(function(){if(document.getElementById('tp2628DialogCss'))return;const st=document.createElement('style');st.id='tp2628DialogCss';st.textContent=`.tp2628-dialog-backdrop{position:fixed;inset:0;z-index:1200;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.72);backdrop-filter:blur(5px)}.tp2628-dialog{width:min(460px,100%);max-height:min(78dvh,620px);overflow:auto;background:linear-gradient(145deg,var(--card2),var(--card));color:var(--text);border:1px solid color-mix(in srgb,var(--accent) 28%,var(--line));border-radius:22px;padding:20px;box-shadow:0 24px 70px rgba(0,0,0,.55)}.tp2628-dialog h2{margin:0 0 12px;font-size:22px}.tp2628-dialog-message{white-space:pre-line;line-height:1.45;margin:0 0 20px;color:var(--text)}.tp2628-dialog-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.tp2628-dialog-actions.single{grid-template-columns:1fr}.tp2628-dialog-actions .btn{min-height:48px}@media(max-width:380px){.tp2628-dialog{padding:16px;border-radius:18px}.tp2628-dialog-actions{grid-template-columns:1fr}}`;document.head.appendChild(st)})();
+
+// @section trainpilot-142-photo-stopwatch-ui.js
+/* TrainPilot 1.4.2: native photo launch reliability + visible timed-set controls. */
+const TP142_VERSION='1.4.2';
+
+const tp142StopwatchPaintBase=rf110StopwatchPaint;
+rf110StopwatchPaint=function rf110StopwatchPaint(){
+ const r=tp142StopwatchPaintBase();
+ const sec=rf110StopwatchSeconds(),toggle=document.querySelector('#rf110StopwatchToggle'),status=document.querySelector('#rf142StopwatchStatus');
+ if(toggle)toggle.textContent=rf110Stopwatch.running?'Stop és rögzítés':(sec>0?'Folytatás':'Indítás');
+ if(status){
+  const setNo=Math.max(1,(Number(rf110Stopwatch.setIndex)||0)+1);
+  status.textContent=rf110Stopwatch.running?`Fut • ${setNo}. sorozat • ${sec} mp`:sec>0?`${sec} mp rögzítve a ${setNo}. sorozatba.`:'Indítsd a stoppert; leállításkor az idő automatikusan a sorozatba kerül.';
+ }
+ return r;
+};
+const tp142TimedWorkoutBase=rf110DecorateTimedWorkout;
+rf110DecorateTimedWorkout=function rf110DecorateTimedWorkout(){
+ const r=tp142TimedWorkoutBase(),card=document.querySelector('#rf110Stopwatch');
+ if(!card)return r;
+ card.classList.add('rf142-stopwatch-top');
+ const status=card.querySelector('p.small.muted');if(status)status.id='rf142StopwatchStatus';
+ const main=card.closest('main'),hero=main?.querySelector('.hero');
+ if(hero&&hero.nextElementSibling!==card)hero.insertAdjacentElement('afterend',card);
+ rf110StopwatchPaint();return r;
+};
+(function tp142StopwatchCss(){
+ if(document.querySelector?.('#tp142StopwatchCss'))return;
+ const style=document.createElement('style');style.id='tp142StopwatchCss';style.textContent=`
+  .rf142-stopwatch-top{margin:10px 0 16px;padding:16px}
+  .rf142-stopwatch-top .rf110-stopwatch-time{font-size:42px}
+  .rf142-stopwatch-top .rf110-stopwatch-actions .btn{min-height:52px}
+  .rf142-stopwatch-top #rf142StopwatchStatus{margin:10px 0 0;font-weight:650}
+  @media(max-width:380px){.rf142-stopwatch-top .rf110-stopwatch-time{font-size:36px}}
+ `;document.head?.appendChild?.(style);
+})();
+
+// User-facing wording only; the progression decision logic is unchanged.
+const tp142FeedbackHtmlBase=rf152FeedbackHtml;
+rf152FeedbackHtml=function(e){return String(tp142FeedbackHtmlBase(e)).replaceAll('Progresszív terhelés 2.0','Progresszív edzés').replaceAll('Progresszív edzés 2.0','Progresszív edzés')};
+const tp142SettingsScreenBase=settingsScreen;
+settingsScreen=function(){return String(tp142SettingsScreenBase()).replaceAll('Progresszív terhelés • tényleges súlylépcsők','Progresszív edzés • tényleges súlylépcsők')};
+
+
+// @endsection trainpilot-142-photo-stopwatch-ui.js
+
+// @section trainpilot-143-gallery-picker.js
+/* TrainPilot 1.4.3: real-device gallery picker reliability hotfix. */
+const TP143_VERSION='1.4.3';
+
+
+// @endsection trainpilot-143-gallery-picker.js
+
+// @section trainpilot-144-capacitor-camera.js
+/* TrainPilot 1.4.4 test 2624: local gallery + MediaStore camera + private storage. */
+const TP144_VERSION='1.4.4';
+
+
+// @endsection trainpilot-144-capacitor-camera.js
+
+
+// TrainPilot 1.4.5 / test 2629: complete active WebView dialog audit.
+// All currently reachable confirm()/prompt() paths are fronted by TrainPilot-owned UI.
+var tp2629Prompt=function tp2629Prompt(message,opts={}){
+ tp2628DialogRemove();
+ return new Promise(resolve=>{
+  const title=opts.title||'Adat megadása',okText=opts.okText||'OK',cancelText=opts.cancelText||'Mégse';
+  const modal=document.createElement('div');modal.id='tp2628Dialog';modal.className='tp2628-dialog-backdrop';
+  modal.innerHTML=`<div class="tp2628-dialog" role="dialog" aria-modal="true" aria-labelledby="tp2628DialogTitle"><h2 id="tp2628DialogTitle">${tp2628DialogEscape(title)}</h2><p class="tp2628-dialog-message">${tp2628DialogEscape(message)}</p><input class="field" data-tp2629-input type="${tp2628DialogEscape(opts.type||'text')}" value="${tp2628DialogEscape(opts.value??'')}" ${opts.inputMode?`inputmode="${tp2628DialogEscape(opts.inputMode)}"`:''}><div class="tp2628-dialog-actions" style="margin-top:14px"><button type="button" class="btn secondary" data-tp2628-cancel>${tp2628DialogEscape(cancelText)}</button><button type="button" class="btn" data-tp2628-confirm>${tp2628DialogEscape(okText)}</button></div></div>`;
+  let finished=false;const input=modal.querySelector('[data-tp2629-input]');
+  const finish=value=>{if(finished)return;finished=true;document.removeEventListener('keydown',key,true);modal.remove();resolve(value)};
+  const key=e=>{if(e.key==='Escape'){e.preventDefault();finish(null)}else if(e.key==='Enter'){e.preventDefault();finish(input.value)}};
+  modal.querySelector('[data-tp2628-cancel]').onclick=()=>finish(null);
+  modal.querySelector('[data-tp2628-confirm]').onclick=()=>finish(input.value);
+  modal.addEventListener('click',e=>{if(e.target===modal)finish(null)});
+  document.addEventListener('keydown',key,true);document.body.appendChild(modal);input.focus();input.select?.();
+ });
+};
+var tp2629ConfirmBypass=function tp2629ConfirmBypass(fn,value=true){const old=window.confirm;window.confirm=()=>value;try{return fn()}finally{window.confirm=old}};
+var tp2629PromptBypass=function tp2629PromptBypass(values,fn){const old=window.prompt,a=[...values];window.prompt=()=>a.length?a.shift():null;try{return fn()}finally{window.prompt=old}};
+
+// Backup restore.
+if(typeof restoreText==='function'){
+ const tp2629RestoreTextBase=restoreText;
+ restoreText=function(text){
+  if(text.length>20*1024*1024)throw Error('Maximum 20 MB.');
+  const d=validateBackup(JSON.parse(text.replace(/^\uFEFF/,'')));
+  const msg=`${d.history.length} edzés és ${d.weights.length} testsúlyadat visszatöltése?\nEz lecseréli az app jelenlegi naplóját és tervét. A félbehagyott edzés törlődik.`;
+  void tp2628Confirm(msg,{title:'Biztonsági mentés visszatöltése',confirmText:'Visszatöltés',danger:true}).then(ok=>{if(ok)tp2629ConfirmBypass(()=>tp2629RestoreTextBase(text),true)});
+  return true;
+ };
+}
+
+// Google account confirmation paths.
+if(typeof connectGoogle==='function'){
+ const tp2629ConnectGoogleBase=connectGoogle;
+ connectGoogle=async function(){
+  if(cloudBusy)return;if(!isNative())return tp2629ConnectGoogleBase();
+  const ok=await tp2628Confirm('A kiválasztott Google-fiókhoz kapcsolod a TrainPilotot? A szinkron későbbi bekapcsolása a telefon jelenlegi edzésadatait is ebbe a fiókba menti.',{title:'Google-fiók kapcsolása',confirmText:'Kapcsolás'});
+  if(!ok)return;return tp2629ConfirmBypass(()=>tp2629ConnectGoogleBase(),true);
+ };
+}
+if(typeof disconnectGoogle==='function'){
+ const tp2629DisconnectGoogleBase=disconnectGoogle;
+ disconnectGoogle=async function(){
+  if(cloudBusy)return tp2629DisconnectGoogleBase();
+  const ok=await tp2628Confirm('Kijelentkezel? A szinkron leáll, a helyi és a Google-ban tárolt adatok megmaradnak.',{title:'Google-fiók leválasztása',confirmText:'Kijelentkezés',danger:true});
+  if(!ok)return;return tp2629ConfirmBypass(()=>tp2629DisconnectGoogleBase(),true);
+ };
+}
+
+// Drive merge has a synchronous legacy conflict selector deep in mergeSync().
+// First pass captures that selector without showing a native dialog; if a conflict
+// exists, the operation is safely repeated after an app-owned choice.
+if(typeof syncCloud==='function'){
+ const tp2629SyncCloudBase=syncCloud;
+ syncCloud=async function(silent=false){
+  if(silent)return tp2629SyncCloudBase(true);
+  let conflictMessage='';const old=window.confirm;
+  window.confirm=msg=>{conflictMessage=String(msg||'');throw Error('__TP2629_SYNC_CONFLICT__')};
+  let first;
+  try{first=await tp2629SyncCloudBase(false)}finally{window.confirm=old}
+  if(!conflictMessage)return first;
+  const phone=await tp2628Confirm(conflictMessage,{title:'Szinkronütközés',confirmText:'Telefon',cancelText:'Felhő'});
+  const prev=window.confirm;window.confirm=()=>phone;try{return await tp2629SyncCloudBase(false)}finally{window.confirm=prev}
+ };
+}
+
+// Legacy planned-item delete is still callable from older planner UI helpers.
+if(typeof cancelSchedule==='function'){
+ const tp2629CancelScheduleBase=cancelSchedule;
+ cancelSchedule=function(i){const row=scheduled()?.[i];if(!row)return;void tp2628Confirm('Törlöd ezt a tervezett alkalmat? A teljesített edzésnapló megmarad.',{title:'Tervezett edzés törlése',confirmText:'Törlés',danger:true}).then(ok=>{if(ok)tp2629ConfirmBypass(()=>tp2629CancelScheduleBase(i),true)})};
+}
+
+// Starting a new workout over a draft.
+if(typeof startWorkout==='function'){
+ const tp2629StartWorkoutBase=startWorkout;
+ startWorkout=function(dayId,scheduleId=null,programId=null){
+  if(!db.get('draft',null))return tp2629StartWorkoutBase(dayId,scheduleId,programId);
+  void tp2628Confirm('Új edzést indítasz? A félbehagyott edzés helyére ez kerül.',{title:'Új edzés indítása',confirmText:'Indítás',danger:true}).then(ok=>{if(ok)tp2629ConfirmBypass(()=>tp2629StartWorkoutBase(dayId,scheduleId,programId),true)});
+ };
+}
+
+// Settings reset confirmations.
+if(typeof resetPlan==='function'){
+ const tp2629ResetPlanBase=resetPlan;
+ resetPlan=function(){void tp2628Confirm('Visszaállítod az alapértelmezett Otthoni A/B – Alap programot és gyakorlatértékeket? A napló megmarad.',{title:'Alapértékek visszaállítása',confirmText:'Visszaállítás',danger:true}).then(ok=>{if(ok)tp2629ConfirmBypass(()=>tp2629ResetPlanBase(),true)})};
+}
+if(typeof resetStarter==='function'){
+ const tp2629ResetStarterBase=resetStarter;
+ resetStarter=function(){void tp2628Confirm('A gyakorlatok alap sorozat/ismétlés értékei a kímélő profilra állnak. A napló megmarad.',{title:'Kímélő profil',confirmText:'Alkalmazás'}).then(ok=>{if(ok)tp2629ConfirmBypass(()=>tp2629ResetStarterBase(),true)})};
+}
+
+// Program library confirmations/prompts.
+if(typeof activateProgram==='function'){
+ const tp2629ActivateProgramBase=activateProgram;
+ activateProgram=function(id){if(!programById(id))return;void tp2628Confirm('Aktiválod ezt a programot? A korábbi napló és tervezett alkalmak megmaradnak.',{title:'Program aktiválása',confirmText:'Aktiválás'}).then(ok=>{if(ok)tp2629ConfirmBypass(()=>tp2629ActivateProgramBase(id),true)})};
+}
+if(typeof createCustomProgram==='function'){
+ const tp2629CreateCustomProgramBase=createCustomProgram;
+ createCustomProgram=async function(){
+  const name=await tp2629Prompt('Program neve:',{title:'Új saját program',value:'Saját program'});if(!name)return;
+  const count=await tp2629Prompt('Hány napos ciklus? (1–7)',{title:'Program hossza',value:'2',type:'number',inputMode:'numeric'});if(count===null)return;
+  return tp2629PromptBypass([name,count],()=>tp2629CreateCustomProgramBase());
+ };
+}
+if(typeof deleteCustomProgram==='function'){
+ const tp2629DeleteCustomProgramBase=deleteCustomProgram;
+ deleteCustomProgram=function(id){const p=programById(id);if(!p||p.builtin)return;void tp2628Confirm('Törlöd ezt a saját programot? A korábbi naplóbejegyzések megmaradnak.',{title:'Saját program törlése',confirmText:'Törlés',danger:true}).then(ok=>{if(ok)tp2629ConfirmBypass(()=>tp2629DeleteCustomProgramBase(id),true)})};
+}
+if(typeof deleteCustomExercise14==='function'){
+ const tp2629DeleteCustomExerciseBase=deleteCustomExercise14;
+ deleteCustomExercise14=function(id){const e=exercises().find(x=>x.id===id);if(!e?.custom)return;void tp2628Confirm('Törlöd ezt a saját gyakorlatot? A korábbi naplóbejegyzéseket nem módosítjuk.',{title:'Saját gyakorlat törlése',confirmText:'Törlés',danger:true}).then(ok=>{if(ok)tp2629ConfirmBypass(()=>tp2629DeleteCustomExerciseBase(id),true)})};
+}
+
+// Workout/history deletion and editable-plan confirmations.
+if(typeof deleteHistoryWorkout==='function'){
+ const tp2629DeleteHistoryBase=deleteHistoryWorkout;
+ deleteHistoryWorkout=function(key){const i=rf142FindHistoryIndex(key),h=history();if(i<0)return tp2629DeleteHistoryBase(key);const x=h[i];const msg=`Biztosan törlöd ezt az edzést?\n${fmtDate(x.started)} • ${sessionDuration(x)}`;void tp2628Confirm(msg,{title:'Edzés törlése',confirmText:'Törlés',danger:true}).then(ok=>{if(ok)tp2629ConfirmBypass(()=>tp2629DeleteHistoryBase(key),true)})};
+}
+if(typeof rf153ResetDay==='function'){
+ const tp2629ResetDayBase=rf153ResetDay;
+ rf153ResetDay=function(w){void tp2628Confirm(`Visszaállítod a Full Body ${w} gyári programját?`,{title:'Programnap visszaállítása',confirmText:'Visszaállítás',danger:true}).then(ok=>{if(ok)tp2629ConfirmBypass(()=>tp2629ResetDayBase(w),true)})};
+}
+if(typeof rf154Remove==='function'){
+ const tp2629RemoveExerciseBase=rf154Remove;
+ rf154Remove=function(w,i){
+  let blocked=false;try{const st=typeof rf155DayState==='function'?rf155DayState(w):null,arr=st?.day?.exercises||plan()?.[w]||[];blocked=arr.length<=1}catch(_){}
+  if(blocked)return tp2629RemoveExerciseBase(w,i);
+  void tp2628Confirm('Törlöd ezt a gyakorlatot a programból?',{title:'Gyakorlat eltávolítása',confirmText:'Törlés',danger:true}).then(ok=>{if(ok)tp2629ConfirmBypass(()=>tp2629RemoveExerciseBase(w,i),true)});
+ };
+}
+
+// Body-weight journal delete/edit.
+if(typeof rf215Del==='function'){
+ const tp2629WeightDeleteBase=rf215Del;
+ rf215Del=function(date){void tp2628Confirm('Törlöd ezt a testsúlyadatot?',{title:'Testsúlyadat törlése',confirmText:'Törlés',danger:true}).then(ok=>{if(ok)tp2629ConfirmBypass(()=>tp2629WeightDeleteBase(date),true)})};
+}
+if(typeof rf215Edit==='function'){
+ const tp2629WeightEditBase=rf215Edit;
+ rf215Edit=async function(date){const x=weights().find(y=>y.date===date);if(!x)return;const v=await tp2629Prompt((typeof rf215T==='function'?rf215T()[3]:'Testsúly')+' (kg)',{title:'Testsúly szerkesztése',value:x.kg,type:'number',inputMode:'decimal'});if(v===null)return;return tp2629PromptBypass([v],()=>tp2629WeightEditBase(date))};
+}
+
+// Calendar reschedule and legacy day chooser prompts.
+if(typeof editSchedulePrompt==='function'){
+ const tp2629EditScheduleBase=editSchedulePrompt;
+ editSchedulePrompt=async function(id){const s=scheduled(),i=s.findIndex(x=>x.id===id);if(i<0)return;const old=s[i];const date=await tp2629Prompt('Új dátum (ÉÉÉÉ-HH-NN):',{title:'Edzés áthelyezése',value:localDateKey(new Date(old.start)),type:'date'});if(date===null)return;const time=await tp2629Prompt('Új időpont (ÓÓ:PP):',{title:'Edzés áthelyezése',value:new Date(old.start).toTimeString().slice(0,5),type:'time'});if(time===null)return;return tp2629PromptBypass([date,time],()=>tp2629EditScheduleBase(id))};
+}
+if(typeof rf224DayChoice==='function'){
+ const tp2629DayChoiceBase=rf224DayChoice;
+ rf224DayChoice=async function(date){const items=scheduleOnDate(date).filter(x=>!x.cancelled);if(items.length)return tp2629DayChoiceBase(date);const p=activeProgram(),days=p?.days||[];if(!days.length)return;const t=rf224T(),labels=days.map((d,i)=>`${i+1}. ${d.name||d.id}`).join('\n');const raw=await tp2629Prompt(`${t.choose}\n\n${labels}`,{title:t.title||'Edzésnap kiválasztása',value:'1',inputMode:'numeric'});if(raw===null)return;return tp2629PromptBypass([raw],()=>tp2629DayChoiceBase(date))};
+}
+
+window.TrainPilotDialogAudit={version:'2629',prompt:tp2629Prompt};
+
+const TP145_VERSION='1.4.5';
+
+
+// @section trainpilot-146-inline-compact.js
+// TrainPilot 1.4.6 / test 2630: exercise details stay on the Edzés page and
+// collapsed Journal entries use the same compact card rhythm.
+if(typeof rf201ExerciseRow==='function'){
+ rf201ExerciseRow=function(dayId,id,i){
+  const e=byId(id),rawPlay=typeof rf260VideoButton==='function'?rf260VideoButton(id):'';
+  const play=rawPlay.replace('event.stopPropagation();','event.preventDefault();event.stopPropagation();');
+  const target=e?.target?`<span class="badge">${esc(e.target)}</span>`:'';
+  const equipment=e?.equipment?`<span class="badge">${esc(e.equipment)}</span>`:'';
+  const note=e?.notes?`<p class="small muted tp146-exercise-note">${esc(e.notes)}</p>`:'<p class="small muted tp146-exercise-note">Koppints a módosításra, ha cserélni vagy szerkeszteni szeretnéd a gyakorlatot.</p>';
+  return `<details class="exercise tp146-exercise" data-tp146-day="${esc(dayId)}" data-tp146-exercise="${esc(id)}">
+   <summary class="tp146-exercise-summary">
+    <div class="num">${i+1}</div>
+    <div class="tp146-exercise-copy"><div class="ex-name">${esc(e?.hu||id)}</div><div class="en">${esc(e?.en||'')}</div><div class="meta">${e?.sets||''}${e?.sets?' × ':''}${esc(e?.reps||'')} ${e?.weight?`• ${e.weight} ${esc(e.unit||'kg')}`:''}</div></div>
+    <div class="tp-exercise-actions">${play}<span class="tp146-exercise-chevron" aria-hidden="true">⌄</span></div>
+   </summary>
+   <div class="tp146-exercise-body">
+    ${(target||equipment)?`<div class="tp146-exercise-tags">${target}${equipment}</div>`:''}
+    ${note}
+    <button type="button" class="btn secondary block tp146-edit-exercise" onclick="event.stopPropagation();rf154EditSlot('${esc(dayId)}',${i})">Gyakorlat módosítása</button>
+   </div>
+  </details>`;
+ };
+}
+
+// 1.4.6 main: unified compact cards, consistent program/day titles and final WebView dialog audit.
+var tp146ProgramDayTitle=function tp146ProgramDayTitle(program,day){
+ const raw=String(program?.name||'Program'),lang=typeof rf212Lang==='function'?rf212Lang():'hu';
+ let name=raw;
+ if(lang==='en'&&typeof RF213_EN!=='undefined')name=RF213_EN[raw]||raw;
+ else if(lang!=='hu'&&typeof RF214_MAPS!=='undefined'){const map=RF214_MAPS[lang]||RF214_MAPS.en||{};name=map[raw]||raw;}
+ name=String(name).replace(/\s*[–—]\s*/g,' - ').replace(/\s+-\s+/g,' - ').trim();
+ const d=String(day?.name||day?.id||'').trim();
+ return d?`${name} - ${d}`:name;
+};
+workoutTitle=function(programId,dayId){const p=programById(programId)||activeProgram(),d=programDay(p,dayId);return tp146ProgramDayTitle(p,d)};
+
+planScreen=function(){
+ const p=activeProgram();
+ if(!p)return shell(`<main><div class="hero"><h1>Nincs aktív program</h1><div class="muted">Válassz programot a Programok fülön.</div></div><button class="btn block" onclick="go('programs')">Program választása</button></main>`);
+ return shell(`<main class="tp146-plan"><div class="hero"><span class="badge">AKTÍV PROGRAM</span><h1>${esc(p.name)}</h1><div class="muted">${esc(p.location||'')} ${p.level?`• ${esc(p.level)}`:''} • ${p.days?.length||0} napos ciklus</div><br><button class="btn secondary block" onclick="go('programs')">Másik program választása</button></div>${(p.days||[]).map(d=>`<div class="card tp146-day-head"><div class="tp146-day-copy"><span class="badge">EDZÉSNAP</span><h2 class="tp146-day-title">${esc(tp146ProgramDayTitle(p,d))}</h2><div class="small muted">${d.exercises?.length||0} gyakorlat • koppints a részletekhez</div></div><span class="tp146-day-letter" aria-label="${esc(d.name||d.id)}">${esc(d.id||d.name||'')}</span></div>${(d.exercises||[]).map((id,i)=>rf201ExerciseRow(d.id,id,i)).join('')}<button class="btn secondary block" onclick="rf154AddScreen('${esc(d.id)}')">+ Gyakorlat hozzáadása</button><br><button class="btn block" onclick="startWorkout('${esc(d.id)}')">Edzés indítása</button>`).join('<br>')}</main>`);
+};
+showWorkout=function(dayId){
+ state.workout=dayId;state.tab='plan';const p=activeProgram(),d=programDay(p,dayId);if(!p||!d){render();return;}
+ render(shell(`<main class="tp146-plan"><button class="btn secondary" onclick="go('plan')">← ${esc(p.name)}</button><div class="hero"><span class="badge">AKTÍV PROGRAM</span><h1>${esc(tp146ProgramDayTitle(p,d))}</h1><div class="muted">${d.exercises?.length||0} gyakorlat</div></div>${(d.exercises||[]).map((id,i)=>rf201ExerciseRow(d.id,id,i)).join('')}<br><button class="btn secondary block" onclick="rf154AddScreen('${esc(d.id)}')">+ Gyakorlat hozzáadása</button><br><button class="btn block" onclick="startWorkout('${esc(d.id)}')">Edzés indítása</button></main>`));
+};
+
+const tp146HomeBase=home;
+home=function(){
+ let html=tp146HomeBase();const p=activeProgram(),np=nextPlanned(),next=nextWorkout(),targetProgram=np?programById(np.programId||p?.id):p,targetDay=programDay(targetProgram,np?(np.dayId||np.workout):next);
+ if(!targetProgram||!targetDay)return html;
+ const title=esc(tp146ProgramDayTitle(targetProgram,targetDay)),when=np?esc(fmtDate(np.start)):`${targetDay.exercises?.length||0} gyakorlat`;
+ const block=`<div class="tp146-next"><span class="small muted">Következő</span><strong class="tp146-next-title">${title}</strong><span class="small muted tp146-next-time">${when}</span></div><br>`;
