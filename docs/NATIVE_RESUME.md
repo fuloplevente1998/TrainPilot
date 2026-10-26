@@ -19,6 +19,36 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
   High kód; Medium vizuális dizájn előtt jelezni; Extra High komoly végső debug előtt.
   Kevés lényegi magyar output, nincs belső subagent külön kérés nélkül. PR238 követőlap.
 
+## PR252–254 integrálva; UI-debug és új közös kapu – 2026-10-26
+
+Legfrissebb app/teszt **f72c9cb0c8e336ab6cc4073d3005e7d30b3ed7fd**.
+#252936e5df→f208617c Calendar11JVM+1UI; #2533d45d3ae→acd6927c onboarding7JVM+2UI;
+#254c6366826→624aaf01 program6JVM+3UI. Külső exact riportok/delták integrálva,
+main/külső PR-merge és verzióemelés nincs. Mindhárom korábbi foglalás felszabadult;
+új külső delta csak az átadott HEAD óta review. Részletes root review/korrekció:
+reviews/NATIVE_PR252_254_INTEGRATION.md. A07 globális main catalog-reset továbbra
+nem igazolt teljes paritás; E15 Google revoke/Drive/calendar maintenance API-k
+meglevők, Settingsből még nincsenek hívva (reviews/NATIVE_PR250_INTEGRATION.md).
+
+**Korábbi b28672bf runtime:** 40291546367 telefon1096/0/0 és Wear167/0/0 valódi XML;
+R8/signing/package/version PASS, signed upgrade mindkét régi kiadásból2/2PASS;
+Wear round68+56+59=183PASS. Telefon UI69-ből csak18terminális:12PASS/6FAIL, majd
+INITIALIZED→DESTROYED nav process crash,0screenshot. Journal feedback UI PASS.
+Nem teljes telefonos kapu! Raw artifact12636867224.
+
+Rootf72c9cb0: launch/nav explicit Main (log worker-thread navot mutatott), canonical
+nyitó Main assert; lazy theme/record/interval scroll, substring progress assert,
+valódi pihenő Skip a második stopwatch előtt. Új onboarding miatt meglévő app UI
+fixture explicit complete, first-install welcome teszt megőrizve/izolálva; program
+JVM runTest/Main pump +store cleanup. Calendar canonical/projection/ownership
+schedule védelem Mainen, egyszer/preview.37Kotlin lexical/4locale XML staticPASS.
+
+**Aktuális egyetlen canonical run40315675080**, exact appf72c9cb0:
+https://github.com/fuloplevente1998/TrainPilot/actions/runs/40315675080
+Indításkor IN_PROGRESS; ezt ellenőrizd, ne indíts másolatot. Új3csomag/korrekció
+JVM/UI/R8/upgrade elfogadás még nincs. Felhasználó Extra High-t kért a CI-debugra;
+Mediumra csak későbbi vizuális finomítás előtt jelezz. Élő adat fölé install STOP.
+
 ## #250 javított audit, új UI-bekötések és közös kapu – 2026-10-26
 
 #250 exact **fb64307** két riportja byteazonosan beemelve **85f09350**.107 ID/sorrend

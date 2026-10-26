@@ -42,6 +42,15 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
 - Ne küldj GitHub-kommentet vagy másoknak üzenetet külön kérés nélkül.
   A kért nyomonkövetéshez issue/PR leírását és állapotát frissítheted.
 
+## Új aktuális integráció – 2026-10-26
+
+#252936e5df/#2533d45d3ae/#254c6366826 Rootnál integrálva f208617c/acd6927c/624aaf01,
+majd f72c9cb0 integrációs és UI-debug javítás. A lentebbi három területfoglalás
+feloldva: a felhasználó késznek adta át mindhármat. Nincs új belső agent-kérés,
+main/külső PR-merge/lezárás nincs. Új külső delta a pontos átadott SHA óta review.
+Aktuális runtime/egyetlen CI mindig a NATIVE_RESUME tetején. User Extra High-t kér
+az aktuális CI-debughoz; dizájnfinomítás előtt Medium jelzés később.
+
 ## Aktuális külső kiosztás – 2026-10-26, PR250 után
 
 Három új átadó elkészült9dfb155a-ban, pinned app7043fc7d; indulás még nem igazolt:

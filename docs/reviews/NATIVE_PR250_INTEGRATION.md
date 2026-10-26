@@ -52,6 +52,32 @@ Az új közös CI igazolja vagy cáfolja a javítást, nincs tesztkihagyás.
 
 Main/verzió/csomag változatlan, nincs PR-zárás vagy élő adatos telepítés.
 
+## Utóellenőrzés – E15/E19 és felhő-karbantartás
+
+A main tényleges erase/privacy caller most azonosítva, nem maradt pusztán
+kulcsszókeresési hiány: app.js L10759/L11177 Settings → tp105DataPanel L15019–15021
+→ tp105ManageData L14998–15017, kind local/drive/calendar/revoke. Privacy:
+tp105OpenPrivacy L15023 → BackupArchive.privacy (natív) vagy privacy.html (web).
+Exact main7473b30, eredeti sorszámok. A helyi törlési és privacy funkció a natív
+Settingsben már elérhető; erre nem készül második törlőmotor vagy privacy oldal.
+
+**További bizonyított bekötési hiány:** GoogleSyncRepository.revokeAccess,
+deleteAllDriveAppData és deleteManagedCalendars megvan, de kizárólag deklaráció/
+belső SDK-call találatuk van az alkalmazásforrásban. SettingsScreen/ViewModel
+nem hívja őket. A main fiókhoz kötött három megerősített karbantartási műveletének
+UI/consent/account/operation gate bekötése későbbi root-csomag. Ez kódparitás-hiány,
+nem csak runtime-bizonyítékhiány. Valódi Google-adatokon semmi nem lett törölve/
+visszavonva. Külön tesztelendő a cancel, account switch, token expiry, restore
+epoch, aktív edzés/szinkron admission és részben végrehajtott távoli törlés.
+
+A12 main rf144FavoriteButtons/toggleExerciseFavorite144 L1542–1552 és portable
+exerciseFavorites L14896/L14905/L14920 forrása azonosítva, de a végső library
+override caller fennmaradása továbbra külön vizsgálat. Native favorites nem hiányzik.
+C10 a main rf215WeightScreen L2791 testsúlyadatokat/diagramot mutat; közvetlen
+testsúly→haladásfotó shortcut hiánya önmagában nem igazolt main regresszió.
+E19 TRAINPILOT_VERSION L127 és backup/diagnosztikai használat nem bizonyítja
+egy külön verzióinformációs Settings-képernyő kötelező paritását.
+
 ## C03 – utólagos napló-feedback bekötése
 
 `bc18d019`: az eredeti JournalEditor draft/mentési úthoz hat explicit visszajelzés
