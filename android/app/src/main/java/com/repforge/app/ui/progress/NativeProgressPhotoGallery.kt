@@ -168,7 +168,7 @@ private fun PrivateProgressPhoto(id: String, edge: Int, language: String, modifi
         when (val result = preview) {
             PhotoPreview.Loading -> Text(strings.getString(R.string.native_progress_photo_loading), color = colors.muted)
             PhotoPreview.Error -> Text(strings.getString(R.string.native_progress_photo_unavailable),
-                color = colors.danger, modifier = Modifier.testTag("progress_photo_error"))
+                color = colors.text, modifier = Modifier.testTag("progress_photo_error"))
             is PhotoPreview.Ready -> Image(result.image,
                 strings.getString(R.string.native_progress_photo_title),
                 Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
