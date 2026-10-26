@@ -1,0 +1,614 @@
+{
+  "schema": 1,
+  "nativeCommit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+  "status": "SPECIFIED_NOT_IMPLEMENTED",
+  "screens": [
+    {
+      "id": "V01",
+      "name": "Kezdőlap",
+      "route": "home",
+      "refs": [
+        "home",
+        "homestate",
+        "homeenergy",
+        "homequery",
+        "nav"
+      ],
+      "features": [
+        "A01",
+        "A03",
+        "A04",
+        "A05",
+        "C11",
+        "E05"
+      ],
+      "retained": "A main mai naptári elsőbbsége, Folytatás és gyorsindítás marad. A mockup arany Folytatás-kártyája kerül első helyre; a köszöntés nem lehet fix Levente, az óra neve nem fix Watch7.",
+      "layout": "Globális fejléc → aktív/paused/importált Folytatás hero (ha van) → különben következő valódi programnap → Gyors edzés → óraállapot → mai metrikák → Programok/Naptár/Coach. A folytatás mellett az ajánlott új indítás ne legyen vele versengő elsődleges CTA.",
+      "actions": "Fő: meglévő banner selectDestination(\"training\") aktívnál, onResumeDraft importáltnál, különben onStartWorkout(programId, dayId, scheduleId). Másodlagos: onQuickWorkout(false/true), onPrograms/onCalendar/onCoach; onOnboarding kihagyott profilnál.",
+      "interaction": "Egy vertikális scroll; visszatéréskor scroll és célzott nap megmarad. Nincs billentyűzet. Bottom aktív banner mért Scaffold-helyet foglal. Back nem indít új sessiont.",
+      "states": "loading: valódi folyamatjelző; loadFailed: loadHomeData retry, régi adat nem kap mai címkét. Nincs cél: programválasztó, nem inaktív demóedzés. Óraadat hiánya: ismeretlen/—. Samsung-forrás csak igazolt forrással.",
+      "acceptance": "320dp-n egy teljes Folytatás CTA és a session állapota elérhető. DE/RO 2.0 fontnál metrikák egy oszlopra váltanak. TalkBack a session állapotát a CTA előtt olvassa. Aktív+importált fixture: az aktív marad a kanonikus session.",
+      "gaps": "G01, G02: Home recoveryText nyers energyScore; watchBattery nincs kitöltve. A felső aktív hero adat/callback már a scaffoldban megvan, a prezentációs slotot Root-reviewed hunkkal kell áthelyezni, nem új Home-motorral."
+    },
+    {
+      "id": "V02",
+      "name": "Edzésválasztó",
+      "route": "training",
+      "refs": [
+        "training",
+        "programs",
+        "nav"
+      ],
+      "features": [
+        "A03",
+        "A04",
+        "A06",
+        "B01",
+        "E01"
+      ],
+      "retained": "A bevált gyors beltéri/kültéri indítás és az aktuális program naplistája marad. A mockup három gyorscsempéje és kijelölt programnapja adja a ritmust; nem találunk ki becsült edzésidőt.",
+      "layout": "Gyors edzés fő kártya → Gyakorlatok/Kültéri két kártya → aktuális program neve → programnapok sorrendben → Programok/Naptár/Coach gyorselérés. Sok napnál vertikális lista, nem levágott A/B fixrács.",
+      "actions": "Fő: onStart(programId, dayId), onQuick(false/true). Másodlagos: onLibrary/onPrograms/onCalendar/onCoach. Busy/aktív új indítás a meglévő nav szabályával folytatást kap.",
+      "interaction": "Főoldali scroll mentett helyzettel; nincs IME. Programnapok kártyája egy címzett startművelet, a teljes kártya és belső gomb ne legyen két fókuszállomás ugyanarra.",
+      "states": "Nincs aktív program: onPrograms elérés. Betöltés alatt nem villan üres programként az állapot; ahol nincs loading state, ne találjunk ki külön sikerállapotot.",
+      "acceptance": "Kis szélesség/nagy betű: két gyorscsempe egymás alá, minimum48dp start. Hosszú napnév teljesen tördelődik. TalkBack név + gyakorlatdarab + Indítás; nem színből derül ki a kiválasztás.",
+      "gaps": "—"
+    },
+    {
+      "id": "V03",
+      "name": "Programok",
+      "route": "programs",
+      "refs": [
+        "programs",
+        "programvm",
+        "programeditor",
+        "rx"
+      ],
+      "features": [
+        "A06",
+        "A07",
+        "A08",
+        "A09",
+        "A10",
+        "C14"
+      ],
+      "retained": "A main programaktiválás, másolás, saját szerkesztés és napi visszaállítás marad. A mockup kiemelt Aktuális program kártyája és listaritmusa megmarad; a Közösségi mintafül kimarad.",
+      "layout": "Aktív program + állapotcímke → további beépített/saját listák → Saját terv/új program → kártyán belüli naplista és műveletmenü. A training-mode összehasonlító előnézet külön modal, nem csendes kapcsoló.",
+      "actions": "Fő: onStartProgramDay és activateProgram. Másodlagos: saveProgram, személyes terv openPersonalPlanner/savePersonalProgram, previewRestoreDay/confirmRestoreDay, deleteProgram, approveTrainingModeCompared/undoTrainingMode. Az editor callbackek változatlan draft/CAS célra kötődnek.",
+      "interaction": "Lista scroll visszaállítás; a program szerkesztése modal, IME a címmezőhöz igazodik. Back először az aktuális modalt zárja; mód-/összehasonlítási request epoch védelme megmarad.",
+      "states": "Betöltő/mentési hiba az adott programhoz; stale compare esetén új előnézetet kér. Beépített törlés/reset korlátozását nem oldja fel új menüpont.",
+      "acceptance": "Kis képernyőn az aktiválás és menü elérhető; DE/RO hosszú címe több sor. TalkBack Aktív jelző + műveletnevek. Nagy fontnál a mode összehasonlítás vertikális, nem levágott kétoszlopos tábla.",
+      "gaps": "—"
+    },
+    {
+      "id": "V04",
+      "name": "Naptár",
+      "route": "calendar",
+      "refs": [
+        "calendar",
+        "calendarvm",
+        "calendarplanner"
+      ],
+      "features": [
+        "E01",
+        "E02",
+        "E03",
+        "E04"
+      ],
+      "retained": "A main naptári napkapcsolat és többhetes ciklus marad. A mockup havi rácsa + napi esemény-idővonala a cél; a jelenlegi napcsík ugyanazon month/day adataiból alakítható rácscsá.",
+      "layout": "Hónapváltó → hét napnevek + 7 oszlopos valódi hónaprács → választott dátum → tervezett/teljesített eseménykártyák → többhetes tervezőpanel. A rácspont csak meglévő plan/history eseményt jelez.",
+      "actions": "Fő: onStart(row), completed esetben onJournal. Másodlagos: selectDay/changeMonth, save/status, plannerOpen lokális megnyitás, previewPlanner/applyPlanner/cancelPlanner. Terv előnézet és Mégse megtartandó.",
+      "interaction": "Hónapváltó és rács fölött nincs vízszintes képernyőscroll. Nagy betűn a rács számcellája48dp; ha7×48dp nem fér a belső szélességbe, a jelenlegi vízszintes napcsík a működő fallback, plusz teljes dátum fejléccel. Editor IME/date picker; Back a preview/edit réteget zárja, nincs mentés.",
+      "states": "Újraolvasási readiness/fallback és busy a VM állapotából; nem indítható idő előtt előnézet. Üres nap külön, üres hónap külön. Cancelled sorok VM-szűrését nem kerüli meg a UI.",
+      "acceptance": "DE/RO eseménynév wrap, TalkBack teljes dátum + státusz + indítás. DST23/25h nap megtartja a helyi idő szerződését. 4 hét terv cancel/save/reopen és ugyanazon scheduleId indítása kötelező.",
+      "gaps": "G09: Settingsből már van Google naptár sync, itt nincs külön onSync callback; nem rajzolható működőnek egy új inline sync gomb. Root nav-hook kell, ha itt is kívánják."
+    },
+    {
+      "id": "V05",
+      "name": "Gyakorlatkönyvtár",
+      "route": "exercise_library",
+      "refs": [
+        "library",
+        "favorites",
+        "custom"
+      ],
+      "features": [
+        "A11",
+        "A12",
+        "A13",
+        "A14"
+      ],
+      "retained": "A WebView keresője, izomcsoportjai, Kedvencek és saját gyakorlatok maradnak. A mockup kereső/chip/listakártya felépítése javítja az áttekinthetőséget; a106 szám valós aktuális state.rows méretéből jön.",
+      "layout": "Kereső → Összes/Kedvencek és izomcsoport-szűrők tördelődő sor → találatszám → teljes lista → saját gyakorlat hozzáadása. Soronként név, főizom, felszerelés és kedvenc; stock anatómiai fotó csak valódi meglévő assetből.",
+      "actions": "Fő: selectedId megnyitja a meglévő részletet. Másodlagos: toggleFavorite, saveCustom/deleteCustom editor. A sor szív/csillag önálló48dp cél, nem a kártyanyitás mellékhatása.",
+      "interaction": "Keresésnél IME ne takarja a találatlista első akcióját, kereső clear48dp. Back előbb saját editor, majd részlet, majd route. Query/favoritesOnly/muscle már rememberSaveable, megmarad.",
+      "states": "loading/error/reload külön; nincs találat a szűrő miatt nem üres katalógus. WriteFailed a kedvencsoron; nem animálunk sikeres mentést tartós hiba esetén.",
+      "acceptance": "320dp és hosszú DE/RO gyakorlatnevek: nincs horizontális elcsúszás; font2.0-n ikon helyett is marad szöveges név. TalkBack kedvenc be/ki állapot és listaindex. Saját elemek nem tűnnek el hardcoded106 limit miatt.",
+      "gaps": "—"
+    },
+    {
+      "id": "V06",
+      "name": "Gyakorlat részletei",
+      "route": "exercise_library / selectedId",
+      "refs": [
+        "librarydetail",
+        "favorites",
+        "custom"
+      ],
+      "features": [
+        "A12",
+        "A13",
+        "A14",
+        "A15",
+        "B03"
+      ],
+      "retained": "A main leírás, főizmok, súlyértelmezés és videóforrások megmaradnak. A mockup nagy demonstrációs panelje csak rendelkezésre álló tartalmat használ; nem generálunk új, ellenőrzöttnek látszó bemutatót.",
+      "layout": "Cím + kedvenc → valódi leírás és felszerelés → célizom/adattípus/előírás → videó vagy külön jelölt keresőhivatkozás → saját elem szerkesztése. Ha nincs asset, leírás és típusszimbólum helyettesíti a dekorációt.",
+      "actions": "Fő: NativeExerciseDemo.resolve szerinti VIDEO vagy UNVERIFIED_SEARCH open(link). Másodlagos: toggleFavorite; custom edit. Aktív edzéshez hozzáadás az editor meglévő exercise pickeréből működik.",
+      "interaction": "Vertikális részletscroll; Back a kereső listához tér, megőrzött szűréssel. Külső videóból visszatérve nincs új session vagy programmutáció. IME csak custom editorban.",
+      "states": "Videóhiány és linknyitási hiba saját szöveg, nem néma ikon. Nem hitelesített keresés világosan különbözik a demonstrációtól.",
+      "acceptance": "TalkBack a videó/keresés jellegét és a kedvenc állapotát mondja. Hosszú cím/nagy font mellett a bemutató nem tolja el az első valódi műveletet. Súly/kéz vs összsúly jelentés látható.",
+      "gaps": "G03: ebben a screen-signature-ben nincs onAddToWorkout; a mockup Hozzáadás gombját nem lehet új writer/callback nélkül ide bekötni. A meglévő aktív picker út marad, Root dönt az extra entryről."
+    },
+    {
+      "id": "V07",
+      "name": "Súlyzós aktív edzés",
+      "route": "active_workout / reps",
+      "refs": [
+        "workout",
+        "workoutstate",
+        "setcard",
+        "rest",
+        "leave"
+      ],
+      "features": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07",
+        "B09",
+        "B10",
+        "B15",
+        "B18"
+      ],
+      "retained": "A megszokott kg/ism/RIR sor és egyértelmű sorozat-OK, undo, ±15 és Kihagyás marad. A mockup egy kiválasztott gyakorlatra koncentrál, nem több teljes kártyára.",
+      "layout": "Session/owner állapot → előző/cím/következő → előírás → sorozatrács → visszavonás → opcionális részletek. A pihenőkártya a gyakorlatlistán kívül, a mért alsó vezérlőterületen marad. Befejezés és kamera/galéria külön egyértelmű akció.",
+      "actions": "Fő: toggleSetCompleted(renderedTarget). Másodlagos: editSet/setSetRir/toggleSetRirMode, add/removeSet, selectExercise, undoLastSet; rest adjustRestTimer/skipRestTimer. Minden cél workoutId/generation/exerciseId/setId/timerKey a renderelt snapshotból.",
+      "interaction": "IME alatt a fókuszos cella és OK elérhető; numerikus megjelenítés nem alakítja át a validátort. Kis szélesség/font2.0: egy sorozat kétsoros blokk (felső set/kg/ism, alsó RIR/OK), nincs tömörítés8sp-re. Back a meglévő leaveWorkout pause út; Settings külön, nem pause.",
+      "states": "Watch-owner csak olvasható tükröt kap; pending ownership/finalization nem oldható fel új gombbal. Timerérték a state-ből, nincs Compose tick motor.",
+      "acceptance": "Valódi pihenő futása alatt gyakorlatváltáskor marad kijelzés/azonos timerKey. Régi target nem ír. DE/RO labels és TalkBack Sorozat2,16kg,10ism, RIR2, kész/nem kész. Undo és ±15/Skip48dp.",
+      "gaps": "G04: a RestTimerFloatingBar csak onAdjust/onSkip paramétert kap; a mockup külön rest-pause vezérlőjét nem szabad a teljes workout pause-nak álcázni."
+    },
+    {
+      "id": "V08",
+      "name": "Egyoldali időalapú edzés",
+      "route": "active_workout / timed unilateral",
+      "refs": [
+        "workout",
+        "timer",
+        "interval",
+        "workoutstate"
+      ],
+      "features": [
+        "B02",
+        "B03",
+        "B05",
+        "B06",
+        "B08",
+        "B09"
+      ],
+      "retained": "A main eredeti alsó sorozatstopperje marad, és az explicit pozitív stop auto-rögzít. A mockup nagy olvasható ideje, státuszcímkéje és csukott Intervallumok sora kerül a valódi stopper köré.",
+      "layout": "Gyakorlatváltó → sorozatlista (kész/fut/még nem) → aktuális alsó stopper → Stop/Start és külön Nullázás → csukott intervallum → közös finish/rest terület. Intervallum futásakor nincs duplikált alsó stopper.",
+      "actions": "Fő: toggleSetStopwatch(target, side). Másodlagos: resetSetStopwatch, selectExercise; IntervalOptions onSave/onStart/onStop/onSkip a meglévő célokkal.",
+      "interaction": "Stop/Start a szám közelében; Nullázás nem piros stopnak álcázott. Számok tabulárisak. Vertikális scroll, nincs billentyűzet a futó méréshez; kézi adat csak lenyitott cellában. Back pause, Settings folyamatos mérés.",
+      "states": "0mp/reset/implicit pause nem teljesítés. Futó/nincs futó/szüneteltetett/ready/complete külön szöveg+ikon, nem csak progresscsík.",
+      "acceptance": "1–59mp és60+mp fixture, explicit pozitív stop után ugyanaz a sorozat egyszer kész. Nagy font/DE a stop és reset nem lóg össze; TalkBack nem szólal meg250ms-onként, állapotváltást jelez.",
+      "gaps": "—"
+    },
+    {
+      "id": "V09",
+      "name": "Kétoldali időmérés",
+      "route": "active_workout / timed bilateral",
+      "refs": [
+        "workout",
+        "timer",
+        "interval"
+      ],
+      "features": [
+        "B03",
+        "B05",
+        "B06",
+        "B08"
+      ],
+      "retained": "A main külön bal/jobb pozitív időfeltétele megmarad. A két mockup-oszlop ugyanazt a meglévő stopper-state-et jeleníti meg, nem két párhuzamos Compose-motort.",
+      "layout": "Gyakorlat → sorozatcél → Bal / Jobb külön panel → teljesítési feltétel → csukott pihenő/intervallum. Széles nézeten két oszlop; kis/nagyfonton egymás alatti azonos sorrendű panelek.",
+      "actions": "Fő: toggleSetStopwatch(target, \"left\"/\"right\"); Másodlagos: resetSetStopwatch a meglévő szerződéssel, gyakorlatváltó, pihenő. Automatikus intervallumléptetés kétoldalinál nem kínálható új funkcióként.",
+      "interaction": "Oldalcímke mindig az idő előtt olvasható, oldalváltás nem helycserés UI-trükk. Reset megerősítése csak ha a meglévő út kéri; nem vezetünk be második állapotot. Back/Settings mint V08.",
+      "states": "Csak bal pozitív, jobb0: nem kész. Mindkettő pozitív: meglévő auto-rögzítés. Watch mirror/read-only ugyanazt mutatja más inputengedéllyel.",
+      "acceptance": "2.0 font és hosszú oldalcím: vertikális fallback. TalkBack oldal + idő + mérési állapot + művelet. Oldal/gyakorlatváltás és visszatérés nem nulláz rögzített értéket.",
+      "gaps": "—"
+    },
+    {
+      "id": "V10",
+      "name": "Kültéri/GPS mérés",
+      "route": "active_workout / distance",
+      "refs": [
+        "workout",
+        "distance",
+        "gpspermission",
+        "workoutstate"
+      ],
+      "features": [
+        "B11",
+        "B12",
+        "B13",
+        "B14",
+        "E18"
+      ],
+      "retained": "A bevált Mérés befejezése, kézi idő/táv és kifejezett GPS-döntés megmarad. A mockup GPS-státuszsáv és2×2 metrikarács szervezése a cél; nincs például148bpm alapérték.",
+      "layout": "Aktivitás/owner → GPS-választás/engedélyállapot → táv+idő hangsúly → fix/pontosság és valós pulzus külön → útvonal megnyitás → manuális sorozatmezők → explicit mérés-start/finish. Élő háttértérkép dekoráció nélkül.",
+      "actions": "Fő: requestGps(renderedTarget, expectedMeasurementId) → meglévő permission launcher/toggleGpsTracking. Másodlagos: openRouteMap(routeKey), ugyanazon editSet manuális mezők. Permission-settings visszatérés nem hív automatikus GPS-writert.",
+      "interaction": "Mérés befejezése nem ugyanaz az Edzés befejezése. A map-close csak modal. IME-nél manuális adatok szerkeszthetők és olvasható a mért vs kézi forrás; futó mérés readonly szabályai maradnak.",
+      "states": "Pontos/hozzávetőleges/megtagadott, központi hely OFF, vár fixre, fixvesztés, hibás/partial route külön. Pulzusforrás nélkül —bpm. Engedélyhiány mellett a workout nem áll le és nincs kitalált pont.",
+      "acceptance": "Kis nézeten a táv/idő és explicit stop minimum48dp. TalkBack fixállapot és forrás, élő érték nincs zajos folyamatos bejelentéssel. Pozitív explicit GPS-stop külön sorozat-OK nélkül kész; mapX/back/hiba nem.",
+      "gaps": "G05: DistanceMeasurementPanel jelenleg nem rendereli liveHeartRateBpm és gpsAccuracyMeters mezőt, noha a state tartalmazza. Bemutatásuk vizuális kötés, új pulzus/pace számítás nem. G06: nincs alaptérkép-provider."
+    },
+    {
+      "id": "V11",
+      "name": "Intervallum beállítása",
+      "route": "active_workout / IntervalOptions; settings timer",
+      "refs": [
+        "interval",
+        "timerdefaults",
+        "workoutstate"
+      ],
+      "features": [
+        "B08",
+        "B09",
+        "E17"
+      ],
+      "retained": "A munka/pihenő/kör, hang/rezgés és explicit automatikus léptetés a mainből megmarad. A mockup rendezett beállítássorai a csukott, opcionális aktív panel lenyitásában kapnak helyet.",
+      "layout": "Először aktuális mentett preset összefoglaló → lenyitva munka/pihenő/kör → hang/rezgés → autoAdvance (csak támogatott egyoldali mód) → csak erre/mentés alapnak → Mentés → Indítás. Globális timerdialog ugyanazon mezőhierarchia.",
+      "actions": "Fő: configureIntervals / IntervalOptions onSave, majd startIntervals. Másodlagos: stopIntervals és skipRestTimer a meglévő célhoz; Settingsben beginTimerDefaults/saveTimerDefaults. A csukás nem mentési gomb.",
+      "interaction": "Számbillentyűzet, IME-padding, Next mezősorrend. Módosított és mentett preset külön; start csak az eddig is engedett feltételekkel. Back csak a panel/editor állapotot kezeli, nem állít le rejtetten szolgáltatást.",
+      "states": "Invalid vagy24h feletti konfiguráció a meglévő validátoron marad. intervalSaving/writeFailed látható, nincs hamis Saved. Kétoldali módban nincs új egyoldali automata ígéret.",
+      "acceptance": "Kis/nagyfont: mezők oszlopba, plusz/mínusz48dp. TalkBack érték+egység és checkboxállapot. Csak a megadott scope változik; más aktív frame/global config nem íródik felül stale mentésből.",
+      "gaps": "—"
+    },
+    {
+      "id": "V12",
+      "name": "Edzés befejezése",
+      "route": "active_workout / showFinishModal",
+      "refs": [
+        "finish",
+        "finishwriter",
+        "leave",
+        "workout"
+      ],
+      "features": [
+        "B16",
+        "B17",
+        "B10"
+      ],
+      "retained": "A hat effort-állapot, fájdalom és külön pause/discard megmarad. A mockup „Mentésre vár” hierarchiája a cél: az effort választás önmagában ne tűnjön végleges mentésnek.",
+      "layout": "Valódi összegzés → hat értékelés mint választható mező → megjegyzés, ha lesz meglévő writable state → elsődleges Mentés → Szüneteltetés és kilépés → elkülönített Elvetés. Nincs nyerttrófea/mentve állítás a writer sikere előtt; kalória csak valós forrásból.",
+      "actions": "Jelenlegi fő út: FinishWorkoutDialog.onConfirm(effort) → closeFinishModal → finishWorkout(effort,onSaved). Pause: leaveWorkout. Discard: openDiscardModal/discardWorkout. Tervben a kiválasztás vizuális draft, a valódi finish csak explicit Mentésre hívható; note callback jelenleg nincs.",
+      "interaction": "Back/Mégse bezárja az összegzést, nem ment; siker előtt nincs navigate. Nagy font/IME esetén külön görgethető form és hozzáférhető mentés. Finish/restore/owner lockot a UI nem oldja fel.",
+      "states": "Íráshiba vagy finalize/discard hiba megtartandó szerkesztési értékekkel, külön retry. Nincs „mentve” nyugta részleges natív lezárásnál.",
+      "acceptance": "2.0font, DE/RO: hat válasz legalább48dp, nem42dp magas buttonok. TalkBack kiválasztott effort külön a Mentéstől. Pause nem hoz naplósort vagy naptári teljesítést; discard külön confirmation.",
+      "gaps": "G07: a jelenlegi modal azonnal ment és nincs megjegyzés vagy összegző input contract. A note/fájdalom részletes writer Root-funkciócsomag; nem új ViewModel API dizájnindokból. A phase2 nem nevezheti késznek ezt a teljes képet e hiány rendezése nélkül."
+    },
+    {
+      "id": "V13",
+      "name": "Napló",
+      "route": "journal",
+      "refs": [
+        "journal",
+        "journalvm"
+      ],
+      "features": [
+        "C01",
+        "C07"
+      ],
+      "retained": "A main kereső, hónap/időszak és PR-jelzés marad; a mockup lapozott, jól szkennelhető kártyáihoz illesztjük. Nem csak a képernyőre már betöltött lapban keresünk.",
+      "layout": "Kereső → hónap/időszak → szűrő összefoglaló → dátumos workoutkártyák (név, teljesítés, idő, sorozat/PR) → append loading/retry. Útvonalthumbnail csak ténylegesen betöltött meglévő adatból, nincs listaszintű route-hydrate.",
+      "actions": "Fő: openDetails(row.id). Másodlagos: setSearch/setMonth, Paging retry. Az ID stabil; a kártya nem tölt részletet vagy fotófájlt csak a díszítésért.",
+      "interaction": "LazyPagingItems stabil kulcs; query/month és scroll vissza részletből. IME keresőhöz, Back előbb szerkesztő/részlet réteg, majd főoldal. Részletdialog nem hagy két aktív focus-rootot.",
+      "states": "Üres napló / nincs keresési találat / appenderror külön. PR hiány nem „0PR rekord”. Betöltő kártyákhoz nincs kamu edzésnév vagy mérés.",
+      "acceptance": "Kis kijelzőn legalább két áttekinthető rekord, nagy betűn egy is elfogadható, minden művelet elérhető. DE/RO hosszú név wrap. TalkBack dátum → cím → státusz/PR → megnyitás; mini térkép dekoráció csak igazolt meglévő geometryből.",
+      "gaps": "G06: listában nincs alaptérkép/route geometry betöltés; a látványterv várostérképes thumbja nem kész funkció. Ne hozzunk létre N+1 route-queryt a dizájnért."
+    },
+    {
+      "id": "V14",
+      "name": "Naplózott edzés részletei",
+      "route": "journal / selectedWorkoutId modal",
+      "refs": [
+        "detail",
+        "journalvm",
+        "journaledit",
+        "sources",
+        "photo"
+      ],
+      "features": [
+        "C02",
+        "C03",
+        "C04",
+        "C05",
+        "C07"
+      ],
+      "retained": "A main részletes sorozatok, Statisztikák/Forrás és utólagos szerkesztés marad. A mockup három füle, időtartam-hierarchiája és külön fotó/útvonal elérése a cél.",
+      "layout": "Edzésazonosító, dátum/név → időmutatók → scrollozható fülek Gyakorlatok/Statisztikák/Forrás → teljes gyakorlat/sorozatlista → fotó/útvonal → Szerkesztés/Calendar intent → megerősített törlés.",
+      "actions": "Fő: openEditor / szerkesztő save callback. Másodlagos: openRouteMap, refreshWorkoutHealth(activity), createCalendarIntent, requestDeleteWorkout/confirmDeleteWorkout; privát fotó modal. A két health source külön jelenik meg.",
+      "interaction": "Full-screen dialog jelenlegi close/back szerződése megmarad, a közös gear hozzáférhetőségét a dialogon belüli guardolt nav-hook nélkül nem ígérjük. Tab/scroll workout-ID-hez kötött. IME csak editorban, cancel nem ír.",
+      "states": "Loading/missing/detailError retry; photosMissing és health partial saját állapot. Delete vagy mentés közben close/back csak meglévő engedéllyel. Az alkalmazott feedback nem válik módosíthatóvá új chip miatt.",
+      "acceptance": "2.0font hosszú edzésnév/tabs nem fedik a listát. TalkBack sorozatonként súly/ism/idő/RIR és forrás. Ugyanaz az edzés-ID marad edit után. Fotó törlés és workout törlés külön jelentésű.",
+      "gaps": "G08 megengedett modal-kivétel: a JournalDetailDialog külön Window; a NATIVE_MOCKUP_REVIEW szerint beágyazott dialógusra nem szükséges új fogaskerék. Nem kell új nav-hookot vagy hatodik fület bevezetni emiatt."
+    },
+    {
+      "id": "V15",
+      "name": "Privát útvonaltérkép",
+      "route": "WorkoutRouteMapDialog modal",
+      "refs": [
+        "map",
+        "mapcanvas",
+        "journalvm"
+      ],
+      "features": [
+        "B13",
+        "C06"
+      ],
+      "retained": "A bevált piros X és a privát útvonalszakaszok maradnak. A mockup teljes képernyős útvonal és alsó adatpanel kompozíciója a cél, nem a generált Budapest háttérképe.",
+      "layout": "Cím + piros veszélytokennel megkülönböztetett X → route point/partial állapot → nagy saját geometry canvas → start/path/finish legenda. Csak létező összesített adat lehet alsó panelen. Nincs fogaskerék vagy bottom nav a térképmodalban.",
+      "actions": "Fő/másodlagos: onDismiss (X, rendszer-Back), minden aktív/journal belépő ugyanazt a canvasadatot adja. Nincs stop/finish writer a close útján.",
+      "interaction": "Window teljes méret, rendszer insetek, X48dp. Route bounding box elfér, szakaszok nincsenek összekötve hiányzó pontokon. Nincs IME; Back csak ezt a modalt zárja.",
+      "states": "Offline saját route továbbra rajzolható; hiányzó rész explicit jelzés. Alaptérkép hiánya nem routehiba és nincs új offline tile-ígéret.",
+      "acceptance": "TalkBack route szakasz/pont összefoglaló és X címke. Nagy font mellett a címke/legenda nem fedheti a close-t. X után GPS/stopper/session állapota változatlan.",
+      "gaps": "G06: MercatorRouteCanvas saját Path-rajz; nincs tile provider, zoom/recenter callback vagy térképcache. Ezeket a mockupból nem szabad működőként átvenni."
+    },
+    {
+      "id": "V16",
+      "name": "Fejlődés",
+      "route": "progress; weight_journal közös elérés",
+      "refs": [
+        "progress",
+        "progressstate",
+        "cardio",
+        "weight",
+        "weightvm"
+      ],
+      "features": [
+        "C07",
+        "C08",
+        "C09",
+        "C10"
+      ],
+      "retained": "A main gyakorlatválasztó, 1RM/volumen, izomterhelés, kardió-időszakok és testsúly megmarad. A mockup belső fülei az információkat csoportosítják, nem tüntetik el az összetett régi statisztikát.",
+      "layout": "Áttekintő cím → Erőnlét/Mennyiség/Kardió/Testsúly helyi panelek → az adott meglévő queryhez tartozó választók → valódi grafikon + táblás összefoglaló → testsúlynapló gyorselérés. A meglévő state-ben nem létező időszakszűrőhöz nem rajzolunk placebo chipet.",
+      "actions": "Fő: selectExercise, selectCardioActivity, onWeightJournal. Másodlagos: retryCardio/loadProgressData, WeightJournalViewModel.setRange/retryReads. Mérésaggregátumot a UI nem számol újra.",
+      "interaction": "Azonos selection/scroll/panel visszaállítás; nagy grafikonhoz nincs vízszintes oldalhúzás. IME csak testsúly editorban. Back a közös weight naplóból ugyanide.",
+      "states": "Loading és cardioError/trenderror külön a panelekben; nincs minta e1RM/history pont. A napi/zóna-váltás meglévő refresh collectora megmarad.",
+      "acceptance": "TalkBack grafikonalternatíva mértérték/lista és mintaösszeg, nem puszta canvas. Kis/nagyfont: kártyák egy oszlop, hosszú DE/RO periódus felirat wrap. Same-count history edit frissítése megmarad.",
+      "gaps": "G10: progressPhotos listát betölt a VM, de a ProgressScreen nem renderel fotógalériát vagy callbacket. A mockup Testsúly/Fotó gyorseléréshez Root dönt a hiányzó közös fotó-entryről; a strength időszakszűrés sem található a publikus state-ben."
+    },
+    {
+      "id": "V17",
+      "name": "Egészség és részletes napló",
+      "route": "health; HealthRecordBrowser; weight_journal",
+      "refs": [
+        "health",
+        "healthvm",
+        "metrics",
+        "records",
+        "weight"
+      ],
+      "features": [
+        "D01",
+        "D02",
+        "D03",
+        "D04",
+        "D05",
+        "D06",
+        "D07",
+        "D08",
+        "D09",
+        "D10",
+        "D11",
+        "D12",
+        "D13",
+        "D14",
+        "E09",
+        "E10"
+      ],
+      "retained": "A main teljes naplója, forrásai, 26 metrikakulcsa és alvásrészletei megmaradnak. A mockup hat csempéje áttekintő hierarchia, nem metrikalimit. Lépés/aktív/összes energia nem összeadás.",
+      "layout": "Szolgáltató/lastSync/partial → normál/full frissítés és progress/cancel/retry → választott hónap/nap/csatorna → fontos metrikák → teljes metrikacsoportok → alvás/rekord részletek → testsúly → Eszközök és adatforrásbeállítások. Statisztika és permission külön.",
+      "actions": "Fő: syncHealth, record detail megnyitás és HealthRecordBrowser range/source/paging. Másodlagos: setProvider, setDailySourcePreference, setAutoOnOpen, toggleHcBackground/toggleBleBackground, onWeightJournal; kézi Samsung consent megmarad.",
+      "interaction": "Metrikarács2oszlop alapból,1oszlop nagyfontnál. A részletbrowser scroll/query megmarad bezárás után; új sync nem állítja át a kiválasztott napot. Dátum natív picker, Back a browserből azonosnapra.",
+      "states": "Engedélyhiány/providerhiány/partial/syncerror/üresnap külön, no data=—. Jövőbeli/régi adat nem élő. HC/Samsung/BLE külön forrás és időbélyeg; a timestamp nélküli forrásbadge nem lehet „friss”.",
+      "acceptance": "Kis nézet és DE/RO: minden metrikakulcs/részlet elérhető. TalkBack szám+egység+forrás+dátum; progress oldalszámból/napból jön. 30 nap/full/incremental és régi nap/source selection megmarad. Kézi testsúly update nem ír provider-recordot.",
+      "gaps": "—"
+    },
+    {
+      "id": "V18",
+      "name": "Coach",
+      "route": "coach",
+      "refs": [
+        "coach",
+        "coachvm",
+        "readiness"
+      ],
+      "features": [
+        "C11",
+        "C12",
+        "C13",
+        "C14",
+        "A09",
+        "A10"
+      ],
+      "retained": "A main tanácsok, terhelés/fájdalom korlátozás és külön Samsung/saját/Coach érték marad. A mockup nagy readiness körét az egyetlen NativeCoachReadiness eredmény tölti ki.",
+      "layout": "Nagy Coach score + korlátozó ok → Samsung energia és TrainPilot becslés két névvel → frissesség/tényezők → javasolt programnap CTA → gyakorlatonkénti lenyitható tanács → megerősített variációelőnézet.",
+      "actions": "Fő: meglévő onStart vagy upcoming esetben onCalendar; másodlagos: refreshHealth, previewVariation/saveVariation/closeVariation, onHealth/onProgress/onPrograms. Read-only tanács nem alkalmazott terv.",
+      "interaction": "Egy scroll, számpanel csak addig nagy, amíg az első ajánlás elérhető. Nagyfonton két pontszám vertikális. Back variációt zár/route-ra lép, nem fogad el programot.",
+      "states": "Nincs score: —, nem0. Elavult/hiányzó Samsung és fallback külön. Loading/error/reload megtartja az engedélyezett tanácsokat, nem jelzi késznek a félkész új readet.",
+      "acceptance": "Azonos inputnál Home/Health recovery nem veheti át a terheléssel csökkentett Coach score-t. TalkBack három külön skála és indok, nem „87+61=54”. DE/RO a körtől jobbra szűk szöveg helyett alatta jelenik meg.",
+      "gaps": "—"
+    },
+    {
+      "id": "V19",
+      "name": "Beállítások",
+      "route": "settings",
+      "refs": [
+        "settings",
+        "settingsvm",
+        "themepicker",
+        "lang",
+        "timerdefaults",
+        "google"
+      ],
+      "features": [
+        "A02",
+        "C14",
+        "E11",
+        "E12",
+        "E13",
+        "E14",
+        "E15",
+        "E16",
+        "E17",
+        "E19",
+        "E20"
+      ],
+      "retained": "A main szekciók, 32paletta és négy nyelv marad; a mockup soros beállításkártyái a hosszú Material-listát tagolják. A user mentett témáját a grafit/arany bemutató kedvéért nem reseteljük.",
+      "layout": "Megjelenés (nyelv/témák) → Profil → Edzés/időzítő/haptika/mód → Kapcsolatok/Google → Mentés-visszaállítás → Adatvédelem/karbantartás. Szekciócímek és fogaskerék kontextus megmarad. Veszélyes műveletek nem elsődleges arany főgombok.",
+      "actions": "Fő: meglévő editor Save callbackek. Másodlagos: setTheme/setLanguage, beginTimerDefaults/saveTimerDefaults, saveProfile, training-mode compare, connect/sync/disconnect, három Google maintenance. Nincs új verzióadat vagy backup-lista lekérés.",
+      "interaction": "IME profile/timerben a formnak foglal helyet. Back először megnyitott panel, majd eredeti route/session; Settingsbe lépés önmagában nem pause. Dialog input local draft nem kerül újra inicializálásra háttérrecompozíciótól.",
+      "states": "Versengő restore/sync/writer busy és hibák panelspecifikusak; új felület nem kerüli meg a guardot. Google confirmation account/scope/cancel megmarad, token nem UI.",
+      "acceptance": "32 palette választható és persistált, HU/EN/DE/RO az egész felületet frissíti.48dp switchsor, hosszú német label-wrap. TalkBack szekció és be/ki/mentési állapot. Aktív időmérés Settings roundtrip során folytatódik.",
+      "gaps": "G09: globális Permissions/Watch külön route nincs; a mockup ezekre mutató sorait csak meglévő kontextusos entryvel vagy Root nav-bekötéssel lehet megvalósítani. Verziósort csak valós BuildConfigból, ha Root jóváhagyja a hiányzó kötést."
+    },
+    {
+      "id": "V20",
+      "name": "Óra és szinkron",
+      "route": "active_workout / ownership dialog + Home status",
+      "refs": [
+        "workout",
+        "workoutstate",
+        "ownership",
+        "home",
+        "nav"
+      ],
+      "features": [
+        "E05",
+        "E06",
+        "E07",
+        "E08"
+      ],
+      "retained": "A main kétirányú ownership/protokoll és offline saját folytatás marad. A mockup státuszkártyáit a meglévő session-owner felület köré tervezzük; nem „következő edzésnél” ígéretet.",
+      "layout": "Valódi kapcsolat → aktuális workout tulajdonos → pending/ack/blocked állapot → engedélyezett átadás/visszavétel → offline magyarázat. Akkumulátor csak valódi adatból, kapcsolat nem következik pusztán egy régi profilból.",
+      "actions": "Fő: requestOwnershipBackFromWatch vagy startWatchMeasurementRemotely(activity), a jelenlegi UI permission/owner szabályaival. Másodlagos: meglévő ownership dialog zárás/megtekintés; Home csak státusz, nem hamis mutatós órafotó.",
+      "interaction": "Őrizze az aktív session nézetét és a bottom eredetfület. Back csak a panelt zárja. Nincs IME; ownership közben a globális navigation guard megmarad.",
+      "states": "Disconnected/ack-pending/phone-owner/watch-owner és recovery blokk külön szöveg. Reconnect nem indít automatikus átadást vagy két stoppert.",
+      "acceptance": "TalkBack kimondja a tulajdonost és az átadás függő állapotát, a zöld pont nem elég. Kis kijelzőn a manuális átadás és a figyelmeztetés együtt látható. Offline→online nem lesz néma ownercsere.",
+      "gaps": "G09: standalone watch_sync route és settings callback nincs; az aktuális aktív editorba szervezett panel megvalósítható. Teljes külön oldalhoz Root prezentációs nav-hook szükséges; Wear-kód nem módosítható."
+    },
+    {
+      "id": "V21",
+      "name": "Mentés és visszaállítás",
+      "route": "settings / SAF + recovery",
+      "refs": [
+        "settings",
+        "settingsvm",
+        "recovery",
+        "google"
+      ],
+      "features": [
+        "E11",
+        "E12",
+        "E13",
+        "E14",
+        "E15"
+      ],
+      "retained": "A bevált JSON/ZIP/Drive és explicit egészségadat-beleegyezés megmarad. A mockup három formátumkártyáját a már meglévő SAF/Drive callbackekhez kötjük, kitalált mentéslista nélkül.",
+      "layout": "Formátum és tényleges tartalom → health consent → Export → Import külön blokk → interrupted recovery + Folytatás/alternatív JSON/ZIP → Google recoveryEarlier és maintenance külön veszélyzóna. Restore tiltásszöveg: aktív edzés KÖZBEN, nem ELŐTT.",
+      "actions": "Fő: meglévő JSON/ZIP launcherek + onSaf*Completed; Google syncDriveCloud. Másodlagos: resumeReplacement/onJson/onZip recovery; explicit erasure sajátconfirm. SAF cancel nem hív import/export writert.",
+      "interaction": "Scrollos szekció Settingsen belül, nem új route. Rendszer fájlválasztóból Back ugyanoda és meglévő restore-fence mellett tér vissza. Nem adunk dummy fájllistát vagy kijelölt visszaállítás CTA-t hiányzó API-val.",
+      "states": "Hiba/részleges ZIP/restore pending explicit recovery. Műveleti siker csak repository eredményből. Busy alatt a felhasználó tudja, mely művelet fut; aktív session nem vész el.",
+      "acceptance": "Kis/nagyfont és DE/RO: tartalommagyarázat nem sűrített apróbetű. TalkBack formátum+tartalom+scope és megerősítés. Import hiba után továbbra van retry/alternatíva, nem dekorációs zöld pipa.",
+      "gaps": "G11: nincs mentések listázására/preview-lista választására state a SettingsUiState-ben. A mintabeli dátumok/méretek/sorok nem jeleníthetők meg valós funkcióként. Adatintegritási QA-ból jövő jövőbeli baseline-t Root adja."
+    },
+    {
+      "id": "V22",
+      "name": "Engedélyek",
+      "route": "kontextusos panelek: GPS/health/BLE/settings",
+      "refs": [
+        "gpspermission",
+        "health",
+        "healthvm",
+        "settings"
+      ],
+      "features": [
+        "E18",
+        "E09",
+        "E10",
+        "D09",
+        "B11"
+      ],
+      "retained": "A main kontextusos engedélykérés és rendszerlinkek maradnak. A mockup állapotsoros elrendezése átvehető a létező panelekben, nem új második permission-managerrel.",
+      "layout": "Funkcióhoz szükséges hozzáférés → rendszerhely külön sor → hiány oka → konkrét Android prompt/settings elérés → explicit visszatérés/újrapróba. Külön HC/Samsung/BLE/Wear és értesítési indokok.",
+      "actions": "Fő: NativeGpsPermissionRecovery existing request/retry/settingsIntent; health permission launcherek; BLE háttér permission launcherek. Másodlagos: cancel/back és állapotfrissítés. ON_RESUME csak olvas, nem GPS-start.",
+      "interaction": "Rendszerablak visszatérési út megmarad; eredeti workout/generation/exercise/set requestid nem cserélődhet újra. Nincs IME. Back elveti a pending felhasználói szándékot, nem teljesít sorozatot.",
+      "states": "Approximate vs precise, permanently denied vs egyszer denied, location OFF, SDK unsupported és app-szintű Samsung korlát külön. Általános engedélylista nem állíthat minden platformtámogatást zöldre.",
+      "acceptance": "TalkBack pontos engedély+státusz+következmény. Kis képernyőn a „rendszerhely” nem rövidül „GPS engedély”-re. Permissiongrant után sem startol háttérben GPS; explicit felhasználói retry kell.",
+      "gaps": "G09: önálló permissions route és közös permission-list state nem létezik. A meglévő panelek vizuális rendezése készíthető; a kép szerinti közös oldal Root-adaptert igényel."
+    },
+    {
+      "id": "V23",
+      "name": "Privát edzésfotók",
+      "route": "active_workout attachedPhotos + journal photo modal",
+      "refs": [
+        "activephotos",
+        "photo",
+        "detail",
+        "workoutstate"
+      ],
+      "features": [
+        "C05",
+        "C10",
+        "E13",
+        "E15"
+      ],
+      "retained": "A main kamera/galéria, privát tárolás és tudatos törlés marad. A mockup két képkártyája valódi mentett fotót jelenthet, nem súlyzós stock-képet.",
+      "layout": "Privát tartalom/backup consent magyarázat → meglévő fotók (szükség szerint lapozott decode) → camera/gallery aktív edzésben → full-view meglévő fotómodal → egyértelmű adott-ID törlés a támogatott kontextusban.",
+      "actions": "Fő: meglévő cameraLauncher/galleryLauncher és onPhotoCaptured. Másodlagos: ActiveWorkoutViewModel.deletePhoto(photo.id), journal photo megnyitás/bezárás. Fotó készítése nem állít meg edzést.",
+      "interaction": "Scroll/thumbs és full-view elválasztva; Back csak kép/modal. Nagy kép dekódolása privát repositoryból, nincs teljes archívum hydrate. Törlés célja látható,48dp gomb.",
+      "states": "Üres, filemissing, decodeerror, restore-fence, consent-/feltöltési állapot a valós adatok szerint. Nem ígérjük, hogy „soha nem kerül felhőbe”, ha user ZIP/Drive fotómentést engedélyez.",
+      "acceptance": "TalkBack fotó címke/dátum/kontextus, törlési scope. Nagyfontnál a grid1oszlopra áll. Thumbnail maxedge és aktív mérés melletti scroll nem foghatja az UI-threadet. Képbezárás nem finish.",
+      "gaps": "G12: aktív attachedPhotos sorban jelenleg üres Box +24dp delete ikon, nincs bitmapmegjelenítés vagy fotó-view callback. Journal PrivateJournalPhoto működő megjelenítő. Standalone progress photos út hiány G10; új mutáció nincs dizájncsomagban."
+    },
+    {
+      "id": "V24",
+      "name": "Program szerkesztése",
+      "route": "programs / ProgramEditorDialog",
+      "refs": [
+        "programeditor",
+        "programvm",
+        "rx",
+        "custom"
+      ],
+      "features": [
+        "A07",
+        "A08",
+        "A09",
+        "A14",
+        "C14"
+      ],
+      "retained": "A main napok/gyakorlatok sorrendje, prescriptions és saját elemek védelme marad. A mockup fókuszált napfül + egy lenyitott gyakorlat + külön Mentés/Mégse jó vizuális minta.",
+      "layout": "Név → programnapválasztó → nap neve/sorrend → gyakorlatkártyák, kijelölt részletben sets/reps/load/rest és típusspecifikus mezők → hozzáadás → Mentés/Mégse → külön veszélyes törlés/visszaállítás.",
+      "actions": "Fő: onSave(draft) → saveProgram(editing,draft,language,editorToken). Másodlagos: onCancel, prescriptions meglévő editor, sorrend/move és exercise chooser, delete/restore csak ahol eredeti szerződés engedi. Nincs új két szerkesztő ugyanazon draftnak.",
+      "interaction": "IME fókuszhoz bring-into-view, min48dp sorrendkezelők. A 3×gomb és input nem fér minden sorba: kis/nagyfonton címkézett vertikális mezőpárok. Back/Mégse nem ment, megnyitott editorToken/CAS érvényben marad.",
+      "states": "Saving/invalid/stale/writefailed a draftban marad, nem defaultokat tölt újra. A template-reset/copy működés meglévő domain-policyt követ, nem adunk új globális reset ígéretet.",
+      "acceptance": "DE/RO hosszú gyakorlat + kg/kéz érték együtt olvasható. TalkBack sorrendindex és explicit Fel/Le fallback drag mellett. Mégse után DB változatlan; siker után ugyanazon program és megfelelő nap marad elérhető.",
+      "gaps": "—"
+    }
+  ]
+}
