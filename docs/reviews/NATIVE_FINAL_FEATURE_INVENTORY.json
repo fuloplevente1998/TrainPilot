@@ -1719,7 +1719,7 @@
     {
       "featureId": "E11",
       "feature": "Helyi JSON mentés és import, teljes ZIP/fotóarchívum, ellenőrzés/előnézet",
-      "mainEntry": "www/index.html:L708 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L131 (makeBackup; app-part-001.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "settings/backup",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/settings/SettingsScreen.kt:L94",
       "callerChain": "exportJsonLauncher → onSafZipExportCompleted → untraced underlying result",
@@ -1730,12 +1730,20 @@
       "status": "IMPLEMENTED_UNVERIFIED",
       "severity": "P1",
       "gap": "JSON/ZIP corrupt/partial/large backup restore needs integrated run",
-      "acceptanceScenario": "JSON+ZIP export/import/corrupt rollback and photos"
+      "acceptanceScenario": "JSON+ZIP export/import/corrupt rollback and photos",
+      "mainEvidence": {
+        "symbolToken": "makeBackup",
+        "originalLine": 131,
+        "rawFile": "app-part-001.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "ae112558f2c1c4fccce4b6ac252b1cec6814bc9a78b8e7986d0b957959772a2d",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "E12",
       "feature": "Drive app-data mentés/szinkron, korábbi mentések és mainbeli retention/helyreállítási lehetőségek",
-      "mainEntry": "www/index.html:L708 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L332 (cloud; app-part-002.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "settings/drive",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/settings/SettingsScreen.kt:L188",
       "callerChain": "syncDriveCloud → syncDriveCloud → untraced underlying result",
@@ -1746,12 +1754,20 @@
       "status": "PLATFORM_DEVICE_PENDING",
       "severity": "P1",
       "gap": "Drive app-data history/retention/restore need real OAuth/Drive",
-      "acceptanceScenario": "Sign-in Drive, older backup restore and retention conflict"
+      "acceptanceScenario": "Sign-in Drive, older backup restore and retention conflict",
+      "mainEvidence": {
+        "symbolToken": "cloud",
+        "originalLine": 332,
+        "rawFile": "app-part-002.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "521c17a542e9fa783950d3c6f6934e396e035496c2d720f06c4aa4acabc25559",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "E13",
       "feature": "Szelektív egészségadat-mentés, fotóreferenciák, minden hordozható beállítás/kedvenc/program/törlésjelölő",
-      "mainEntry": "www/index.html:L678 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L16070 (async function backup(); app-part-076.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "settings/backup",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/settings/SettingsScreen.kt:L315",
       "callerChain": "setHealthBackupConsent → setHealthBackupConsent → untraced underlying result",
@@ -1762,12 +1778,20 @@
       "status": "PARTIAL",
       "severity": "P1",
       "gap": "Export of photo references/favorites/tombstones/selective health not exhaustively compared",
-      "acceptanceScenario": "From settings/backup, perform Szelektív egészségadat-mentés, fotóreferenciák, minden hordozható beállítás/kedvenc/program/törlésjelölő, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From settings/backup, perform Szelektív egészségadat-mentés, fotóreferenciák, minden hordozható beállítás/kedvenc/program/törlésjelölő, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "async function backup()",
+        "originalLine": 16070,
+        "rawFile": "app-part-076.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "2fc0f5af1727c1ed9061b8bba8601bc92a1603ef57f18c4d6d0232da02da9179",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "E14",
       "feature": "Sérült/részleges import kezelése, félbeszakadt művelet folytatása, validáció és adatvédelem",
-      "mainEntry": "www/index.html:L738 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L2 (restore; app-part-001.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "settings/recovery",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/settings/ReplacementRecoveryPanel.kt:L25",
       "callerChain": "replacement_recovery → resumeReplacement → untraced underlying result",
@@ -1778,12 +1802,20 @@
       "status": "PARTIAL",
       "severity": "P1",
       "gap": "Restore/start/cloud fence injected fault+resume unverified; BLOCKED UI anchor android/app/src/main/java/com/repforge/app/ui/settings/ReplacementRecoveryPanel.kt:UNRESOLVED(replacement_recovery)",
-      "acceptanceScenario": "From settings/recovery, perform Sérült/részleges import kezelése, félbeszakadt művelet folytatása, validáció és adatvédelem, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From settings/recovery, perform Sérült/részleges import kezelése, félbeszakadt művelet folytatása, validáció és adatvédelem, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "restore",
+        "originalLine": 2,
+        "rawFile": "app-part-001.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "ae112558f2c1c4fccce4b6ac252b1cec6814bc9a78b8e7986d0b957959772a2d",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "E15",
       "feature": "Helyi adatok törlése és a mainben létező helyreállítási/karbantartási műveletek",
-      "mainEntry": "www/index.html:L678 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L55 (clear; app-part-001.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "settings/erase",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/settings/SettingsScreen.kt:L345",
       "callerChain": "openEraseLocalDialog → confirmEraseLocalData → untraced underlying result",
@@ -1794,12 +1826,20 @@
       "status": "PARTIAL",
       "severity": "P1",
       "gap": "Erasure of local/legacy/remote tombstones needs privacy confirmation",
-      "acceptanceScenario": "From settings/erase, perform Helyi adatok törlése és a mainben létező helyreállítási/karbantartási műveletek, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From settings/erase, perform Helyi adatok törlése és a mainben létező helyreállítási/karbantartási műveletek, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "clear",
+        "originalLine": 55,
+        "rawFile": "app-part-001.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "ae112558f2c1c4fccce4b6ac252b1cec6814bc9a78b8e7986d0b957959772a2d",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "E16",
       "feature": "Teljes témaválaszték és HU/EN/DE/RO, a mainben elérhető nyelvválasztási működés",
-      "mainEntry": "www/index.html:L119 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L13009 (tp155ThemePickerHtml; app-part-062.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "settings/theme_language",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/settings/SettingsScreen.kt:L122",
       "callerChain": "NativeLanguagePicker → setLanguage → AVAILABLE_THEMES",
@@ -1810,12 +1850,20 @@
       "status": "IMPLEMENTED_UNVERIFIED",
       "severity": "P2",
       "gap": "32 palettes x 4 languages visual and persisted selection need run",
-      "acceptanceScenario": "Select all palettes and each HU/EN/DE/RO locale, restart"
+      "acceptanceScenario": "Select all palettes and each HU/EN/DE/RO locale, restart",
+      "mainEvidence": {
+        "symbolToken": "tp155ThemePickerHtml",
+        "originalLine": 13009,
+        "rawFile": "app-part-062.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "03abd93167051bffb9e42350c36a1a888783bad81313c3e8bef8457b319a09f8",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "E17",
       "feature": "Hang/rezgés/pihenő/preset/haptika és meglévő edzésmód-alapbeállítások",
-      "mainEntry": "www/index.html:L834 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L18631 (function config(v); app-part-085.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "settings/timer",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/settings/SettingsScreen.kt:L124",
       "callerChain": "NativeTrainingModePicker → setTimerDefaults → timerConfiguration",
@@ -1826,12 +1874,20 @@
       "status": "PARTIAL",
       "severity": "P2",
       "gap": "Global timer default setter may lack corresponding Settings UI control",
-      "acceptanceScenario": "From settings/timer, perform Hang/rezgés/pihenő/preset/haptika és meglévő edzésmód-alapbeállítások, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From settings/timer, perform Hang/rezgés/pihenő/preset/haptika és meglévő edzésmód-alapbeállítások, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "function config(v)",
+        "originalLine": 18631,
+        "rawFile": "app-part-085.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "5897a825129743f33ba9dfb912ec085d2f8b979ed2343ef0bd2841a9b4b3659f",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "E18",
       "feature": "Pontos helyengedély, központi helyszolgáltatás, értesítési/Health/Bluetooth hozzáférés és háttérállapotok",
-      "mainEntry": "www/index.html:L1807 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L1091 (var healthPermission; app-part-007.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "settings/permissions",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/health/HealthDashboardScreen.kt:L130",
       "callerChain": "permissionLauncher → refreshBackgroundStatus → untraced underlying result",
@@ -1842,12 +1898,20 @@
       "status": "PARTIAL",
       "severity": "P1",
       "gap": "No consolidated Settings permissions hub source-proven",
-      "acceptanceScenario": "From settings/permissions, perform Pontos helyengedély, központi helyszolgáltatás, értesítési/Health/Bluetooth hozzáférés és háttérállapotok, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From settings/permissions, perform Pontos helyengedély, központi helyszolgáltatás, értesítési/Health/Bluetooth hozzáférés és háttérállapotok, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "var healthPermission",
+        "originalLine": 1091,
+        "rawFile": "app-part-007.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "95711dd5493ca21b316b95348e1a9f961220788c30c438d86a94175efefc3380",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "E19",
       "feature": "Adatvédelem, eredeti verzióinformációk és rendszerbeállításokhoz vezető meglévő elérések",
-      "mainEntry": "www/index.html:L1998 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L13013 (rf200ThemePanel=function; app-part-062.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "settings/privacy",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/settings/SettingsScreen.kt:L333",
       "callerChain": "openPrivacyDialog → openPrivacyDialog → untraced underlying result",
@@ -1858,12 +1922,20 @@
       "status": "PARTIAL",
       "severity": "P2",
       "gap": "Privacy/system settings/version links not all evidenced",
-      "acceptanceScenario": "From settings/privacy, perform Adatvédelem, eredeti verzióinformációk és rendszerbeállításokhoz vezető meglévő elérések, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From settings/privacy, perform Adatvédelem, eredeti verzióinformációk és rendszerbeállításokhoz vezető meglévő elérések, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "rf200ThemePanel=function",
+        "originalLine": 13013,
+        "rawFile": "app-part-062.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "03abd93167051bffb9e42350c36a1a888783bad81313c3e8bef8457b319a09f8",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "E20",
       "feature": "Meglévő értesítések, háttérfolyamatok és rendszerintegrációk",
-      "mainEntry": "www/index.html:L708 (late HTML overlay only; www/app.js final entry BLOCKED)",
+      "mainEntry": "www/app.js:L16088 (function backgroundHtml(); app-part-076.txt; rawRef=0fa3f8ead083ace00bd9fc78117b8e08bed9493b)",
       "nativeRoute": "settings/background",
       "uiEntry": "android/app/src/main/java/com/repforge/app/ui/health/HealthDashboardScreen.kt:L134",
       "callerChain": "toggleHcBackground → toggleHcBackground → untraced underlying result",
@@ -1874,7 +1946,15 @@
       "status": "PARTIAL",
       "severity": "P2",
       "gap": "Background services/notifications access not unified in Settings",
-      "acceptanceScenario": "From settings/background, perform Meglévő értesítések, háttérfolyamatok és rendszerintegrációk, reopen and compare stored result vs main baseline; exercise failures/undo."
+      "acceptanceScenario": "From settings/background, perform Meglévő értesítések, háttérfolyamatok és rendszerintegrációk, reopen and compare stored result vs main baseline; exercise failures/undo.",
+      "mainEvidence": {
+        "symbolToken": "function backgroundHtml()",
+        "originalLine": 16088,
+        "rawFile": "app-part-076.txt",
+        "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
+        "manifestSha256": "2fc0f5af1727c1ed9061b8bba8601bc92a1603ef57f18c4d6d0232da02da9179",
+        "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
+      }
     },
     {
       "featureId": "D04.01",
@@ -2708,6 +2788,10 @@
       "perMetricAggregateOnly": 1
     },
     "E01to10": {
+      "resolved": 10,
+      "unresolved": []
+    },
+    "E11to20": {
       "resolved": 10,
       "unresolved": []
     }
