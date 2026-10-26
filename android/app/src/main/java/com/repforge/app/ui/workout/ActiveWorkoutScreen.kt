@@ -315,6 +315,7 @@ fun ActiveWorkoutScreen(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
+                    .testTag("active_workout_exercises")
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
