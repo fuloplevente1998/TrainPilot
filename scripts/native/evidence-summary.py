@@ -296,6 +296,31 @@ def analyse_phone(folder, args, roots):
         run = instrument(folder / "instrumentation.txt", roots)
     except (OSError, UnicodeError):
         return {"status": "FAILED", "issues": [{"kind": "invalid-instrumentation", "detail": "Missing or invalid phone log"}]}
+    additional = manifest.get("additionalInstrumentation", [])
+    if not isinstance(additional, list) or len(additional) != len(set(str(x) for x in additional)):
+        issue(problems, "invalid-instrumentation-runs", "Invalid isolated instrumentation list")
+        additional = []
+    for filename in additional:
+        if not isinstance(filename, str) or not re.fullmatch(r"gps-[A-Za-z0-9_]+\.txt", filename):
+            issue(problems, "invalid-instrumentation-runs", "Invalid isolated instrumentation path")
+            continue
+        try:
+            extra = instrument(folder / filename, roots)
+            expected = ("com.repforge.app.NativeGpsPermissionRecoveryUiTest", filename[4:-4])
+            if extra["case_ids"] != {expected} or run["case_ids"] & extra["case_ids"]:
+                issue(problems, "invalid-instrumentation-runs", "Unexpected or repeated isolated testcase")
+            run["case_ids"].update(extra["case_ids"])
+            for key in ("executed", "passed", "failed", "errors", "skipped"):
+                run[key] += extra[key]
+            for key in ("declared", "missing"):
+                run[key] = None if run[key] is None or extra[key] is None else run[key] + extra[key]
+            run["crashed"] = run["crashed"] or extra["crashed"]
+            run["complete"] = run["complete"] and extra["complete"]
+            run["status"] = status(run["status"], extra["status"])
+            run["issues"].extend(extra["issues"])
+            run["failure_excerpts"].extend(extra["failure_excerpts"])
+        except (OSError, UnicodeError):
+            issue(problems, "invalid-instrumentation-runs", "Missing or invalid isolated instrumentation log")
     sha = manifest.get("commit")
     if sha != args.expected_commit:
         issue(problems, "mixed-source", "Phone manifest commit does not match expected commit")
@@ -341,7 +366,7 @@ def analyse_phone(folder, args, roots):
         issue(problems, "missing-screenshot", "Phone evidence has zero screenshots")
     if manifest.get("result") != "success" or manifest.get("imageOrigin") != "unmodified-adb-exec-out-screencap-p":
         issue(problems, "manifest-result", "Phone manifest does not assert successful raw capture")
-    hard = {"mixed-source", "bad-apk-hash", "apk-hash-mismatch", "invalid-screenshot-entry", "unsafe-screenshot-path",
+    hard = {"invalid-instrumentation-runs", "mixed-source", "bad-apk-hash", "apk-hash-mismatch", "invalid-screenshot-entry", "unsafe-screenshot-path",
             "duplicate-screenshot", "bad-png", "png-hash-mismatch", "png-size-mismatch", "invalid-screenshots"}
     merged = status(run["status"], "FAILED" if any(x["kind"] in hard for x in problems) else
                     "INCOMPLETE" if problems else "PASS")

@@ -62,6 +62,29 @@ def report(raw, destination):
     return complete and not failed and all(code == 0 for _, code in cases)
 
 
+GPS_CLASS = "com.repforge.app.NativeGpsPermissionRecoveryUiTest"
+GPS_CASES = (
+    ("approximateGrantOpensAppPermissionRouteAndBackDoesNotStartMeasurement", "approximate"),
+    ("systemLocationOffHasOwnSettingsAndRequiresExplicitRetryAfterReturn", "precise"),
+    ("runtimePermissionDismissedByBackNeverRecordsDistance", "denied"),
+    ("staleOriginalWorkoutIsRefusedAfterSettingsOrPermissionBlock", "precise"),
+)
+
+
+def prepare_gps_permissions(mode):
+    # Revocation kills the target UID: do this on the host BEFORE starting instrumentation.
+    adb("shell", "am", "force-stop", "com.repforge.app")
+    for suffix in ("ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"):
+        permission = "android.permission." + suffix
+        adb("shell", "pm", "revoke", "com.repforge.app", permission)
+        adb("shell", "pm", "clear-permission-flags", "com.repforge.app", permission,
+            "user-set", "user-fixed")
+    if mode in ("approximate", "precise"):
+        adb("shell", "pm", "grant", "com.repforge.app", "android.permission.ACCESS_COARSE_LOCATION")
+    if mode == "precise":
+        adb("shell", "pm", "grant", "com.repforge.app", "android.permission.ACCESS_FINE_LOCATION")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--app", type=Path, required=True)
@@ -88,43 +111,53 @@ def main():
         adb("shell", "settings", "put", "global", "animator_duration_scale", "0")
         adb("shell", "rm", "-f", "/data/local/tmp/trainpilot-shot-request", "/data/local/tmp/trainpilot-shot-ack")
         seen = set()
-        with (output / "instrumentation.txt").open("wb") as log:
-            process = subprocess.Popen(["adb", "shell", "am", "instrument", "-w", "-r", "-e", "package",
-                                        "com.repforge.app", "com.repforge.app.test/androidx.test.runner.AndroidJUnitRunner"],
-                                       stdout=log, stderr=subprocess.STDOUT)
-            deadline = time.monotonic() + args.timeout
-            while process.poll() is None:
-                if time.monotonic() > deadline:
-                    raise TimeoutError("Native phone instrumentation exceeded deadline")
-                raw = adb("shell", "cat", "/data/local/tmp/trainpilot-shot-request", check=False).decode().strip()
-                if raw.startswith("{"):
-                    try:
-                        request = json.loads(raw)
-                    except json.JSONDecodeError:
-                        time.sleep(.1)
-                        continue
-                    name = request["name"]
-                    if not re.fullmatch(r"[a-z0-9_]{1,120}", name):
-                        raise ValueError("Invalid screenshot checkpoint name")
-                    if name not in seen:
-                        # Capture only the running application's device pixels. No overlays/crops/compositing.
-                        focus = next((line.strip() for line in adb("shell", "dumpsys", "window").decode(errors="replace").splitlines()
-                                      if "mCurrentFocus=" in line), "")
-                        if "com.repforge.app/" not in focus:
-                            raise RuntimeError("Screenshot checkpoint has no foreground native app: " + focus)
-                        png = adb("exec-out", "screencap", "-p", timeout=8)
-                        if not png.startswith(b"\x89PNG\r\n\x1a\n") or len(png) < 100:
-                            raise ValueError("Screenshot was not a complete PNG")
-                        file = output / "screenshots" / (name + ".png")
-                        file.write_bytes(png)
-                        manifest["screenshots"].append({**request, "file": "screenshots/" + file.name,
-                                                        "sha256": digest(file), "bytes": len(png), "focus": focus})
-                        seen.add(name)
-                        adb("shell", "printf '%s' '" + name + "' > /data/local/tmp/trainpilot-shot-ack")
-                time.sleep(.15)
-        raw = (output / "instrumentation.txt").read_text(errors="replace")
-        success = report(raw, output / "instrumentation-derived.xml")
-        if process.returncode != 0 or not success or not seen:
+        invocations = [("instrumentation.txt", ["-e", "package", "com.repforge.app", "-e", "notClass", GPS_CLASS], None)] + [
+            ("gps-" + method + ".txt", ["-e", "class", GPS_CLASS + "#" + method], mode)
+            for method, mode in GPS_CASES
+        ]
+        manifest["additionalInstrumentation"] = [name for name, _, mode in invocations if mode]
+        results = []
+        for filename, selector, mode in invocations:
+            if mode:
+                prepare_gps_permissions(mode)
+            with (output / filename).open("wb") as log:
+                process = subprocess.Popen(["adb", "shell", "am", "instrument", "-w", "-r", *selector,
+                                            "com.repforge.app.test/androidx.test.runner.AndroidJUnitRunner"],
+                                           stdout=log, stderr=subprocess.STDOUT)
+                deadline = time.monotonic() + args.timeout
+                while process.poll() is None:
+                    if time.monotonic() > deadline:
+                        raise TimeoutError("Native phone instrumentation exceeded deadline")
+                    raw = adb("shell", "cat", "/data/local/tmp/trainpilot-shot-request", check=False).decode().strip()
+                    if raw.startswith("{"):
+                        try:
+                            request = json.loads(raw)
+                        except json.JSONDecodeError:
+                            time.sleep(.1)
+                            continue
+                        name = request["name"]
+                        if not re.fullmatch(r"[a-z0-9_]{1,120}", name):
+                            raise ValueError("Invalid screenshot checkpoint name")
+                        if name not in seen:
+                            # Capture only the running application's device pixels. No overlays/crops/compositing.
+                            focus = next((line.strip() for line in adb("shell", "dumpsys", "window").decode(errors="replace").splitlines()
+                                          if "mCurrentFocus=" in line), "")
+                            if "com.repforge.app/" not in focus:
+                                raise RuntimeError("Screenshot checkpoint has no foreground native app: " + focus)
+                            png = adb("exec-out", "screencap", "-p", timeout=8)
+                            if not png.startswith(b"\x89PNG\r\n\x1a\n") or len(png) < 100:
+                                raise ValueError("Screenshot was not a complete PNG")
+                            file = output / "screenshots" / (name + ".png")
+                            file.write_bytes(png)
+                            manifest["screenshots"].append({**request, "file": "screenshots/" + file.name,
+                                                            "sha256": digest(file), "bytes": len(png), "focus": focus})
+                            seen.add(name)
+                            adb("shell", "printf '%s' '" + name + "' > /data/local/tmp/trainpilot-shot-ack")
+                    time.sleep(.15)
+            raw = (output / filename).read_text(errors="replace")
+            valid = report(raw, output / ("instrumentation-derived.xml" if not mode else filename + ".xml"))
+            results.append(process.returncode == 0 and valid)
+        if not all(results) or not seen:
             raise RuntimeError("Native phone UI failed or produced no screenshots; inspect raw artifacts")
         manifest["result"] = "success"
     finally:

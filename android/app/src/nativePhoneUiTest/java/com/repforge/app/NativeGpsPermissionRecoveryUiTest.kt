@@ -28,11 +28,8 @@ class NativeGpsPermissionRecoveryUiTest {
     private val fixture = NativeLocalizationEmulatorFixture()
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context: Context get() = fixture.context
-    private val pkg: String get() = context.packageName
     private var scenario: ActivityScenario<MainActivity>? = null
     private var originallyGpsEnabled = true
-    private var originallyFine = false
-    private var originallyCoarse = false
 
     private fun permission(p: String) =
         ContextCompat.checkSelfPermission(context, p) == PackageManager.PERMISSION_GRANTED
@@ -40,16 +37,12 @@ class NativeGpsPermissionRecoveryUiTest {
     @Before fun prepare() {
         fixture.reset() // Refuses physical devices and non-debuggable apps.
         originallyGpsEnabled = gpsEnabled()
-        originallyFine = permission(Manifest.permission.ACCESS_FINE_LOCATION)
-        originallyCoarse = permission(Manifest.permission.ACCESS_COARSE_LOCATION)
     }
 
     @After fun cleanup() {
         fixture.close(scenario)
-        // Always restore both platform switches even when an assertion fails.
+        // Permission reset is host-owned, between independent instrumentation processes.
         setGpsEnabled(originallyGpsEnabled)
-        setPermission(Manifest.permission.ACCESS_COARSE_LOCATION, originallyCoarse)
-        setPermission(Manifest.permission.ACCESS_FINE_LOCATION, originallyFine)
     }
 
     private fun shell(command: String) {
@@ -67,9 +60,11 @@ class NativeGpsPermissionRecoveryUiTest {
         assertEquals("emulator location switch", on, gpsEnabled())
     }
 
-    private fun setPermission(p: String, granted: Boolean) {
-        if (granted) instrumentation.uiAutomation.grantRuntimePermission(pkg, p)
-        else runCatching { instrumentation.uiAutomation.revokeRuntimePermission(pkg, p) }
+    private fun requirePermissions(precise: Boolean, approximate: Boolean) {
+        assertEquals("Host must prepare precise permission before instrumentation", precise,
+            permission(Manifest.permission.ACCESS_FINE_LOCATION))
+        assertEquals("Host must prepare coarse permission before instrumentation", approximate,
+            permission(Manifest.permission.ACCESS_COARSE_LOCATION))
     }
 
     private fun startDistanceWorkout() {
@@ -104,8 +99,7 @@ class NativeGpsPermissionRecoveryUiTest {
 
     @Test fun approximateGrantOpensAppPermissionRouteAndBackDoesNotStartMeasurement() {
         setGpsEnabled(true)
-        setPermission(Manifest.permission.ACCESS_COARSE_LOCATION, true)
-        setPermission(Manifest.permission.ACCESS_FINE_LOCATION, false)
+        requirePermissions(precise = false, approximate = true)
         startDistanceWorkout()
         startGpsFromUi()
         waitDialog()
@@ -118,8 +112,7 @@ class NativeGpsPermissionRecoveryUiTest {
     }
 
     @Test fun systemLocationOffHasOwnSettingsAndRequiresExplicitRetryAfterReturn() {
-        setPermission(Manifest.permission.ACCESS_COARSE_LOCATION, true)
-        setPermission(Manifest.permission.ACCESS_FINE_LOCATION, true)
+        requirePermissions(precise = true, approximate = true)
         setGpsEnabled(false)
         startDistanceWorkout()
         startGpsFromUi()
@@ -145,8 +138,7 @@ class NativeGpsPermissionRecoveryUiTest {
 
     @Test fun runtimePermissionDismissedByBackNeverRecordsDistance() {
         setGpsEnabled(true)
-        setPermission(Manifest.permission.ACCESS_FINE_LOCATION, false)
-        setPermission(Manifest.permission.ACCESS_COARSE_LOCATION, false)
+        requirePermissions(precise = false, approximate = false)
         startDistanceWorkout()
         startGpsFromUi() // Actual RequestMultiplePermissions launcher.
         shell("input keyevent 4") // Cancel Android runtime permission prompt.
@@ -157,8 +149,7 @@ class NativeGpsPermissionRecoveryUiTest {
     }
 
     @Test fun staleOriginalWorkoutIsRefusedAfterSettingsOrPermissionBlock() {
-        setPermission(Manifest.permission.ACCESS_COARSE_LOCATION, true)
-        setPermission(Manifest.permission.ACCESS_FINE_LOCATION, true)
+        requirePermissions(precise = true, approximate = true)
         setGpsEnabled(false)
         startDistanceWorkout()
         startGpsFromUi()

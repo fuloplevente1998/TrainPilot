@@ -116,6 +116,25 @@ class EvidenceTest(unittest.TestCase):
             if malformed and module == "wear":
                 out.write_text("<testsuite")
 
+    def test_isolated_gps_log_is_required_and_counted(self):
+        folder, app, test = self.phone(declared=2)
+        method = "explicitRetry"
+        filename = "gps-" + method + ".txt"
+        data = json.loads((folder / "manifest.json").read_text())
+        data["additionalInstrumentation"] = [filename]
+        (folder / "manifest.json").write_text(json.dumps(data))
+        code, report = self.run_summary(*self.apk_options(app, test))
+        self.assertEqual(1, code)  # absent GPS evidence cannot be silently omitted
+        raw = instrumentation(1, [0]).replace("example.Cases", "com.repforge.app.NativeGpsPermissionRecoveryUiTest").replace("method0", method)
+        (folder / filename).write_text(raw)
+        code, report = self.run_summary(*self.apk_options(app, test))
+        self.assertEqual(0, code)
+        self.assertEqual(3, report["gates"]["phone"]["passed"])
+        (folder / filename).write_text(instrumentation(1, [0], crash=True))
+        code, report = self.run_summary(*self.apk_options(app, test))
+        self.assertEqual(1, code)
+        self.assertTrue(report["gates"]["phone"]["crashed"])
+
     def test_phone_crashed_69_declared_18_terminal_12_pass_6_fail(self):
         folder, app, test = self.phone(states=[0] * 12 + [-2] * 6, crash=True, shots=False)
         code, result = self.run_summary(*self.apk_options(app, test), "--require-gate", "phone")

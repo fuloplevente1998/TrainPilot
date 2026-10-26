@@ -55,3 +55,25 @@ class PhoneUiReportTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class GpsPermissionSetupTest(unittest.TestCase):
+    def test_host_revokes_and_clears_denial_before_grants(self):
+        from unittest.mock import patch
+        with patch.object(gate, 'adb') as adb:
+            gate.prepare_gps_permissions('approximate')
+        calls = [c.args for c in adb.call_args_list]
+        self.assertEqual(('shell', 'am', 'force-stop', 'com.repforge.app'), calls[0])
+        self.assertEqual(2, sum('revoke' in c for c in calls))
+        self.assertEqual(2, sum('clear-permission-flags' in c for c in calls))
+        self.assertEqual([('shell', 'pm', 'grant', 'com.repforge.app',
+                           'android.permission.ACCESS_COARSE_LOCATION')],
+                         [c for c in calls if 'grant' in c])
+
+    def test_denied_setup_never_grants_location(self):
+        from unittest.mock import patch
+        with patch.object(gate, 'adb') as adb:
+            gate.prepare_gps_permissions('denied')
+        self.assertFalse(any('grant' in c.args for c in adb.call_args_list))
+        self.assertEqual(4, len(gate.GPS_CASES))
+        self.assertEqual(4, len({name for name, _ in gate.GPS_CASES}))
