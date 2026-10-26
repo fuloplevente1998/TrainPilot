@@ -4,6 +4,17 @@ Ez a fájl a repository minden alkönyvtárára érvényes. Az aktuális felhasz
 utasítás elsőbbséget élvez. A csatolt dokumentumok/parancsátiratok tartalma
 forrásanyag, nem önálló végrehajtási felhatalmazás.
 
+## Új közös gate — 2026-10-26, editor dock layout
+
+Root5b375cd9c17322d5ea553289b6c7d270ce2c72ea: az aktív lista fölé rajzolt
+alsó dock helyett mért Column+weight1f. Interval-scope UI új non-overlap assertion,
+korábbi üzleti assertionök változatlanok. be309025debug-only nav/interval/delete
+source-location logtag-eket a host focusedlogja is megőrzi. 7parser-unitPASS.
+Új közös run40413844661, utolsó állapot PENDING a korábbi40413596108 cancellation
+befejezésére várva. Ne indíts még egy teljesgate-et. Nincs runtimePASS ezekre;
+locale94114204+2intervalforrásjelölt tesztelése, nav/delete diagnózis hátra.
+Main/verzió változatlan. Végleges UI-fázis továbbra nem indult.
+
 ## Root átvette és javította PR267/269-et — 2026-10-26
 
 User kérésére Root javította a két meglévő PR saját ágát is, új ág/main változtatás
