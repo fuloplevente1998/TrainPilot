@@ -129,11 +129,19 @@ jobs:
             if set(passed)!=expected or failing or 'INSTRUMENTATION_CODE: -1' not in raw:
               raise SystemExit('Home UI terminal gate failed')
             PY
+            # One existing Home navigation/state regression, without rerunning the full phone suite.
+            adb shell am instrument -w -r -e class 'com.repforge.app.NativePhoneNavigationTest#homeTracksPlanSettingsProgramAndHistoryChangesAndStartsTheDisplayedSchedule' com.repforge.app.test/androidx.test.runner.AndroidJUnitRunner | tee phone-ui/results/existing-home-instrumentation.txt
+            python3 - <<'PY'
+            import pathlib, re
+            s=pathlib.Path('phone-ui/results/existing-home-instrumentation.txt').read_text()
+            statuses=re.findall(r'INSTRUMENTATION_STATUS_CODE: (-?\d+)',s)
+            assert statuses.count('0')==1 and not any(x in statuses for x in ['-2','-3','-4']) and 'INSTRUMENTATION_CODE: -1' in s, statuses
+            PY
             for name in samsung fallback none locale-hu locale-en locale-de locale-ro; do
               adb pull "/sdcard/Download/native-home-$name.png" "phone-ui/results/raw/native-home-$name.png"
               test -s "phone-ui/results/raw/native-home-$name.png"
             done
-            (cd phone-ui/results && sha256sum instrumentation.txt native-home-junit.xml raw/*.png > SHA256SUMS.txt)
+            (cd phone-ui/results && sha256sum instrumentation.txt existing-home-instrumentation.txt native-home-junit.xml raw/*.png > SHA256SUMS.txt)
       - name: Upload unmodified PNG + raw runner log + parsed XML + SHA256
         if: always()
         uses: actions/upload-artifact@v4
