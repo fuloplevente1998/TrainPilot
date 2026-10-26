@@ -121,7 +121,14 @@ internal object NativeProgressPhotoDecode {
      */
     fun decode(file: File, requestedEdge: Int): ImageBitmap? {
         val edge = requestedEdge.coerceIn(1, 1600)
-        if (!file.isFile || file.length() <= 0L || file.length() > 40L * 1024L * 1024L) return null
+        if (!file.isFile || file.length() <= 3L || file.length() > 40L * 1024L * 1024L) return null
+        // Robolectric may return a synthetic bitmap for arbitrary invalid bytes;
+        // the private repository contract always stores normalized JPEG files.
+        // Verify the JPEG SOI marker before asking the platform decoder.
+        val jpeg = file.inputStream().use { input ->
+            input.read() == 0xff && input.read() == 0xd8 && input.read() == 0xff
+        }
+        if (!jpeg) return null
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(file.absolutePath, bounds)
         if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
