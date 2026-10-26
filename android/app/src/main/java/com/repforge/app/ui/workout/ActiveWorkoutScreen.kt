@@ -261,8 +261,11 @@ fun ActiveWorkoutScreen(
         )
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(colors.bg)) {
-        Column(modifier = Modifier.fillMaxSize()) {
+    // Both sections participate in measurement. An overlaid dock let scroll-to
+    // expose controls behind its buttons, so a visible interval toggle could
+    // receive a different action (or no click) on small displays.
+    Column(modifier = Modifier.fillMaxSize().background(colors.bg)) {
+        Column(modifier = Modifier.weight(1f).fillMaxWidth()) {
             // 1. Fejléc: Cím, Időtartam, Szenzor státuszok és Ownership gomb
             ActiveWorkoutHeader(
                 state = state,
@@ -456,15 +459,15 @@ fun ActiveWorkoutScreen(
                     }
                 }
 
-                item { Spacer(Modifier.height(80.dp)) }
+                item { Spacer(Modifier.height(12.dp)) }
             }
         }
 
         // 4. Alsó vezérlősáv és Élő Pihenőidő sáv
         Column(
             modifier = Modifier
-                .align(Alignment.BottomCenter)
                 .fillMaxWidth()
+                .testTag("active_workout_controls")
                 .background(colors.card.copy(alpha = 0.95f))
                 .padding(horizontal = 16.dp, vertical = 10.dp)
         ) {

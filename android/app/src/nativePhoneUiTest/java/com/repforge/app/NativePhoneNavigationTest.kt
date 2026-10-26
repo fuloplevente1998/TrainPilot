@@ -282,6 +282,10 @@ class NativePhoneNavigationTest {
     @Test fun intervalConfigurationIsWorkoutScopedUntilGlobalDefaultIsExplicitlyChosen() {
         runBlocking { NativeWorkoutSession.startQuickWorkout(context, "plank", false) }
         launch(); tab("training")
+        val listBounds = compose.onNodeWithTag("active_workout_exercises").fetchSemanticsNode().boundsInRoot
+        val dockBounds = compose.onNodeWithTag("active_workout_controls").fetchSemanticsNode().boundsInRoot
+        assertTrue("Workout controls must reserve space, not intercept list touches",
+            listBounds.bottom <= dockBounds.top + 1f)
         compose.onNodeWithTag("active_workout_exercises")
             .performScrollToNode(hasTestTag("interval_options"))
         compose.onNodeWithTag("interval_options").performScrollTo().performClick()

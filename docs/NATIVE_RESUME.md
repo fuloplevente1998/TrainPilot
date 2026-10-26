@@ -4,6 +4,18 @@ Frissítve: 2026-10-26. AGENTS.md + ez + WORK_HANDOFF.md teteje elég indulásko
 Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/exportot.
 
 
+## Aktív editor dock nem fedhet rá a listára — 2026-10-26
+
+Root sourcefix: ActiveWorkoutScreen outer Box+overlay helyett mért Column,
+felső editor weight1f és külön wrap-content alsó controls. A 80dp vak spacer
+helyett12dpvégtér; restdock ténylegesmagassága is levonódik a viewportból.
+NativePhoneNavigation interval-scope eset új list.bottom<=dock.top assertiont kapott,
+az összes eddigi persist/autoAdvance/workout-vs-global ellenőrzés megmaradt.
+Ez a két intervalhit/scroll FAIL konkrét layoutjelölt javítása; runtime MÉG UNRUN.
+A diagnosztikus40413596108run korán CANCEL kérésre leállítva, ne tekintsdFAILnek/PASSnak;
+az újsource közös gate-je felváltja, nem indul két párhuzamos teljesRootgate.
+UIvéglegesdesign nemindult; nav/delete diagnosztika továbbra szükséges.
+
 ## Telefonos regressziók célzott diagnosztikája — 2026-10-26
 
 Root a locale94114204 fix mellé debug-only NativeNavigation requested/arrived/
