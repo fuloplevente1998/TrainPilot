@@ -7,6 +7,8 @@ import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.repforge.app.data.store.NativeTrainingModes
+import com.repforge.app.data.store.NativeTrainingModeChange
+import com.repforge.app.ui.settings.NativeTrainingModeComparison
 import com.repforge.app.ui.text.nativeResources
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -57,6 +59,30 @@ class NativeTrainingModeApprovalUiTest {
                     .fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithTag("training_modes_program_approve").assertIsEnabled()
+    }
+
+    @Test fun hitRirProgramComparisonUsesRealRoomRowsWithoutMutatingSettings() {
+        val pid = current().activeProgramId
+        val raw = JSONObject().put("schemaVersion", 1).put("explicitChoice", true)
+            .put("defaults", JSONObject().put("trainingStyle", "normal")
+                .put("progressionMode", "double"))
+            .put("byProgram", JSONObject())
+        runBlocking(Dispatchers.IO) {
+            fixture.settings.importPortableSettings(JSONObject().put("settings",
+                JSONObject().put("trainingModes197", raw)))
+        }
+        val before = current().trainingModes197Json
+        val proposed = NativeTrainingModeChange.prepare(
+            before, pid, "program", pid, "hit", "rir")
+        val snapshot = runBlocking(Dispatchers.IO) {
+            NativeTrainingModeComparison.read(fixture.context, proposed)
+        }
+        assertEquals(pid, snapshot.programId)
+        assertTrue("Coach comparison must cover real program exercises", snapshot.rows.isNotEmpty())
+        assertTrue(runBlocking(Dispatchers.IO) {
+            NativeTrainingModeComparison.isCurrent(fixture.context, proposed, snapshot)
+        })
+        assertEquals(before, current().trainingModes197Json)
     }
 
     @Test fun programPreviewAndCancelLeaveSettingsAndRecipesUnchanged() {
