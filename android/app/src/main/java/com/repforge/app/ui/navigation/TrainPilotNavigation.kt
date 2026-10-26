@@ -253,7 +253,10 @@ fun TrainPilotAppScaffold(
                 target in NativeMainMenu.routes -> navController.navigate(target) {
                     popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                     launchSingleTop = true
-                    restoreState = true
+                    // Home is the graph's root. Restoring its saved stack can
+                    // resurrect a different tab/secondary destination above it.
+                    // Other tabs retain their independent saved state.
+                    restoreState = target != "home"
                 }
                 else -> navController.navigate(target) { launchSingleTop = true }
             }
