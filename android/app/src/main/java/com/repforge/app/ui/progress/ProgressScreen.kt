@@ -24,17 +24,20 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.FilterChip
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -114,6 +117,7 @@ fun ProgressScreen(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp).testTag("progress_list"),
+        state = rememberLazyListState(),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item { Spacer(Modifier.height(8.dp)) }
@@ -183,6 +187,29 @@ fun ProgressScreen(
                     Text(strings.getString(R.string.native_progress_1rm_description), color = colors.muted, fontSize = 11.sp)
                     Spacer(Modifier.height(12.dp))
 
+                    // Independent strength date window. Cardio and weight keep their own filters.
+                    LazyRow(
+                        modifier = Modifier.testTag("progress_strength_ranges"),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(NativeStrengthRange.values().toList(), key = { it.name }) { range ->
+                            val title = when (range) {
+                                NativeStrengthRange.DAYS_30 -> R.string.native_progress_strength_30
+                                NativeStrengthRange.DAYS_90 -> R.string.native_progress_strength_90
+                                NativeStrengthRange.YEAR -> R.string.native_progress_strength_year
+                                NativeStrengthRange.ALL -> R.string.native_progress_strength_all
+                            }
+                            FilterChip(
+                                selected = state.selectedStrengthRange == range,
+                                onClick = { viewModel.selectStrengthRange(range) },
+                                label = { Text(strings.getString(title)) },
+                                modifier = Modifier.heightIn(min = 48.dp)
+                                    .testTag("progress_strength_${range.name.lowercase()}")
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+
                     // Gyakorlat választó chip sor
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp),
                         modifier = Modifier.testTag("progress_exercise_choices")) {
@@ -216,16 +243,36 @@ fun ProgressScreen(
                             .background(colors.card2)
                             .padding(12.dp)
                     ) {
-                        if (state.exercise1RmTrend.size < 2) {
-                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                Text(strings.getString(R.string.native_progress_no_history), color = colors.muted, fontSize = 12.sp)
+                        when {
+                            state.strengthLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text(strings.getString(R.string.native_progress_strength_loading),
+                                    color = colors.muted, modifier = Modifier.testTag("progress_strength_loading"))
                             }
-                        } else {
-                            TrendCanvas(points = state.exercise1RmTrend.map { it.e1rmKg })
+                            state.strengthError -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                androidx.compose.material3.TextButton(
+                                    onClick = viewModel::retryStrength,
+                                    modifier = Modifier.testTag("progress_strength_retry")
+                                ) {
+                                    Text(strings.getString(R.string.native_progress_retry), color = colors.danger)
+                                }
+                            }
+                            state.exercise1RmTrend.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text(strings.getString(
+                                    if (state.selectedStrengthRange == NativeStrengthRange.ALL)
+                                        R.string.native_progress_no_history
+                                    else R.string.native_progress_strength_empty
+                                ), color = colors.muted, fontSize = 12.sp,
+                                    modifier = Modifier.testTag("progress_strength_empty"))
+                            }
+                            else -> TrendCanvas(points = state.exercise1RmTrend.map { it.e1rmKg })
                         }
                     }
                 }
             }
+        }
+
+        item(key = "progress_photos") {
+            NativeProgressPhotoGallery(state, viewModel::openPhoto, viewModel::closePhoto)
         }
 
         item(key = "progress_cardio") {
