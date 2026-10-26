@@ -4,6 +4,16 @@ Frissítve: **2026-10-26**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Telefonos regressziók célzott diagnosztikája — 2026-10-26
+
+Root a locale94114204 fix mellé debug-only NativeNavigation requested/arrived/
+guardflags, NativeIntervalPanel toggle és NativeLibraryEdit delete exception-type/
+source-stack diagnosztikát adott; személyes mező/JSON/SQLérték nincs logolva.
+phone-ui-gate.py a hosszú suite végén e tag-eket is megőrzi a meglévő focusedlogban.
+7runner-parser unittestPASS. Ez NEM az5hibára állított javítás/green; a pontos
+sourcecause-hoz új közös nativeCI kell. Továbbra5régiFAIL és1localeújrafuttatás.
+Main/verzió változatlan; UI megvalósítás nem indult. Új CI runID GitHubról kérendő.
+
 ## Root átvette és javította PR267/269-et — 2026-10-26
 
 User kérésére Root javította a két meglévő PR saját ágát is, új ág/main változtatás

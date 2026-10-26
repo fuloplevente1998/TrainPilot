@@ -4,6 +4,16 @@ Frissítve: 2026-10-26. AGENTS.md + ez + WORK_HANDOFF.md teteje elég indulásko
 Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/exportot.
 
 
+## Telefonos regressziók célzott diagnosztikája — 2026-10-26
+
+Root a locale94114204 fix mellé debug-only NativeNavigation requested/arrived/
+guardflags, NativeIntervalPanel toggle és NativeLibraryEdit delete exception-type/
+source-stack diagnosztikát adott; személyes mező/JSON/SQLérték nincs logolva.
+phone-ui-gate.py a hosszú suite végén e tag-eket is megőrzi a meglévő focusedlogban.
+7runner-parser unittestPASS. Ez NEM az5hibára állított javítás/green; a pontos
+sourcecause-hoz új közös nativeCI kell. Továbbra5régiFAIL és1localeújrafuttatás.
+Main/verzió változatlan; UI megvalósítás nem indult. Új CI runID GitHubról kérendő.
+
 ## Root átvette és javította PR267/269-et — 2026-10-26
 
 User kérésére Root javította a két meglévő PR saját ágát is, új ág/main változtatás

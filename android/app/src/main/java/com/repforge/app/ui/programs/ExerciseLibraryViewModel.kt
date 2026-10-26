@@ -85,7 +85,13 @@ internal class ExerciseLibraryViewModel(application: Application) : AndroidViewM
                 }
                 _state.update { it.copy(rows = data.first, favorites = data.second, deletedId = id) }
             } catch (cancelled: CancellationException) { throw cancelled }
-            catch (failure: Exception) { _state.update { it.copy(editError = failure.message ?: "Delete blocked") } }
+            catch (failure: Exception) {
+                // Debug-only source locations, without exercise names, raw JSON or query values.
+                if (com.repforge.app.BuildConfig.DEBUG) android.util.Log.e("NativeLibraryEdit",
+                    "delete failed type=${failure.javaClass.simpleName} at " +
+                        failure.stackTrace.take(6).joinToString(" <- "))
+                _state.update { it.copy(editError = failure.message ?: "Delete blocked") }
+            }
             finally { _state.update { it.copy(saving = false) } }
         }
     }

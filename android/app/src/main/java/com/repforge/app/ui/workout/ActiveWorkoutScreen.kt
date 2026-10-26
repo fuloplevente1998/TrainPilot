@@ -364,6 +364,8 @@ fun ActiveWorkoutScreen(
                                     expanded = intervalExpansion[intervalIdentity] == true,
                                     onToggleExpanded = {
                                         intervalExpansion[intervalIdentity] = !(intervalExpansion[intervalIdentity] ?: false)
+                                        if (com.repforge.app.BuildConfig.DEBUG) android.util.Log.d("NativeIntervalPanel",
+                                            "expanded=${intervalExpansion[intervalIdentity]}")
                                     },
                                     onSave = { work, rest, rounds, sound, vibration, advance, global ->
                                         viewModel.configureIntervals(renderedTarget, work, rest, rounds, sound, vibration, advance, global) },

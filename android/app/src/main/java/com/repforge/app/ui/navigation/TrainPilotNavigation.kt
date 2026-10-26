@@ -211,6 +211,9 @@ fun TrainPilotAppScaffold(
         }) }
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: Screen.Home.route
+    LaunchedEffect(currentRoute) {
+        if (com.repforge.app.BuildConfig.DEBUG) android.util.Log.d("NativeNavigation", "arrived $currentRoute")
+    }
 
     val activeSnapshot by ActiveWorkoutStore.snapshotFlow.collectAsStateWithLifecycle()
     val hasActiveWorkout = activeSnapshot?.optBoolean("active", false) == true
@@ -245,7 +248,14 @@ fun TrainPilotAppScaffold(
     fun selectDestination(requested: String) {
         val current = ActiveWorkoutStore.current(context)
         val target = NativeMainMenu.destination(requested, current?.optBoolean("active") == true)
-        if (!canNavigate(target)) return
+        if (!canNavigate(target)) {
+            if (com.repforge.app.BuildConfig.DEBUG) android.util.Log.d("NativeNavigation",
+                "rejected $currentRoute->$target starting=$starting finishing=${editor?.uiState?.value?.isFinishing} " +
+                    "finalizing=${current?.optBoolean("finalizationPending")} " +
+                    "restore=${PhoneWorkoutExecution.store(context).restoreBlocked()} suspended=${PhoneWorkoutExecution.store(context).commandsSuspended()}")
+            return
+        }
+        if (com.repforge.app.BuildConfig.DEBUG) android.util.Log.d("NativeNavigation", "requested $currentRoute->$target")
         if (target == currentRoute) return
         val navigate = {
             when {
