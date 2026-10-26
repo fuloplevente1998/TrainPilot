@@ -28,7 +28,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  app-target:
+    uses: ./.github/workflows/classify-app-source.yml
+
   chromium-cache:
+    needs: app-target
+    if: ${{ needs.app-target.outputs.legacy == 'true' }}
     name: Prepare Playwright Chromium cache
     runs-on: ubuntu-latest
     timeout-minutes: 8
@@ -59,8 +64,9 @@ jobs:
         run: npx --no-install playwright install chromium
 
   ui-tests:
+    if: ${{ needs.app-target.outputs.legacy == 'true' }}
     name: Chromium UI (${{ matrix.shard }}/6)
-    needs: chromium-cache
+    needs: [app-target, chromium-cache]
     runs-on: ubuntu-latest
     timeout-minutes: 8
     permissions:
@@ -107,7 +113,8 @@ jobs:
           retention-days: 14
 
   release-gate:
-    needs: ui-tests
+    if: ${{ needs.app-target.outputs.legacy == 'true' }}
+    needs: [app-target, ui-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
