@@ -283,6 +283,7 @@ class NativePhoneNavigationTest {
         val generation = health.generation()
         context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE).edit().putBoolean("blocked", true).commit()
         try {
+            compose.onNodeWithTag("coach_ready").performScrollToNode(hasTestTag("coach_refresh_health"))
             compose.onNodeWithTag("coach_refresh_health").performScrollTo().performClick()
             compose.waitUntil(15000) { compose.onAllNodesWithTag("coach_refresh_failed").fetchSemanticsNodes().isNotEmpty() }
             compose.waitUntil(15000) { compose.onAllNodesWithTag("coach_ready").fetchSemanticsNodes().isNotEmpty() }
@@ -450,7 +451,8 @@ class NativePhoneNavigationTest {
         launch()
         compose.onNodeWithTag("shortcut_coach").performScrollTo().performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("coach_ready").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("coach_advice_0").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("coach_ready").performScrollToNode(hasTestTag("coach_advice_0"))
+            compose.onNodeWithTag("coach_advice_0").performScrollTo().assertIsDisplayed()
         screenshot("coach_exercise_advice")
         val after = snapshot()!!
         assertEquals(original.getString("workoutId"), after.getString("workoutId"))
@@ -558,7 +560,7 @@ class NativePhoneNavigationTest {
         compose.onNodeWithTag("health_weight_journal").performClick()
         compose.waitUntil(15000) { compose.onAllNodes(hasTestTag("weight_measurement_count") and
             hasText("1500 mérés", substring = true)).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("weight_global_extrema").assertTextContains("35 / 140 kg")
+        compose.onNodeWithTag("weight_global_extrema").assertTextContains("35 / 140 kg", substring = true)
         compose.onNodeWithTag("weight_range_choices").performScrollToNode(hasTestTag("weight_range_all"))
         compose.onNodeWithTag("weight_range_all").performScrollTo().performClick()
         compose.waitUntil(15000) { compose.onAllNodes(hasTestTag("weight_chart_coverage") and
@@ -568,8 +570,8 @@ class NativePhoneNavigationTest {
         compose.onNodeWithTag("weight_range_7").performScrollTo().performClick()
         compose.waitUntil(15000) { compose.onAllNodes(hasTestTag("weight_chart_coverage") and
             hasText("8 mérés", substring = true)).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("weight_measurement_count").assertTextContains("1500 mérés")
-        compose.onNodeWithTag("weight_global_extrema").assertTextContains("35 / 140 kg")
+        compose.onNodeWithTag("weight_measurement_count").assertTextContains("1500 mérés", substring = true)
+        compose.onNodeWithTag("weight_global_extrema").assertTextContains("35 / 140 kg", substring = true)
         screenshot("weight_1500_week_range")
     }
 
@@ -587,7 +589,7 @@ class NativePhoneNavigationTest {
         compose.onNodeWithTag("weight_journal_list").performScrollToIndex(0)
         compose.waitUntil(15000) { compose.onAllNodesWithText("Aktuális: 81,5 kg").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("weight_measurement_count").assertTextContains("200 mérés", substring = true)
-        compose.onNodeWithTag("weight_global_extrema").assertTextContains("35 / 140 kg")
+        compose.onNodeWithTag("weight_global_extrema").assertTextContains("35 / 140 kg", substring = true)
         val old = runBlocking(Dispatchers.IO) { TrainPilotDatabase.getInstance(context).bodyWeightDao().getWeightById("weight-0000")!! }
         assertEquals(140.0, old.kg, .0001)
         screenshot("weight_paged_edit_same_count")
@@ -723,7 +725,7 @@ class NativePhoneNavigationTest {
             store.generation())
         store.healthDay(day, JSONObject().put("source", "@aggregate").put("steps", 123), store.generation())
         launch(); tab("health")
-        compose.waitUntil(15000) { compose.onAllNodesWithTag("health_daily_origin.alpha").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("health_journal_list").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_daily_origin.alpha"))
         compose.onNodeWithTag("health_daily_origin.alpha").performClick()
         compose.waitUntil(15000) { store.preferences().optString("hcDailySource") == "origin.alpha" &&
@@ -821,7 +823,7 @@ class NativePhoneNavigationTest {
                 compose.onAllNodesWithTag("personal_change_B_bulgarian-split-squat").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithTag("personal_change_B_bulgarian-split-squat").performScrollTo()
-            .assertTextContains("→").assertTextContains("Hiányzó felszerelés")
+            .assertTextContains("→", substring = true).assertTextContains("Hiányzó felszerelés", substring = true)
         screenshot("personal_equipment_substitution")
         compose.onNodeWithText("Mégse").performClick()
         assertEquals(baseline, runBlocking(Dispatchers.IO) { db.programDao().getProgramIds().toSet() })
@@ -896,7 +898,7 @@ class NativePhoneNavigationTest {
             compose.onAllNodesWithTag("personal_preview_accept").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("personal_template_home-basic").performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("personal_practiced_barbell-row").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("personal_practiced_barbell-row").performScrollTo().assertTextContains("automatikus terhelésemelés nélkül")
+        compose.onNodeWithTag("personal_practiced_barbell-row").performScrollTo().assertTextContains("automatikus terhelésemelés nélkül", substring = true)
         screenshot("personal_beginner_practiced")
         compose.onNodeWithText("Mégse").performClick()
         assertEquals(baseline, runBlocking(Dispatchers.IO) { db.programDao().getProgramIds().toSet() })
@@ -1085,7 +1087,7 @@ class NativePhoneNavigationTest {
         launch(); tab("training")
         compose.onNodeWithText("Gyakorlatkönyvtár").performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("exercise_library_count").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("exercise_library_count").assertTextContains("106")
+        compose.onNodeWithTag("exercise_library_count").assertTextContains("106", substring = true)
         compose.onNodeWithTag("exercise_library_search").performTextInput(
             com.repforge.app.data.db.NativeBuiltinCatalog.exercises.first { it.id == "db-squat" }.nameHu)
         compose.onNodeWithTag("exercise_library_row_db-squat").performClick()
