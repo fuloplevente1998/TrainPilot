@@ -19,6 +19,25 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
   High kód; Medium vizuális dizájn előtt jelezni; Extra High komoly végső debug előtt.
   Kevés lényegi magyar output, nincs belső subagent külön kérés nélkül. PR238 követőlap.
 
+## CI-import javítás és tényleges hátralévő kapuk – 2026-10-26
+
+A40275657585 futás FAIL: compileDebugAndroidTestKotlin, NativeTrainingModesUiTest
+4helyen unresolved getOrNull. Phone/Wear appfordítás továbbjutott, JVM/UI/upgrade
+futási elfogadás nem történt. **3d45a324** pótolja az androidx.compose.ui.semantics.getOrNull
+importot; nem üzleti kód vagy assertgyengítés. Új canonical CI **40276384595**
+(https://github.com/fuloplevente1998/TrainPilot/actions/runs/40276384595), checkout/
+app3d45a324c5d31c058353a0e4316e02c9a9133520, indításkor IN_PROGRESS.
+Ne indíts másolatot, ugyanennek a job/XML eredménye a következő lépés.
+
+Az öt párhuzamos csomag #244–248 beépítve. A #242 audit mind7 konkrét hiányához
+van most kódos bekötés, ez nem teljes main-paritás vagy runtime-elfogadás.
+Hátra: közös JVM/Compose/Wear/R8/signer/emulátoros upgrade; teljes A–E/main/24nézet
+funkcióleltár és vizuális finomítás/valódi képek;30napos/incremental health sync;
+valós OAuth/provider/permission/offline és processdeath/cross-device/cloud-photo
+bizonytalan befejezések; adatmegőrző upgrade és fizikai Phone/Watch7 elfogadás.
+Élőadat-fölé telepítés még nem igazolt. Párhuzamosítás időnyereségét nem mértük;
+csak elkülönített csomagszám/integráció és konkrét teszteredmény tényadat.
+
 ## Közös natív CI elindítva – 2026-10-26
 
 Actions **40275657585**: https://github.com/fuloplevente1998/TrainPilot/actions/runs/40275657585
@@ -302,29 +321,14 @@ Következő: izolált hibajavítások, exact új delta, #244 külön review, int
 
 ## Következő konkrét lépések
 
-1. A három fennmaradó auditcsomagra új külön chat prompt készült, bázis0a5abbe,
-   a felhasználó mindhárom indulását2026-10-25-én megerősítette, eredmény/PR
-   még nincs: plans/NATIVE_CARDIO_BINDING_HANDOFF.md
-   (Progress+DAO), NATIVE_TRAINING_MODES_HANDOFF.md (settings/Coach/explicit
-   proposal), NATIVE_HEALTH_AUTO_REFRESH_HANDOFF.md (HealthDashboard/napi SDK).
-   Saját feat/native-* ágak, draft célmigration. Pontos diszjunkt fájlhatárok
-   az átadókban/AGENTS-ben; ezekbe fő munkás közben ne írjon. Rootnál marad a
-   review/integráció, teljes mainleltár fennmaradó Journal-funkciói és a közös
-   gate előkészítése. Nincs belső subagent, nincs új CI/elfogadás.
-2. Lokális in-flight photo delete / új ref / restore admission kódban, de szerver-
-   timeout utáni bizonytalan befejezés, processdeath és cross-device/older-peer
-   továbbra nyitott. A foglalás nem tartós Drive-lock/elosztott atomikusság.
-3. Teljes A–E/UI/Health/main funkcióleltár és maradó dinamikus VM-/hibafeliratok;
-   15 lokalizált képernyő nem minden funkció. Home target/start/invalidation és
-   workout HC panel kódban most kész, platform/foreground/race mérés és teljes
-   UI/design/készülékes paritás nem lezárt. A helyi Home re-read nem a külön
-   auditgap autoOnOpen providerfrissítés, és nem watch-kapcsolat/freshness javítás.
-4. Google-fiókos engedély/részleges grant/revoke/offline/rotation/processdeath,
-   backup közbeni cancel, calendar cache és cél-scope valódi szolgáltatással még
-   nem igazolt. Unit consent-intent nem OAuth- vagy UI-szolgáltatás-siker.
-5. Batch végén közös GitHub JVM/Compose/Wear/R8/signer/upgrade kapu ugyanazon
-   appforráson, majd valódi képek és fizikai telefon/Watch7. Ne jelöljünk késznek
-   funkciót pusztán fájl/tesztkód miatt. Élő adatok fölé APK még nem adható.
+1.40276384595 közös CI job/XML, új hiba esetén annak célzott javítása. Nincs
+   párhuzamos teljes kapu. Komolydebug előtt Extra High jelzés.
+2. Teljes main/A–E/24nézet és dinamikus VM-hibaszövegek auditja; a hét korábbi
+   gap kódja már bent, a történeti „három külső eredmény még nincs” listák elavultak.
+3.30nap/full/incremental Health; tényleges Google OAuth és provider/revoke/offline/
+   processdeath, photo server-timeout/cross-device/older-peer elfogadás.
+4. Vizuális finomítás előtt Medium jelzés, utána valódi emulátorképek és a teljes
+   adatmegőrző upgrade/fizikai Phone/Watch7 elfogadás. Main/verzió/install STOP.
 
 ## Felhasználói szünet – 2026-10-25
 

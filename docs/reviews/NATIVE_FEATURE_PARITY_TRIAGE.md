@@ -14,10 +14,10 @@ elmaradt tesztfuttatás. Ez statikus megerősítés, nem eszközös reprodukció
 | --- | --- | --- |
 | P1 | Naplózott edzés idő-/gyakorlat-/sorozatadatainak utólagos szerkesztése | **1a9b6d3/6856abe** kódban pótolva, futtatás/elfogadás hátra. |
 | P1 | Programgyakorlat sorozat/ismétlés-idő/súly/pihenő/próbasúly szerkesztése | **b161126** kódban pótolva, futtatás/elfogadás hátra. |
-| P2 | Kardió heti táv/tempó/idő és azonos távú rekordok | **5aacc8a/0f8bb70** számítási mag kódban; lapozott Room-projekció és Progress UI még nyitott. |
+| P2 | Kardió heti táv/tempó/idő és azonos távú rekordok | **cf1db70b (#246)** math+bounded Room+Progress UI és dátum/lifecycle fix beépítve; új közös CI/elfogadás hátra. |
 | P2 | Edzésidőablakhoz kötött HC-részletek és felhasználói frissítés | **0a69035** külön Wear/HC panel és explicit window refresh kódban; SDK/UI-futtatás hátra. |
-| P2 | Globális/programonkénti edzésstílus/progresszió megerősítéssel és undo-val | Nyitott: main trainingModes197 UI és natív effektus útja külön pótlandó. |
-| P2 | Egészségnapló automatikus foreground/on-open frissítés | Nyitott: main autoOnOpen és10perces throttle nem azonos a natív háttérmóddal. |
+| P2 | Globális/programonkénti edzésstílus/progresszió megerősítéssel és undo-val | **7d773190 (#245)** picker/preview/approval/undo és öt review-javítás beépítve; runtime-elfogadás hátra. |
+| P2 | Egészségnapló automatikus foreground/on-open frissítés | **4eae08c8 (#244)** valódi foreground/provider/admission kód beépítve; külső30JVM+4UI PASS, közös/fizikai elfogadás hátra. |
 | P2 | Nyers egészségrekordok tetszőleges többnapos from/to szűrése | **1864a8c/c611cc7**, külső #243 beemelve; inclusive range/DatePicker/paging kódban, futtatás hátra. |
 
 Ellenőrzött main hívási utak: végső editHistoryWorkout → rf151HistoryEditor /

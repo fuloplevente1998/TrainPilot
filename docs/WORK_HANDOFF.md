@@ -4,6 +4,25 @@ Frissítve: **2026-10-26**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## CI-import javítás és tényleges hátralévő kapuk – 2026-10-26
+
+A40275657585 futás FAIL: compileDebugAndroidTestKotlin, NativeTrainingModesUiTest
+4helyen unresolved getOrNull. Phone/Wear appfordítás továbbjutott, JVM/UI/upgrade
+futási elfogadás nem történt. **3d45a324** pótolja az androidx.compose.ui.semantics.getOrNull
+importot; nem üzleti kód vagy assertgyengítés. Új canonical CI **40276384595**
+(https://github.com/fuloplevente1998/TrainPilot/actions/runs/40276384595), checkout/
+app3d45a324c5d31c058353a0e4316e02c9a9133520, indításkor IN_PROGRESS.
+Ne indíts másolatot, ugyanennek a job/XML eredménye a következő lépés.
+
+Az öt párhuzamos csomag #244–248 beépítve. A #242 audit mind7 konkrét hiányához
+van most kódos bekötés, ez nem teljes main-paritás vagy runtime-elfogadás.
+Hátra: közös JVM/Compose/Wear/R8/signer/emulátoros upgrade; teljes A–E/main/24nézet
+funkcióleltár és vizuális finomítás/valódi képek;30napos/incremental health sync;
+valós OAuth/provider/permission/offline és processdeath/cross-device/cloud-photo
+bizonytalan befejezések; adatmegőrző upgrade és fizikai Phone/Watch7 elfogadás.
+Élőadat-fölé telepítés még nem igazolt. Párhuzamosítás időnyereségét nem mértük;
+csak elkülönített csomagszám/integráció és konkrét teszteredmény tényadat.
+
 ## Közös natív CI elindítva – 2026-10-26
 
 Actions **40275657585**: https://github.com/fuloplevente1998/TrainPilot/actions/runs/40275657585
