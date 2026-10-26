@@ -15,9 +15,10 @@ import org.robolectric.annotation.Config
 @Config(sdk = [33], manifest = Config.NONE)
 class NativeMetadataGateTest {
     private lateinit var context: Context
+    private val mainDispatcher = StandardTestDispatcher()
     private val field = PhoneWorkoutExecution::class.java.getDeclaredField("store").apply { isAccessible = true }
     @Before fun open() {
-        Dispatchers.setMain(StandardTestDispatcher())
+        Dispatchers.setMain(mainDispatcher)
         context = RuntimeEnvironment.getApplication()
         (field.get(null) as? PhoneWorkoutExecutionStore)?.close(); field.set(null, null)
         context.deleteDatabase(PhoneWorkoutExecutionStore.DATABASE)
@@ -52,15 +53,48 @@ class NativeMetadataGateTest {
         }
         assertFalse(called)
     }
-    @Test fun nestedImporterAndSettingsCallbacksShareTheSameAdmittedWriterWithoutDeadlock() = runTest {
-        var count = 0
-        withTimeout(5000) {
-            NativeDataReplacement.mutate(context) {
-                NativeDataReplacement.mutate(context) { count++ }
-                withContext(Dispatchers.IO) { NativeDataReplacement.mutate(context) { count++ } }
+    @Test fun nestedImporterAndSettingsCallbacksShareTheSameAdmittedWriterWithoutDeadlock() = runBlocking {
+        // runTest's withTimeout measures virtual time; a real IO dispatcher can outlive that clock.
+        // Keep a real five-second bound, while letting IO -> Main.immediate resume deterministically.
+        Dispatchers.setMain(UnconfinedTestDispatcher(mainDispatcher.scheduler))
+        val independentScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        try {
+            withTimeout(5_000L) {
+                var count = 0
+                val independentStarted = CompletableDeferred<Unit>()
+                val independentFinished = CompletableDeferred<Unit>()
+                var independent: Deferred<Unit>? = null
+                NativeDataReplacement.mutate(context) {
+                    count++ // The admitted outer writer actually executes.
+                    withContext(Dispatchers.IO) {
+                        NativeDataReplacement.mutate(context) {
+                            withContext(Dispatchers.Main.immediate) {
+                                NativeDataReplacement.mutate(context) { count++ }
+                            }
+                        }
+                    }
+                    // This scope has no inherited admission context: it must await the outer lease.
+                    independent = independentScope.async {
+                        independentStarted.complete(Unit)
+                        NativeDataReplacement.mutate(context) { independentFinished.complete(Unit) }
+                    }
+                    independentStarted.await()
+                    assertFalse("Unrelated IO writer ran inside the admitted writer", independentFinished.isCompleted)
+                    var replaced = false
+                    val rejection = independentScope.async {
+                        runCatching { NativeDataReplacement.exclusively(context) { replaced = true } }.exceptionOrNull()
+                    }.await()
+                    assertTrue("Replacement must reject another writer's active lease", rejection is IllegalStateException)
+                    assertFalse(replaced)
+                }
+                independent!!.await()
+                assertTrue("Queued independent writer never resumed after release", independentFinished.isCompleted)
+                assertEquals(2, count)
             }
+        } finally {
+            independentScope.cancel()
+            Dispatchers.setMain(mainDispatcher)
         }
-        assertEquals(2, count)
     }
     @Test fun replacementOwnImporterCanWriteWhileIndependentCallbacksStayBlocked() = runTest {
         var own = false

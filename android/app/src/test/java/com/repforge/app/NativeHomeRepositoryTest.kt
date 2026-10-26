@@ -25,6 +25,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Executor
+import java.util.concurrent.atomic.AtomicReference
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33], manifest = Config.NONE)
@@ -33,10 +34,11 @@ class NativeHomeRepositoryTest {
     private lateinit var repository: NativeHomeRepository
     private val now = Instant.parse("2026-10-24T12:00:00Z")
     private val zone = ZoneId.of("Europe/Budapest")
-    private val reads = ConcurrentLinkedQueue<String>()
+    // Only the measured repository.read is part of this query sample, not fixture setup.
+    private val activeTrace = AtomicReference<ConcurrentLinkedQueue<String>?>(null)
     @Before fun setup() = runBlocking {
         db = Room.inMemoryDatabaseBuilder(RuntimeEnvironment.getApplication(), TrainPilotDatabase::class.java)
-            .setQueryCallback({ sql, _ -> reads.add(sql) }, Executor { it.run() }).build()
+            .setQueryCallback({ sql, _ -> activeTrace.get()?.add(sql) }, Executor { it.run() }).build()
         val (programs, days) = TrainPilotDatabase.defaultPrograms()
         db.programDao().upsertPrograms(programs); db.programDao().upsertProgramDays(days)
         val source = db.programDao().getProgramWithDaysById("home-basic")!!
@@ -99,13 +101,35 @@ class NativeHomeRepositoryTest {
         for (count in listOf(0, 200, 1500)) {
             db.workoutHistoryDao().deleteAllWorkouts()
             db.withTransaction { repeat(count) { db.workoutHistoryDao().insertWorkout(JournalTestFixtures.row(it)) } }
-            reads.clear()
-            val result = repository.read("home-basic", "hu", now, zone)
+            val captured = ConcurrentLinkedQueue<String>()
+            check(activeTrace.compareAndSet(null, captured)) { "A previous SQL probe was not closed" }
+            val result = try {
+                repository.read("home-basic", "hu", now, zone)
+            } finally {
+                activeTrace.compareAndSet(captured, null)
+            }
             assertNotNull(result.target)
-            val queries = reads.filter { it.trimStart().startsWith("SELECT", true) }
-            assertEquals(1, queries.count { Regex("SELECT\\s+\\*\\s+FROM\\s+programs\\b", RegexOption.IGNORE_CASE).containsMatchIn(it) })
-            assertTrue(queries.none { Regex("SELECT\\s+\\*\\s+FROM\\s+workout_history\\b", RegexOption.IGNORE_CASE).containsMatchIn(it) })
-            assertTrue(queries.none { "workout_history_sets" in it || "workout_photos" in it })
+            val queries = captured.filter { it.trimStart().startsWith("SELECT", ignoreCase = true) }
+            val trace = buildString {
+                append("history fixture=").append(count).append(" rows; scoped repository.read SQL (")
+                    .append(captured.size).append(" statements):")
+                captured.forEachIndexed { index, sql ->
+                    append("\n").append(index + 1).append(": ").append(sql)
+                }
+            }
+            val catalogReads = queries.filter {
+                Regex("""SELECT\s+\*\s+FROM\s+programs\b""", RegexOption.IGNORE_CASE).containsMatchIn(it)
+            }
+            // @Relation may query program_days separately; one root catalog query is still required.
+            // Do not mask a genuine duplicate by blindly changing the expected count to two.
+            assertEquals(trace, 1, catalogReads.size)
+            assertTrue(trace, queries.none {
+                Regex("""SELECT\s+\*\s+FROM\s+workout_history\b""", RegexOption.IGNORE_CASE).containsMatchIn(it)
+            })
+            assertTrue(trace, queries.none {
+                it.contains("workout_history_sets", ignoreCase = true) ||
+                    it.contains("workout_photos", ignoreCase = true)
+            })
         }
     }
 

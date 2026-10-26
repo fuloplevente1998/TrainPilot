@@ -47,8 +47,9 @@ class NativeWorkoutDiscardTest {
             "started":"2026-10-24T10:00:00Z","currentExercise":0,
             "exercises":[{"id":"press","repUnit":"ism.","loadType":"dumbbell",
                 "sets":[{"setId":"set-a","done":false,"reps":"8","weight":10}]}]}""")
-        store().prepare(draft, 0)
-        return ActiveWorkoutStore.saveOwned(context, draft)
+        val prepared = store().prepare(draft, 0)
+        assertEquals(1L, prepared.getLong("executionRevision"))
+        return ActiveWorkoutStore.saveOwned(context, prepared)
     }
     private suspend fun reject(operation: suspend () -> Unit) {
         var error: Exception? = null
@@ -65,10 +66,19 @@ class NativeWorkoutDiscardTest {
     }
     @Test fun explicitDiscardAbandonsPendingRecordingOnlyAfterDurableTombstoneAndNativeClose() = runTest(dispatcher) {
         val input = prepare()
-        store().record(JSONObject().put("commandId", "record").put("action", "completeSet")
-            .put("workoutId", "discard-me").put("generation", 1).put("executionRevision", 0)
+        val prepared = requireNotNull(store().snapshot())
+        assertEquals(input.getLong("executionRevision"), prepared.getLong("executionRevision"))
+        val recorded = store().record(JSONObject().put("commandId", "record").put("action", "completeSet")
+            .put("workoutId", prepared.getString("workoutId"))
+            .put("generation", prepared.getLong("generation"))
+            .put("executionRevision", prepared.getLong("executionRevision"))
             .put("exerciseId", "press").put("setId", "set-a").put("weight", 12).put("reps", "9"))
-        assertEquals(1, store().pendingEvents("discard-me", 1, 0).length())
+        assertEquals("The pending event must be durably recorded before discard: $recorded",
+            "applied", recorded.optString("status"))
+        assertTrue(recorded.optLong("sequence") > 0L)
+        val pending = store().pendingEvents("discard-me", prepared.getLong("generation"), 0L)
+        assertEquals("Discard must be exercised with a real unacknowledged event", 1, pending.length())
+        assertEquals("record", pending.getJSONObject(0).getString("commandId"))
         val closed = finalizer().discardWorkout(input)
         assertFalse(closed.getBoolean("active"))
         assertFalse(store().snapshot()!!.getBoolean("active"))
