@@ -105,7 +105,12 @@ fun TrainPilotAppScaffold(
     fun writeOnboarding(onSaved: () -> Unit = {},
         change: suspend (NativeDataReplacement.Continuation) -> Boolean) {
         if (onboardingSaving) return
-        val ticket = NativeDataReplacement.continuationForCurrentData(context)
+        val ticket = try { NativeDataReplacement.continuationForCurrentData(context) }
+            catch (_: Exception) {
+                // Restore/erase admission is closed; leave profile and navigation unchanged.
+                onboardingFailed = true
+                return
+            }
         onboardingSaving = true
         onboardingFailed = false
         scope.launch {
