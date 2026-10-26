@@ -156,6 +156,7 @@ class NativeTrainingModesUiTest {
         select("training_modes_program_progression", "rir")
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("training_modes_program_preview"))
         compose.onNodeWithTag("training_modes_program_preview").performScrollTo().performClick()
+        compose.onNodeWithTag("training_modes_program_dialog").assertExists()
         assertEquals("global", NativeTrainingModes.resolveSavedJson(current().trainingModes197Json, programId).source)
         try {
             compose.waitUntil(30_000) {
