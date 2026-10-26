@@ -113,6 +113,30 @@ class NativeTrainingModeApprovalUiTest {
             fixture.database.programDao().getProgramWithDaysById(programId)!!.program.rawJson
         }
 
+    @Test fun uiEmptyComparisonNeverEnablesApproval() {
+        val pid = runBlocking(Dispatchers.IO) {
+            val blank = NativeProgramEditor.Draft("Empty mode comparison", "",
+                listOf(NativeProgramEditor.DayDraft("A", "Day A", emptyList())))
+            val id = NativeProgramEditor.save(fixture.context, fixture.database,
+                null, blank, "hu")
+            fixture.settings.setActiveProgramId(id)
+            id
+        }
+        val raw = current().trainingModes197Json
+        openProgramPicker()
+        select("training_modes_program_style", "hit")
+        compose.onNodeWithTag("training_modes_program_preview").performClick()
+        compose.waitUntil(30_000) {
+            compose.onAllNodesWithTag("training_modes_program_comparison_error")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("training_modes_program_approve").assertIsNotEnabled()
+        assertEquals(raw, current().trainingModes197Json)
+        assertEquals("legacy", NativeTrainingModes.resolveSavedJson(raw, pid).source)
+        compose.onNodeWithTag("training_modes_program_cancel").performClick()
+        assertEquals(raw, current().trainingModes197Json)
+    }
+
     @Test fun uiApprovalRejectsProgramRawChangeAfterShownComparison() {
         val pid = editableProgram()
         previewHitRir()
