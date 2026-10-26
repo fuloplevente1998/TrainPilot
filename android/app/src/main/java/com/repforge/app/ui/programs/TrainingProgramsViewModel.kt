@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.repforge.app.WearSyncRepository
 import com.repforge.app.NativeProgramEditor
+import com.repforge.app.NativeProgramActions
 import com.repforge.app.data.db.ExerciseLibraryEntity
 import com.repforge.app.data.db.ProgramWithDays
 import com.repforge.app.data.db.TrainPilotDatabase
@@ -36,7 +37,10 @@ internal data class TrainingProgramsUiState(
     val editorSaving: Boolean = false,
     val editorError: String? = null,
     val savedProgramId: String? = null,
-    val deletedProgramId: String? = null
+    val deletedProgramId: String? = null,
+    val restorePreview: NativeProgramActions.RestorePreview? = null,
+    val restoreLoading: Boolean = false,
+    val restoreError: String? = null
 )
 
 internal class TrainingProgramsViewModel(application: Application) : AndroidViewModel(application) {
@@ -111,14 +115,15 @@ internal class TrainingProgramsViewModel(application: Application) : AndroidView
         }
     }
 
-    fun saveProgram(opened: ProgramWithDays?, draft: NativeProgramEditor.Draft, language: String) {
+    fun saveProgram(opened: ProgramWithDays?, draft: NativeProgramEditor.Draft, language: String,
+        actionToken: String) {
         if (_uiState.value.editorSaving) return
         _uiState.value = _uiState.value.copy(editorSaving = true,
             editorError = null, savedProgramId = null, deletedProgramId = null)
         viewModelScope.launch {
             try {
                 val saved = withContext(Dispatchers.IO) {
-                    NativeProgramEditor.save(context, database, opened, draft, language)
+                    NativeProgramEditor.save(context, database, opened, draft, language, actionToken = actionToken)
                 }
                 val all = withContext(Dispatchers.IO) { database.programDao().getProgramsWithDays() }
                 _uiState.value = _uiState.value.copy(programs = all, savedProgramId = saved)
@@ -175,6 +180,44 @@ internal class TrainingProgramsViewModel(application: Application) : AndroidView
                 _uiState.value = _uiState.value.copy(editorError = failure.message ?: "Program delete blocked")
             } finally { _uiState.value = _uiState.value.copy(editorSaving = false) }
         }
+    }
+
+    fun previewRestoreDay(opened: ProgramWithDays, dayId: String) {
+        if (_uiState.value.editorSaving || _uiState.value.restoreLoading) return
+        _uiState.value = _uiState.value.copy(restoreLoading = true,
+            restoreError = null, restorePreview = null)
+        viewModelScope.launch {
+            try {
+                val preview = NativeProgramActions.preview(context, database, opened, dayId)
+                _uiState.value = _uiState.value.copy(restorePreview = preview)
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (failure: Exception) {
+                _uiState.value = _uiState.value.copy(restoreError = failure.message ?: "Restore preview unavailable")
+            } finally { _uiState.value = _uiState.value.copy(restoreLoading = false) }
+        }
+    }
+
+    fun confirmRestoreDay() {
+        if (_uiState.value.editorSaving || _uiState.value.restoreLoading) return
+        val preview = _uiState.value.restorePreview ?: return
+        _uiState.value = _uiState.value.copy(editorSaving = true, restoreError = null)
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) { NativeProgramActions.restore(context, database, preview) }
+                val all = withContext(Dispatchers.IO) { database.programDao().getProgramsWithDays() }
+                _uiState.value = _uiState.value.copy(programs = all, restorePreview = null,
+                    restoreError = null)
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (failure: Exception) {
+                _uiState.value = _uiState.value.copy(restoreError = failure.message ?: "Factory day changed")
+            } finally { _uiState.value = _uiState.value.copy(editorSaving = false) }
+        }
+    }
+
+    fun dismissRestoreDay() {
+        if (_uiState.value.editorSaving) return
+        _uiState.value = _uiState.value.copy(restorePreview = null,
+            restoreError = null, restoreLoading = false)
     }
 
     fun clearEditorOutcome() {

@@ -12,6 +12,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -69,6 +72,7 @@ internal fun TrainingProgramsScreen(
     val strings = remember(context, language) { nativeResources(context, language) }
     var editorOpen by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<ProgramWithDays?>(null) }
+    var editorToken by remember { mutableStateOf(java.util.UUID.randomUUID().toString()) }
     LaunchedEffect(state.savedProgramId, state.deletedProgramId) {
         if (state.savedProgramId != null || state.deletedProgramId != null) {
             editorOpen = false
@@ -84,6 +88,13 @@ internal fun TrainingProgramsScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        if (state.restoreError != null && state.restorePreview == null) item {
+            Text(state.restoreError.orEmpty(), color = colors.danger)
+            OutlinedButton(onClick = viewModel::dismissRestoreDay,
+                modifier = Modifier.heightIn(min = 48.dp)) {
+                Text(strings.getString(R.string.native_program_actions_cancel))
+            }
+        }
         if (state.writeFailed) item {
             Text(com.repforge.app.ui.text.nativeResources(androidx.compose.ui.platform.LocalContext.current, state.language)
                 .getString(com.repforge.app.R.string.metadata_write_failed), color = colors.danger)
@@ -150,7 +161,10 @@ internal fun TrainingProgramsScreen(
         }
 
         item {
-            OutlinedButton(onClick = { editing = null; editorOpen = true; viewModel.clearEditorOutcome() },
+            OutlinedButton(onClick = {
+                editing = null; editorToken = java.util.UUID.randomUUID().toString()
+                editorOpen = true; viewModel.clearEditorOutcome()
+            },
                 enabled = !state.editorSaving, modifier = Modifier.fillMaxWidth().testTag("program_create")) {
                 Text(strings.getString(R.string.native_program_create))
             }
@@ -179,7 +193,11 @@ internal fun TrainingProgramsScreen(
                 language = language,
                 onActivate = { viewModel.activateProgram(programWithDays.program.id) },
                 onStartDay = { dayId -> onStartProgramDay(programWithDays.program.id, dayId) },
-                onEdit = { editing = programWithDays; editorOpen = true; viewModel.clearEditorOutcome() }
+                onRestoreDay = { dayId -> viewModel.previewRestoreDay(programWithDays, dayId) },
+                onEdit = {
+                    editing = programWithDays; editorToken = java.util.UUID.randomUUID().toString()
+                    editorOpen = true; viewModel.clearEditorOutcome()
+                }
             )
         }
     }
@@ -208,10 +226,59 @@ internal fun TrainingProgramsScreen(
         onAccept = { preview -> viewModel.savePersonalProgram(preview, language) },
         onCancel = viewModel::closePersonalPlanner
     )
+    state.restorePreview?.let { preview ->
+        fun exerciseNames(items: List<String>): String = items.mapIndexed { index, raw ->
+            val id = runCatching { com.repforge.app.NativeProgramEditor.exerciseId(raw) }.getOrDefault("?")
+            val ex = state.exerciseChoices.firstOrNull { it.id == id }
+            val localized = when (language) {
+                "en" -> ex?.nameEn; "de" -> ex?.nameDe; "ro" -> ex?.nameRo
+                else -> ex?.nameHu
+            }.orEmpty().ifBlank { ex?.nameHu ?: id }
+            "${index + 1}. $localized ($id)"
+        }.joinToString("\n")
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = viewModel::dismissRestoreDay,
+            title = { Text(strings.getString(R.string.native_program_actions_title, preview.dayId),
+                color = colors.text) },
+            text = {
+                Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(strings.getString(R.string.native_program_actions_scope), color = colors.muted)
+                    Text(strings.getString(R.string.native_program_actions_before), color = colors.text)
+                    Text(exerciseNames(preview.before), color = colors.muted)
+                    Text(strings.getString(R.string.native_program_actions_after), color = colors.text)
+                    Text(exerciseNames(preview.after), color = colors.muted,
+                        modifier = Modifier.testTag("program_restore_factory_exercises"))
+                    Text(strings.getString(R.string.native_program_actions_recipe,
+                        preview.resetRecipeIds.sorted().joinToString(", ").ifEmpty { "—" }), color = colors.muted)
+                    if (preview.otherDaysUsingRecipes.isNotEmpty())
+                        Text(strings.getString(R.string.native_program_actions_shared,
+                            preview.otherDaysUsingRecipes.joinToString(", ")), color = colors.danger)
+                    state.restoreError?.let {
+                        Text(it, color = colors.danger, modifier = Modifier.testTag("program_restore_error"))
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = viewModel::confirmRestoreDay, enabled = !state.editorSaving,
+                    modifier = Modifier.heightIn(min = 48.dp).testTag("program_restore_confirm")) {
+                    Text(strings.getString(R.string.native_program_actions_confirm))
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = viewModel::dismissRestoreDay,
+                    enabled = !state.editorSaving,
+                    modifier = Modifier.heightIn(min = 48.dp).testTag("program_restore_cancel")) {
+                    Text(strings.getString(R.string.native_program_actions_cancel))
+                }
+            },
+            containerColor = colors.card
+        )
+    }
     if (editorOpen) ProgramEditorDialog(opened = editing, language = language,
         exercises = state.exerciseChoices, defaultRestSeconds = state.defaultRestSeconds,
         saving = state.editorSaving, error = state.editorError,
-        onSave = { draft -> viewModel.saveProgram(editing, draft, language) },
+        onSave = { draft -> viewModel.saveProgram(editing, draft, language, editorToken) },
         onDelete = { editing?.let(viewModel::deleteProgram) },
         onCancel = { if (!state.editorSaving) {
             editorOpen = false; editing = null; viewModel.clearEditorOutcome()
@@ -225,6 +292,7 @@ fun ProgramCardItem(
     language: String = "hu",
     onActivate: () -> Unit,
     onStartDay: (String) -> Unit,
+    onRestoreDay: (String) -> Unit = {},
     onEdit: () -> Unit
 ) {
     val colors = LocalTrainPilotColors.current
@@ -294,6 +362,7 @@ fun ProgramCardItem(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .testTag("program_expand_${prog.id}")
                     .clickable { expanded = !expanded },
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -328,6 +397,7 @@ fun ProgramCardItem(
                                 Text(name(day.nameHu, day.nameEn, day.nameDe, day.nameRo), color = colors.text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                                 Text(strings.getString(R.string.native_program_exercises, exCount), color = colors.muted, fontSize = 11.sp)
                             }
+                            Column(horizontalAlignment = Alignment.End) {
                             Button(
                                 onClick = { onStartDay(day.dayId) },
                                 enabled = exCount > 0,
@@ -337,6 +407,16 @@ fun ProgramCardItem(
                                 Icon(Icons.Default.PlayArrow, contentDescription = null, tint = colors.onAccent)
                                 Spacer(Modifier.width(4.dp))
                                 Text(strings.getString(R.string.native_program_start), color = colors.onAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+                            if (!prog.builtin && prog.sourceTemplateId == "home-basic" &&
+                                day.dayId in setOf("A", "B")) {
+                                OutlinedButton(onClick = { onRestoreDay(day.dayId) },
+                                    modifier = Modifier.heightIn(min = 48.dp)
+                                        .testTag("program_restore_${prog.id}_${day.dayId}")) {
+                                    Text(strings.getString(R.string.native_program_actions_restore),
+                                        color = colors.accentText, fontSize = 11.sp)
+                                }
+                            }
                             }
                         }
                     }

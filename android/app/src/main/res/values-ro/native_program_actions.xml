@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_program_actions_restore">Zi A/B din fabrică</string>
+    <string name="native_program_actions_title">Restabilește ziua %1$s</string>
+    <string name="native_program_actions_scope">Se modifică doar ziua aleasă și prescripțiile de program afectate. Istoricul, pozele, GPS, Health și celelalte programe rămân intacte.</string>
+    <string name="native_program_actions_before">Exerciții curente</string>
+    <string name="native_program_actions_after">Exerciții originale</string>
+    <string name="native_program_actions_recipe">ID-uri ale exercițiilor cu prescripții restaurate: %1$s</string>
+    <string name="native_program_actions_shared">Atenție: prescripțiile partajate pot afecta și aceste zile: %1$s</string>
+    <string name="native_program_actions_confirm">Restabilește ziua</string>
+    <string name="native_program_actions_cancel">Anulează</string>
+</resources>

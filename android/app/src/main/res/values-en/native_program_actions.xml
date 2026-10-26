@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_program_actions_restore">Factory A/B day</string>
+    <string name="native_program_actions_title">Restore factory day %1$s</string>
+    <string name="native_program_actions_scope">Only the selected day and its affected program prescription overrides change. Workout history, photos, GPS, Health and other programs remain untouched.</string>
+    <string name="native_program_actions_before">Current exercises</string>
+    <string name="native_program_actions_after">Factory exercises</string>
+    <string name="native_program_actions_recipe">Exercise IDs whose program recipes revert to factory: %1$s</string>
+    <string name="native_program_actions_shared">Note: shared prescriptions may also affect these other days: %1$s</string>
+    <string name="native_program_actions_confirm">Restore day</string>
+    <string name="native_program_actions_cancel">Cancel</string>
+</resources>

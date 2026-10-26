@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_program_actions_restore">A/B-Werkstag zurücksetzen</string>
+    <string name="native_program_actions_title">Werkstag %1$s zurücksetzen</string>
+    <string name="native_program_actions_scope">Nur dieser Tag und betroffene Programmvorgaben werden geändert. Verlauf, Fotos, GPS, Health und andere Programme bleiben erhalten.</string>
+    <string name="native_program_actions_before">Aktuelle Übungen</string>
+    <string name="native_program_actions_after">Originalübungen</string>
+    <string name="native_program_actions_recipe">Übungs-IDs mit zurückgesetzten Programmvorgaben: %1$s</string>
+    <string name="native_program_actions_shared">Achtung: gemeinsame Vorgaben können auch diese Tage betreffen: %1$s</string>
+    <string name="native_program_actions_confirm">Tag zurücksetzen</string>
+    <string name="native_program_actions_cancel">Abbrechen</string>
+</resources>
