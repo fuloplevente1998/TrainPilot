@@ -2,6 +2,7 @@ package com.repforge.app.ui.settings
 
 import android.content.Context
 import com.repforge.app.HealthJournalStore
+import com.repforge.app.NativeDataReplacement
 import com.repforge.app.data.db.TrainPilotDatabase
 import com.repforge.app.data.store.NativeTrainingModeChange
 import com.repforge.app.data.store.TrainPilotSettingsStore
@@ -25,17 +26,51 @@ internal object NativeTrainingModeComparison {
         val restSeconds: Int?, val beforeWeight: Double?, val afterWeight: Double?,
         val rir: String, val reason: String
     )
-    data class Snapshot(val programName: String, val rows: List<Row>)
+    data class Snapshot(
+        val programName: String,
+        val rows: List<Row>,
+        val programId: String,
+        val programRaw: String,
+        val dayRecipes: List<Pair<String, String>>,
+        // Captured before any Room/DataStore read: identical restored bytes must not
+        // make a comparison from a previous dataset generation valid again.
+        val generation: NativeDataReplacement.Continuation
+    )
+
+    /** Read-only revalidation immediately before the existing settings admission/CAS. */
+    suspend fun isCurrent(
+        context: Context, preview: NativeTrainingModeChange.Preview, snapshot: Snapshot
+    ): Boolean {
+        snapshot.generation.requireCurrent(context)
+        if (snapshot.rows.isEmpty()) return false
+        val settings = TrainPilotSettingsStore(context).current()
+        if (settings.trainingModes197Json != preview.expectedRaw ||
+            settings.activeProgramId != preview.expectedActiveProgramId) return false
+        val pid = preview.programId ?: settings.activeProgramId
+        if (pid != snapshot.programId) return false
+        val current = TrainPilotDatabase.getInstance(context).programDao()
+            .getProgramWithDaysById(pid) ?: return false
+        val sameRecipes = current.program.rawJson == snapshot.programRaw &&
+            current.days.sortedBy { it.sortOrder }.map { it.dayId to it.exercisesJson } ==
+                snapshot.dayRecipes
+        snapshot.generation.requireCurrent(context)
+        return sameRecipes
+    }
 
     suspend fun read(context: Context, preview: NativeTrainingModeChange.Preview): Snapshot {
+        val generation = NativeDataReplacement.continuationForCurrentData(context)
         val db = TrainPilotDatabase.getInstance(context)
         val settings = TrainPilotSettingsStore(context).current()
         check(settings.trainingModes197Json == preview.expectedRaw &&
             settings.activeProgramId == preview.expectedActiveProgramId) { "Stale training modes preview" }
         val pid = preview.programId ?: settings.activeProgramId
-        val program = db.programDao().getProgramWithDaysById(pid) ?: return Snapshot("", emptyList())
+        require(pid.isNotBlank() && (preview.scope != "program" ||
+            preview.programId == preview.expectedActiveProgramId))
+        val program = checkNotNull(db.programDao().getProgramWithDaysById(pid)) {
+            "Training mode comparison program missing"
+        }
         val daysInProgram = program.days.sortedBy { it.sortOrder }
-        if (daysInProgram.isEmpty()) return Snapshot("", emptyList())
+        check(daysInProgram.isNotEmpty()) { "Training mode comparison has no program days" }
         val now = Instant.now()
         val zone = ZoneId.systemDefault()
         val date = now.atZone(zone).toLocalDate()
@@ -60,9 +95,15 @@ internal object NativeTrainingModeComparison {
             val before = repository.load(target, settings, readiness, now)
             val after = repository.load(target,
                 settings.copy(trainingModes197Json = prospectiveJson.toString()), readiness, now)
+            // Do not silently drop a missing/mismatched exercise: a partial
+            // comparison could otherwise enable approval with stale results.
+            check(before.map { it.id } == after.map { it.id } &&
+                before.map { it.id }.distinct().size == before.size) {
+                "Training mode comparison changed exercise identity"
+            }
             val afterById = after.associateBy { it.id }
-            before.mapNotNull { old ->
-                val updated = afterById[old.id] ?: return@mapNotNull null
+            before.map { old ->
+                val updated = afterById.getValue(old.id)
                 val rx = prescriptions?.optJSONObject(old.id)
                 // Program-day edits override the program-level Rx, just as the Coach repository does.
                 val dayItems = org.json.JSONArray(day.exercisesJson)
@@ -94,13 +135,20 @@ internal object NativeTrainingModeComparison {
                     updated.advice.reason)
             }
         }
-        check(TrainPilotSettingsStore(context).current().trainingModes197Json == preview.expectedRaw) {
-            "Training modes changed during preview"
+        check(rows.isNotEmpty()) { "Training mode comparison has no exercise rows" }
+        val snapshot = Snapshot(
+            programName = when (settings.language) {
+                "en" -> program.program.nameEn; "de" -> program.program.nameDe
+                "ro" -> program.program.nameRo; else -> program.program.nameHu
+            }.ifBlank { program.program.nameHu },
+            rows = rows, programId = pid,
+            programRaw = program.program.rawJson,
+            dayRecipes = daysInProgram.map { it.dayId to it.exercisesJson },
+            generation = generation
+        )
+        check(isCurrent(context, preview, snapshot)) {
+            "Training mode comparison became stale"
         }
-        val name = when (settings.language) {
-            "en" -> program.program.nameEn; "de" -> program.program.nameDe
-            "ro" -> program.program.nameRo; else -> program.program.nameHu
-        }.ifBlank { program.program.nameHu }
-        return Snapshot(name, rows)
+        return snapshot
     }
 }
