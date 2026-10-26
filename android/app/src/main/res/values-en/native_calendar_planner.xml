@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calendar_planner_title">Plan multiple weeks</string>
+    <string name="calendar_planner_alternate">Every other day</string>
+    <string name="calendar_planner_daily">Every day</string>
+    <string name="calendar_planner_weekly">Selected weekdays</string>
+    <string name="calendar_planner_date">Start date (YYYY-MM-DD)</string>
+    <string name="calendar_planner_time">Time (HH:mm)</string>
+    <string name="calendar_planner_minutes">Duration (10–240 minutes)</string>
+    <string name="calendar_planner_weeks">Weeks (1–12)</string>
+    <string name="calendar_planner_first">First program day</string>
+    <string name="calendar_planner_invalid">Check the entered values.</string>
+    <string name="calendar_planner_preview">%1$d events, %2$d plans to cancel</string>
+    <string name="calendar_planner_save">Confirm plan</string>
+    <string name="calendar_planner_generate">Preview</string>
+    <string name="calendar_planner_cancel">Cancel</string>
+</resources>

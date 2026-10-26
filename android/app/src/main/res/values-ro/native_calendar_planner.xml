@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calendar_planner_title">Planifică mai multe săptămâni</string>
+    <string name="calendar_planner_alternate">O dată la două zile</string>
+    <string name="calendar_planner_daily">În fiecare zi</string>
+    <string name="calendar_planner_weekly">Zile selectate</string>
+    <string name="calendar_planner_date">Data de început (YYYY-MM-DD)</string>
+    <string name="calendar_planner_time">Ora (HH:mm)</string>
+    <string name="calendar_planner_minutes">Durata (10–240 minute)</string>
+    <string name="calendar_planner_weeks">Săptămâni (1–12)</string>
+    <string name="calendar_planner_first">Prima zi a programului</string>
+    <string name="calendar_planner_invalid">Verifică valorile introduse.</string>
+    <string name="calendar_planner_preview">%1$d evenimente, %2$d planuri de anulat</string>
+    <string name="calendar_planner_save">Confirmă planul</string>
+    <string name="calendar_planner_generate">Previzualizare</string>
+    <string name="calendar_planner_cancel">Anulează</string>
+</resources>
