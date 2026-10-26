@@ -1,0 +1,184 @@
+name: Native GPS recovery targeted QA (PR 256)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  phone-gps-recovery:
+    if: github.ref == 'refs/heads/feat/native-gps-permission-recovery'
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    steps:
+      - name: Checkout exact dispatched own-branch commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+          cache-dependency-path: |
+            android/**/*.gradle
+            android/gradle/wrapper/gradle-wrapper.properties
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+      - name: Install pinned Android platform
+        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - name: Record exact checkout
+        run: |
+          mkdir -p gps-qa/results
+          git rev-parse HEAD | tee gps-qa/results/commit.txt
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          echo "branch=$GITHUB_REF_NAME" >> gps-qa/results/commit.txt
+      - name: Compile phone debug APK and Android test APK
+        id: build
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon --stacktrace -PnativePhoneUiTests :app:assembleDebug :app:assembleDebugAndroidTest
+          sha256sum app/build/outputs/apk/debug/app-debug.apk \
+            app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk \
+            > ../gps-qa/results/apk-sha256.txt
+      - name: Run exactly 11 GPS recovery JVM cases
+        id: jvm
+        if: steps.build.outcome == 'success'
+        continue-on-error: true
+        working-directory: android
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon --stacktrace :app:testDebugUnitTest \
+            --tests com.repforge.app.NativeGpsPermissionRecoveryDecisionTest \
+            2>&1 | tee ../gps-qa/results/jvm-gradle.log
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          path = Path('app/build/test-results/testDebugUnitTest/TEST-com.repforge.app.NativeGpsPermissionRecoveryDecisionTest.xml')
+          root = ET.parse(path).getroot()
+          counts = {key: int(root.attrib.get(key, 0)) for key in ('tests', 'failures', 'errors', 'skipped')}
+          print('JVM_XML', counts)
+          assert counts == {'tests': 11, 'failures': 0, 'errors': 0, 'skipped': 0}, counts
+          PY
+      - name: Enable KVM for isolated API 35 emulator
+        if: steps.build.outcome == 'success'
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Run exactly four GPS recovery Compose UI cases
+        id: phone-ui
+        if: steps.build.outcome == 'success'
+        continue-on-error: true
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          ram-size: 3072M
+          disk-size: 6000M
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: |
+            set -euo pipefail
+            adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+            adb install -r android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+            adb logcat -c
+            set +e
+            adb shell am instrument -w -r -e class com.repforge.app.NativeGpsPermissionRecoveryUiTest \
+              com.repforge.app.test/androidx.test.runner.AndroidJUnitRunner \
+              > gps-qa/results/instrumentation.log 2>&1
+            instrument_rc=$?
+            set -e
+            adb logcat -d -v threadtime > gps-qa/results/logcat.txt || true
+            python3 - <<'PY'
+            import json
+            from pathlib import Path
+            import xml.etree.ElementTree as ET
+            path = Path('gps-qa/results/instrumentation.log')
+            raw = path.read_text(errors='replace')
+            expected = {
+              'approximateGrantOpensAppPermissionRouteAndBackDoesNotStartMeasurement',
+              'systemLocationOffHasOwnSettingsAndRequiresExplicitRetryAfterReturn',
+              'runtimePermissionDismissedByBackNeverRecordsDistance',
+              'staleOriginalWorkoutIsRefusedAfterSettingsOrPermissionBlock',
+            }
+            results = {}
+            duplicates = []
+            status = {}
+            for line in raw.splitlines():
+              if line.startswith('INSTRUMENTATION_STATUS: '):
+                key_value = line.split(': ', 1)[1]
+                if '=' in key_value:
+                  key, value = key_value.split('=', 1)
+                  status[key] = value
+              elif line.startswith('INSTRUMENTATION_STATUS_CODE: '):
+                try:
+                  code = int(line.rsplit(': ', 1)[-1])
+                except ValueError:
+                  code = -999
+                if code <= 0 and 'class' in status and 'test' in status:
+                  key = status['test']
+                  if key in results:
+                    duplicates.append(key)
+                  results[key] = {'class': status['class'], 'code': code,
+                                  'details': status.get('stack', '')[:1000]}
+                status = {}
+            suite = ET.Element('testsuite', {
+              'name': 'NativeGpsPermissionRecoveryUiTest',
+              'tests': str(len(results)),
+              'failures': str(sum(v['code'] == -2 for v in results.values())),
+              'errors': str(sum(v['code'] not in (0, -2, -3) for v in results.values())),
+              'skipped': str(sum(v['code'] == -3 for v in results.values())),
+            })
+            for name, result in sorted(results.items()):
+              case = ET.SubElement(suite, 'testcase', {
+                'classname': result['class'], 'name': name})
+              if result['code'] == -2:
+                ET.SubElement(case, 'failure').text = result['details']
+              elif result['code'] == -3:
+                ET.SubElement(case, 'skipped')
+              elif result['code'] != 0:
+                ET.SubElement(case, 'error').text = result['details']
+            ET.ElementTree(suite).write(
+              'gps-qa/results/phone-ui-targeted.xml', encoding='utf-8', xml_declaration=True)
+            good = set(results) == expected and not duplicates and len(results) == 4 and all(
+              v['code'] == 0 and v['class'].endswith('.NativeGpsPermissionRecoveryUiTest')
+              for v in results.values()) and 'FAILURES!!!' not in raw
+            summary = {'expected': 4, 'terminal': len(results),
+                       'passed': sum(v['code'] == 0 for v in results.values()),
+                       'missing': sorted(expected - set(results)),
+                       'unexpected': sorted(set(results) - expected),
+                       'duplicates': duplicates, 'complete_pass': good}
+            Path('gps-qa/results/phone-ui-summary.json').write_text(
+              json.dumps(summary, indent=2) + '\n')
+            print('GPS_UI', summary)
+            if not good:
+              raise SystemExit(1)
+            PY
+            test "$instrument_rc" -eq 0
+      - name: Fail QA when either targeted suite failed or did not run
+        if: always()
+        env:
+          BUILD: ${{ steps.build.outcome }}
+          JVM: ${{ steps.jvm.outcome }}
+          UI: ${{ steps.phone-ui.outcome }}
+        run: |
+          printf 'build=%s\njvm=%s\nui=%s\n' "$BUILD" "$JVM" "$UI" | tee gps-qa/results/step-status.txt
+          test "$BUILD" = success
+          test "$JVM" = success
+          test "$UI" = success
+      - name: Upload raw QA evidence regardless of success
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrainPilot-Native-GPS-Recovery-QA-${{ github.sha }}
+          path: |
+            gps-qa/results/
+            android/app/build/test-results/testDebugUnitTest/TEST-com.repforge.app.NativeGpsPermissionRecoveryDecisionTest.xml
+          if-no-files-found: warn
