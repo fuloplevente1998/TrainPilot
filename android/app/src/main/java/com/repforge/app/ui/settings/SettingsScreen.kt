@@ -86,8 +86,17 @@ fun SettingsScreen(
     val activity = context as? Activity
     var profileOpen by remember { mutableStateOf(false) }
     var openedProfileJson by remember { mutableStateOf("{}") }
+    var openedTimerJson by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(state.timerSavedSequence) {
+        if (state.timerSavedSequence > 0) openedTimerJson = null
+    }
     LaunchedEffect(state.profileSavedSequence) {
         if (state.profileSavedSequence > 0) profileOpen = false
+    }
+
+    openedTimerJson?.let { config ->
+        NativeTimerDefaultsDialog(config, state.settings.language, state.timerSaving, state.timerWriteFailed,
+            onDismiss = { openedTimerJson = null }, onSave = viewModel::saveTimerDefaults)
     }
 
     // SAF Launcherek (Export/Import)
@@ -120,6 +129,13 @@ fun SettingsScreen(
         }
 
         item { NativeLanguagePicker(state.settings.language, !state.replacementBusy, viewModel::setLanguage) }
+        item {
+            OutlinedButton(onClick = { openedTimerJson = viewModel.beginTimerDefaults() },
+                enabled = !state.replacementBusy && !state.timerSaving,
+                modifier = Modifier.fillMaxWidth().testTag("settings_timer_open")) {
+                Text(strings.getString(R.string.native_timer_defaults_title))
+            }
+        }
         item {
             NativeTrainingModePicker(
                 language = state.settings.language,

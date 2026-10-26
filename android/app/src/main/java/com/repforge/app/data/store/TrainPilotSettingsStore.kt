@@ -252,6 +252,18 @@ class TrainPilotSettingsStore(private val context: Context) {
         }
     }
 
+    /** Explicit Settings save: stale dialogs cannot overwrite another edit or a restored dataset. */
+    internal suspend fun updateTimerDefaults(expected: String, proposed: JSONObject,
+        ticket: NativeDataReplacement.Continuation) {
+        val config = com.repforge.app.NativeIntervalPreset.normalized(proposed)
+        NativeDataReplacement.mutate(context) {
+            ticket.requireCurrent(context)
+            check(current().timerConfiguration().toString() == expected) { "Timer defaults changed; reopen editor" }
+            setTimerDefaults(config.getInt("work"), config.getInt("rest"), config.getInt("rounds"),
+                config.getBoolean("sound"), config.getBoolean("vibration"), config.getBoolean("autoAdvance"))
+        }
+    }
+
     suspend fun setHapticSetRecorded227(enabled: Boolean) {
         NativeDataReplacement.mutate(context) {
             context.trainPilotDataStore.edit { it[KEY_HAPTIC_SET_RECORDED_227] = enabled }

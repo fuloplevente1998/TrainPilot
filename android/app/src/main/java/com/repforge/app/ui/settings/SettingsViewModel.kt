@@ -42,7 +42,10 @@ data class SettingsUiState(
     val profileSaving: Boolean = false,
     val profileWriteFailed: Boolean = false,
     val profileSavedSequence: Int = 0,
-    val modeSaving: Boolean = false
+    val modeSaving: Boolean = false,
+    val timerSaving: Boolean = false,
+    val timerWriteFailed: Boolean = false,
+    val timerSavedSequence: Int = 0
 )
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
@@ -54,6 +57,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val googleConsentBridge = NativeGoogleConsentBridge()
     internal val googleConsent = googleConsentBridge.prompt
     private var googleRequestRunning = false
+    private var timerEdit: Pair<String, NativeDataReplacement.Continuation>? = null
 
     internal fun takeGoogleConsent(id: String) = googleConsentBridge.takeForLaunch(id)
     internal fun completeGoogleConsent(id: String, data: Intent?) { googleConsentBridge.complete(id, data) }
@@ -153,6 +157,31 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setLanguage(lang: String) = writeSetting { settingsStore.setLanguage(lang) }
     fun setTimerDefaults(workSec: Int, restSec: Int, rounds: Int, sound: Boolean, vibration: Boolean) =
         writeSetting { settingsStore.setTimerDefaults(workSec, restSec, rounds, sound, vibration) }
+    internal fun beginTimerDefaults(): String? {
+        if (_uiState.value.replacementBusy || _uiState.value.timerSaving) return null
+        return try {
+            val config = _uiState.value.settings.timerConfiguration().toString()
+            timerEdit = config to NativeDataReplacement.continuationForCurrentData(context)
+            _uiState.value = _uiState.value.copy(timerWriteFailed = false)
+            config
+        } catch (_: Exception) { null }
+    }
+
+    internal fun saveTimerDefaults(config: JSONObject) {
+        val opened = timerEdit ?: return
+        if (_uiState.value.replacementBusy || _uiState.value.timerSaving) return
+        _uiState.value = _uiState.value.copy(timerSaving = true, timerWriteFailed = false)
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) { settingsStore.updateTimerDefaults(opened.first, config, opened.second) }
+                timerEdit = null
+                _uiState.value = _uiState.value.copy(timerSavedSequence = _uiState.value.timerSavedSequence + 1)
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (_: Exception) { _uiState.value = _uiState.value.copy(timerWriteFailed = true) }
+            finally { _uiState.value = _uiState.value.copy(timerSaving = false) }
+        }
+    }
+
     fun setHapticSetRecorded227(enabled: Boolean) = writeSetting { settingsStore.setHapticSetRecorded227(enabled) }
     fun setHealthBackupConsent(consented: Boolean) = writeSetting { settingsStore.setHealthBackupConsent(consented) }
     fun setAutoWriteHc(enabled: Boolean) = writeSetting { settingsStore.setAutoWriteWorkoutToHealthConnect(enabled) }

@@ -651,4 +651,16 @@
     <string name="native_health_ble_connected_watch">Connected watch</string>
     <string name="native_health_ble_steps_count">%1$d steps</string>
     <string name="native_health_ble_unnamed_device">Unnamed device</string>
+
+    <string name="native_timer_defaults_title">Timer defaults</string>
+    <string name="native_timer_defaults_info">Defaults for new workouts. The timer in the current workout stays unchanged.</string>
+    <string name="native_timer_defaults_work">Work (seconds)</string>
+    <string name="native_timer_defaults_rest">Rest (seconds)</string>
+    <string name="native_timer_defaults_rounds">Rounds</string>
+    <string name="native_timer_defaults_sound">Sound</string>
+    <string name="native_timer_defaults_vibration">Vibration</string>
+    <string name="native_timer_defaults_auto">Automatic advance</string>
+    <string name="native_timer_defaults_invalid">Work: 1–3600 s; rest: 0–3600 s; rounds: 1–100. Total duration must not exceed 24 hours.</string>
+    <string name="native_timer_defaults_failed">Could not save, or the data changed while editing. Close and reopen the editor.</string>
+    <string name="native_timer_defaults_save">Save</string>
 </resources>

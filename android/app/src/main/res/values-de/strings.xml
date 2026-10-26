@@ -651,4 +651,16 @@
     <string name="native_health_ble_connected_watch">Verbundene Uhr</string>
     <string name="native_health_ble_steps_count">%1$d Schritte</string>
     <string name="native_health_ble_unnamed_device">Unbenanntes Gerät</string>
+
+    <string name="native_timer_defaults_title">Timer-Grundeinstellungen</string>
+    <string name="native_timer_defaults_info">Standardwerte für neue Trainings. Der Timer im laufenden Training bleibt unverändert.</string>
+    <string name="native_timer_defaults_work">Belastung (Sekunden)</string>
+    <string name="native_timer_defaults_rest">Pause (Sekunden)</string>
+    <string name="native_timer_defaults_rounds">Runden</string>
+    <string name="native_timer_defaults_sound">Tonsignal</string>
+    <string name="native_timer_defaults_vibration">Vibration</string>
+    <string name="native_timer_defaults_auto">Automatisch fortfahren</string>
+    <string name="native_timer_defaults_invalid">Belastung: 1–3600 s; Pause: 0–3600 s; Runden: 1–100. Gesamtdauer höchstens 24 Stunden.</string>
+    <string name="native_timer_defaults_failed">Speichern fehlgeschlagen oder Daten wurden inzwischen geändert. Editor schließen und erneut öffnen.</string>
+    <string name="native_timer_defaults_save">Speichern</string>
 </resources>
