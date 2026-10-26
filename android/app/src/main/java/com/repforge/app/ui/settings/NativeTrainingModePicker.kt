@@ -37,13 +37,31 @@ import kotlinx.coroutines.withContext
 import com.repforge.app.ui.text.nativeResources
 import com.repforge.app.ui.theme.LocalTrainPilotColors
 
+/**
+ * Owned by the non-virtualized screen for the program picker. Mutable dialog state
+ * survives LazyColumn item disposal and cannot approve an unrelated proposal.
+ */
+internal class NativeTrainingModePickerState(initial: NativeTrainingModes.Effective) {
+    val styleState = mutableStateOf(initial.trainingStyle)
+    val progressionState = mutableStateOf(initial.progressionMode)
+    val pendingState = mutableStateOf<NativeTrainingModeChange.Preview?>(null)
+    val comparisonState = mutableStateOf<NativeTrainingModeComparison.Snapshot?>(null)
+    val comparisonFailedState = mutableStateOf(false)
+    val comparisonForState = mutableStateOf<NativeTrainingModeChange.Preview?>(null)
+}
+
 /** Global and active-program editors share one read-only preview/explicit-approval UI. */
 @Composable
 internal fun NativeTrainingModePicker(
     language: String, raw: String?, activeProgramId: String,
     scope: String, programId: String? = null, enabled: Boolean = true,
     onApprove: (NativeTrainingModeChange.Preview) -> Unit,
-    onUndo: () -> Unit
+    onUndo: () -> Unit,
+    holder: NativeTrainingModePickerState? = null,
+    showCard: Boolean = true,
+    showDialog: Boolean = true,
+    onApproveCompared: ((NativeTrainingModeChange.Preview,
+        NativeTrainingModeComparison.Snapshot) -> Unit)? = null
 ) {
     val colors = LocalTrainPilotColors.current
     val ctx = LocalContext.current
@@ -52,15 +70,16 @@ internal fun NativeTrainingModePicker(
         if (scope == "global") NativeTrainingModes.globalChoice(raw)
         else NativeTrainingModes.resolveSavedJson(raw, programId)
     }
-    var style by remember(raw, scope, programId, activeProgramId) { mutableStateOf(effective.trainingStyle) }
-    var progression by remember(raw, scope, programId, activeProgramId) { mutableStateOf(effective.progressionMode) }
-    var pending by remember(raw, scope, programId, activeProgramId) {
-        mutableStateOf<NativeTrainingModeChange.Preview?>(null)
+    val owner = holder ?: remember(raw, scope, programId, activeProgramId) {
+        NativeTrainingModePickerState(effective)
     }
-    var comparison by remember { mutableStateOf<NativeTrainingModeComparison.Snapshot?>(null) }
-    var comparisonFailed by remember { mutableStateOf(false) }
-    var comparisonFor by remember { mutableStateOf<NativeTrainingModeChange.Preview?>(null) }
-    LaunchedEffect(pending, raw, activeProgramId) {
+    var style by owner.styleState
+    var progression by owner.progressionState
+    var pending by owner.pendingState
+    var comparison by owner.comparisonState
+    var comparisonFailed by owner.comparisonFailedState
+    var comparisonFor by owner.comparisonForState
+    if (showDialog) LaunchedEffect(pending, raw, activeProgramId, scope, programId) {
         val proposal = pending
         comparison = null
         comparisonFor = null
@@ -89,7 +108,7 @@ internal fun NativeTrainingModePicker(
     })
     val tag = if (scope == "global") "training_modes_global" else "training_modes_program"
 
-    Card(
+    if (showCard) Card(
         modifier = Modifier.fillMaxWidth().testTag(tag),
         colors = CardDefaults.cardColors(containerColor = colors.card)
     ) {
@@ -156,7 +175,13 @@ internal fun NativeTrainingModePicker(
             }
         }
     }
-    pending?.let { preview ->
+    if (showDialog) pending?.let { preview ->
+        // The comparison must belong to the exact dialog proposal; stale results
+        // and partial/empty previews never authorize the settings CAS write.
+        val ready = !comparisonFailed && comparisonFor == preview &&
+            comparison?.rows?.isNotEmpty() == true &&
+            preview.expectedRaw == raw && preview.expectedActiveProgramId == activeProgramId &&
+            (scope != "program" || preview.programId == programId)
         AlertDialog(
             onDismissRequest = { pending = null },
             title = { Text(strings.getString(R.string.native_modes_confirm_title), color = colors.text) },
@@ -226,9 +251,15 @@ internal fun NativeTrainingModePicker(
                 }
             },
             confirmButton = {
-                Button(onClick = { pending = null; onApprove(preview) },
-                    enabled = enabled && comparison?.rows?.isNotEmpty() == true &&
-                        comparisonFor == preview && !comparisonFailed,
+                Button(onClick = {
+                    if (enabled && ready) {
+                        val completed = comparison!!
+                        pending = null // consume before dispatch: no double approval
+                        if (onApproveCompared != null) onApproveCompared(preview, completed)
+                        else onApprove(preview)
+                    }
+                },
+                    enabled = enabled && ready,
                     modifier = Modifier.heightIn(min = 48.dp).testTag("${tag}_approve")) {
                     Text(strings.getString(R.string.native_modes_approve))
                 }
