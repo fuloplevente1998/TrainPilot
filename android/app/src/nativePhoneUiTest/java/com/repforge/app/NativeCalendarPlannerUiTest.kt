@@ -47,6 +47,7 @@ internal class CalendarPlannerUiHarness(private val compose: ComposeTestRule) {
 
     fun launch(
         plannerSettingsReadGate: (suspend () -> Unit)? = null,
+        programsReadGate: (suspend () -> Unit)? = null,
         previewReadGate: (suspend () -> Unit)? = null,
         waitForReady: Boolean = true
     ) {
@@ -58,7 +59,8 @@ internal class CalendarPlannerUiHarness(private val compose: ComposeTestRule) {
                     override fun <T : ViewModel> create(modelClass: Class<T>): T {
                         require(modelClass == CalendarViewModel::class.java)
                         return CalendarViewModel(activity.application,
-                            plannerSettingsReadGate ?: {}, previewReadGate ?: {}) as T
+                            plannerSettingsReadGate ?: {}, programsReadGate ?: {},
+                            previewReadGate ?: {}) as T
                     }
                 }
                 // Own key prevents reuse of a ViewModel installed by MainActivity navigation.
