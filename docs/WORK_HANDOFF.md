@@ -4,6 +4,19 @@ Frissítve: **2026-10-26**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Root UI-javítás, két chat mellett – 2026-10-26
+
+User a két új chatfeladatot átadta. Indulásuk most felhasználó által igazolt;
+Calendar és training-mode fájlhatár továbbra foglalt.
+Root javította a NativePhoneNavigationTest két bizonyított exact-vs-substring
+eltérését (200 mérés / teljes nap megmarad), az üzleti assert tartalma változatlan.
+Cardio és navigation theme click, közös locale fixture és sleep-expand célok most
+child performScrollTo+assertIsDisplayed után kattintanak. Ez a clipping-gyanú
+javítása, nem igazolt Android runtime eredmény.3Kotlin lexical/diff PASS,
+5canonical gate-parser Python teszt PASS; Kotlin fordítás és UI UNRUN.
+A legacy75/40 eredmény továbbra csak e28-ra érvényes. Interval-rest hiányzó node
+és további UI okok vizsgálata még nyitott; egy új közös gate szükséges a javításokhoz.
+
 ## Két külső chat területfoglalása – 2026-10-26
 
 User most két ChatGPT-chatnek kér munkát, új Codex/belső agent nélkül.
