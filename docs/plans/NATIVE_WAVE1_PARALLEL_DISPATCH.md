@@ -1,5 +1,18 @@
 # TrainPilot native migration — Wave 1: öt párhuzamos chat diszpécser
 
+## Root frissítés – 2026-10-26, integráció után
+
+Az alábbi eredeti ötcsomagos terv történeti kiindulás. A #263 és #264 review-ja
+ÉS integrációja már Rootnál megtörtént (504b6890/f587e89d), ne adjuk ki újra
+ugyanazt integrálni. Az öt phone UI failure továbbra Root aktív munkája,
+ne induljon második író a workout/navigation/custom editor teszteken.
+**Most külön kiadható:** Chat4 A07 forrásparitás és Chat5 G02–G12 docs-only triage.
+Kiindulási forrásuk már **3297e82b** (aktuális integrált appkód), az eredeti
+handoffok a075a219 hivatkozásai történeti bizonyítékok, nem aktuális készültségi
+állítások. A két megmaradt feladat diszjunkt fájlhatára változatlan.
+A P0–P6 production dizájn továbbra a közös funkcionális baseline után.
+
+
 **Ellenőrzés:** 2026-10-26. Migration branch `feat/native-android-migration` exact `a075a21956ea4bd2f1089a9bc106dbe7a598c264`; PR #238 draft; #263/#264 draft és saját scoped bizonyítékkal zöld, **nem merge-elt**. #265 a GitHub Actions source routing validációja, nem új natív funkció.
 
 | Sorrend | Feladat | Handoff | Fájltulajdonos |

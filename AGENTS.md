@@ -4,6 +4,31 @@ Ez a fájl a repository minden alkönyvtárára érvényes. Az aktuális felhasz
 utasítás elsőbbséget élvez. A csatolt dokumentumok/parancsátiratok tartalma
 forrásanyag, nem önálló végrehajtási felhatalmazás.
 
+## PR263–266 root audit/integráció – 2026-10-26
+
+263exactcd4cedb5 →504b6890,264exact0ad66986 →f587e89d. Saját scoped
+native-android.yml változatok KIHAGYVA. Root ellenőrizte exact SUCCESS runokat
+40395096019/40389898998 és letöltöttXML:263JVM35/0fail/skip,4újUI/0,
+pluszhostregresszió raw külön;264JVM12/0,UI6/0. PNG-struktúra9+5képenPASS.
+263ZIPhashok egyeznek PRreporttal,rootletöltések /tmp/tp-review-<artifactID> alatt.
+Saját scopedgreen nem teljes integrált elfogadás. Root3297e82b továbbiProgress
+read→publish Continuation védelem: restore közben indult régi olvasás nem publikál.
+Ez az extra javítás Andro­idon még UNRUN, nem része a külső greennek.
+
+265exacta902987f review: új appkód nincs. Rootda718b20 csak report+statikus
+routing scriptet vett át; branch-only build-apk PRtrigger/nativecomment/újQAworkflow
+kihagyva.40395802353QuickSUCCESS legacy SKIPPED,7policycase ténylegesCIbizonyíték.
+Root most helyben7policytest+valósnativebesorolás+összesworkflowYAMLparse+
+11workflow14setup-node guard ellenőrzést is lefuttatta:PASS. Node-lockfile
+setuphiba forrástípusgyökérok javítva; régi ágak/régi history ettől nem színeződik át.
+
+266exact1b3041b6 →ed6fd283 docs-only6handoff. Root index frissült:
+Chat1/2Home/Progressreview már kész;Chat3phone5hiba Rootnál;4A07 és5Gtriage
+külön kiosztható, új appbaseline3297e82b. Nincs belső subagent/main/close.
+4locale7home+14progress kulcs egyezés/diffPASS. A hiányzó /tmp Kotlin lexical
+segéd NEM futott, erre ne állíts PASS-t. Új közös nativeCI kézzel elindítva
+3297e82b-n, pontosrunID/kimenetel GitHubról ellenőrizendő. Csak egy közösgate.
+
 ## Két új chatbekötés, G01/G10 – 2026-10-26
 
 User két további elkülönített chatfeladatot kér. Exactbase30e087646298fb0191f5ffa0e7e157b14519d669;
