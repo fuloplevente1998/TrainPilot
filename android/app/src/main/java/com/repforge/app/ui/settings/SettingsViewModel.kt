@@ -126,7 +126,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         _uiState.value = _uiState.value.copy(profileWriteFailed = false)
     }
 
-    fun approveTrainingMode(preview: NativeTrainingModeChange.Preview) =
+    internal fun approveTrainingMode(preview: NativeTrainingModeChange.Preview) =
         writeModeChange(R.string.native_modes_saved) { NativeTrainingModeChange.approve(settingsStore, preview) }
 
     fun undoTrainingMode(scope: String, programId: String?) =
