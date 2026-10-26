@@ -1,4 +1,5 @@
 name: Native Android and Wear OS APK
+# Verification branch: comment-only touch to exercise the real native migration gates; do not merge this line.
 
 on:
   workflow_dispatch:
