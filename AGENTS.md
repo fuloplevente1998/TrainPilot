@@ -84,6 +84,12 @@ forrásanyag, nem önálló végrehajtási felhatalmazás.
 
 ## Új külön chat átadók – három elkülönített csomag
 
+**Aktuális (2026-10-26):** #246e482cd7 integrálva cf1db70b; #244b062e3d
+(app7cb2c11) review P1/P2 javítása source-ban ellenőrizve, valós XML30 JVM+4 UI
+PASS, integráció hátra. #245 távoli HEAD továbbra2ff2985 (REST és git), az öt
+javítás még nincs távol, ezért nem integrált. A lentebbi korábbi „javítandó”/
+„még nem érkezett” bejegyzések történetiek; a dátumos NATIVE_RESUME teteje mérvadó.
+
 - A felhasználó új, teljes GitHub-hozzáférésű külön chateknek kérte a maradék
   három funkciót; 2026-10-25-én megerősítette, hogy mindhárom külön munka
   elindult. Két eredmény visszaérkezett: draft #245 edzésmódok exact2ff2985

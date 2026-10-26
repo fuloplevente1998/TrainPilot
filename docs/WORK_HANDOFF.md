@@ -1,8 +1,32 @@
 # TrainPilot – aktuális átadás
 
-Frissítve: **2026-10-25**. A main alkalmazásbaseline-ja `7473b30`, dokumentációs HEAD-je `8a36502`; **#235/#237 mainen, készüléken elfogadva, változatlan 1.3.71 /2735**. Latest: `v1.3.71-perf-20261022`, Wear párja `wear-v1.3.71-perf-20261022`; az október 21-i eredeti kiadás megmaradt. A natív migráció külön ágon folyamatban; #214 karbantartási issue marad. [Takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
+Frissítve: **2026-10-26**. A main alkalmazásbaseline-ja `7473b30`, dokumentációs HEAD-je `8a36502`; **#235/#237 mainen, készüléken elfogadva, változatlan 1.3.71 /2735**. Latest: `v1.3.71-perf-20261022`, Wear párja `wear-v1.3.71-perf-20261022`; az október 21-i eredeti kiadás megmaradt. A natív migráció külön ágon folyamatban; #214 karbantartási issue marad. [Takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
+
+## Ellenőrzött aktuális állapot – 2026-10-26
+
+| Rész | Távoli állapot | Migrációs integráció / elfogadás |
+|---|---|---|
+| #246 kardió | e482cd7 | Beépítve cf1db70b; teljes új közös gate hátra. |
+| #244 Health auto-refresh | b062e3d (app/teszt7cb2c11) | A P1 dispatcher és P2 ZIP cleanup javítás source-deltája ellenőrizve; integráció még hátra. |
+| #245 edzésmódok | 2ff2985, változatlan | Öt review-javítás nincs a távoli ágon; nem integrált, függőben. |
+
+#244 Actions40243229800 SUCCESS. Root most a valódi XML-ekből is ellenőrizte:
+**30/30 JVM +4/4 emulátoros UI PASS**,0hiba/skip (artifact12617517971/12617558453).
+App/teszt7cb2c11→b062e3d csak3docsdelta. A főszálas execution probe a metadata
+lease előtt fut, az IO prepare/callback már nem hívja a main-only store-t;
+ZIP transactionDir a try/finally alatt, hibainjektálás és új production callback
+regressziók hozzáadva. Fizikai HC/Samsung és30nap/full/incremental parity továbbra
+nyitott. A célzott zöld nem közös release gate.
+
+A felhasználó mindkét rész elkészültét jelezte. #245-öt REST, cache nélküli REST,
+git fetch és ls-remote alapján is ellenőriztük: továbbra2ff2985, PR updated_at
+2026-10-25T21:28:35Z; más új nyitott mode PR nincs. A kért állapotban ezért nem
+jelölhető javítottnak. Következő: #244 átfedő baseline-fixek összevezetése a már
+integrált #246-tal; #245 tényleges új távoli delta review, majd integrált gate.
+Ebben a körben csak státusz/docs frissült: appforrás cf1db70b változatlan,
+main/verzió/PR-lezárás/élőadat-telepítés és új CI nem történt.
 
 ## PR246 beépítve, PR245 javított forrása még nem távoli – 2026-10-25
 

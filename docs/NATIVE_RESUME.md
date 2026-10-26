@@ -1,6 +1,6 @@
 # Natív folytatási pont – rövid kontextus
 
-Frissítve: 2026-10-25. AGENTS.md + ez + WORK_HANDOFF.md teteje elég induláskor.
+Frissítve: 2026-10-26. AGENTS.md + ez + WORK_HANDOFF.md teteje elég induláskor.
 Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/exportot.
 
 ## Hatókör és munkamód
@@ -18,6 +18,30 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
   Helyben nincs Gradle/emulátor/teljes suite. Meglévő Kotlin/adatút, nem prototípus.
   High kód; Medium vizuális dizájn előtt jelezni; Extra High komoly végső debug előtt.
   Kevés lényegi magyar output, nincs belső subagent külön kérés nélkül. PR238 követőlap.
+
+## Ellenőrzött aktuális állapot – 2026-10-26
+
+| Rész | Távoli állapot | Migrációs integráció / elfogadás |
+|---|---|---|
+| #246 kardió | e482cd7 | Beépítve cf1db70b; teljes új közös gate hátra. |
+| #244 Health auto-refresh | b062e3d (app/teszt7cb2c11) | A P1 dispatcher és P2 ZIP cleanup javítás source-deltája ellenőrizve; integráció még hátra. |
+| #245 edzésmódok | 2ff2985, változatlan | Öt review-javítás nincs a távoli ágon; nem integrált, függőben. |
+
+#244 Actions40243229800 SUCCESS. Root most a valódi XML-ekből is ellenőrizte:
+**30/30 JVM +4/4 emulátoros UI PASS**,0hiba/skip (artifact12617517971/12617558453).
+App/teszt7cb2c11→b062e3d csak3docsdelta. A főszálas execution probe a metadata
+lease előtt fut, az IO prepare/callback már nem hívja a main-only store-t;
+ZIP transactionDir a try/finally alatt, hibainjektálás és új production callback
+regressziók hozzáadva. Fizikai HC/Samsung és30nap/full/incremental parity továbbra
+nyitott. A célzott zöld nem közös release gate.
+
+A felhasználó mindkét rész elkészültét jelezte. #245-öt REST, cache nélküli REST,
+git fetch és ls-remote alapján is ellenőriztük: továbbra2ff2985, PR updated_at
+2026-10-25T21:28:35Z; más új nyitott mode PR nincs. A kért állapotban ezért nem
+jelölhető javítottnak. Következő: #244 átfedő baseline-fixek összevezetése a már
+integrált #246-tal; #245 tényleges új távoli delta review, majd integrált gate.
+Ebben a körben csak státusz/docs frissült: appforrás cf1db70b változatlan,
+main/verzió/PR-lezárás/élőadat-telepítés és új CI nem történt.
 
 ## PR246 beépítve, PR245 javított forrása még nem távoli – 2026-10-25
 
