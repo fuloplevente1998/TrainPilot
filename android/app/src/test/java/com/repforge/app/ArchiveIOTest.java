@@ -42,6 +42,50 @@ public class ArchiveIOTest {
         try { extract(zip("backup.json", "manifest.json"), directory, 5, 10); fail("Expanded byte limit ignored"); } catch (IOException expected) { }
         try { extract(zip("backup.json", "manifest.json"), directory, 100, 1); fail("Entry limit ignored"); } catch (IOException expected) { }
     }
+    @Test public void rejectsTruncatedCentralDirectoryEvenWithCompleteLocalEntries() throws Exception {
+        byte[] complete = zip("backup.json", "manifest.json");
+        // A streaming ZIP parser can read both entries and incorrectly accept this
+        // prefix despite the missing central directory and end-of-central-directory record.
+        int eocd = -1;
+        for (int i = complete.length - 22; i >= 0; i--) {
+            if ((complete[i] & 255) == 0x50 && (complete[i + 1] & 255) == 0x4b
+                    && (complete[i + 2] & 255) == 0x05 && (complete[i + 3] & 255) == 0x06) {
+                eocd = i;
+                break;
+            }
+        }
+        assertTrue("Expected ZIP end record", eocd > 0);
+        File directory = Files.createTempDirectory("archive-truncated").toFile();
+        try {
+            extract(Arrays.copyOf(complete, eocd), directory, 100, 10);
+            fail("Truncated archive falsely accepted");
+        } catch (IOException expected) { }
+    }
+
+    @Test public void rejectsCentralDirectoryOnlyArchiveWithCorruptedOffset() throws Exception {
+        byte[] complete = zip("backup.json", "manifest.json");
+        byte[] corrupt = complete.clone();
+        // Flip the local-header offset of the first central-directory entry.
+        int central = -1;
+        for (int i = 0; i < corrupt.length - 46; i++) {
+            if ((corrupt[i] & 255) == 0x50 && (corrupt[i + 1] & 255) == 0x4b
+                    && (corrupt[i + 2] & 255) == 0x01 && (corrupt[i + 3] & 255) == 0x02) {
+                central = i;
+                break;
+            }
+        }
+        assertTrue(central > 0);
+        corrupt[central + 42] = (byte) 0xff;
+        corrupt[central + 43] = (byte) 0xff;
+        corrupt[central + 44] = (byte) 0xff;
+        corrupt[central + 45] = (byte) 0x7f;
+        File directory = Files.createTempDirectory("archive-offset").toFile();
+        try {
+            extract(corrupt, directory, 100, 10);
+            fail("Invalid ZIP entry offset accepted");
+        } catch (IOException expected) { }
+    }
+
     @Test public void rejectsMissingReferencedPhoto() throws Exception {
         File directory = Files.createTempDirectory("archive-test").toFile();
         Set<String> names = extract(zip("backup.json", "manifest.json"), directory, 100, 10);
