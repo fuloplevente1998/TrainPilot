@@ -198,13 +198,18 @@ class LegacyWebViewMigrator(
         val stream = archive.startWrite()
         try { stream.write(snapshot); archive.finishWrite(stream) }
         catch (failure: Exception) { archive.failWrite(stream); throw failure }
-        if (extractedKeys.isNotEmpty()) {
+        val hasLegacyData = com.repforge.app.ui.onboarding.NativeOnboardingPolicy
+            .hasLegacyEvidence(extractedKeys)
+        if (hasLegacyData) {
             val compositeRoot = decodeSnapshot(extractedKeys)
             importBackupJson(compositeRoot, replaceAll = false)
         }
 
         TrainPilotDatabase.ensureBuiltinCatalogSeeded(database, context)
         settingsStore.ensureCloudDeviceId()
+        // After import, never gate a legacy/native profile as a fresh user.
+        // On failure before this point migration remains unfinished and no welcome is shown.
+        settingsStore.initializeOnboardingForMigration(hasLegacyData)
         settingsStore.markMigrationComplete()
     }
 
