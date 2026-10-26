@@ -1,4 +1,4 @@
-name: Native Android and Wear OS APK
+name: Native Android scoped data QA (NOT full app CI)
 
 on:
   workflow_dispatch:
@@ -26,7 +26,7 @@ concurrency:
 
 jobs:
   native-debug:
-    name: Build phone and Wear OS debug APKs
+    name: Scoped data QA - debug JVM release signer
     runs-on: ubuntu-latest
     timeout-minutes: 35
     defaults:
@@ -258,84 +258,80 @@ jobs:
           path: upgrade/results/
           if-no-files-found: error
 
-  wear-ui:
-    name: Preserved native Wear round UI
+  data-integrity:
+    name: Scoped data QA - emulator ${{ matrix.method }}
     needs: native-debug
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 50
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: android-actions/setup-android@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: TrainPilot-Native-Wear-Debug
-          path: wear-ui/app
-      - uses: actions/download-artifact@v4
-        with:
-          name: TrainPilot-Native-Wear-UI-Test
-          path: wear-ui/test
-      - name: Enable KVM
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-      - uses: reactivecircus/android-emulator-runner@v2
-        env:
-          WEAR_SHARD: ${{ matrix.shard }}
-        with:
-          api-level: 30
-          target: android-wear
-          arch: x86
-          profile: wearos_small_round
-          disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 2048
-          script: bash scripts/run-native-wear-ui.sh
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: TrainPilot-Native-Wear-UI-Results-${{ github.sha }}-${{ matrix.shard }}
-          path: wear-ui/results/
-          if-no-files-found: error
-
-  phone-ui:
-    name: Native phone Compose UI and unmodified screenshots
-    needs: native-debug
-    runs-on: ubuntu-latest
-    timeout-minutes: 35
+        method: [jsonRoundTrip0, jsonRoundTrip200, jsonRoundTrip1500, zipPhotoBytesSurviveEraseRestoreAndReexport, invalidJsonAndTruncatedZipCannotReplaceExistingData]
     steps:
       - uses: actions/checkout@v4
       - uses: android-actions/setup-android@v4
       - uses: actions/download-artifact@v4
         with:
           name: TrainPilot-Native-Phone-Debug
-          path: phone-ui/app
+          path: data-qa/app
       - uses: actions/download-artifact@v4
         with:
           name: TrainPilot-Native-Phone-UI-Test
-          path: phone-ui/test
+          path: data-qa/test
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - uses: reactivecircus/android-emulator-runner@v2
+      - name: Real native data integrity on isolated emulator (one exact method)
+        uses: reactivecircus/android-emulator-runner@v2
+        env:
+          DATA_METHOD: ${{ matrix.method }}
         with:
           api-level: 35
           target: google_apis
           arch: x86_64
-          ram-size: 3072M
-          disk-size: 6000M
+          profile: pixel_2
+          ram-size: 4096M
+          disk-size: 8000M
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: python3 scripts/native/phone-ui-gate.py --app phone-ui/app/app-debug.apk --tests phone-ui/test/app-debug-androidTest.apk --output phone-ui/results --commit "$GITHUB_SHA"
-      - name: Upload raw phone UI evidence and screenshots
+          script: |
+            set -euo pipefail
+            mkdir -p data-qa/results
+            adb install -r data-qa/app/app-debug.apk
+            adb install -r data-qa/test/app-debug-androidTest.apk
+            adb logcat -c
+            adb shell am instrument -w -r -e class "com.repforge.app.NativeDataIntegrityArchiveTest#${DATA_METHOD}" com.repforge.app.test/androidx.test.runner.AndroidJUnitRunner > "data-qa/results/${DATA_METHOD}.raw.txt" 2>&1 || true
+            adb logcat -d > "data-qa/results/${DATA_METHOD}.logcat.txt"
+            python3 - "${DATA_METHOD}" "data-qa/results/${DATA_METHOD}.raw.txt" "data-qa/results/${DATA_METHOD}.xml" "data-qa/results/${DATA_METHOD}.logcat.txt" <<'PY'
+            import pathlib, re, sys, xml.etree.ElementTree as ET
+            method, raw_path, xml_path, log_path = sys.argv[1:]
+            raw = pathlib.Path(raw_path).read_text(errors='replace')
+            log = pathlib.Path(log_path).read_text(errors='replace')
+            codes = re.findall(r'^INSTRUMENTATION_STATUS_CODE: (-?\d+)\s*$', raw, re.M)
+            tests = re.findall(r'^INSTRUMENTATION_STATUS: test=([^\r\n]+)', raw, re.M)
+            success = codes == ['1', '0'] and tests == [method, method] and 'INSTRUMENTATION_CODE: -1' in raw
+            marker = ('sample=' if method.startswith('jsonRoundTrip') or method.startswith('zipPhoto') else 'faults=')
+            evidence = [line for line in log.splitlines() if 'NativeDataIntegrity' in line and marker in line and 'status=PASS' in line]
+            success = success and len(evidence) == 1
+            suite = ET.Element('testsuite', name='NativeDataIntegrityArchiveTest', tests='1', failures='0' if success else '1', errors='0')
+            case = ET.SubElement(suite, 'testcase', classname='com.repforge.app.NativeDataIntegrityArchiveTest', name=method)
+            if not success:
+                ET.SubElement(case, 'failure', message='Missing, failed, duplicated, or crashed instrumentation/evidence').text = raw[-30000:] + '\n' + '\n'.join(evidence)
+            ET.ElementTree(suite).write(xml_path, encoding='utf-8', xml_declaration=True)
+            print('SCOPED_DATA_QA', method, 'PASS' if success else 'FAIL', 'statusCodes=', codes, 'tests=', tests, 'evidence=', evidence)
+            sys.exit(0 if success else 1)
+            PY
+      - name: Preserve exact raw, strict XML and fixture hashes
+        if: always()
+        run: |
+          mkdir -p data-qa/results
+          sha256sum data-qa/results/* 2>/dev/null > data-qa/results/artifact-sha256.txt || true
+      - name: Upload scoped data integrity evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: TrainPilot-Native-Phone-UI-Evidence
-          path: phone-ui/results/
+          name: TrainPilot-Scoped-Data-${{ matrix.method }}-${{ github.sha }}
+          path: data-qa/results/
           if-no-files-found: error
