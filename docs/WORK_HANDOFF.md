@@ -4,6 +4,30 @@ Frissítve: **2026-10-26**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Root átvette PR261-et, közvetlen migration integráció – 2026-10-26
+
+User explicit utasítása: beragadt külső chat helyett Root vegye át a munkát,
+KÖZVETLEN a feat/native-android-migration ágon integráljon/javítson/teszteljen.
+A korábbi ui/** külső területfoglalás Root számára feloldva. Másik dizájn-Codex
+production területe továbbra nincs automatikusan feloldva; elsőként stabil QA-baseline.
+#261exactd01496a61e35a0ea0c6e5ce4057550686670de36 →49ab93f5,
+16app/test/script/report fájl integrálva, sajátQAworkflow KIHAGYVA.
+Root151f0200: UiDevice dumpsys pipe/grep helyett nyers ablaklista+Kotlin szűrés;
+modaldiagnosztika több szemantikai gyökeret kezel; expandbutton childscroll;
+duplaimport és formázás tisztítva.34evidence+7gate Python PASS,4Kotlin lexicalPASS.
+#260exactef22711e →79ab227a:5adat/test/report/scriptfájl integrálva,
+QAworkflow KIHAGYVA. Saját8/8scoped green nem közös runtimePASS.
+Canonical native-android.yml kézi új futás elindítva79ab227a forráson; runID és
+kimenetel GitHubról ellenőrizendő. Ezen a forráson Androideredmény még nincs.
+
+Utolsó261teszt40362238384 exact41dc60b2artifact12670330542 /tmp/tp261-phone:
+94main=88PASS/6FAIL +4GPS=3PASS/1FAIL, együtt91/98PASS, no runnercrash.
+Hátra akkor:2intervalelem,customdelete diagnostics,workoutleave pause,
+Homeshortcut,programrestore selector,GPSpermissionfocus. Az új d014delta és
+root151f erre még UNRUN; új synthetic route teszt miatt össztesztszámot újraszámolni,
+nem a régi98-at rögzíteni. Dí­zájn következő: QA stabilbaseline→G01–G12triage→P0–P6.
+Main/verzió/GitHubmerge/PRclose változatlan. Root exact sourceintegration nem mainmerge.
+
 ## PR262 dizájnspecifikáció review és integráció – 2026-10-26
 
 Exactf0ccb90cd9a982281d22b03a6288b6d5d94b327f dokumentációs delta integrálva:
