@@ -186,6 +186,7 @@ internal fun NativeTrainingModePicker(
             preview.expectedRaw == raw && preview.expectedActiveProgramId == activeProgramId &&
             (scope != "program" || preview.programId == programId)
         AlertDialog(
+            modifier = Modifier.testTag("${tag}_dialog"),
             onDismissRequest = { pending = null },
             title = { Text(strings.getString(R.string.native_modes_confirm_title), color = colors.text) },
             text = {

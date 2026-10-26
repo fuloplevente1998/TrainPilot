@@ -116,6 +116,31 @@ class EvidenceTest(unittest.TestCase):
             if malformed and module == "wear":
                 out.write_text("<testsuite")
 
+    def test_four_isolated_gps_cases_are_mandatory_in_final_qa(self):
+        folder, app, test = self.phone(declared=2)
+        names = ["gps-" + method + ".txt" for method in evidence.REQUIRED_GPS_METHODS]
+        data = json.loads((folder / "manifest.json").read_text())
+        data["additionalInstrumentation"] = names
+        (folder / "manifest.json").write_text(json.dumps(data))
+        opts = (*self.apk_options(app, test), "--require-isolated-gps")
+        code, report = self.run_summary(*opts)
+        self.assertEqual(1, code)  # all four logs missing must fail closed
+        for filename, method in zip(names, evidence.REQUIRED_GPS_METHODS):
+            raw = instrumentation(1, [0]).replace("example.Cases",
+                "com.repforge.app.NativeGpsPermissionRecoveryUiTest").replace("method0", method)
+            (folder / filename).write_text(raw)
+        code, report = self.run_summary(*opts)
+        self.assertEqual(0, code)
+        self.assertEqual(6, report["gates"]["phone"]["passed"])
+        # Green main suite and three green GPS cases must still be FAILED.
+        data["additionalInstrumentation"] = names[:-1]
+        (folder / "manifest.json").write_text(json.dumps(data))
+        code, report = self.run_summary(*opts)
+        self.assertEqual(1, code)
+        self.assertEqual("FAILED", report["gates"]["phone"]["status"])
+        self.assertTrue(any(i["kind"] == "invalid-instrumentation-runs"
+                            for i in report["gates"]["phone"]["issues"]))
+
     def test_isolated_gps_log_is_required_and_counted(self):
         folder, app, test = self.phone(declared=2)
         method = "explicitRetry"

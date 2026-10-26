@@ -349,7 +349,7 @@ fun HealthJournalTabContent(
                     if (state.provider == com.repforge.app.HealthJournalStore.HC) {
                         val text = com.repforge.app.ui.text.nativeResources(LocalContext.current, state.language)
                         Text(text.getString(com.repforge.app.R.string.health_daily_source_title), color = colors.text)
-                        androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        androidx.compose.foundation.lazy.LazyRow(modifier = Modifier.testTag("health_daily_sources_row"), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             items(listOf("auto", "priority") + state.dailySourceOptions, key = { it }) { choice ->
                                 androidx.compose.material3.FilterChip(selected = state.dailySourcePreference == choice,
                                     enabled = !state.sourceSaving && !state.historyLoading,

@@ -95,7 +95,11 @@ internal class CoachViewModel(application: Application) : AndroidViewModel(appli
                     }
                 }
             } catch (cancelled: CancellationException) { throw cancelled }
-            catch (_: Exception) { _state.value = _state.value.copy(loading = false, error = true, readiness = null, target = null, exercises = emptyList()) }
+            catch (_: Exception) {
+                // Failed re-read must not erase a previously displayed, persisted readiness
+                // snapshot; the visible error flag explicitly marks its uncertain freshness.
+                _state.value = _state.value.copy(loading = false, error = true)
+            }
         }
     }
 }

@@ -70,18 +70,29 @@ class NativePhoneNavigationTest {
         compose.waitUntil(30000) { compose.onAllNodesWithTag("navigation_home").fetchSemanticsNodes().isNotEmpty() }
         compose.waitForIdle()
     }
-    private fun tab(route: String) { compose.onNodeWithTag("navigation_$route").performClick(); compose.waitForIdle() }
+    private fun tab(route: String) {
+        compose.onNodeWithTag("navigation_$route").performClick()
+        // A click is not an admission receipt: await actual selected destination
+        // before starting the next screen's work/screenshot.
+        compose.waitUntil(15_000) {
+            compose.onAllNodesWithTag("navigation_$route").fetchSemanticsNodes().any {
+                it.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.Selected) == true
+            }
+        }
+        compose.waitForIdle()
+    }
     private fun snapshot(): JSONObject? {
         var result: JSONObject? = null
         instrumentation.runOnMainSync { result = ActiveWorkoutStore.current(context) }
         return result
     }
-    private fun screenshot(screen: String, language: String = "hu", theme: String = "classicBlue") {
+    private fun screenshot(screen: String, language: String = "hu", theme: String = "classicBlue",
+        data: String = "isolated-emulator-test-fixture") {
         compose.waitForIdle()
         val name = "${javaClass.simpleName.lowercase()}_${testIdentity.methodName.hashCode().toUInt().toString(16)}_${screen}_${language}_${theme.lowercase()}_${++shot}"
         require(Regex("[a-z0-9_]{1,120}").matches(name))
         val request = JSONObject().put("name", name).put("language", language).put("theme", theme)
-            .put("screen", screen).put("data", "isolated-emulator-test-fixture").toString()
+            .put("screen", screen).put("data", data).toString()
         // UiAutomation executes a command, not shell redirection. Stream the request
         // through stdin so the host actually receives a file before waiting for its ack.
         val pipes = instrumentation.uiAutomation.executeShellCommandRw("tee /data/local/tmp/trainpilot-shot-request")
@@ -121,7 +132,13 @@ class NativePhoneNavigationTest {
         for (route in listOf("training", "journal", "progress", "health")) { tab(route); screenshot(route) }
         tab("home")
         for (route in listOf("programs", "calendar", "coach")) {
-            compose.onNodeWithTag("shortcut_$route").performClick()
+            try {
+                compose.waitUntil(10_000) { compose.onAllNodesWithTag("shortcut_$route").fetchSemanticsNodes().isNotEmpty() }
+            } catch (failure: Throwable) {
+                throw AssertionError("Home planning shortcut missing for $route; UI=" +
+                    compose.onRoot(useUnmergedTree = true).printToString().take(8000), failure)
+            }
+            compose.onNodeWithTag("shortcut_$route").performScrollTo().performClick()
             compose.onNodeWithTag("navigation_settings").assertExists()
             if (route == "coach") compose.waitUntil(15000) {
                 compose.onAllNodesWithTag("coach_ready").fetchSemanticsNodes().isNotEmpty()
@@ -222,6 +239,12 @@ class NativePhoneNavigationTest {
         assertFalse(snapshot()!!.optBoolean("workoutPaused"))
         screenshot("active_timed")
         tab("home")
+        try {
+            compose.waitUntil(10_000) { snapshot()?.optBoolean("workoutPaused") == true }
+        } catch (failure: Throwable) {
+            throw AssertionError("Leaving native editor did not persist workout pause: " +
+                snapshot()?.toString()?.take(2500), failure)
+        }
         assertTrue(snapshot()!!.optBoolean("workoutPaused"))
     }
     @Test fun failedDiscardStaysInEditorAndExplicitRetryClosesTheSameWorkout() {
@@ -258,7 +281,11 @@ class NativePhoneNavigationTest {
     @Test fun intervalConfigurationIsWorkoutScopedUntilGlobalDefaultIsExplicitlyChosen() {
         runBlocking { NativeWorkoutSession.startQuickWorkout(context, "plank", false) }
         launch(); tab("training")
+        compose.onNodeWithTag("active_workout_exercises")
+            .performScrollToNode(hasTestTag("interval_options"))
         compose.onNodeWithTag("interval_options").performScrollTo().performClick()
+        compose.onNodeWithTag("active_workout_exercises")
+            .performScrollToNode(hasTestTag("interval_auto_advance"))
         compose.onNodeWithTag("interval_auto_advance").performScrollTo().performClick()
         compose.onNodeWithTag("interval_save").performScrollTo().performClick()
         compose.waitUntil(10000) { snapshot()?.optJSONObject("timerConfig")?.optBoolean("autoAdvance", true) == false }
@@ -388,6 +415,58 @@ class NativePhoneNavigationTest {
         assertEquals("home-basic", runBlocking { settings.current().activeProgramId })
         assertEquals(1, runBlocking(Dispatchers.IO) { db.workoutHistoryDao().getWorkoutCount() })
         screenshot("home_scheduled_target_started")
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("workout_discard").fetchSemanticsNodes().isNotEmpty() }
+        screenshot("active_strength") // Real programmed goblet-squat workout UI, emulator fixture.
+    }
+
+    @Test fun syntheticGpsRouteOpensOriginalJournalMapWithoutClaimingDeviceMeasurement() {
+        // Synthetic route is written through the existing private route-store fixture.
+        // The screen and modal are the actual MainActivity -> Journal -> Route UI.
+        val db = TrainPilotDatabase.getInstance(context)
+        val routeKey = "native-phone-ui-synthetic-route"
+        val epoch = System.currentTimeMillis() - 90_000L
+        val route = GpsRouteStore(context.noBackupFilesDir)
+        route.append(routeKey, 1, GpsRouteTrace.Point(46.902, 18.078, 5.0, 1_000L, epoch))
+        route.append(routeKey, 1, GpsRouteTrace.Point(46.903, 18.080, 5.0, 2_000L, epoch + 1_000L))
+        route.append(routeKey, 1, GpsRouteTrace.Point(46.904, 18.082, 5.0, 3_000L, epoch + 2_000L))
+        assertEquals(3, route.read(routeKey).pointCount)
+
+        val end = java.time.Instant.now().minusSeconds(60)
+        val exercise = runBlocking(Dispatchers.IO) {
+            db.exerciseLibraryDao().getAllExercises().first {
+                it.measurementType == "distance" || it.repUnit.trim().lowercase() in setOf("m", "km")
+            }
+        }
+        runBlocking(Dispatchers.IO) {
+            com.repforge.app.data.migration.LegacyWebViewMigrator(context, db, settings)
+                .saveWorkoutJsonToRoom(JSONObject()
+                    .put("id", "native-synthetic-route-ui")
+                    .put("started", end.minusSeconds(600).toString())
+                    .put("finished", end.toString())
+                    .put("programId", "home-basic")
+                    .put("dayName", "Szintetikus GPS-útvonal")
+                    .put("exercises", org.json.JSONArray().put(JSONObject()
+                        .put("id", exercise.id)
+                        .put("hu", exercise.nameHu)
+                        .put("loadType", exercise.loadType)
+                        .put("repUnit", exercise.repUnit)
+                        .put("sets", org.json.JSONArray().put(JSONObject()
+                            .put("setId", "native-route-set")
+                            .put("set", 1).put("reps", "600").put("distanceMeters", 400.0)
+                            .put("done", true).put("gpsRouteKey163", routeKey))))))
+        }
+        launch(); tab("journal")
+        compose.waitUntil(15_000) {
+            compose.onAllNodesWithTag("journal_workout_native-synthetic-route-ui")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("journal_workout_native-synthetic-route-ui").performClick()
+        compose.onNodeWithTag("journal_details_list")
+            .performScrollToNode(hasTestTag("journal_open_route"))
+        compose.onNodeWithTag("journal_open_route").performClick()
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("route_close").fetchSemanticsNodes().isNotEmpty() }
+        screenshot("route_synthetic_gps", data = "synthetic-gps-emulator-fixture-not-a-device-measurement")
+        compose.onNodeWithTag("route_close").performClick()
     }
 
     @Test fun journalEditorCancelInvalidSaveAndRealSavePreserveTheExistingWorkout() {
@@ -648,7 +727,7 @@ class NativePhoneNavigationTest {
         compose.onNodeWithTag("health_records_reload").performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("health_record_beta-weight").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("health_records_close").performClick()
-        compose.onNodeWithTag("health_selected_day").assertTextContains(day.toString())
+        compose.onNodeWithTag("health_selected_day").assertTextContains(day.toString(), substring = true)
     }
 
     @Test fun sleepDetailsRenderHealthConnectAndSamsungStagesWithActualProvenance() {
@@ -726,7 +805,8 @@ class NativePhoneNavigationTest {
         store.healthDay(day, JSONObject().put("source", "@aggregate").put("steps", 123), store.generation())
         launch(); tab("health")
         compose.waitUntil(15000) { compose.onAllNodesWithTag("health_journal_list").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_daily_origin.alpha"))
+        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_daily_priority"))
+        compose.onNodeWithTag("health_daily_sources_row").performScrollToNode(hasTestTag("health_daily_origin.alpha"))
         compose.onNodeWithTag("health_daily_origin.alpha").performClick()
         compose.waitUntil(15000) { store.preferences().optString("hcDailySource") == "origin.alpha" &&
             compose.onAllNodesWithTag("health_daily_partial").fetchSemanticsNodes().isNotEmpty() }
@@ -1050,6 +1130,7 @@ class NativePhoneNavigationTest {
         compose.waitUntil(15000) { runBlocking(Dispatchers.IO) {
             db.exerciseLibraryDao().getAllExercises().any { it.custom && it.nameHu == "Saját UI próba" }
         } }
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("custom_exercise_save").fetchSemanticsNodes().isEmpty() }
         compose.waitUntil(15000) { compose.onAllNodesWithTag("custom_exercise_edit").fetchSemanticsNodes().isNotEmpty() }
         screenshot("custom_exercise_created")
         compose.onNodeWithTag("custom_exercise_edit").performClick()
@@ -1059,13 +1140,25 @@ class NativePhoneNavigationTest {
         compose.waitUntil(15000) { runBlocking(Dispatchers.IO) {
             db.exerciseLibraryDao().getAllExercises().any { it.custom && it.nameHu == "Saját UI javítva" }
         } }
-        compose.waitUntil(15000) { compose.onAllNodesWithTag("custom_exercise_edit").fetchSemanticsNodes().isNotEmpty() }
+        // Persisted DB change alone is insufficient: await completion of the actual
+        // ViewModel->dialog close path before opening the edited record again.
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("custom_exercise_save").fetchSemanticsNodes().isEmpty() }
         compose.onNodeWithTag("custom_exercise_edit").performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("custom_exercise_delete").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("custom_exercise_delete").performClick()
-        compose.onNodeWithTag("custom_exercise_confirm_delete").performClick()
-        compose.waitUntil(15000) { runBlocking(Dispatchers.IO) {
-            db.exerciseLibraryDao().getAllExercises().none { it.custom && it.nameHu == "Saját UI javítva" }
-        } }
+        compose.onNodeWithTag("custom_exercise_confirm_delete").performScrollTo().performClick()
+        try {
+            compose.waitUntil(15000) { runBlocking(Dispatchers.IO) {
+                db.exerciseLibraryDao().getAllExercises().none { it.custom && it.nameHu == "Saját UI javítva" }
+            } }
+        } catch (failure: Throwable) {
+            val saved = runBlocking(Dispatchers.IO) { db.exerciseLibraryDao().getAllExercises()
+                .filter { it.custom }.map { it.id + ":" + it.nameHu } }
+            val dialogErrors = compose.onAllNodesWithTag("custom_exercise_error", useUnmergedTree = true)
+                .fetchSemanticsNodes().map { it.config.toString() }
+            throw AssertionError("Real custom exercise deletion did not persist: $saved; " +
+                "visible dialog errors: $dialogErrors", failure)
+        }
         assertFalse(ActiveWorkoutStore.current(context)?.optBoolean("active") == true)
     }
 

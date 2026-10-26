@@ -18,6 +18,12 @@ CODE = re.compile(r"^INSTRUMENTATION_STATUS_CODE:\s*(-?\d+)\s*$")
 SUMMARY = re.compile(r"\bOK\s*\((\d+)\s+tests?\)")
 SAFE_CASE = re.compile(r"[A-Za-z0-9_.$\[\]-]+\Z")
 STATUS_RANK = {"PASS": 0, "UNKNOWN": 1, "INCOMPLETE": 2, "FAILED": 3}
+REQUIRED_GPS_METHODS = (
+    "approximateGrantOpensAppPermissionRouteAndBackDoesNotStartMeasurement",
+    "systemLocationOffHasOwnSettingsAndRequiresExplicitRetryAfterReturn",
+    "runtimePermissionDismissedByBackNeverRecordsDistance",
+    "staleOriginalWorkoutIsRefusedAfterSettingsOrPermissionBlock",
+)
 
 
 def status(*values):
@@ -300,6 +306,11 @@ def analyse_phone(folder, args, roots):
     if not isinstance(additional, list) or len(additional) != len(set(str(x) for x in additional)):
         issue(problems, "invalid-instrumentation-runs", "Invalid isolated instrumentation list")
         additional = []
+    if args.require_isolated_gps:
+        expected = {"gps-" + method + ".txt" for method in REQUIRED_GPS_METHODS}
+        if {value for value in additional if isinstance(value, str)} != expected or len(additional) != len(expected):
+            issue(problems, "invalid-instrumentation-runs",
+                  "Exactly four required isolated GPS instrumentation logs must be declared")
     for filename in additional:
         if not isinstance(filename, str) or not re.fullmatch(r"gps-[A-Za-z0-9_]+\.txt", filename):
             issue(problems, "invalid-instrumentation-runs", "Invalid isolated instrumentation path")
@@ -465,7 +476,7 @@ def summarize(args):
         gates["apk"] = analyse_apk(apk_dirs[0], args, roots) if len(apk_dirs) == 1 else {
             "status": "FAILED", "issues": [{"kind": "duplicate-apk-meta", "detail": "Multiple checksum artifacts"}]}
     required = set(args.require_gate)
-    if args.require_screenshot or args.phone_apk or args.phone_test_apk:
+    if args.require_screenshot or args.phone_apk or args.phone_test_apk or args.require_isolated_gps:
         required.add("phone")
     if args.wear_total is not None:
         required.add("wear")
@@ -518,6 +529,8 @@ def main(argv=None):
     parser.add_argument("--wear-shards", type=int, default=3)
     parser.add_argument("--wear-total", type=int, default=None, help="Required unique/executed Wear count, e.g. 183")
     parser.add_argument("--require-screenshot", action="append", default=[], help="Phone screenshot checkpoint, repeatable")
+    parser.add_argument("--require-isolated-gps", action="store_true",
+                        help="Fail closed unless the four exact isolated GPS instrumentations finish")
     parser.add_argument("--phone-apk", type=Path, help="Independent app-debug.apk path to compare to phone manifest")
     parser.add_argument("--phone-test-apk", type=Path, help="Independent androidTest APK path to compare")
     parser.add_argument("--apk-file", action="append", default=[], metavar="ARTIFACT_PATH=LOCAL_APK")

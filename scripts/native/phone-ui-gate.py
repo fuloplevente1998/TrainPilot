@@ -156,6 +156,12 @@ def main():
                     time.sleep(.15)
             raw = (output / filename).read_text(errors="replace")
             valid = report(raw, output / ("instrumentation-derived.xml" if not mode else filename + ".xml"))
+            if not mode and not valid:
+                # The full 94-case suite can take long enough to rotate the short
+                # global logcat tail. Preserve focused diagnostics without modifying
+                # instrumentation or converting failed outcomes to success.
+                (output / "native-mode-diagnostics.txt").write_bytes(
+                    adb("logcat", "-d", "-v", "brief", "-s", "NativeModeApproval:*", check=False, timeout=30))
             results.append(process.returncode == 0 and valid)
         if not all(results) or not seen:
             raise RuntimeError("Native phone UI failed or produced no screenshots; inspect raw artifacts")

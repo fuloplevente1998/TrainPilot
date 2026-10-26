@@ -39,6 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.testTag
@@ -73,6 +74,9 @@ internal fun TrainingProgramsScreen(
     var editorOpen by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<ProgramWithDays?>(null) }
     var editorToken by remember { mutableStateOf(java.util.UUID.randomUUID().toString()) }
+    // A separate screen-owned map survives LazyColumn item removal. Keeping the
+    // expanded card inside the virtualized item can make actions disappear on scroll.
+    val expandedPrograms = remember { mutableStateMapOf<String, Boolean>() }
     // Keep the proposal/approval owner outside the virtualized LazyColumn item.
     // Scrolling must not cancel an in-flight comparison or dispose its dialog.
     val programModeState = remember(state.trainingModes197Json, state.activeProgramId) {
@@ -199,6 +203,11 @@ internal fun TrainingProgramsScreen(
             ProgramCardItem(
                 programWithDays = programWithDays,
                 isActive = isActive,
+                expanded = expandedPrograms[programWithDays.program.id] ?: isActive,
+                onToggleExpanded = {
+                    val id = programWithDays.program.id
+                    expandedPrograms[id] = !(expandedPrograms[id] ?: isActive)
+                },
                 language = language,
                 onActivate = { viewModel.activateProgram(programWithDays.program.id) },
                 onStartDay = { dayId -> onStartProgramDay(programWithDays.program.id, dayId) },
@@ -311,6 +320,8 @@ internal fun TrainingProgramsScreen(
 fun ProgramCardItem(
     programWithDays: ProgramWithDays,
     isActive: Boolean,
+    expanded: Boolean,
+    onToggleExpanded: () -> Unit,
     language: String = "hu",
     onActivate: () -> Unit,
     onStartDay: (String) -> Unit,
@@ -320,7 +331,6 @@ fun ProgramCardItem(
     val colors = LocalTrainPilotColors.current
     val context = LocalContext.current
     val strings = remember(context, language) { nativeResources(context, language) }
-    var expanded by remember { mutableStateOf(isActive) }
     val prog = programWithDays.program
     fun name(hu: String, en: String, de: String, ro: String) = when (language) {
         "en" -> en; "de" -> de; "ro" -> ro; else -> hu
@@ -385,7 +395,7 @@ fun ProgramCardItem(
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("program_expand_${prog.id}")
-                    .clickable { expanded = !expanded },
+                    .clickable(onClick = onToggleExpanded),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
