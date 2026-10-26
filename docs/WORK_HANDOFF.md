@@ -4,6 +4,25 @@ Frissítve: **2026-10-26**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## #249 integrálva; #250 folytatás vissza a Plus chatnek – 2026-10-26
+
+#249224999b → **654c016c**: kontraszt Oklab/alpha alapú token deriváció,
+fókuszos/selected picker outline és4JVM-kód beemelve; runtime UNRUN.
+#250a360a5a két auditfájl byteazonos importja **be5e2642**.107sor/80UNRESOLVED,
+main JS connector méretkorlát miatti BLOCKED; ez nem107igazolt hibajegy.
+A felhasználó a #250 auditot ugyanabban a chatben folytatja; Root ne javítsa
+párhuzamosan a két külső auditfájlt. Pontos új prompt:
+plans/NATIVE_PR250_AUDIT_CONTINUATION.md. Natív auditedrefbe5e2642/app654c016c.
+
+Hiányzó main-input pótlása0fa3f8ea: docs/audit-input/main-7473b30/INDEX.md és
+manifest.json +93max24000byte-os teljes sorhatáros rész;181szekció indexszel.
+Numerikus összefűzés BYTEAZONOS main7473b30:www/app.js, Gitblob ésSHA256 ellenőrizve.
+Exact eredeti sorszámok, nem kivonat/új implementáció. Source blank EOF megőrzött.
+#250 feladata végső JS override/caller és Kotlin symbol/UI-chain feloldása,
+valódi PARTIAL vs runtime hiány szétválasztása; a termékfix Rootnál marad.
+Közös40276384595 CANCELLED a JVM lépésen; nincs újruntimezöld/hibadiagnózis.
+Main/version/új CI/élő install ebben az audit/input körben nem változott.
+
 ## Új munkamegosztás: 1 Codex +2 Plus chat – 2026-10-26
 
 A felhasználó felülírta a Gemini/AI Studio kiosztást: Gemini most nem kap munkát.

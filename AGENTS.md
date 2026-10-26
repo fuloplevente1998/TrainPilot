@@ -146,6 +146,13 @@ következik; statikus ellenőrzés és Node validator PASS nem natív runtime.
 
 ## Aktuális új kiosztás – 2026-10-26
 
+- Új állapot: #249224999b integrálva654c016c; #250a360a5a audit byteazonosan
+  importálva be5e2642. A felhasználó a #250 audit két fájlját ugyanabban a
+  Plus chatben folytatja; Root ne írja párhuzamosan. Új teljes prompt
+  docs/plans/NATIVE_PR250_AUDIT_CONTINUATION.md; exact main chunkindex
+  docs/audit-input/main-7473b30/INDEX.md ésmanifest. Root implementálja majd
+  a bizonyított hibákat, a80UNRESOLVED nem80bizonyított hiány.
+
 - Felhasználói módosítás: NINCS Gemini feladat; egy külön Codex implementál,
   két Plus chat GitHub-hozzáféréssel dolgozik, Root mindent review-z/integrál.
 - Pinned e9278a99 bázis. Teljes szerződések:
