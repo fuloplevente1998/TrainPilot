@@ -246,7 +246,8 @@ fun ActiveWorkoutScreen(
             onDismiss = {
                 // Cancellation invalidates any saved launcher callback; it cannot start GPS later.
                 pendingGpsPermissionJson = ""
-                gpsPermissionRequestInFlight = false
+                // Do not release the launcher lease until the old result arrives;
+                // otherwise a late callback could consume a newer pending target.
                 gpsRecovery = null
             }
         )
