@@ -4,6 +4,19 @@ Frissítve: **2026-10-26**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## PR267 audit első rootreview – 2026-10-26
+
+Chat5átadott267exact0f8cae57060a4b1b8fd7bee673a5ef6741641041, docs-only1file.
+Root ellenőrizte11sort és38pinnednativepath/line létezését; nincs runtimeállítás.
+Státuszok:G10javítva,G08/G09elfogadott,G06/G11újfeature,
+G02/G03/G04/G05/G07/G12bizonyítékhiány. Nincs11új kötelező implementáció.
+A report MINDEN main livecallsite-ot bizonyítatlannak jelöl, így a kért teljes
+paritásaudit még hiányos. Egyelőre NINCS integrálva/elfogadva267.
+plans/NATIVE_PR267_REVIEW_FOLLOWUP.md a pontos sajátágas/egyfájlos visszaadás;
+benne ellenőrzött93részes byteazonosmainforrás index0fa3f8e, ne minifiedhiányra
+hivatkozva álljunk meg. App/teszt/CIírás továbbra tiltott a Chat5nek.
+Root marad az5UIhiba tulajdonosa; A07Chat4külön foglalt. Main/verzió változatlan.
+
 ## PR263–266 root audit/integráció – 2026-10-26
 
 263exactcd4cedb5 →504b6890,264exact0ad66986 →f587e89d. Saját scoped
