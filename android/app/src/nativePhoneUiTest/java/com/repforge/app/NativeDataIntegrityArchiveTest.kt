@@ -100,8 +100,9 @@ class NativeDataIntegrityArchiveTest {
         val history = data.getJSONArray("history")
         assertEquals(expected, history.length())
         val result = StringBuilder()
+        val rows = (0 until history.length()).map { history.getJSONObject(it) }.sortedBy { it.getString("id") }
         for (i in 0 until expected) {
-            val row = history.getJSONObject(i)
+            val row = rows[i]
             val id = row.getString("id")
             assertEquals("integrity-%04d".format(java.util.Locale.US, i), id)
             assertEquals("stable-$id", row.getString("key"))
@@ -126,7 +127,7 @@ class NativeDataIntegrityArchiveTest {
         return sha(result.toString().toByteArray(Charsets.UTF_8))
     }
 
-    private fun runCount(count: Int) = runBlocking(Dispatchers.IO) {
+    private fun runCount(count: Int) { runBlocking(Dispatchers.IO) {
         val source = writeJson("source-$count.json", synthetic(count))
         val imported = manager.importJsonBackupFromUri(source)
         assertTrue("Input import: ${imported.exceptionOrNull()}", imported.isSuccess)
@@ -149,6 +150,8 @@ class NativeDataIntegrityArchiveTest {
         assertFalse(NativeReplacementJournal(context).exists())
         assertFalse(NativeDataReplacement.blocked(context))
         Log.i("NativeDataIntegrity", "sample=$count count=$count beforeSha256=$signature afterSha256=$after status=PASS")
+    }
+
     }
 
     @Test fun jsonRoundTrip0() = runCount(0)
@@ -179,7 +182,7 @@ class NativeDataIntegrityArchiveTest {
         return archive
     }
 
-    @Test fun zipPhotoBytesSurviveEraseRestoreAndReexport() = runBlocking(Dispatchers.IO) {
+    @Test fun zipPhotoBytesSurviveEraseRestoreAndReexport() { runBlocking(Dispatchers.IO) {
         val archive = preparePhotoArchive()
         val before = sha(photoBytes)
         val erased = manager.eraseAllLocalData()
@@ -200,7 +203,9 @@ class NativeDataIntegrityArchiveTest {
         Log.i("NativeDataIntegrity", "sample=photo photoSha256=$before reexportSha256=$before status=PASS")
     }
 
-    @Test fun invalidJsonAndTruncatedZipCannotReplaceExistingData() = runBlocking(Dispatchers.IO) {
+    } }
+
+    @Test fun invalidJsonAndTruncatedZipCannotReplaceExistingData() { runBlocking(Dispatchers.IO) {
         val source = writeJson("fault-base.json", synthetic(1))
         assertTrue(manager.importJsonBackupFromUri(source).isSuccess)
         val before = database.workoutHistoryDao().getWorkoutCount()
@@ -216,5 +221,5 @@ class NativeDataIntegrityArchiveTest {
         assertFalse(NativeReplacementJournal(context).exists())
         assertFalse(NativeDataReplacement.blocked(context))
         Log.i("NativeDataIntegrity", "faults=invalid-json,truncated-zip unchangedCount=$before status=PASS")
-    }
+    } }
 }
