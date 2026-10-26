@@ -11,6 +11,7 @@ import androidx.core.content.ContextCompat
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.UiDevice
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
@@ -25,6 +26,8 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class NativeGpsPermissionRecoveryUiTest {
     @get:Rule val compose = createEmptyComposeRule()
+    @get:Rule val testIdentity = org.junit.rules.TestName()
+    private var shot = 0
     private val fixture = NativeLocalizationEmulatorFixture()
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context: Context get() = fixture.context
@@ -70,6 +73,28 @@ class NativeGpsPermissionRecoveryUiTest {
             permission(Manifest.permission.ACCESS_FINE_LOCATION))
         assertEquals("Host must prepare coarse permission before instrumentation", approximate,
             permission(Manifest.permission.ACCESS_COARSE_LOCATION))
+    }
+
+    /** Device pixels only: host must ACK an unmodified screencap of this foreground app. */
+    private fun screenshot(screen: String) {
+        compose.waitForIdle()
+        val name = "${javaClass.simpleName.lowercase()}_${testIdentity.methodName.hashCode().toUInt().toString(16)}_${screen}_hu_classicblue_${++shot}"
+        require(Regex("[a-z0-9_]{1,120}").matches(name))
+        val request = JSONObject().put("name", name).put("screen", screen)
+            .put("language", "hu").put("theme", "classicBlue")
+            .put("data", "synthetic-gps-emulator-fixture").toString()
+        val pipes = instrumentation.uiAutomation.executeShellCommandRw("tee /data/local/tmp/trainpilot-shot-request")
+        ParcelFileDescriptor.AutoCloseOutputStream(pipes[1]).use {
+            it.write(request.toByteArray(Charsets.UTF_8))
+        }
+        ParcelFileDescriptor.AutoCloseInputStream(pipes[0]).use { it.readBytes() }
+        val deadline = System.nanoTime() + 15_000_000_000L
+        val device = UiDevice.getInstance(instrumentation)
+        while (System.nanoTime() < deadline) {
+            if (device.executeShellCommand("cat /data/local/tmp/trainpilot-shot-ack").trim() == name) return
+            Thread.sleep(100)
+        }
+        fail("Host did not capture unmodified GPS screenshot: $name")
     }
 
     private fun startDistanceWorkout() {
@@ -139,6 +164,9 @@ class NativeGpsPermissionRecoveryUiTest {
         assertEquals(old.optLong("generation"), newFrame.optLong("generation"))
         assertFalse(newFrame.getJSONArray("exercises").getJSONObject(0)
             .getJSONArray("sets").getJSONObject(0).optBoolean("done"))
+        // The real native workout screen after explicit permission/settings retry.
+        // Emulator GPS and any heartbeat are synthetic fixtures, not device measurements.
+        screenshot("active_gps_retry")
     }
 
     @Test fun runtimePermissionDismissedByBackNeverRecordsDistance() {
