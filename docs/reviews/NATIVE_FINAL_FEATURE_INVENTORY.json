@@ -108,7 +108,8 @@
         "rawFile": "app-part-049.txt",
         "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
         "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f",
-        "notice": "Exact source snippet from pinned raw part; stronger final override chain still needs inspection"
+        "notice": "Exact source snippet from pinned raw part; stronger final override chain still needs inspection",
+        "manifestSha256": "84299db6e0c8aa556abf0b8588139dd01f815d0dd4bfcb4a3d1211bbe4a4b7f3"
       },
       "nativeFileURL": "https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/be5e26429f48813788b91d1a2b712be93bf24c68/android/app/src/main/java/com/repforge/app/ui/programs/TrainingLandingScreen.kt",
       "mainRawURL": "https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/0fa3f8ead083ace00bd9fc78117b8e08bed9493b/docs/audit-input/main-7473b30/app-part-049.txt",
@@ -216,7 +217,8 @@
         "rawFile": "app-part-071.txt",
         "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
         "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f",
-        "notice": "Exact source snippet from pinned raw part; stronger final override chain still needs inspection"
+        "notice": "Exact source snippet from pinned raw part; stronger final override chain still needs inspection",
+        "manifestSha256": "7b379339b19913ad4637021a6dfaa9b075ce9631c2f90a620bf04980966d53da"
       },
       "nativeFileURL": "https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/be5e26429f48813788b91d1a2b712be93bf24c68/android/app/src/main/java/com/repforge/app/ui/programs/TrainingProgramsScreen.kt",
       "mainRawURL": "https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/0fa3f8ead083ace00bd9fc78117b8e08bed9493b/docs/audit-input/main-7473b30/app-part-071.txt",
@@ -243,7 +245,8 @@
         "rawFile": "app-part-079.txt",
         "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
         "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f",
-        "notice": "Exact source snippet from pinned raw part; stronger final override chain still needs inspection"
+        "notice": "Exact source snippet from pinned raw part; stronger final override chain still needs inspection",
+        "manifestSha256": "69977ebbdb76569c92dd2c61658e5fa29a0dadea0cc26328ea44c0fa10ffff68"
       },
       "nativeFileURL": "https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/be5e26429f48813788b91d1a2b712be93bf24c68/android/app/src/main/java/com/repforge/app/ui/programs/TrainingProgramsScreen.kt",
       "mainRawURL": "https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/0fa3f8ead083ace00bd9fc78117b8e08bed9493b/docs/audit-input/main-7473b30/app-part-079.txt",
@@ -297,7 +300,8 @@
         "rawFile": "app-part-007.txt",
         "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
         "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f",
-        "notice": "Exact source snippet from pinned raw part; stronger final override chain still needs inspection"
+        "notice": "Exact source snippet from pinned raw part; stronger final override chain still needs inspection",
+        "manifestSha256": "95711dd5493ca21b316b95348e1a9f961220788c30c438d86a94175efefc3380"
       },
       "nativeFileURL": "https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/be5e26429f48813788b91d1a2b712be93bf24c68/android/app/src/main/java/com/repforge/app/ui/programs/ExerciseLibraryScreen.kt",
       "mainRawURL": "https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/0fa3f8ead083ace00bd9fc78117b8e08bed9493b/docs/audit-input/main-7473b30/app-part-007.txt",
@@ -324,7 +328,8 @@
         "rawFile": "app-part-007.txt",
         "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
         "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f",
-        "notice": "Exact source snippet from pinned raw part; stronger final override chain still needs inspection"
+        "notice": "Exact source snippet from pinned raw part; stronger final override chain still needs inspection",
+        "manifestSha256": "95711dd5493ca21b316b95348e1a9f961220788c30c438d86a94175efefc3380"
       },
       "nativeFileURL": "https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/be5e26429f48813788b91d1a2b712be93bf24c68/android/app/src/main/java/com/repforge/app/ui/programs/ExerciseLibraryScreen.kt",
       "mainRawURL": "https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/0fa3f8ead083ace00bd9fc78117b8e08bed9493b/docs/audit-input/main-7473b30/app-part-007.txt",
@@ -540,7 +545,8 @@
         "rawFile": "app-part-033.txt",
         "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
         "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f",
-        "notice": "Exact source snippet from pinned raw part; stronger final override chain still needs inspection"
+        "notice": "Exact source snippet from pinned raw part; stronger final override chain still needs inspection",
+        "manifestSha256": "d844c8d0c18879e0def9771bae3f2a0488dcc9bba14fc7a2dee1dc776e1f2451"
       },
       "nativeFileURL": "https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/be5e26429f48813788b91d1a2b712be93bf24c68/android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt",
       "mainRawURL": "https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/0fa3f8ead083ace00bd9fc78117b8e08bed9493b/docs/audit-input/main-7473b30/app-part-033.txt",
@@ -567,7 +573,8 @@
         "rawFile": "app-part-033.txt",
         "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
         "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f",
-        "notice": "Exact source snippet from pinned raw part; stronger final override chain still needs inspection"
+        "notice": "Exact source snippet from pinned raw part; stronger final override chain still needs inspection",
+        "manifestSha256": "d844c8d0c18879e0def9771bae3f2a0488dcc9bba14fc7a2dee1dc776e1f2451"
       },
       "nativeFileURL": "https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/be5e26429f48813788b91d1a2b712be93bf24c68/android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt",
       "mainRawURL": "https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/0fa3f8ead083ace00bd9fc78117b8e08bed9493b/docs/audit-input/main-7473b30/app-part-033.txt",
@@ -593,7 +600,7 @@
         "originalLine": 18631,
         "rawFile": "app-part-085.txt",
         "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
-        "manifestSha256": "1d271385e755c06ad8004eb52e8f2a15d063937cf8ceecb36177d27b892b8ba0",
+        "manifestSha256": "5897a825129743f33ba9dfb912ec085d2f8b979ed2343ef0bd2841a9b4b3659f",
         "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
       },
       "nativeFileURL": "https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/be5e26429f48813788b91d1a2b712be93bf24c68/android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt",
@@ -674,7 +681,7 @@
         "originalLine": 19042,
         "rawFile": "app-part-087.txt",
         "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
-        "manifestSha256": "22059f4a6c7c7654455786722fa776ee56f67553fb90d602c1ef00a292b66083",
+        "manifestSha256": "d1b60e8c14fd6cb598b5e0808767c372ccef4d5874fa38a4fbd332fefa145815",
         "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f"
       },
       "nativeFileURL": "https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/be5e26429f48813788b91d1a2b712be93bf24c68/android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt",
@@ -891,7 +898,8 @@
         "rawFile": "app-part-093.txt",
         "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
         "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f",
-        "notice": "Exact source snippet from pinned raw part; stronger final override chain still needs inspection"
+        "notice": "Exact source snippet from pinned raw part; stronger final override chain still needs inspection",
+        "manifestSha256": "ae1c382e768babd1ed00d8e78a630f0a1ce8df5bf1996d50949a2a162b1da3fb"
       },
       "nativeFileURL": "https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/be5e26429f48813788b91d1a2b712be93bf24c68/android/app/src/main/java/com/repforge/app/ui/settings/SettingsScreen.kt",
       "mainRawURL": "https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/0fa3f8ead083ace00bd9fc78117b8e08bed9493b/docs/audit-input/main-7473b30/app-part-093.txt",
@@ -1026,7 +1034,8 @@
         "rawFile": "app-part-027.txt",
         "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
         "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f",
-        "notice": "Exact source snippet from pinned raw part; stronger final override chain still needs inspection"
+        "notice": "Exact source snippet from pinned raw part; stronger final override chain still needs inspection",
+        "manifestSha256": "4cb45b9a3c1e7845edb5cf2f0d9b6f684a310973e618f8453e32e94f709b51ba"
       },
       "nativeFileURL": "https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/be5e26429f48813788b91d1a2b712be93bf24c68/android/app/src/main/java/com/repforge/app/ui/workout/ActiveWorkoutScreen.kt",
       "mainRawURL": "https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/0fa3f8ead083ace00bd9fc78117b8e08bed9493b/docs/audit-input/main-7473b30/app-part-027.txt",
@@ -1107,7 +1116,8 @@
         "rawFile": "app-part-067.txt",
         "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
         "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f",
-        "notice": "Exact source snippet from pinned raw part; stronger final override chain still needs inspection"
+        "notice": "Exact source snippet from pinned raw part; stronger final override chain still needs inspection",
+        "manifestSha256": "95040741463cca5d1565829b5deb5395e2dc67cdda4b2a04c715217c512fffb9"
       },
       "nativeFileURL": "https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/be5e26429f48813788b91d1a2b712be93bf24c68/android/app/src/main/java/com/repforge/app/ui/progress/ProgressScreen.kt",
       "mainRawURL": "https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/0fa3f8ead083ace00bd9fc78117b8e08bed9493b/docs/audit-input/main-7473b30/app-part-067.txt",
@@ -1850,7 +1860,8 @@
         "rawFile": "app-part-085.txt",
         "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
         "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f",
-        "notice": "Exact source snippet from pinned raw part; stronger final override chain still needs inspection"
+        "notice": "Exact source snippet from pinned raw part; stronger final override chain still needs inspection",
+        "manifestSha256": "5897a825129743f33ba9dfb912ec085d2f8b979ed2343ef0bd2841a9b4b3659f"
       },
       "nativeFileURL": "https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/be5e26429f48813788b91d1a2b712be93bf24c68/android/wear/src/main/java/com/repforge/app/wear/WearScreens.kt",
       "mainRawURL": "https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/0fa3f8ead083ace00bd9fc78117b8e08bed9493b/docs/audit-input/main-7473b30/app-part-085.txt",
@@ -1981,7 +1992,8 @@
         "rawFile": "app-part-001.txt",
         "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
         "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f",
-        "notice": "Exact source snippet from pinned raw part; stronger final override chain still needs inspection"
+        "notice": "Exact source snippet from pinned raw part; stronger final override chain still needs inspection",
+        "manifestSha256": "ae112558f2c1c4fccce4b6ac252b1cec6814bc9a78b8e7986d0b957959772a2d"
       },
       "nativeFileURL": "https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/be5e26429f48813788b91d1a2b712be93bf24c68/android/app/src/main/java/com/repforge/app/ui/settings/SettingsScreen.kt",
       "mainRawURL": "https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/0fa3f8ead083ace00bd9fc78117b8e08bed9493b/docs/audit-input/main-7473b30/app-part-001.txt",
@@ -2035,7 +2047,8 @@
         "rawFile": "app-part-001.txt",
         "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
         "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f",
-        "notice": "Exact source snippet from pinned raw part; stronger final override chain still needs inspection"
+        "notice": "Exact source snippet from pinned raw part; stronger final override chain still needs inspection",
+        "manifestSha256": "ae112558f2c1c4fccce4b6ac252b1cec6814bc9a78b8e7986d0b957959772a2d"
       },
       "nativeFileURL": "https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/be5e26429f48813788b91d1a2b712be93bf24c68/android/app/src/main/java/com/repforge/app/ui/settings/ReplacementRecoveryPanel.kt",
       "mainRawURL": "https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/0fa3f8ead083ace00bd9fc78117b8e08bed9493b/docs/audit-input/main-7473b30/app-part-001.txt",
@@ -2167,7 +2180,8 @@
         "rawFile": "app-part-003.txt",
         "rawRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
         "mainRef": "7473b30f387eda54186c1e31830304ca12bd104f",
-        "notice": "Exact source snippet from pinned raw part; stronger final override chain still needs inspection"
+        "notice": "Exact source snippet from pinned raw part; stronger final override chain still needs inspection",
+        "manifestSha256": "4d783e0041bfbc5000c101dcf3b572ff7fcd1503410fc14a459829b64565a72d"
       },
       "nativeFileURL": "https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/be5e26429f48813788b91d1a2b712be93bf24c68/android/app/src/main/java/com/repforge/app/ui/settings/SettingsScreen.kt",
       "mainRawURL": "https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/0fa3f8ead083ace00bd9fc78117b8e08bed9493b/docs/audit-input/main-7473b30/app-part-003.txt",
@@ -3268,5 +3282,23 @@
   "ciState": "40276384595 CANCELLED; new shared gates belong to main agent",
   "mainAppPartsRef": "0fa3f8ead083ace00bd9fc78117b8e08bed9493b",
   "mainAppGitBlob": "b5567576bed9a8f93608a6bf1ed8db1dee4723f4",
-  "mainAppSha256": "47750fd38905860aa5910a14ff52a46421a3c78e19059c34cc5025da2538106d"
+  "mainAppSha256": "47750fd38905860aa5910a14ff52a46421a3c78e19059c34cc5025da2538106d",
+  "auditChecks": {
+    "exactMainReference": "7473b30f387eda54186c1e31830304ca12bd104f",
+    "gitBlob": "b5567576bed9a8f93608a6bf1ed8db1dee4723f4",
+    "sha256": "47750fd38905860aa5910a14ff52a46421a3c78e19059c34cc5025da2538106d",
+    "partsAvailable": 93,
+    "mainLines": 20599,
+    "rawIndex": "docs/audit-input/main-7473b30/INDEX.md",
+    "mainPartsArePrevalidatedByMainAgent": true,
+    "hashesIndependentlyRecomputedInThisChat": false,
+    "kotlinUnresolvedBefore": 86,
+    "kotlinUnresolvedAfter": 0,
+    "numberOfExactRawMainAnchors": 105,
+    "numberOfExplicitNoDirectMainEntries": 2,
+    "rowCount": 107,
+    "androidRuntimeExecuted": false,
+    "ci40276384595": "CANCELLED",
+    "mainOverrideCompleteness": "Targeted parts only; some grouped anchors not proven final exact function overrides"
+  }
 }
