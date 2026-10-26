@@ -91,7 +91,10 @@ internal fun NativeTrainingModePicker(
                 }
                 comparisonFor = proposal
             } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
-            catch (_: Exception) { comparisonFailed = true }
+            catch (failure: Exception) {
+                android.util.Log.w("NativeModeApproval", "Read-only comparison failed", failure)
+                comparisonFailed = true
+            }
         }
     }
     var styleExpanded by remember { mutableStateOf(false) }
@@ -198,9 +201,11 @@ internal fun NativeTrainingModePicker(
                         color = colors.text, fontWeight = FontWeight.Bold)
                     when {
                         comparisonFailed -> Text(strings.getString(R.string.native_modes_comparison_error),
-                            color = colors.dangerText)
+                            color = colors.dangerText,
+                            modifier = Modifier.testTag("${tag}_comparison_error"))
                         comparison == null -> Text(strings.getString(R.string.native_modes_comparison_loading),
-                            color = colors.muted)
+                            color = colors.muted,
+                            modifier = Modifier.testTag("${tag}_comparison_loading"))
                         else -> {
                             val available = comparison!!
                             if (available.rows.isEmpty()) {
