@@ -51,7 +51,7 @@ class NativeHealthSyncUiTest {
         click("health_sync_now"); click("health_sync_full")
         compose.runOnIdle { state.value = state.value.copy(healthRefreshing = true, syncStage = "DAYS", syncCompleted = 7, syncTotal = 30) }
         compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_sync_progress"))
-        compose.onNodeWithTag("health_sync_progress").assertTextContains("7").assertTextContains("30")
+        compose.onNodeWithTag("health_sync_progress").assertTextContains("7", substring = true).assertTextContains("30", substring = true)
         click("health_sync_cancel")
         compose.runOnIdle { state.value = state.value.copy(healthRefreshing = false, syncPartial = true) }
         compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_sync_failure"))

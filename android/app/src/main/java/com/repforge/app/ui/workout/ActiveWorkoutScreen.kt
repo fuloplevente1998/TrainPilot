@@ -786,7 +786,7 @@ private fun IntervalOptions(
                 if (singleTimed) OutlinedTextField(value = work, onValueChange = { work = it }, label = { Text(text.getString(com.repforge.app.R.string.interval_work)) },
                     modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), enabled = editable)
                 OutlinedTextField(value = rest, onValueChange = { rest = it }, label = { Text(text.getString(com.repforge.app.R.string.interval_rest)) },
-                    modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), enabled = editable)
+                    modifier = Modifier.weight(1f).testTag("interval_rest"), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), enabled = editable)
                 if (singleTimed) OutlinedTextField(value = rounds, onValueChange = { rounds = it }, label = { Text(text.getString(com.repforge.app.R.string.interval_rounds)) },
                     modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), enabled = editable)
             }
@@ -1028,6 +1028,7 @@ fun RestTimerFloatingBar(
             }
             Button(
                 onClick = onSkip,
+                modifier = Modifier.testTag("workout_rest_skip"),
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = colors.accent)
             ) {

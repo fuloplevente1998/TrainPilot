@@ -24,9 +24,11 @@ class NativeOnboardingUiTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context get() = instrumentation.targetContext
     private lateinit var store: TrainPilotSettingsStore
+    private val fixture = NativeLocalizationEmulatorFixture()
     private var scenario: ActivityScenario<MainActivity>? = null
 
     @Before fun isolatedData() {
+        fixture.reset()
         assertTrue("Do not run against a release or live-data installation",
             context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0)
         context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE)
@@ -40,7 +42,7 @@ class NativeOnboardingUiTest {
         }
     }
 
-    @After fun close() { scenario?.close() }
+    @After fun close() { fixture.close(scenario) }
 
     private fun launch(expected: String = "onboarding_screen") {
         scenario = ActivityScenario.launch(MainActivity::class.java)

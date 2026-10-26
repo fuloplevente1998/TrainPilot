@@ -16,7 +16,7 @@ import java.util.UUID
 
 /** Uses the imported calendar entity, legacy raw JSON and managed Google event identity. */
 internal class NativeCalendarRepository(private val db: TrainPilotDatabase,
-    private val activeScheduleId: () -> String? = { null }) {
+    private val activeScheduleId: suspend () -> String? = { null }) {
     data class Edit(val id: String? = null, val expected: CalendarScheduleEntity? = null,
         val programId: String, val dayId: String, val date: LocalDate,
         val time: LocalTime, val minutes: Int)
@@ -78,7 +78,8 @@ internal class NativeCalendarRepository(private val db: TrainPilotDatabase,
         val rows = db.calendarScheduleDao().getEntriesInRange(settings.start.toString(),
             settings.start.plusWeeks(settings.weeks.toLong()).minusDays(1).toString())
         val history = history(settings, zone)
-        val protected = rows.filter { it.id == activeScheduleId() || db.workoutHistoryDao().hasScheduleHistory(it.id) }.map { it.id }.toSet()
+        val activeId = activeScheduleId()
+        val protected = rows.filter { it.id == activeId || db.workoutHistoryDao().hasScheduleHistory(it.id) }.map { it.id }.toSet()
         val plan = NativeCalendarPlanner.plan(settings, program.days.sortedBy { it.sortOrder }.map { it.dayId }, rows,
             protected, history.mapNotNull { runCatching { java.time.Instant.parse(it.started).atZone(zone).toLocalDate() }.getOrNull() }.toSet(), zone)
         Preview(UUID.randomUUID().toString(), settings, program, db.keyValueDocumentDao().getDocument("plannerSettings"),

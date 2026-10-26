@@ -64,6 +64,7 @@ class NativeHealthDateRangeUiTest {
             TrainPilotDatabase.ensureBuiltinCatalogSeeded(db, context)
             TrainPilotSettingsStore(context).apply {
                 resetAllSettingsForEraseLocal()
+                importPortableSettings(org.json.JSONObject().put("settings", org.json.JSONObject().put("onboarding128", "complete")))
                 markMigrationComplete()
                 setLanguage("en")
             }
@@ -132,8 +133,9 @@ class NativeHealthDateRangeUiTest {
         pickActualDialogDate(yesterday)
         compose.onNodeWithTag("health_range_apply").performClick()
         compose.waitUntil(15000) {
-            compose.onAllNodesWithTag("health_record_yesterday").fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithTag("health_records_list").fetchSemanticsNodes().isNotEmpty()
         }
+        compose.onNodeWithTag("health_records_list").performScrollToNode(hasTestTag("health_record_yesterday"))
         compose.onNodeWithTag("health_records_list").performScrollToNode(hasTestTag("health_record_today"))
         compose.onNodeWithTag("health_record_today").assertExists()
         compose.onNodeWithTag("health_records_list").performScrollToNode(hasTestTag("health_record_yesterday"))

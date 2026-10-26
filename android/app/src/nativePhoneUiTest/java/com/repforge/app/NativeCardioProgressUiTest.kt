@@ -138,7 +138,8 @@ class NativeCardioProgressUiTest {
         for ((language, theme, heading) in locales) {
             compose.onNodeWithTag("navigation_settings").performClick()
             fixture.selectLanguageThroughUi(compose, language)
-            compose.onNodeWithTag("theme_$theme").performScrollTo().performClick()
+            compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("theme_$theme"))
+            compose.onNodeWithTag("theme_$theme").performClick()
             compose.waitUntil(15_000) {
                 fixture.selectedLanguage() == language &&
                     runBlocking { fixture.settings.current().themeKey == theme }

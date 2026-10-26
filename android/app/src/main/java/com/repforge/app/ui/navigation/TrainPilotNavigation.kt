@@ -113,7 +113,7 @@ fun TrainPilotAppScaffold(
             }
         onboardingSaving = true
         onboardingFailed = false
-        scope.launch {
+        scope.launch(Dispatchers.Main.immediate) {
             try {
                 val saved = withContext(Dispatchers.IO) { change(ticket) }
                 if (saved) onSaved() else onboardingFailed = true
@@ -173,12 +173,14 @@ fun TrainPilotAppScaffold(
     var pendingProgram by remember { mutableStateOf<PendingProgram?>(null) }
     fun launchProgram(programId: String?, dayId: String, scheduleId: String?, option: NativeProgramGpsChoice.Option?, record: Boolean) {
         starting = true
-        scope.launch {
+        scope.launch(Dispatchers.Main.immediate) {
             try {
                 val launch = NativeWorkoutSession.startProgramWorkout(context, programId, dayId, scheduleId,
                     option?.activityId, record)
-                launchGps = launch.gpsTarget
-                navController.openCanonicalWorkout()
+                withContext(Dispatchers.Main) {
+                    launchGps = launch.gpsTarget
+                    navController.openCanonicalWorkout()
+                }
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (error: Exception) { snackbar.showSnackbar(error.message ?: "Az edzést nem sikerült elindítani.") }
             finally { starting = false }
@@ -191,7 +193,7 @@ fun TrainPilotAppScaffold(
             return
         }
         starting = true
-        scope.launch {
+        scope.launch(Dispatchers.Main.immediate) {
             try {
                 val option = NativeProgramGpsChoice.read(context, programId, dayId)
                 if (option != null) {
@@ -335,10 +337,10 @@ fun TrainPilotAppScaffold(
                         onResumeDraft = {
                             if (!starting) {
                                 starting = true
-                                scope.launch {
+                                scope.launch(Dispatchers.Main.immediate) {
                                     try {
                                         NativeWorkoutSession.resumeImportedDraft(context)
-                                        navController.openCanonicalWorkout()
+                                        withContext(Dispatchers.Main) { navController.openCanonicalWorkout() }
                                     } catch (cancelled: CancellationException) { throw cancelled }
                                     catch (error: Exception) { snackbar.showSnackbar(error.message ?: "A félbehagyott edzés nem vehető át.") }
                                     finally { starting = false }
@@ -399,13 +401,15 @@ fun TrainPilotAppScaffold(
                             onCancel = { navController.popBackStack() }, onStart = { exerciseId, gps ->
                                 if (!starting) {
                                     starting = true
-                                    scope.launch {
+                                    scope.launch(Dispatchers.Main.immediate) {
                                         try {
                                             val launch = NativeWorkoutSession.startQuickWorkout(context, exerciseId, gps)
-                                            launchGps = launch.gpsTarget
-                                            navController.navigate("active_workout") {
-                                                popUpTo(if (outdoor) "quick_outdoor" else "quick_workout") { inclusive = true }
-                                                launchSingleTop = true
+                                            withContext(Dispatchers.Main) {
+                                                launchGps = launch.gpsTarget
+                                                navController.navigate("active_workout") {
+                                                    popUpTo(if (outdoor) "quick_outdoor" else "quick_workout") { inclusive = true }
+                                                    launchSingleTop = true
+                                                }
                                             }
                                         } catch (cancelled: CancellationException) { throw cancelled }
                                         catch (error: Exception) { snackbar.showSnackbar(error.message ?: "Az edzés nem indítható. Az adatok megmaradtak.") }
@@ -482,6 +486,7 @@ fun FloatingActiveWorkoutBanner(
 
 /** Reuse the actual editor entry before considering a restored tab state. */
 private fun NavHostController.openCanonicalWorkout() {
+    check(android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) { "Navigation requires the main looper" }
     if (popBackStack("active_workout", inclusive = false)) return
     navigate("active_workout") {
         popUpTo(graph.findStartDestination().id) { saveState = true }

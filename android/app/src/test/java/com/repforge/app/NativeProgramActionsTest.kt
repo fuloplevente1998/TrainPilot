@@ -5,6 +5,12 @@ import androidx.room.Room
 import com.repforge.app.data.db.ProgramWithDays
 import com.repforge.app.data.db.TrainPilotDatabase
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.test.resetMain
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After
@@ -16,14 +22,22 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33], manifest = Config.NONE)
 class NativeProgramActionsTest {
+    private val dispatcher = StandardTestDispatcher()
+    private val field = PhoneWorkoutExecution::class.java.getDeclaredField("store").apply { isAccessible = true }
     private lateinit var context: Context
     private lateinit var db: TrainPilotDatabase
 
     @Before fun setup() = runBlocking {
+        Dispatchers.setMain(dispatcher)
         context = RuntimeEnvironment.getApplication()
+        (field.get(null) as? PhoneWorkoutExecutionStore)?.close(); field.set(null, null)
+        context.deleteDatabase(PhoneWorkoutExecutionStore.DATABASE)
+        android.util.AtomicFile(java.io.File(context.noBackupFilesDir, "ownership193.json")).delete()
+        context.getSharedPreferences("trainpilot_wear_sync", Context.MODE_PRIVATE).edit().clear().commit()
         context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE)
             .edit().clear().commit()
         ActiveWorkoutStore.clear(context)
@@ -37,6 +51,9 @@ class NativeProgramActionsTest {
     @After fun cleanup() {
         db.close()
         ActiveWorkoutStore.clear(context)
+        (field.get(null) as? PhoneWorkoutExecutionStore)?.close(); field.set(null, null)
+        context.deleteDatabase(PhoneWorkoutExecutionStore.DATABASE)
+        Dispatchers.resetMain()
         context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE)
             .edit().clear().commit()
     }
@@ -51,7 +68,7 @@ class NativeProgramActionsTest {
         return db.programDao().getProgramWithDaysById(id)!!
     }
 
-    @Test fun repeatCopyRequestReusesItsOwnIdentityAndNeverActivatesSourceOrCreatesWorkoutState() = runBlocking {
+    @Test fun repeatCopyRequestReusesItsOwnIdentityAndNeverActivatesSourceOrCreatesWorkoutState() = runTest(dispatcher) {
         val before = factory()
         val copy = copy()
         val second = copy()
@@ -68,7 +85,7 @@ class NativeProgramActionsTest {
         assertNull(ActiveWorkoutStore.current(context)?.takeIf { it.optBoolean("active") })
     }
 
-    @Test fun previewAndCancelAreReadOnlyAndShowOnlyTheFactoryABDay() = runBlocking {
+    @Test fun previewAndCancelAreReadOnlyAndShowOnlyTheFactoryABDay() = runTest(dispatcher) {
         val source = copy()
         val before = db.programDao().getProgramsWithDays()
         val preview = NativeProgramActions.preview(context, db, source, "A")
@@ -82,7 +99,7 @@ class NativeProgramActionsTest {
         } }
     }
 
-    @Test fun restoreSelectedDayAndRecipePreservesOtherDayAndUnknownRawFields() = runBlocking {
+    @Test fun restoreSelectedDayAndRecipePreservesOtherDayAndUnknownRawFields() = runTest(dispatcher) {
         val copy = copy()
         val extra = JSONObject(copy.program.rawJson)
         val a = extra.getJSONArray("days").getJSONObject(0).put("unknownDayField", "keep")
@@ -117,7 +134,7 @@ class NativeProgramActionsTest {
         } }
     }
 
-    @Test fun sourceProgramChangeAndFactoryChangeBlockStaleRestoreWithoutWrite() = runBlocking {
+    @Test fun sourceProgramChangeAndFactoryChangeBlockStaleRestoreWithoutWrite() = runTest(dispatcher) {
         val original = copy()
         val preview = NativeProgramActions.preview(context, db, original, "A")
         NativeProgramEditor.save(context, db, original,
@@ -136,7 +153,7 @@ class NativeProgramActionsTest {
         assertEquals(updated, db.programDao().getProgramWithDaysById(original.program.id))
     }
 
-    @Test fun activeWorkoutAndReplacementFenceBlockRestore() = runBlocking {
+    @Test fun activeWorkoutAndReplacementFenceBlockRestore() = runTest(dispatcher) {
         val opened = copy()
         val preview = NativeProgramActions.preview(context, db, opened, "A")
         ActiveWorkoutStore.saveOwned(context, JSONObject().put("workoutId", "guarded-active"))
@@ -152,7 +169,7 @@ class NativeProgramActionsTest {
         } }
     }
 
-    @Test fun unrelatedCustomProgramCannotClaimFactoryDayRestore() = runBlocking {
+    @Test fun unrelatedCustomProgramCannotClaimFactoryDayRestore() = runTest(dispatcher) {
         val custom = NativeProgramEditor.Draft("Own", "", listOf(
             NativeProgramEditor.DayDraft("A", "A", listOf(JSONObject.quote("goblet-squat")))))
         val id = NativeProgramEditor.save(context, db, null, custom, "hu")

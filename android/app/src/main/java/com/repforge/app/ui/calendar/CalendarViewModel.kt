@@ -35,7 +35,15 @@ internal class CalendarViewModel(application: Application) : AndroidViewModel(ap
     private val app = application.applicationContext
     private val db = TrainPilotDatabase.getInstance(app)
     private val repository = NativeCalendarRepository(db) {
-        com.repforge.app.ActiveWorkoutStore.current(app)?.takeIf { it.optBoolean("active") || it.optBoolean("workoutPaused") || it.optBoolean("finalizationPending") }?.optString("scheduleId")
+        withContext(Dispatchers.Main.immediate) {
+            val execution = com.repforge.app.PhoneWorkoutExecution.store(app)
+            val frames = listOfNotNull(com.repforge.app.ActiveWorkoutStore.current(app), execution.snapshot(),
+                com.repforge.app.PhoneOwnership193.journal(app).read().optJSONObject("snapshot"))
+            val ids = frames.filter { it.optBoolean("active") || it.optBoolean("workoutPaused") || it.optBoolean("finalizationPending") }
+                .map { it.optString("scheduleId") }.filter { it.isNotBlank() }.distinct()
+            check(ids.size <= 1) { "calendarActive" }
+            ids.firstOrNull()
+        }
     }
     private var plannerContinuation: com.repforge.app.NativeDataReplacement.Continuation? = null
     private var plannerSettingsIdentity: String? = null

@@ -54,6 +54,7 @@ class NativePhoneNavigationTest {
             db.clearAllTables()
             TrainPilotDatabase.ensureBuiltinCatalogSeeded(db, context)
             settings.resetAllSettingsForEraseLocal()
+            settings.importPortableSettings(org.json.JSONObject().put("settings", org.json.JSONObject().put("onboarding128", "complete")))
             settings.markMigrationComplete()
             HealthJournalStore.get(context).erase()
         }

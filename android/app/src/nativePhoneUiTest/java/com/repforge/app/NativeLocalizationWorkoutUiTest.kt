@@ -69,6 +69,9 @@ class NativeLocalizationWorkoutUiTest {
                 ?.optJSONArray("sets")?.optJSONObject(0)?.optBoolean("done") == true
         }
         assertTrue(exerciseSets(snapshot()).getJSONObject(0).optDouble("reps", 0.0) > 0.0)
+        // A recorded set starts a real rest. End it through its UI before asking
+        // the single-owner engine to run the next set's stopwatch.
+        compose.onNodeWithTag("workout_rest_skip").performClick()
         // Second set stopwatch is active during Settings; its elapsed time must never reset.
         compose.onNodeWithText("Indítás", useUnmergedTree = true).performScrollTo().performClick()
         compose.waitUntil(15_000) {
@@ -108,6 +111,7 @@ class NativeLocalizationWorkoutUiTest {
         compose.onNodeWithTag("navigation_back").performClick()
         waitForText("Stoppuhr · Satz 1")
         compose.onNodeWithTag("interval_options").performScrollTo().performClick()
+        compose.onNodeWithTag("interval_rest").performScrollTo()
         waitForText("Pause (s)")
         assertEquals(sets, exerciseSets(snapshot()).toString())
         assertEquals(owner, snapshot().optString("timerOwner"))
