@@ -4,6 +4,14 @@ Frissítve: 2026-10-26. AGENTS.md + ez + WORK_HANDOFF.md teteje elég indulásko
 Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/exportot.
 
 
+## Összevont UI-kapu fordítási javítás – 2026-10-26
+
+40371054137 exact79ab227a LEZÁRT FAIL:NativePhoneNavigationTest.kt:79
+SemanticsConfiguration.getOrNull extension import hiányzott a #261átvett új tab
+várakozásából. Root1d2be2a5 importfix feltöltve, push új közös kaput indít.
+A bukott futásban JVM/UI/upgrade/Wear kapuk NEM futottak; nincs új runtimeeredmény
+259/261-re. Korábbi91/98PASS más SHA, nem összevont elfogadás. Main változatlan.
+
 ## Root átvette PR261-et, közvetlen migration integráció – 2026-10-26
 
 User explicit utasítása: beragadt külső chat helyett Root vegye át a munkát,

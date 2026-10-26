@@ -4,6 +4,14 @@ Frissítve: **2026-10-26**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Összevont UI-kapu fordítási javítás – 2026-10-26
+
+40371054137 exact79ab227a LEZÁRT FAIL:NativePhoneNavigationTest.kt:79
+SemanticsConfiguration.getOrNull extension import hiányzott a #261átvett új tab
+várakozásából. Root1d2be2a5 importfix feltöltve, push új közös kaput indít.
+A bukott futásban JVM/UI/upgrade/Wear kapuk NEM futottak; nincs új runtimeeredmény
+259/261-re. Korábbi91/98PASS más SHA, nem összevont elfogadás. Main változatlan.
+
 ## Root átvette PR261-et, közvetlen migration integráció – 2026-10-26
 
 User explicit utasítása: beragadt külső chat helyett Root vegye át a munkát,
