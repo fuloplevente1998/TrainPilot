@@ -19,7 +19,6 @@ import org.json.JSONObject
 import java.time.Instant
 import java.time.ZoneId
 import java.time.Duration
-import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.roundToInt
 
 data class TodayMetricsUiModel(
@@ -56,7 +55,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val settingsStore = TrainPilotSettingsStore(context)
     private val repository = NativeHomeRepository(database)
     private var loading: Job? = null
-    private val readEpoch = AtomicLong()
+    private val readEpoch = NativeHomeRecoveryLoadGate()
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
@@ -80,7 +79,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     /** Cancelling an older read prevents its result from overwriting a changed plan or dataset. */
     fun loadHomeData() {
-        val epoch = readEpoch.incrementAndGet()
+        val epoch = readEpoch.next()
         loading?.cancel()
         loading = viewModelScope.launch {
             _uiState.update { it.copy(loading = true, loadFailed = false) }
@@ -97,7 +96,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                             watchConnected = liveHealth != null, watchState = liveHealth?.optString("state").orEmpty())
                     }
                 }
-                if (readEpoch.get() == epoch) {
+                if (readEpoch.isCurrent(epoch)) {
                     _uiState.update { result.copy(hasImportedDraft = it.hasImportedDraft) }
                 }
             } catch (cancelled: CancellationException) { throw cancelled }
