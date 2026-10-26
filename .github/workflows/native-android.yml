@@ -342,3 +342,69 @@ jobs:
           name: TrainPilot-Native-Phone-UI-Evidence
           path: phone-ui/results/
           if-no-files-found: error
+
+  # QA-only: separate from application changes. Never integrate this CI delta into migration.
+  phone-evidence-offline:
+    name: Check exact APK, JVM, instrumentation and screenshot evidence
+    needs: [native-debug, phone-ui]
+    if: ${{ always() && needs.native-debug.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: TrainPilot-Native-Phone-UI-Evidence
+          path: qa-input/TrainPilot-Native-Phone-UI-Evidence
+      - uses: actions/download-artifact@v4
+        with:
+          name: TrainPilot-Native-Tests-${{ github.sha }}
+          path: qa-input/TrainPilot-Native-Tests-${{ github.sha }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: TrainPilot-Native-Phone-Debug
+          path: qa-apks/phone
+      - uses: actions/download-artifact@v4
+        with:
+          name: TrainPilot-Native-Phone-UI-Test
+          path: qa-apks/test
+      - name: Check phone and JVM raw evidence against the exact APK bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/native/evidence-summary.py qa-input \
+            --expected-commit "$GITHUB_SHA" \
+            --require-gate phone --require-gate jvm \
+            --phone-apk qa-apks/phone/app-debug.apk \
+            --phone-test-apk qa-apks/test/app-debug-androidTest.apk \
+            --json-out qa-report/summary.json \
+            --markdown-out qa-report/summary.md
+      - name: Check canonical real screen and locale coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          m = json.loads(Path("qa-input/TrainPilot-Native-Phone-UI-Evidence/manifest.json").read_text())
+          shots = m["screenshots"]
+          actual = {s.get("screen") for s in shots}
+          required = {"home", "training", "journal", "progress", "health",
+                      "coach", "calendar", "settings", "active_strength",
+                      "active_timed", "active_gps_retry", "route_synthetic_gps"}
+          missing = required - actual
+          assert not missing, "Missing real native UI views: " + ", ".join(sorted(missing))
+          settings = [s for s in shots if s.get("screen") == "settings"]
+          assert {"hu", "en", "de", "ro"} <= {s.get("language") for s in settings}
+          assert len({s.get("theme") for s in settings}) >= 2
+          for screen in ("active_gps_retry", "route_synthetic_gps"):
+              entries = [s for s in shots if s.get("screen") == screen]
+              assert entries and all("synthetic-gps" in e.get("data", "") for e in entries)
+          PY
+      - name: Upload independent native evidence report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrainPilot-Native-Phone-Offline-Report-${{ github.sha }}
+          path: qa-report/
+          if-no-files-found: ignore
