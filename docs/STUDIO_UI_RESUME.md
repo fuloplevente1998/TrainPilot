@@ -1,5 +1,17 @@
 # TrainPilot – Studio UI folytatási pont
 
+## 2026-10-27: valódi, választható időszakos volumen-oszlopdiagram
+
+- A 18:49-es Studio ZIP `LogAndProgressScreens.kt` volume mockupjának **Összes volumen** 2×2 időszakválasztója (1 nap / 7 nap / 30 nap / 3 hó) és kiválasztható oszlopai natív Compose UI-ban is működnek: `ProgressVolumeChart` (`ProgressScreen.kt`) testTag: `progress_total_volume_card`, `progress_volume_range_*`, `progress_volume_bars`, `progress_volume_bar_*`, `progress_volume_selected_detail`. NINCS rögzített Studio kg és 2026-os DEMO-idősor.
+- Új `WorkoutHistoryDao.getProgressVolumeRows`: kizárólag mentett végidő + mentett összvolumen, befejezett/érvényes, nem törölt edzésekből, 1 nap–3 naptári hónap közé szorítva. Nem olvas rawJson, GPS, fotót, set relációkat; nem változtat sémát, nincs migráció.
+- `NativeVolumeProjection.kt`: tisztán tesztelhető időzónás naptárnap alapú range/bucket kiszámítás; DST, jövőbeli sorok és nem véges/negatív kg kizárása. Az üres időszak üres/0 adatot mutat, nem DEMO értéket. 1/7/10/12 bar az időszakhoz; 3 hónap valódi naptári hónap és nem fix 90×24 óra.
+- `ProgressViewModel`: ViewModel/Room/admission rétegen kezelt kiválasztott range, több módváltás esetén `volumeRevision` stale-read guard, mentett adat invalidálása és helyi dátum/időzóna frissítés; a strength és cardio szűrők, motorok, main anatómia továbbra önállóak.
+- HU/EN/DE/RO lokalizált cím/felirat/hiba/üres state, minimum 48 dp-es időszak- és oszlopgombok, kiválasztott oszlop valódi dátum+kg+edzésszám részletével és accessibility selected szemantikával.
+- `NativeProgressQueryTest` két új Robolectric/Room tesztje DST, 4 range, tombstone, future/incomplete és stored totals hitelességét vizsgálja; nem UI-fixture-ből rajzolja az appadatot.
+- **Utolsó UI-kód SHA:** `2b470df27b511e68a78923524ba7d0d384fe7eb9`, [Quick validáció](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40567027829) és [native Android/Wear](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40567027715) ellenőrzés elkezdődött; [telefonos release-gate](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40567016910) SUCCESS. A teljes kapura ***PASS-t csak az adott pontos SHA-n lezárt run után*** állíts. Nincs main merge vagy release-kész APK.
+- Következő UI: pulse history trend és records details, progress volume kiválasztott oszlop edzésnapló deep-link, további Studio részletfák/Coach/edzésmódok, teljes natív Phone/Wear+signed upgrade és valós emulátoros képernyő-összevetés.
+
+
 ## 2026-10-27: valós 30 napos Progress + Studio Health napválasztó
 
 - Az új `ProgressPeriodTotals` Room projection a **befejezett, tombstone-mentes edzéseket** összesíti, időbeli korláttal: workouts, összvolumen (kg), completed sets, PR-t tartalmazó edzések (nem badge-darabszám). A query csak a `workout_history` indexelt/mentett mezőiből számol, GPS/photo/raw JSON hydratálás nélkül; nem kerül új séma vagy migráció a projektbe.
