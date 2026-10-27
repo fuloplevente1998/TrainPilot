@@ -1,5 +1,14 @@
 # TrainPilot – Studio UI folytatási pont
 
+## 2026-10-27: 18:49 Studio-export feltöltve, újabb UI-csomag
+
+- A user az eredeti `trainpilot-oct-27-2026-6-49-09-pm.zip` fájlt ténylegesen feltöltötte a `docs/ai-studio/` mappába, a PR #270 **HEAD ágára**. Méret `4011698` byte, Git blob `8a12a591cf841cfc1a8b6b8ca86716bd8d0dd92b`, SHA-256 `b699d72bc2b673cefbd3dabbdb8164f681c35762e47d19adf42c12e6b22eabf1`; a korábbi user ZIP byteazonos. Kánonikus vizuális input az új ZIP, a régi 15:58 ZIP csak történet.
+- Exact GitHub exportdokumentáció: `docs/ai-studio/STUDIO_EXPORT_2026-10-27_1849.md` és `docs/ai-studio/trainpilot-oct-27-2026-6-49-09-pm.zip`; nincs további ZIP-igény.
+- Új natív UI-bekötés: `NativeTopNavigation` 18:49-es export szerinti `<400dp` / `fontScale>1.15` esetén vízszintesen görgethető; `NativeMainMenu` pure policy + JVM teszt; `WorkoutRouteMapDialog` Studio-szerű külső, eredeti mentett route-szegmensekkel; `TrainingLandingScreen` külön gyors edzés, két akciókártya, program / napok új vizuális hierarchiája. A valós callbackek, navigáció és testTag-ek maradnak; sem új DEMO motor, sem kitalált élő adat nincs.
+- A korábbi `40557329949` gate a friss ZIP előtti SHA-n indult, nem bizonyíték a fenti új UI-kódra. Az új változtatások célzott Android compile / UI / Wear / signed upgrade ellenőrzése még kötelező; `[skip ci]` commitokból sem következik automatikus zöld build.
+- Következő folytatás: a **PR aktuális HEAD** és a 18:49-es export összevetése; Health, Progress, Training, Journal és aktív edzés valódi adatú UI-port; fő testábra main natív maszkokból, térkép mentett GPS-ből. Képernyőnként teszt és emulátoros bizonyíték.
+
+
 ## Ezt másold az új Codex beszélgetésbe
 
 Folytasd a TrainPilot AI Studio dizájn beépítését a meglévő PR #270 ágán:
