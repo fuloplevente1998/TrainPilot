@@ -358,6 +358,7 @@ fun TrainPilotAppScaffold(
                         onCalendar = { selectDestination("calendar") }, onCoach = { selectDestination("coach") },
                         onPrograms = { selectDestination("programs") }, language = settings.language, busy = navigationBlocked,
                         onProfile = { settingsSection = "profile"; selectDestination("settings") },
+                        onWatch = { settingsSection = "general"; selectDestination("settings") },
                         onPersonalPlan = {
                             selectDestination("programs")
                             if (navController.currentDestination?.route == "programs") personalPlannerRequested = true
