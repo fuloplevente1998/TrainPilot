@@ -8,6 +8,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,6 +40,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.repforge.app.ui.theme.LocalTrainPilotColors
+import com.repforge.app.ui.components.TrainPilotStatusBadge
 import kotlin.math.ln
 import kotlin.math.max
 import kotlin.math.min
@@ -60,12 +62,29 @@ fun WorkoutRouteMapDialog(route: RouteCoordinatesUiModel, onDismiss: () -> Unit,
                         Icon(Icons.Default.Close, text.getString(com.repforge.app.R.string.journal_close), tint = colors.dangerText)
                     }
                 }
-                Text(text.getString(com.repforge.app.R.string.journal_route_points, route.pointCount), color = colors.muted)
-                if (route.missingRouteParts > 0) Text(text.getString(com.repforge.app.R.string.journal_partial_route), color = colors.muted)
-                Box(Modifier.fillMaxWidth().weight(1f).clip(RoundedCornerShape(16.dp)).background(colors.card2)) {
-                    MercatorRouteCanvas(route.segments)
+                // Only observed, saved coordinates: never show Studio's illustrative map metrics.
+                Row(Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
+                    TrainPilotStatusBadge(text.getString(com.repforge.app.R.string.journal_route_points, route.pointCount))
+                    if (route.missingRouteParts > 0)
+                        Text(text.getString(com.repforge.app.R.string.journal_partial_route),
+                            color = colors.muted, style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
                 }
-                Row(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                androidx.compose.material3.Surface(
+                    modifier = Modifier.fillMaxWidth().weight(1f).testTag("route_map_canvas"),
+                    shape = RoundedCornerShape(20.dp),
+                    color = colors.card2,
+                    border = BorderStroke(1.dp, colors.selectedBorder)
+                ) {
+                    Box(Modifier.fillMaxSize().padding(8.dp)) {
+                        // Preserve the individual GPS segments; gaps never become a drawn path.
+                        MercatorRouteCanvas(route.segments)
+                    }
+                }
+                Row(Modifier.fillMaxWidth().padding(top = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically) {
                     RouteLegendItem(colors.accent2, text.getString(com.repforge.app.R.string.journal_route_start))
                     RouteLegendItem(colors.success, text.getString(com.repforge.app.R.string.journal_route_path))
                     RouteLegendItem(colors.accent, text.getString(com.repforge.app.R.string.journal_route_finish))
@@ -124,10 +143,12 @@ fun MercatorRouteCanvas(segments: List<List<Pair<Double, Double>>>) {
 
         // Rajt pont (#30DFF2)
         val startOffset = toCanvasOffset(allPoints.first())
+        drawCircle(color = colors.bg, radius = 9.dp.toPx(), center = startOffset)
         drawCircle(color = colors.accent2, radius = 6.dp.toPx(), center = startOffset)
 
         // Cél pont (#FFB93D)
         val finishOffset = toCanvasOffset(allPoints.last())
+        drawCircle(color = colors.bg, radius = 9.dp.toPx(), center = finishOffset)
         drawCircle(color = colors.accent, radius = 6.dp.toPx(), center = finishOffset)
     }
 }
