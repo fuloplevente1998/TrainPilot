@@ -1,18 +1,22 @@
 # AI Studio feladat: a meglévő Studio UI végső hozzáférhetőségi és nyelvi finomítása
 
-Ez a feladat a felhasználó AI Studio Android/Compose PROTOTÍPUSÁRA vonatkozik.
+Ez a feladat a felhasználó AI Studio APP BUILDER Android/Compose projektjére vonatkozik.
 A natív beépítést Root közben végzi a PR270-ben; erre a munkára nem várunk.
 A következő blokk egyben bemásolható az eredeti AI Studio projekt beszélgetésébe.
 
 ---
 
-Folytasd a már meglévő TrainPilot Android/Jetpack Compose dizájnprojektet.
-Ne tervezz új alkalmazást: a jóváhagyott látványt finomítsd, a következő hibákat
-javítsd végig, és adj ellenőrizhető kódot. Ne csak javaslatlistát vagy látványképet.
+AI STUDIO APP BUILDER MÓDBAN dolgozol a már meglévő TrainPilot Android/Jetpack
+Compose projektünkön. KÖZVETLENÜL ebben a projektben javítsd a kódot és az
+interaktív előnézetet. Ne készíts külön új projektet, ne csak tervet/javaslatot,
+ne chatbe bemásolt fájlokat vagy patchcsomagot adj. A végén a szokásos App Builder
+letöltéssel a TELJES FRISSÍTETT PROJEKT ZIP-et fogom letölteni és Codexnek átadni.
 
 **Pontos bázis:** az általad készített `trainpilot-oct-27-2026-3-58-04-pm.zip`,
 SHA256 `574f17f639b91037a6e0bdea428f350d4c5950307227511eafc32e7f64bcefcc`.
 Ez a `com.example` forrású, `com.aistudio.trainpilot.tpux01` demóprojekt.
+Ha azóta már finomítottad a jelenlegi projektet, azt folytasd; ne állítsd vissza
+az első exportot. A hash az eredeti összehasonlítási alapot azonosítja.
 A valódi alkalmazás másik projekt (`com.repforge.app`): azt nem írhatod át.
 
 ## Kötelezően megőrzendő
@@ -107,15 +111,21 @@ manifest maradjon változatlan. Ha bizonyíthatóan kell más fájl, nevezd meg 
 4. Ha van valódi Android build/emulátor hozzáférésed, fordíts/tesztelj és javíts.
    Ha nincs, a kód készülhet, de pontosan `NOT_RUN` státusszal add át. A böngészős
    render, screenshot vagy Preview nem az Android instrumentáció eredménye.
-5. Átadás: módosítottfájl-lista, teljes javított kis Kotlinfájlok VAGY unified patch
-   (eredeti paths), új kulcsok, BEFORE/AFTER tételek és futtatott/NOT_RUN tesztek.
-   Opcionálisan kis ZIP CSAK a megváltozott fájlokkal és manifesttel;
-   ne csomagolj gradlecache/build/media/.aistudio/.git vagy teljes TrainPilot repót.
-6. `AISTUDIO_REFINEMENT_REPORT.md`: mi készült el, hol van még valódi hiba,
-   milyen eszközön/forráson mit futtattál; tényleges képek csak helyes eredetjelzéssel.
+5. A javítások az App Builder AKTUÁLIS projektjében legyenek benne, működő
+   interaktív előnézettel, a demóállapotok közötti váltás megőrzésével.
+   TELJES FRISSÍTETT PROJEKT legyen letölthető az App Builder szokásos ZIP-exportjával.
+   Ne kérj tőlem kézi fájlcserét, ne csak patch-et vagy részleges ZIP-et adj.
+   Az eredeti fájlszerkezet/package és a projekt fordíthatósága maradjon meg.
+6. Hozd létre a projekt gyökerében az `AISTUDIO_REFINEMENT_REPORT.md` fájlt:
+   javított fájlok, új lokalizációs kulcsok, elvégzett ellenőrzések és NOT_RUN
+   tételek, maradék ismert hibák. Ez is kerüljön a teljes projekt exportjába.
+   A chatben röviden sorold fel az elkészült javításokat és a maradék korlátokat.
+   Ha csak böngészős/Builder Preview áll rendelkezésre, annak helyes eredetjelzésével
+   add át, ne állítsd Android-emulátoros készüléktesztnek.
 
-A feladat végéig haladj a saját Studio projekteden; ne állj meg javaslatoknál.
-A natív appba Root illeszti a javításokat ellenőrzés után.
+A feladat végéig haladj az App Builder saját projektjén; ne állj meg javaslatoknál.
+A teljes ZIP-et én letöltöm és átadom Codexnek. Codex hasonlítja össze a két ZIP-et,
+és ő illeszti be a szükséges javításokat a valódi natív appba ellenőrzés után.
 
 ---
 

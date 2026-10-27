@@ -51,6 +51,9 @@ A későbbi065db698 csak docs-only AIStudio-finomítási prompt, nem új appforr
 A felhasználó promptot kért AIStudiónak; átadó elkészült, tényleges külsőfeladat
 indulását még nem jelezte. Root bekötés ettől független, nem állhat meg erre várva:
 docs/plans/AISTUDIO_STUDIO_ACCESSIBILITY_REFINEMENT_HANDOFF.md.
+Pontosított userfolyamat: AIStudio APP BUILDER; sajátprojektben javítás +TELJES új
+projektZIP export. Nem kérünk patch-et/részleges ZIP-et vagy kézi fájlcserét a usertől;
+Root hasonlítja össze az archívumokat és portolja a megfelelő UI-deltát.
 - Studio SpaceGrotesk/PlusJakartaSans/JetBrainsMono fontok és typography, tnum;
   valódi statikusregular fontok, hiányzó súlyokat Compose szintetizálja.
 - Studio sötét közösalap, hero finom háttérgradiens, a meglévő32mentettpaletta
