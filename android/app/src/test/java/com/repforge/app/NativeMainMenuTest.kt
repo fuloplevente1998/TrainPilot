@@ -5,6 +5,22 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class NativeMainMenuTest {
+    @Test fun topNavigationScrollsForSmallScreensOrScaledTextWithoutLosingSelectedTab() {
+        assertTrue(NativeMainMenu.topTabsScrollable(320f, 1.0f))
+        assertTrue(NativeMainMenu.topTabsScrollable(399f, 1.0f))
+        assertTrue(NativeMainMenu.topTabsScrollable(400f, 1.16f))
+        assertTrue(NativeMainMenu.topTabsScrollable(480f, 2.0f))
+        assertFalse(NativeMainMenu.topTabsScrollable(400f, 1.15f))
+        assertFalse(NativeMainMenu.topTabsScrollable(480f, 1.0f))
+        assertEquals(0, NativeMainMenu.topTabScrollTarget(260, 0))
+        assertEquals(65, NativeMainMenu.topTabScrollTarget(260, 1))
+        assertEquals(130, NativeMainMenu.topTabScrollTarget(260, 2))
+        assertEquals(260, NativeMainMenu.topTabScrollTarget(260, 4))
+        assertEquals(260, NativeMainMenu.topTabScrollTarget(260, 50))
+        assertEquals(0, NativeMainMenu.topTabScrollTarget(260, -1))
+        assertEquals(0, NativeMainMenu.topTabScrollTarget(0, 4))
+        assertEquals(Int.MAX_VALUE, NativeMainMenu.topTabScrollTarget(Int.MAX_VALUE, 4))
+    }
     @Test fun acceptedHierarchyHasFiveTabsWithSettingsOutsideTheTabBar() {
         assertEquals(listOf("home", "training", "journal", "progress", "health"), NativeMainMenu.routes)
         assertEquals(listOf("Kezdőlap", "Edzés", "Napló", "Fejlődés", "Egészség"), NativeMainMenu.labels("hu"))
