@@ -1,5 +1,15 @@
 # TrainPilot – Studio UI folytatási pont
 
+## 2026-10-27: valós 30 napos Progress + Studio Health napválasztó
+
+- Az új `ProgressPeriodTotals` Room projection a **befejezett, tombstone-mentes edzéseket** összesíti, időbeli korláttal: workouts, összvolumen (kg), completed sets, PR-t tartalmazó edzések (nem badge-darabszám). A query csak a `workout_history` indexelt/mentett mezőiből számol, GPS/photo/raw JSON hydratálás nélkül; nem kerül új séma vagy migráció a projektbe.
+- `NativeProgressQuery.thirtyDayWindow(now, zone)`: Budapest nyári/téli óraátállítást és 30 **helyi naptári napot** kezel, a jövőbeli rekordok kizárásával; `NativeProgressQueryTest` két új tesztje ellenőrzi a határnapot, 25 órás időszakot, tombstone-t, hiányzó/lezáratlan és jövőbeli rekordokat.
+- `ProgressViewModel` az új összesítést a meglévő `NativeDataReplacement` admission kereten belül olvassa, és Room invalidation + helyi dátum/időzóna váltás után újratölti. `ProgressScreen` négy Studio-stílusú, HU/EN/DE/RO feliratú metrikakártyája a valós adatokon dolgozik. Az eredeti progress anatómia/PR/trend/photogallery/cardio/weight nem lett kiváltva.
+- `HealthDashboardScreen`: Studio-féle dátumválasztó `FilterChip` (aktív nap és 48dp minimum), hétköznapi és történeti dátumhoz egyaránt pontos felirat; 48dp-s Health Connect/Samsung Health választók szűk/nagybetűs kijelzőn függőlegesek. Az eredeti provider, permissions, rekordböngésző és szinkron callbackek megmaradnak.
+- Natív UI-változat a `ffb5a77d` commiton; a `40565014064` Android/Wear workflow **futott az utolsó ellenőrzéskor**, eredményét külön ellenőrizni kell. Ugyanerre a kód SHA-ra a gyors validáció `40565014115` és phone-release `40565005658` SUCCESS volt. Az előző átkódolások egyes Android/Wear kapui cancelled, nem PASS. A legfrissebb telepíthető, átvizsgált APK még nincs elfogadva.
+- Folytatás: HCPulse historial timeline (napokra bontva, missing/stale/source explicit), Progress valódi volumen idősor + badge részletek, Napló részletes képernyő/térkép, Coach és edzésmódok Studio-paritás, teljes native test/telefonos screenshot/gate.
+
+
 ## 2026-10-27: következő Egészség + Fejlődés + Napló increment
 
 - Aktuális natív adatkötött felületek: `HealthSelectedDayOverview` a 6 Studio-kártyát a kiválasztott valódi nap 26 metrikájából vetíti; a teljes 26-os lista tovább látható, `NativeHealthMetrics.overview` kizárólag az adott nap elemeit rangsorolja. `NativeHealthOverviewTest` 2 célzott JVM-es esettel dokumentálja hiányzó adatok, sorrend, source megőrzését.
