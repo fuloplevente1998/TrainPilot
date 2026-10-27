@@ -19,8 +19,8 @@ class NativeThemeContrastParityTest {
     }
 
     @Test fun everyStoredPaletteKeepsItsPaintAndAllTextAndSelectionThresholds() {
-        assertEquals("All ten final main Basic + sixteen main Vivid + six legacy native keys", 32, palettes.size)
-        assertEquals(32, palettes.map { it.key }.toSet().size)
+        assertEquals("32 preserved main/native themes plus the exact Studio graphite-gold reference", 33, palettes.size)
+        assertEquals(33, palettes.map { it.key }.toSet().size)
         palettes.forEach { palette ->
             val settings = TrainPilotUserSettings(
                 themeKey = palette.key,
@@ -64,6 +64,29 @@ class NativeThemeContrastParityTest {
         }
     }
 
+    @Test fun studioDefaultHasExactExportedBackgroundCardAndAccentColors() {
+        val colors = NativeThemeTokens.resolve(TrainPilotUserSettings())
+        assertEquals(Color(0xFF0E1015), colors.bg)
+        assertEquals(Color(0xFF171A21), colors.card)
+        assertEquals(Color(0xFF1F242D), colors.card2)
+        assertEquals(Color(0xFF2B313D), colors.line)
+        assertEquals(Color(0xFFE5B842), colors.accent)
+        assertEquals(Color(0xFF4CA6A8), colors.accent2)
+        assertEquals(Color(0xFFF3F4F6), colors.text)
+        assertEquals(Color(0xFFB6BFCF), colors.muted)
+        assertContrast("Studio body", colors.text, colors.card, 4.5f)
+        assertContrast("Studio muted body", colors.muted, colors.card, 4.5f)
+
+        // Saved main-era themes must still use the original native surface tokens.
+        val legacy = NativeThemeTokens.resolve(TrainPilotUserSettings(
+            themeKey = "classicBlue", themeAccent = "#4d8fbe",
+            themeAccent2 = "#7cb4d6"
+        ))
+        assertEquals(BgColor, legacy.bg)
+        assertEquals(CardColor, legacy.card)
+        assertEquals(Color(0xFF4D8FBE), legacy.accent)
+    }
+
     @Test fun translucentPaintIsCompositedBeforeContrastRatherThanTreatedAsOpaque() {
         val halfWhite = Color.White.copy(alpha = .5f)
         val measured = NativeThemeTokens.contrast(halfWhite, Color.Black)
@@ -79,6 +102,6 @@ class NativeThemeContrastParityTest {
         }
         assertTrue(palettes.any { it.displayName("de").length >= 25 })
         assertTrue(palettes.any { it.displayName("ro").length >= 20 })
-        assertEquals("classicBlue", TrainPilotUserSettings().themeKey)
+        assertEquals("graphite_gold", TrainPilotUserSettings().themeKey)
     }
 }
