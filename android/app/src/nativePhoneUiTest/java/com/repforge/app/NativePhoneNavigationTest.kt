@@ -151,6 +151,11 @@ class NativePhoneNavigationTest {
         }
         fun capture(screen: String) = screenshot(screen, "hu", "yellow", "synthetic_disposable_p1_visual_fixture")
         launch()
+        scenario?.onActivity { activity ->
+            val bars = androidx.core.view.WindowCompat.getInsetsController(activity.window, activity.window.decorView)
+            assertFalse("Dark native surfaces need light status-bar icons", bars.isAppearanceLightStatusBars)
+            assertFalse("Dark native surfaces need light navigation-bar icons", bars.isAppearanceLightNavigationBars)
+        }
         compose.waitUntil(30_000) { compose.onAllNodesWithTag("home_loading").fetchSemanticsNodes().isEmpty() }
         capture("p1_home")
         compose.onNodeWithTag("home_metric_recovery").performScrollTo()

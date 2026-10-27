@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.SystemBarStyle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,7 +44,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         startupScreen = StartupScreen.install(this)
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        // All native palettes use dark surfaces, independently of Android's day/night mode.
+        // Auto system-bar styling otherwise puts dark clock/icons on the dark app background.
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+        )
 
         settingsStore = TrainPilotSettingsStore(this)
         database = TrainPilotDatabase.getInstance(this)
