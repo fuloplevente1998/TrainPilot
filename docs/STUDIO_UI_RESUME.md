@@ -12,6 +12,20 @@ felülírja. A Studio demóállapotváltók/demószövegek nem végleges termék
 valódi funkciógombot ettől még ne törölj. Minden nézetet valós natív állapothoz,
 meglévő callbackhez és adatforráshoz köss. A terv95%-ossága nem a natív kód készültsége.
 
+## Studio increment01 QA-javítások – 2026-10-27
+
+40539957380 exact0fb350a4 lezártFAIL. Root JVM12750582974:1333PASS;
+phone12750939854:114main112PASS/2FAIL+4GPSPASS=116/118,0missing/crash.
+Mind3Wear és2signedupgradeSUCCESS. Home/profile/header-entry goldUI PASS.
+65PNG manifestSHA256/PIL validált,2köztes natívHomekép:
+docs/design/previews/studio-increment-0fb350a4/README.md.
+457dc1e6 javítja a font2fülek naturalwidth mérését és a nestedLazy öröklésgomb
+közvetlen scroll/visible assertjét +teljesdiag; b80ebc62 explicit sötét
+systembarstyle és valódiUIassert (feketefelületen fehérikonok). Új runtime UNRUN.
+AIStudio prompt APP BUILDERRE javítva6c9bdfa3: sajátprojektben módosít,
+TELJES újZIP letöltve, nempatch/részarchívum; Rootdiffeli. Felső5fül/demokontrollmarad.
+P1teljesUI/paritás továbbra nincs kész; részletek STUDIO_UI_RESUME-ben.
+
 ## Pontos állapot
 
 - PR: https://github.com/fuloplevente1998/TrainPilot/pull/270
@@ -46,7 +60,7 @@ Nem kell új bemenetet kérni. Az alkalmazáskódba a következő increment ker�
 Jelölt app/tesztforrás: d7e64697 (8ba6a388+34c629b8+d7e64697).
 Aktív canonical gate:40539957380 exact0fb350a47b1c17a04851ce6a0f7529f510dad8d9.
 https://github.com/fuloplevente1998/TrainPilot/actions/runs/40539957380
-Compile lépés PASS, unit lépés még fut; ne indíts mellé duplagate-et.
+LezártFAIL; a fenti116/118eredmény és javítások érvényesek. Új egyszeri gate kell.
 A későbbi065db698 csak docs-only AIStudio-finomítási prompt, nem új appforrás.
 A felhasználó promptot kért AIStudiónak; átadó elkészült, tényleges külsőfeladat
 indulását még nem jelezte. Root bekötés ettől független, nem állhat meg erre várva:

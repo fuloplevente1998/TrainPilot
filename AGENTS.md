@@ -1,5 +1,20 @@
 # TrainPilot – agent munkarend
 
+## Studio increment01 QA-javítások – 2026-10-27
+
+40539957380 exact0fb350a4 lezártFAIL. Root JVM12750582974:1333PASS;
+phone12750939854:114main112PASS/2FAIL+4GPSPASS=116/118,0missing/crash.
+Mind3Wear és2signedupgradeSUCCESS. Home/profile/header-entry goldUI PASS.
+65PNG manifestSHA256/PIL validált,2köztes natívHomekép:
+docs/design/previews/studio-increment-0fb350a4/README.md.
+457dc1e6 javítja a font2fülek naturalwidth mérését és a nestedLazy öröklésgomb
+közvetlen scroll/visible assertjét +teljesdiag; b80ebc62 explicit sötét
+systembarstyle és valódiUIassert (feketefelületen fehérikonok). Új runtime UNRUN.
+AIStudio prompt APP BUILDERRE javítva6c9bdfa3: sajátprojektben módosít,
+TELJES újZIP letöltve, nempatch/részarchívum; Rootdiffeli. Felső5fül/demokontrollmarad.
+P1teljesUI/paritás továbbra nincs kész; részletek STUDIO_UI_RESUME-ben.
+
+
 ## Studio ZIP beolvasva, első valódi increment – 2026-10-27
 
 User ZIP megérkezett f685d540 docs/ai-studio/trainpilot-oct-27-2026-3-58-04-pm.zip;
