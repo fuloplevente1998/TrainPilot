@@ -125,7 +125,7 @@ class NativeProgressQueryTest {
         record(104, now + 1, 777.0)
         record(105, now - 6000, 555.0, complete = false)
         db.workoutHistoryDao().upsertTombstone(HistoryTombstoneEntity(
-            primaryId = "w-0102", workoutKey = "key-102", idsJson = "[\\\"w-0102\\\"]", deletedAt = 1))
+            primaryId = "w-0102", workoutKey = "key-102", idsJson = "[\"w-0102\"]", deletedAt = 1))
         val (from, until) = NativeVolumeProjection.queryBounds(NativeVolumeRange.WEEK, now, zone)
         val rows = db.workoutHistoryDao().getProgressVolumeRows(from, until)
         assertEquals(2, rows.size)
