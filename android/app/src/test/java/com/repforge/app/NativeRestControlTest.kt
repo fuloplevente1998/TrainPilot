@@ -98,9 +98,19 @@ class NativeRestControlTest {
         val current = ActiveWorkoutStore.current(context)!!
         ActiveWorkoutStore.saveOwned(context, JSONObject(current.toString()).put("timerOwner", "watch"))
         assertThrows(IllegalStateException::class.java) { NativeWorkoutEditing.setRestPaused(context, target, true) }
-        ActiveWorkoutStore.saveOwned(context, JSONObject(current.toString()).put("workoutPaused", true))
-        assertThrows(IllegalStateException::class.java) { NativeWorkoutEditing.setRestPaused(context, target, false) }
         assertTrue(timer().getBoolean("running"))
+        ActiveWorkoutStore.saveOwned(context, JSONObject(current.toString()))
+        // Pause the durable execution authority, not just the disposable UI projection.
+        PhoneWorkoutExecution.setWorkoutPause(context, JSONObject(frame().toString())
+            .put("workoutPaused", true).put("pauseRevision", frame().optLong("pauseRevision") + 1L))
+        assertTrue(frame().getBoolean("workoutPaused"))
+        assertFalse(timer().getBoolean("running"))
+        val remaining = timer().getLong("remainingMs")
+        assertThrows(IllegalStateException::class.java) { NativeWorkoutEditing.setRestPaused(context, target, false) }
+        advance(10)
+        assertFalse(timer().getBoolean("running"))
+        assertEquals(remaining, timer().getLong("remainingMs"))
+        assertTrue(frame().getBoolean("workoutPaused"))
     }
 
     @Test fun plusAndMinusChangeRealRemainingTimeAndDurablePlanWithoutInventedCredit() {

@@ -4,6 +4,19 @@ Frissítve: **2026-10-26**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Közös gate JVMeredmény és G04fixturejavítás — 2026-10-27
+
+40457074686/a50d911f lezártFAIL aJVMjobon, phone/WearUI/upgrade SKIPPED.
+Root artifact12713476709XML:1332teszt/1failure/0error/0skip; új rest-only
+pause/no-credit és mind11CustomExerciseEditor korutinJVM PASS, nincs deadlock.
+Egyhiba:NativeRestControlTest.restPauseRejectsStaleOwnerAndSuspendedWorkout...
+102sor: a fixture ActiveWorkoutStore UI-projekcióját paused-ra írta, de a
+kanonikus SQLiteframe nem voltpaused; project helyesen a kanonikus frame-et olvassa.
+Root fixturefix valósPhoneWorkoutExecution.setWorkoutPause(+pauseRevision),
+majd durablepause/runningfalse assert; restResume elutasítása után10sfrozenclock+
+workoutPaused megmarad. Assertion nem gyengült, guard produktívkód nem változott.
+Új közösgate szükséges, még nincs runtimePASS a3phonefixre és aG04UIra.
+
 ## Rest-only pause bekötés és korutin JVM harness — 2026-10-27
 
 40456207747/790d7c93 megszakítva a JVMtesztlépésben; nem runtimeeredmény.
