@@ -665,4 +665,9 @@
     <string name="native_timer_defaults_save">Save</string>
     <string name="studio_progress_latest_1rm">Latest estimated 1RM</string>
     <string name="studio_progress_best_1rm">Best estimated 1RM</string>
+    <string name="studio_progress_period_title">Last 30 days</string>
+    <string name="studio_progress_period_workouts">Workouts</string>
+    <string name="studio_progress_period_volume">Total volume</string>
+    <string name="studio_progress_period_sets">Completed sets</string>
+    <string name="studio_progress_period_pr_workouts">Workouts with PR</string>
 </resources>
