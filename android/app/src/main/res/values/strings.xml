@@ -670,4 +670,13 @@
     <string name="studio_progress_period_volume">Összvolumen</string>
     <string name="studio_progress_period_sets">Teljesített sorozatok</string>
     <string name="studio_progress_period_pr_workouts">PR-t tartalmazó edzések</string>
+    <string name="studio_volume_total">Összes volumen</string>
+    <string name="studio_volume_one_day">1 nap</string>
+    <string name="studio_volume_week">7 nap</string>
+    <string name="studio_volume_month">30 nap</string>
+    <string name="studio_volume_three_months">3 hó</string>
+    <string name="studio_volume_empty">Ebben az időszakban még nincs rögzített edzés.</string>
+    <string name="studio_volume_loading">Volumengrafikon betöltése…</string>
+    <string name="studio_volume_retry">Grafikon újratöltése</string>
+    <string name="studio_volume_workouts">edzés</string>
 </resources>
