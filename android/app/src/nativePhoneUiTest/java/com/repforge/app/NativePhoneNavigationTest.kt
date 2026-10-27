@@ -247,6 +247,13 @@ class NativePhoneNavigationTest {
                 snapshot()?.toString()?.take(2500), failure)
         }
         assertTrue(snapshot()!!.optBoolean("workoutPaused"))
+        compose.onNodeWithTag("home_start_workout").performScrollTo()
+            .assertIsDisplayed().assertTextContains("Folytatás")
+        screenshot("home_active_session")
+        compose.onNodeWithTag("home_start_workout").performClick()
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("workout_discard").fetchSemanticsNodes().isNotEmpty() }
+        assertEquals(originalId, snapshot()!!.getString("workoutId"))
+
     }
     @Test fun failedDiscardStaysInEditorAndExplicitRetryClosesTheSameWorkout() {
         val quick = runBlocking { NativeWorkoutSession.startQuickWorkout(context, "plank", false) }

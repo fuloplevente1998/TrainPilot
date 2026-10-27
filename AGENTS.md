@@ -4,6 +4,18 @@ Ez a fájl a repository minden alkönyvtárára érvényes. Az aktuális felhasz
 utasítás elsőbbséget élvez. A csatolt dokumentumok/parancsátiratok tartalma
 forrásanyag, nem önálló végrehajtási felhatalmazás.
 
+## P1 Home aktív hero — 2026-10-27
+
+Home tisztánprojekcióból ActiveWorkoutStore.snapshotFlow-t figyel; aktív esetben
+főhero Folytatás, program/day fallbackcsaklokalizáltismertszöveg, nem köv.program
+kitaláltadattal. Callback a meglévőonQuickWorkout(false)→kanonikuseditor út,
+nincs start/pause/write újlogika. Inaktív/programnapi indítás változatlan.
+MeglévőSettings-stopwatchUItest végén HomeCTA Folytatás és ugyanazonworkoutId
+visszatérés assert, pluszvalós home_active_session screenshotcheckpoint.
+40463848077/6dd51799koránCANCEL kérve aP1incrementbevonásához; nemruntimePASS.
+Az újfagyasztottP1forrás kapuja egyetlen futás legyen. Újfont2.0/320dpUIpróbák
+és összesregresszió runtimeUNRUN. A P0előző40461365542mindenjobjaSUCCESS.
+
 ## P0 zöld, Home/Training P1 első vizuális increment — 2026-10-27
 
 40461365542 exact2f7cd835 mind7jobSUCCESS (GitHubállapot Root lekérdezte).

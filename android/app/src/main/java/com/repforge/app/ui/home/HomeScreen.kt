@@ -51,6 +51,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.repforge.app.R
+import com.repforge.app.ActiveWorkoutStore
 import com.repforge.app.ui.text.nativeResources
 import com.repforge.app.ui.text.nativeLocalizedName
 import androidx.compose.ui.platform.testTag
@@ -84,6 +85,8 @@ fun HomeScreen(
     onOnboarding: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val activeSession by ActiveWorkoutStore.snapshotFlow.collectAsStateWithLifecycle()
+    val hasActiveSession = activeSession?.optBoolean("active") == true
     val colors = LocalTrainPilotColors.current
     val context = LocalContext.current
     val strings = remember(context, language) { nativeResources(context, language) }
@@ -128,14 +131,14 @@ fun HomeScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = strings.getString(R.string.native_home_next_workout),
+                        text = strings.getString(if (hasActiveSession) R.string.native_workout_component_resume else R.string.native_home_next_workout),
                         color = colors.accentText,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
                     )
                     Text(
-                        text = state.recommendedProgram?.program?.let {
+                        text = if (hasActiveSession) activeSession?.optString("programName").orEmpty().ifBlank { strings.getString(R.string.native_home_quick_workout) } else state.recommendedProgram?.program?.let {
                             nativeLocalizedName(language, it.nameHu, it.nameEn, it.nameDe, it.nameRo)
                         } ?: strings.getString(R.string.home_state_no_program),
                         modifier = Modifier.testTag("home_program_name"),
@@ -145,7 +148,7 @@ fun HomeScreen(
                 }
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = state.recommendedProgram?.days?.firstOrNull { it.dayId == target?.dayId }?.let {
+                    text = if (hasActiveSession) activeSession?.optString("dayName").orEmpty().ifBlank { strings.getString(R.string.native_workout_component_resume) } else state.recommendedProgram?.days?.firstOrNull { it.dayId == target?.dayId }?.let {
                         nativeLocalizedName(language, it.nameHu, it.nameEn, it.nameDe, it.nameRo)
                     } ?: strings.getString(if (state.loading) R.string.home_state_loading else R.string.home_state_no_target),
                     modifier = Modifier.testTag("home_day_name"),
@@ -153,22 +156,22 @@ fun HomeScreen(
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold
                 )
-                if (target != null) Text(
+                if (!hasActiveSession && target != null) Text(
                     text = strings.getString(R.string.native_home_planned_exercises, state.nextDayExercisesCount),
                     color = colors.muted,
                     fontSize = 13.sp
                 )
                 Spacer(Modifier.height(16.dp))
                 Button(
-                    onClick = { target?.let { onStartWorkout(it.programId, it.dayId, it.scheduleId) } },
-                    enabled = !busy && !state.loading && target != null,
+                    onClick = { if (hasActiveSession) onQuickWorkout(false) else target?.let { onStartWorkout(it.programId, it.dayId, it.scheduleId) } },
+                    enabled = !busy && (hasActiveSession || (!state.loading && target != null)),
                     modifier = Modifier.fillMaxWidth().heightIn(min = TrainPilotDimensions.PrimaryAction).testTag("home_start_workout"),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = colors.accent)
                 ) {
                     Icon(Icons.Default.PlayArrow, contentDescription = null, tint = colors.onAccent)
                     Spacer(Modifier.width(8.dp))
-                    Text(strings.getString(R.string.native_home_start_workout), color = colors.onAccent, fontWeight = FontWeight.Bold)
+                    Text(strings.getString(if (hasActiveSession) R.string.native_workout_component_resume else R.string.native_home_start_workout), color = colors.onAccent, fontWeight = FontWeight.Bold)
                 }
             }
         }
