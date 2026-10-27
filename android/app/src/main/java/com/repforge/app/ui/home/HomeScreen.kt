@@ -96,7 +96,8 @@ fun HomeScreen(
     offerOnboarding: Boolean = false,
     onOnboarding: () -> Unit = {},
     onProfile: () -> Unit = {},
-    onHealth: () -> Unit = {}
+    onHealth: () -> Unit = {},
+    onPersonalPlan: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val activeSession by ActiveWorkoutStore.snapshotFlow.collectAsStateWithLifecycle()
@@ -140,8 +141,12 @@ fun HomeScreen(
             Text(strings.getString(R.string.studio_home_planner_title), style = MaterialTheme.typography.titleMedium)
             Text(strings.getString(R.string.studio_home_planner_info), style = MaterialTheme.typography.bodySmall,
                 color = colors.muted)
-            TrainPilotPrimaryButton(strings.getString(R.string.native_settings_profile_title), onProfile,
-                Modifier.fillMaxWidth().testTag("home_profile_open"), !busy)
+            TrainPilotPrimaryButton(strings.getString(R.string.studio_home_new_plan), onPersonalPlan,
+                Modifier.fillMaxWidth().testTag("home_personal_plan"), !busy)
+            androidx.compose.material3.TextButton(onClick = onProfile, enabled = !busy,
+                modifier = Modifier.fillMaxWidth().heightIn(min = TrainPilotDimensions.Control).testTag("home_profile_open")) {
+                Text(strings.getString(R.string.native_settings_profile_title))
+            }
         }
 
         // The three Studio hero states come from the real session/target, never a demo switch.

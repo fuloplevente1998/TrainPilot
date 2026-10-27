@@ -233,6 +233,7 @@ fun TrainPilotAppScaffold(
     val editorFinishing = finishingFlow?.collectAsStateWithLifecycle(initialValue = false)?.value == true
     val settingsOrigin = if (currentRoute == "settings")
         navController.previousBackStackEntry?.destination?.route ?: "home" else "home"
+    var personalPlannerRequested by remember { mutableStateOf(false) }
     var settingsSection by remember { mutableStateOf("general") }
     val navigationBlocked = starting || editorFinishing ||
         activeSnapshot?.optBoolean("finalizationPending") == true
@@ -356,6 +357,10 @@ fun TrainPilotAppScaffold(
                         onCalendar = { selectDestination("calendar") }, onCoach = { selectDestination("coach") },
                         onPrograms = { selectDestination("programs") }, language = settings.language, busy = navigationBlocked,
                         onProfile = { settingsSection = "profile"; selectDestination("settings") },
+                        onPersonalPlan = {
+                            selectDestination("programs")
+                            if (navController.currentDestination?.route == "programs") personalPlannerRequested = true
+                        },
                         onHealth = { selectDestination("health") },
                         offerOnboarding = settings.onboarding128 == NativeOnboardingPolicy.SKIPPED,
                         onOnboarding = { if (!navigationBlocked && !hasActiveWorkout) reopenedOnboarding = true },
@@ -390,6 +395,8 @@ fun TrainPilotAppScaffold(
                 }
                 composable("programs") {
                     TrainingProgramsScreen(navController = navController, language = settings.language,
+                        requestPersonalPlanner = personalPlannerRequested,
+                        onPersonalPlannerConsumed = { personalPlannerRequested = false },
                         onStartProgramDay = { programId, dayId -> startWorkout(programId, dayId) })
                 }
                 composable("coach") {

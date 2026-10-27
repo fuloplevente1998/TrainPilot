@@ -6,4 +6,5 @@
     <string name="studio_home_planner_title">Planificator personal</string>
     <string name="studio_home_planner_info">Configurează profilul de antrenament, apoi alege un program.</string>
     <string name="studio_header_theme">Aspect</string>
+    <string name="studio_home_new_plan">Previzualizează un plan nou</string>
 </resources>

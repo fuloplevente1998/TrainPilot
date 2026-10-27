@@ -6,4 +6,5 @@
     <string name="studio_home_planner_title">Személyes edzéstervező</string>
     <string name="studio_home_planner_info">Állítsd be az edzésprofilodat, majd válassz programot.</string>
     <string name="studio_header_theme">Megjelenés</string>
+    <string name="studio_home_new_plan">Új terv előnézete</string>
 </resources>

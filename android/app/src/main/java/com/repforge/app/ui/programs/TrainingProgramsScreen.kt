@@ -65,12 +65,22 @@ internal fun TrainingProgramsScreen(
     navController: NavController,
     language: String = "hu",
     viewModel: TrainingProgramsViewModel = viewModel(),
-    onStartProgramDay: (String, String) -> Unit
+    onStartProgramDay: (String, String) -> Unit,
+    requestPersonalPlanner: Boolean = false,
+    onPersonalPlannerConsumed: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val colors = LocalTrainPilotColors.current
     val context = LocalContext.current
     val strings = remember(context, language) { nativeResources(context, language) }
+    // A memory-only user navigation intent; wait for the canonical VM's first snapshot.
+    // The existing preview/cancel/explicit-accept path owns every read and write.
+    LaunchedEffect(requestPersonalPlanner, state.programs.isNotEmpty(), state.writeFailed) {
+        if (requestPersonalPlanner && (state.programs.isNotEmpty() || state.writeFailed)) {
+            viewModel.openPersonalPlanner()
+            onPersonalPlannerConsumed()
+        }
+    }
     var editorOpen by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<ProgramWithDays?>(null) }
     var editorToken by remember { mutableStateOf(java.util.UUID.randomUUID().toString()) }

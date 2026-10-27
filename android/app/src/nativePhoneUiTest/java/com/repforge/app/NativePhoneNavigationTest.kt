@@ -245,6 +245,28 @@ class NativePhoneNavigationTest {
         compose.onNodeWithTag("profile_field_minutes").assertTextContains("75")
         assertFalse(JSONObject(runBlocking(Dispatchers.IO) { settings.current().profileJson }).has("height"))
         screenshot("training_profile_edited")
+        val strings = com.repforge.app.ui.text.nativeResources(context, "hu")
+        compose.onNodeWithText(strings.getString(R.string.native_profile_18)).performClick()
+        compose.onNodeWithTag("navigation_back").performClick()
+        val profileBefore = runBlocking(Dispatchers.IO) { settings.current().profileJson }
+        val programsBefore = runBlocking(Dispatchers.IO) {
+            TrainPilotDatabase.getInstance(context).programDao().getProgramsWithDays()
+                .associate { it.program.id to it.program.rawJson }
+        }
+        compose.onNodeWithTag("home_personal_plan").performScrollTo().performClick()
+        compose.onNodeWithTag("personal_preview").assertExists()
+        compose.waitUntil(30_000) { compose.onAllNodesWithTag("personal_preview_loading").fetchSemanticsNodes().isEmpty() }
+        screenshot("home_personal_plan_preview")
+        compose.onNodeWithText(strings.getString(R.string.native_preview_10)).performClick()
+        compose.onNodeWithTag("personal_preview").assertDoesNotExist()
+        assertEquals(profileBefore, runBlocking(Dispatchers.IO) { settings.current().profileJson })
+        assertEquals(programsBefore, runBlocking(Dispatchers.IO) {
+            TrainPilotDatabase.getInstance(context).programDao().getProgramsWithDays()
+                .associate { it.program.id to it.program.rawJson }
+        })
+        assertTrue(snapshot()?.optBoolean("active") != true)
+        compose.onNodeWithTag("navigation_back").performClick()
+        compose.onNodeWithTag("home_studio_greeting").assertExists()
     }
 
     @Test fun invalidTrainingProfileDoesNotOverwriteStoredProfile() {

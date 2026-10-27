@@ -6,4 +6,5 @@
     <string name="studio_home_planner_title">Persönlicher Trainingsplaner</string>
     <string name="studio_home_planner_info">Richte dein Trainingsprofil ein und wähle dann ein Programm.</string>
     <string name="studio_header_theme">Darstellung</string>
+    <string name="studio_home_new_plan">Neuen Plan ansehen</string>
 </resources>
