@@ -663,4 +663,6 @@
     <string name="native_timer_defaults_invalid">Belastung: 1–3600 s; Pause: 0–3600 s; Runden: 1–100. Gesamtdauer höchstens 24 Stunden.</string>
     <string name="native_timer_defaults_failed">Speichern fehlgeschlagen oder Daten wurden inzwischen geändert. Editor schließen und erneut öffnen.</string>
     <string name="native_timer_defaults_save">Speichern</string>
+    <string name="studio_progress_latest_1rm">Letzte 1RM-Schätzung</string>
+    <string name="studio_progress_best_1rm">Beste 1RM-Schätzung</string>
 </resources>
