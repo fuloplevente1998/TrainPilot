@@ -2,6 +2,10 @@
 
 [Teljes ZIP letöltése](https://github.com/fuloplevente1998/TrainPilot/raw/refs/heads/feat/native-android-migration/docs/offline/TrainPilot-complete-handoff-2026-10-27.zip)
 
+**AI Studiohoz ne ezt a teljes ZIP-et töltsd fel.** Használd a
+[kis kezdőbemenetet](../ai-studio/01_START_HERE.md), és utána csak az aktuális
+lépéshez szükséges forrásokat.
+
 Kicsomagolás után a `START_HERE.md` fájllal kezdd.
 
 A csomag a `975dda9e430d10c88597bca3c3dd4ab809ed0605` migrációs pillanatképet,

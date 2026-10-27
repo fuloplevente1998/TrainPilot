@@ -6,6 +6,10 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
 ## Teljes áthelyezhető átadó — 2026-10-27
 
+AI Studiohoz külön kis bemenet: [01_START_HERE.md](ai-studio/01_START_HERE.md),
+35 KB; utána opcionális dizájn- és Home/Training forráscsomag.
+A teljes ZIP archívum, nem egyben feltöltendő modellkontextus.
+
 Letölthető offline ZIP: [docs/offline/README.md](offline/README.md).
 A korábbi belső `/workspace` link helyett valódi GitHub RAW letöltés;
 a csomag a 975dda9e pillanatkép, alkalmazáskód/verzió változatlan.
