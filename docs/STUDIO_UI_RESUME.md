@@ -19,7 +19,10 @@ meglévő callbackhez és adatforráshoz köss. A terv95%-ossága nem a natív k
 - A korábbi PR-head8c3336bb + friss migration történet integrálva, nincs forcepush.
 - Javítva a felső főfülek selected/Role.Tab és selectableGroup szemantikája.
   Az eredeti NativePhoneNavigationTest.tab() már kivárja a Selected=true állapotot;
-  tesztet nem gyengítettünk. A javítás runtime ellenőrzése még hátra.
+  tesztet nem gyengítettünk. Runtime kapu: Actions40535425696,
+  exact5bbc916227e1bac0d6e0368f95e269b399ded049, még folyamatban.
+  https://github.com/fuloplevente1998/TrainPilot/actions/runs/40535425696
+  Ne indíts mellette duplagate-et; a lefutott eredményt és nyers evidence-t olvasd.
 - A felső pill elrendezés és a main launcherikon megvan, ez NEM a teljes StudioUI.
 - Valódi kiindulási képek8nézetre: docs/design/previews/p1-f0c474f1/README.md;
   még a Studio ELŐTTI alsó navigációval, világosan szintetikus fixture-adatokkal.
