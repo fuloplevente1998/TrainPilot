@@ -91,6 +91,17 @@ Root hasonlítja össze az archívumokat és portolja a megfelelő UI-deltát.
   A többi6jobSUCCESS. Új közös gate kell az egész incrementre, ne régiPASS-t állíts.
 Részletes acceptance/provenance: docs/reviews/NATIVE_STUDIO_INCREMENT_01.md.
 
+## Újabb Home-bekötés – c167d92f (még UNRUN)
+
+ad10ff9d: Home újterv gomb → kanonikus Programs VM personalpreview, hidratálás
+után egy memóriás intenttel. Profil külön natív szerkesztő; cancel/program/profile/
+session megőrzés bővített eredetiUItesztben. c167d92f: márkafelirat → Home valódi
+navguarddal, eredeti5fülesUIteszt ezt is ellenőrzi. Új8locale-kulcs nincs, csak
+1newplan kulcs4nyelven. Várhatóképszám66,tesztszám118 változatlan.
+A futó40544853264 exact1aacc644 MÉG NEM tartalmazza ezt a2újcodecommitot;
+csak a 457dc1e6+b80ebc62 javításokat teszteli. Ne nevezz újHeadet elfogadottnak.
+24képernyő valós forrás-/adattérképe: docs/ai-studio/STUDIO_NATIVE_BINDING_MATRIX.md.
+
 ## Következő csomagok
 
 1. Zárd le a topnav javítás canonical GitHub Android/UI ellenőrzését;

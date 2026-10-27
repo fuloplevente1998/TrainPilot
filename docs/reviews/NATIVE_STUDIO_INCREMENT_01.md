@@ -62,4 +62,3 @@ systembarstyle és valódiUIassert (feketefelületen fehérikonok). Új runtime 
 AIStudio prompt APP BUILDERRE javítva6c9bdfa3: sajátprojektben módosít,
 TELJES újZIP letöltve, nempatch/részarchívum; Rootdiffeli. Felső5fül/demokontrollmarad.
 P1teljesUI/paritás továbbra nincs kész; részletek STUDIO_UI_RESUME-ben.
-
