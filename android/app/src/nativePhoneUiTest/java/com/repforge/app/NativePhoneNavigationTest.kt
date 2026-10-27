@@ -162,11 +162,11 @@ class NativePhoneNavigationTest {
         compose.waitUntil(30_000) { compose.onAllNodesWithTag("journal_workout_p1-visual-1").fetchSemanticsNodes().isNotEmpty() }
         capture("p1_journal")
         tab("progress")
-        compose.waitUntil(30_000) { compose.onAllNodesWithTag("progress_anatomy_loaded").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(30_000) { compose.onAllNodesWithTag("progress_anatomy_loaded", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
         capture("p1_progress")
         compose.onNodeWithTag("progress_anatomy").performScrollTo().performClick()
         compose.onNodeWithTag("progress_anatomy_dialog").assertExists()
-        compose.waitUntil(30_000) { compose.onAllNodesWithTag("progress_anatomy_loaded").fetchSemanticsNodes().size == 2 }
+        compose.waitUntil(30_000) { compose.onAllNodesWithTag("progress_anatomy_loaded", useUnmergedTree = true).fetchSemanticsNodes().size == 2 }
         capture("p1_anatomy_zoom")
         compose.onNodeWithTag("progress_anatomy_close").performClick()
         compose.onNodeWithTag("progress_anatomy_dialog").assertDoesNotExist()

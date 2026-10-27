@@ -70,3 +70,13 @@ Forrás: www/app.js:14226–14244 és www/progress-177.css:173–185.
 - `progress_muscle_core_main.png` SHA-256 `04f8963280c9b8d9afa76fe60b499349ab191b810b67d299124b28a5125b5d81`
 - `progress_muscle_legs_main.png` SHA-256 `8d7968655c1a950f3ed667bcf46c0fac3c0483d22d41c2bb798fe94b8698fb19`
 - `progress_muscle_shoulders_main.png` SHA-256 `b4c7a2ea435aeca139938194bf35028951e7338ab5d299b9115690be2220b19f`
+
+## Screenshot-próba szemantikai pontosítása
+
+40496633981/d075c17b fordítás és JVM lépése sikeres volt; release közben Root
+megszakítást kért, mielőtt a drága emulátorkapu futott. A kattintható anatómiai
+konténer összevonja a gyerekek szemantikáját, ezért a belső bitmap-ready Image
+testTag a `useUnmergedTree=true` fában keresendő. A betöltési várakozás és a két
+kirajzolt kép/nagyítás/assertion megmarad. Ez teszt-selector pontosítás; az app
+forrása változatlan. A megszakított futás nem telefonos runtime-eredmény.
+Új egyszeri közös kapu szükséges a javított tesztforrásra.
