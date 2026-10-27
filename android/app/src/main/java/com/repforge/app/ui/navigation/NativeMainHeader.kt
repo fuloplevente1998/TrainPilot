@@ -1,6 +1,13 @@
 package com.repforge.app.ui.navigation
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -40,28 +47,58 @@ internal fun NativeMainHeader(route: String, language: String, enabled: Boolean,
     }
 }
 
+/** Studio-inspired five-pill navigation, intentionally fixed below the header.
+ * Keep the canonical navigation_* test tags and native navigation guards.
+ * No demo state or action is added here.
+ */
 @Composable
-internal fun NativeBottomNavigation(route: String, settingsOrigin: String, language: String,
+internal fun NativeTopNavigation(route: String, settingsOrigin: String, language: String,
     enabled: Boolean, onSelect: (String) -> Unit) {
     val colors = LocalTrainPilotColors.current
     val selected = NativeMainMenu.selected(route, settingsOrigin)
     val labels = NativeMainMenu.labels(language)
-    NavigationBar(containerColor = colors.card, tonalElevation = 0.dp) {
-        NativeMainMenu.routes.forEachIndexed { index, destination ->
-            val icon = when (destination) {
-                "home" -> Icons.Default.Home
-                "training" -> Icons.Default.FitnessCenter
-                "journal" -> Icons.Default.MenuBook
-                "progress" -> Icons.Default.ShowChart
-                else -> Icons.Default.FavoriteBorder
+    val destinations = NativeMainMenu.routes
+    Surface(color = colors.bg, tonalElevation = 0.dp) {
+        Row(
+            modifier = Modifier.fillMaxWidth()
+                .padding(start = 8.dp, end = 8.dp, top = 2.dp, bottom = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            destinations.forEachIndexed { index, destination ->
+                val active = selected == destination
+                val icon = when (destination) {
+                    "home" -> Icons.Default.Home
+                    "training" -> Icons.Default.FitnessCenter
+                    "journal" -> Icons.Default.MenuBook
+                    "progress" -> Icons.Default.ShowChart
+                    else -> Icons.Default.FavoriteBorder
+                }
+                val shape = RoundedCornerShape(12.dp)
+                Column(
+                    modifier = Modifier.weight(1f).heightIn(min = 56.dp)
+                        .clip(shape)
+                        .background(if (active) colors.selectedSurface else colors.card)
+                        .border(if (active) 1.5.dp else 1.dp,
+                            if (active) colors.accentText else colors.line, shape)
+                        .clickable(enabled = enabled) { onSelect(destination) }
+                        .testTag("navigation_$destination")
+                        .padding(horizontal = 1.dp, vertical = 6.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(icon, contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = if (active) colors.accentText else colors.muted)
+                    Spacer(Modifier.height(3.dp))
+                    Text(
+                        labels[index],
+                        color = if (active) colors.accentText else colors.text,
+                        fontSize = 10.sp,
+                        fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
-            NavigationBarItem(selected = selected == destination, enabled = enabled,
-                onClick = { onSelect(destination) }, modifier = Modifier.testTag("navigation_$destination"),
-                icon = { Icon(icon, contentDescription = null) },
-                label = { Text(labels[index], maxLines = 2, overflow = TextOverflow.Ellipsis) },
-                colors = NavigationBarItemDefaults.colors(selectedIconColor = colors.accentText,
-                    selectedTextColor = colors.accentText, indicatorColor = colors.selectedSurface,
-                    unselectedIconColor = colors.muted, unselectedTextColor = colors.muted))
         }
     }
 }
