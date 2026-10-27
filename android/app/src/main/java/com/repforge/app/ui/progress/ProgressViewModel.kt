@@ -41,6 +41,10 @@ data class Exercise1RmPointUiModel(
 data class ProgressUiState(
     val muscleLoads: List<MuscleLoadUiModel> = emptyList(),
     val periodTotals: ProgressPeriodTotals? = null,
+    val selectedVolumeRange: NativeVolumeRange = NativeVolumeRange.MONTH,
+    val volumeSnapshot: NativeVolumeSnapshot? = null,
+    val volumeLoading: Boolean = true,
+    val volumeError: Boolean = false,
     val exercises: List<ExerciseLibraryEntity> = emptyList(),
     val selectedExerciseId: String = "goblet-squat",
     val exercise1RmTrend: List<Exercise1RmPointUiModel> = emptyList(),
@@ -70,6 +74,9 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
     val uiState: StateFlow<ProgressUiState> = _uiState.asStateFlow()
     private var summaryJob: Job? = null
     private var summaryRequestedStamp: Pair<LocalDate, ZoneId>? = null
+    private var volumeJob: Job? = null
+    private var volumeRevision = 0L
+    private var volumeRequestedStamp: Pair<LocalDate, ZoneId>? = null
     private var trendJob: Job? = null
     private var trendRevision = 0L
     private var strengthRequestedStamp: Pair<LocalDate, ZoneId>? = null
@@ -104,6 +111,7 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
         val zone = ZoneId.systemDefault()
         val stamp = LocalDate.now(zone) to zone
         if (!_uiState.value.loading && stamp != summaryRequestedStamp) loadProgressData()
+        else if (stamp != volumeRequestedStamp && !_uiState.value.volumeLoading) reloadVolume()
     }
 
     private fun refreshStrengthForClock() {
@@ -137,6 +145,7 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun loadProgressData() {
+        reloadVolume()
         summaryJob?.cancel()
         trendJob?.cancel() // Same-ID strength reads from the previous dataset are stale too.
         trendRevision++
@@ -182,6 +191,56 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Exception) { _uiState.update { it.copy(loading = false, loadError = true,
                 periodTotals = null, photosLoading = false, photosError = true) } }
+        }
+    }
+
+    fun selectVolumeRange(range: NativeVolumeRange) {
+        if (_uiState.value.selectedVolumeRange == range) return
+        _uiState.update { it.copy(selectedVolumeRange = range) }
+        reloadVolume()
+    }
+
+    fun retryVolume() = reloadVolume()
+
+    /** Independent from strength/cardio filters and from the canonical 30-day overview.
+     * Revision checks avoid publishing a stale period after rapid user switching.
+     */
+    private fun reloadVolume() {
+        volumeJob?.cancel()
+        val revision = ++volumeRevision
+        val range = _uiState.value.selectedVolumeRange
+        volumeJob = viewModelScope.launch {
+            _uiState.update {
+                it.copy(volumeLoading = true, volumeError = false, volumeSnapshot = null)
+            }
+            try {
+                val now = System.currentTimeMillis()
+                val zone = ZoneId.systemDefault()
+                val (snapshot, admission) = withContext(Dispatchers.IO) {
+                    NativeDataReplacement.mutate(context) {
+                        val (from, until) = NativeVolumeProjection.queryBounds(range, now, zone)
+                        val rows = db.workoutHistoryDao().getProgressVolumeRows(from, until)
+                        NativeVolumeProjection.summarize(range, now, zone, rows) to
+                            NativeDataReplacement.continuationForCurrentData(context)
+                    }
+                }
+                admission.requireCurrent(context)
+                if (revision != volumeRevision || range != _uiState.value.selectedVolumeRange) return@launch
+                val currentZone = ZoneId.systemDefault()
+                val currentDate = LocalDate.now(currentZone)
+                if (currentZone != zone || currentDate != snapshot.endDate) {
+                    reloadVolume()
+                    return@launch
+                }
+                volumeRequestedStamp = snapshot.endDate to zone
+                _uiState.update { it.copy(volumeLoading = false, volumeError = false,
+                    volumeSnapshot = snapshot) }
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) {
+                if (revision == volumeRevision) _uiState.update {
+                    it.copy(volumeLoading = false, volumeError = true, volumeSnapshot = null)
+                }
+            }
         }
     }
 
