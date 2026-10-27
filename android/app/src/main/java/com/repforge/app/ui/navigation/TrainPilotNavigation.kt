@@ -313,23 +313,24 @@ fun TrainPilotAppScaffold(
         containerColor = colors.bg,
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
-            NativeMainHeader(currentRoute, settings.language, enabled = !navigationBlocked,
-                onBack = if (currentRoute in NativeMainMenu.secondaryRoutes) ({ goBack() }) else null,
-                onSettings = { selectDestination("settings") },
-                backEnabled = !starting && !editorFinishing &&
-                    (activeSnapshot?.optBoolean("finalizationPending") != true || settingsOrigin == "active_workout"))
-        },
-        bottomBar = {
             Column {
-                // Part of measured scaffold chrome, so the banner cannot cover list actions.
-                if (hasActiveWorkout && currentRoute != "active_workout") FloatingActiveWorkoutBanner(
-                    title = activeSnapshot?.optString("dayName", "Folyamatban lévő edzés") ?: "Edzés",
-                    isPaused = isWorkoutPaused, timerOwner = timerOwner, language = settings.language,
-                    enabled = !starting && !editorFinishing,
-                    onClick = { selectDestination("training") })
-                NativeBottomNavigation(currentRoute, settingsOrigin, settings.language,
+                NativeMainHeader(currentRoute, settings.language, enabled = !navigationBlocked,
+                    onBack = if (currentRoute in NativeMainMenu.secondaryRoutes) ({ goBack() }) else null,
+                    onSettings = { selectDestination("settings") },
+                    backEnabled = !starting && !editorFinishing &&
+                        (activeSnapshot?.optBoolean("finalizationPending") != true || settingsOrigin == "active_workout"))
+                // Intentional Studio design: primary tabs are placed ABOVE all pages.
+                NativeTopNavigation(currentRoute, settingsOrigin, settings.language,
                     enabled = !navigationBlocked, onSelect = destinationSelector)
             }
+        },
+        bottomBar = {
+            // The active workout remains reachable without blocking content.
+            if (hasActiveWorkout && currentRoute != "active_workout") FloatingActiveWorkoutBanner(
+                title = activeSnapshot?.optString("dayName", "Folyamatban lévő edzés") ?: "Edzés",
+                isPaused = isWorkoutPaused, timerOwner = timerOwner, language = settings.language,
+                enabled = !starting && !editorFinishing,
+                onClick = { selectDestination("training") })
         }
 
     ) { innerPadding ->
