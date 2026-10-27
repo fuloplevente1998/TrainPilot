@@ -11,7 +11,7 @@ import org.junit.Test
 class NativeThemeTokensTest {
     @Test fun everyPaletteHasReadableButtonAndSmallTextContrast() {
         for (theme in TrainPilotSettingsStore.AVAILABLE_THEMES) {
-            val colors = NativeThemeTokens.resolve(TrainPilotUserSettings(themeAccent = theme.accent,
+            val colors = NativeThemeTokens.resolve(TrainPilotUserSettings(themeKey = theme.key, themeAccent = theme.accent,
                 themeAccent2 = theme.accent2, themeFamily = theme.family))
             assertTrue(theme.key, NativeThemeTokens.contrast(colors.onAccent, colors.accent) >= 4.5f)
             assertTrue(theme.key, NativeThemeTokens.contrast(colors.onAccent2, colors.accent2) >= 4.5f)
@@ -21,8 +21,8 @@ class NativeThemeTokensTest {
         }
     }
     @Test fun basicIsMatteAndVividHasAnAccentSelectionWithoutChangingSemanticDanger() {
-        val basic = NativeThemeTokens.resolve(TrainPilotUserSettings(themeFamily = "basic"))
-        val vivid = NativeThemeTokens.resolve(TrainPilotUserSettings(themeFamily = "vivid"))
+        val basic = NativeThemeTokens.resolve(TrainPilotUserSettings(themeKey = "classicBlue", themeFamily = "basic"))
+        val vivid = NativeThemeTokens.resolve(TrainPilotUserSettings(themeKey = "blue", themeFamily = "vivid"))
         assertEquals(Card2Color, basic.selectedSurface)
         assertEquals(LineColor, basic.emphasisBorder)
         assertNotEquals(basic.selectedSurface, vivid.selectedSurface)
@@ -39,7 +39,7 @@ class NativeThemeTokensTest {
     }
     @Test fun materialInputsAndErrorsHaveReadableSemanticColorsAcrossEveryPalette() {
         for (theme in TrainPilotSettingsStore.AVAILABLE_THEMES) {
-            val colors = NativeThemeTokens.resolve(TrainPilotUserSettings(themeAccent = theme.accent,
+            val colors = NativeThemeTokens.resolve(TrainPilotUserSettings(themeKey = theme.key, themeAccent = theme.accent,
                 themeAccent2 = theme.accent2, themeFamily = theme.family))
             val material = nativeMaterialColorScheme(colors)
             assertEquals(theme.key, colors.accent, material.primary)
