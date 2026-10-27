@@ -1,5 +1,17 @@
 # Natív folytatási pont – rövid kontextus
 
+## PR270 Studio-beépítés Rootnál – 2026-10-27
+
+User kifejezetten Rootnak átadta a teljesdizájn beépítést, GitHub checkpointokkal.
+A PR270 meglévő feat/studio-ui-topnav-trial-20261027 ágán folytasd;
+migrationf0c474f1 közös7/7gate zöld:1333JVM+117phone+183Wear,2upgradePASS.
+A Studio-topnav candidate9c9ccdee selected/Role.Tab/selectableGroup javítva,
+eredeti UI-assertionök megtartva, új felsőUI runtime mégUNRUN.
+Önálló folytatási pont és pinnedrawforrások: docs/STUDIO_UI_RESUME.md.
+Teljes friss StudioZIP URL/path még szükséges, felhasználótól bekérve;
+csak a topnav/iconpróba elérhető, új komplettUI-t ne találj ki a hiányzóexport helyett.
+
+
 ## Ellenőrzött zöld alap és Studio-átvétel – 2026-10-27
 
 Actions40529220611 exactf0c474f17072aaf6f5c23506e0ad5b1c0092e2ae mind7jobSUCCESS.
