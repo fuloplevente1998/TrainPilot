@@ -4,6 +4,21 @@ Frissítve: **2026-10-26**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## P0 zöld, Home/Training P1 első vizuális increment — 2026-10-27
+
+40461365542 exact2f7cd835 mind7jobSUCCESS (GitHubállapot Root lekérdezte).
+P0komponens API használható, újrawartifactXMLdarabszámot e körben nem validáltunk;
+CIgreen nem a most írt P1forrásruntimeeredménye. P1elsőkód: Homehero52dpCTA,
+gyorsindítás→óra→6metrika→planning sorrend; 2oszlopos nagyobbméretű/részletes
+metricSurfaceCard, fontScale>1.3/keskeny eset1oszlop, nincs levágott source/notice.
+Quickactionteljesszéles48dp, közösCard és title/body szerepek. Training Quick első,
+programkártyák közösCard/PrimaryButton, footer96dp vaküreshely helyett16dp.
+Minden6mérés, callback/localization/source/testTag megmaradt; VM/motor/DB nemváltozott.
+Új2NativeHomeMetricLayoutUiTest:320dp2col és DEfont2.0stack/6metricelérhető.
+TisztaUIteszt szintetikus sizingértékekkel, nem újprovider vagy utánzottHostActivity.
+P1teljesoldalkidolgozás MÉG NEM kész (pl. aktívHero végsőkiemelés, többi3főoldal).
+Új közösgate kell a mostani P1forrásra; eredmény MÉG UNRUN. Main/version változatlan.
+
 ## P0 vizuális alap első implementáció — 2026-10-27
 
 User a vizuális rendszer megkezdését kérte, megkérdezte a szétosztás lehetőségét.

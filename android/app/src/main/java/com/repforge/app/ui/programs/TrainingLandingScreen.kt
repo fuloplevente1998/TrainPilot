@@ -13,6 +13,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.repforge.app.ui.navigation.NativePlanningShortcuts
 import com.repforge.app.ui.theme.LocalTrainPilotColors
+import com.repforge.app.ui.theme.TrainPilotDimensions
+import com.repforge.app.ui.components.TrainPilotSurfaceCard
+import com.repforge.app.ui.components.TrainPilotSectionHeader
+import com.repforge.app.ui.components.TrainPilotPrimaryButton
 import org.json.JSONArray
 import com.repforge.app.R
 import com.repforge.app.ui.text.nativeResources
@@ -45,31 +49,31 @@ internal fun TrainingLandingScreen(language: String, activeProgramId: String, bu
     }.ifBlank { hu }
     val program = state.programs.firstOrNull { it.program.id == activeProgramId }
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item { NativePlanningShortcuts(language, !busy, onPrograms, onCalendar, onCoach) }
         item {
-            Card(colors = CardDefaults.cardColors(containerColor = colors.card)) {
-                Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(labels[1], color = colors.text)
-                    Button(onClick = { onQuick(false) }, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(labels[2]) }
-                    OutlinedButton(onClick = { onQuick(true) }, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(labels[3]) }
-                    OutlinedButton(onClick = onLibrary, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(labels[9]) }
-                }
+            TrainPilotSurfaceCard(Modifier.fillMaxWidth()) {
+                TrainPilotSectionHeader(labels[1])
+                TrainPilotPrimaryButton(labels[2], { onQuick(false) }, Modifier.fillMaxWidth(), !busy)
+                OutlinedButton(onClick = onLibrary, enabled = !busy,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = TrainPilotDimensions.Control)) { Text(labels[9]) }
+                OutlinedButton(onClick = { onQuick(true) }, enabled = !busy,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = TrainPilotDimensions.Control)) { Text(labels[3]) }
             }
         }
+        item { NativePlanningShortcuts(language, !busy, onPrograms, onCalendar, onCoach) }
         item {
-            Text(labels[4], color = colors.muted)
+            TrainPilotSectionHeader(labels[4])
             Text(program?.program?.let { name(it.nameHu, it.nameEn, it.nameDe, it.nameRo) } ?: labels[7], color = colors.text)
             TextButton(onClick = onPrograms, enabled = !busy) { Text(labels[5]) }
         }
         items(program?.days.orEmpty().sortedBy { it.sortOrder }, key = { it.compositeId }) { day ->
-            Card(colors = CardDefaults.cardColors(containerColor = colors.card)) {
-                Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(name(day.nameHu, day.nameEn, day.nameDe, day.nameRo), color = colors.text)
-                    Text("${runCatching { JSONArray(day.exercisesJson).length() }.getOrDefault(0)} ${labels[8]}", color = colors.muted)
-                    Button(onClick = { onStart(day.programId, day.dayId) }, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(labels[6]) }
-                }
+            TrainPilotSurfaceCard(Modifier.fillMaxWidth()) {
+                Text(name(day.nameHu, day.nameEn, day.nameDe, day.nameRo), color = colors.text,
+                    style = MaterialTheme.typography.titleMedium)
+                Text("${runCatching { JSONArray(day.exercisesJson).length() }.getOrDefault(0)} ${labels[8]}",
+                    color = colors.muted, style = MaterialTheme.typography.bodySmall)
+                TrainPilotPrimaryButton(labels[6], { onStart(day.programId, day.dayId) }, Modifier.fillMaxWidth(), !busy)
             }
         }
-        item { Spacer(Modifier.height(96.dp)) }
+        item { Spacer(Modifier.height(TrainPilotDimensions.Page)) }
     }
 }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -54,6 +55,11 @@ import com.repforge.app.ui.text.nativeResources
 import com.repforge.app.ui.text.nativeLocalizedName
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.material3.MaterialTheme
+import com.repforge.app.ui.components.TrainPilotSurfaceCard
+import com.repforge.app.ui.components.TrainPilotSectionHeader
+import com.repforge.app.ui.theme.TrainPilotDimensions
 import androidx.compose.runtime.remember
 import java.time.Instant
 import java.time.LocalDateTime
@@ -101,7 +107,6 @@ fun HomeScreen(
         ) {
             Text(strings.getString(R.string.native_onboarding_resume), color = colors.text)
         }
-        NativePlanningShortcuts(language, !busy, onPrograms, onCalendar, onCoach)
         if (state.loading) LinearProgressIndicator(Modifier.fillMaxWidth().testTag("home_loading"))
         if (state.loadFailed) {
             Text(strings.getString(R.string.home_state_error), color = colors.dangerText)
@@ -125,7 +130,7 @@ fun HomeScreen(
                     Text(
                         text = strings.getString(R.string.native_home_next_workout),
                         color = colors.accentText,
-                        fontSize = 11.sp,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
                     )
@@ -135,7 +140,7 @@ fun HomeScreen(
                         } ?: strings.getString(R.string.home_state_no_program),
                         modifier = Modifier.testTag("home_program_name"),
                         color = colors.muted,
-                        fontSize = 11.sp
+                        fontSize = 13.sp
                     )
                 }
                 Spacer(Modifier.height(8.dp))
@@ -157,7 +162,7 @@ fun HomeScreen(
                 Button(
                     onClick = { target?.let { onStartWorkout(it.programId, it.dayId, it.scheduleId) } },
                     enabled = !busy && !state.loading && target != null,
-                    modifier = Modifier.fillMaxWidth().testTag("home_start_workout"),
+                    modifier = Modifier.fillMaxWidth().heightIn(min = TrainPilotDimensions.PrimaryAction).testTag("home_start_workout"),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = colors.accent)
                 ) {
@@ -168,15 +173,6 @@ fun HomeScreen(
             }
         }
 
-        // 2. Phase 5 #44: Mai állapot rács (Today Status 6-Metric Grid)
-        Text(
-            text = strings.getString(R.string.native_home_today_status),
-            color = colors.text,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.SemiBold
-        )
-        TodayMetricsGrid(metrics = state.todayMetrics, language = language)
-
         // 3. Gyorsindítás szekció (Quick Workout Buttons)
         Text(
             text = strings.getString(R.string.native_home_quick_workout),
@@ -184,22 +180,12 @@ fun HomeScreen(
             fontSize = 16.sp,
             fontWeight = FontWeight.SemiBold
         )
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            QuickActionButton(
-                title = strings.getString(R.string.native_home_gym),
-                subtitle = strings.getString(R.string.native_home_select_exercise),
-                icon = Icons.Default.FitnessCenter,
-                modifier = Modifier.weight(1f),
-                onClick = { onQuickWorkout(false) }
-            )
-            QuickActionButton(
-                title = strings.getString(R.string.native_home_outdoor_gps),
-                subtitle = strings.getString(R.string.native_home_run_walk),
-                icon = Icons.Default.DirectionsRun,
-                modifier = Modifier.weight(1f),
-                onClick = { onQuickWorkout(true) }
-            )
-        }
+        QuickActionButton(strings.getString(R.string.native_home_gym),
+            strings.getString(R.string.native_home_select_exercise), Icons.Default.FitnessCenter,
+            Modifier.fillMaxWidth(), onClick = { onQuickWorkout(false) })
+        QuickActionButton(strings.getString(R.string.native_home_outdoor_gps),
+            strings.getString(R.string.native_home_run_walk), Icons.Default.DirectionsRun,
+            Modifier.fillMaxWidth(), onClick = { onQuickWorkout(true) })
 
         // 4. Wear OS kapcsolat és diagnosztika státusz sáv
         Card(
@@ -219,7 +205,7 @@ fun HomeScreen(
                     Spacer(Modifier.width(10.dp))
                     Column {
                         Text(strings.getString(R.string.native_home_wear_watch), color = colors.text, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                        Text(state.watchState.ifBlank { strings.getString(R.string.home_state_watch_unknown) }, color = colors.muted, fontSize = 11.sp)
+                        Text(state.watchState.ifBlank { strings.getString(R.string.home_state_watch_unknown) }, color = colors.muted, fontSize = 13.sp)
                     }
                 }
                 Box(
@@ -230,6 +216,18 @@ fun HomeScreen(
                 )
             }
         }
+        // 2. Phase 5 #44: Mai állapot rács (Today Status 6-Metric Grid)
+        Text(
+            text = strings.getString(R.string.native_home_today_status),
+            color = colors.text,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+        TodayMetricsGrid(metrics = state.todayMetrics, language = language)
+
+
+        NativePlanningShortcuts(language, !busy, onPrograms, onCalendar, onCoach)
+
     }
 }
 
@@ -295,36 +293,23 @@ fun TodayMetricsGrid(metrics: TodayMetricsUiModel, language: String = "hu") {
             detail = recoveryDetail, notice = recoveryNotices)
     )
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        for (row in items.chunked(3)) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                for ((key, label, value, unit, detail, notice) in row) {
-                    Card(
-                        modifier = Modifier.weight(1f).testTag("home_metric_$key"),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = colors.card),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(10.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(text = label, color = colors.muted, fontSize = 10.sp, maxLines = 2)
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                text = value,
-                                modifier = Modifier.testTag("home_metric_${key}_value"),
-                                color = colors.text,
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1
-                            )
-                            if (unit != null) Text(unit, color = colors.muted, fontSize = 10.sp,
+    val fontScale = LocalDensity.current.fontScale
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val columns = if (maxWidth < 280.dp || fontScale > 1.3f) 1 else 2
+        Column(verticalArrangement = Arrangement.spacedBy(TrainPilotDimensions.Gap)) {
+            for (row in items.chunked(columns)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(TrainPilotDimensions.Gap)) {
+                    for ((key, label, value, unit, detail, notice) in row) {
+                        TrainPilotSurfaceCard(Modifier.weight(1f).testTag("home_metric_$key")) {
+                            Text(label, color = colors.muted, style = MaterialTheme.typography.bodySmall)
+                            Text(value, color = colors.text, style = MaterialTheme.typography.headlineMedium,
+                                modifier = Modifier.testTag("home_metric_${key}_value"))
+                            if (unit != null) Text(unit, color = colors.muted, style = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier.testTag("home_metric_${key}_unit"))
-                            if (detail != null) Text(detail, color = colors.muted, fontSize = 10.sp,
-                                maxLines = 3, modifier = Modifier.testTag("home_metric_${key}_source"))
-                            if (!notice.isNullOrEmpty()) Text(notice, color = colors.muted, fontSize = 10.sp,
-                                maxLines = 3, modifier = Modifier.testTag("home_metric_${key}_status"))
+                            if (detail != null) Text(detail, color = colors.muted, style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.testTag("home_metric_${key}_source"))
+                            if (!notice.isNullOrEmpty()) Text(notice, color = colors.muted, style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.testTag("home_metric_${key}_status"))
                         }
                     }
                 }
@@ -345,18 +330,13 @@ fun QuickActionButton(
     onClick: () -> Unit
 ) {
     val colors = LocalTrainPilotColors.current
-    Card(
-        modifier = modifier.clickable(onClick = onClick),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = colors.card),
-        border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
-    ) {
-        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, tint = colors.accentText, modifier = Modifier.size(24.dp))
-            Spacer(Modifier.width(10.dp))
-            Column {
-                Text(title, color = colors.text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                Text(subtitle, color = colors.muted, fontSize = 11.sp)
+    TrainPilotSurfaceCard(modifier.heightIn(min = TrainPilotDimensions.Control), onClick = onClick) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, contentDescription = null, tint = colors.accentText, modifier = Modifier.size(TrainPilotDimensions.Icon))
+            Spacer(Modifier.width(TrainPilotDimensions.Gap))
+            Column(Modifier.weight(1f)) {
+                Text(title, color = colors.text, style = MaterialTheme.typography.titleMedium)
+                Text(subtitle, color = colors.muted, style = MaterialTheme.typography.bodySmall)
             }
         }
     }
