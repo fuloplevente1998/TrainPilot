@@ -1,5 +1,14 @@
 # TrainPilot – Studio UI folytatási pont
 
+## PINNED DESIGN SOURCE — user correction (2026-10-27)
+
+**Visual reference = the approved original 18:49 Studio export ONLY.**
+`docs/ai-studio/trainpilot-oct-27-2026-6-49-09-pm.zip`
+(SHA-256 `b699d72bc2b673cefbd3dabbdb8164f681c35762e47d19adf42c12e6b22eabf1`).
+**DO NOT use the newer 20:14 AI Studio/native hybrid ZIP or its compiled appearance as a design template.**
+Audit **ALL** existing PR #270 UI changes against the 18:49 source, including previously styled screens. The partial native restyling is not approved Studio visual parity. See `docs/ai-studio/PR270_1849_VISUAL_PARITY_AUDIT.md` and `docs/ai-studio/PR270_VISUAL_FIRST_INTEGRATION.md`. Preserve top tabs, original main detailed muscle anatomy, real native functions, package/signing, and saved user themes; only remove DEMO controls and fixed data, not their real-condition layouts.
+
+
 ## 2026-10-27: valódi, választható időszakos volumen-oszlopdiagram
 
 - A 18:49-es Studio ZIP `LogAndProgressScreens.kt` volume mockupjának **Összes volumen** 2×2 időszakválasztója (1 nap / 7 nap / 30 nap / 3 hó) és kiválasztható oszlopai natív Compose UI-ban is működnek: `ProgressVolumeChart` (`ProgressScreen.kt`) testTag: `progress_total_volume_card`, `progress_volume_range_*`, `progress_volume_bars`, `progress_volume_bar_*`, `progress_volume_selected_detail`. NINCS rögzített Studio kg és 2026-os DEMO-idősor.
