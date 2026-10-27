@@ -4,6 +4,17 @@ Frissítve: 2026-10-26. AGENTS.md + ez + WORK_HANDOFF.md teteje elég indulásko
 Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/exportot.
 
 
+## Vizuális minőség pontosítva — 2026-10-27
+
+User: tervezzünk tovább a már rögzítettek szerint; main funkció/használhatóság minimum,
+mockupok kidolgozottságát legalább érje el a végleges UI. A mutatott köztes kép messze
+van ettől, NEM vizuálisan elfogadott. Most tervezési pontosítás, új UI-kód nem készült.
+Részletes mérce és Home/Training hiánylista: docs/design/NATIVE_DESIGN_HANDOFF.md teteje.
+P0 CI-green nem vizuális elfogadás; P1 jelenlegi kód csak kísérleti jelölt.
+Külső2chat átadói még tervezetek/nemkiosztottak, a minőségi mércét át kell venniük.
+Main/version nincs módosítva. CLIgh 401-et adott; nem próbálunk újlogin/credentialcserét,
+szükség esetén a meglévő GitHub connectorral rögzítjük a docs módosítást.
+
 ## P1 Home aktív hero — 2026-10-27
 
 Home tisztánprojekcióból ActiveWorkoutStore.snapshotFlow-t figyel; aktív esetben

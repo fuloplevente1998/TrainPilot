@@ -6,6 +6,49 @@ a vizuális irány elfogadott, az új képek külön felhasználói áttekintés
 A képek generált látványtervek, a végső átadás futó emulátorból készített képeket igényel.
 
 
+## Kötelező minőségi mérce — felhasználói pontosítás, 2026-10-27
+
+**A main működése, funkciókészlete és használhatósága a minimum. A négy elfogadott
+mockup vizuális kidolgozottságát legalább el kell érni, lehetőleg túl kell lépni.**
+A korábban megmutatott natív alapállapot/köztes előnézet ezt még nem teljesíti;
+a felhasználó nem fogadta el végleges vagy kielégítő vizuális eredményként.
+Most a rögzített tervek további pontosítása az aktív feladat; új UI-kódot ebben a
+pontosító körben nem írunk. A meglévő P1 kód kísérleti jelölt, nem jóváhagyott irány.
+
+A meglévő 24 nézet részletes leírása és a final-ui-ux specifikáció érvényes marad.
+Nem új látványtervet vagy eltérő irányt találunk ki, és nem csökkentjük a korábban
+rögzített feladatot általános Material-kártyák, betűméret- vagy színcsere szintjére.
+A P0 komponensrendszer és a zöld CI szükséges alap; önmagában egyik sem vizuális elfogadás.
+
+### Képernyőnkénti elfogadási minimum
+
+- A mockup szerinti információhierarchia, kidolgozott hero-/akció-/mérési kártyák,
+  ikonkezelés, állapotjelzések, tagolás és kiegyensúlyozott képernyőkitöltés.
+- A main összes releváns művelete és adata megtalálható és használható; kevesebb
+  navigációs oldal megengedett, kevesebb funkció vagy elvesző szerkesztés nem.
+- Az aktuális edzés/indítás és a gyakori műveletek elsőbbséget kapnak; a sűrű adatok
+  olvashatók, a ritkák rendezett részletekben elérhetők. Nincs nagy üres tér vagy
+  egymást ismétlő cím/gomb csak azért, mert egyszerűbb volt így bekötni.
+- A grafit/arany referencia minősége mind a 32 palettával és HU/EN/DE/RO felirattal
+  megmarad; 320dp, nagy betű, üres/töltő/hiba/engedélyhiányos állapot is tervezett.
+- A mockup mintaszámai, Watch-modellje, képei nem válhatnak kitalált élő adattá.
+  Valódi hiány esetén is kidolgozott, őszinte állapot kell; a funkcióhiány külön tétel.
+- Azonos valódi állapotról készült, módosítatlan emulátorkép összevetése a mockuppal
+  és a main megfelelő használati útjával. A tesztzöld és egy létező PNG nem elég:
+  a látvány és a használhatóság is meg kell feleljen a fenti minőségi mércének.
+
+### A mostani két jelölt még hiányzó vizuális kidolgozása
+
+| Nézet | Következő tervezési pontosítás |
+|---|---|
+| Kezdőlap | Teljes aktív/mai program hero komponenshierarchia, erős főművelet, vizuálisan megkülönböztetett gyorsindítás és óraállapot, egységes ikonozott mérési kártyák és forrásjelzések; minden meglévő mérés megtartva. Nem pusztán a jelenlegi dobozok átrendezése. |
+| Edzés | A mockup gyorsindító kártyái, gyakorlatválasztás és kültéri mód külön karaktere, aktuális program napjainak átlátható kártyái, kompakt Programok/Naptár/Coach belépők. A három egymás alatti általános gomb önmagában nem kész dizájn. |
+| További főoldalak/aktív módok | A már rögzített 02-screen-specifications/24 nézet szerint kidolgozva, azonos közös komponensekkel; nem új egymástól eltérő képernyőstílusok. |
+
+A két külső chatnek szánt átadó egyelőre tervezet. Kiosztás előtt e minőségi
+mércét és a képernyőspecifikációt be kell építeni a feladataikba. A közös rendszer
+és a végső vizuális review egy gazdánál marad; a párhuzamosítás nem minőségi engedmény.
+
 ## Aktuális termékirány – felhasználói pontosítás, 2026-10-26
 
 A WebView-app a minőségi minimum; a natív app egyértelmű használhatósági és
