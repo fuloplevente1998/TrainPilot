@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -59,9 +60,10 @@ internal fun TrainingLandingScreen(language: String, activeProgramId: String, bu
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
             TrainPilotHeroSurface(Modifier.fillMaxWidth().testTag("training_quick_section")) {
+                TrainPilotStatusBadge(labels[1])
                 TrainPilotPrimaryButton(labels[2], { onQuick(false) },
                     Modifier.fillMaxWidth().testTag("training_quick_workout"), !busy)
-                val stacked = LocalDensity.current.fontScale > 1.3f
+                val stacked = LocalDensity.current.fontScale > 1.3f || LocalConfiguration.current.screenWidthDp < 360
                 if (stacked) Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     TrainPilotActionSurface(labels[9], Icons.Default.MenuBook, onLibrary,
                         Modifier.fillMaxWidth().testTag("training_open_exercises"), !busy)

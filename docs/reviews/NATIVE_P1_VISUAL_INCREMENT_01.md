@@ -80,3 +80,16 @@ testTag a `useUnmergedTree=true` fában keresendő. A betöltési várakozás é
 kirajzolt kép/nagyítás/assertion megmarad. Ez teszt-selector pontosítás; az app
 forrása változatlan. A megszakított futás nem telefonos runtime-eredmény.
 Új egyszeri közös kapu szükséges a javított tesztforrásra.
+
+## 40497708263 /4af5ff2d lezárt első futás
+
+JVM rawartifact12732076368:1333/0failure/error/skip. Phone rawartifact12731553607:
+112main=111PASS/1FAIL +4GPSPASS, együtt **115/116**,0missing/0runnercrash.
+65rawPNG hash/PNG-verify PASS; az új gold/zoom és DEfont2.0 próbák PASS.
+Egyhiba: LocaleTraining line114 Antrenament rapid hiányzik, mert a Quickheading
+resource native_training_landing_01, a chooserCTA pedig _02; nem redundánsak.
+Root visszateszi a csoport badge-et az eredeti4nyelvűresource-ból, assertion nemgyengül.
+A két gyorsactioncard320dp-n egymás alá kerül, hogy a library cím ne törjön szóköz nélkül.
+Wear1 SDKsystemimage PrematureEOF az emulatorindítás előtt, nincs app-végrehajtás;
+Wear0/2 és2upgrade SUCCESS. Az új appforrás miatt újközösgate kell, nem régi PASS.
+Két köztes, változatlanPNG: docs/design/previews/p1-4af5ff2d/README.md.
