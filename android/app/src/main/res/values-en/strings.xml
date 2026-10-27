@@ -663,4 +663,6 @@
     <string name="native_timer_defaults_invalid">Work: 1–3600 s; rest: 0–3600 s; rounds: 1–100. Total duration must not exceed 24 hours.</string>
     <string name="native_timer_defaults_failed">Could not save, or the data changed while editing. Close and reopen the editor.</string>
     <string name="native_timer_defaults_save">Save</string>
+    <string name="studio_progress_latest_1rm">Latest estimated 1RM</string>
+    <string name="studio_progress_best_1rm">Best estimated 1RM</string>
 </resources>
