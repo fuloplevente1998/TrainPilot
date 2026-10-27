@@ -2,6 +2,8 @@ package com.repforge.app.ui.navigation
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.selection.selectable
@@ -15,6 +17,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import com.repforge.app.R
@@ -99,9 +102,14 @@ internal fun NativeTopNavigation(route: String, settingsOrigin: String, language
     val selected = NativeMainMenu.selected(route, settingsOrigin)
     val labels = NativeMainMenu.labels(language)
     val destinations = NativeMainMenu.routes
+    // Keep the Studio row at normal sizing; large system text gets full-width
+    // labels in a scrollable tab group instead of clamping accessibility scaling.
+    val expandedLabels = LocalDensity.current.fontScale > 1.3f
+    val scroll = rememberScrollState()
     Surface(color = colors.bg, tonalElevation = 0.dp) {
         Row(
             modifier = Modifier.fillMaxWidth().selectableGroup()
+                .then(if (expandedLabels) Modifier.horizontalScroll(scroll) else Modifier)
                 .padding(start = 8.dp, end = 8.dp, top = 2.dp, bottom = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
@@ -116,7 +124,8 @@ internal fun NativeTopNavigation(route: String, settingsOrigin: String, language
                 }
                 val shape = RoundedCornerShape(12.dp)
                 Column(
-                    modifier = Modifier.weight(1f).heightIn(min = 56.dp)
+                    modifier = (if (expandedLabels) Modifier.width(IntrinsicSize.Max).widthIn(min = 88.dp)
+                        else Modifier.weight(1f)).heightIn(min = 56.dp)
                         .clip(shape)
                         .background(if (active) colors.selectedSurface else colors.card)
                         .border(if (active) 1.5.dp else 1.dp,
