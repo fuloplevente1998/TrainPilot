@@ -670,4 +670,13 @@
     <string name="studio_progress_period_volume">Volum total</string>
     <string name="studio_progress_period_sets">Serii finalizate</string>
     <string name="studio_progress_period_pr_workouts">Antrenamente cu record</string>
+    <string name="studio_volume_total">Volum total</string>
+    <string name="studio_volume_one_day">1 zi</string>
+    <string name="studio_volume_week">7 zile</string>
+    <string name="studio_volume_month">30 zile</string>
+    <string name="studio_volume_three_months">3 luni</string>
+    <string name="studio_volume_empty">Nu există antrenamente înregistrate în această perioadă.</string>
+    <string name="studio_volume_loading">Se încarcă graficul de volum…</string>
+    <string name="studio_volume_retry">Reîncarcă graficul de volum</string>
+    <string name="studio_volume_workouts">antrenamente</string>
 </resources>
