@@ -17,6 +17,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -119,9 +120,16 @@ private fun JournalSummaryCard(row: JournalWorkoutSummary, text: Resources, loca
             }
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = colors.accentText)
         }
-        Text(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).withLocale(locale)
-            .withZone(ZoneId.systemDefault()).format(Instant.ofEpochMilli(row.startedEpochMs)), color = colors.muted,
-            style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"))
+        // The Studio journal uses a distinct event-date row, but the time is the real saved
+        // workout timestamp (never a fixed demo date).
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Icon(Icons.Default.DateRange, contentDescription = null,
+                modifier = Modifier.size(16.dp), tint = colors.accentText)
+            Text(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).withLocale(locale)
+                .withZone(ZoneId.systemDefault()).format(Instant.ofEpochMilli(row.startedEpochMs)),
+                color = colors.muted, style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"))
+        }
         HorizontalDivider(color = colors.line)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             TrainPilotStatusBadge(text.getString(R.string.journal_minutes, row.durationSeconds / 60))
