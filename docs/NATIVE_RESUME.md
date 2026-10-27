@@ -13,13 +13,15 @@ nincs start/pause/write újlogika. Inaktív/programnapi indítás változatlan.
 MeglévőSettings-stopwatchUItest végén HomeCTA Folytatás és ugyanazonworkoutId
 visszatérés assert, pluszvalós home_active_session screenshotcheckpoint.
 40463848077/6dd51799koránCANCEL kérve aP1incrementbevonásához; nemruntimePASS.
-Az újfagyasztottP1forrás kapuja egyetlen futás legyen. Újfont2.0/320dpUIpróbák
+ÚjfagyasztottP1gate40464028059 exact67f2889fd252f9a413b7b7272716459d2d67ba80
+utolsólekérdezéskorPENDING. Ne induljon másikRootgate. Újfont2.0/320dpUIpróbák
 és összesregresszió runtimeUNRUN. A P0előző40461365542mindenjobjaSUCCESS.
 
 ## P0 zöld, Home/Training P1 első vizuális increment — 2026-10-27
 
 40461365542 exact2f7cd835 mind7jobSUCCESS (GitHubállapot Root lekérdezte).
 P0komponens API használható, újrawartifactXMLdarabszámot e körben nem validáltunk;
+Root P0XMLartifact12715017976+12715019281:1333JVM+112phoneUI/0fail/error/skip.
 CIgreen nem a most írt P1forrásruntimeeredménye. P1elsőkód: Homehero52dpCTA,
 gyorsindítás→óra→6metrika→planning sorrend; 2oszlopos nagyobbméretű/részletes
 metricSurfaceCard, fontScale>1.3/keskeny eset1oszlop, nincs levágott source/notice.
