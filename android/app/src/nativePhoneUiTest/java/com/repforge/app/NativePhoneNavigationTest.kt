@@ -191,7 +191,8 @@ class NativePhoneNavigationTest {
     @Test fun fiveTabsAndSecondaryPlanningEntriesUseActualNativeScreens() {
         launch(); screenshot("home")
         for (route in listOf("training", "journal", "progress", "health")) { tab(route); screenshot(route) }
-        tab("home")
+        compose.onNodeWithTag("header_home").performClick()
+        compose.onNodeWithTag("navigation_home").assertIsSelected()
         for (route in listOf("programs", "calendar", "coach")) {
             try {
                 compose.waitUntil(10_000) { compose.onAllNodesWithTag("shortcut_$route").fetchSemanticsNodes().isNotEmpty() }
@@ -267,6 +268,7 @@ class NativePhoneNavigationTest {
         assertTrue(snapshot()?.optBoolean("active") != true)
         compose.onNodeWithTag("navigation_back").performClick()
         compose.onNodeWithTag("home_studio_greeting").assertExists()
+        compose.onNodeWithTag("navigation_home").assertIsSelected()
     }
 
     @Test fun invalidTrainingProfileDoesNotOverwriteStoredProfile() {

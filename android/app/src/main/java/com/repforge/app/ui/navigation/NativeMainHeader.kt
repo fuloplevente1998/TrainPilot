@@ -2,6 +2,7 @@ package com.repforge.app.ui.navigation
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.background
@@ -40,7 +41,8 @@ import com.repforge.app.ui.theme.TrainPilotDimensions
 @Composable
 internal fun NativeMainHeader(route: String, language: String, enabled: Boolean,
     onBack: (() -> Unit)?, onSettings: () -> Unit, backEnabled: Boolean = enabled,
-    onLanguage: () -> Unit = onSettings, onTheme: () -> Unit = onSettings) {
+    onLanguage: () -> Unit = onSettings, onTheme: () -> Unit = onSettings,
+    onHome: (() -> Unit)? = null) {
     val colors = LocalTrainPilotColors.current
     val strings = nativeResources(LocalContext.current, language)
     Surface(color = colors.bg) {
@@ -51,11 +53,20 @@ internal fun NativeMainHeader(route: String, language: String, enabled: Boolean,
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, NativeMainMenu.backLabel(language), tint = colors.text)
             }
             val mainPage = route in NativeMainMenu.routes
-            if (mainPage) NativeStudioBrand(Modifier.size(26.dp, 18.dp))
-            Text(if (mainPage) "TrainPilot" else NativeMainMenu.title(route, language),
-                modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
-                color = if (mainPage) colors.accentText else colors.text, style = if (mainPage) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (mainPage) Row(
+                Modifier.weight(1f).heightIn(min = TrainPilotDimensions.Control)
+                    .clickable(enabled = enabled && onHome != null, role = Role.Button) { onHome?.invoke() }
+                    .semantics { contentDescription = NativeMainMenu.title("home", language) }
+                    .testTag("header_home"), verticalAlignment = Alignment.CenterVertically) {
+                NativeStudioBrand(Modifier.size(26.dp, 18.dp))
+                Text("TrainPilot", Modifier.weight(1f).padding(horizontal = 8.dp),
+                    color = if (enabled) colors.accentText else colors.muted,
+                    style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis)
+            } else Text(NativeMainMenu.title(route, language),
+                modifier = Modifier.weight(1f).padding(horizontal = 8.dp), color = colors.text,
+                style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold,
+                maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (mainPage) {
                 IconButton(onClick = onLanguage, enabled = enabled,
                     modifier = Modifier.size(TrainPilotDimensions.Control).testTag("header_language")
@@ -65,7 +76,8 @@ internal fun NativeMainHeader(route: String, language: String, enabled: Boolean,
                 }
                 IconButton(onClick = onTheme, enabled = enabled,
                     modifier = Modifier.size(TrainPilotDimensions.Control).testTag("header_theme")) {
-                    Icon(Icons.Default.Palette, strings.getString(R.string.studio_header_theme), tint = colors.accentText)
+                    Icon(Icons.Default.Palette, strings.getString(R.string.studio_header_theme),
+                        tint = if (enabled) colors.accentText else colors.muted)
                 }
             }
             IconButton(onClick = onSettings, enabled = enabled && route != "settings",

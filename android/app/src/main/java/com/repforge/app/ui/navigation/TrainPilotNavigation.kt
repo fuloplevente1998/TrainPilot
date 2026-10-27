@@ -321,6 +321,7 @@ fun TrainPilotAppScaffold(
                     onSettings = { settingsSection = "general"; selectDestination("settings") },
                     onLanguage = { settingsSection = "language"; selectDestination("settings") },
                     onTheme = { settingsSection = "theme"; selectDestination("settings") },
+                    onHome = { selectDestination("home") },
                     backEnabled = !starting && !editorFinishing &&
                         (activeSnapshot?.optBoolean("finalizationPending") != true || settingsOrigin == "active_workout"))
                 // Intentional Studio design: primary tabs are placed ABOVE all pages.
