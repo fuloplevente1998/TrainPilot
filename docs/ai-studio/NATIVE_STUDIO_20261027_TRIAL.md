@@ -12,6 +12,13 @@
 - Select the existing **main TrainPilot icon** in the native Android manifest; the matching launcher resources already exist.
 - Do not replace native screen composables, ViewModels or real data with Studio DEMO screens.
 
+## Design clarification from user (2026-10-27)
+- The five-tab **TOP navigation** is a deliberate, final design choice. Do not move it back to the bottom, even if older design handoffs describe bottom tabs.
+- AI Studio export is explicitly an **interactive DEMO/prototype**. Text such as `DEMO MINTAADAT`, buttons used to switch Home between `PAUSED_WORKOUT`, `PLANNED_NEXT`, and `COACH_LIGHT_DAY`, fake workout metrics or illustrated GPS scenery are testing controls, NOT permanent features.
+- In the *Studio design preview*, retain these switches because they let the user review alternate card states without completing workouts. In the *integrated native APK*, state must come from the existing ViewModels/repositories, with these demo-only controls and labels absent. Do **not** remove valid functional actions merely because their prototype callback temporarily manipulates demo state.
+- Preserve the visual appearance and interaction patterns of each reviewed state, but render it when the real underlying app condition occurs. For screenshot-only prototyping, label made-up data clearly as a demo.
+- Distinguish temporary demo/test-only controls from authentic functional controls using the native app's source and user acceptance; don't delete the latter.
+
 ## Important visual integration next
 1. Bring Studio surface hierarchy, icons, typography and selected 32-palette color tokens to the existing native components. Preserve 4 locale variants, accessibility, original `testTag` semantics, and navigation. Keep top navigation (user choice).
 2. Progress: keep `NativeMuscleLoadVisual` and the actual main anatomy mask resources with `NativeProgressQuery.muscle()` from native Room workout history. **Do not** use the Studio fixed `MuscleLoadItem` values.
