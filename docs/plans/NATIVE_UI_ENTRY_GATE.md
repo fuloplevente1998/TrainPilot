@@ -1,4 +1,9 @@
 # UI-fejlesztés belépési kapuja — Root, 2026-10-26
+> **2026-10-27 frissítés:** közös40413844661/5b375cd9 telefon112/109PASS/3FAIL,
+> 53rawPNG; locale és mindkét intervallumos eset PASS. Hátra törlés és két
+> navigációs eset. Root790d7c93 javította a Main-looper admissiont és az elavult
+> bottom-navigation callback capture-t; újközös40456207747 folyamatban, még nemPASS.
+> Az alábbi hatos mátrix a korábbi3297baseline történeti bontása.
 
 Ez az aktuális sorrend a régi c116a042 baseline-ra készült tervek mellett.
 A meglévő edzésmotor, adatbázis, migráció, backup és ownership marad.

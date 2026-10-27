@@ -17,7 +17,8 @@ Roomolvasások után/elsőwriteelőtt; tranzakció/dependency/CASvédelem marad.
 BottomNavigation ::selectDestination localfunctionref helyett explicitremember
 (currentRoute,settingsOrigin,editor,starting) frissített lambda. Élőguardok maradnak.
 Meglévő3valósphoneUIregresszió ellenőrzi; assertionkihagyás/gyengítés nincs.
-A javított3esetre még nincs runtimePASS; egyetlen új közösCI kell, UI még nemindult.
+A javított3esetre még nincs runtimePASS; újközös40456207747 exact790d7c93
+folyamatban. Neinduljon duplagate; UI még nemindult.
 Main/verzió változatlan, nincs belsősubagent vagy új fejlesztési ág.
 
 ## Új közös gate — 2026-10-26, editor dock layout
