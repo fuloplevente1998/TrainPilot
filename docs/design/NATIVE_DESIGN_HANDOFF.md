@@ -6,6 +6,26 @@ a vizuális irány elfogadott, az új képek külön felhasználói áttekintés
 A képek generált látványtervek, a végső átadás futó emulátorból készített képeket igényel.
 
 
+## Képernyőnkénti referenciaprioritás — user pontosítás, 2026-10-27
+
+- **Egészség és Fejlődés:** a main teljes, bevált oldalstruktúrája, funkciókészlete,
+  adatmegjelenítése és vizuális elemei átvehetők. Ezeknél a main az elsődleges
+  képernyőreferencia, natív Compose-újraépítéssel. Megmaradnak a szekciók, mérések,
+  napló-/részletbelépők, források, grafikonok, időszakok és vezérlők; nem egyszerűsítjük
+  le a mockup kevesebb mintakártyájára. A közös új tipográfiához, 32 palettához,
+  ötfüles navigációhoz és akadálymentes méretekhez igazítjuk, működésvesztés nélkül.
+- **Kezdőlap és a többi mockup-nézet:** a felhasználó kifejezetten kedveli az új
+  mockup-elrendezést; az marad az elsődleges kompozíciós referencia, a main bevált
+  elemeinek és összes funkciójának beépítésével. Nem állunk vissza a régi főmenüre.
+- A referencia nem szintetikus adatok átvétele: a valódi natív state/provider adja
+  az értékeket, a hiányállapot is őszinte és kidolgozott. A főoldalak megfelelő
+  módon kapcsolódnak a Settingshez, a részletekhez és a meglévő műveletekhez.
+
+Ez pontosítja a lenti általános mockup-minőség szabályt: a minőségi elvárás
+mindenhol érvényes, a Health/Progress oldalakat viszont nem kell más elrendezésre
+kényszeríteni. Új adatlogika, képlet, engine vagy WebView-visszavezetés ebből nem következik.
+A két külső UI-chat tervezett átadójában is ezt a prioritást kell használni.
+
 ## Main-elemek tudatos újrahasznosítása — felhasználói döntés, 2026-10-27
 
 A mainben már bevált és elfogadott dizájnelemek átvehetők, majd az új natív

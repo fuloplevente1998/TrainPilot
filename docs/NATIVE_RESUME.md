@@ -4,6 +4,16 @@ Frissítve: 2026-10-26. AGENTS.md + ez + WORK_HANDOFF.md teteje elég indulásko
 Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/exportot.
 
 
+## Health/Progress main-referencia, Home/mockup irány — 2026-10-27
+
+User az Egészség és Fejlődés teljes main oldalainak átvihetőségét kérdezte;
+tervezési prioritás rögzítve: e2oldal teljes beváltmainfelépítés/tartalom/megjelenés
+Compose-ban átvehető, közösnatívtémához/navigációhoz/a11yhez igazítva.
+Kezdőlap és többi mockup elrendezés kifejezetten tetszik neki: ott a mockup marad
+elsődleges kompozíció, mainfunkciók/elemek megőrzésével. Nem egységesen új layout
+kényszer mindenoldalra. Részletek design/NATIVE_DESIGN_HANDOFF.md tetején.
+Most csaktervezési pontosítás, nincs új UIkód vagy vizuáliselfogadás.
+
 ## Main dizájnelemek újrahasznosítása — 2026-10-27
 
 User engedélyezte/preferálja a main már elfogadott elemeinek átvételét,
