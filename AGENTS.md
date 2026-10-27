@@ -1,5 +1,20 @@
 # TrainPilot – agent munkarend
 
+## Studio ZIP beolvasva, első valódi increment – 2026-10-27
+
+User ZIP megérkezett f685d540 docs/ai-studio/trainpilot-oct-27-2026-3-58-04-pm.zip;
+CRC/SHA574f17f6…bcefcc egyezik, nincs hiányzó bemenet.16változatlanKotlin referencia
+és rawindex docs/ai-studio/export-20261027. A demó nem Android source-set.
+Root PR270 8ba6a388+34c629b8+d7e64697: Studiofontok/OFL/tnum/commonfelületek,
+brandheader valódiSettingssection entrykkel, Homevalósadat/callbackcompozíció,
+320dp/font2DE teljesfülfelirat/selected/disabled újUIpróba (118phone várható).
+Régi topnavgate40535425696/5bbc:116/117phone,0missing/crash;1Approvalcomparison
+awaitReadyFAIL diagkétroot általelfedve. d7e teljesdialog1scrollowner+láthatórows assert,
+multi-rootdiagfix; guardok/write/callbacks maradnak. Többi6jobSUCCESS.
+Új increment runtime MÉG UNRUN, ne nevezd teljesStudioUI-nak. Teljes aktuális
+folytatási pont: docs/STUDIO_UI_RESUME.md +reviews/NATIVE_STUDIO_INCREMENT_01.md.
+
+
 ## PR270 Studio-beépítés Rootnál – 2026-10-27
 
 User kifejezetten Rootnak átadta a teljesdizájn beépítést, GitHub checkpointokkal.

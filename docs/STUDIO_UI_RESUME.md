@@ -15,14 +15,12 @@ meglévő callbackhez és adatforráshoz köss. A terv95%-ossága nem a natív k
 ## Pontos állapot
 
 - PR: https://github.com/fuloplevente1998/TrainPilot/pull/270
-- UI alkalmazás-/tesztforrás jelölt: `9c9ccdee25de941f2f3cb407add687ddbde4f9b8`.
+- UI alkalmazás-/tesztforrás jelölt: `d7e64697`.
 - A korábbi PR-head8c3336bb + friss migration történet integrálva, nincs forcepush.
 - Javítva a felső főfülek selected/Role.Tab és selectableGroup szemantikája.
   Az eredeti NativePhoneNavigationTest.tab() már kivárja a Selected=true állapotot;
-  tesztet nem gyengítettünk. Runtime kapu: Actions40535425696,
-  exact5bbc916227e1bac0d6e0368f95e269b399ded049, még folyamatban.
-  https://github.com/fuloplevente1998/TrainPilot/actions/runs/40535425696
-  Ne indíts mellette duplagate-et; a lefutott eredményt és nyers evidence-t olvasd.
+  tesztet nem gyengítettünk. Az előző40535425696 lezárt egy összehasonlító UI-hibán;
+  a lent dokumentált javítással és a teljes Studio-incrementtel kell új gate.
 - A felső pill elrendezés és a main launcherikon megvan, ez NEM a teljes StudioUI.
 - Valódi kiindulási képek8nézetre: docs/design/previews/p1-f0c474f1/README.md;
   még a Studio ELŐTTI alsó navigációval, világosan szintetikus fixture-adatokkal.
@@ -31,17 +29,43 @@ meglévő callbackhez és adatforráshoz köss. A terv95%-ossága nem a natív k
   0failure/error/skip/missing/crash;2signedupgradeSUCCESS.65PNG hash/size/PIL validált.
   Ez NEM a PR270 új felső navigációjának elfogadása.
 
-## Kritikus hiányzó bemenet
+## Bemenet megérkezett – ellenőrzött eredeti Studio ZIP
 
-A TELJES friss Studio export még nincs ebben a workspace-ben és a PR diffjében.
-Ismert név: trainpilot-oct-27-2026-3-58-04-pm.zip;
-SHA256:574f17f639b91037a6e0bdea428f350d4c5950307227511eafc32e7f64bcefcc.
-A másik chat csak a4fájlos topnav/iconpróbát publikálta; ez nem a teljes forrás.
-A felhasználótól az export GitHub URL-jét vagy repóbeli helyét bekértük, válasz függőben.
-Ha megérkezik, őrizd meg az eredeti forrás/provenance-t és SHA-t GitHubon,
-olvasható kis fájlokkal/raw linkindexszel; ne adj új többmillió tokenes repoZIP-et.
-Ne találj ki egy másik dizájnt az export helyett. Az ismert régebbi MD-spec alább
-használható a meglévő minimumhoz, de nem igazolja az új StudioUI pontos megjelenését.
+A felhasználó f685d540 alatt feltöltötte:
+https://raw.githubusercontent.com/fuloplevente1998/TrainPilot/f685d540/docs/ai-studio/trainpilot-oct-27-2026-3-58-04-pm.zip
+3,957,338byte, CRC és SHA256 ellenőrizve:
+574f17f639b91037a6e0bdea428f350d4c5950307227511eafc32e7f64bcefcc.
+A16eredetiKotlinfájl változatlan referencia a docs/ai-studio/export-20261027 alatt,
+README rawlinkindexszel és manifest bytehashokkal. Nem Android source-set.
+A natív app nem importál com.example modellt, DemoDataProvider-t vagy ViewModel-t.
+A3eredetiTTF ésSIL-OFL licencek res/font +assets/font-licenses alatt.
+Nem kell új bemenetet kérni. Az alkalmazáskódba a következő increment kerül.
+
+## Studio increment01 – forrás megírva, új runtime még szükséges
+
+Jelölt app/tesztforrás: d7e64697 (8ba6a388+34c629b8+d7e64697).
+- Studio SpaceGrotesk/PlusJakartaSans/JetBrainsMono fontok és typography, tnum;
+  valódi statikusregular fontok, hiányzó súlyokat Compose szintetizálja.
+- Studio sötét közösalap, hero finom háttérgradiens, a meglévő32mentettpaletta
+  és kontrasztpolicy alapján; nincs téma/változó formátumcsere vagy fontScaleclamp.
+- Márkajelzéses fejléc, valós nyelv/téma/profile Settings-entry; initialSection csakUI.
+- Home üdvözlés/planner/valós session-target hero/metrikák/planning/Coach-belépő.
+  A profil CTA meglévő Settingsprofil, nem állítjuk, hogy új programot generál.
+  A Coach-előnézet még a tényleges regenerációt és forrás/notices értékét mutatja,
+  nem a teljes Coach tanács/advice kivonat. Ezek további valós bekötést igényelnek.
+- Metrikacímsor tényleges Health/Coach navigáció, minden régi érték/unit/source tag
+  továbbra külön elérhető; ne tedd újra merge-descendants kattintható parent alá.
+- Nagyfont: a felső fülsor vízszintesen görgethető, intrinsic címkékkel;
+  új320dp/font2DE próba valós textLayout overflow/selected/disabled assertionnel.
+- Eredeti profile-persistence és4nyelv/téma roundtrip tesztek új header/Home entryvel
+  bővítve; minden régi assertion megmarad. Várható1333JVM+118phone+183Wear.
+- Az előző topnav-gate40535425696 exact5bbc9162 lezárt FAIL:116/117phone,
+  0missing/crash; uiApprovalRejectsProgramRawChangeAfterShownComparison awaitReady.
+  Diagnosztikai onRoot kétablakos hibája elfedte az eredeti várási okot.
+  d7e64697 teljes összehasonlítást egyetlen scroll owner alá tesz, megvárja a látható
+  comparison_0 sort; multi-root diagnostic javítva. Nincs timeoutemelés/assertiongyengítés.
+  A többi6jobSUCCESS. Új közös gate kell az egész incrementre, ne régiPASS-t állíts.
+Részletes acceptance/provenance: docs/reviews/NATIVE_STUDIO_INCREMENT_01.md.
 
 ## Következő csomagok
 
