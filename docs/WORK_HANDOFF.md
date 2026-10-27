@@ -4,6 +4,16 @@ Frissítve: **2026-10-26**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Main dizájnelemek újrahasznosítása — 2026-10-27
+
+User engedélyezte/preferálja a main már elfogadott elemeinek átvételét,
+a natív mockupokhoz igazítva. A működési minimum és a mockup-minőség nem csökken.
+Konkrét source/pattern→Compose adaptációs leltár NATIVE_DESIGN_HANDOFF.md tetején:
+felületek/CTA/secondary/danger/num-check-badge/health/history/settings/progress/map/font.
+Main7473b30readonly; stylesheet-cascade+render együtt érvényes, nem nyersCSSmásolat.
+Ötfül/32paletta/4nyelv és natív motoradatút megmarad. Most tervezési pontosítás,
+új UIkód nem íródott; a meglévőP1jelölt továbbra nem vizuális elfogadás.
+
 ## Vizuális minőség pontosítva — 2026-10-27
 
 User: tervezzünk tovább a már rögzítettek szerint; main funkció/használhatóság minimum,

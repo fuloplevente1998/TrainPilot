@@ -6,6 +6,40 @@ a vizuális irány elfogadott, az új képek külön felhasználói áttekintés
 A képek generált látványtervek, a végső átadás futó emulátorból készített képeket igényel.
 
 
+## Main-elemek tudatos újrahasznosítása — felhasználói döntés, 2026-10-27
+
+A mainben már bevált és elfogadott dizájnelemek átvehetők, majd az új natív
+mockupokhoz igazítandók. Ez az elsődleges kiindulás ott, ahol használható mintánk
+van; nem kell mindent újratervezni. A formákat és interakciókat Compose-ban
+valósítjuk meg, a meglévő natív state/callback bekötésével.
+
+A fő navigáció továbbra az új ötfüles elrendezés; a main bevált elemei ebbe az
+új szerkezetbe kerülnek. A mockupok részletességi/minőségi elvárása és a main teljes
+funkciókészlete együtt érvényes. A korábbi köztes előnézet ettől még nem elfogadott.
+
+### Konkrét újrahasznosítási leltár
+
+Olvasott main-forrás: `7473b30f387eda54186c1e31830304ca12bd104f`, csak olvasásra.
+A CSS-hivatkozások mintaforrások: az `index.html:2` tényleges stylesheet-sorrendje,
+a későbbi felülírások és a renderelt állapot együtt adják az érvényes látványt.
+Egy régi CSS-részlet nyers színkódját vagy betűméretét nem másoljuk vakon.
+
+| Bevált elem | Main forrásjelölt | Natív adaptáció |
+|---|---|---|
+| Matt grafit felületek, finom kontúrok, kiválasztott hangsúly | `www/global-uiux-177.css:1–55`, `.card/.hero/.stat`, `.active-program` | Közös SurfaceCard és hero/selected szerepek, 32 palettából származó kontrasztos tokenek. A kijelölés felirattal/ikonnal is látszik. |
+| Erős főgomb, sötét másodlagos gomb, veszélyes művelet | `www/styles.css:26–28`, `.btn/.secondary/.danger` | Egységes Compose gombcsalád, mockup szerinti hangsúly, teljes felirat, minimum48dp és tartalommal növekvő méret. |
+| Sorszámblokk, kész állapot, kompakt sorozatsor és jelvény | `www/styles.css:30–39`, `.num/.check/.badge` | Ismerős súly/ismétlés/RIR és kész/visszavonás interakció, új mockup szerinti elrendezéssel; a meglévő motor és auto-rögzítés változatlan. |
+| Egészségmérési és forrás-/állapotkártyák | `www/health-dashboard-168.css:14–31`, `.tp168-metric/.tp168-status` + globális felülírás | Ikon, nagy szám, kisebb egység, dátum/forrás/frissesség. Mockup-szintű kidolgozás, kis képernyő/nagy font mellett tördelődő rács. Minden meglévő mérés elérhető marad. |
+| Naplókártya és szekcionált beállítások | `www/styles.css:41`, `www/global-uiux-177.css:26–35`, `.history/.setting` | Tartalmi hierarchia, lenyitható részletek, jól elkülönített műveletek; natív paging/állapotmegőrzés és adatút megtartása. |
+| Fejlődés időszakválasztója és grafikonpanelek | `www/progress-177.css:21–46`, `.tp177-volume-panel/.tp177-periods` | Bevált időszakválasztás az új grafikon- és metrikakártyákban; ugyanazok az adatok és számítások. |
+| Térkép és egyértelmű bezárás | `www/gps-route-map-163.css:4–7`, `.tp163-route-dialog/.tp163-close` | Mockup szerinti nagy térképfelület és piros X; csak a térkép záródik. Az online réteg bekötése külön G06 funkciófeladat. |
+| Olvasható, karakterhelyes tipográfia | `www/typography-137.css:1–8`, helyi Inter betűkészlet | A bevált tipográfiai karaktert követjük; natívan használható fontasset és licenc ellenőrzése után közös FontFamily, nem képernyőnként eltérő betűk. |
+
+Minden következő képernyőterv röviden rögzítse: **mit veszünk át a mainből,
+hogyan illesztjük a mockuphoz, mi változik a használatban, és mivel ellenőrizzük**.
+A komponenskönyvtár, a két chat átadója és a vizuális review ugyanazt a leltárt
+használja; az újrahasznosítás az egységességet és a részletességet szolgálja.
+
 ## Kötelező minőségi mérce — felhasználói pontosítás, 2026-10-27
 
 **A main működése, funkciókészlete és használhatósága a minimum. A négy elfogadott

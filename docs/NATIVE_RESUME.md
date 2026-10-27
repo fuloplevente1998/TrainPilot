@@ -4,6 +4,16 @@ Frissítve: 2026-10-26. AGENTS.md + ez + WORK_HANDOFF.md teteje elég indulásko
 Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/exportot.
 
 
+## Main dizájnelemek újrahasznosítása — 2026-10-27
+
+User engedélyezte/preferálja a main már elfogadott elemeinek átvételét,
+a natív mockupokhoz igazítva. A működési minimum és a mockup-minőség nem csökken.
+Konkrét source/pattern→Compose adaptációs leltár NATIVE_DESIGN_HANDOFF.md tetején:
+felületek/CTA/secondary/danger/num-check-badge/health/history/settings/progress/map/font.
+Main7473b30readonly; stylesheet-cascade+render együtt érvényes, nem nyersCSSmásolat.
+Ötfül/32paletta/4nyelv és natív motoradatút megmarad. Most tervezési pontosítás,
+új UIkód nem íródott; a meglévőP1jelölt továbbra nem vizuális elfogadás.
+
 ## Vizuális minőség pontosítva — 2026-10-27
 
 User: tervezzünk tovább a már rögzítettek szerint; main funkció/használhatóság minimum,
