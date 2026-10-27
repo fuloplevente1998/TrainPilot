@@ -45,6 +45,47 @@ class NativeProgressQueryTest {
             done = completed, actualRir = null, gpsRouteKey163 = null, gpsRouteKey193 = null)))
     }
 
+    @Test fun thirtyDayCalendarWindowHonorsBudapestDstAndExcludesFutureWorkouts() {
+        val zone = ZoneId.of("Europe/Budapest")
+        val now = LocalDate.of(2026, 10, 27).atTime(12, 0).atZone(zone).toInstant().toEpochMilli()
+        val (start, until) = NativeProgressQuery.thirtyDayWindow(now, zone)
+        assertEquals(LocalDate.of(2026, 9, 28).atStartOfDay(zone).toInstant().toEpochMilli(), start)
+        assertEquals(now + 1, until)
+        assertEquals(30, java.time.temporal.ChronoUnit.DAYS.between(
+            java.time.Instant.ofEpochMilli(start).atZone(zone).toLocalDate(),
+            java.time.Instant.ofEpochMilli(until - 1).atZone(zone).toLocalDate()) + 1)
+        // DST ended Oct 25, so 30 calendar dates are NOT exactly 30 * 24 hours.
+        assertEquals(29L * 86_400_000L + 3_600_000L + 12L * 3_600_000L + 1L,
+            until - start)
+    }
+
+    @Test fun periodTotalsArePersistedTombstoneAwareAndIgnoreFutureOrIncomplete() = runBlocking {
+        val zone = ZoneId.of("Europe/Budapest")
+        val now = LocalDate.of(2026, 10, 27).atTime(12, 0).atZone(zone).toInstant().toEpochMilli()
+        val (start, until) = NativeProgressQuery.thirtyDayWindow(now, zone)
+        suspend fun add(i: Int, finished: Long, volume: Double, sets: Int, pr: Boolean,
+            complete: Boolean = true) {
+            db.workoutHistoryDao().insertWorkout(JournalTestFixtures.row(i).copy(
+                startedEpochMs = if (complete) finished - 60_000 else finished,
+                finishedEpochMs = finished,
+                totalVolumeKg = volume, completedSetsCount = sets, hasPr226 = pr
+            ))
+        }
+        add(1, start + 90_000, 125.0, 4, true)
+        add(2, now - 90_000, 225.5, 6, false)
+        add(3, now - 180_000, 999.0, 5, true)
+        add(4, start - 1, 800.0, 8, true)
+        add(5, now + 1000, 700.0, 7, true)
+        add(6, now - 300_000, 300.0, 3, true, complete = false)
+        db.workoutHistoryDao().upsertTombstone(HistoryTombstoneEntity(
+            primaryId = "w-0003", workoutKey = "key-3", idsJson = "[\\"w-0003\\"]", deletedAt = 1))
+        val totals = db.workoutHistoryDao().getProgressPeriodTotals(start, until)
+        assertEquals(2, totals.workoutCount)
+        assertEquals(350.5, totals.totalVolumeKg, 1e-6)
+        assertEquals(10, totals.completedSets)
+        assertEquals(1, totals.prWorkouts)
+    }
+
     @Test fun noHistoryReturnsZeroMusclesAndEmptyTrend() = runBlocking {
         val trend = NativeProgressQuery.trend(db.workoutHistoryDao(), "goblet-squat")
         assertTrue(trend.isEmpty())
