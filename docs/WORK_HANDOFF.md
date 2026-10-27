@@ -1,5 +1,21 @@
 # TrainPilot – aktuális átadás
 
+## Aktuális UI-döntés és munkamegosztás – 2026-10-27
+
+Felhasználó: az öt főfül FENT helyezkedik el, ez szándékos, felülírja a korábbi
+alsófüles döntést. AIStudio export DEMO; tesztcélú nézet-/edzésmódváltók és
+demószöveg nem végleges termékfunkció, valódi funkciógombot emiatt ne törölj.
+TeljesUI bevezetés a másik felhasználói chatnél: PR270, saját
+feat/studio-ui-topnav-trial-20261027 → feat/native-android-migration.
+Root read-only elsőaudit2dd71963:4fájl, csak topnav/mainicon próba, nem teljesUI.
+P1 auditfinding: NativeMainHeader új clickable Column elveszti a korábbi
+NavigationBarItem selected/Role.Tab szemantikáját; selectable(active,Role.Tab)
+és Row selectableGroup kell.320dp/font2.0/4locale elvárás a10sp/1line ellipsis
+miatt külön valósUI-próbával ellenőrizendő. Még nem merge-elt, UI-writer másikchat.
+Root stabilitási gate40529220611 exactf0c474f1 folyamatban; előző116/117,
+0runnercrash/0missing, egy újteszt szerződésjavítva, még nem új runtimePASS.
+
+
 ## Stabilitás ellenőrzés és külső dizájnbevezetés – 2026-10-27
 
 A teljes, AIStudio app/android módból kapott UI/UX bevezetését a felhasználó
