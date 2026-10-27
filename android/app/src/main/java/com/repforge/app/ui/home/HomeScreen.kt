@@ -43,7 +43,6 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bedtime
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Eco
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -107,6 +106,7 @@ fun HomeScreen(
     offerOnboarding: Boolean = false,
     onOnboarding: () -> Unit = {},
     onProfile: () -> Unit = {},
+    onWatch: () -> Unit = onProfile,
     onHealth: () -> Unit = {},
     onPersonalPlan: () -> Unit = {}
 ) {
@@ -164,8 +164,9 @@ fun HomeScreen(
         // Accepted 18:49 Studio hero structure: 56dp warm-gold icon, real status,
         // primary action, and a details affordance, not a generic native card.
         TrainPilotHeroSurface(Modifier.fillMaxWidth()
-            .testTag("home_today_hero").testTag("home_hero_workout_card")) {
-            Row(Modifier.fillMaxWidth().clickable(enabled = !busy, role = Role.Button) { onPrograms() },
+            .testTag("home_today_hero")) {
+            Row(Modifier.fillMaxWidth().testTag("home_hero_workout_card")
+                .clickable(enabled = !busy, role = Role.Button) { onPrograms() },
                 verticalAlignment = Alignment.CenterVertically) {
                 Surface(
                     modifier = Modifier.size(56.dp)
@@ -214,12 +215,12 @@ fun HomeScreen(
                 },
                 enabled = !busy && (hasActiveSession || (!state.loading && target != null)),
                 modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
-                    .testTag("home_start_workout").testTag("home_continue_workout_button"),
+                    .testTag("home_start_workout"),
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = colors.accent,
                     contentColor = colors.onAccent)
             ) {
-                Icon(Icons.Default.PlayArrow, null, Modifier.size(20.dp))
+                Icon(Icons.Default.PlayArrow, null, Modifier.size(20.dp).testTag("home_continue_workout_button"))
                 Spacer(Modifier.width(8.dp))
                 Text(strings.getString(if (hasActiveSession)
                     R.string.native_workout_component_resume else R.string.native_home_start_workout),
@@ -233,8 +234,7 @@ fun HomeScreen(
             title = strings.getString(R.string.native_home_quick_workout),
             subtitle = strings.getString(R.string.native_home_select_exercise),
             icon = Icons.Default.DirectionsRun,
-            modifier = Modifier.fillMaxWidth().testTag("home_quick_workout_card")
-                .testTag("home_quick_workout"), enabled = !busy,
+            modifier = Modifier.fillMaxWidth().testTag("home_quick_workout_card"), enabled = !busy,
             onClick = { onQuickWorkout(false) }
         )
 
@@ -248,7 +248,7 @@ fun HomeScreen(
             modifier = Modifier.fillMaxWidth().testTag("home_watch_status_card"),
             connected = state.watchConnected,
             enabled = !busy,
-            onClick = onProfile
+            onClick = onWatch
         )
 
         // Exactly the source's 2 × 2 health/readiness bento composition.
@@ -364,7 +364,6 @@ private fun StudioHomeVitals(
                         Surface(Modifier.weight(1f).fillMaxHeight()
                             .heightIn(min = 48.dp)
                             .testTag("home_metric_${tile.key}")
-                            .testTag("home_vital_${if (tile.key == "pulse") "hr" else if (tile.key == "recovery") "energy" else tile.key}_card")
                             .border(1.dp, colors.line, RoundedCornerShape(18.dp))
                             .clickable(enabled = enabled, role = Role.Button) { tile.onClick() },
                             color = colors.card, shape = RoundedCornerShape(18.dp)) {
@@ -447,13 +446,13 @@ private fun StudioHomeCoachCard(state: HomeUiState,
     val colors = LocalTrainPilotColors.current
     val strings = nativeResources(LocalContext.current, language)
     Surface(Modifier.fillMaxWidth().testTag("home_coach_preview")
-        .testTag("home_coach_advice_card")
         .border(1.dp, colors.accent.copy(alpha = .45f), RoundedCornerShape(18.dp))
         .clickable(enabled = enabled, role = Role.Button) { onOpen() },
         shape = RoundedCornerShape(18.dp), color = colors.card) {
         Column(Modifier.fillMaxWidth().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().testTag("home_coach_advice_card"),
+                verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.AutoAwesome, contentDescription = null,
                     tint = colors.accentText, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(6.dp))
