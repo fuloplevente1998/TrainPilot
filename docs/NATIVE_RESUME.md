@@ -1,5 +1,42 @@
 # Natív folytatási pont – rövid kontextus
 
+## Aktuális UI-döntés és munkamegosztás – 2026-10-27
+
+Felhasználó: az öt főfül FENT helyezkedik el, ez szándékos, felülírja a korábbi
+alsófüles döntést. AIStudio export DEMO; tesztcélú nézet-/edzésmódváltók és
+demószöveg nem végleges termékfunkció, valódi funkciógombot emiatt ne törölj.
+TeljesUI bevezetés a másik felhasználói chatnél: PR270, saját
+feat/studio-ui-topnav-trial-20261027 → feat/native-android-migration.
+Root read-only elsőaudit2dd71963:4fájl, csak topnav/mainicon próba, nem teljesUI.
+P1 auditfinding: NativeMainHeader új clickable Column elveszti a korábbi
+NavigationBarItem selected/Role.Tab szemantikáját; selectable(active,Role.Tab)
+és Row selectableGroup kell.320dp/font2.0/4locale elvárás a10sp/1line ellipsis
+miatt külön valósUI-próbával ellenőrizendő. Még nem merge-elt, UI-writer másikchat.
+Root stabilitási gate40529220611 exactf0c474f1 folyamatban; előző116/117,
+0runnercrash/0missing, egy újteszt szerződésjavítva, még nem új runtimePASS.
+
+
+## Stabilitás ellenőrzés és külső dizájnbevezetés – 2026-10-27
+
+A teljes, AIStudio app/android módból kapott UI/UX bevezetését a felhasználó
+egy másik ChatGPT Plus beszélgetésben elindította. A tervet kb.95%-osnak írja le;
+ez NEM a natív implementáció/tesztelés készültsége. Root most stabilitás/audit,
+új vizuális írás nélkül; külső ág/PR linkje még bekérve, nem ismert.
+
+40504835636 exact3549a6e0 lezárt: build+3Wear+2signedupgrade SUCCESS;
+Root rawJVM12734239024:1333/0failure/error/skip.
+Phone raw12734684186:113main=112PASS/1FAIL+4GPSPASS, együtt116/117;
+0missing/0runnercrash. Mind116 korábbi teszt PASS, SlotWriter ebben a körben nincs.
+EgyFAIL Root új coldrestart próbája: null snapshotot várt, de ActiveWorkoutStore.clear()
+szabályosan active=false lezárási nyugtát tárol. Javítás f0c474f17072aaf6f5c23506e0ad5b1c0092e2ae:
+nincs aktív edzés és workoutId/revision változatlan mind3ciklusban.
+Ez tesztszerződés-javítás, appforrás azonos3549-cel; új próba még UNRUN.
+A tesztfix végső pushja a meglévő native-android.yml canonical workflow-t indítja.
+Root workspace közben unavailable; GitHub connectorral mentve, nincs helyi újbuild.
+Ha a workspace visszatér, a helyi3549 HEAD-et frissítsd fast-forwarddal;
+a két korábbi untracked chatprompt és cache saját munkafájljaihoz ne nyúlj.
+
+
 ## Compose-lezárás stabilizálása – 2026-10-27
 
 40500323759 / exact5054c6c6 lezárt FAIL: Root rawXML1333JVM PASS; phone115/116,
