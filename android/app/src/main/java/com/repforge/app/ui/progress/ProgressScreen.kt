@@ -57,6 +57,7 @@ import com.repforge.app.R
 import com.repforge.app.ui.text.nativeResources
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.material.icons.Icons
@@ -64,10 +65,13 @@ import androidx.compose.material.icons.filled.AccessibilityNew
 import androidx.compose.material.icons.filled.TrendingUp
 import com.repforge.app.ui.components.TrainPilotSectionSurface
 import com.repforge.app.ui.components.TrainPilotHeroSurface
+import com.repforge.app.ui.components.TrainPilotMetricSurface
 import com.repforge.app.ui.components.TrainPilotSectionHeader
 import androidx.compose.runtime.remember
 import com.repforge.app.ui.theme.LocalTrainPilotColors
 import kotlin.math.max
+import java.text.NumberFormat
+import java.util.Locale
 
 @Composable
 fun ProgressScreen(
@@ -160,6 +164,9 @@ fun ProgressScreen(
                 Column {
                     TrainPilotSectionHeader(strings.getString(R.string.native_progress_1rm_chart), icon = Icons.Default.TrendingUp)
                     Text(strings.getString(R.string.native_progress_1rm_description), color = colors.muted, fontSize = 11.sp)
+                    if (!state.strengthLoading && !state.strengthError && state.exercise1RmTrend.isNotEmpty()) {
+                        ProgressStrengthSnapshot(state.exercise1RmTrend, state.language)
+                    }
                     Spacer(Modifier.height(12.dp))
 
                     // Independent strength date window. Cardio and weight keep their own filters.
@@ -270,6 +277,65 @@ fun ProgressScreen(
         item { Spacer(Modifier.height(80.dp)) }
     }
 
+}
+
+/** Only the selected exercise/range's persisted, finite 1RM estimates are displayed.
+ * Do not conflate the maximum estimate with a confirmed personal record.
+ */
+@Composable
+private fun ProgressStrengthSnapshot(
+    estimates: List<Exercise1RmPointUiModel>, language: String
+) {
+    val latest = estimates.lastOrNull() ?: return
+    val best = estimates.maxByOrNull { it.e1rmKg } ?: return
+    val narrow = LocalConfiguration.current.screenWidthDp < 360 ||
+        LocalDensity.current.fontScale > 1.3f
+    val text = nativeResources(LocalContext.current, language)
+    val number = NumberFormat.getNumberInstance(Locale.forLanguageTag(language)).apply {
+        maximumFractionDigits = 1
+        minimumFractionDigits = 0
+    }
+    val latestCard: @Composable (Modifier) -> Unit = { modifier ->
+        TrainPilotMetricSurface(modifier.testTag("progress_latest_1rm")) {
+            Text(text.getString(R.string.studio_progress_latest_1rm),
+                style = androidx.compose.material3.MaterialTheme.typography.labelMedium,
+                color = LocalTrainPilotColors.current.muted)
+            Text("${number.format(latest.e1rmKg)} kg",
+                style = androidx.compose.material3.MaterialTheme.typography.titleLarge.copy(
+                    fontFeatureSettings = "tnum"),
+                color = LocalTrainPilotColors.current.text)
+            Text(latest.date,
+                style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                color = LocalTrainPilotColors.current.muted)
+        }
+    }
+    val bestCard: @Composable (Modifier) -> Unit = { modifier ->
+        TrainPilotMetricSurface(modifier.testTag("progress_best_1rm")) {
+            Text(text.getString(R.string.studio_progress_best_1rm),
+                style = androidx.compose.material3.MaterialTheme.typography.labelMedium,
+                color = LocalTrainPilotColors.current.muted)
+            Text("${number.format(best.e1rmKg)} kg",
+                style = androidx.compose.material3.MaterialTheme.typography.titleLarge.copy(
+                    fontFeatureSettings = "tnum"),
+                color = LocalTrainPilotColors.current.accentText)
+            Text(best.date,
+                style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                color = LocalTrainPilotColors.current.muted)
+        }
+    }
+    Spacer(Modifier.height(12.dp))
+    if (narrow) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            latestCard(Modifier.fillMaxWidth())
+            bestCard(Modifier.fillMaxWidth())
+        }
+    } else {
+        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            latestCard(Modifier.weight(1f).fillMaxHeight())
+            bestCard(Modifier.weight(1f).fillMaxHeight())
+        }
+    }
 }
 
 @Composable
