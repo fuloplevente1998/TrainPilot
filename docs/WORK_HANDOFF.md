@@ -9,8 +9,12 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
 P1 vizuális increment01 kódolva: docs/reviews/NATIVE_P1_VISUAL_INCREMENT_01.md.
 Ikonos Home/Training/Journal/Health panelek és main anatómiai maszkok/Progress;
-2újUIpróba+raw screenshotcheckpointok. Androidruntime az újforráson MÉG UNRUN.
-TeljesP1mainparitás nincs kész; a részletes hiánylista a reviewban. P2–P5 nemindult.
+2újUIpróba+raw screenshotcheckpointok.40497708263/4af5ff2d:1333JVM PASS,
+115/116phoneUI,0missing/runnercrash,65PNGvalidált.1localeFAIL:TrainingQuickcsoportcím;
+5054c6c6 visszateszi_01badge-et (_02különchooserCTA),narrowaction1col. Wear1SDKEOF,
+Wear0/2+2upgradePASS. Új közösgate40500323759 exact5054c6c6 forráson fut, runtime még UNRUN.
+Köztesképek docs/design/previews/p1-4af5ff2d/README.md. TeljesP1mainparitás MÉG NEM
+kész; részleteshiánylista a reviewban. P2–P5 nemindult.
 A BLE nemkülönújoldal; főintegrációWearOS/HC/Samsung, userpontosítás DesignHandoffban.
 
 

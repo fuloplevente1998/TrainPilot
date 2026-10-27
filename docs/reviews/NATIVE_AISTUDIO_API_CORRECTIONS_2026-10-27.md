@@ -33,6 +33,7 @@ bekötéseket használjuk. Ez a lista nem egy új API-réteg megírására szól
 | `ProgressAnalyticsScreen.kt` | `ui/progress/ProgressScreen.kt`. |
 | `TrainingCalendarScreen.kt` | `ui/calendar/CalendarScreen.kt`. |
 | Külön WatchSyncSettings/BackupRestore/Permissions/PrivatePhotos screen fájlok | A meglévő megvalósítás nagy része a SettingsScreen meglévő paneljeiben/callbackjeiben van; csak a tervezett névből ne következzen új adatút. |
+| `native_training_landing_01` és `_02` felirat | `_01` a Gyors edzés csoportcíme (RO: Antrenament rapid, DE: Schnelltraining), `_02` a Gyakorlat választása gomb. Nem ismétlődő feliratok; a csoportcím eltávolítása locale-regressziót okozott. |
 | `history_*`, `home_metric_card_*`, stb. | A tervbeli nevek nem írják felül a meglévő `journal_*`, `home_metric_*`, `exercise_library_*`, stb. tageket. A működő tagek és session-guardok megmaradnak. |
 
 ## Forráshoz igazított munkaszabály a másik chatnek

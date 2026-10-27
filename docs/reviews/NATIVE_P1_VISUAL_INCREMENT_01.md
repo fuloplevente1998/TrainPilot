@@ -93,3 +93,10 @@ A két gyorsactioncard320dp-n egymás alá kerül, hogy a library cím ne törj�
 Wear1 SDKsystemimage PrematureEOF az emulatorindítás előtt, nincs app-végrehajtás;
 Wear0/2 és2upgrade SUCCESS. Az új appforrás miatt újközösgate kell, nem régi PASS.
 Két köztes, változatlanPNG: docs/design/previews/p1-4af5ff2d/README.md.
+
+## Javított ellenőrzés folyamatban
+
+40500323759 exact5054c6c603b0daa6fe80525000ee2b56f06c271a: új közösgate,
+most még nem lezárt eredmény. Productionfix: valós Quickbadge _01 vissza,
+chooserCTA _02 megmarad,320dp-n a két hosszú actioncard egymás alatt.
+Nincs tesztelvárás-gyengítés vagy verzió/main módosítás.
