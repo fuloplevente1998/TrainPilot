@@ -10,18 +10,18 @@ import java.time.temporal.ChronoUnit
  * The 3-month option means three calendar months through the current local date,
  * not an inaccurate fixed 90*24-hour window.
  */
-internal enum class NativeVolumeRange(val barCount: Int) {
+enum class NativeVolumeRange(val barCount: Int) {
     DAY(1), WEEK(7), MONTH(10), THREE_MONTHS(12)
 }
 
-internal data class NativeVolumeBucket(
+data class NativeVolumeBucket(
     val startDate: LocalDate,
     val endExclusive: LocalDate,
     val volumeKg: Double,
     val workoutCount: Int
 )
 
-internal data class NativeVolumeSnapshot(
+data class NativeVolumeSnapshot(
     val range: NativeVolumeRange,
     val startDate: LocalDate,
     val endDate: LocalDate,
