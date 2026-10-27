@@ -670,4 +670,13 @@
     <string name="studio_progress_period_volume">Gesamtvolumen</string>
     <string name="studio_progress_period_sets">Abgeschlossene Sätze</string>
     <string name="studio_progress_period_pr_workouts">Trainings mit Rekord</string>
+    <string name="studio_volume_total">Gesamtvolumen</string>
+    <string name="studio_volume_one_day">1 Tag</string>
+    <string name="studio_volume_week">7 Tage</string>
+    <string name="studio_volume_month">30 Tage</string>
+    <string name="studio_volume_three_months">3 Mon.</string>
+    <string name="studio_volume_empty">In diesem Zeitraum sind noch keine Trainings erfasst.</string>
+    <string name="studio_volume_loading">Volumendiagramm wird geladen…</string>
+    <string name="studio_volume_retry">Volumendiagramm erneut laden</string>
+    <string name="studio_volume_workouts">Trainings</string>
 </resources>
