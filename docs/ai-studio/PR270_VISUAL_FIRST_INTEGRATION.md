@@ -23,6 +23,19 @@
 | Map | `AnatomicalBodyAndMapComponents.kt` and route controls in Studio screens | Native `WorkoutRouteMapDialog` and saved **segmented** GPS points. Do not reconnect missing GPS segments or show the Studio fixed Margitsziget demo trail |
 | Settings / localization | Studio settings and 32 themes / 4 languages | Native settings/backup/theme/language, prior migration data, Android packaging and main launcher icon |
 
+## Explicit user acceptance rule: pixel-faithful Studio presentation (2026-10-27)
+
+The user has expressly confirmed that **every Studio UI surface, element dimension, card, padding, color, and arrangement had already been finalized to their satisfaction**. Therefore:
+
+- Do **not** improvise new native card sizes, spacing, colors, layouts, visual hierarchy, radii or icon choices. Studio is the exact design source, not a loose inspiration.
+- Port Studio Composable structure, padding, typography, token values, interaction style and responsive layout **directly** from the actual supplied export; only replace DEMO data/state/actions with native production state and callbacks.
+- Preserve the user-approved top navigation exactly as placed and drawn in Studio.
+- Preserve the original main anatomy mask image and actual muscle load calculation as the explicitly requested exception.
+- Do not infer visual completeness from a successful Kotlin build. Capture **real screenshots on the exact PR HEAD** and compare side-by-side with Studio at matching phone dimensions/theme/language/state; fix discrepancies before marking a screen accepted.
+- Avoid adding options, badges, headers, explanatory text, or a new visual pattern merely to expose a native feature; fit real functions within the established Studio screens. Missing feature entry points must be handled without degrading established visual identity.
+- Already committed partial restylings, including the Studio graphite-gold theme, header/hero changes and volume cards, are **WIP and unapproved until screenshot parity**. In particular, the extra graphite-gold theme entry added alongside 32 old native themes is a temporary compatibility measure, not the final 32 Studio palettes: match the original Studio palette registry exactly while preserving saved legacy keys in data.
+- The full integrated app must still preserve the native app's original program, training, planning, GPS, health, Coach, journal, backup, Wear and record-handling behavior.
+
 ## Correct implementation strategy
 
 1. Preserve `com.repforge.app` applicationId, Room entities and migrations, signed update identity, existing native engine and Wear/Health/GPS contracts. Keep `main` unchanged.
