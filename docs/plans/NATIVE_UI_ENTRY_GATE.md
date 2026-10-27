@@ -1,4 +1,11 @@
 # UI-fejlesztés belépési kapuja — Root, 2026-10-26
+
+> **G04 kódban bekötve (2026-10-27, a50d911f):** külön pihenőpause/resume,
+> meglévő service-en, idempotens desiredstate+stale/ownership guard, 48dpUIgomb.
+> 2újJVM és meglévővalósUIpróba bővült; runtime még UNRUN. A CustomExerciseEditor
+> JVMharness runTest/Main-dispatcher-re váltott blokkoló nestedrunBlocking helyett.
+> Új közös40457074686 fut; a korábbi40456207747 megszakítva, nem PASS.
+
 > **2026-10-27 frissítés:** közös40413844661/5b375cd9 telefon112/109PASS/3FAIL,
 > 53rawPNG; locale és mindkét intervallumos eset PASS. Hátra törlés és két
 > navigációs eset. Root790d7c93 javította a Main-looper admissiont és az elavult

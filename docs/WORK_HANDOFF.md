@@ -20,6 +20,7 @@ két sorba törő kompakt restdock, pausedállapotbanSkip/±15disabled.
 Új2NativeRestControlJVM: pausedidő nemcredit/nemworkoutpause/idempotensresume,
 stalegeneration/watch/suspendedelutasítás. MeglévővalósUI Settings-timed-roundtrip
 restPause/resume/Skipassertionnel bővült; stateenabledvárás, nem timeoutemelés.
+Új közös40457074686 exacta50d911fe9bdf80de0598c70493dd5ef9049e100 folyamatban.
 E változások kódban készek, runtime MÉG UNRUN. A3korábbijavítás sem elfogadott
 runtime-ra a megszakítottCIalapján. Új egyközösgate kell; UI vizuálisfázis nemindult.
 
