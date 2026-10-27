@@ -114,18 +114,28 @@ internal fun NativeTopNavigation(route: String, settingsOrigin: String, language
     val selected = NativeMainMenu.selected(route, settingsOrigin)
     val labels = NativeMainMenu.labels(language)
     val destinations = NativeMainMenu.routes
-    // Keep the Studio row at normal sizing; large system text gets full-width
-    // labels in a scrollable tab group instead of clamping accessibility scaling.
-    val expandedLabels = LocalDensity.current.fontScale > 1.3f
-    val scroll = rememberScrollState()
-    Surface(color = colors.bg, tonalElevation = 0.dp) {
-        Row(
-            modifier = Modifier.fillMaxWidth().selectableGroup()
-                .then(if (expandedLabels) Modifier.horizontalScroll(scroll) else Modifier)
-                .padding(start = 8.dp, end = 8.dp, top = 2.dp, bottom = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(5.dp)
-        ) {
-            destinations.forEachIndexed { index, destination ->
+    // 18:49 AI Studio export: at 320dp OR increased font scale, allow every
+    // translated label to remain readable instead of ellipsizing or shrinking text.
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        val scrollable = NativeMainMenu.topTabsScrollable(
+            availableWidthDp = maxWidth.value, fontScale = LocalDensity.current.fontScale)
+        val scroll = rememberScrollState()
+        androidx.compose.runtime.LaunchedEffect(selected, scrollable, scroll.maxValue) {
+            if (scrollable && scroll.maxValue > 0) {
+                val index = destinations.indexOf(selected).coerceAtLeast(0)
+                scroll.animateScrollTo(NativeMainMenu.topTabScrollTarget(
+                    scroll.maxValue, index, destinations.size))
+            }
+        }
+        Surface(color = colors.bg, tonalElevation = 0.dp) {
+            Row(
+                modifier = Modifier.fillMaxWidth()
+                    .then(if (scrollable) Modifier.horizontalScroll(scroll) else Modifier)
+                    .selectableGroup()
+                    .padding(start = 8.dp, end = 8.dp, top = 2.dp, bottom = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
+                destinations.forEachIndexed { index, destination ->
                 val active = selected == destination
                 val icon = when (destination) {
                     "home" -> Icons.Default.Home
@@ -136,7 +146,7 @@ internal fun NativeTopNavigation(route: String, settingsOrigin: String, language
                 }
                 val shape = RoundedCornerShape(12.dp)
                 Column(
-                    modifier = (if (expandedLabels) Modifier.widthIn(min = 88.dp)
+                    modifier = (if (scrollable) Modifier.widthIn(min = 76.dp)
                         else Modifier.weight(1f)).heightIn(min = 56.dp)
                         .clip(shape)
                         .background(if (active) colors.selectedSurface else colors.card)
@@ -144,7 +154,7 @@ internal fun NativeTopNavigation(route: String, settingsOrigin: String, language
                             if (active) colors.accentText else colors.line, shape)
                         .selectable(selected = active, enabled = enabled, role = Role.Tab) { onSelect(destination) }
                         .testTag("navigation_$destination")
-                        .padding(horizontal = 1.dp, vertical = 6.dp),
+                        .padding(horizontal = if (scrollable) 10.dp else 1.dp, vertical = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
@@ -157,10 +167,12 @@ internal fun NativeTopNavigation(route: String, settingsOrigin: String, language
                         color = if (active) colors.accentText else colors.text,
                         fontSize = 10.sp,
                         fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
-                        maxLines = 1, overflow = TextOverflow.Ellipsis
+                        maxLines = 1, softWrap = false,
+                        overflow = if (scrollable) TextOverflow.Visible else TextOverflow.Ellipsis
                     )
                 }
             }
+        }
         }
     }
 }
