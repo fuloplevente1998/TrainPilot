@@ -144,3 +144,21 @@ Root workspace közben unavailable; GitHub connectorral mentve, nincs helyi újb
 Ha a workspace visszatér, a helyi3549 HEAD-et frissítsd fast-forwarddal;
 a két korábbi untracked chatprompt és cache saját munkafájljaihoz ne nyúlj.
 
+
+
+## Ellenőrzött zöld alap és Studio-átvétel – 2026-10-27
+
+Actions40529220611 exactf0c474f17072aaf6f5c23506e0ad5b1c0092e2ae mind7jobSUCCESS.
+Root rawJVM12744903234:166XML/1333PASS; phone12746356640:113main+4GPS=117PASS,
+0failure/error/skip/missing/runnercrash. Új3ciklusos modes-coldrestart PASS.
+Wear raw12746536261/12746331266/12745702438:68+59+56=183PASS;2signedupgradeSUCCESS.
+Phone65PNG manifestSHA256/bytes/PIL-verify PASS;8változatlan baselinekép:
+docs/design/previews/p1-f0c474f1/README.md (még Studio ELŐTTI alsónavigáció).
+User átadta Rootnak a teljesdizájnbeépítést, GitHubonfolytathatócheckpointokkal.
+Munka a PR270 MEGLÉVŐ feat/studio-ui-topnav-trial-20261027 ágán folytatódik,
+main változatlan. Rootworktree /workspace/TrainPilot-studio-ui.
+Felsőötfül kifejezett új userdöntés; demóállapotváltók nemtermékfunkciók.
+A teljesújStudioZIP nincs ebben a workspace-ben/GitHubforrásban; URL/path bekérve.
+Ismertprovenance: trainpilot-oct-27-2026-3-58-04-pm.zip, SHA574f17f639b91037a6e0bdea428f350d4c5950307227511eafc32e7f64bcefcc.
+Ne találj ki készUI-t a hiányzóexport helyett. PR270 csaktopnav/iconpróba jelenleg.
+
