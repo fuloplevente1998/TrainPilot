@@ -78,7 +78,7 @@ class NativeProgressQueryTest {
         add(5, now + 1000, 700.0, 7, true)
         add(6, now - 300_000, 300.0, 3, true, complete = false)
         db.workoutHistoryDao().upsertTombstone(HistoryTombstoneEntity(
-            primaryId = "w-0003", workoutKey = "key-3", idsJson = "[\\"w-0003\\"]", deletedAt = 1))
+            primaryId = "w-0003", workoutKey = "key-3", idsJson = "[\"w-0003\"]", deletedAt = 1))
         val totals = db.workoutHistoryDao().getProgressPeriodTotals(start, until)
         assertEquals(2, totals.workoutCount)
         assertEquals(350.5, totals.totalVolumeKg, 1e-6)
