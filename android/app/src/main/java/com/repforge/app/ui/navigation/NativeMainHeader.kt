@@ -3,9 +3,9 @@ package com.repforge.app.ui.navigation
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
@@ -15,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -60,7 +61,7 @@ internal fun NativeTopNavigation(route: String, settingsOrigin: String, language
     val destinations = NativeMainMenu.routes
     Surface(color = colors.bg, tonalElevation = 0.dp) {
         Row(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth().selectableGroup()
                 .padding(start = 8.dp, end = 8.dp, top = 2.dp, bottom = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
@@ -80,7 +81,7 @@ internal fun NativeTopNavigation(route: String, settingsOrigin: String, language
                         .background(if (active) colors.selectedSurface else colors.card)
                         .border(if (active) 1.5.dp else 1.dp,
                             if (active) colors.accentText else colors.line, shape)
-                        .clickable(enabled = enabled) { onSelect(destination) }
+                        .selectable(selected = active, enabled = enabled, role = Role.Tab) { onSelect(destination) }
                         .testTag("navigation_$destination")
                         .padding(horizontal = 1.dp, vertical = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
