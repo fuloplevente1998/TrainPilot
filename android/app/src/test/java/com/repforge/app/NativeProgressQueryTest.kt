@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.Room
 import com.repforge.app.data.db.*
 import com.repforge.app.ui.progress.NativeProgressQuery
+import com.repforge.app.ui.progress.NativeVolumeProjection
+import com.repforge.app.ui.progress.NativeVolumeRange
 import kotlinx.coroutines.runBlocking
 import java.time.LocalDate
 import java.time.ZoneId
@@ -84,6 +86,60 @@ class NativeProgressQueryTest {
         assertEquals(350.5, totals.totalVolumeKg, 1e-6)
         assertEquals(10, totals.completedSets)
         assertEquals(1, totals.prWorkouts)
+    }
+
+    @Test fun volumeRangesRespectLocalCalendarAndDstChange() {
+        val zone = ZoneId.of("Europe/Budapest")
+        val today = LocalDate.of(2026, 10, 27)
+        val now = today.atTime(12, 0).atZone(zone).toInstant().toEpochMilli()
+        assertEquals(today, NativeVolumeProjection.dateBounds(NativeVolumeRange.DAY, now, zone).first)
+        assertEquals(today.minusDays(6),
+            NativeVolumeProjection.dateBounds(NativeVolumeRange.WEEK, now, zone).first)
+        assertEquals(today.minusDays(29),
+            NativeVolumeProjection.dateBounds(NativeVolumeRange.MONTH, now, zone).first)
+        assertEquals(today.minusMonths(3).plusDays(1),
+            NativeVolumeProjection.dateBounds(NativeVolumeRange.THREE_MONTHS, now, zone).first)
+        // The local DST-end day Oct 25 was 25 hours long.
+        val dstDay = LocalDate.of(2026, 10, 25)
+        val dstEnd = dstDay.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli() - 1
+        val bounds = NativeVolumeProjection.queryBounds(NativeVolumeRange.DAY, dstEnd, zone)
+        assertEquals(25L * 60 * 60 * 1000, bounds.second - bounds.first)
+        assertEquals(12, NativeVolumeRange.THREE_MONTHS.barCount)
+    }
+
+    @Test fun volumeChartUsesSavedNonDeletedFinishesAndNeverFakeBars() = runBlocking {
+        val zone = ZoneId.of("Europe/Budapest")
+        val now = LocalDate.of(2026, 10, 27).atTime(12, 0)
+            .atZone(zone).toInstant().toEpochMilli()
+        val start = LocalDate.of(2026, 10, 21).atStartOfDay(zone).toInstant().toEpochMilli()
+        suspend fun record(i: Int, whenFinished: Long, kg: Double, complete: Boolean = true) {
+            db.workoutHistoryDao().insertWorkout(JournalTestFixtures.row(i).copy(
+                startedEpochMs = if (complete) whenFinished - 120_000 else whenFinished,
+                finishedEpochMs = whenFinished, totalVolumeKg = kg
+            ))
+        }
+        record(100, start + 1000, 100.0)
+        record(101, now - 9000, 250.5)
+        record(102, now - 8000, 999.0)
+        record(103, start - 1, 888.0)
+        record(104, now + 1, 777.0)
+        record(105, now - 6000, 555.0, complete = false)
+        db.workoutHistoryDao().upsertTombstone(HistoryTombstoneEntity(
+            primaryId = "w-0102", workoutKey = "key-102", idsJson = "[\\\"w-0102\\\"]", deletedAt = 1))
+        val (from, until) = NativeVolumeProjection.queryBounds(NativeVolumeRange.WEEK, now, zone)
+        val rows = db.workoutHistoryDao().getProgressVolumeRows(from, until)
+        assertEquals(2, rows.size)
+        val snapshot = NativeVolumeProjection.summarize(NativeVolumeRange.WEEK, now, zone, rows)
+        assertEquals(7, snapshot.buckets.size)
+        assertEquals(2, snapshot.workoutCount)
+        assertEquals(350.5, snapshot.totalVolumeKg, 0.000001)
+        assertEquals(100.0, snapshot.buckets.first().volumeKg, 0.000001)
+        assertEquals(250.5, snapshot.buckets.last().volumeKg, 0.000001)
+        assertEquals(snapshot.totalVolumeKg, snapshot.buckets.sumOf { it.volumeKg }, 0.000001)
+        val blank = NativeVolumeProjection.summarize(
+            NativeVolumeRange.WEEK, now, zone, emptyList())
+        assertEquals(0.0, blank.totalVolumeKg, 0.0)
+        assertTrue(blank.buckets.all { it.volumeKg == 0.0 })
     }
 
     @Test fun noHistoryReturnsZeroMusclesAndEmptyTrend() = runBlocking {
