@@ -281,6 +281,18 @@ fun ProgressScreen(
 
 }
 
+/** The source trend is an ascending time-series for the selected exercise and date range.
+ * Missing/invalid calculations never become values in the Studio summary cards.
+ */
+internal fun strengthSnapshot(
+    estimates: List<Exercise1RmPointUiModel>
+): Pair<Exercise1RmPointUiModel, Exercise1RmPointUiModel>? {
+    val valid = estimates.filter { it.e1rmKg.isFinite() && it.e1rmKg > 0.0 }
+    val latest = valid.lastOrNull() ?: return null
+    val best = valid.maxByOrNull { it.e1rmKg } ?: return null
+    return latest to best
+}
+
 /** Only the selected exercise/range's persisted, finite 1RM estimates are displayed.
  * Do not conflate the maximum estimate with a confirmed personal record.
  */
@@ -288,8 +300,7 @@ fun ProgressScreen(
 private fun ProgressStrengthSnapshot(
     estimates: List<Exercise1RmPointUiModel>, language: String
 ) {
-    val latest = estimates.lastOrNull() ?: return
-    val best = estimates.maxByOrNull { it.e1rmKg } ?: return
+    val (latest, best) = strengthSnapshot(estimates) ?: return
     val narrow = LocalConfiguration.current.screenWidthDp < 360 ||
         LocalDensity.current.fontScale > 1.3f
     val text = nativeResources(LocalContext.current, language)
