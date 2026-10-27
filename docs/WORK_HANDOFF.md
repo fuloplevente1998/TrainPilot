@@ -4,6 +4,20 @@ Frissítve: **2026-10-26**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Gemini AI Studio elkülönített Egészség-tervezési feladat — 2026-10-27
+
+User elfogadta a képernyőnkénti stratégiát (közösmain-elemek,Health/Progress main,
+Home/többinézetmockup), AIStudio delegálható munkát kért. Root elkészítette:
+plans/GEMINI_HEALTH_VISUAL_HANDOFF.md + audit-input/gemini-health/INPUT.md.
+Egészségoldal pontos teljestartalom/layout→natívstate/callback/specifikáció,
+read-only, egy Markdownkimenet, nincs GitHubírás/kód/CI/újmockup/modelkitalálás.
+Input21pinnedblokk380230byte: mainJS/indexHTMLhealthdekorátor+CSS, natívHealthUI/VM,
+RecordBrowser, P0theme/components és4locale ténylegesHealthresourceértékek.
+Main7473b30; natív/P0 2f7cd835green. Teljesmainindex+manifest rawlink+16teljes/részletes
+forráslink+eredetisorszám a packetben. Proofgapot meg kell neveznie, nem teljesnekmondani.
+Root Home/Training P1forrását nem írja; nincs párhuzamos runtimewriter.
+Átadó elkészült, tényleges külsőGeminiindítást nem állítunk uservisszajelzés nélkül.
+
 ## Health/Progress main-referencia, Home/mockup irány — 2026-10-27
 
 User az Egészség és Fejlődés teljes main oldalainak átvihetőségét kérdezte;
