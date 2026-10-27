@@ -1,5 +1,16 @@
 # TrainPilot – Studio UI folytatási pont
 
+## 2026-10-27: következő Egészség + Fejlődés + Napló increment
+
+- Aktuális natív adatkötött felületek: `HealthSelectedDayOverview` a 6 Studio-kártyát a kiválasztott valódi nap 26 metrikájából vetíti; a teljes 26-os lista tovább látható, `NativeHealthMetrics.overview` kizárólag az adott nap elemeit rangsorolja. `NativeHealthOverviewTest` 2 célzott JVM-es esettel dokumentálja hiányzó adatok, sorrend, source megőrzését.
+- `ProgressStrengthSnapshot`: az aktuális kiválasztott gyakorlat/range Room-ból származó legutóbbi és max becsült 1RM külön, lokalizált Studio-metrikakártyán; **nem** állítunk igazolt PR-t. A régi `TrendCanvas`, trendválasztók, képgaléria, kardió, testsúly-áttekintés továbbra elérhető.
+- `MuscleLoadPanel`: telefonon (<600dp) a teljes main anatómia/maszk előbb teljes szélességben látható, a valós terhelési oszlopok alatta; tableten oldalt. Eredeti `NativeMuscleLoadVisual` zoom + valódi Room-modellek megtartva.
+- `JournalSummaryCard`: mentett natív kezdési idő önálló Studio-dátumsorként jelenik meg; eredeti paging/detail / eredmény adatok maradnak.
+- **CI hiba javítva:** az előző exact `f3fdbb3a` Android/Wear workflow `40559273312` compileFAIL: `ProgressScreen.kt` hiányzó `IntrinsicSize` és `fillMaxHeight` importok. Javítás `ed87533a`, majd anatómia-layout `b1f2825a`. `40560794911` régebbi `ed87533a` SHA-n fut, ezért nem hitelesíti az új body layoutot. Következő teljes workflow-nak **b1f2825a utáni** HEAD-en kell futnia, build+JVM+phone+Wear+2upgrade vizsgálattal.
+- A pontos felhasználói legfrissebb ZIP: `docs/ai-studio/trainpilot-oct-27-2026-6-49-09-pm.zip`, SHA-256 `b699d72bc2b673cefbd3dabbdb8164f681c35762e47d19adf42c12e6b22eabf1`. A GitHubon ténylegesen fent van. Sem `main` merge, sem release APK, sem éles adatos telepítés nincs.
+- További, még NEM kész UI: valódi Health pulzustrend/naplórészletek és grafikonok, Progress volumen-/PR részletek, log edzésrészletek/térkép tile provider, Coach, összes edzésmód és minden támogató nézet Studio-paritása. Mostani munkát ezért **WIP**-nek tekintsd.
+
+
 ## 2026-10-27: 18:49 Studio-export feltöltve, újabb UI-csomag
 
 - A user az eredeti `trainpilot-oct-27-2026-6-49-09-pm.zip` fájlt ténylegesen feltöltötte a `docs/ai-studio/` mappába, a PR #270 **HEAD ágára**. Méret `4011698` byte, Git blob `8a12a591cf841cfc1a8b6b8ca86716bd8d0dd92b`, SHA-256 `b699d72bc2b673cefbd3dabbdb8164f681c35762e47d19adf42c12e6b22eabf1`; a korábbi user ZIP byteazonos. Kánonikus vizuális input az új ZIP, a régi 15:58 ZIP csak történet.
