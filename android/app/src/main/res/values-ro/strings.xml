@@ -665,4 +665,9 @@
     <string name="native_timer_defaults_save">Salvează</string>
     <string name="studio_progress_latest_1rm">Ultima estimare 1RM</string>
     <string name="studio_progress_best_1rm">Cea mai bună estimare 1RM</string>
+    <string name="studio_progress_period_title">Ultimele 30 de zile</string>
+    <string name="studio_progress_period_workouts">Antrenamente</string>
+    <string name="studio_progress_period_volume">Volum total</string>
+    <string name="studio_progress_period_sets">Serii finalizate</string>
+    <string name="studio_progress_period_pr_workouts">Antrenamente cu record</string>
 </resources>
