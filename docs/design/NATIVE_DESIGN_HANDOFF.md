@@ -6,6 +6,27 @@ a vizuális irány elfogadott, az új képek külön felhasználói áttekintés
 A képek generált látványtervek, a végső átadás futó emulátorból készített képeket igényel.
 
 
+## Main-fotók alapján pontosított vizuális mesterterv – 2026-10-27
+
+A felhasználó a main tényleges képeivel és a négy mockuppal elkészíttette az új
+részletes bemenetet: [NATIVE_VISUAL_MASTER_PLAN_2026-10-27.md](NATIVE_VISUAL_MASTER_PLAN_2026-10-27.md).
+Vizuális referencia: prémium grafit/arany kompozíció, ötfüles natív navigáció;
+Health és Progress teljes main-szekciók, lenyitható részletek, pulzus/súly trend,
+volumen- és PR-részletek, relatív izomterhelés valódi anatómiai assetekkel.
+A 32 paletta és 4 nyelv megmarad; arany referencia nem írja át a mentett palettát.
+Sötét felirat világos/arany CTA-n a közös onAccent kontraszttokenből; nincs
+képernyőnkénti színkód/új luminance-heurisztika. A szövegbeli példaszámok nem adatok.
+
+Forrásillesztés: a bemásolható kód több nem létező package/API/resource-ra utal;
+a tényleges session/callback/recovery/epoch/restore szerződéseket nem cseréljük le.
+A meglévő testTag-ek megmaradnak, új neveket legfeljebb hozzáadunk. A valódi oldalak
+JournalScreen és ProgressScreen, nem külön új History/Analytics rendszerek.
+
+Első stabilitási csomag zöld: 39da06cc / 40481815367, 1333 JVM +114 phoneUI,
+3 Wear és2 signed upgrade sikeres, 57 nyers PNG validált. Ez a baseline
+nem végleges vizuális elfogadás. A Home quick-kártya szűk méreten még túltördel;
+a Health/Progress main-részletesség még feladat. Következő a P1 további kidolgozás.
+
 ## Képernyőnkénti referenciaprioritás — user pontosítás, 2026-10-27
 
 - **Egészség és Fejlődés:** a main teljes, bevált oldalstruktúrája, funkciókészlete,

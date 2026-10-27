@@ -5,16 +5,19 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
 
 
 
-## Aktuális: master plan szerinti sorrendi folytatás – 2026-10-27
+## Aktuális: master plan, első kapu zöld – 2026-10-27
 
-User 1 stabilitás/V01–V02 → zöld teszt → 2 V03–V05 → 3 P2/P3/P4/P5
-sorrendet kér. Terv: docs/plans/NATIVE_MASTER_PLAN_AND_FIXES.md, pontos
-forrásillesztés: docs/reviews/NATIVE_MASTER_PLAN_EXECUTION.md. A mellékelt
-full-file blokkok más API-kra utalnak; a valódi Home bounded/recovery/epoch
-útvonalat megtartottuk, nincs ott CoachEngine.load. Runner teardown idle,
-locale+Coach scroll és meglévő Home/Training callbackre igazított intrinsic
-layout/P0 felület jelölt kész. Még nincs új runtimePASS. Második lépés csak
-az első kapu igazolása után; main/verzió/PR-merge nincs.
+Exact 39da06cca96d93586fc1ef00ab8bac2ded0925fb / Actions40481815367:
+7/7 SUCCESS. Root XML1333JVM +114phoneUI (110main+4GPS),0failure/error/skip;
+mind3korábbiFAIL PASS, nincs missing/runnercrash.57rawPNG hash/CRC validált.
+3Wear shard+2signedupgrade SUCCESS. Main/verzió/PR-merge változatlan.
+Friss user main-fotók+mockupok→docs/design/NATIVE_VISUAL_MASTER_PLAN_2026-10-27.md,
+normalizált szerződés a NATIVE_DESIGN_HANDOFF tetején, végrehajtás/review:
+docs/reviews/NATIVE_MASTER_PLAN_EXECUTION.md. A bemeneti fullfile blokkok nem a
+valós API-k; nincs Home CoachEngine.load. A bounded/recovery/epoch útvonal megmarad.
+Következő 2.lépés P1 V03–V05 actual Journal/HealthDashboard/Progress; teljesmain
+részletesség, nem pusztaCardcsere. Home/Training még nem véglegesen elfogadott.
+3.lépés P2→P3→P4→P5 csak sorrendben, csomagonként kapu; még nem kezdődött.
 
 ## Teljes áthelyezhető átadó — 2026-10-27
 
