@@ -4,6 +4,18 @@ Frissítve: **2026-10-26**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+
+## Aktuális: master plan szerinti sorrendi folytatás – 2026-10-27
+
+User 1 stabilitás/V01–V02 → zöld teszt → 2 V03–V05 → 3 P2/P3/P4/P5
+sorrendet kér. Terv: docs/plans/NATIVE_MASTER_PLAN_AND_FIXES.md, pontos
+forrásillesztés: docs/reviews/NATIVE_MASTER_PLAN_EXECUTION.md. A mellékelt
+full-file blokkok más API-kra utalnak; a valódi Home bounded/recovery/epoch
+útvonalat megtartottuk, nincs ott CoachEngine.load. Runner teardown idle,
+locale+Coach scroll és meglévő Home/Training callbackre igazított intrinsic
+layout/P0 felület jelölt kész. Még nincs új runtimePASS. Második lépés csak
+az első kapu igazolása után; main/verzió/PR-merge nincs.
+
 ## Teljes áthelyezhető átadó — 2026-10-27
 
 AI Studiohoz külön kis bemenet: [01_START_HERE.md](ai-studio/01_START_HERE.md),

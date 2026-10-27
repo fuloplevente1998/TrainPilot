@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -58,6 +60,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.material3.MaterialTheme
+import com.repforge.app.ui.components.TrainPilotHeroSurface
+import com.repforge.app.ui.components.TrainPilotStatusBadge
 import com.repforge.app.ui.components.TrainPilotSurfaceCard
 import com.repforge.app.ui.components.TrainPilotSectionHeader
 import com.repforge.app.ui.theme.TrainPilotDimensions
@@ -118,13 +122,8 @@ fun HomeScreen(
             }
         }
         // 1. Következő edzés ajánló kártya (Next Workout Hero Card)
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = colors.card),
-            border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
-        ) {
-            Column(modifier = Modifier.padding(18.dp)) {
+        TrainPilotHeroSurface(Modifier.fillMaxWidth().testTag("home_today_hero")) {
+            Column {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -176,19 +175,26 @@ fun HomeScreen(
             }
         }
 
-        // 3. Gyorsindítás szekció (Quick Workout Buttons)
-        Text(
-            text = strings.getString(R.string.native_home_quick_workout),
-            color = colors.text,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.SemiBold
-        )
-        QuickActionButton(strings.getString(R.string.native_home_gym),
-            strings.getString(R.string.native_home_select_exercise), Icons.Default.FitnessCenter,
-            Modifier.fillMaxWidth(), onClick = { onQuickWorkout(false) })
-        QuickActionButton(strings.getString(R.string.native_home_outdoor_gps),
-            strings.getString(R.string.native_home_run_walk), Icons.Default.DirectionsRun,
-            Modifier.fillMaxWidth(), onClick = { onQuickWorkout(true) })
+        // Navigation stays available during local data loading; no duplicate section title.
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val stacked = maxWidth < 280.dp || LocalDensity.current.fontScale > 1.3f
+            val gym: @Composable (Modifier) -> Unit = { modifier ->
+                QuickActionButton(strings.getString(R.string.native_home_gym),
+                    strings.getString(R.string.native_home_select_exercise), Icons.Default.FitnessCenter,
+                    modifier.testTag("home_quick_workout"), enabled = !busy, onClick = { onQuickWorkout(false) })
+            }
+            val outdoor: @Composable (Modifier) -> Unit = { modifier ->
+                QuickActionButton(strings.getString(R.string.native_home_outdoor_gps),
+                    strings.getString(R.string.native_home_run_walk), Icons.Default.DirectionsRun,
+                    modifier.testTag("home_outdoor_workout"), enabled = !busy, onClick = { onQuickWorkout(true) })
+            }
+            if (stacked) Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                gym(Modifier.fillMaxWidth()); outdoor(Modifier.fillMaxWidth())
+            } else Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                gym(Modifier.weight(1f).fillMaxHeight()); outdoor(Modifier.weight(1f).fillMaxHeight())
+            }
+        }
 
         // 4. Wear OS kapcsolat és diagnosztika státusz sáv
         Card(
@@ -301,11 +307,11 @@ fun TodayMetricsGrid(metrics: TodayMetricsUiModel, language: String = "hu") {
         val columns = if (maxWidth < 280.dp || fontScale > 1.3f) 1 else 2
         Column(verticalArrangement = Arrangement.spacedBy(TrainPilotDimensions.Gap)) {
             for (row in items.chunked(columns)) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(TrainPilotDimensions.Gap)) {
+                Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(TrainPilotDimensions.Gap)) {
                     for ((key, label, value, unit, detail, notice) in row) {
-                        TrainPilotSurfaceCard(Modifier.weight(1f).testTag("home_metric_$key")) {
+                        TrainPilotSurfaceCard(Modifier.weight(1f).fillMaxHeight().testTag("home_metric_$key")) {
                             Text(label, color = colors.muted, style = MaterialTheme.typography.bodySmall)
-                            Text(value, color = colors.text, style = MaterialTheme.typography.headlineMedium,
+                            Text(value, color = colors.text, style = MaterialTheme.typography.headlineMedium.copy(fontFeatureSettings = "tnum"),
                                 modifier = Modifier.testTag("home_metric_${key}_value"))
                             if (unit != null) Text(unit, color = colors.muted, style = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier.testTag("home_metric_${key}_unit"))
@@ -330,10 +336,11 @@ fun QuickActionButton(
     subtitle: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     modifier: Modifier,
+    enabled: Boolean = true,
     onClick: () -> Unit
 ) {
     val colors = LocalTrainPilotColors.current
-    TrainPilotSurfaceCard(modifier.heightIn(min = TrainPilotDimensions.Control), onClick = onClick) {
+    TrainPilotSurfaceCard(modifier.heightIn(min = TrainPilotDimensions.Control), onClick = onClick, enabled = enabled) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(icon, contentDescription = null, tint = colors.accentText, modifier = Modifier.size(TrainPilotDimensions.Icon))
             Spacer(Modifier.width(TrainPilotDimensions.Gap))

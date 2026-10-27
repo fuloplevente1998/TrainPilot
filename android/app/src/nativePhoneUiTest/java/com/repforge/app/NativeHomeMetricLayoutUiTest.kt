@@ -16,6 +16,7 @@ import com.repforge.app.ui.home.TodayMetricsGrid
 import com.repforge.app.ui.home.TodayMetricsUiModel
 import com.repforge.app.ui.theme.TrainPilotTheme
 import org.junit.Assert.assertTrue
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -24,6 +25,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class NativeHomeMetricLayoutUiTest {
     @get:Rule val compose = createComposeRule()
+    @After fun settleComposition() = compose.waitForIdle()
 
     private fun show(fontScale: Float) {
         compose.setContent {
@@ -43,6 +45,7 @@ class NativeHomeMetricLayoutUiTest {
         val first = compose.onNodeWithTag("home_metric_sleep").fetchSemanticsNode().boundsInRoot
         val second = compose.onNodeWithTag("home_metric_calories").fetchSemanticsNode().boundsInRoot
         assertTrue("Adjacent metric cards must not overlap", first.right < second.left)
+        assertTrue("Intrinsic metric row must align card heights", kotlin.math.abs(first.height - second.height) <= 1f)
         for (key in listOf("sleep", "calories", "pulse", "steps", "workouts", "recovery")) {
             compose.onNodeWithTag("home_metric_${key}_value").performScrollTo().assertIsDisplayed()
         }

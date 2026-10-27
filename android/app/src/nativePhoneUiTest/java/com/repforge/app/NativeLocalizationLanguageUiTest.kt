@@ -113,10 +113,11 @@ class NativeLocalizationLanguageUiTest {
         compose.onNodeWithTag("navigation_training").performClick()
         awaitText("Antrenament rapid")
         compose.onNodeWithTag("navigation_home").performClick()
-        compose.onNodeWithTag("shortcut_calendar").performClick()
+        compose.onNodeWithTag("shortcut_calendar").performScrollTo().performClick()
+        compose.waitUntil(15_000) { nodesWithTag("navigation_back") }
         awaitText("Calendar")
         compose.onNodeWithTag("navigation_back").performClick()
-        compose.onNodeWithTag("shortcut_coach").performClick()
+        compose.onNodeWithTag("shortcut_coach").performScrollTo().performClick()
         compose.waitUntil(15_000) { nodesWithTag("coach_ready") }
         awaitText("Coach")
         compose.onNodeWithTag("navigation_back").performClick()
@@ -124,7 +125,8 @@ class NativeLocalizationLanguageUiTest {
         compose.onNodeWithTag("navigation_settings").performClick()
         selectLanguageInSettings("de", "Trainingsprofil")
         compose.onNodeWithTag("navigation_back").performClick()
-        compose.onNodeWithTag("shortcut_calendar").performClick()
+        compose.onNodeWithTag("shortcut_calendar").performScrollTo().performClick()
+        compose.waitUntil(15_000) { nodesWithTag("navigation_back") }
         awaitText("Kalender")
         compose.onNodeWithTag("navigation_back").performClick()
         compose.onNodeWithTag("navigation_training").performClick()

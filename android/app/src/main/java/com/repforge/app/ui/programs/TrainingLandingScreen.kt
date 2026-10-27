@@ -8,12 +8,17 @@ import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.repforge.app.ui.navigation.NativePlanningShortcuts
 import com.repforge.app.ui.theme.LocalTrainPilotColors
 import com.repforge.app.ui.theme.TrainPilotDimensions
+import com.repforge.app.ui.components.TrainPilotHeroSurface
+import com.repforge.app.ui.components.TrainPilotStatusBadge
+import com.repforge.app.ui.components.TrainPilotSectionSurface
 import com.repforge.app.ui.components.TrainPilotSurfaceCard
 import com.repforge.app.ui.components.TrainPilotSectionHeader
 import com.repforge.app.ui.components.TrainPilotPrimaryButton
@@ -50,28 +55,37 @@ internal fun TrainingLandingScreen(language: String, activeProgramId: String, bu
     val program = state.programs.firstOrNull { it.program.id == activeProgramId }
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
-            TrainPilotSurfaceCard(Modifier.fillMaxWidth()) {
-                TrainPilotSectionHeader(labels[1])
-                TrainPilotPrimaryButton(labels[2], { onQuick(false) }, Modifier.fillMaxWidth(), !busy)
+            TrainPilotHeroSurface(Modifier.fillMaxWidth().testTag("training_quick_section")) {
+                TrainPilotStatusBadge(labels[1])
+                val stacked = LocalDensity.current.fontScale > 1.3f
+                if (stacked) Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    TrainPilotPrimaryButton(labels[2], { onQuick(false) },
+                        Modifier.fillMaxWidth().testTag("training_quick_workout"), !busy)
+                    OutlinedButton(onClick = { onQuick(true) }, enabled = !busy,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("training_outdoor_workout")) { Text(labels[3]) }
+                } else Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    TrainPilotPrimaryButton(labels[2], { onQuick(false) },
+                        Modifier.weight(1f).fillMaxHeight().testTag("training_quick_workout"), !busy)
+                    OutlinedButton(onClick = { onQuick(true) }, enabled = !busy,
+                        modifier = Modifier.weight(1f).fillMaxHeight().heightIn(min = 52.dp).testTag("training_outdoor_workout")) { Text(labels[3]) }
+                }
                 OutlinedButton(onClick = onLibrary, enabled = !busy,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = TrainPilotDimensions.Control)) { Text(labels[9]) }
-                OutlinedButton(onClick = { onQuick(true) }, enabled = !busy,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = TrainPilotDimensions.Control)) { Text(labels[3]) }
+                    modifier = Modifier.fillMaxWidth().heightIn(min = TrainPilotDimensions.Control).testTag("training_open_exercises")) { Text(labels[9]) }
             }
         }
         item { NativePlanningShortcuts(language, !busy, onPrograms, onCalendar, onCoach) }
         item {
             TrainPilotSectionHeader(labels[4])
             Text(program?.program?.let { name(it.nameHu, it.nameEn, it.nameDe, it.nameRo) } ?: labels[7], color = colors.text)
-            TextButton(onClick = onPrograms, enabled = !busy) { Text(labels[5]) }
+            TextButton(onClick = onPrograms, enabled = !busy, modifier = Modifier.heightIn(min = 48.dp).testTag("training_open_programs")) { Text(labels[5]) }
         }
         items(program?.days.orEmpty().sortedBy { it.sortOrder }, key = { it.compositeId }) { day ->
-            TrainPilotSurfaceCard(Modifier.fillMaxWidth()) {
+            TrainPilotSectionSurface(Modifier.fillMaxWidth().testTag("training_day_${day.dayId}")) {
                 Text(name(day.nameHu, day.nameEn, day.nameDe, day.nameRo), color = colors.text,
                     style = MaterialTheme.typography.titleMedium)
                 Text("${runCatching { JSONArray(day.exercisesJson).length() }.getOrDefault(0)} ${labels[8]}",
                     color = colors.muted, style = MaterialTheme.typography.bodySmall)
-                TrainPilotPrimaryButton(labels[6], { onStart(day.programId, day.dayId) }, Modifier.fillMaxWidth(), !busy)
+                TrainPilotPrimaryButton(labels[6], { onStart(day.programId, day.dayId) }, Modifier.fillMaxWidth().testTag("training_start_day_${day.dayId}"), !busy)
             }
         }
         item { Spacer(Modifier.height(TrainPilotDimensions.Page)) }

@@ -98,6 +98,7 @@ internal class NativeLocalizationEmulatorFixture {
     }
 
     fun close(scenario: ActivityScenario<MainActivity>?) {
+        instrumentation.waitForIdleSync()
         scenario?.close()
         stopServices()
     }

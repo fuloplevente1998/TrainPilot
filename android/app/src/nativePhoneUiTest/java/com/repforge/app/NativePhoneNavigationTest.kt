@@ -1272,7 +1272,7 @@ class NativePhoneNavigationTest {
         }
         fun programCount() = runBlocking(Dispatchers.IO) { db.programDao().getProgramIds().size }
         val count = programCount()
-        launch(); compose.onNodeWithTag("shortcut_coach").performClick()
+        launch(); compose.onNodeWithTag("shortcut_coach").performScrollTo().performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("coach_ready").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("coach_ready").performScrollToNode(hasTestTag("coach_variation_pushup"))
         compose.onNodeWithTag("coach_variation_pushup").performClick()
