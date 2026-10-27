@@ -663,4 +663,6 @@
     <string name="native_timer_defaults_invalid">Munka: 1–3600 mp; pihenő: 0–3600 mp; körök: 1–100. A teljes idő legfeljebb 24 óra.</string>
     <string name="native_timer_defaults_failed">Nem sikerült menteni, vagy közben változtak az adatok. Zárd be és nyisd meg újra a szerkesztőt.</string>
     <string name="native_timer_defaults_save">Mentés</string>
+    <string name="studio_progress_latest_1rm">Legutóbbi 1RM-becslés</string>
+    <string name="studio_progress_best_1rm">Legjobb 1RM-becslés</string>
 </resources>
