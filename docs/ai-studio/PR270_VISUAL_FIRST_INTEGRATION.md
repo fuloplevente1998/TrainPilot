@@ -2,12 +2,19 @@
 
 **Product decision, 2026-10-27:** the target is **the exported AI Studio Compose design running with every real TrainPilot function**, not the old native screen hierarchy merely recolored. This PR remains draft against `feat/native-android-migration`; `main` must not be merged/overwritten in this work.
 
-## Which export?
+## Canonical visual reference — USER LOCKED (2026-10-27)
 
-- Current newest ChatGPT-supplied ZIP (20:14 local time): `trainpilot-oct-27-2026-8-14-38-pm.zip`, **8.5 MB**, SHA-256 `05c5f58cb9f184a05bd6b88c1e6d7460d456b6a9c5a4e83051c8ff432ce1a082`; 479 ZIP entries. Present in the originating ChatGPT conversation; **not yet verified as a binary GitHub upload**.
-- Already archived on this branch (18:49 Studio design): [`docs/ai-studio/trainpilot-oct-27-2026-6-49-09-pm.zip`](trainpilot-oct-27-2026-6-49-09-pm.zip) and [source index](STUDIO_EXPORT_2026-10-27_1849.md); 18:49 is older.
-- The 20:14 ZIP is **one Android application module containing TWO Compose screen families**: `app/src/main/java/com/example/` (Studio UI DEMO) and `app/src/main/java/com/repforge/app/` (production native app). Its launch manifest opens **`com.repforge.app.MainActivity`**, which explains why directly building that ZIP opens the older native look. Simply including the Studio classes does NOT wire them into the Activity.
-- **Do not switch the production manifest to `com.example.MainActivity` as a shortcut.** It has standalone demo state, a separate package and no guaranteed production identity, real workouts, signed-upgrade continuity, migration, Room, Wear or Health integration.
+**Use ONLY the earlier, user-approved 18:49 AI Studio visual export to judge or port the UI:**
+[`docs/ai-studio/trainpilot-oct-27-2026-6-49-09-pm.zip`](trainpilot-oct-27-2026-6-49-09-pm.zip).
+Original filename `trainpilot-oct-27-2026-6-49-09-pm.zip` (4,011,698 bytes),
+SHA-256 `b699d72bc2b673cefbd3dabbdb8164f681c35762e47d19adf42c12e6b22eabf1`.
+See [original source index](STUDIO_EXPORT_2026-10-27_1849.md).
+
+**Explicit user correction:** **DO NOT** use the newer 20:14 (`trainpilot-oct-27-2026-8-14-38-pm.zip`) Studio/compiled hybrid as a visual design source or parity benchmark. It launches the older native `com.repforge.app.MainActivity` and its rendered appearance is *not* the accepted design. Its existence does not supersede the 18:49 export.
+
+A production APK must continue to launch the **native** `com.repforge.app.MainActivity`, but the *actual native screen appearance* must reproduce the accepted 18:49 export with real native data, not use the 20:14 APK's appearance.
+
+The approved source has static demo controls and data: omit those controls from production, not the styling/layout of real corresponding states.
 
 ## Visual source-of-truth → actual native logic
 
@@ -28,7 +35,7 @@
 The user has expressly confirmed that **every Studio UI surface, element dimension, card, padding, color, and arrangement had already been finalized to their satisfaction**. Therefore:
 
 - Do **not** improvise new native card sizes, spacing, colors, layouts, visual hierarchy, radii or icon choices. Studio is the exact design source, not a loose inspiration.
-- Port Studio Composable structure, padding, typography, token values, interaction style and responsive layout **directly** from the actual supplied export; only replace DEMO data/state/actions with native production state and callbacks.
+- Port Studio Composable structure, padding, typography, token values, interaction style and responsive layout **directly from the approved 18:49 export**; only replace DEMO data/state/actions with native production state and callbacks.
 - Preserve the user-approved top navigation exactly as placed and drawn in Studio.
 - Preserve the original main anatomy mask image and actual muscle load calculation as the explicitly requested exception.
 - Do not infer visual completeness from a successful Kotlin build. Capture **real screenshots on the exact PR HEAD** and compare side-by-side with Studio at matching phone dimensions/theme/language/state; fix discrepancies before marking a screen accepted.
@@ -58,8 +65,8 @@ The user has expressly confirmed that **every Studio UI surface, element dimensi
 1. Rewrite native Home presentation tree to match the Studio source **section-for-section**, preserving genuine active/scheduled/Coach state and every existing callback. Emulator screenshot first.
 2. Bring over the Studio Training/Log/Progress card composition and live detailed state with real native data. Visual compare each screen after working build.
 3. Native Health, Coach, Settings and all secondary/editing screens. Verify small-screen text, permissions, missing readings, and signed upgrade.
-4. Audit the whole resulting UI against the 20:14 export and the separate four mockups before removing draft status.
+4. Audit the whole resulting UI against the **approved 18:49 export** and the separate four mockups before removing draft status; **never** use the 20:14 compiled/hybrid build as a visual benchmark.
 
 ## Resume from another ChatGPT/Codex session
 
-Read this document, [`docs/STUDIO_UI_RESUME.md`](../STUDIO_UI_RESUME.md), and PR #270's current **HEAD**. Use the **20:14 ZIP** if available (verify hash above), otherwise the checked-in older 18:49 design as a provisional UI reference. The next agent must not claim the 20:14 binary was GitHub-uploaded. Report exact commits, test run URLs and real unmodified screenshot artifacts. No unrequested merge or release.
+Read this document, [`docs/STUDIO_UI_RESUME.md`](../STUDIO_UI_RESUME.md), and PR #270's current **HEAD**. Use the checked-in **18:49 ZIP exclusively as the accepted visual reference**. Do NOT use the newer 20:14 ZIP as a design benchmark. Report exact commits, test run URLs and real unmodified screenshot artifacts. No unrequested merge or release.
