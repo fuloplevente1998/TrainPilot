@@ -3,6 +3,17 @@ package com.repforge.app.ui.navigation
 /** Accepted five-tab hierarchy; secondary destinations keep a primary parent. */
 internal object NativeMainMenu {
     val routes = listOf("home", "training", "journal", "progress", "health")
+    /** Latest Studio 18:49 design: 320dp screens and scaled DE/RO text stay scrollable. */
+    fun topTabsScrollable(availableWidthDp: Float, fontScale: Float): Boolean =
+        availableWidthDp < 400f || fontScale > 1.15f
+
+    /** Ensure selected top pill becomes visible; resistant to extreme scroll widths. */
+    fun topTabScrollTarget(maxScrollPx: Int, index: Int, tabCount: Int = routes.size): Int {
+        if (maxScrollPx <= 0 || tabCount <= 1) return 0
+        val validIndex = index.coerceIn(0, tabCount - 1)
+        return ((maxScrollPx.toLong() * validIndex) / (tabCount - 1)).toInt()
+    }
+
     val secondaryRoutes = listOf("programs", "calendar", "coach", "quick_workout", "quick_outdoor", "active_workout", "settings", "weight_journal", "exercise_library")
 
     fun selected(route: String, settingsOrigin: String = "home"): String = when (route) {
