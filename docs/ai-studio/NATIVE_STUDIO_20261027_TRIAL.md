@@ -1,5 +1,8 @@
 # TrainPilot AI Studio 2026-10-27 — native trial (not release-ready)
 
+> **Latest source supersedes this original trial note:** [18:49 AI Studio export handoff](STUDIO_EXPORT_2026-10-27_1849.md) records the newer `trainpilot-oct-27-2026-6-49-09-pm.zip` SHA-256 `b699d72bc2b673cefbd3dabbdb8164f681c35762e47d19adf42c12e6b22eabf1`, its AI Studio project link, and resume instructions. The older 15:58 archive below remains history only. This PR now includes native UI changes beyond the original top-navigation-and-icon proof of concept; inspect the current diff instead of relying on its outdated status section.
+
+
 ## Provenance
 - Source supplied by user: `trainpilot-oct-27-2026-3-58-04-pm.zip`
 - SHA-256: `574f17f639b91037a6e0bdea428f350d4c5950307227511eafc32e7f64bcefcc`.
