@@ -37,6 +37,18 @@ internal object NativeHealthMetrics {
         Definition("basalMetabolicRateKcal", R.string.health_metric_basalmetabolicratekcal, "kcal", 0),
         Definition("bodyMassIndex", R.string.health_metric_bodymassindex, "", 1)
     )
+    /** Studio's six compact overview tiles, selected only from genuine day projections.
+     * This is a view projection: no fallback to past days, calculated values, or DEMO metrics.
+     * Every original metric remains available in the detailed 26-reading list.
+     */
+    internal val overviewKeys = listOf(
+        "sleepScore", "activeCalories", "averageHeartRate",
+        "steps", "weightKg", "energyScore"
+    )
+
+    fun overview(metrics: List<HealthMetricItemUiModel>): List<HealthMetricItemUiModel> =
+        overviewKeys.mapNotNull { key -> metrics.firstOrNull { it.key == key } }
+
     fun parse(context: Context, day: JSONObject, language: String): List<HealthMetricItemUiModel> {
         val text = nativeResources(context, language)
         val providers = day.optJSONObject("metricProviders")
