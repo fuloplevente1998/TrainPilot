@@ -107,6 +107,12 @@ interface ExerciseLibraryDao {
     suspend fun deleteAllCustomExercises()
 }
 
+/** Bounded persisted history source for the Studio volume bar chart. */
+data class ProgressVolumeRow(
+    val finishedEpochMs: Long,
+    val volumeKg: Double
+)
+
 /** No raw JSON, GPS, photo or set hydration in the 30-day progress overview. */
 data class ProgressPeriodTotals(
     val workoutCount: Int,
@@ -294,6 +300,21 @@ interface WorkoutHistoryDao {
                  OR (t.workoutKey <> '' AND t.workoutKey = w.workoutKey))
     """)
     suspend fun getProgressPeriodTotals(fromInclusive: Long, toExclusive: Long): ProgressPeriodTotals
+
+    /** No photos, routes, set rows or raw JSON are read to build the volume chart.
+     * Finished timestamp is the chart's date; data replacement/tombstones are respected.
+     */
+    @Query("""
+        SELECT w.finishedEpochMs AS finishedEpochMs, w.totalVolumeKg AS volumeKg
+        FROM workout_history w
+        WHERE w.finishedEpochMs >= :fromInclusive AND w.finishedEpochMs < :toExclusive
+          AND w.finishedEpochMs > w.startedEpochMs
+          AND NOT EXISTS (SELECT 1 FROM history_tombstones t
+              WHERE (t.primaryId <> '' AND t.primaryId IN (w.id, w.syncId, w.workoutKey))
+                 OR (t.workoutKey <> '' AND t.workoutKey = w.workoutKey))
+        ORDER BY w.finishedEpochMs ASC, w.id ASC
+    """)
+    suspend fun getProgressVolumeRows(fromInclusive: Long, toExclusive: Long): List<ProgressVolumeRow>
 
     /** Completed sets for the last 30 days, grouped in SQLite rather than hydrating whole workouts. */
     @Query("""
