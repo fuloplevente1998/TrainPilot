@@ -137,12 +137,13 @@ internal fun NativeTopNavigation(route: String, settingsOrigin: String, language
             ) {
                 destinations.forEachIndexed { index, destination ->
                 val active = selected == destination
+                // Icons follow the latest Studio mockup; the native routes do not change.
                 val icon = when (destination) {
                     "home" -> Icons.Default.Home
-                    "training" -> Icons.Default.FitnessCenter
-                    "journal" -> Icons.Default.MenuBook
-                    "progress" -> Icons.Default.ShowChart
-                    else -> Icons.Default.FavoriteBorder
+                    "training" -> Icons.Default.DirectionsRun
+                    "journal" -> Icons.Default.Description
+                    "progress" -> Icons.Default.TrendingUp
+                    else -> if (active) Icons.Default.Favorite else Icons.Default.FavoriteBorder
                 }
                 val shape = RoundedCornerShape(12.dp)
                 Column(
