@@ -105,7 +105,9 @@ class NativeHomeMetricLayoutUiTest {
             compose.onNodeWithText(label, useUnmergedTree = true)
                 .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { it(layouts) }
             assertTrue("A tab must expose its actual text layout", layouts.isNotEmpty())
-            assertTrue("Full German tab label must remain visible at font2.0", layouts.none { it.hasVisualOverflow })
+            assertTrue("Full German tab label '$label' must remain visible at font2.0: " +
+                layouts.joinToString { "size=${it.size},widthOverflow=${it.didOverflowWidth},heightOverflow=${it.didOverflowHeight}" },
+                layouts.none { it.hasVisualOverflow })
         }
         for (route in listOf("home", "training", "journal", "progress", "health")) {
             compose.onNodeWithTag("navigation_$route").assertIsNotEnabled()

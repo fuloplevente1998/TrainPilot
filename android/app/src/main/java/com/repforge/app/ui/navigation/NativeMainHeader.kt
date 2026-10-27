@@ -124,7 +124,7 @@ internal fun NativeTopNavigation(route: String, settingsOrigin: String, language
                 }
                 val shape = RoundedCornerShape(12.dp)
                 Column(
-                    modifier = (if (expandedLabels) Modifier.width(IntrinsicSize.Max).widthIn(min = 88.dp)
+                    modifier = (if (expandedLabels) Modifier.widthIn(min = 88.dp)
                         else Modifier.weight(1f)).heightIn(min = 56.dp)
                         .clip(shape)
                         .background(if (active) colors.selectedSurface else colors.card)
