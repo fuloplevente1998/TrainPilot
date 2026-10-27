@@ -68,6 +68,7 @@ import androidx.compose.material.icons.filled.TrendingUp
 import com.repforge.app.ui.components.TrainPilotSectionSurface
 import com.repforge.app.ui.components.TrainPilotHeroSurface
 import com.repforge.app.ui.components.TrainPilotMetricSurface
+import com.repforge.app.data.db.ProgressPeriodTotals
 import com.repforge.app.ui.components.TrainPilotSectionHeader
 import androidx.compose.runtime.remember
 import com.repforge.app.ui.theme.LocalTrainPilotColors
@@ -143,6 +144,13 @@ fun ProgressScreen(
             Text(strings.getString(R.string.native_progress_error), color = colors.dangerText, modifier = Modifier.testTag("progress_error"))
             androidx.compose.material3.TextButton(onClick = viewModel::loadProgressData) {
                 Text(strings.getString(R.string.native_progress_retry))
+            }
+        }
+
+        // Studio's four-metric summary comes from bounded, tombstone-safe native Room aggregates.
+        state.periodTotals?.let { totals ->
+            item(key = "progress_period_overview") {
+                ProgressPeriodOverview(totals, state.language)
             }
         }
 
@@ -279,6 +287,51 @@ fun ProgressScreen(
         item { Spacer(Modifier.height(80.dp)) }
     }
 
+}
+
+/** A read-only Studio overview of completed workouts from the last 30 local dates.
+ * The DB aggregate is the source of truth; no DEMO counters are introduced here.
+ */
+@Composable
+private fun ProgressPeriodOverview(totals: ProgressPeriodTotals, language: String) {
+    val colors = LocalTrainPilotColors.current
+    val context = LocalContext.current
+    val strings = remember(context, language) { nativeResources(context, language) }
+    val number = remember(language) {
+        NumberFormat.getNumberInstance(Locale.forLanguageTag(language)).apply {
+            maximumFractionDigits = 1
+            minimumFractionDigits = 0
+        }
+    }
+    val entries = listOf(
+        R.string.studio_progress_period_workouts to number.format(totals.workoutCount),
+        R.string.studio_progress_period_volume to "${number.format(totals.totalVolumeKg)} kg",
+        R.string.studio_progress_period_sets to number.format(totals.completedSets),
+        R.string.studio_progress_period_pr_workouts to number.format(totals.prWorkouts)
+    )
+    val stack = LocalConfiguration.current.screenWidthDp < 320 ||
+        LocalDensity.current.fontScale > 1.3f
+    TrainPilotHeroSurface(Modifier.fillMaxWidth().testTag("progress_period_overview")) {
+        TrainPilotSectionHeader(strings.getString(R.string.studio_progress_period_title),
+            icon = Icons.Default.TrendingUp)
+        for (row in entries.chunked(if (stack) 1 else 2)) {
+            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                for ((label, value) in row) {
+                    TrainPilotMetricSurface(Modifier.weight(1f).fillMaxHeight()) {
+                        Text(strings.getString(label),
+                            style = androidx.compose.material3.MaterialTheme.typography.labelMedium,
+                            color = colors.muted)
+                        Text(value, style = androidx.compose.material3.MaterialTheme.typography.titleLarge.copy(
+                            fontFeatureSettings = "tnum"), color = colors.text)
+                    }
+                }
+                repeat(if (stack) 1 - row.size else 2 - row.size) {
+                    Spacer(Modifier.weight(1f))
+                }
+            }
+        }
+    }
 }
 
 /** The source trend is an ascending time-series for the selected exercise and date range.
