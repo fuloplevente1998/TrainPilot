@@ -5,9 +5,11 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.repforge.app.NativeDataReplacement
 import com.repforge.app.data.db.ExerciseLibraryEntity
+import com.repforge.app.data.db.ProgressPeriodTotals
 import com.repforge.app.data.db.TrainPilotDatabase
 import com.repforge.app.data.store.TrainPilotSettingsStore
 import java.time.ZoneId
+import java.time.Instant
 import java.time.LocalDate
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -38,6 +40,7 @@ data class Exercise1RmPointUiModel(
 
 data class ProgressUiState(
     val muscleLoads: List<MuscleLoadUiModel> = emptyList(),
+    val periodTotals: ProgressPeriodTotals? = null,
     val exercises: List<ExerciseLibraryEntity> = emptyList(),
     val selectedExerciseId: String = "goblet-squat",
     val exercise1RmTrend: List<Exercise1RmPointUiModel> = emptyList(),
@@ -66,6 +69,7 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
     private val _uiState = MutableStateFlow(ProgressUiState())
     val uiState: StateFlow<ProgressUiState> = _uiState.asStateFlow()
     private var summaryJob: Job? = null
+    private var summaryRequestedStamp: Pair<LocalDate, ZoneId>? = null
     private var trendJob: Job? = null
     private var trendRevision = 0L
     private var strengthRequestedStamp: Pair<LocalDate, ZoneId>? = null
@@ -81,16 +85,25 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
     fun onCardioScreenResumed() {
         refreshCardioForClock(NativeCardioCalendarRefresh.Trigger.SCREEN_RESUME)
         refreshStrengthForClock()
+        refreshSummaryForClock()
     }
 
     fun onCardioSystemClockChanged() {
         refreshCardioForClock(NativeCardioCalendarRefresh.Trigger.SYSTEM_CLOCK_CHANGE)
         refreshStrengthForClock()
+        refreshSummaryForClock()
     }
 
     fun onCardioCalendarTick() {
         refreshCardioForClock(NativeCardioCalendarRefresh.Trigger.CALENDAR_TICK)
         refreshStrengthForClock()
+        refreshSummaryForClock()
+    }
+
+    private fun refreshSummaryForClock() {
+        val zone = ZoneId.systemDefault()
+        val stamp = LocalDate.now(zone) to zone
+        if (!_uiState.value.loading && stamp != summaryRequestedStamp) loadProgressData()
     }
 
     private fun refreshStrengthForClock() {
@@ -133,35 +146,42 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
                 val (result, admission) = withContext(Dispatchers.IO) {
                     NativeDataReplacement.mutate(context) {
                         val now = System.currentTimeMillis()
+                        val zone = ZoneId.systemDefault()
+                        val stamp = Instant.ofEpochMilli(now).atZone(zone).toLocalDate() to zone
                         val language = store.current().language
                         val exercises = db.exerciseLibraryDao().getAllExercises()
                         val groups = db.workoutHistoryDao().getProgressMuscleSummary(
                             now - 30L * 86_400_000L, now)
+                        val (fromInclusive, toExclusive) = NativeProgressQuery.thirtyDayWindow(now, zone)
+                        val totals = db.workoutHistoryDao().getProgressPeriodTotals(
+                            fromInclusive, toExclusive)
                         val photos = runCatching { NativeProgressPhotoData.load(db) }
-                        (Triple(language, exercises, groups) to photos) to
+                        (Triple(Triple(language, exercises, groups), photos, totals) to stamp) to
                             NativeDataReplacement.continuationForCurrentData(context)
                     }
                 }
                 admission.requireCurrent(context)
-                val language = result.first.first
-                val exercises = result.first.second
-                val muscle = NativeProgressQuery.muscle(result.first.third, language)
+                val language = result.first.first.first
+                val exercises = result.first.first.second
+                val muscle = NativeProgressQuery.muscle(result.first.first.third, language)
                 val id = _uiState.value.selectedExerciseId
                     .takeIf { selected -> exercises.any { it.id == selected } }
                     ?: exercises.firstOrNull()?.id.orEmpty()
+                summaryRequestedStamp = result.second
                 _uiState.update { it.copy(
                     language = language, exercises = exercises, muscleLoads = muscle,
-                    progressPhotos = result.second.getOrDefault(emptyList()),
+                    periodTotals = result.first.third,
+                    progressPhotos = result.first.second.getOrDefault(emptyList()),
                     selectedPhotoId = it.selectedPhotoId?.takeIf { photoId ->
-                        result.second.getOrNull()?.any { photo -> photo.id == photoId } == true
+                        result.first.second.getOrNull()?.any { photo -> photo.id == photoId } == true
                     },
-                    photosLoading = false, photosError = result.second.isFailure,
+                    photosLoading = false, photosError = result.first.second.isFailure,
                     selectedExerciseId = id, loading = false, loadError = false
                 ) }
                 selectExercise(id)
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Exception) { _uiState.update { it.copy(loading = false, loadError = true,
-                photosLoading = false, photosError = true) } }
+                periodTotals = null, photosLoading = false, photosError = true) } }
         }
     }
 
