@@ -4,6 +4,22 @@ Frissítve: **2026-10-26**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Három maradék phoneFAIL konkrét javítása — 2026-10-27
+
+40413844661/5b375cd9 lezárt: build/JVM/signer,2upgrade és3WearUIjobSUCCESS,
+phoneFAIL. Rootartifact12695852303XML108main=105PASS/3FAIL+4GPSPASS:
+112terminal=109PASS/3FAIL. Locale94114204 és2interval/dock5b375cd9 MOST PASS.
+Hibák:customdelete,Settings→editor→Home ésHealth→Home. Focuseddiagnostics:
+deleteIllegalStateException PhoneWorkoutEngine.kt453: IOszálonExecution.store;
+nav activeeditorben/Healthen bottomHome requested home->home (elavultcapturedroute).
+Rootfix:NativeCustomExerciseEditor Main.immediate admission és újbóli ellenőrzés
+Roomolvasások után/elsőwriteelőtt; tranzakció/dependency/CASvédelem marad.
+BottomNavigation ::selectDestination localfunctionref helyett explicitremember
+(currentRoute,settingsOrigin,editor,starting) frissített lambda. Élőguardok maradnak.
+Meglévő3valósphoneUIregresszió ellenőrzi; assertionkihagyás/gyengítés nincs.
+A javított3esetre még nincs runtimePASS; egyetlen új közösCI kell, UI még nemindult.
+Main/verzió változatlan, nincs belsősubagent vagy új fejlesztési ág.
+
 ## Új közös gate — 2026-10-26, editor dock layout
 
 Root5b375cd9c17322d5ea553289b6c7d270ce2c72ea: az aktív lista fölé rajzolt

@@ -2,6 +2,8 @@ package com.repforge.app
 
 import android.content.Context
 import androidx.room.withTransaction
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.repforge.app.data.db.ExerciseLibraryEntity
 import com.repforge.app.data.db.KeyValueDocumentEntity
 import com.repforge.app.data.db.TrainPilotDatabase
@@ -132,10 +134,7 @@ internal object NativeCustomExerciseEditor {
     suspend fun delete(context: Context, db: TrainPilotDatabase, id: String,
         expectedRawJson: String? = null) =
         NativeDataReplacement.mutate(context) {
-            check(ActiveWorkoutStore.current(context)?.optBoolean("active") != true &&
-                PhoneWorkoutExecution.store(context).snapshot()?.optBoolean("active") != true) {
-                "Finish the active workout before deleting exercises"
-            }
+            assertDeletionAdmission(context)
             db.withTransaction {
                 val exercise = db.exerciseLibraryDao().getExerciseById(id)
                 require(exercise?.custom == true) { "Only custom exercises can be deleted" }
@@ -146,6 +145,8 @@ internal object NativeCustomExerciseEditor {
                 check(db.programDao().getProgramsWithDays().none { program ->
                     program.days.any { referencedInProgram(id, it.exercisesJson) }
                 }) { "Exercise is used in a program day" }
+                // Recheck after suspending Room reads, before the first write.
+                assertDeletionAdmission(context)
                 db.exerciseLibraryDao().deleteCustomExercise(id)
                 val currentFavorites = NativeExerciseFavorites.load(db).filterNot { it == id }
                 db.keyValueDocumentDao().putDocument(KeyValueDocumentEntity(
@@ -154,4 +155,13 @@ internal object NativeCustomExerciseEditor {
                 db.keyValueDocumentDao().deleteDocument("legacy:exerciseFavorites")
             }
         }
+    private suspend fun assertDeletionAdmission(context: Context) = withContext(Dispatchers.Main.immediate) {
+        synchronized(ActiveWorkoutStore) {
+            check(ActiveWorkoutStore.current(context)?.optBoolean("active") != true &&
+                PhoneWorkoutExecution.store(context).snapshot()?.optBoolean("active") != true) {
+                "Finish the active workout before deleting exercises"
+            }
+        }
+    }
+
 }

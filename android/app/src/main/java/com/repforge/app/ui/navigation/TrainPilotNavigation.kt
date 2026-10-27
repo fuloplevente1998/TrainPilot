@@ -276,6 +276,12 @@ fun TrainPilotAppScaffold(
             editor.leaveWorkout(current?.optString("workoutId").orEmpty(), current?.optLong("generation") ?: 0L, navigate)
         } else navigate()
     }
+    // A local function reference can compare equal across compositions while
+    // retaining the old route/editor capture. Refresh it explicitly when its
+    // navigation context changes; guards still read the live execution at click.
+    val destinationSelector = remember(currentRoute, settingsOrigin, editor, starting) {
+        { requested: String -> selectDestination(requested) }
+    }
     fun goBack() {
         val target = navController.previousBackStackEntry?.destination?.route ?: "home"
         if (!canNavigate(target)) return
@@ -322,7 +328,7 @@ fun TrainPilotAppScaffold(
                     enabled = !starting && !editorFinishing,
                     onClick = { selectDestination("training") })
                 NativeBottomNavigation(currentRoute, settingsOrigin, settings.language,
-                    enabled = !navigationBlocked, onSelect = ::selectDestination)
+                    enabled = !navigationBlocked, onSelect = destinationSelector)
             }
         }
 
