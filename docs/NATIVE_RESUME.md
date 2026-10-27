@@ -11,7 +11,8 @@ Root elkezdte:4valós mockup átnézve, Typography szerepek/tnum és Shapes/mér
 Materialerror/onErrorContainer+3:1functionaloutline a meglévőpalettepolicy-ból;
 SurfaceCard/SectionHeader/PrimaryButton pureUI; közösheader24sp+48dp sharedtoken.
 Mentettpalette/DataStore/domain/VMwriter nem változik. Új32palettásMaterialkontraszt
-JVMteszt; runtime MÉG UNRUN, teljesP0könyvtár/5oldal NEMkész.
+JVMteszt; újközös40461365542 exact2f7cd835 folyamatban, runtime MÉG UNRUN;
+teljesP0könyvtár/5oldal NEMkész.
 plans/NATIVE_VISUAL_WORK_SPLIT.md rögzíti: Rootközösalap+Home/Training;
 P0API/gatefagyasztásután2chat AJournal/Progress, BHealth/Coach diszjunktpanelmunka.
 MOST nincs kiosztás/agentindítás vagy új fájlfoglalás; közös theme/components Rootnál.
