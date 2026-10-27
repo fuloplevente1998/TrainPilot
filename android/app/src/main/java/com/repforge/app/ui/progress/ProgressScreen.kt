@@ -46,6 +46,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
@@ -365,7 +369,12 @@ private fun ProgressVolumeChart(
                     itemsIndexed(snapshot.buckets, key = { index, _ -> index }) { index, bucket ->
                         Column(
                             modifier = Modifier.width(48.dp).heightIn(min = 150.dp)
-                                .clickable { selectedBar.intValue = index }
+                                .semantics {
+                                    contentDescription = "${bucket.startDate.format(date)}: " +
+                                        "${number.format(bucket.volumeKg)} kg"
+                                    selected = selectedBar.intValue == index
+                                }
+                                .clickable(role = Role.Button) { selectedBar.intValue = index }
                                 .testTag("progress_volume_bar_$index"),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Bottom
@@ -374,7 +383,7 @@ private fun ProgressVolumeChart(
                                 contentAlignment = Alignment.BottomCenter) {
                                 val filled = (bucket.volumeKg / maxValue).coerceIn(0.0, 1.0)
                                 Box(Modifier.width(25.dp)
-                                    .height((if (bucket.volumeKg > 0) 5.0 + filled * 95.0 else 3.0).dp)
+                                    .height((if (bucket.volumeKg > 0) 5.0 + filled * 95.0 else 3.0).toFloat().dp)
                                     .clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
                                     .background(if (selectedBar.intValue == index)
                                         colors.accent2 else colors.accent))
