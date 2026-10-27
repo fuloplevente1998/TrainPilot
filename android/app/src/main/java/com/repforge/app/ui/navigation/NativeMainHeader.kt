@@ -13,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.repforge.app.ui.theme.LocalTrainPilotColors
+import com.repforge.app.ui.theme.TrainPilotDimensions
 
 /** Compact shared toolbar: settings remains available without adding a sixth tab. */
 @Composable
@@ -23,15 +24,15 @@ internal fun NativeMainHeader(route: String, language: String, enabled: Boolean,
         Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 8.dp)
             .heightIn(min = 56.dp), verticalAlignment = Alignment.CenterVertically) {
             if (onBack != null) IconButton(onClick = onBack, enabled = backEnabled,
-                modifier = Modifier.size(48.dp).testTag("navigation_back")) {
+                modifier = Modifier.size(TrainPilotDimensions.Control).testTag("navigation_back")) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, NativeMainMenu.backLabel(language), tint = colors.text)
             }
             Text(if (route == "home") "TrainPilot" else NativeMainMenu.title(route, language),
                 modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
-                color = colors.text, style = MaterialTheme.typography.titleLarge,
+                color = colors.text, style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             IconButton(onClick = onSettings, enabled = enabled && route != "settings",
-                modifier = Modifier.size(48.dp).testTag("navigation_settings")) {
+                modifier = Modifier.size(TrainPilotDimensions.Control).testTag("navigation_settings")) {
                 Icon(Icons.Default.Settings, NativeMainMenu.title("settings", language),
                     tint = if (enabled && route != "settings") colors.muted else colors.muted.copy(alpha = .4f))
             }

@@ -37,6 +37,19 @@ class NativeThemeTokensTest {
         assertEquals(basic.danger, vivid.danger)
         assertEquals(basic.dangerText, vivid.dangerText)
     }
+    @Test fun materialInputsAndErrorsHaveReadableSemanticColorsAcrossEveryPalette() {
+        for (theme in TrainPilotSettingsStore.AVAILABLE_THEMES) {
+            val colors = NativeThemeTokens.resolve(TrainPilotUserSettings(themeAccent = theme.accent,
+                themeAccent2 = theme.accent2, themeFamily = theme.family))
+            val material = nativeMaterialColorScheme(colors)
+            assertEquals(theme.key, colors.accent, material.primary)
+            assertTrue(theme.key, NativeThemeTokens.contrast(material.onPrimary, material.primary) >= 4.5f)
+            assertTrue(theme.key, NativeThemeTokens.contrast(material.error, material.surface) >= 4.5f)
+            assertTrue(theme.key, NativeThemeTokens.contrast(material.onErrorContainer, material.errorContainer) >= 4.5f)
+            assertTrue(theme.key, NativeThemeTokens.contrast(material.outline, material.surfaceVariant) >= 3f)
+        }
+    }
+
     @Test fun malformedHexDoesNotCrashAndDoesNotAcceptTransparentAccent() {
         for (value in listOf("", "#123", "#00123456", "blue", "#ggffff"))
             assertEquals(Color.Red, NativeThemeTokens.parseHex(value, Color.Red))

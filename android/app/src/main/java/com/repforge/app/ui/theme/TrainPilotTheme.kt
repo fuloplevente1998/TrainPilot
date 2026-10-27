@@ -1,6 +1,5 @@
 package com.repforge.app.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
@@ -52,55 +51,37 @@ val LocalTrainPilotColors = staticCompositionLocalOf {
     )
 }
 
+/** Shared roles from the accepted visual specification; colors come from the surface. */
+private fun textStyle(size: Int, height: Int, weight: FontWeight = FontWeight.Normal,
+    numeric: Boolean = false) = TextStyle(fontFamily = FontFamily.SansSerif,
+    fontSize = size.sp, lineHeight = height.sp, fontWeight = weight,
+    fontFeatureSettings = if (numeric) "tnum" else null)
+
 val TrainPilotTypography = Typography(
-    headlineLarge = TextStyle(
-        fontWeight = FontWeight.Bold,
-        fontSize = 30.sp,
-        lineHeight = 36.sp,
-        color = TextColor
-    ),
-    headlineMedium = TextStyle(
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 22.sp,
-        lineHeight = 28.sp,
-        color = TextColor
-    ),
-    titleLarge = TextStyle(
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 18.sp,
-        lineHeight = 24.sp,
-        color = TextColor
-    ),
-    titleMedium = TextStyle(
-        fontWeight = FontWeight.Medium,
-        fontSize = 15.sp,
-        lineHeight = 20.sp,
-        color = TextColor
-    ),
-    bodyLarge = TextStyle(
-        fontWeight = FontWeight.Normal,
-        fontSize = 15.sp,
-        lineHeight = 22.sp,
-        color = TextColor
-    ),
-    bodyMedium = TextStyle(
-        fontWeight = FontWeight.Normal,
-        fontSize = 13.sp,
-        lineHeight = 18.sp,
-        color = TextColor
-    ),
-    bodySmall = TextStyle(
-        fontWeight = FontWeight.Normal,
-        fontSize = 11.sp,
-        lineHeight = 15.sp,
-        color = MutedColor
-    ),
-    labelSmall = TextStyle(
-        fontWeight = FontWeight.Medium,
-        fontSize = 10.sp,
-        lineHeight = 13.sp,
-        color = MutedColor
-    )
+    headlineLarge = textStyle(36, 42, FontWeight.Bold, numeric = true),
+    headlineMedium = textStyle(24, 30, FontWeight.Bold),
+    headlineSmall = textStyle(24, 30, FontWeight.SemiBold),
+    titleLarge = textStyle(18, 24, FontWeight.SemiBold),
+    titleMedium = textStyle(16, 22, FontWeight.SemiBold),
+    titleSmall = textStyle(14, 20, FontWeight.SemiBold),
+    bodyLarge = textStyle(16, 24),
+    bodyMedium = textStyle(14, 20),
+    bodySmall = textStyle(13, 18),
+    labelLarge = textStyle(14, 20, FontWeight.SemiBold),
+    labelMedium = textStyle(13, 18, FontWeight.Medium),
+    labelSmall = textStyle(12, 16, FontWeight.Medium)
+)
+
+internal fun nativeMaterialColorScheme(colors: TrainPilotExtendedColors) = darkColorScheme(
+    primary = colors.accent, secondary = colors.accent2,
+    background = colors.bg, surface = colors.card, surfaceVariant = colors.card2,
+    onPrimary = colors.onAccent, onSecondary = colors.onAccent2,
+    primaryContainer = colors.selectedSurface, onPrimaryContainer = colors.text,
+    onBackground = colors.text, onSurface = colors.text, onSurfaceVariant = colors.muted,
+    error = colors.dangerText, onError = colors.danger,
+    errorContainer = colors.danger, onErrorContainer = colors.dangerText,
+    outline = NativeThemeTokens.readableControlAccent(colors.line, colors.selectedSurface),
+    outlineVariant = colors.line
 )
 
 @Composable
@@ -111,19 +92,13 @@ fun TrainPilotTheme(
     val colors = androidx.compose.runtime.remember(settings.themeAccent, settings.themeAccent2, settings.themeFamily) {
         NativeThemeTokens.resolve(settings)
     }
-    val colorScheme = darkColorScheme(
-        primary = colors.accent, secondary = colors.accent2,
-        background = colors.bg, surface = colors.card, surfaceVariant = colors.card2,
-        onPrimary = colors.onAccent, onSecondary = colors.onAccent2,
-        primaryContainer = colors.selectedSurface, onPrimaryContainer = colors.text,
-        onBackground = colors.text, onSurface = colors.text, onSurfaceVariant = colors.muted,
-        outline = colors.line
-    )
+    val colorScheme = androidx.compose.runtime.remember(colors) { nativeMaterialColorScheme(colors) }
 
     CompositionLocalProvider(LocalTrainPilotColors provides colors) {
         MaterialTheme(
             colorScheme = colorScheme,
             typography = TrainPilotTypography,
+            shapes = TrainPilotShapes,
             content = content
         )
     }
