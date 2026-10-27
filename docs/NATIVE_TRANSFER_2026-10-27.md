@@ -275,6 +275,8 @@ A kísérő ZIP:
 - `evidence/`: a legutóbbi P1 hibás és a P0 zöld futás elérhető raw bizonyítékai;
 - `SNAPSHOTS.json` és `SHA256SUMS.txt`: pontos forrásrefek és fájlellenőrzés.
 
+A csomag SDK-t, JDK-t, Gradle/Maven dependencycache-t és aláírókulcsot nem tartalmaz. Offline a forrás/terv szerkeszthető; teljes offline build csak előre telepített toolchain és dependencycache mellett lehetséges. Egyébként az új ellenőrzésekhez online CI kell.
+
 Ez forrássnapshot, nem teljes Git-história és nem telepítő. Offline új repositoryt lehet inicializálni saját mentéshez; később az eltéréseket a valódi migration ággal kell integrálni, nem mainre vagy force push-sal felülírni. A forráscsomag nem tartalmaz release signing secreteket. A kézi, még nem commitolt UI-kiosztási vázlatok nem aktív munkák és nem részei a snapshotnak.
 
 ## 13. Következő konkrét munkasorrend
