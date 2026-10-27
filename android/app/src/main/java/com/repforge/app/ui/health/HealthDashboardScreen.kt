@@ -289,6 +289,12 @@ fun HealthJournalTabContent(
         modifier = Modifier.fillMaxSize().testTag("health_journal_list").padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
+        // Studio-inspired selected-day overview above the detailed health record browser.
+        // Values, missing-state and provider attribution all come from the native model.
+        // The selected day may be historical: do not label it "today" unconditionally.
+        item(key = "health_selected_day_overview") {
+            if (state.metrics.isNotEmpty()) HealthSelectedDayOverview(state)
+        }
         item {
             val text = com.repforge.app.ui.text.nativeResources(LocalContext.current, state.language)
             TrainPilotHeroSurface(Modifier.fillMaxWidth()) {
@@ -508,6 +514,62 @@ fun HealthJournalTabContent(
         }
 
         item { Spacer(Modifier.height(80.dp)) }
+    }
+}
+
+/** Compact Studio header while the original full metric grid / provider controls remain below. */
+@Composable
+internal fun HealthSelectedDayOverview(state: HealthDashboardUiState) {
+    val colors = LocalTrainPilotColors.current
+    val ctx = LocalContext.current
+    val strings = remember(ctx, state.language) { nativeResources(ctx, state.language) }
+    val metrics = NativeHealthMetrics.overview(state.metrics)
+    if (metrics.isEmpty()) return
+    val fontScale = LocalDensity.current.fontScale
+    val width = LocalConfiguration.current.screenWidthDp
+    val columns = when {
+        width < 312 || fontScale > 1.3f -> 1
+        width < 400 || fontScale > 1.15f -> 2
+        else -> 3
+    }
+    TrainPilotHeroSurface(Modifier.fillMaxWidth().testTag("health_selected_day_overview")) {
+        TrainPilotSectionHeader(
+            strings.getString(R.string.health_history_day, state.selectedDay),
+            icon = Icons.Default.FavoriteBorder
+        )
+        for (chunk in metrics.chunked(columns)) {
+            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                for (metric in chunk) {
+                    TrainPilotMetricSurface(Modifier.weight(1f).fillMaxHeight()
+                        .testTag("health_snapshot_${metric.key}")) {
+                        Row(verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                            Icon(trainPilotMetricIcon(metric.key), contentDescription = null,
+                                modifier = Modifier.size(18.dp), tint = colors.accentText)
+                            Text(metric.label, color = colors.muted,
+                                style = MaterialTheme.typography.labelSmall, modifier = Modifier.weight(1f))
+                        }
+                        Text(buildString {
+                            append(metric.valueText)
+                            if (metric.unit.isNotBlank() && metric.isAvailable) {
+                                append(' ')
+                                append(metric.unit)
+                            }
+                        }, color = if (metric.isAvailable) colors.text else colors.muted,
+                            style = MaterialTheme.typography.titleLarge.copy(fontFeatureSettings = "tnum"))
+                        Text(metric.sourceText, color = colors.muted,
+                            style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+                repeat(columns - chunk.size) { Spacer(Modifier.weight(1f)) }
+            }
+        }
+        if (state.historyPartial) {
+            Text(strings.getString(R.string.health_daily_source_partial),
+                color = colors.muted, style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.testTag("health_overview_partial"))
+        }
     }
 }
 
