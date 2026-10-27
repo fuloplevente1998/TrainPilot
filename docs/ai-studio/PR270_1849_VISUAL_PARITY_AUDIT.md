@@ -26,6 +26,15 @@
 4. No DEMO state switcher, fake values or fixed GPS route in the release; the approved visual states still display on genuine events.
 5. Keep PR #270 draft, `main` unchanged. Do not present older emulator screenshots or the 20:14 compiled UI as proof of visual parity.
 
+## Home visual re-port implementation on PR #270 (new, NOT yet screenshot-approved)
+
+- `ui/home/HomeScreen.kt` now substantially replaces the old native Home presentation tree with the **18:49 Studio Home source** structure: genuine workout 56dp warm-accent hero icon, program/day details and 50dp full-width CTA; Studio full-width 44dp-icon Quick Workout row; separate Watch status row; genuine 2×2 sleep/pulse/steps/recovery bento; 3-column compact programs/calendar/Coach shortcuts; actual activity/goal and Coach recovery lower cards. It preserves real callbacks and no hardcoded readings, fake watch battery, synthetic Coach score or DEMO mode controls.
+- `TrainPilotNavigation.kt` routes the Watch overview action to actual native Settings rather than incorrectly to the profile; the original GPS/outdoor workout remains on the existing Training route. All native workout/session/draft/loading/onboarding callbacks remain.
+- The historical 6-item `TodayMetricsGrid` and its accessibility test remain available; `NativeHomeMetricLayoutUiTest` now also verifies the Studio 2×2 Home bento and unavailable readings as missing.
+- `NativeThemeTokensTest` repaired after switching new-install default to graphite/gold: legacy basic/vivid test cases now explicitly select their own theme keys; stored palette behavior stays unchanged.
+- **Current UI source commit**: `5826baa6c3f399df9ac936c98d6104d078684176`. [Phone Release Gate](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40574470177) succeeded on that exact SHA; [Full Android/Wear/phone UI/signed-upgrade gate](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40574479567) was queued at the last check, NOT PASS. No current-head emulator screenshot verified; therefore this Home port is **visual WIP, not approved**.
+- **Remaining Home discrepancies to inspect against original 18:49 Studio**: full 32 Studio palettes and exact per-palette surfaces, Home personal planner typography/text/spacing, device/watch settings destination, three shortcut subtitles on compact screens, Studio goals/provider error footers and state-specific screen snapshots. The main anatomy remains the separately required native renderer for Progress.
+
 ## Current changes following this audit
 
 - `docs/ai-studio/PR270_VISUAL_FIRST_INTEGRATION.md` locks the **18:49** reference, explicitly discards the 20:14 appearance.
