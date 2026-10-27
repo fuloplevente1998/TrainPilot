@@ -670,4 +670,13 @@
     <string name="studio_progress_period_volume">Total volume</string>
     <string name="studio_progress_period_sets">Completed sets</string>
     <string name="studio_progress_period_pr_workouts">Workouts with PR</string>
+    <string name="studio_volume_total">Total volume</string>
+    <string name="studio_volume_one_day">1 day</string>
+    <string name="studio_volume_week">7 days</string>
+    <string name="studio_volume_month">30 days</string>
+    <string name="studio_volume_three_months">3 mo</string>
+    <string name="studio_volume_empty">No recorded workouts in this period yet.</string>
+    <string name="studio_volume_loading">Loading volume chart…</string>
+    <string name="studio_volume_retry">Retry volume chart</string>
+    <string name="studio_volume_workouts">workouts</string>
 </resources>
