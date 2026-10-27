@@ -105,7 +105,7 @@ fun TrainPilotActionSurface(title: String, icon: ImageVector, onClick: () -> Uni
 fun TrainPilotHeroSurface(modifier: Modifier = Modifier,
     focus: Boolean = true, content: @Composable ColumnScope.() -> Unit) {
     val colors = LocalTrainPilotColors.current
-    TrainPilotPanel(modifier, colors.card, colors.selectedBorder, 20,
+    TrainPilotPanel(modifier, colors.card, colors.line, 20,
         if (focus) colors.accent else null, content)
 }
 
@@ -127,8 +127,13 @@ fun TrainPilotSubtleSurface(modifier: Modifier = Modifier,
 private fun TrainPilotPanel(modifier: Modifier, fill: Color, outline: Color,
     radius: Int, focus: Color?, content: @Composable ColumnScope.() -> Unit) {
     val colors = LocalTrainPilotColors.current
+    val outlineStroke = if (focus != null)
+        BorderStroke(1.dp, Brush.linearGradient(
+            listOf(focus.copy(alpha = .55f), outline)
+        ))
+    else BorderStroke(1.dp, outline)
     Surface(modifier, shape = RoundedCornerShape(radius.dp), color = fill,
-        contentColor = colors.text, border = BorderStroke(1.dp, outline)) {
+        contentColor = colors.text, border = outlineStroke) {
         Column(Modifier.background(Brush.verticalGradient(
             if (focus != null) listOf(colors.card2.copy(alpha = .65f), fill) else listOf(fill, fill)
         )).padding(TrainPilotDimensions.Page),
