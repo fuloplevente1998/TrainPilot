@@ -107,6 +107,14 @@ interface ExerciseLibraryDao {
     suspend fun deleteAllCustomExercises()
 }
 
+/** No raw JSON, GPS, photo or set hydration in the 30-day progress overview. */
+data class ProgressPeriodTotals(
+    val workoutCount: Int,
+    val totalVolumeKg: Double,
+    val completedSets: Int,
+    val prWorkouts: Int
+)
+
 @Dao
 interface WorkoutHistoryDao {
     @Query("SELECT rawJson FROM workout_history WHERE (CASE WHEN finishedEpochMs > 0 THEN finishedEpochMs ELSE startedEpochMs END) BETWEEN :fromEpoch AND :toEpoch ORDER BY (CASE WHEN finishedEpochMs > 0 THEN finishedEpochMs ELSE startedEpochMs END) DESC, id LIMIT 3")
@@ -267,6 +275,25 @@ interface WorkoutHistoryDao {
     """)
     suspend fun pageProgressExerciseSets(exerciseId: String, beforeEpoch: Long?, beforeWorkoutId: String,
         beforeSetRowId: Long, limit: Int): List<ProgressSetSummary>
+
+    /** Studio progress counters from finished, non-deleted workouts in a local-day window.
+     * Store rows already contain #226's persisted volume and record flags; never synthesize
+     * total volume from a UI or load the full historical JSON/sets/photos/GPS graph.
+     */
+    @Query("""
+        SELECT COUNT(w.id) AS workoutCount,
+            COALESCE(SUM(CASE WHEN w.totalVolumeKg > 0.0
+                AND w.totalVolumeKg < 1.0e308 THEN w.totalVolumeKg ELSE 0.0 END), 0.0) AS totalVolumeKg,
+            COALESCE(SUM(CASE WHEN w.completedSetsCount > 0 THEN w.completedSetsCount ELSE 0 END), 0) AS completedSets,
+            COALESCE(SUM(CASE WHEN w.hasPr226 = 1 THEN 1 ELSE 0 END), 0) AS prWorkouts
+        FROM workout_history w
+        WHERE w.finishedEpochMs >= :fromInclusive AND w.finishedEpochMs < :toExclusive
+          AND w.finishedEpochMs > w.startedEpochMs
+          AND NOT EXISTS (SELECT 1 FROM history_tombstones t
+              WHERE (t.primaryId <> '' AND t.primaryId IN (w.id, w.syncId, w.workoutKey))
+                 OR (t.workoutKey <> '' AND t.workoutKey = w.workoutKey))
+    """)
+    suspend fun getProgressPeriodTotals(fromInclusive: Long, toExclusive: Long): ProgressPeriodTotals
 
     /** Completed sets for the last 30 days, grouped in SQLite rather than hydrating whole workouts. */
     @Query("""
