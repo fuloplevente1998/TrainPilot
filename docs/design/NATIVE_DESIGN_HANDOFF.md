@@ -6,6 +6,17 @@ a vizuális irány elfogadott, az új képek külön felhasználói áttekintés
 A képek generált látványtervek, a végső átadás futó emulátorból készített képeket igényel.
 
 
+## Integrációs hatókör – felhasználói pontosítás, 2026-10-27
+
+Az új dizájn elsődleges integrációi: Wear OS, Google Health Connect és Samsung Health.
+A kínai órás BLE-próbából nem készül külön új felület. A jelenlegi natív Health
+BLE-füle örökölt/prototípus kezelőfelület, nem a mainből kötelezően átveendő
+képernyő. A végleges információs szerkezetből nem vezetünk le új BLE-oldal igényt.
+A korábbi BLE-ből származó mentett mérési adatok és a nem érintett protokollkód
+megőrzése külön kérdés; a dizájnmunka nem töröl ilyen adatot vagy mérési utat.
+A mostani P1 vizuális increment nem alakítja át ezt a régi diagnosztikai utat;
+a Health végleges szerkezeténél a külön fül rendezése nyitott feladat.
+
 ## Main-fotók alapján pontosított vizuális mesterterv – 2026-10-27
 
 A felhasználó a main tényleges képeivel és a négy mockuppal elkészíttette az új
