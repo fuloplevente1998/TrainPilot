@@ -62,8 +62,9 @@ class NativeTrainingModeApprovalUiTest {
             }
         } catch (failure: Throwable) {
             throw AssertionError("Program picker after preview: " +
-                compose.onRoot(useUnmergedTree = true).printToString().take(8500), failure)
+                compose.onAllNodes(isRoot(), useUnmergedTree = true).printToString().take(8500), failure)
         }
+        compose.onNodeWithTag("training_modes_program_comparison_0").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("training_modes_program_approve").assertIsEnabled()
     }
 
@@ -143,7 +144,7 @@ class NativeTrainingModeApprovalUiTest {
             }
         } catch (failure: Throwable) {
             throw AssertionError("Empty program comparison dialog: " +
-                compose.onRoot(useUnmergedTree = true).printToString().take(8500), failure)
+                compose.onAllNodes(isRoot(), useUnmergedTree = true).printToString().take(8500), failure)
         }
         compose.onNodeWithTag("training_modes_program_approve").assertIsNotEnabled()
         assertEquals(raw, current().trainingModes197Json)

@@ -213,7 +213,7 @@ class NativeTrainingModesUiTest {
             }
         } catch (failure: Throwable) {
             throw AssertionError("Program mode comparison: " +
-                compose.onRoot(useUnmergedTree = true).printToString().take(8500), failure)
+                compose.onAllNodes(isRoot(), useUnmergedTree = true).printToString().take(8500), failure)
         }
         compose.onNodeWithTag("training_modes_program_comparison_0").assertExists()
         compose.onNodeWithTag("training_modes_program_approve").assertIsEnabled().performClick()
