@@ -1,0 +1,86 @@
+{
+  "archive_sha256": "574f17f639b91037a6e0bdea428f350d4c5950307227511eafc32e7f64bcefcc",
+  "source_commit": "f685d540",
+  "files": [
+    {
+      "zip_path": "app/src/main/java/com/example/MainActivity.kt",
+      "path": "docs/ai-studio/export-20261027/com/example/MainActivity.kt",
+      "sha256": "c7d5ffdd3a0d63dd4983425bdb8c9260d775e289b8bfcd71540ff41f287d1028"
+    },
+    {
+      "zip_path": "app/src/main/java/com/example/data/DemoDataProvider.kt",
+      "path": "docs/ai-studio/export-20261027/com/example/data/DemoDataProvider.kt",
+      "sha256": "0adf77241b3488b36307ba2bd94ba8366b29866f62cd08388c7d658022ec3078"
+    },
+    {
+      "zip_path": "app/src/main/java/com/example/localization/TrainPilotStrings.kt",
+      "path": "docs/ai-studio/export-20261027/com/example/localization/TrainPilotStrings.kt",
+      "sha256": "411d83983621d8f043034613c2bc7179ba6fa550a422c8f47184b9b9386b4d01"
+    },
+    {
+      "zip_path": "app/src/main/java/com/example/model/TrainPilotModels.kt",
+      "path": "docs/ai-studio/export-20261027/com/example/model/TrainPilotModels.kt",
+      "sha256": "48eda53eac9d41740cde6c2df1d9626aac6540f02f94f96281b94dac92e9b8b7"
+    },
+    {
+      "zip_path": "app/src/main/java/com/example/ui/components/AnatomicalBodyAndMapComponents.kt",
+      "path": "docs/ai-studio/export-20261027/com/example/ui/components/AnatomicalBodyAndMapComponents.kt",
+      "sha256": "bc864e94ba078ca396af6d433dcf6aa9e903f6451e913d0d3974e76bd2866c1a"
+    },
+    {
+      "zip_path": "app/src/main/java/com/example/ui/components/TrainPilotCommonComponents.kt",
+      "path": "docs/ai-studio/export-20261027/com/example/ui/components/TrainPilotCommonComponents.kt",
+      "sha256": "9609e67b7c1af52d66d77309194325c37b104b0d52a32934cacfc9d9b9d5e1a9"
+    },
+    {
+      "zip_path": "app/src/main/java/com/example/ui/screens/ActiveMeasurementScreens.kt",
+      "path": "docs/ai-studio/export-20261027/com/example/ui/screens/ActiveMeasurementScreens.kt",
+      "sha256": "a1ee8a1b5e6ce1768c3b7b24d2d55f7c647f68a5017f457162b5e20d4245b7f6"
+    },
+    {
+      "zip_path": "app/src/main/java/com/example/ui/screens/HealthCoachAndSettingsScreens.kt",
+      "path": "docs/ai-studio/export-20261027/com/example/ui/screens/HealthCoachAndSettingsScreens.kt",
+      "sha256": "361fee8807f2695b55937e2f199bf10f12da1f30fae65b15221a272bcce4b575"
+    },
+    {
+      "zip_path": "app/src/main/java/com/example/ui/screens/HomeScreen.kt",
+      "path": "docs/ai-studio/export-20261027/com/example/ui/screens/HomeScreen.kt",
+      "sha256": "be8719aa27146da628b537b12ddecd556ef6acb08d9db2bab61f7a038ecd1b29"
+    },
+    {
+      "zip_path": "app/src/main/java/com/example/ui/screens/LogAndProgressScreens.kt",
+      "path": "docs/ai-studio/export-20261027/com/example/ui/screens/LogAndProgressScreens.kt",
+      "sha256": "8e69bb45798aa28010d7ae771beab854e0bf8ea3ac1335e543f33c7f4dc8347a"
+    },
+    {
+      "zip_path": "app/src/main/java/com/example/ui/screens/WorkoutAndPlanningScreens.kt",
+      "path": "docs/ai-studio/export-20261027/com/example/ui/screens/WorkoutAndPlanningScreens.kt",
+      "sha256": "0fd66b678b77d28cf4e49727511966b8a43fd34e27888cf6b20ae2b7d641719f"
+    },
+    {
+      "zip_path": "app/src/main/java/com/example/ui/theme/Color.kt",
+      "path": "docs/ai-studio/export-20261027/com/example/ui/theme/Color.kt",
+      "sha256": "49b776eb44cf05d92c2e55ce8192409b1373fc84720c8c810e635851883969c6"
+    },
+    {
+      "zip_path": "app/src/main/java/com/example/ui/theme/Theme.kt",
+      "path": "docs/ai-studio/export-20261027/com/example/ui/theme/Theme.kt",
+      "sha256": "20232fe6e87ad36daaae61c8c2585f5c12e2aea7027f66abf88d30b60d98b730"
+    },
+    {
+      "zip_path": "app/src/main/java/com/example/ui/theme/TrainPilotPalettes.kt",
+      "path": "docs/ai-studio/export-20261027/com/example/ui/theme/TrainPilotPalettes.kt",
+      "sha256": "0d3c03e1e6df77fd144fd908731e0cded57829c108d4bc9899ab0669f918fc01"
+    },
+    {
+      "zip_path": "app/src/main/java/com/example/ui/theme/Type.kt",
+      "path": "docs/ai-studio/export-20261027/com/example/ui/theme/Type.kt",
+      "sha256": "a60e3ddb5c0b3a338f0dc4814ca24412e91ea4d91ab09842a130686b1ec96988"
+    },
+    {
+      "zip_path": "app/src/main/java/com/example/ui/viewmodel/TrainPilotViewModel.kt",
+      "path": "docs/ai-studio/export-20261027/com/example/ui/viewmodel/TrainPilotViewModel.kt",
+      "sha256": "5ad11e8b3d6a8faa24324e6e833fbb944bdb0fa699cd958fd99a43c9f93d22a8"
+    }
+  ]
+}

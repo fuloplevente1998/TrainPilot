@@ -32,7 +32,7 @@ import com.repforge.app.ui.theme.LocalTrainPilotColors
 internal fun NativeLanguagePicker(language: String, enabled: Boolean, onSelect: (String) -> Unit) {
     val colors = LocalTrainPilotColors.current
     val strings = nativeResources(LocalContext.current, language)
-    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
+    Card(Modifier.fillMaxWidth().testTag("settings_language_picker"), shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = colors.card),
         border = BorderStroke(1.dp, colors.line)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {

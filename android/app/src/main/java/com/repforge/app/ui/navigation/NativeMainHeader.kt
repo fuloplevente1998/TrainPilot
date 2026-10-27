@@ -1,6 +1,7 @@
 package com.repforge.app.ui.navigation
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.selection.selectable
@@ -13,8 +14,17 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import com.repforge.app.R
+import com.repforge.app.ui.text.nativeResources
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -26,8 +36,10 @@ import com.repforge.app.ui.theme.TrainPilotDimensions
 /** Compact shared toolbar: settings remains available without adding a sixth tab. */
 @Composable
 internal fun NativeMainHeader(route: String, language: String, enabled: Boolean,
-    onBack: (() -> Unit)?, onSettings: () -> Unit, backEnabled: Boolean = enabled) {
+    onBack: (() -> Unit)?, onSettings: () -> Unit, backEnabled: Boolean = enabled,
+    onLanguage: () -> Unit = onSettings, onTheme: () -> Unit = onSettings) {
     val colors = LocalTrainPilotColors.current
+    val strings = nativeResources(LocalContext.current, language)
     Surface(color = colors.bg) {
         Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 8.dp)
             .heightIn(min = 56.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -35,16 +47,44 @@ internal fun NativeMainHeader(route: String, language: String, enabled: Boolean,
                 modifier = Modifier.size(TrainPilotDimensions.Control).testTag("navigation_back")) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, NativeMainMenu.backLabel(language), tint = colors.text)
             }
-            Text(if (route == "home") "TrainPilot" else NativeMainMenu.title(route, language),
+            val mainPage = route in NativeMainMenu.routes
+            if (mainPage) NativeStudioBrand(Modifier.size(26.dp, 18.dp))
+            Text(if (mainPage) "TrainPilot" else NativeMainMenu.title(route, language),
                 modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
-                color = colors.text, style = MaterialTheme.typography.headlineSmall,
+                color = if (mainPage) colors.accentText else colors.text, style = if (mainPage) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (mainPage) {
+                IconButton(onClick = onLanguage, enabled = enabled,
+                    modifier = Modifier.size(TrainPilotDimensions.Control).testTag("header_language")
+                        .semantics { contentDescription = strings.getString(R.string.native_language_title) }) {
+                    Text(language.uppercase(java.util.Locale.ROOT), style = MaterialTheme.typography.labelMedium,
+                        color = colors.text)
+                }
+                IconButton(onClick = onTheme, enabled = enabled,
+                    modifier = Modifier.size(TrainPilotDimensions.Control).testTag("header_theme")) {
+                    Icon(Icons.Default.Palette, strings.getString(R.string.studio_header_theme), tint = colors.accentText)
+                }
+            }
             IconButton(onClick = onSettings, enabled = enabled && route != "settings",
                 modifier = Modifier.size(TrainPilotDimensions.Control).testTag("navigation_settings")) {
                 Icon(Icons.Default.Settings, NativeMainMenu.title("settings", language),
                     tint = if (enabled && route != "settings") colors.muted else colors.muted.copy(alpha = .4f))
             }
         }
+    }
+}
+
+/** Exact mountain path from the supplied Studio reference; decorative brand only. */
+@Composable
+private fun NativeStudioBrand(modifier: Modifier) {
+    val ink = LocalTrainPilotColors.current.accentText
+    Canvas(modifier) {
+        val w = size.width; val h = size.height
+        val path = Path().apply {
+            moveTo(w * .06f, h * .86f); lineTo(w * .34f, h * .20f)
+            lineTo(w * .54f, h * .66f); lineTo(w * .72f, h * .26f); lineTo(w * .94f, h * .86f)
+        }
+        drawPath(path, ink, style = Stroke(h * .22f, cap = StrokeCap.Round, join = StrokeJoin.Round))
     }
 }
 

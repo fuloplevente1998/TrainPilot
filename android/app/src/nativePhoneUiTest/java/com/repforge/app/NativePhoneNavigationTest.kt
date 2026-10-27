@@ -219,7 +219,7 @@ class NativePhoneNavigationTest {
 
     @Test fun trainingProfilePersistsAfterSettingsReentryWithoutGuessingMeasurements() {
         launch()
-        compose.onNodeWithTag("navigation_settings").performClick()
+        compose.onNodeWithTag("home_profile_open").performScrollTo().performClick()
         compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("training_profile_open"))
         compose.onNodeWithTag("training_profile_open").performClick()
         compose.onNodeWithTag("profile_field_age").performTextReplacement("28")
@@ -278,6 +278,14 @@ class NativePhoneNavigationTest {
         compose.onNodeWithTag("navigation_back").performClick()
         compose.onNodeWithTag("journal_search").assertExists()
         compose.onNodeWithText("Caută antrenamente sau exerciții").assertExists()
+        compose.onNodeWithTag("header_theme").performClick()
+        compose.onNodeWithTag("settings_theme_picker").assertIsDisplayed()
+        compose.onNodeWithTag("navigation_back").performClick()
+        compose.onNodeWithTag("journal_search").assertExists()
+        compose.onNodeWithTag("header_language").performClick()
+        compose.onNodeWithTag("settings_language_ro").assertIsDisplayed().assertIsSelected()
+        compose.onNodeWithTag("navigation_back").performClick()
+        compose.onNodeWithTag("journal_search").assertExists()
     }
     @Test fun openingSettingsKeepsTheCanonicalWorkoutAndStopwatchRunning() {
         val quickLaunch = runBlocking { NativeWorkoutSession.startQuickWorkout(context, "plank", false) }

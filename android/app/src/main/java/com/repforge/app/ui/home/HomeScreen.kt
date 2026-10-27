@@ -41,6 +41,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
+import com.repforge.app.ui.theme.TrainPilotNumericFont
+import com.repforge.app.ui.components.TrainPilotSectionSurface
+import com.repforge.app.ui.components.TrainPilotPrimaryButton
+import com.repforge.app.ui.navigation.NativeMainMenu
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -89,7 +94,9 @@ fun HomeScreen(
     language: String,
     busy: Boolean = false,
     offerOnboarding: Boolean = false,
-    onOnboarding: () -> Unit = {}
+    onOnboarding: () -> Unit = {},
+    onProfile: () -> Unit = {},
+    onHealth: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val activeSession by ActiveWorkoutStore.snapshotFlow.collectAsStateWithLifecycle()
@@ -124,57 +131,58 @@ fun HomeScreen(
                 Text(strings.getString(R.string.home_state_retry))
             }
         }
-        // 1. Következő edzés ajánló kártya (Next Workout Hero Card)
+        Text(strings.getString(R.string.studio_home_greeting),
+            style = MaterialTheme.typography.headlineLarge, color = colors.text,
+            modifier = Modifier.testTag("home_studio_greeting"))
+        Text(strings.getString(if (hasActiveSession) R.string.studio_home_active_intro else R.string.studio_home_overview),
+            style = MaterialTheme.typography.bodyLarge, color = colors.muted)
+        TrainPilotSectionSurface(Modifier.fillMaxWidth().testTag("home_personal_planner")) {
+            Text(strings.getString(R.string.studio_home_planner_title), style = MaterialTheme.typography.titleMedium)
+            Text(strings.getString(R.string.studio_home_planner_info), style = MaterialTheme.typography.bodySmall,
+                color = colors.muted)
+            TrainPilotPrimaryButton(strings.getString(R.string.native_settings_profile_title), onProfile,
+                Modifier.fillMaxWidth().testTag("home_profile_open"), !busy)
+        }
+
+        // The three Studio hero states come from the real session/target, never a demo switch.
         TrainPilotHeroSurface(Modifier.fillMaxWidth().testTag("home_today_hero")) {
-            Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = strings.getString(if (hasActiveSession) R.string.native_workout_component_resume else R.string.native_home_next_workout),
-                        color = colors.accentText,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
-                    )
-                    Text(
-                        text = if (hasActiveSession) activeSession?.optString("programName").orEmpty().ifBlank { strings.getString(R.string.native_home_quick_workout) } else state.recommendedProgram?.program?.let {
-                            nativeLocalizedName(language, it.nameHu, it.nameEn, it.nameDe, it.nameRo)
-                        } ?: strings.getString(R.string.home_state_no_program),
-                        modifier = Modifier.testTag("home_program_name"),
-                        color = colors.muted,
-                        fontSize = 13.sp
-                    )
-                }
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = if (hasActiveSession) activeSession?.optString("dayName").orEmpty().ifBlank { strings.getString(R.string.native_workout_component_resume) } else state.recommendedProgram?.days?.firstOrNull { it.dayId == target?.dayId }?.let {
+            Row(verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                TrainPilotIconBadge(Icons.Default.FitnessCenter)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(strings.getString(if (hasActiveSession) R.string.native_workout_component_resume else R.string.native_home_next_workout),
+                        color = colors.accentText, style = MaterialTheme.typography.labelMedium)
+                    Text(if (hasActiveSession) activeSession?.optString("programName").orEmpty()
+                        .ifBlank { strings.getString(R.string.native_home_quick_workout) }
+                    else state.recommendedProgram?.program?.let {
+                        nativeLocalizedName(language, it.nameHu, it.nameEn, it.nameDe, it.nameRo)
+                    } ?: strings.getString(R.string.home_state_no_program),
+                        Modifier.testTag("home_program_name"), color = colors.muted,
+                        style = MaterialTheme.typography.bodySmall)
+                    Text(if (hasActiveSession) activeSession?.optString("dayName").orEmpty()
+                        .ifBlank { strings.getString(R.string.native_workout_component_resume) }
+                    else state.recommendedProgram?.days?.firstOrNull { it.dayId == target?.dayId }?.let {
                         nativeLocalizedName(language, it.nameHu, it.nameEn, it.nameDe, it.nameRo)
                     } ?: strings.getString(if (state.loading) R.string.home_state_loading else R.string.home_state_no_target),
-                    modifier = Modifier.testTag("home_day_name"),
-                    color = colors.text,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                if (!hasActiveSession && target != null) Text(
-                    text = strings.getString(R.string.native_home_planned_exercises, state.nextDayExercisesCount),
-                    color = colors.muted,
-                    fontSize = 13.sp
-                )
-                Spacer(Modifier.height(16.dp))
-                Button(
-                    onClick = { if (hasActiveSession) onQuickWorkout(false) else target?.let { onStartWorkout(it.programId, it.dayId, it.scheduleId) } },
-                    enabled = !busy && (hasActiveSession || (!state.loading && target != null)),
-                    modifier = Modifier.fillMaxWidth().heightIn(min = TrainPilotDimensions.PrimaryAction).testTag("home_start_workout"),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = colors.accent)
-                ) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = null, tint = colors.onAccent)
-                    Spacer(Modifier.width(8.dp))
-                    Text(strings.getString(if (hasActiveSession) R.string.native_workout_component_resume else R.string.native_home_start_workout), color = colors.onAccent, fontWeight = FontWeight.Bold)
+                        Modifier.testTag("home_day_name"), color = colors.text,
+                        style = MaterialTheme.typography.titleLarge)
+                    if (!hasActiveSession && target != null) Text(
+                        strings.getString(R.string.native_home_planned_exercises, state.nextDayExercisesCount),
+                        color = colors.muted, style = MaterialTheme.typography.bodySmall)
                 }
+            }
+            Button(
+                onClick = { if (hasActiveSession) onQuickWorkout(false)
+                    else target?.let { onStartWorkout(it.programId, it.dayId, it.scheduleId) } },
+                enabled = !busy && (hasActiveSession || (!state.loading && target != null)),
+                modifier = Modifier.fillMaxWidth().heightIn(min = TrainPilotDimensions.PrimaryAction)
+                    .testTag("home_start_workout"), shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = colors.accent, contentColor = colors.onAccent)
+            ) {
+                Icon(Icons.Default.PlayArrow, null)
+                Spacer(Modifier.width(8.dp))
+                Text(strings.getString(if (hasActiveSession) R.string.native_workout_component_resume else R.string.native_home_start_workout),
+                    style = MaterialTheme.typography.labelLarge)
             }
         }
 
@@ -235,10 +243,31 @@ fun HomeScreen(
             fontSize = 16.sp,
             fontWeight = FontWeight.SemiBold
         )
-        TodayMetricsGrid(metrics = state.todayMetrics, language = language)
+        TodayMetricsGrid(metrics = state.todayMetrics, language = language,
+            onMetricClick = { key -> if (!busy) { if (key == "recovery") onCoach() else onHealth() } })
 
 
         NativePlanningShortcuts(language, !busy, onPrograms, onCalendar, onCoach)
+        TrainPilotSurfaceCard(Modifier.fillMaxWidth().testTag("home_coach_preview"),
+            onClick = onCoach, enabled = !busy) {
+            TrainPilotSectionHeader(NativeMainMenu.title("coach", language))
+            Text(strings.getString(R.string.native_home_recovery), style = MaterialTheme.typography.bodySmall,
+                color = colors.muted)
+            Text(state.todayMetrics.recoveryText, style = MaterialTheme.typography.headlineMedium.copy(
+                fontFamily = TrainPilotNumericFont))
+            val sourceLabel = when (state.todayMetrics.recovery.source) {
+                NativeHomeRecoveryPresentation.Source.SAMSUNG -> R.string.native_home_recovery_samsung
+                NativeHomeRecoveryPresentation.Source.TRAINPILOT_ESTIMATE -> R.string.native_home_recovery_estimate
+                NativeHomeRecoveryPresentation.Source.NONE -> R.string.native_home_recovery_no_data
+            }
+            Text(strings.getString(sourceLabel), color = colors.muted, style = MaterialTheme.typography.bodySmall)
+            val notices = listOfNotNull(
+                strings.getString(R.string.native_home_recovery_partial).takeIf { state.todayMetrics.recovery.partial },
+                strings.getString(R.string.native_home_recovery_stale).takeIf { state.todayMetrics.recovery.stale },
+                strings.getString(R.string.native_home_recovery_read_error).takeIf { state.todayMetrics.recovery.refreshFailed }
+            ).joinToString(" · ")
+            if (notices.isNotEmpty()) Text(notices, color = colors.muted, style = MaterialTheme.typography.bodySmall)
+        }
 
     }
 }
@@ -268,7 +297,7 @@ private fun HomeLocalRefresh(model: HomeViewModel) {
 }
 
 @Composable
-fun TodayMetricsGrid(metrics: TodayMetricsUiModel, language: String = "hu") {
+fun TodayMetricsGrid(metrics: TodayMetricsUiModel, language: String = "hu", onMetricClick: ((String) -> Unit)? = null) {
     val colors = LocalTrainPilotColors.current
     val context = LocalContext.current
     val strings = remember(context, language) { nativeResources(context, language) }
@@ -313,12 +342,15 @@ fun TodayMetricsGrid(metrics: TodayMetricsUiModel, language: String = "hu") {
                 Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(TrainPilotDimensions.Gap)) {
                     for ((key, label, value, unit, detail, notice) in row) {
                         TrainPilotMetricSurface(Modifier.weight(1f).fillMaxHeight().testTag("home_metric_$key")) {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(Modifier.fillMaxWidth().then(if (onMetricClick != null)
+                                Modifier.heightIn(min = TrainPilotDimensions.Control).clickable(role = Role.Button) { onMetricClick(key) }
+                                else Modifier), verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Icon(trainPilotMetricIcon(key), null, Modifier.size(18.dp), tint = colors.accentText)
                                 Text(label, color = colors.muted, modifier = Modifier.weight(1f),
                                     style = MaterialTheme.typography.labelSmall)
                             }
-                            Text(value, color = colors.text, style = MaterialTheme.typography.headlineMedium.copy(fontSize = 20.sp, fontFeatureSettings = "tnum"),
+                            Text(value, color = colors.text, style = MaterialTheme.typography.headlineMedium.copy(fontSize = 20.sp, fontFamily = TrainPilotNumericFont, fontFeatureSettings = "tnum"),
                                 modifier = Modifier.testTag("home_metric_${key}_value"))
                             if (unit != null) Text(unit, color = colors.muted, style = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier.testTag("home_metric_${key}_unit"))

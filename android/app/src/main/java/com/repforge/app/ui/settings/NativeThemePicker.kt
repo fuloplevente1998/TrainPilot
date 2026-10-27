@@ -36,7 +36,7 @@ internal fun NativeThemePicker(settings: TrainPilotUserSettings, onSelect: (Them
         "ro" -> listOf("Aspect", "Culori de bază", "Culori intense")
         else -> listOf("Megjelenés", "Alapszínek", "Élénk színek")
     }
-    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
+    Card(Modifier.fillMaxWidth().testTag("settings_theme_picker"), shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = colors.card), border = BorderStroke(1.dp, colors.line)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(labels[0], color = colors.text, style = MaterialTheme.typography.titleLarge)

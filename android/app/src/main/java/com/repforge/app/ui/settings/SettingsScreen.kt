@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -75,7 +76,8 @@ import com.repforge.app.ui.theme.LocalTrainPilotColors
 fun SettingsScreen(
     navController: NavController,
     allowDataReplacement: Boolean = true,
-    viewModel: SettingsViewModel = viewModel()
+    viewModel: SettingsViewModel = viewModel(),
+    initialSection: String = "general"
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val colors = LocalTrainPilotColors.current
@@ -128,7 +130,12 @@ fun SettingsScreen(
         NativeTrainingModePickerState(NativeTrainingModes.globalChoice(state.settings.trainingModes197Json))
     }
 
+    // Presentation-only entry points reuse the original settings controls/writers.
+    val initialIndex = when (initialSection) { "language" -> 1; "theme" -> 4; "profile" -> 5; else -> 0 }
+    val listState = rememberLazyListState(initialFirstVisibleItemIndex =
+        if (initialIndex > 0 && !allowDataReplacement) initialIndex + 1 else initialIndex)
     LazyColumn(
+        state = listState,
         modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp).testTag("settings_list"),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {

@@ -233,6 +233,7 @@ fun TrainPilotAppScaffold(
     val editorFinishing = finishingFlow?.collectAsStateWithLifecycle(initialValue = false)?.value == true
     val settingsOrigin = if (currentRoute == "settings")
         navController.previousBackStackEntry?.destination?.route ?: "home" else "home"
+    var settingsSection by remember { mutableStateOf("general") }
     val navigationBlocked = starting || editorFinishing ||
         activeSnapshot?.optBoolean("finalizationPending") == true
 
@@ -316,7 +317,9 @@ fun TrainPilotAppScaffold(
             Column {
                 NativeMainHeader(currentRoute, settings.language, enabled = !navigationBlocked,
                     onBack = if (currentRoute in NativeMainMenu.secondaryRoutes) ({ goBack() }) else null,
-                    onSettings = { selectDestination("settings") },
+                    onSettings = { settingsSection = "general"; selectDestination("settings") },
+                    onLanguage = { settingsSection = "language"; selectDestination("settings") },
+                    onTheme = { settingsSection = "theme"; selectDestination("settings") },
                     backEnabled = !starting && !editorFinishing &&
                         (activeSnapshot?.optBoolean("finalizationPending") != true || settingsOrigin == "active_workout"))
                 // Intentional Studio design: primary tabs are placed ABOVE all pages.
@@ -352,6 +355,8 @@ fun TrainPilotAppScaffold(
                         },
                         onCalendar = { selectDestination("calendar") }, onCoach = { selectDestination("coach") },
                         onPrograms = { selectDestination("programs") }, language = settings.language, busy = navigationBlocked,
+                        onProfile = { settingsSection = "profile"; selectDestination("settings") },
+                        onHealth = { selectDestination("health") },
                         offerOnboarding = settings.onboarding128 == NativeOnboardingPolicy.SKIPPED,
                         onOnboarding = { if (!navigationBlocked && !hasActiveWorkout) reopenedOnboarding = true },
                         onResumeDraft = {
@@ -440,7 +445,7 @@ fun TrainPilotAppScaffold(
                     }
                 }
                 composable("settings") {
-                    SettingsScreen(navController = navController, allowDataReplacement = !hasActiveWorkout)
+                    SettingsScreen(navController = navController, allowDataReplacement = !hasActiveWorkout, initialSection = settingsSection)
                 }
             }
         }
