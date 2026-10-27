@@ -47,8 +47,9 @@ internal fun NativeMainHeader(route: String, language: String, enabled: Boolean,
     val colors = LocalTrainPilotColors.current
     val strings = nativeResources(LocalContext.current, language)
     Surface(color = colors.bg) {
-        Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 8.dp)
-            .heightIn(min = 56.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().statusBarsPadding()
+            .padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 8.dp)
+            .heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
             if (onBack != null) IconButton(onClick = onBack, enabled = backEnabled,
                 modifier = Modifier.size(TrainPilotDimensions.Control).testTag("navigation_back")) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, NativeMainMenu.backLabel(language), tint = colors.text)
@@ -62,7 +63,8 @@ internal fun NativeMainHeader(route: String, language: String, enabled: Boolean,
                 NativeStudioBrand(Modifier.size(26.dp, 18.dp))
                 Text("TrainPilot", Modifier.weight(1f).padding(horizontal = 8.dp),
                     color = if (enabled) colors.accentText else colors.muted,
-                    style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium.copy(letterSpacing = (-0.2).sp),
+                    fontWeight = FontWeight.Bold,
                     maxLines = 1, overflow = TextOverflow.Ellipsis)
             } else Text(NativeMainMenu.title(route, language),
                 modifier = Modifier.weight(1f).padding(horizontal = 8.dp), color = colors.text,
@@ -157,7 +159,7 @@ internal fun NativeTopNavigation(route: String, settingsOrigin: String, language
                             if (active) colors.accent else colors.line, shape)
                         .selectable(selected = active, enabled = enabled, role = Role.Tab) { onSelect(destination) }
                         .testTag("navigation_$destination")
-                        .padding(horizontal = if (scrollable) 10.dp else 1.dp, vertical = 6.dp),
+                        .padding(horizontal = if (scrollable) 10.dp else 2.dp, vertical = 7.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
