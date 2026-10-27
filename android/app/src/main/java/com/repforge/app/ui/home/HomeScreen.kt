@@ -155,10 +155,6 @@ fun HomeScreen(
                 color = colors.muted)
             TrainPilotPrimaryButton(strings.getString(R.string.studio_home_new_plan), onPersonalPlan,
                 Modifier.fillMaxWidth().testTag("home_personal_plan"), !busy)
-            androidx.compose.material3.TextButton(onClick = onProfile, enabled = !busy,
-                modifier = Modifier.fillMaxWidth().heightIn(min = TrainPilotDimensions.Control).testTag("home_profile_open")) {
-                Text(strings.getString(R.string.native_settings_profile_title))
-            }
         }
 
         // Accepted 18:49 Studio hero structure: 56dp warm-gold icon, real status,
@@ -327,7 +323,7 @@ private fun StudioHomeNavigationRow(
 }
 
 @Composable
-private fun StudioHomeVitals(
+internal fun StudioHomeVitals(
     metrics: TodayMetricsUiModel,
     language: String,
     onHealth: () -> Unit, onCoach: () -> Unit,
