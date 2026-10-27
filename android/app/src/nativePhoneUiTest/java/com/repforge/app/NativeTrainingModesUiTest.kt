@@ -130,6 +130,9 @@ class NativeTrainingModesUiTest {
     }
 
     @Test fun globalApprovalsSurviveThreeAcknowledgedColdRestarts() {
+        // clear() persists an inactive closure receipt; absence is not the contract.
+        val initialWorkout = fixture.currentWorkout()
+        assertFalse(initialWorkout?.optBoolean("active") == true)
         for (progression in listOf("linear", "rir", "double")) {
             launch()
             settings()
@@ -149,7 +152,10 @@ class NativeTrainingModesUiTest {
             closeNativeComposeScenario(scenario, compose)
             scenario = null
             assertEquals(progression, NativeTrainingModes.globalChoice(current().trainingModes197Json).progressionMode)
-            assertNull(fixture.currentWorkout())
+            val afterWorkout = fixture.currentWorkout()
+            assertFalse("Mode approval must not start a workout", afterWorkout?.optBoolean("active") == true)
+            assertEquals(initialWorkout?.optString("workoutId"), afterWorkout?.optString("workoutId"))
+            assertEquals(initialWorkout?.optLong("revision"), afterWorkout?.optLong("revision"))
         }
         launch()
         settings()
