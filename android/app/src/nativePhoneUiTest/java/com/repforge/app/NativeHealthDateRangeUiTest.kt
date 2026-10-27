@@ -73,7 +73,7 @@ class NativeHealthDateRangeUiTest {
     }
 
     @After fun close() {
-        scenario?.close()
+        closeNativeComposeScenario(scenario, compose)
         context.stopService(Intent(context, IntervalTimerService::class.java))
         context.stopService(Intent(context, DistanceTrackingService::class.java))
     }

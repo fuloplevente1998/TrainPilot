@@ -29,9 +29,7 @@ class NativeTrainingModeApprovalUiTest {
     private var scenario: ActivityScenario<MainActivity>? = null
 
     @Before fun reset() = fixture.reset()
-    @After fun close() {
-        try { compose.waitForIdle() } finally { fixture.close(scenario) }
-    }
+    @After fun close() = fixture.close(scenario, compose)
 
     private fun current() = runBlocking(Dispatchers.IO) { fixture.settings.current() }
 

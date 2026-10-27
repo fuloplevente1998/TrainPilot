@@ -97,9 +97,30 @@ internal class NativeLocalizationEmulatorFixture {
         instrumentation.waitForIdleSync()
     }
 
-    fun close(scenario: ActivityScenario<MainActivity>?) {
-        instrumentation.waitForIdleSync()
-        scenario?.close()
-        stopServices()
+    fun close(scenario: ActivityScenario<MainActivity>?, compose: ComposeTestRule) {
+        try { closeNativeComposeScenario(scenario, compose) } finally { stopServices() }
+    }
+
+    /** Non-UI admission tests never create an Activity or a Compose root. */
+    fun closeWithoutActivity() = stopServices()
+}
+
+/** Drain Compose frames before destroying a real host, including mid-test cold restarts. */
+internal fun closeNativeComposeScenario(scenario: ActivityScenario<MainActivity>?, compose: ComposeTestRule) {
+    if (scenario == null) return
+    val instrumentation = InstrumentationRegistry.getInstrumentation()
+    try {
+        if (scenario.state != androidx.lifecycle.Lifecycle.State.DESTROYED) {
+            android.util.Log.d("NativeComposeTestLifecycle", "Awaiting Compose idle before Activity close")
+            compose.waitForIdle()
+        }
+    } finally {
+        try {
+            instrumentation.waitForIdleSync()
+            scenario.close()
+        } finally {
+            instrumentation.waitForIdleSync()
+            android.util.Log.d("NativeComposeTestLifecycle", "Activity closed")
+        }
     }
 }

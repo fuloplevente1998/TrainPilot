@@ -42,7 +42,7 @@ class NativeProgressPhotoRangeUiTest {
     @Before fun setup() = fixture.reset()
 
     @After fun finish() {
-        scenario?.close()
+        closeNativeComposeScenario(scenario, compose)
         for (id in listOf(photoId, missingId, deletedId, orphanId)) repository.photoFile(id).delete()
         fixture.stopServices()
     }

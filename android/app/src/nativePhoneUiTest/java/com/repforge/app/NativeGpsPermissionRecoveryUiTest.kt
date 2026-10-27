@@ -43,7 +43,7 @@ class NativeGpsPermissionRecoveryUiTest {
     }
 
     @After fun cleanup() {
-        fixture.close(scenario)
+        fixture.close(scenario, compose)
         // Permission reset is host-owned, between independent instrumentation processes.
         setGpsEnabled(originallyGpsEnabled)
     }

@@ -43,7 +43,7 @@ class NativeHealthAutoRefreshUiTest {
     }
 
     @After fun close() {
-        scenario?.close()
+        closeNativeComposeScenario(scenario, compose)
         runBlocking(Dispatchers.IO) {
             NativeDataReplacement.mutate(context) {
                 HealthJournalStore.get(context).setPreferences(JSONObject().put("autoOnOpen", false))

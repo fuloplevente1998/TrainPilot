@@ -32,7 +32,7 @@ class NativeHomeRecoveryUiTest {
     private var scenario: ActivityScenario<MainActivity>? = null
 
     @Before fun reset() { fixture.reset() }
-    @After fun close() { fixture.close(scenario) }
+    @After fun close() { fixture.close(scenario, compose) }
 
     private fun today(): String = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate().toString()
     private fun time(): String = Instant.now().minusSeconds(3600).toString()
@@ -119,7 +119,7 @@ class NativeHomeRecoveryUiTest {
         samsung(64.0)
         for ((language, label) in listOf("hu" to "Samsung", "en" to "Samsung",
             "de" to "Samsung", "ro" to "Samsung")) {
-            scenario?.close(); scenario = null
+            closeNativeComposeScenario(scenario, compose); scenario = null
             setLanguage(language)
             launch()
             shownValue("64%")
@@ -128,11 +128,11 @@ class NativeHomeRecoveryUiTest {
         }
         // A translated fallback/no-data key is asserted from actual Home below,
         // not just by testing resources in isolation.
-        scenario?.close(); scenario = null
+        closeNativeComposeScenario(scenario, compose); scenario = null
         runBlocking(Dispatchers.IO) { journal.erase() }
         for ((language, label) in listOf("hu" to "Nincs adat", "en" to "No data",
             "de" to "Keine Daten", "ro" to "Fără date")) {
-            scenario?.close(); scenario = null
+            closeNativeComposeScenario(scenario, compose); scenario = null
             setLanguage(language)
             launch()
             shownValue("—")

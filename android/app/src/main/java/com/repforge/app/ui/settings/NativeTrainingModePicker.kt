@@ -38,7 +38,7 @@ import com.repforge.app.ui.text.nativeResources
 import com.repforge.app.ui.theme.LocalTrainPilotColors
 
 /**
- * Owned by the non-virtualized screen for the program picker. Mutable dialog state
+ * Owned by the non-virtualized Settings/Programs screen. Mutable dialog state
  * survives LazyColumn item disposal and cannot approve an unrelated proposal.
  */
 internal class NativeTrainingModePickerState(initial: NativeTrainingModes.Effective) {

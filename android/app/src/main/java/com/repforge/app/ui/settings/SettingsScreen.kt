@@ -67,6 +67,7 @@ import androidx.navigation.NavController
 import com.repforge.app.R
 import com.repforge.app.ui.text.nativeResources
 import com.repforge.app.PrivacyPolicy
+import com.repforge.app.data.store.NativeTrainingModes
 import com.repforge.app.data.store.TrainPilotSettingsStore
 import com.repforge.app.ui.theme.LocalTrainPilotColors
 
@@ -122,6 +123,11 @@ fun SettingsScreen(
         return
     }
 
+    // The proposal/dialog belongs to the screen, not a disposable lazy-list item.
+    val globalModeState = remember(state.settings.trainingModes197Json, state.settings.activeProgramId) {
+        NativeTrainingModePickerState(NativeTrainingModes.globalChoice(state.settings.trainingModes197Json))
+    }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp).testTag("settings_list"),
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -147,7 +153,8 @@ fun SettingsScreen(
                 scope = "global",
                 enabled = allowDataReplacement && !state.modeSaving && !state.replacementBusy,
                 onApprove = viewModel::approveTrainingMode,
-                onUndo = { viewModel.undoTrainingMode("global", null) }
+                onUndo = { viewModel.undoTrainingMode("global", null) },
+                holder = globalModeState, showDialog = false
             )
         }
         item { NativeThemePicker(state.settings, viewModel::setTheme) }
@@ -379,6 +386,17 @@ fun SettingsScreen(
 
         item { Spacer(Modifier.height(80.dp)) }
     }
+
+    NativeTrainingModePicker(
+        language = state.settings.language,
+        raw = state.settings.trainingModes197Json,
+        activeProgramId = state.settings.activeProgramId,
+        scope = "global",
+        enabled = allowDataReplacement && !state.modeSaving && !state.replacementBusy,
+        onApprove = viewModel::approveTrainingMode,
+        onUndo = { viewModel.undoTrainingMode("global", null) },
+        holder = globalModeState, showCard = false
+    )
 
     if (profileOpen) TrainingProfileDialog(
         profileJson = openedProfileJson, language = state.settings.language,

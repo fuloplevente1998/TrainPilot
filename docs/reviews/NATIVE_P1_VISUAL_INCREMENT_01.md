@@ -100,3 +100,25 @@ Két köztes, változatlanPNG: docs/design/previews/p1-4af5ff2d/README.md.
 most még nem lezárt eredmény. Productionfix: valós Quickbadge _01 vissza,
 chooserCTA _02 megmarad,320dp-n a két hosszú actioncard egymás alatt.
 Nincs tesztelvárás-gyengítés vagy verzió/main módosítás.
+
+
+## 40500323759 lezárt gate és Compose-javításjelölt
+
+Exact app5054c6c6: JVMartifact12732747473 **1333PASS**. Wear XMLartifactek
+12732474405/12733915968/12733371784: **68+59+56=183PASS**, nincs skip/missing.
+Két signedupgrade job SUCCESS. Phoneartifact12733831495: **115/116**,0missing,
+112main111PASS/1FAIL+4GPSPASS. A Quicklocale és mindkét új P1próba PASS;
+65rawPNG. A runner mégis crash: az utolsó
+`NativeTrainingModesUiTest.globalPickerWithProgramHitRirChangesOnlyGlobalProgressionThroughRealSettingsVm`
+Activity-lezárásakor Compose SlotWriter length1280/index-461. A1333/183PASS nem
+telefonos elfogadás; a korábbi puszta main-looper idle nem elégséges általános fix.
+
+Forrásban igazolt két lifecycle-hiány: a Settings global picker dialogja még
+virtualizált LazyColumn-itemben él; a teszt csak DataStore-commitot vár, a VM
+statusMessage/modeSaving lezárását nem. A crash pontos frameworkoka még nem bizonyított.
+Jelölt javítás: képernyő-tulajdonú globális holder/dialog, azonosan Programs mintájával;
+az UItesztekben közös Compose-idle/Activity-close, mindig lefutó szolgáltatástakarítás;
+a trainingmode teszt a valódi látható nyugtát is megvárja és bezárja.
+Új regresszió három jóváhagyott mentés/coldrestart, megmaradó progresszióval,
+aktívsession létrehozása nélkül. Nincs sleep/timeoutnövelés/ignore/tesztkihagyás,
+writer/engine/guard/verzió/BOM változás. Runtime eredmény még UNRUN;117phone várható.

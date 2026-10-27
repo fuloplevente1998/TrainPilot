@@ -25,7 +25,7 @@ class NativeCardioProgressUiTest {
     private var scenario: ActivityScenario<MainActivity>? = null
 
     @Before fun reset() = fixture.reset()
-    @After fun close() = fixture.close(scenario)
+    @After fun close() = fixture.close(scenario, compose)
 
     private fun exists(tag: String) =
         compose.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()

@@ -61,12 +61,10 @@ class NativePhoneNavigationTest {
         }
     }
     @After fun close() {
-        try { compose.waitForIdle() } finally {
-            try { instrumentation.waitForIdleSync(); scenario?.close() } finally {
-                context.stopService(Intent(context, IntervalTimerService::class.java))
-                context.stopService(Intent(context, DistanceTrackingService::class.java))
-                instrumentation.waitForIdleSync()
-            }
+        try { closeNativeComposeScenario(scenario, compose) } finally {
+            context.stopService(Intent(context, IntervalTimerService::class.java))
+            context.stopService(Intent(context, DistanceTrackingService::class.java))
+            instrumentation.waitForIdleSync()
         }
     }
     private fun launch() {

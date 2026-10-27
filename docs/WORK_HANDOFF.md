@@ -1,5 +1,20 @@
 # TrainPilot – aktuális átadás
 
+## Compose-lezárás stabilizálása – 2026-10-27
+
+40500323759 / exact5054c6c6 lezárt FAIL: Root rawXML1333JVM PASS; phone115/116,
+112main111PASS/1FAIL+4GPSPASS,0missing, de runnercrash az utolsó TrainingModes teszt
+Activity-dispose pontján (SlotWriter index=-461). LocaleQuick már PASS;65rawPNG.
+Wear rawXML183/183 (68+59+56),2signedupgradeSUCCESS. Ez nem közös zöld kapu.
+Javításjelölt: Settings globalmode screen-owned dialog/holder (Programs mintája),
+közös Compose-idle→Activity-close helper a valódi UI-fixture-eknél/coldrestartnál;
+Modes tesztek mentés UTÁNI látható VMnyugtát is megvárnak/bezárnak. Új3ciklusos
+approve→close→coldstart próba, minden meglévő assertion/tag/guard megmarad.
+Még nem futott Androidon. Várható phone117; JVM1333; új egyetlen canonicalgate kell.
+AIStudio app/android módban teljesUI/UX-et tervez usermockupokból; új önálló
+UIrendszert nem importálunk vakon, meglévőAPI/motor/adat utakhoz adaptáljuk.
+
+
 Frissítve: **2026-10-26**. A main alkalmazásbaseline-ja `7473b30`, dokumentációs HEAD-je `8a36502`; **#235/#237 mainen, készüléken elfogadva, változatlan 1.3.71 /2735**. Latest: `v1.3.71-perf-20261022`, Wear párja `wear-v1.3.71-perf-20261022`; az október 21-i eredeti kiadás megmaradt. A natív migráció külön ágon folyamatban; #214 karbantartási issue marad. [Takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.

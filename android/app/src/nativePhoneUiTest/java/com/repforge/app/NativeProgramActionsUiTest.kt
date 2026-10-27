@@ -28,7 +28,7 @@ class NativeProgramActionsUiTest {
     private var scenario: ActivityScenario<MainActivity>? = null
 
     @Before fun setup() = fixture.reset()
-    @After fun cleanup() = fixture.close(scenario)
+    @After fun cleanup() = fixture.close(scenario, compose)
 
     private fun launchPrograms() {
         scenario = fixture.launch()

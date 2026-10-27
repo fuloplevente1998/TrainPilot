@@ -1,5 +1,20 @@
 # Natív folytatási pont – rövid kontextus
 
+## Compose-lezárás stabilizálása – 2026-10-27
+
+40500323759 / exact5054c6c6 lezárt FAIL: Root rawXML1333JVM PASS; phone115/116,
+112main111PASS/1FAIL+4GPSPASS,0missing, de runnercrash az utolsó TrainingModes teszt
+Activity-dispose pontján (SlotWriter index=-461). LocaleQuick már PASS;65rawPNG.
+Wear rawXML183/183 (68+59+56),2signedupgradeSUCCESS. Ez nem közös zöld kapu.
+Javításjelölt: Settings globalmode screen-owned dialog/holder (Programs mintája),
+közös Compose-idle→Activity-close helper a valódi UI-fixture-eknél/coldrestartnál;
+Modes tesztek mentés UTÁNI látható VMnyugtát is megvárnak/bezárnak. Új3ciklusos
+approve→close→coldstart próba, minden meglévő assertion/tag/guard megmarad.
+Még nem futott Androidon. Várható phone117; JVM1333; új egyetlen canonicalgate kell.
+AIStudio app/android módban teljesUI/UX-et tervez usermockupokból; új önálló
+UIrendszert nem importálunk vakon, meglévőAPI/motor/adat utakhoz adaptáljuk.
+
+
 Frissítve: 2026-10-27. AGENTS.md + ez + WORK_HANDOFF.md teteje elég induláskor.
 Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/exportot.
 

@@ -20,7 +20,7 @@ class NativeTimerDefaultsUiTest {
     private val fixture = NativeLocalizationEmulatorFixture()
     private var scenario: ActivityScenario<MainActivity>? = null
     @Before fun prepare() = fixture.reset()
-    @After fun close() = fixture.close(scenario)
+    @After fun close() = fixture.close(scenario, compose)
     private fun current() = runBlocking(Dispatchers.IO) { fixture.settings.current().timerConfiguration().toString() }
     private fun open() {
         scenario = fixture.launch()

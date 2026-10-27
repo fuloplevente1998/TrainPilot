@@ -41,7 +41,7 @@ internal class CalendarPlannerUiHarness(private val compose: ComposeTestRule) {
     fun reset() = fixture.reset()
 
     fun close() {
-        fixture.close(scenario)
+        fixture.close(scenario, compose)
         scenario = null
     }
 

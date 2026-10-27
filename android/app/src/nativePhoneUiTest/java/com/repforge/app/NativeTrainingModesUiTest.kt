@@ -25,7 +25,7 @@ class NativeTrainingModesUiTest {
     private var scenario: ActivityScenario<MainActivity>? = null
 
     @Before fun prepare() = fixture.reset()
-    @After fun close() = fixture.close(scenario)
+    @After fun close() = fixture.close(scenario, compose)
     private fun current() = runBlocking(Dispatchers.IO) { fixture.settings.current() }
     private fun launch() {
         scenario = fixture.launch()
@@ -41,7 +41,18 @@ class NativeTrainingModesUiTest {
     private fun dismissSettingsStatus() {
         val text = nativeResources(fixture.context, current().language)
             .getString(R.string.native_settings_ok)
-        compose.onNodeWithText(text).performClick()
+        dismissStatus(text)
+    }
+    private fun dismissStatus(text: String) {
+        // DataStore completion precedes the VM's visible acknowledgement.
+        compose.waitUntil(15_000) {
+            compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText(text).assertIsDisplayed().performClick()
+        compose.waitUntil(15_000) {
+            compose.onAllNodesWithText(text).fetchSemanticsNodes().isEmpty()
+        }
+        compose.waitForIdle()
     }
     private fun select(tag: String, option: String) {
         compose.onNodeWithTag(tag).performClick()
@@ -73,6 +84,7 @@ class NativeTrainingModesUiTest {
         compose.onNodeWithTag("training_modes_global_undo").performClick()
         compose.waitUntil(15_000) { current().trainingModes197Json == null }
         assertEquals("legacy", NativeTrainingModes.resolveSavedJson(current().trainingModes197Json, "p").source)
+        dismissSettingsStatus()
     }
 
     @Test fun globalPickerWithProgramHitRirChangesOnlyGlobalProgressionThroughRealSettingsVm() {
@@ -114,6 +126,36 @@ class NativeTrainingModesUiTest {
             .getJSONObject(programId).getString("trainingStyle"))
         assertEquals("rir", applied.getJSONObject("byProgram")
             .getJSONObject(programId).getString("progressionMode"))
+        dismissSettingsStatus()
+    }
+
+    @Test fun globalApprovalsSurviveThreeAcknowledgedColdRestarts() {
+        for (progression in listOf("linear", "rir", "double")) {
+            launch()
+            settings()
+            select("training_modes_global_progression", progression)
+            compose.onNodeWithTag("training_modes_global_preview").performClick()
+            compose.waitUntil(30_000) {
+                compose.onAllNodesWithTag("training_modes_global_approve").fetchSemanticsNodes()
+                    .any { it.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.Disabled) == null }
+            }
+            compose.onNodeWithTag("training_modes_global_approve").assertIsEnabled().performClick()
+            compose.waitUntil(15_000) {
+                current().trainingModes197Json?.let {
+                    JSONObject(it).getJSONObject("defaults").optString("progressionMode") == progression
+                } == true
+            }
+            dismissSettingsStatus()
+            closeNativeComposeScenario(scenario, compose)
+            scenario = null
+            assertEquals(progression, NativeTrainingModes.globalChoice(current().trainingModes197Json).progressionMode)
+            assertNull(fixture.currentWorkout())
+        }
+        launch()
+        settings()
+        val label = nativeResources(fixture.context, current().language)
+            .getString(R.string.native_modes_progression_double)
+        compose.onNodeWithTag("training_modes_global_progression").assertTextContains(label)
     }
 
     @Test fun modePickerShowsSelectedLanguageInAllFourNativeLocalizations() {
@@ -180,7 +222,7 @@ class NativeTrainingModesUiTest {
         // Program inheritance requires a separate preview and confirmation.
         val buttonLabel = nativeResources(fixture.context, current().language)
             .getString(R.string.native_modes_approve)
-        compose.onNodeWithText(buttonLabel).performClick()
+        dismissStatus(buttonLabel)
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("training_modes_program_inherit"))
         compose.onNodeWithTag("training_modes_program_inherit").performClick()
         compose.waitUntil(30_000) {
@@ -194,5 +236,6 @@ class NativeTrainingModesUiTest {
                 .getJSONObject(programId).getBoolean("explicitChoice") == false
         }
         assertEquals("global", NativeTrainingModes.resolveSavedJson(current().trainingModes197Json, programId).source)
+        dismissStatus(buttonLabel)
     }
 }

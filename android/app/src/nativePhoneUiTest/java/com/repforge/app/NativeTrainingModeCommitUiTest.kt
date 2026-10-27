@@ -24,7 +24,7 @@ class NativeTrainingModeCommitUiTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
 
     @Before fun prepare() = fixture.reset()
-    @After fun close() = fixture.close(null)
+    @After fun close() = fixture.closeWithoutActivity()
 
     @Test fun settingsApprovalAndUndoEnteredFromIoUseMainOnlyExecutionAdmission() {
         val activeProgram = runBlocking(Dispatchers.IO) { fixture.settings.current().activeProgramId }

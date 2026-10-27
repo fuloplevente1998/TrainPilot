@@ -23,7 +23,7 @@ class NativeLocalizationSafetyUiTest {
     private var scenario: ActivityScenario<MainActivity>? = null
 
     @Before fun prepare() = fixture.reset()
-    @After fun close() = fixture.close(scenario)
+    @After fun close() = fixture.close(scenario, compose)
     private fun visible(text: String) =
         compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
 

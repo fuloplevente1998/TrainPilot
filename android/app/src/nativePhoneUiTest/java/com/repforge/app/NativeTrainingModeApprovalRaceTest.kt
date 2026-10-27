@@ -25,7 +25,7 @@ class NativeTrainingModeApprovalRaceTest {
     private fun vm() = TrainingProgramsViewModel(fixture.context.applicationContext as Application)
 
     @Before fun reset() = fixture.reset()
-    @After fun close() = fixture.close(null)
+    @After fun close() = fixture.closeWithoutActivity()
 
     @Test fun queuedProgramEditorSaveInvalidatesComparisonBeforeApprovalCas() = runBlocking(Dispatchers.IO) {
         val builtin = fixture.database.programDao().getProgramsWithDays().first { it.program.builtin }

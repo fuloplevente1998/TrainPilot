@@ -19,7 +19,7 @@ import org.junit.runner.RunWith
 class NativeGoogleMaintenanceUiTest {
     @get:Rule val compose = createEmptyComposeRule()
     private var scenario: ActivityScenario<MainActivity>? = null
-    @After fun close() { scenario?.close() }
+    @After fun close() { closeNativeComposeScenario(scenario, compose) }
 
     @Test fun allThreeActionsRequireConfirmationAndCancelDoesNotExecute() {
         val preview = mutableStateOf<NativeGoogleMaintenance.Request?>(null)
@@ -90,7 +90,7 @@ class NativeGoogleMaintenanceUiTest {
             org.junit.Assert.assertEquals("isolated-test-sub", prefs.getString("sub", ""))
         } finally {
             if (backup) NativeHealthBackupGate.end()
-            scenario?.close(); scenario = null
+            closeNativeComposeScenario(scenario, compose); scenario = null
             val edit = prefs.edit().clear()
             for ((key, value) in old) when (value) {
                 is String -> edit.putString(key, value)

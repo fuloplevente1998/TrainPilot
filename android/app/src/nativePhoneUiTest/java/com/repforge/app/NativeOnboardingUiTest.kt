@@ -42,7 +42,7 @@ class NativeOnboardingUiTest {
         }
     }
 
-    @After fun close() { fixture.close(scenario) }
+    @After fun close() { fixture.close(scenario, compose) }
 
     private fun launch(expected: String = "onboarding_screen") {
         scenario = ActivityScenario.launch(MainActivity::class.java)
@@ -61,7 +61,7 @@ class NativeOnboardingUiTest {
         compose.onNodeWithTag("onboarding_skip").performClick()
         waitFor("navigation_home")
         assertEquals("skipped", runBlocking(Dispatchers.IO) { store.current().onboarding128 })
-        scenario?.close()
+        closeNativeComposeScenario(scenario, compose)
         launch("navigation_home")
         compose.onNodeWithTag("onboarding_screen").assertDoesNotExist()
         compose.onNodeWithTag("home_resume_onboarding").performClick()
@@ -69,7 +69,7 @@ class NativeOnboardingUiTest {
         compose.onNodeWithTag("onboarding_begin").performClick()
         waitFor("onboarding_profile")
         assertEquals("in_progress", runBlocking(Dispatchers.IO) { store.current().onboarding128 })
-        scenario?.close()
+        closeNativeComposeScenario(scenario, compose)
         launch()
         compose.onNodeWithTag("onboarding_welcome").assertDoesNotExist()
         waitFor("onboarding_profile")

@@ -26,7 +26,7 @@ import org.junit.runner.RunWith
 class NativeHealthSyncUiTest {
     @get:Rule val compose = createEmptyComposeRule()
     private var scenario: ActivityScenario<MainActivity>? = null
-    @After fun close() { scenario?.close() }
+    @After fun close() { closeNativeComposeScenario(scenario, compose) }
 
     @Test fun fullNormalCancelAndRetryControlsDispatchAndPreserveDisplayedHistory() {
         val state = mutableStateOf(HealthDashboardUiState(selectedDay = "2026-09-21", historyMonth = "2026-09",

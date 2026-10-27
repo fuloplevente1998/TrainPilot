@@ -21,7 +21,7 @@ class NativeLocalizationWorkoutUiTest {
     private var scenario: ActivityScenario<MainActivity>? = null
 
     @Before fun prepare() = fixture.reset()
-    @After fun close() = fixture.close(scenario)
+    @After fun close() = fixture.close(scenario, compose)
 
     private fun launchActive() {
         scenario = fixture.launch()

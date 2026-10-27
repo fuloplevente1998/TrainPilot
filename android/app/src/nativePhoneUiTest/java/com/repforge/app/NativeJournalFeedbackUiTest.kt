@@ -23,7 +23,7 @@ class NativeJournalFeedbackUiTest {
     private val fixture = NativeLocalizationEmulatorFixture()
     private var scenario: ActivityScenario<MainActivity>? = null
     @Before fun prepare() = fixture.reset()
-    @After fun close() = fixture.close(scenario)
+    @After fun close() = fixture.close(scenario, compose)
     private fun stored() = runBlocking(Dispatchers.IO) {
         fixture.database.workoutHistoryDao().getWorkoutWithDetailsById("feedback-ui")!!
     }
