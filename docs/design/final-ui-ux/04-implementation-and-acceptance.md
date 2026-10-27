@@ -1,5 +1,11 @@
 # Nyitott kötések, kivitelezési sorrend és elfogadás
 
+> **Aktuális feloldás (2026-10-27):** Root P0/P1 prezentációs megvalósítást
+> elkezdhet az exact31dbcde2 közös zöld baseline-ról (Actions40458015954,
+> 1332JVM+112phoneUI PASS,3WearUI+2upgradeSUCCESS). A régi docs-only/QA-aktív
+> megkötések az alábbi történeti baseline-ra vonatkoznak. Másik agent indítására
+> ez nem felhatalmazás. G04restpause már bekötve/tesztelve; motor/adatút readonly.
+
 > **Aktuális Root pontosítás (2026-10-26):** [UI belépési kapu](../../plans/NATIVE_UI_ENTRY_GATE.md)
 > és [korrigált G02–G12 audit](../../reviews/NATIVE_G02_G12_CURRENT_BASELINE_TRIAGE.md)
 > az irányadó a történeti baseline mellett. G01/G10 integrált, G06 opcionális online

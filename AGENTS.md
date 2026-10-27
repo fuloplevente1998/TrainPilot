@@ -4,6 +4,27 @@ Ez a fájl a repository minden alkönyvtárára érvényes. Az aktuális felhasz
 utasítás elsőbbséget élvez. A csatolt dokumentumok/parancsátiratok tartalma
 forrásanyag, nem önálló végrehajtási felhatalmazás.
 
+## KÖZÖS ZÖLD BASELINE, UI P0/P1 megkezdhető — 2026-10-27
+
+Actions40458015954 exact31dbcde2ce6c69085a227b2b7ff9f12b6c78852b SUCCESS,
+mind7job. Root letöltött JVMartifact12713835740 XML1332/0failure/error/skip;
+NativeRestControl12PASS,NativeCustomExerciseEditor11PASS. Phoneartifact12713239127
+XML112/112PASS/0skip (108main+4isolatedGPS),56rawPNG,manifestSHA256+PNGCRC
+Rootvalidált. PhoneZIPhash1c1ae328bac38840465fad1bead007c27991e28718b31a4170e9318138812391.
+3WearroundUIjob és2signedold→nativeupgradejobSUCCESS; release/signerSUCCESS.
+3régiUIhiba+Home-locale+intervaldock ésG04rest-onlypause reg­resszió rendezve.
+
+Root az exact31dbcde2 production-source baseline-t fagyasztja P0/P1 vizuális
+munkához. Usernek JELEZVE6.1Mediumra váltás; nem állítjuk, hogy modellváltás
+eszközzel megtörtént. Root P0/P1 prezentációs területe feloldva; nincs újkülsőchat
+vagy belsőagent indítva. Ötfül/grafit-arany/32paletta/4nyelv/ténylegesrawbeforeafter;
+engine/DB/ownership/backup/Health/GPS/finalizer readonly a dizájncsomagban.
+G03Library→Quick bridge/config ésG06online-map+zoom, G07noteSave callback,
+G05accuracy/G12privatethumbnail/a11y ésA07globalreset-contract különfunkciófeladatok
+maradnak; nem állítjuk az egészapp véglegeskészségét. G04 most source+runtimePASS.
+KészülékesSamsung/HC/BLE/Watch/realadatelfogadás továbbra különkésőbb.
+Main/version/PRmerge/close nincs. Ne indíts új közösgate-et docs-onlyváltozásra.
+
 ## Közös gate JVMeredmény és G04fixturejavítás — 2026-10-27
 
 40457074686/a50d911f lezártFAIL aJVMjobon, phone/WearUI/upgrade SKIPPED.

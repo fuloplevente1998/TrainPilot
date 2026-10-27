@@ -1,5 +1,11 @@
 # UI-fejlesztés belépési kapuja — Root, 2026-10-26
 
+> **Kapunyitás 2026-10-27:** közös40458015954, exact31dbcde2,
+> mind7jobSUCCESS. RootXML1332JVM+112phoneUI/0fail/error/skip;56rawPNG
+> CRC/hash validált. A történeti hat/majdhárom phoneFAIL rendezve, G04pause is PASS.
+> **P0/P1 megvalósítás Root számára megkezdhető 6.1Medium ajánlással**;
+> P2/P3/P4 funkcióhookok és készülékes végelfogadás külön maradnak.
+
 > **G04 kódban bekötve (2026-10-27, a50d911f):** külön pihenőpause/resume,
 > meglévő service-en, idempotens desiredstate+stale/ownership guard, 48dpUIgomb.
 > 2újJVM és meglévővalósUIpróba bővült; runtime még UNRUN. A CustomExerciseEditor
