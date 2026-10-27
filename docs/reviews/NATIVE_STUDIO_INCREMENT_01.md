@@ -40,3 +40,10 @@ Training/Journal teljesszerkezet, összes aktívmérés/finish/interval, program
 calendar/coach/settings/support képernyők. Mainanatómia/GPS szegmens/valósmérések
 maradnak, demószöveg/állapotváltó/fake route nem kerül a termékbe. Main/verzió nincs
 módosítva. A compile/JVM/UI/Wear/upgrade kapu és új natívPNG még hátra.
+
+
+## Futó kapu
+
+40539957380 exact0fb350a47b1c17a04851ce6a0f7529f510dad8d9 (app/tests d7e64697).
+Compile lépés PASS, unit még fut. A65db698 és későbbi docs-only checkpointok nem
+változtatják a fagyasztott appforrást. Új118phone várható, rawXML/log alapján ellenőrizendő.

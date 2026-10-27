@@ -44,6 +44,13 @@ Nem kell új bemenetet kérni. Az alkalmazáskódba a következő increment ker�
 ## Studio increment01 – forrás megírva, új runtime még szükséges
 
 Jelölt app/tesztforrás: d7e64697 (8ba6a388+34c629b8+d7e64697).
+Aktív canonical gate:40539957380 exact0fb350a47b1c17a04851ce6a0f7529f510dad8d9.
+https://github.com/fuloplevente1998/TrainPilot/actions/runs/40539957380
+Compile lépés PASS, unit lépés még fut; ne indíts mellé duplagate-et.
+A későbbi065db698 csak docs-only AIStudio-finomítási prompt, nem új appforrás.
+A felhasználó promptot kért AIStudiónak; átadó elkészült, tényleges külsőfeladat
+indulását még nem jelezte. Root bekötés ettől független, nem állhat meg erre várva:
+docs/plans/AISTUDIO_STUDIO_ACCESSIBILITY_REFINEMENT_HANDOFF.md.
 - Studio SpaceGrotesk/PlusJakartaSans/JetBrainsMono fontok és typography, tnum;
   valódi statikusregular fontok, hiányzó súlyokat Compose szintetizálja.
 - Studio sötét közösalap, hero finom háttérgradiens, a meglévő32mentettpaletta

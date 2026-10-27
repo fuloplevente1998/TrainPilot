@@ -90,7 +90,7 @@ Módosítható a Studio projektben:
 - ui/theme/Theme.kt, Type.kt, TrainPilotPalettes.kt (csak szükséges megjelenítési fix),
 - ui/components/TrainPilotCommonComponents.kt,
 - localization/TrainPilotStrings.kt,
-- a6meglévő ui/screens/*.kt,
+- az5meglévő ui/screens/*.kt,
 - szükséges, kis célzott app/src/androidTest teszt.
 
 A DemoDataProvider, TrainPilotModels, TrainPilotViewModel és Android package/build/
