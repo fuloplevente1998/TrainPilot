@@ -6,6 +6,10 @@ GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
 ## Teljes áthelyezhető átadó — 2026-10-27
 
+Letölthető offline ZIP: [docs/offline/README.md](offline/README.md).
+A korábbi belső `/workspace` link helyett valódi GitHub RAW letöltés;
+a csomag a 975dda9e pillanatkép, alkalmazáskód/verzió változatlan.
+
 Elsődleges önálló állapot: docs/NATIVE_TRANSFER_2026-10-27.md; minden szükséges
 forrás rawlinkkel, plusz1470soros NATIVE_SOURCE_LINKS_2026-10-27.tsv teljesindex.
 A user szerint minden megmaradttervezés/bekötés/kivitelezés a fogadóagenté;
