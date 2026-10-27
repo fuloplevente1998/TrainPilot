@@ -407,13 +407,21 @@ private fun MuscleLoadPanel(loads: List<MuscleLoadUiModel>, language: String) {
             }
         }
     }
-    if (LocalDensity.current.fontScale > 1.3f) Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    // The original main front/back anatomy is the central visual, not a tiny thumbnail.
+    // Preserve the real tinted muscle-mask renderer and set percentages; the Studio
+    // outline/illustrative DEMO body is deliberately NOT substituted here.
+    // On phones the full body image gets the available width, with load bars below;
+    // on wider tablets both can appear side-by-side without squeezing the anatomy.
+    val fullBody = LocalConfiguration.current.screenWidthDp < 600 ||
+        LocalDensity.current.fontScale > 1.3f
+    if (fullBody) Column(Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)) {
         NativeMuscleLoadVisual(loads, language, Modifier.fillMaxWidth())
         bars()
     } else Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        NativeMuscleLoadVisual(loads, language, Modifier.weight(0.85f))
-        Box(Modifier.weight(1.15f)) { bars() }
+        NativeMuscleLoadVisual(loads, language, Modifier.weight(1.05f))
+        Box(Modifier.weight(0.95f)) { bars() }
     }
     Spacer(Modifier.height(12.dp))
     FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
