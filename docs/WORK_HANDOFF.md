@@ -15,7 +15,8 @@ kanonikus SQLiteframe nem voltpaused; project helyesen a kanonikus frame-et olva
 Root fixturefix valósPhoneWorkoutExecution.setWorkoutPause(+pauseRevision),
 majd durablepause/runningfalse assert; restResume elutasítása után10sfrozenclock+
 workoutPaused megmarad. Assertion nem gyengült, guard produktívkód nem változott.
-Új közösgate szükséges, még nincs runtimePASS a3phonefixre és aG04UIra.
+Új közös40458015954 exact31dbcde2ce6c69085a227b2b7ff9f12b6c78852b
+folyamatban, még nincs runtimePASS a3phonefixre és aG04UIra.
 
 ## Rest-only pause bekötés és korutin JVM harness — 2026-10-27
 
