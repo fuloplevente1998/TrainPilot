@@ -26,6 +26,7 @@ import com.repforge.app.ui.text.nativeResources
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -132,7 +133,7 @@ internal fun NativeTopNavigation(route: String, settingsOrigin: String, language
                 modifier = Modifier.fillMaxWidth()
                     .then(if (scrollable) Modifier.horizontalScroll(scroll) else Modifier)
                     .selectableGroup()
-                    .padding(start = 8.dp, end = 8.dp, top = 2.dp, bottom = 8.dp),
+                    .padding(start = 12.dp, end = 12.dp, top = 2.dp, bottom = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(5.dp)
             ) {
                 destinations.forEachIndexed { index, destination ->
@@ -146,13 +147,14 @@ internal fun NativeTopNavigation(route: String, settingsOrigin: String, language
                     else -> if (active) Icons.Default.Favorite else Icons.Default.FavoriteBorder
                 }
                 val shape = RoundedCornerShape(12.dp)
+                val fill = if (active) colors.accent.copy(alpha = .22f).compositeOver(colors.card) else colors.card
                 Column(
                     modifier = (if (scrollable) Modifier.widthIn(min = 76.dp)
-                        else Modifier.weight(1f)).heightIn(min = 56.dp)
+                        else Modifier.weight(1f)).heightIn(min = 48.dp)
                         .clip(shape)
-                        .background(if (active) colors.selectedSurface else colors.card)
+                        .background(fill)
                         .border(if (active) 1.5.dp else 1.dp,
-                            if (active) colors.accentText else colors.line, shape)
+                            if (active) colors.accent else colors.line, shape)
                         .selectable(selected = active, enabled = enabled, role = Role.Tab) { onSelect(destination) }
                         .testTag("navigation_$destination")
                         .padding(horizontal = if (scrollable) 10.dp else 1.dp, vertical = 6.dp),
@@ -161,11 +163,11 @@ internal fun NativeTopNavigation(route: String, settingsOrigin: String, language
                 ) {
                     Icon(icon, contentDescription = null,
                         modifier = Modifier.size(18.dp),
-                        tint = if (active) colors.accentText else colors.muted)
+                        tint = if (active) colors.accent else colors.muted)
                     Spacer(Modifier.height(3.dp))
                     Text(
                         labels[index],
-                        color = if (active) colors.accentText else colors.text,
+                        color = if (active) colors.accent else colors.text,
                         fontSize = 10.sp,
                         fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
                         maxLines = 1, softWrap = false,
