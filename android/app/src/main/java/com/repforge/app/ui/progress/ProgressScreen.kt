@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -42,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.FilterChip
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.Modifier
@@ -75,6 +77,7 @@ import com.repforge.app.ui.theme.LocalTrainPilotColors
 import kotlin.math.max
 import java.text.NumberFormat
 import java.util.Locale
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun ProgressScreen(
@@ -145,6 +148,15 @@ fun ProgressScreen(
             androidx.compose.material3.TextButton(onClick = viewModel::loadProgressData) {
                 Text(strings.getString(R.string.native_progress_retry))
             }
+        }
+
+        // Original Studio 2x2 time-range selector and tappable volume bars,
+        // driven entirely by persisted, completed native workout history.
+        item(key = "progress_volume_chart") {
+            ProgressVolumeChart(
+                state, onRange = viewModel::selectVolumeRange,
+                onRetry = viewModel::retryVolume
+            )
         }
 
         // Studio's four-metric summary comes from bounded, tombstone-safe native Room aggregates.
@@ -287,6 +299,146 @@ fun ProgressScreen(
         item { Spacer(Modifier.height(80.dp)) }
     }
 
+}
+
+/** Studio's total-volume panel with four authentic native history ranges.
+ * This is visual-only: no separate DEMO state or simulated chart measurements.
+ */
+@Composable
+private fun ProgressVolumeChart(
+    state: ProgressUiState,
+    onRange: (NativeVolumeRange) -> Unit,
+    onRetry: () -> Unit
+) {
+    val colors = LocalTrainPilotColors.current
+    val context = LocalContext.current
+    val strings = remember(context, state.language) {
+        nativeResources(context, state.language)
+    }
+    val locale = remember(state.language) { Locale.forLanguageTag(state.language) }
+    val number = remember(locale) {
+        NumberFormat.getNumberInstance(locale).apply { maximumFractionDigits = 1 }
+    }
+    val date = remember(locale) { DateTimeFormatter.ofPattern("d MMM", locale) }
+    val selectedBar = remember(state.selectedVolumeRange) { mutableIntStateOf(-1) }
+    val snapshot = state.volumeSnapshot?.takeIf {
+        it.range == state.selectedVolumeRange
+    }
+    val narrow = LocalConfiguration.current.screenWidthDp < 480 ||
+        LocalDensity.current.fontScale > 1.15f
+    val rangeLabels = listOf(
+        R.string.studio_volume_one_day, R.string.studio_volume_week,
+        R.string.studio_volume_month, R.string.studio_volume_three_months
+    )
+    val ranges = NativeVolumeRange.values().toList()
+    val control: @Composable () -> Unit = {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            for (pair in ranges.chunked(2)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    for (range in pair) {
+                        FilterChip(
+                            selected = range == state.selectedVolumeRange,
+                            onClick = { onRange(range) },
+                            label = { Text(strings.getString(rangeLabels[range.ordinal])) },
+                            modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                                .testTag("progress_volume_range_${range.name.lowercase()}")
+                        )
+                    }
+                }
+            }
+        }
+    }
+    val chart: @Composable () -> Unit = {
+        when {
+            state.volumeLoading -> Text(strings.getString(R.string.studio_volume_loading),
+                color = colors.muted, modifier = Modifier.testTag("progress_volume_loading"))
+            state.volumeError -> androidx.compose.material3.TextButton(
+                onClick = onRetry, modifier = Modifier.heightIn(min = 48.dp)
+                    .testTag("progress_volume_retry")
+            ) { Text(strings.getString(R.string.studio_volume_retry)) }
+            snapshot == null -> Text(strings.getString(R.string.studio_volume_empty),
+                color = colors.muted)
+            else -> {
+                val maxValue = snapshot.buckets.maxOfOrNull { it.volumeKg }?.coerceAtLeast(1.0) ?: 1.0
+                LazyRow(modifier = Modifier.fillMaxWidth().testTag("progress_volume_bars"),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    itemsIndexed(snapshot.buckets, key = { index, _ -> index }) { index, bucket ->
+                        Column(
+                            modifier = Modifier.width(48.dp).heightIn(min = 150.dp)
+                                .clickable { selectedBar.intValue = index }
+                                .testTag("progress_volume_bar_$index"),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Bottom
+                        ) {
+                            Box(Modifier.fillMaxWidth().height(105.dp),
+                                contentAlignment = Alignment.BottomCenter) {
+                                val filled = (bucket.volumeKg / maxValue).coerceIn(0.0, 1.0)
+                                Box(Modifier.width(25.dp)
+                                    .height((if (bucket.volumeKg > 0) 5.0 + filled * 95.0 else 3.0).dp)
+                                    .clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
+                                    .background(if (selectedBar.intValue == index)
+                                        colors.accent2 else colors.accent))
+                            }
+                            Spacer(Modifier.height(6.dp))
+                            Text(bucket.startDate.format(date), color = colors.muted,
+                                style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                                maxLines = 1)
+                        }
+                    }
+                }
+                if (snapshot.workoutCount == 0) {
+                    Text(strings.getString(R.string.studio_volume_empty),
+                        color = colors.muted,
+                        style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.testTag("progress_volume_empty"))
+                }
+                if (selectedBar.intValue in snapshot.buckets.indices) {
+                    val bucket = snapshot.buckets[selectedBar.intValue]
+                    Text(
+                        "${bucket.startDate.format(date)} – ${bucket.endExclusive.minusDays(1).format(date)} · " +
+                            "${number.format(bucket.volumeKg)} kg · ${bucket.workoutCount} " +
+                            strings.getString(R.string.studio_volume_workouts),
+                        color = colors.text,
+                        style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.testTag("progress_volume_selected_detail")
+                    )
+                }
+            }
+        }
+    }
+    TrainPilotHeroSurface(Modifier.fillMaxWidth().testTag("progress_total_volume_card")) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(strings.getString(R.string.studio_volume_total),
+                    color = colors.muted,
+                    style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
+                Text(
+                    if (snapshot == null) "—" else "${number.format(snapshot.totalVolumeKg)} kg",
+                    color = colors.text,
+                    style = androidx.compose.material3.MaterialTheme.typography.headlineMedium.copy(
+                        fontFeatureSettings = "tnum"),
+                    modifier = Modifier.testTag("progress_volume_total")
+                )
+                if (snapshot != null) Text(
+                    "${snapshot.startDate.format(date)} – ${snapshot.endDate.format(date)}",
+                    color = colors.muted,
+                    style = androidx.compose.material3.MaterialTheme.typography.labelSmall
+                )
+            }
+            Icon(Icons.Default.TrendingUp, contentDescription = null,
+                modifier = Modifier.size(24.dp), tint = colors.accentText)
+        }
+        Spacer(Modifier.height(10.dp))
+        if (narrow) Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            control()
+            chart()
+        } else Row(Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Box(Modifier.weight(0.55f)) { control() }
+            Box(Modifier.weight(1.45f)) { chart() }
+        }
+    }
 }
 
 /** A read-only Studio overview of completed workouts from the last 30 local dates.
