@@ -299,7 +299,9 @@ fun HealthJournalTabContent(
             val text = com.repforge.app.ui.text.nativeResources(LocalContext.current, state.language)
             TrainPilotHeroSurface(Modifier.fillMaxWidth()) {
                 Column(Modifier.fillMaxWidth().testTag("health_history")) {
-                    TrainPilotSectionHeader(strings.getString(com.repforge.app.R.string.native_home_today_status), icon = Icons.Default.FavoriteBorder)
+                    // Browsing a historical day must never be labelled "today".
+                    TrainPilotSectionHeader(strings.getString(R.string.health_history_title),
+                        icon = Icons.Default.FavoriteBorder)
                     Text(state.historyMonth, color = colors.text, fontWeight = FontWeight.Bold)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         TextButton(onClick = onPreviousMonth, modifier = Modifier.testTag("health_previous_month")) { Text(text.getString(com.repforge.app.R.string.health_history_previous)) }
@@ -308,9 +310,18 @@ fun HealthJournalTabContent(
                     TextButton(onClick = onToday) { Text(text.getString(com.repforge.app.R.string.health_history_today)) }
                     Text(text.getString(com.repforge.app.R.string.health_history_day, state.selectedDay), color = colors.text,
                         modifier = Modifier.testTag("health_selected_day"))
-                    androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        items((state.availableDays + state.selectedDay).distinct().sortedDescending()) { day ->
-                            TextButton(onClick = { onDay(day) }) { Text(day) }
+                    // Studio date strip: selected state is visible, keyboard/semantics enabled,
+                    // and selection continues to use the real paged history callback.
+                    androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.testTag("health_day_picker")) {
+                        items((state.availableDays + state.selectedDay).distinct().sortedDescending(),
+                            key = { it }) { day ->
+                            androidx.compose.material3.FilterChip(
+                                selected = day == state.selectedDay,
+                                onClick = { onDay(day) },
+                                label = { Text(day) },
+                                modifier = Modifier.heightIn(min = 48.dp).testTag("health_day_$day")
+                            )
                         }
                     }
                     androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -344,19 +355,23 @@ fun HealthJournalTabContent(
                         }
                     }
                     Spacer(Modifier.height(10.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        ProviderChoiceChip(
-                            label = "Health Connect",
-                            isSelected = state.provider == "health_connect",
-                            onClick = { onSelectProvider("health_connect") },
-                            modifier = Modifier.weight(1f)
-                        )
-                        ProviderChoiceChip(
-                            label = "Samsung Health",
-                            isSelected = state.provider == "samsung_health",
-                            onClick = { onSelectProvider("samsung_health") },
-                            modifier = Modifier.weight(1f)
-                        )
+                    // Long German/Romanian text and fontScale must not squeeze provider actions.
+                    val narrowProviders = LocalConfiguration.current.screenWidthDp < 360 ||
+                        LocalDensity.current.fontScale > 1.15f
+                    if (narrowProviders) Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ProviderChoiceChip("Health Connect", state.provider == "health_connect",
+                            { onSelectProvider("health_connect") },
+                            Modifier.fillMaxWidth().testTag("health_provider_hc"))
+                        ProviderChoiceChip("Samsung Health", state.provider == "samsung_health",
+                            { onSelectProvider("samsung_health") },
+                            Modifier.fillMaxWidth().testTag("health_provider_samsung"))
+                    } else Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ProviderChoiceChip("Health Connect", state.provider == "health_connect",
+                            { onSelectProvider("health_connect") },
+                            Modifier.weight(1f).testTag("health_provider_hc"))
+                        ProviderChoiceChip("Samsung Health", state.provider == "samsung_health",
+                            { onSelectProvider("samsung_health") },
+                            Modifier.weight(1f).testTag("health_provider_samsung"))
                     }
                     Spacer(Modifier.height(8.dp))
                     Text(
@@ -814,7 +829,7 @@ fun ProviderChoiceChip(
     val colors = LocalTrainPilotColors.current
     Box(
         modifier = modifier
-            .height(42.dp)
+            .heightIn(min = 48.dp)
             .clip(RoundedCornerShape(10.dp))
             .background(if (isSelected) colors.accent else colors.card2)
             .border(1.dp, if (isSelected) colors.accent else colors.line, RoundedCornerShape(10.dp))
