@@ -4,6 +4,25 @@ Frissítve: **2026-10-26**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Rest-only pause bekötés és korutin JVM harness — 2026-10-27
+
+40456207747/790d7c93 megszakítva a JVMtesztlépésben; nem runtimeeredmény.
+Az új Main.immediate admissiont Roomtranzakción belül is ellenőrizzük;
+a CustomExerciseEditorTest régi runBlocking/nestedrunBlocking blokkolja a
+főlooper callbacket. Root runTest(StandardTestDispatcher)+setMain/resetMain
+harnessre váltott,8kivételassertiont suspendrejects tart meg, eredeti@Testszám
+változatlan; favorite-delete eset kifejezettenDispatchers.IO-ról hívdelete-et.
+
+G04 újkód: NativeWorkoutEditing.setRestPaused explicit desiredstate és
+workout/generation/key/restOnly/phase/paused/finalization/ownership guardok;
+meglévőIntervalTimerService.pause/resume, nincs másodikidőzítő. VM+48dpUIgomb,
+két sorba törő kompakt restdock, pausedállapotbanSkip/±15disabled.
+Új2NativeRestControlJVM: pausedidő nemcredit/nemworkoutpause/idempotensresume,
+stalegeneration/watch/suspendedelutasítás. MeglévővalósUI Settings-timed-roundtrip
+restPause/resume/Skipassertionnel bővült; stateenabledvárás, nem timeoutemelés.
+E változások kódban készek, runtime MÉG UNRUN. A3korábbijavítás sem elfogadott
+runtime-ra a megszakítottCIalapján. Új egyközösgate kell; UI vizuálisfázis nemindult.
+
 ## Három maradék phoneFAIL konkrét javítása — 2026-10-27
 
 40413844661/5b375cd9 lezárt: build/JVM/signer,2upgrade és3WearUIjobSUCCESS,

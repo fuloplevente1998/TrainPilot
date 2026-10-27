@@ -71,6 +71,19 @@ class NativeLocalizationWorkoutUiTest {
         assertTrue(exerciseSets(snapshot()).getJSONObject(0).optDouble("reps", 0.0) > 0.0)
         // A recorded set starts a real rest. End it through its UI before asking
         // the single-owner engine to run the next set's stopwatch.
+        // The dedicated rest pause must not suspend the canonical workout.
+        compose.onNodeWithTag("workout_rest_pause").performClick()
+        compose.waitUntil(15_000) {
+            compose.onAllNodes(hasTestTag("workout_rest_skip") and isNotEnabled()).fetchSemanticsNodes().isNotEmpty()
+        }
+        assertFalse(snapshot().optBoolean("workoutPaused"))
+        compose.onNodeWithTag("workout_rest_skip").assertIsNotEnabled()
+        compose.onNodeWithTag("workout_rest_pause").performClick()
+        compose.waitUntil(15_000) {
+            compose.onAllNodes(hasTestTag("workout_rest_skip") and isEnabled()).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("workout_rest_skip").assertIsEnabled()
+        assertFalse(snapshot().optBoolean("workoutPaused"))
         compose.onNodeWithTag("workout_rest_skip").performClick()
         // Second set stopwatch is active during Settings; its elapsed time must never reset.
         compose.onNodeWithText("Indítás", useUnmergedTree = true).performScrollTo().performClick()

@@ -477,6 +477,9 @@ fun ActiveWorkoutScreen(
                 val renderedTimer = NativeTimerTarget(state.workoutId, state.generation, state.timerKey)
                 RestTimerFloatingBar(
                     remainingSec = state.timerRemainingSec,
+                    paused = !state.timerRunning,
+                    canToggle = !state.isPaused && !state.isFinishing,
+                    onSetPaused = { paused -> viewModel.setRestPaused(renderedTimer, paused) },
                     onAdjust = { delta -> viewModel.adjustRestTimer(renderedTimer, delta) },
                     onSkip = { viewModel.skipRestTimer(renderedTimer) },
                     canAdjust = state.timerRestOnly && state.timerRunning && !state.isPaused,
@@ -1097,6 +1100,9 @@ fun SetRowItem(
 @Composable
 fun RestTimerFloatingBar(
     remainingSec: Int,
+    paused: Boolean,
+    onSetPaused: (Boolean) -> Unit,
+    canToggle: Boolean,
     onAdjust: (Int) -> Unit,
     onSkip: () -> Unit,
     canAdjust: Boolean = true,
@@ -1105,40 +1111,28 @@ fun RestTimerFloatingBar(
     val colors = LocalTrainPilotColors.current
     val context = LocalContext.current
     val strings = remember(context, language) { nativeResources(context, language) }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(colors.card2)
-            .border(1.dp, colors.emphasisBorder, RoundedCornerShape(14.dp))
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = "⏱ ${remainingSec / 60}:${(remainingSec % 60).toString().padStart(2, '0')}",
-                color = colors.accentText,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(Modifier.width(8.dp))
-            Text(strings.getString(R.string.native_workout_component_rest), color = colors.muted, fontSize = 11.sp)
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(colors.card2)
+        .border(1.dp, colors.emphasisBorder, RoundedCornerShape(14.dp)).padding(horizontal = 12.dp, vertical = 4.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("⏱ ${remainingSec / 60}:${(remainingSec % 60).toString().padStart(2, '0')}",
+                color = colors.accentText, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text(strings.getString(R.string.native_workout_component_rest), color = colors.muted,
+                fontSize = 11.sp, modifier = Modifier.weight(1f).padding(horizontal = 8.dp))
+            IconButton(onClick = { onSetPaused(!paused) }, enabled = canToggle,
+                modifier = Modifier.size(48.dp).testTag("workout_rest_pause")) {
+                Icon(if (paused) Icons.Default.PlayArrow else Icons.Default.Pause,
+                    contentDescription = strings.getString(if (paused) R.string.native_workout_component_resume else R.string.native_workout_component_pause),
+                    tint = colors.text)
+            }
         }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            TextButton(onClick = { onAdjust(-15) }, enabled = canAdjust) {
-                Text("-15s", color = colors.text, fontSize = 11.sp)
-            }
-            TextButton(onClick = { onAdjust(15) }, enabled = canAdjust) {
-                Text("+15s", color = colors.text, fontSize = 11.sp)
-            }
-            Button(
-                onClick = onSkip,
-                modifier = Modifier.testTag("workout_rest_skip"),
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = colors.accent)
-            ) {
-                Text(strings.getString(R.string.native_workout_component_skip), color = colors.onAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.End) {
+            TextButton(onClick = { onAdjust(-15) }, enabled = canAdjust) { Text("-15s", color = colors.text, fontSize = 11.sp) }
+            TextButton(onClick = { onAdjust(15) }, enabled = canAdjust) { Text("+15s", color = colors.text, fontSize = 11.sp) }
+            Button(onClick = onSkip, enabled = canAdjust, modifier = Modifier.testTag("workout_rest_skip"),
+                shape = RoundedCornerShape(8.dp), colors = ButtonDefaults.buttonColors(containerColor = colors.accent)) {
+                Text(strings.getString(R.string.native_workout_component_skip), color = colors.onAccent,
+                    fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
         }
     }

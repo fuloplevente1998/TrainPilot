@@ -269,6 +269,25 @@ internal object NativeWorkoutEditing {
         return project(context, PhoneWorkoutExecution.display(context))
     }
 
+    /** Pause only the rendered automatic-rest clock, never the whole workout. */
+    fun setRestPaused(context: Context, target: NativeTimerTarget, paused: Boolean): JSONObject {
+        val frame = project(context)
+        check(target.key.isNotEmpty() && target.workoutId == frame.optString("workoutId") &&
+            target.generation == frame.optLong("generation") && !frame.optBoolean("workoutPaused")) {
+            "A pihenő már másik edzéshez tartozik."
+        }
+        val timer = IntervalTimerService.snapshot(context)
+        check(timer.optString("key") == target.key && timer.optString("workoutId") == target.workoutId &&
+            timer.optLong("generation") == target.generation && timer.optBoolean("restOnly") &&
+            timer.optString("phase") == "rest" && !timer.optBoolean("stopped") &&
+            !timer.optBoolean("interrupted")) { "A pihenő időközben megváltozott." }
+        // Explicit desired state makes repeated/late delivery idempotent.
+        if (timer.optBoolean("running") == paused)
+            IntervalTimerService.command(context, target.key, if (paused) "pause" else "resume")
+        PhoneWorkoutExecution.publish(context)
+        return project(context, PhoneWorkoutExecution.display(context))
+    }
+
     fun configureIntervals(context: Context, target: NativeWorkoutTarget, configuration: JSONObject): JSONObject {
         val frame = project(context)
         val resolved = target.resolve(frame)

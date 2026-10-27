@@ -749,6 +749,12 @@ class ActiveWorkoutViewModel(application: Application) : AndroidViewModel(applic
         return false
     }
 
+    fun setRestPaused(target: NativeTimerTarget, paused: Boolean) {
+        if (editableSnapshot() == null) return
+        try { NativeWorkoutEditing.setRestPaused(context, target, paused) }
+        catch (error: Exception) { showStatus(error.message ?: "A pihenő nem vezérelhető.") }
+    }
+
     fun skipRestTimer(target: NativeTimerTarget) = controlRest(target, null)
     fun adjustRestTimer(target: NativeTimerTarget, deltaSeconds: Int) = controlRest(target, deltaSeconds)
 

@@ -69,6 +69,40 @@ class NativeRestControlTest {
         assertEquals("ready", PhoneWorkoutExecution.display(context)!!.getJSONObject("automation").getString("phase"))
     }
 
+    @Test fun restPauseDoesNotPauseWorkoutOrCreditPausedTimeAndResumeIsExplicit() {
+        record(); advance(20); val target = target()
+        NativeWorkoutEditing.setRestPaused(context, target, true)
+        assertFalse(timer().getBoolean("running"))
+        assertFalse(frame().optBoolean("workoutPaused"))
+        val remaining = timer().getLong("remainingMs")
+        val credited = restMs()
+        advance(30)
+        assertEquals(remaining, timer().getLong("remainingMs"))
+        assertEquals(credited, restMs())
+        NativeWorkoutEditing.setRestPaused(context, target, true) // repeat delivery is not a toggle
+        assertFalse(timer().getBoolean("running"))
+        NativeWorkoutEditing.setRestPaused(context, target, false)
+        advance(10)
+        assertTrue(timer().getBoolean("running"))
+        assertEquals(remaining - 10_000L, timer().getLong("remainingMs"))
+        assertEquals(credited + 10_000L, restMs())
+        assertFalse(frame().optBoolean("workoutPaused"))
+        assertFalse(frame().getJSONArray("exercises").getJSONObject(0).getJSONArray("sets").getJSONObject(1).getBoolean("done"))
+    }
+
+    @Test fun restPauseRejectsStaleOwnerAndSuspendedWorkoutWithoutChangingClock() {
+        record(); val target = target()
+        assertThrows(IllegalStateException::class.java) {
+            NativeWorkoutEditing.setRestPaused(context, target.copy(generation = target.generation + 1), true)
+        }
+        val current = ActiveWorkoutStore.current(context)!!
+        ActiveWorkoutStore.saveOwned(context, JSONObject(current.toString()).put("timerOwner", "watch"))
+        assertThrows(IllegalStateException::class.java) { NativeWorkoutEditing.setRestPaused(context, target, true) }
+        ActiveWorkoutStore.saveOwned(context, JSONObject(current.toString()).put("workoutPaused", true))
+        assertThrows(IllegalStateException::class.java) { NativeWorkoutEditing.setRestPaused(context, target, false) }
+        assertTrue(timer().getBoolean("running"))
+    }
+
     @Test fun plusAndMinusChangeRealRemainingTimeAndDurablePlanWithoutInventedCredit() {
         record(); advance(30); val target = target()
         NativeWorkoutEditing.controlRest(context, target, 15)

@@ -5,7 +5,13 @@ import androidx.room.Room
 import com.repforge.app.data.db.*
 import com.repforge.app.data.migration.LegacyWebViewMigrator
 import com.repforge.app.data.store.TrainPilotSettingsStore
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.test.resetMain
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After
@@ -17,27 +23,41 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33], manifest = Config.NONE)
 class NativeCustomExerciseEditorTest {
+    private val dispatcher = StandardTestDispatcher()
     private lateinit var context: Context
     private lateinit var db: TrainPilotDatabase
 
     @Before fun setup() {
+        Dispatchers.setMain(dispatcher)
         context = RuntimeEnvironment.getApplication()
         context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE).edit().clear().commit()
         db = Room.inMemoryDatabaseBuilder(context, TrainPilotDatabase::class.java).build()
     }
     @After fun cleanup() {
+        Dispatchers.resetMain()
         db.close()
         context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE).edit().clear().commit()
+    }
+
+    private suspend fun <T : Throwable> rejects(type: Class<T>, operation: suspend () -> Unit) {
+        try { operation() }
+        catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+        catch (failure: Throwable) {
+            assertTrue("Expected ${type.simpleName}, got $failure", type.isInstance(failure))
+            return
+        }
+        fail("Expected ${type.simpleName}")
     }
 
     private fun draft() = NativeCustomExerciseEditor.Draft("Saját edzés", "Kéz a falon", "arms",
         "reps", "bodyweight", "ism.", 3, "12", 0.0, 90,
         "https://www.youtube.com/watch?v=v_c67Omje48")
 
-    @Test fun createAndEditKeepIdentityAndCanonicalPortableFields() = runBlocking {
+    @Test fun createAndEditKeepIdentityAndCanonicalPortableFields() = runTest(dispatcher) {
         val id = NativeCustomExerciseEditor.save(context, db, null, draft(), "hu")
         assertTrue(id.matches(Regex("custom-[a-f0-9-]{36}")))
         var ex = db.exerciseLibraryDao().getExerciseById(id)!!
@@ -80,41 +100,42 @@ class NativeCustomExerciseEditorTest {
         assertFalse(JSONObject(newer.rawJson).has("demo"))
     }
 
-    @Test fun invalidVideoAndNumericFieldsNeverPersist() = runBlocking {
+    @Test fun invalidVideoAndNumericFieldsNeverPersist() = runTest(dispatcher) {
         for (bad in listOf("javascript:alert(1)", "https://youtu.be/unsafe",
             "https://www.youtube.com/watch?v=v_c67Omje48&unexpected=1")) {
             assertThrows(IllegalArgumentException::class.java) { NativeCustomExerciseEditor.validate(draft().copy(videoUrl = bad)) }
         }
         for (bad in listOf(draft().copy(sets = 0), draft().copy(weight = Double.NaN),
             draft().copy(restSeconds = -1), draft().copy(name = ""))) {
-            assertThrows(IllegalArgumentException::class.java) { runBlocking {
-                NativeCustomExerciseEditor.save(context, db, null, bad, "hu") } }
+            rejects(IllegalArgumentException::class.java) {
+                NativeCustomExerciseEditor.save(context, db, null, bad, "hu") }
         }
         assertTrue(db.exerciseLibraryDao().getAllExercises().isEmpty())
     }
 
-    @Test fun builtinRowsCannotBeEditedOrDeleted() = runBlocking {
+    @Test fun builtinRowsCannotBeEditedOrDeleted() = runTest(dispatcher) {
         val builtin = TrainPilotDatabase.defaultExercises().first()
         db.exerciseLibraryDao().upsertExercise(builtin)
-        assertThrows(IllegalArgumentException::class.java) { runBlocking {
-            NativeCustomExerciseEditor.save(context, db, builtin.id, draft(), "hu") } }
-        assertThrows(IllegalArgumentException::class.java) { runBlocking {
-            NativeCustomExerciseEditor.delete(context, db, builtin.id) } }
+        rejects(IllegalArgumentException::class.java) {
+                NativeCustomExerciseEditor.save(context, db, builtin.id, draft(), "hu") }
+        rejects(IllegalArgumentException::class.java) {
+                NativeCustomExerciseEditor.delete(context, db, builtin.id) }
         assertEquals(builtin, db.exerciseLibraryDao().getExerciseById(builtin.id))
     }
 
-    @Test fun deleteRemovesFavoriteButLeavesOtherExercisesUntouched() = runBlocking {
+    @Test fun deleteFromIoRemovesFavoriteButLeavesOtherExercisesUntouched() = runTest(dispatcher) {
         val a = NativeCustomExerciseEditor.save(context, db, null, draft(), "hu")
         val b = NativeCustomExerciseEditor.save(context, db, null, draft().copy(name = "Második"), "hu")
         db.keyValueDocumentDao().putDocument(KeyValueDocumentEntity("exerciseFavorites",
             JSONArray().put(a).put(b).toString(), 1))
-        NativeCustomExerciseEditor.delete(context, db, a)
+        // Exercise the real ViewModel IO entry without blocking the Main test dispatcher.
+        withContext(Dispatchers.IO) { NativeCustomExerciseEditor.delete(context, db, a) }
         assertNull(db.exerciseLibraryDao().getExerciseById(a))
         assertNotNull(db.exerciseLibraryDao().getExerciseById(b))
         assertEquals(listOf(b), NativeExerciseFavorites.load(db))
     }
 
-    @Test fun referencedProgramPreventsDeleteWithoutChangingAnyData() = runBlocking {
+    @Test fun referencedProgramPreventsDeleteWithoutChangingAnyData() = runTest(dispatcher) {
         val id = NativeCustomExerciseEditor.save(context, db, null, draft(), "hu")
         val program = TrainPilotDatabase.defaultPrograms().first.first().copy(
             id = "custom-plan", builtin = false, rawJson = """{"id":"custom-plan"}""")
@@ -122,14 +143,14 @@ class NativeCustomExerciseEditorTest {
             "Saját nap", "Custom day", "Tag", "Zi", 0, JSONArray()
                 .put(JSONObject().put("id", id)).toString())
         db.programDao().saveProgramWithDays(program, listOf(day))
-        assertThrows(IllegalStateException::class.java) { runBlocking {
-            NativeCustomExerciseEditor.delete(context, db, id) } }
+        rejects(IllegalStateException::class.java) {
+                NativeCustomExerciseEditor.delete(context, db, id) }
         assertNotNull(db.exerciseLibraryDao().getExerciseById(id))
         assertEquals(id, JSONArray(db.programDao().getProgramWithDaysById("custom-plan")!!.days[0].exercisesJson)
             .getJSONObject(0).getString("id"))
     }
 
-    @Test fun referencedWorkoutHistoryPreventsDeletion() = runBlocking {
+    @Test fun referencedWorkoutHistoryPreventsDeletion() = runTest(dispatcher) {
         val id = NativeCustomExerciseEditor.save(context, db, null, draft(), "hu")
         val history = JournalTestFixtures.row(1)
         db.workoutHistoryDao().insertWorkout(history)
@@ -137,17 +158,17 @@ class NativeCustomExerciseEditorTest {
             workoutHistoryId = history.id, exerciseId = id, nameHu = "Saját", nameEn = "Custom",
             loadType = "bodyweight", repUnit = "ism.", measurementType = "reps", orderIndex = 0,
             actualRir = null, setRir229 = false))
-        assertThrows(IllegalStateException::class.java) { runBlocking {
-            NativeCustomExerciseEditor.delete(context, db, id) } }
+        rejects(IllegalStateException::class.java) {
+                NativeCustomExerciseEditor.delete(context, db, id) }
         assertNotNull(db.exerciseLibraryDao().getExerciseById(id))
     }
 
-    @Test fun dataReplacementFenceBlocksCustomWritesWithoutPartialRows() = runBlocking {
+    @Test fun dataReplacementFenceBlocksCustomWritesWithoutPartialRows() = runTest(dispatcher) {
         context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE)
             .edit().putBoolean("blocked", true).commit()
         try {
-            assertThrows(IllegalStateException::class.java) { runBlocking {
-                NativeCustomExerciseEditor.save(context, db, null, draft(), "hu") } }
+            rejects(IllegalStateException::class.java) {
+                NativeCustomExerciseEditor.save(context, db, null, draft(), "hu") }
             assertTrue(db.exerciseLibraryDao().getAllExercises().isEmpty())
         } finally {
             context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE)
@@ -155,18 +176,18 @@ class NativeCustomExerciseEditorTest {
         }
     }
 
-    @Test fun staleEditorCannotOverwriteOrDeleteConcurrentlyChangedExercise() = runBlocking {
+    @Test fun staleEditorCannotOverwriteOrDeleteConcurrentlyChangedExercise() = runTest(dispatcher) {
         val id = NativeCustomExerciseEditor.save(context, db, null, draft(), "hu")
         val opened = db.exerciseLibraryDao().getExerciseById(id)!!.rawJson
         NativeCustomExerciseEditor.save(context, db, id, draft().copy(name = "Frissebb"), "hu")
-        assertThrows(IllegalStateException::class.java) { runBlocking {
-            NativeCustomExerciseEditor.save(context, db, id, draft().copy(name = "Elavult"), "hu", opened) } }
-        assertThrows(IllegalStateException::class.java) { runBlocking {
-            NativeCustomExerciseEditor.delete(context, db, id, opened) } }
+        rejects(IllegalStateException::class.java) {
+                NativeCustomExerciseEditor.save(context, db, id, draft().copy(name = "Elavult"), "hu", opened) }
+        rejects(IllegalStateException::class.java) {
+                NativeCustomExerciseEditor.delete(context, db, id, opened) }
         assertEquals("Frissebb", db.exerciseLibraryDao().getExerciseById(id)!!.nameHu)
     }
 
-    @Test fun portableBackupKeepsEditedCustomExerciseAndVideo() = runBlocking {
+    @Test fun portableBackupKeepsEditedCustomExerciseAndVideo() = runTest(dispatcher) {
         val id = NativeCustomExerciseEditor.save(context, db, null, draft(), "hu")
         val backup = LegacyWebViewMigrator(context, db, TrainPilotSettingsStore(context)).exportBackupJson(false)
         val exported = backup.getJSONArray("exercises").getJSONObject(0)
