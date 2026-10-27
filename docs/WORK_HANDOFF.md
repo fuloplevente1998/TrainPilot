@@ -4,6 +4,22 @@ Frissítve: **2026-10-26**. A main alkalmazásbaseline-ja `7473b30`, dokumentác
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Teljes áthelyezhető átadó — 2026-10-27
+
+Elsődleges önálló állapot: docs/NATIVE_TRANSFER_2026-10-27.md; minden szükséges
+forrás rawlinkkel, plusz1470soros NATIVE_SOURCE_LINKS_2026-10-27.tsv teljesindex.
+A user szerint minden megmaradttervezés/bekötés/kivitelezés a fogadóagenté;
+nincs másikmodellre váró feladat, korábbi alternatívát ne kezeld kiosztásnak.
+Utolsóapp67f2889f, forrás/docbaselineeb0f73ba. P0zöld2f7cd835/40461365542:
+1333JVM+112phonePASS. LegfrissebbP1run40464028059 LEZÁRTFAIL telefonon:
+rawartifact12716292699 main110declared/98terminal,3FAIL,12MISSING+processcrash;
+4GPSPASS; összes114expected/102terminal=99PASS/3FAIL/12MISSING;56PNG.
+JVMartifact12715983295:1333/0fail/error/skip;3WearUI+2upgradeSUCCESS.
+Konkréthibák és továbbmunkasorrend az újátadóban. P1nemvizuálisanelfogadott;
+mainHealth/Progress teljesreferencia,Home/többimockup minőségiirány.
+Kétuntrackedvizuálischatprompt saját korábbi tervezet,nemkiosztott;cache-ekhezne nyúlj.
+Main/version/release/migrációsuserdata változatlan; most csakátadó+bizonyítékcsomag.
+
 ## Gemini AI Studio elkülönített Egészség-tervezési feladat — 2026-10-27
 
 User elfogadta a képernyőnkénti stratégiát (közösmain-elemek,Health/Progress main,
