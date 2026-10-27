@@ -42,6 +42,31 @@ class NativeHomeMetricLayoutUiTest {
         }
     }
 
+    @Test fun acceptedStudioBentoHasFourRealMetricCardsNotSixDemoTiles() {
+        compose.setContent {
+            TrainPilotTheme(TrainPilotUserSettings()) {
+                Column(Modifier.width(320.dp).fillMaxHeight().verticalScroll(rememberScrollState())) {
+                    com.repforge.app.ui.home.StudioHomeVitals(
+                        TodayMetricsUiModel(sleepText = "7 h", pulseText = "—",
+                            stepsText = "412", recoveryText = "—"),
+                        "hu", onHealth = {}, onCoach = {}, enabled = true
+                    )
+                }
+            }
+        }
+        for (key in listOf("sleep", "pulse", "steps", "recovery")) {
+            compose.onNodeWithTag("home_metric_$key").performScrollTo().assertIsDisplayed()
+        }
+        compose.onNodeWithTag("home_metric_pulse_value").assertTextEquals("—")
+        compose.onNodeWithTag("home_metric_steps_value").assertTextEquals("412")
+        compose.onNodeWithTag("home_metric_recovery_source").performScrollTo()
+            .assertIsDisplayed()
+        // Secondary calorie/workout counts belong in the lower Studio goals row,
+        // not in the accepted 2×2 bento layout.
+        compose.onAllNodesWithTag("home_metric_calories").assertCountEquals(0)
+        compose.onAllNodesWithTag("home_metric_workouts").assertCountEquals(0)
+    }
+
     @Test fun narrowPhoneUsesTwoReadableColumnsWithAllSixMetricsReachable() {
         show(1f)
         val first = compose.onNodeWithTag("home_metric_sleep").fetchSemanticsNode().boundsInRoot
