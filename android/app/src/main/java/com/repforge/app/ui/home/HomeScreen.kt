@@ -60,6 +60,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.material3.MaterialTheme
+import com.repforge.app.ui.components.TrainPilotIconBadge
+import com.repforge.app.ui.components.TrainPilotMetricSurface
+import com.repforge.app.ui.components.trainPilotMetricIcon
 import com.repforge.app.ui.components.TrainPilotHeroSurface
 import com.repforge.app.ui.components.TrainPilotStatusBadge
 import com.repforge.app.ui.components.TrainPilotSurfaceCard
@@ -309,9 +312,13 @@ fun TodayMetricsGrid(metrics: TodayMetricsUiModel, language: String = "hu") {
             for (row in items.chunked(columns)) {
                 Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(TrainPilotDimensions.Gap)) {
                     for ((key, label, value, unit, detail, notice) in row) {
-                        TrainPilotSurfaceCard(Modifier.weight(1f).fillMaxHeight().testTag("home_metric_$key")) {
-                            Text(label, color = colors.muted, style = MaterialTheme.typography.bodySmall)
-                            Text(value, color = colors.text, style = MaterialTheme.typography.headlineMedium.copy(fontFeatureSettings = "tnum"),
+                        TrainPilotMetricSurface(Modifier.weight(1f).fillMaxHeight().testTag("home_metric_$key")) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Icon(trainPilotMetricIcon(key), null, Modifier.size(18.dp), tint = colors.accentText)
+                                Text(label, color = colors.muted, modifier = Modifier.weight(1f),
+                                    style = MaterialTheme.typography.labelSmall)
+                            }
+                            Text(value, color = colors.text, style = MaterialTheme.typography.headlineMedium.copy(fontSize = 20.sp, fontFeatureSettings = "tnum"),
                                 modifier = Modifier.testTag("home_metric_${key}_value"))
                             if (unit != null) Text(unit, color = colors.muted, style = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier.testTag("home_metric_${key}_unit"))
@@ -341,13 +348,8 @@ fun QuickActionButton(
 ) {
     val colors = LocalTrainPilotColors.current
     TrainPilotSurfaceCard(modifier.heightIn(min = TrainPilotDimensions.Control), onClick = onClick, enabled = enabled) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, tint = colors.accentText, modifier = Modifier.size(TrainPilotDimensions.Icon))
-            Spacer(Modifier.width(TrainPilotDimensions.Gap))
-            Column(Modifier.weight(1f)) {
-                Text(title, color = colors.text, style = MaterialTheme.typography.titleMedium)
-                Text(subtitle, color = colors.muted, style = MaterialTheme.typography.bodySmall)
-            }
-        }
+        TrainPilotIconBadge(icon)
+        Text(title, color = colors.text, style = MaterialTheme.typography.titleSmall.copy(fontSize = 15.sp))
+        Text(subtitle, color = colors.muted, style = MaterialTheme.typography.bodySmall)
     }
 }

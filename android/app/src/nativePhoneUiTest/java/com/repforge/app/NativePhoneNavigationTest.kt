@@ -61,10 +61,13 @@ class NativePhoneNavigationTest {
         }
     }
     @After fun close() {
-        scenario?.close()
-        context.stopService(Intent(context, IntervalTimerService::class.java))
-        context.stopService(Intent(context, DistanceTrackingService::class.java))
-        instrumentation.waitForIdleSync()
+        try { compose.waitForIdle() } finally {
+            try { instrumentation.waitForIdleSync(); scenario?.close() } finally {
+                context.stopService(Intent(context, IntervalTimerService::class.java))
+                context.stopService(Intent(context, DistanceTrackingService::class.java))
+                instrumentation.waitForIdleSync()
+            }
+        }
     }
     private fun launch() {
         scenario = ActivityScenario.launch(MainActivity::class.java)
@@ -128,6 +131,60 @@ class NativePhoneNavigationTest {
         assertFalse(dir.exists())
         screenshot("recovered_home")
     }
+    /** Real native host, original main assets, persistent palette and clearly synthetic local data. */
+    @Test fun p1YellowPalettePagesKeepStoredDataAndAnatomyZoomOnlyClosesItsDialog() {
+        val db = TrainPilotDatabase.getInstance(context)
+        runBlocking(Dispatchers.IO) {
+            settings.setTheme(TrainPilotSettingsStore.AVAILABLE_THEMES.first { it.key == "yellow" })
+            val importer = com.repforge.app.data.migration.LegacyWebViewMigrator(context, db, settings)
+            for (i in 1..3) {
+                val end = java.time.Instant.now().minusSeconds(i * 86400L)
+                val exercise = JSONObject().put("id", "goblet-squat").put("loadType", "dumbbell").put("repUnit", "ism.")
+                    .put("sets", org.json.JSONArray().put(JSONObject().put("done", true).put("weight", 12 + i).put("reps", "10")))
+                importer.saveWorkoutJsonToRoom(JSONObject().put("id", "p1-visual-$i")
+                    .put("programId", "home-basic").put("programName", "P1 vizuális teszt")
+                    .put("dayId", "A").put("dayName", "A").put("started", end.minusSeconds(2700).toString())
+                    .put("finished", end.toString()).put("exercises", org.json.JSONArray().put(exercise)))
+            }
+            val health = HealthJournalStore.get(context)
+            health.setPreferences(JSONObject().put("provider", HealthJournalStore.HC))
+            health.healthDay(java.time.LocalDate.now().toString(), JSONObject().put("source", "@aggregate")
+                .put("steps", 6821).put("averageHeartRate", 65).put("weightKg", 72.3), health.generation())
+        }
+        fun capture(screen: String) = screenshot(screen, "hu", "yellow", "synthetic_disposable_p1_visual_fixture")
+        launch()
+        compose.waitUntil(30_000) { compose.onAllNodesWithTag("home_loading").fetchSemanticsNodes().isEmpty() }
+        capture("p1_home")
+        compose.onNodeWithTag("home_metric_recovery").performScrollTo()
+        capture("p1_home_metrics")
+        tab("training"); capture("p1_training")
+        tab("journal")
+        compose.waitUntil(30_000) { compose.onAllNodesWithTag("journal_workout_p1-visual-1").fetchSemanticsNodes().isNotEmpty() }
+        capture("p1_journal")
+        tab("progress")
+        compose.waitUntil(30_000) { compose.onAllNodesWithTag("progress_anatomy_loaded").fetchSemanticsNodes().isNotEmpty() }
+        capture("p1_progress")
+        compose.onNodeWithTag("progress_anatomy").performScrollTo().performClick()
+        compose.onNodeWithTag("progress_anatomy_dialog").assertExists()
+        compose.waitUntil(30_000) { compose.onAllNodesWithTag("progress_anatomy_loaded").fetchSemanticsNodes().size == 2 }
+        capture("p1_anatomy_zoom")
+        compose.onNodeWithTag("progress_anatomy_close").performClick()
+        compose.onNodeWithTag("progress_anatomy_dialog").assertDoesNotExist()
+        compose.onNodeWithTag("navigation_progress").assertIsSelected()
+        tab("health")
+        compose.waitUntil(30_000) {
+            compose.onAllNodesWithText(com.repforge.app.ui.text.nativeResources(context, "hu")
+                .getString(R.string.health_history_loading)).fetchSemanticsNodes().isEmpty()
+        }
+        capture("p1_health")
+        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_metric_steps"))
+        compose.onNodeWithTag("health_metric_steps").assertIsDisplayed()
+        capture("p1_health_metrics")
+        assertEquals("yellow", runBlocking(Dispatchers.IO) { settings.current().themeKey })
+        assertEquals(3, runBlocking(Dispatchers.IO) { (1..3).count { db.workoutHistoryDao().getWorkoutWithDetailsById("p1-visual-$it") != null } })
+        assertFalse(snapshot()?.optBoolean("active") == true)
+    }
+
     @Test fun fiveTabsAndSecondaryPlanningEntriesUseActualNativeScreens() {
         launch(); screenshot("home")
         for (route in listOf("training", "journal", "progress", "health")) { tab(route); screenshot(route) }
@@ -151,6 +208,7 @@ class NativePhoneNavigationTest {
     @Test fun progressSelectorCanReachExercisesBeyondOldEightItemLimit() {
         launch(); tab("progress")
         val target = com.repforge.app.data.db.NativeBuiltinCatalog.exercises.last()
+        compose.onNodeWithTag("progress_list").performScrollToNode(hasTestTag("progress_exercise_choices"))
         compose.waitUntil(15000) {
             compose.onAllNodesWithTag("progress_exercise_choices").fetchSemanticsNodes().isNotEmpty()
         }

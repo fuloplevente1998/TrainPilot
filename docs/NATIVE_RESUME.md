@@ -7,6 +7,13 @@ Történeti részletek az átadóban/Gitben, ne olvasd vissza a teljes chatet/ex
 
 ## Aktuális: master plan, első kapu zöld – 2026-10-27
 
+P1 vizuális increment01 kódolva: docs/reviews/NATIVE_P1_VISUAL_INCREMENT_01.md.
+Ikonos Home/Training/Journal/Health panelek és main anatómiai maszkok/Progress;
+2újUIpróba+raw screenshotcheckpointok. Androidruntime az újforráson MÉG UNRUN.
+TeljesP1mainparitás nincs kész; a részletes hiánylista a reviewban. P2–P5 nemindult.
+A BLE nemkülönújoldal; főintegrációWearOS/HC/Samsung, userpontosítás DesignHandoffban.
+
+
 Exact 39da06cca96d93586fc1ef00ab8bac2ded0925fb / Actions40481815367:
 7/7 SUCCESS. Root XML1333JVM +114phoneUI (110main+4GPS),0failure/error/skip;
 mind3korábbiFAIL PASS, nincs missing/runnercrash.57rawPNG hash/CRC validált.

@@ -56,6 +56,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.repforge.app.R
 import com.repforge.app.ui.text.nativeResources
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessibilityNew
+import androidx.compose.material.icons.filled.TrendingUp
+import com.repforge.app.ui.components.TrainPilotSectionSurface
+import com.repforge.app.ui.components.TrainPilotHeroSurface
+import com.repforge.app.ui.components.TrainPilotSectionHeader
 import androidx.compose.runtime.remember
 import com.repforge.app.ui.theme.LocalTrainPilotColors
 import kotlin.math.max
@@ -125,7 +134,7 @@ fun ProgressScreen(
             Text(strings.getString(R.string.native_progress_loading), color = colors.muted)
         }
         if (state.loadError) item {
-            Text(strings.getString(R.string.native_progress_error), color = colors.danger, modifier = Modifier.testTag("progress_error"))
+            Text(strings.getString(R.string.native_progress_error), color = colors.dangerText, modifier = Modifier.testTag("progress_error"))
             androidx.compose.material3.TextButton(onClick = viewModel::loadProgressData) {
                 Text(strings.getString(R.string.native_progress_retry))
             }
@@ -133,57 +142,23 @@ fun ProgressScreen(
 
         // 1. #177 Izom-anatómia terheléstérkép
         item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = colors.card),
-                border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(strings.getString(R.string.native_progress_muscle_load), color = colors.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            TrainPilotSectionSurface(Modifier.fillMaxWidth()) {
+                Column {
+                    TrainPilotSectionHeader(strings.getString(R.string.native_progress_muscle_load), icon = Icons.Default.AccessibilityNew)
                     Text(strings.getString(R.string.native_progress_month_sets), color = colors.muted, fontSize = 11.sp)
                     Spacer(Modifier.height(14.dp))
 
-                    state.muscleLoads.forEach { load ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(load.label, color = colors.text, fontSize = 13.sp, modifier = Modifier.width(90.dp))
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(8.dp)
-                                    .clip(CircleShape)
-                                    .background(colors.card2)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth(load.loadPercentage)
-                                        .height(8.dp)
-                                        .clip(CircleShape)
-                                        .background(colors.accent)
-                                )
-                            }
-                            Spacer(Modifier.width(10.dp))
-                            Text(strings.getString(R.string.native_progress_sets_count, load.setsCount), color = colors.muted, fontSize = 11.sp, modifier = Modifier.width(50.dp))
-                        }
-                    }
+                    MuscleLoadPanel(state.muscleLoads, state.language)
+
                 }
             }
         }
 
         // 2. 1RM Fejlődési diagram
         item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = colors.card),
-                border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(strings.getString(R.string.native_progress_1rm_chart), color = colors.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            TrainPilotHeroSurface(Modifier.fillMaxWidth()) {
+                Column {
+                    TrainPilotSectionHeader(strings.getString(R.string.native_progress_1rm_chart), icon = Icons.Default.TrendingUp)
                     Text(strings.getString(R.string.native_progress_1rm_description), color = colors.muted, fontSize = 11.sp)
                     Spacer(Modifier.height(12.dp))
 
@@ -314,9 +289,18 @@ fun TrendCanvas(points: List<Double>) {
         }
 
         offsets.forEachIndexed { i, o ->
-            if (i == 0) path.moveTo(o.x, o.y) else path.lineTo(o.x, o.y)
+            if (i == 0) path.moveTo(o.x, o.y) else {
+                val previous = offsets[i - 1]
+                val middle = (previous.x + o.x) / 2f
+                // Both controls stay within this pair's range: no invented extrema.
+                path.cubicTo(middle, previous.y, middle, o.y, o.x, o.y)
+            }
         }
 
+        for (line in 0..4) {
+            val y = 10.dp.toPx() + (size.height - 20.dp.toPx()) * line / 4f
+            drawLine(colors.line, Offset(0f, y), Offset(size.width, y), strokeWidth = 1.dp.toPx())
+        }
         drawPath(
             path = path,
             color = colors.accentText,
@@ -326,4 +310,54 @@ fun TrendCanvas(points: List<Double>) {
             drawCircle(color = colors.accent2, radius = 3.dp.toPx(), center = o)
         }
     }
+}
+
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MuscleLoadPanel(loads: List<MuscleLoadUiModel>, language: String) {
+    val colors = LocalTrainPilotColors.current
+    val context = LocalContext.current
+    val strings = remember(context, language) { nativeResources(context, language) }
+    val percent = remember(language) { java.text.NumberFormat.getPercentInstance(java.util.Locale.forLanguageTag(language)) }
+    val bars: @Composable () -> Unit = {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            for (load in loads) Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(load.label, Modifier.weight(1f), color = colors.text, style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
+                    Text(strings.getString(R.string.native_progress_sets_count, load.setsCount),
+                        color = colors.muted, style = androidx.compose.material3.MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum"))
+                }
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Box(Modifier.weight(1f).height(8.dp).clip(CircleShape).background(colors.card2)) {
+                        Box(Modifier.fillMaxWidth(load.loadPercentage).height(8.dp).clip(CircleShape)
+                            .background(muscleLoadColor(load.loadPercentage, colors)))
+                    }
+                    Text(if (load.setsCount == 0) "—" else percent.format(load.loadPercentage.toDouble()),
+                        color = colors.muted, style = androidx.compose.material3.MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum"))
+                }
+            }
+        }
+    }
+    if (LocalDensity.current.fontScale > 1.3f) Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        NativeMuscleLoadVisual(loads, language, Modifier.fillMaxWidth())
+        bars()
+    } else Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        NativeMuscleLoadVisual(loads, language, Modifier.weight(0.85f))
+        Box(Modifier.weight(1.15f)) { bars() }
+    }
+    Spacer(Modifier.height(12.dp))
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        for ((label, color) in listOf(R.string.native_visual_load_low to colors.loadLow,
+            R.string.native_visual_load_medium to colors.loadMedium, R.string.native_visual_load_high to colors.loadHigh)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Box(Modifier.size(8.dp).clip(CircleShape).background(color))
+                Text(strings.getString(label), color = colors.muted, style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
+            }
+        }
+    }
+    Spacer(Modifier.height(6.dp))
+    Text(strings.getString(R.string.native_visual_load_note), color = colors.muted,
+        style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
 }

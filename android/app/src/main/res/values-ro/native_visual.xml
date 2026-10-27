@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_visual_load_low">Mai mică</string>
+    <string name="native_visual_load_medium">Medie</string>
+    <string name="native_visual_load_high">Mai mare</string>
+    <string name="native_visual_load_note">Proporțiile sunt raportate la grupa musculară cu cele mai multe serii; nu măsoară oboseala.</string>
+    <string name="native_visual_anatomy_open">Mărește harta musculară</string>
+    <string name="native_visual_anatomy_loading">Se încarcă harta musculară…</string>
+</resources>

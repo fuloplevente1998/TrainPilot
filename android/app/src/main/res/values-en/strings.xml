@@ -414,7 +414,7 @@
     <string name="native_progress_loading">Loading progress…</string>
     <string name="native_progress_error">Could not load progress data.</string>
     <string name="native_progress_retry">Retry</string>
-    <string name="native_progress_muscle_load">Muscle load (#177)</string>
+    <string name="native_progress_muscle_load">Muscle load</string>
     <string name="native_progress_month_sets">Set distribution in the past 30 days</string>
     <string name="native_progress_sets_count">%1$d sets</string>
     <string name="native_progress_1rm_chart">1RM progress chart (Epley)</string>

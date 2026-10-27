@@ -16,6 +16,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -41,6 +42,10 @@ import com.repforge.app.WorkoutPhotoRepository
 import com.repforge.app.data.db.JournalWorkoutSummary
 import com.repforge.app.data.db.WorkoutHistoryWithDetails
 import com.repforge.app.data.db.WorkoutPhotoEntity
+import com.repforge.app.ui.components.TrainPilotSectionSurface
+import com.repforge.app.ui.components.TrainPilotSurfaceCard
+import com.repforge.app.ui.components.TrainPilotIconBadge
+import com.repforge.app.ui.components.TrainPilotStatusBadge
 import com.repforge.app.ui.theme.LocalTrainPilotColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -63,6 +68,7 @@ fun JournalScreen(navController: NavController, language: String = "hu", viewMod
     val listState = rememberLazyListState()
     LaunchedEffect(state.query, state.month) { listState.scrollToItem(0) }
     Column(Modifier.fillMaxSize().background(colors.bg).padding(horizontal = 16.dp)) {
+        TrainPilotSectionSurface(Modifier.fillMaxWidth().testTag("journal_filters")) {
         OutlinedTextField(state.query, viewModel::setSearch, modifier = Modifier.fillMaxWidth().testTag("journal_search"),
             label = { Text(text.getString(R.string.journal_search)) }, singleLine = true)
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
@@ -70,13 +76,16 @@ fun JournalScreen(navController: NavController, language: String = "hu", viewMod
                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, text.getString(R.string.journal_previous_month))
             }
             TextButton(onClick = { viewModel.setMonth(if (state.month == null) YearMonth.now() else null) },
-                modifier = Modifier.testTag("journal_month")) {
-                Text(state.month?.format(DateTimeFormatter.ofPattern("LLLL yyyy", locale)) ?: text.getString(R.string.journal_all_months))
+                modifier = Modifier.weight(1f).heightIn(min = 48.dp).testTag("journal_month")) {
+                Text(state.month?.format(DateTimeFormatter.ofPattern("LLLL yyyy", locale)) ?: text.getString(R.string.journal_all_months),
+                    style = MaterialTheme.typography.labelLarge.copy(fontFeatureSettings = "tnum"))
             }
             IconButton(onClick = { viewModel.setMonth((state.month ?: YearMonth.now()).plusMonths(1)) }) {
                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, text.getString(R.string.journal_next_month))
             }
         }
+        }
+        Spacer(Modifier.height(12.dp))
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().testTag("journal_list"),
             contentPadding = PaddingValues(bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (workouts.loadState.refresh is LoadState.Loading) item { JournalLoading(text) }
@@ -97,19 +106,28 @@ fun JournalScreen(navController: NavController, language: String = "hu", viewMod
     editor?.let { JournalEditorDialog(it, language, viewModel::editDraft, viewModel::saveEditor, viewModel::cancelEditor) }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun JournalSummaryCard(row: JournalWorkoutSummary, text: Resources, locale: Locale, onOpen: () -> Unit) {
     val colors = LocalTrainPilotColors.current
-    Card(onClick = onOpen, modifier = Modifier.fillMaxWidth().testTag("journal_workout_${row.id}"),
-        shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = colors.card)) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(row.programName, color = colors.muted, style = MaterialTheme.typography.labelMedium)
-            Text(row.dayName, color = colors.text, style = MaterialTheme.typography.titleMedium)
-            Text(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).withLocale(locale)
-                .withZone(ZoneId.systemDefault()).format(Instant.ofEpochMilli(row.startedEpochMs)), color = colors.muted)
-            Text(text.getString(R.string.journal_minutes, row.durationSeconds / 60) + " · " +
-                text.getString(R.string.journal_sets, row.completedSetsCount, row.totalSetsCount), color = colors.text)
-            if (row.hasPr226) Row(verticalAlignment = Alignment.CenterVertically) {
+    TrainPilotSurfaceCard(Modifier.fillMaxWidth().testTag("journal_workout_${row.id}"), onClick = onOpen) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            TrainPilotIconBadge(Icons.Default.History)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(row.programName, color = colors.muted, style = MaterialTheme.typography.labelMedium)
+                Text(row.dayName, color = colors.text, style = MaterialTheme.typography.titleMedium)
+            }
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = colors.accentText)
+        }
+        Text(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).withLocale(locale)
+            .withZone(ZoneId.systemDefault()).format(Instant.ofEpochMilli(row.startedEpochMs)), color = colors.muted,
+            style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"))
+        HorizontalDivider(color = colors.line)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            TrainPilotStatusBadge(text.getString(R.string.journal_minutes, row.durationSeconds / 60))
+            TrainPilotStatusBadge(text.getString(R.string.journal_sets, row.completedSetsCount, row.totalSetsCount))
+            if (row.hasPr226) Row(verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 Icon(Icons.Default.EmojiEvents, null, tint = colors.accentText)
                 Text(text.getString(R.string.journal_pr), color = colors.accentText)
             }

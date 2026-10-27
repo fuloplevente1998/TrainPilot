@@ -5,6 +5,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.DirectionsRun
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -16,6 +18,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.repforge.app.ui.navigation.NativePlanningShortcuts
 import com.repforge.app.ui.theme.LocalTrainPilotColors
 import com.repforge.app.ui.theme.TrainPilotDimensions
+import com.repforge.app.ui.components.TrainPilotActionSurface
 import com.repforge.app.ui.components.TrainPilotHeroSurface
 import com.repforge.app.ui.components.TrainPilotStatusBadge
 import com.repforge.app.ui.components.TrainPilotSectionSurface
@@ -56,21 +59,20 @@ internal fun TrainingLandingScreen(language: String, activeProgramId: String, bu
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
             TrainPilotHeroSurface(Modifier.fillMaxWidth().testTag("training_quick_section")) {
-                TrainPilotStatusBadge(labels[1])
+                TrainPilotPrimaryButton(labels[2], { onQuick(false) },
+                    Modifier.fillMaxWidth().testTag("training_quick_workout"), !busy)
                 val stacked = LocalDensity.current.fontScale > 1.3f
                 if (stacked) Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    TrainPilotPrimaryButton(labels[2], { onQuick(false) },
-                        Modifier.fillMaxWidth().testTag("training_quick_workout"), !busy)
-                    OutlinedButton(onClick = { onQuick(true) }, enabled = !busy,
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("training_outdoor_workout")) { Text(labels[3]) }
+                    TrainPilotActionSurface(labels[9], Icons.Default.MenuBook, onLibrary,
+                        Modifier.fillMaxWidth().testTag("training_open_exercises"), !busy)
+                    TrainPilotActionSurface(labels[3], Icons.Default.DirectionsRun, { onQuick(true) },
+                        Modifier.fillMaxWidth().testTag("training_outdoor_workout"), !busy)
                 } else Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    TrainPilotPrimaryButton(labels[2], { onQuick(false) },
-                        Modifier.weight(1f).fillMaxHeight().testTag("training_quick_workout"), !busy)
-                    OutlinedButton(onClick = { onQuick(true) }, enabled = !busy,
-                        modifier = Modifier.weight(1f).fillMaxHeight().heightIn(min = 52.dp).testTag("training_outdoor_workout")) { Text(labels[3]) }
+                    TrainPilotActionSurface(labels[9], Icons.Default.MenuBook, onLibrary,
+                        Modifier.weight(1f).fillMaxHeight().testTag("training_open_exercises"), !busy)
+                    TrainPilotActionSurface(labels[3], Icons.Default.DirectionsRun, { onQuick(true) },
+                        Modifier.weight(1f).fillMaxHeight().testTag("training_outdoor_workout"), !busy)
                 }
-                OutlinedButton(onClick = onLibrary, enabled = !busy,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = TrainPilotDimensions.Control).testTag("training_open_exercises")) { Text(labels[9]) }
             }
         }
         item { NativePlanningShortcuts(language, !busy, onPrograms, onCalendar, onCoach) }

@@ -63,4 +63,23 @@ class NativeHomeMetricLayoutUiTest {
         compose.onNodeWithTag("home_metric_recovery_source").performScrollTo()
             .assertIsDisplayed().assertTextEquals("Keine Daten")
     }
+    @Test fun enlargedGermanHealthTileKeepsItsValueUnitAndFullProviderText() {
+        val source = "com.example.provider.with.long.provenance.and.measurement.time"
+        compose.setContent {
+            val density = LocalDensity.current.density
+            CompositionLocalProvider(LocalDensity provides Density(density, 2f)) {
+                TrainPilotTheme(TrainPilotUserSettings()) {
+                    Column(Modifier.width(320.dp).fillMaxHeight().verticalScroll(rememberScrollState()).padding(16.dp)) {
+                        com.repforge.app.ui.health.HealthMetricTile(
+                            com.repforge.app.ui.health.HealthMetricItemUiModel("distanceMeters", "Gemessene Entfernung",
+                                "12345", "m", source, true), Modifier.fillMaxWidth())
+                    }
+                }
+            }
+        }
+        compose.onNodeWithText("12345").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("m").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(source).performScrollTo().assertIsDisplayed().assertTextEquals(source)
+    }
+
 }

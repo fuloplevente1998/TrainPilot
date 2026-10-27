@@ -9,6 +9,19 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material.icons.filled.FavoriteBorder
+import com.repforge.app.ui.components.TrainPilotHeroSurface
+import com.repforge.app.ui.components.TrainPilotSectionSurface
+import com.repforge.app.ui.components.TrainPilotSubtleSurface
+import com.repforge.app.ui.components.TrainPilotMetricSurface
+import com.repforge.app.ui.components.TrainPilotSectionHeader
+import com.repforge.app.ui.components.trainPilotMetricIcon
 import androidx.core.content.ContextCompat
 import com.repforge.app.HealthConnectRepository
 import androidx.compose.material3.TextButton
@@ -271,57 +284,56 @@ fun HealthJournalTabContent(
     val colors = LocalTrainPilotColors.current
     val context = LocalContext.current
     val strings = remember(context, state.language) { nativeResources(context, state.language) }
+    val metricColumns = if (LocalDensity.current.fontScale > 1.3f || LocalConfiguration.current.screenWidthDp < 312) 1 else 2
     LazyColumn(
         modifier = Modifier.fillMaxSize().testTag("health_journal_list").padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
             val text = com.repforge.app.ui.text.nativeResources(LocalContext.current, state.language)
-            Column(Modifier.fillMaxWidth().testTag("health_history")) {
-                Text(state.historyMonth, color = colors.text, fontWeight = FontWeight.Bold)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TextButton(onClick = onPreviousMonth, modifier = Modifier.testTag("health_previous_month")) { Text(text.getString(com.repforge.app.R.string.health_history_previous)) }
-                    TextButton(onClick = onNextMonth, enabled = state.historyMonth < java.time.YearMonth.now().toString()) { Text(text.getString(com.repforge.app.R.string.health_history_next)) }
-                }
-                TextButton(onClick = onToday) { Text(text.getString(com.repforge.app.R.string.health_history_today)) }
-                Text(text.getString(com.repforge.app.R.string.health_history_day, state.selectedDay), color = colors.text,
-                    modifier = Modifier.testTag("health_selected_day"))
-                androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    items((state.availableDays + state.selectedDay).distinct().sortedDescending()) { day ->
-                        TextButton(onClick = { onDay(day) }) { Text(day) }
+            TrainPilotHeroSurface(Modifier.fillMaxWidth()) {
+                Column(Modifier.fillMaxWidth().testTag("health_history")) {
+                    TrainPilotSectionHeader(strings.getString(com.repforge.app.R.string.native_home_today_status), icon = Icons.Default.FavoriteBorder)
+                    Text(state.historyMonth, color = colors.text, fontWeight = FontWeight.Bold)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = onPreviousMonth, modifier = Modifier.testTag("health_previous_month")) { Text(text.getString(com.repforge.app.R.string.health_history_previous)) }
+                        TextButton(onClick = onNextMonth, enabled = state.historyMonth < java.time.YearMonth.now().toString()) { Text(text.getString(com.repforge.app.R.string.health_history_next)) }
                     }
-                }
-                androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    items(listOf("journal", "health_connect", "samsung_health", "legacy", com.repforge.app.HealthJournalStore.BLE)) { channel ->
-                        val label = when (channel) { "journal" -> text.getString(com.repforge.app.R.string.health_history_auto)
-                            "health_connect" -> "Health Connect"; "samsung_health" -> "Samsung Health"; com.repforge.app.HealthJournalStore.BLE -> "BLE"; else -> text.getString(com.repforge.app.R.string.health_history_legacy) }
-                        androidx.compose.material3.FilterChip(selected = state.historyChannel == channel, onClick = { onChannel(channel) }, label = { Text(label) })
+                    TextButton(onClick = onToday) { Text(text.getString(com.repforge.app.R.string.health_history_today)) }
+                    Text(text.getString(com.repforge.app.R.string.health_history_day, state.selectedDay), color = colors.text,
+                        modifier = Modifier.testTag("health_selected_day"))
+                    androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        items((state.availableDays + state.selectedDay).distinct().sortedDescending()) { day ->
+                            TextButton(onClick = { onDay(day) }) { Text(day) }
+                        }
                     }
-                }
-                if (state.historyLoading) Text(text.getString(com.repforge.app.R.string.health_history_loading), color = colors.muted)
-                if (state.historyError) Text(text.getString(com.repforge.app.R.string.health_history_error), color = colors.dangerText)
-                TextButton(onClick = { onOpenRecords("") }, enabled = !state.historyLoading,
-                    modifier = Modifier.testTag("health_open_records")) { Text(text.getString(com.repforge.app.R.string.health_records_title)) }
+                    androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        items(listOf("journal", "health_connect", "samsung_health", "legacy", com.repforge.app.HealthJournalStore.BLE)) { channel ->
+                            val label = when (channel) { "journal" -> text.getString(com.repforge.app.R.string.health_history_auto)
+                                "health_connect" -> "Health Connect"; "samsung_health" -> "Samsung Health"; com.repforge.app.HealthJournalStore.BLE -> "BLE"; else -> text.getString(com.repforge.app.R.string.health_history_legacy) }
+                            androidx.compose.material3.FilterChip(selected = state.historyChannel == channel, onClick = { onChannel(channel) }, label = { Text(label) })
+                        }
+                    }
+                    if (state.historyLoading) Text(text.getString(com.repforge.app.R.string.health_history_loading), color = colors.muted)
+                    if (state.historyError) Text(text.getString(com.repforge.app.R.string.health_history_error), color = colors.dangerText)
+                    TextButton(onClick = { onOpenRecords("") }, enabled = !state.historyLoading,
+                        modifier = Modifier.testTag("health_open_records")) { Text(text.getString(com.repforge.app.R.string.health_records_title)) }
+            }
             }
         }
         item { Spacer(Modifier.height(8.dp)) }
 
         // Szolgáltató választó kártya (Health Connect vs Samsung Health)
         item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = colors.card),
-                border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
-            ) {
-                Column(modifier = Modifier.padding(14.dp)) {
+            TrainPilotSectionSurface(Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(strings.getString(R.string.native_health_source), color = colors.text, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                        IconButton(onClick = onRefresh, enabled = !state.healthRefreshing, modifier = Modifier.size(32.dp)) {
+                        IconButton(onClick = onRefresh, enabled = !state.healthRefreshing, modifier = Modifier.size(48.dp)) {
                             Icon(Icons.Default.Refresh, contentDescription = strings.getString(R.string.native_health_refresh), tint = colors.accent)
                         }
                     }
@@ -375,11 +387,7 @@ fun HealthJournalTabContent(
 
         // Foreground auto-on-open is intentionally independent of Android background job permission.
         item {
-            Card(
-                modifier = Modifier.fillMaxWidth().testTag("health_auto_refresh_card"),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = colors.card2)
-            ) {
+            TrainPilotSubtleSurface(Modifier.fillMaxWidth().testTag("health_auto_refresh_card")) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(14.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -447,12 +455,8 @@ fun HealthJournalTabContent(
 
         // Alvásnapló összefoglaló
         item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = colors.card2)
-            ) {
-                Column(modifier = Modifier.padding(12.dp)) {
+            TrainPilotSubtleSurface(Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier) {
                     Text(com.repforge.app.ui.text.nativeResources(LocalContext.current, state.language)
                         .getString(com.repforge.app.R.string.health_record_sleep), color = colors.accent2, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(4.dp))
@@ -466,41 +470,17 @@ fun HealthJournalTabContent(
             }
         }
 
-        // 26 egészségügyi metrika listája
-        items(state.metrics, key = { it.key }) { m ->
-            Card(
-                modifier = Modifier.fillMaxWidth().testTag("health_metric_${m.key}"),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = colors.card),
-                border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(m.label, color = colors.text, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                        Text(m.sourceText, color = colors.muted, fontSize = 10.sp)
-                    }
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text(m.valueText, color = if (m.isAvailable) colors.accent else colors.muted, fontSize = 17.sp, fontWeight = FontWeight.Bold)
-                        if (m.unit.isNotBlank() && m.isAvailable) {
-                            Spacer(Modifier.width(4.dp))
-                            Text(m.unit, color = colors.muted, fontSize = 11.sp, modifier = Modifier.padding(bottom = 2.dp))
-                        }
-                    }
-                }
+        // Every one of the 26 readings and its original tag/source remains reachable.
+        items(state.metrics.chunked(metricColumns), key = { row -> row.first().key }) { row ->
+            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                for (metric in row) HealthMetricTile(metric, Modifier.weight(1f).fillMaxHeight())
+                if (row.size < metricColumns) Spacer(Modifier.weight(1f))
             }
         }
 
         // Háttérszinkron kapcsoló kártya
         item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = colors.card2)
-            ) {
+            TrainPilotSubtleSurface(Modifier.fillMaxWidth()) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(14.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -528,6 +508,24 @@ fun HealthJournalTabContent(
         }
 
         item { Spacer(Modifier.height(80.dp)) }
+    }
+}
+
+@Composable
+internal fun HealthMetricTile(m: HealthMetricItemUiModel, modifier: Modifier = Modifier) {
+    val colors = LocalTrainPilotColors.current
+    TrainPilotMetricSurface(modifier.testTag("health_metric_${m.key}")) {
+        Icon(trainPilotMetricIcon(m.key), null, Modifier.size(20.dp), tint = colors.accentText)
+        Text(m.label, color = colors.muted, style = MaterialTheme.typography.labelSmall)
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(m.valueText, Modifier.weight(1f, fill = false),
+                color = if (m.isAvailable) colors.text else colors.muted,
+                style = MaterialTheme.typography.headlineMedium.copy(fontFeatureSettings = "tnum"))
+            if (m.unit.isNotBlank() && m.isAvailable)
+                Text(m.unit, color = colors.muted, style = MaterialTheme.typography.labelSmall)
+        }
+        Text(m.sourceText, color = colors.muted, style = MaterialTheme.typography.bodySmall)
     }
 }
 

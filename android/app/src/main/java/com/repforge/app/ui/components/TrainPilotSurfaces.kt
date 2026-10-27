@@ -4,12 +4,16 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -45,9 +49,56 @@ fun TrainPilotSurfaceCard(
 }
 
 @Composable
-fun TrainPilotSectionHeader(title: String, modifier: Modifier = Modifier) {
-    Text(title, modifier = modifier, style = MaterialTheme.typography.titleLarge,
-        color = LocalTrainPilotColors.current.text)
+fun TrainPilotSectionHeader(title: String, modifier: Modifier = Modifier, icon: ImageVector? = null) {
+    Row(modifier, verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        if (icon != null) TrainPilotIconBadge(icon)
+        Text(title, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleLarge,
+            color = LocalTrainPilotColors.current.text)
+    }
+}
+
+@Composable
+fun TrainPilotIconBadge(icon: ImageVector, modifier: Modifier = Modifier) {
+    val colors = LocalTrainPilotColors.current
+    Surface(modifier.size(36.dp), shape = RoundedCornerShape(10.dp),
+        color = colors.selectedSurface, contentColor = colors.accentText,
+        border = BorderStroke(1.dp, colors.line)) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
+        }
+    }
+}
+
+/** Decorative icons never imply that an unavailable reading exists. */
+fun trainPilotMetricIcon(key: String): ImageVector = when (key) {
+    "sleep", "sleepMinutes", "sleepScore" -> Icons.Default.Bedtime
+    "calories", "activeCalories", "totalCalories", "basalMetabolicRateKcal" -> Icons.Default.LocalFireDepartment
+    "pulse", "averageHeartRate", "restingHeartRate", "maxHeartRate", "minHeartRate", "heartRateSamples", "hrvRmssdMs" -> Icons.Default.FavoriteBorder
+    "steps", "distanceMeters" -> Icons.Default.DirectionsWalk
+    "workouts" -> Icons.Default.FitnessCenter
+    "recovery", "energyScore" -> Icons.Default.EnergySavingsLeaf
+    "weightKg", "bodyFatPercent", "bodyMassIndex" -> Icons.Default.MonitorWeight
+    else -> Icons.Default.MonitorHeart
+}
+
+@Composable
+fun TrainPilotMetricSurface(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+    val colors = LocalTrainPilotColors.current
+    Surface(modifier, shape = RoundedCornerShape(14.dp), color = colors.card2,
+        contentColor = colors.text, border = BorderStroke(1.dp, colors.line)) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp), content = content)
+    }
+}
+
+@Composable
+fun TrainPilotActionSurface(title: String, icon: ImageVector, onClick: () -> Unit,
+    modifier: Modifier = Modifier, enabled: Boolean = true) {
+    TrainPilotSurfaceCard(modifier.heightIn(min = TrainPilotDimensions.Control),
+        onClick = onClick, enabled = enabled) {
+        TrainPilotIconBadge(icon)
+        Text(title, style = MaterialTheme.typography.titleSmall)
+    }
 }
 
 /** Presentation-only variants share the existing palette; no domain or timer state. */

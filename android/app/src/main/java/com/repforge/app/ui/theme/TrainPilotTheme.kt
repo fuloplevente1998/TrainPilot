@@ -41,6 +41,10 @@ data class TrainPilotExtendedColors(
     val emphasisBorder: Color = LineColor,
     val danger: Color = DangerColor,
     val dangerText: Color = DangerTextColor,
+    // Main #177's relative-load encoding; semantic data colors, independent of accent selection.
+    val loadLow: Color = Color(0xFFF0C83E),
+    val loadMedium: Color = Color(0xFFF28A28),
+    val loadHigh: Color = Color(0xFFE84E4E),
     val success: Color = SuccessColor
 )
 
@@ -53,7 +57,7 @@ val LocalTrainPilotColors = staticCompositionLocalOf {
 
 /** Shared roles from the accepted visual specification; colors come from the surface. */
 private fun textStyle(size: Int, height: Int, weight: FontWeight = FontWeight.Normal,
-    numeric: Boolean = false) = TextStyle(fontFamily = FontFamily.SansSerif,
+    numeric: Boolean = true) = TextStyle(fontFamily = FontFamily.SansSerif,
     fontSize = size.sp, lineHeight = height.sp, fontWeight = weight,
     fontFeatureSettings = if (numeric) "tnum" else null)
 

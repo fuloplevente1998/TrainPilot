@@ -414,7 +414,7 @@
     <string name="native_progress_loading">Se încarcă progresul…</string>
     <string name="native_progress_error">Datele despre progres nu pot fi încărcate.</string>
     <string name="native_progress_retry">Reîncearcă</string>
-    <string name="native_progress_muscle_load">Încărcarea musculară (#177)</string>
+    <string name="native_progress_muscle_load">Încărcarea musculară</string>
     <string name="native_progress_month_sets">Distribuția seriilor din ultimele 30 de zile</string>
     <string name="native_progress_sets_count">%1$d serii</string>
     <string name="native_progress_1rm_chart">Grafic progres 1RM (Epley)</string>
