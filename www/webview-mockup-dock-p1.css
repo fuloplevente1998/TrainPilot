@@ -493,3 +493,36 @@ html.tp271-mockup-dock body #app main.tp150-quick-picker .tp150-quick-start {
     padding: 12px 10px !important;
   }
 }
+
+/* The shipped quick workout opens inside the existing Round-4 panel, not
+   another route. Keep its real results and source-driven search/filter UI. */
+html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="quick"] .tp155-quick-panel {
+  padding: 10px 10px calc(env(safe-area-inset-bottom, 0px) + 16px) !important;
+  min-width: 0;
+}
+html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="quick"] .tp155-quick-controls {
+  border-radius: 14px !important;
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--line)) !important;
+  background: var(--tp-ui-card, var(--card)) !important;
+  padding: 9px !important;
+}
+html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="quick"] #tp155QuickQuery {
+  min-height: 46px !important;
+  border-radius: 11px !important;
+  max-width: 100%;
+}
+html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="quick"] #tp150QuickResults .tp152-quick-row {
+  margin: 8px 0 !important;
+  border-radius: 13px !important;
+  border: 1px solid var(--line) !important;
+  background: var(--tp-ui-card, var(--card)) !important;
+  box-shadow: none !important;
+}
+html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="quick"] #tp150QuickResults .tp152-quick-row > summary {
+  min-height: 56px !important;
+  padding: 10px !important;
+}
+html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="quick"] #tp150QuickResults .tp150-quick-start {
+  min-height: 46px !important;
+  border-radius: 11px !important;
+}
