@@ -52,12 +52,15 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
@@ -893,46 +896,80 @@ private fun HealthStudioExpandableSection(
     content: @Composable () -> Unit
 ) {
     val colors = LocalTrainPilotColors.current
-    TrainPilotSectionSurface(Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 64.dp)
-                .testTag(tag)
-                .clickable(
-                    role = androidx.compose.ui.semantics.Role.Button,
-                    onClick = onToggle
-                ),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Icon(
-                trainPilotMetricIcon(iconKey),
-                contentDescription = null,
-                modifier = Modifier.size(20.dp),
-                tint = colors.accentText
+    val shape = RoundedCornerShape(20.dp)
+    Surface(
+        shape = shape,
+        color = colors.card,
+        modifier = Modifier.fillMaxWidth()
+            .border(
+                1.dp,
+                if (expanded) colors.accent.copy(alpha = .6f) else colors.line,
+                shape
             )
-            Column(Modifier.weight(1f)) {
-                Text(title, color = colors.text, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    subtitle,
-                    color = colors.muted,
-                    style = MaterialTheme.typography.labelSmall,
-                    maxLines = 2
+    ) {
+        Column(Modifier.padding(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth()
+                    .heightIn(min = 48.dp)
+                    .testTag(tag)
+                    .clickable(
+                        role = androidx.compose.ui.semantics.Role.Button,
+                        onClick = onToggle
+                    ),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = colors.accent.copy(alpha = .14f),
+                    modifier = Modifier.size(44.dp)
+                        .border(
+                            1.dp,
+                            colors.accent.copy(alpha = .35f),
+                            RoundedCornerShape(14.dp)
+                        )
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            trainPilotMetricIcon(iconKey),
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = colors.accentText
+                        )
+                    }
+                }
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        title,
+                        color = colors.text,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    if (subtitle.isNotBlank()) {
+                        Text(
+                            subtitle,
+                            color = colors.muted,
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 2
+                        )
+                    }
+                }
+                Icon(
+                    if (expanded) Icons.Default.ExpandMore else Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = colors.accentText
                 )
             }
-            Text(
-                if (expanded) "⌄" else "›",
-                color = colors.accentText,
-                style = MaterialTheme.typography.titleLarge
-            )
-        }
-        if (expanded) {
-            Column(
-                Modifier.fillMaxWidth().padding(top = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                content()
+            if (expanded) {
+                Spacer(Modifier.height(12.dp))
+                HorizontalDivider(color = colors.line)
+                Spacer(Modifier.height(12.dp))
+                Column(
+                    Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    content()
+                }
             }
         }
     }
