@@ -37,7 +37,8 @@ class NativeLocalizationLanguageUiTest {
     }
     private fun selectLanguageInSettings(language: String, expectedHeading: String) {
         fixture.selectLanguageThroughUi(compose, language)
-        compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("training_profile_open"))
+        compose.revealSettingsControl("training_profile_open", "settings_profile_summary")
+        compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("settings_profile_summary"))
         compose.waitUntil(15_000) { fixture.selectedLanguage() == language && textVisible(expectedHeading) }
         compose.onNodeWithText(expectedHeading).assertExists()
     }
@@ -47,10 +48,10 @@ class NativeLocalizationLanguageUiTest {
         compose.onNodeWithTag("navigation_settings").performClick()
         val systemLanguage = fixture.context.resources.configuration.locales[0].language
         val cases = listOf(
-            Triple("hu", "Edzésprofil", "Lépések"),
-            Triple("en", "Training profile", "Steps"),
-            Triple("de", "Trainingsprofil", "Schritte"),
-            Triple("ro", "Profil de antrenament", "Pași")
+            Triple("hu", "Edzésprofil és progresszió", "Lépések"),
+            Triple("en", "Training profile and progression", "Steps"),
+            Triple("de", "Trainingsprofil und Progression", "Schritte"),
+            Triple("ro", "Profil de antrenament și progresie", "Pași")
         )
         for ((language, profileLabel, stepsLabel) in cases) {
             selectLanguageInSettings(language, profileLabel)
@@ -108,7 +109,7 @@ class NativeLocalizationLanguageUiTest {
     @Test fun trainingCalendarAndCoachFollowChangedAppLanguageOnRealNavigation() {
         launch()
         compose.onNodeWithTag("navigation_settings").performClick()
-        selectLanguageInSettings("ro", "Profil de antrenament")
+        selectLanguageInSettings("ro", "Profil de antrenament și progresie")
         compose.onNodeWithTag("navigation_back").performClick()
         compose.onNodeWithTag("navigation_training").performClick()
         awaitText("Antrenament rapid")
@@ -123,7 +124,7 @@ class NativeLocalizationLanguageUiTest {
         compose.onNodeWithTag("navigation_back").performClick()
 
         compose.onNodeWithTag("navigation_settings").performClick()
-        selectLanguageInSettings("de", "Trainingsprofil")
+        selectLanguageInSettings("de", "Trainingsprofil und Progression")
         compose.onNodeWithTag("navigation_back").performClick()
         compose.onNodeWithTag("shortcut_calendar").performScrollTo().performClick()
         compose.waitUntil(15_000) { nodesWithTag("navigation_back") }

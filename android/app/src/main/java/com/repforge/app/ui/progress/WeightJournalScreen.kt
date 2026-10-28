@@ -210,6 +210,7 @@ internal fun WeightJournalOverview(
                     )
                     Text(
                         current?.let { "${weightNumber(it, state.language)} kg" } ?: "—",
+                        modifier = Modifier.testTag("weight_current_value"),
                         color = if (current != null) colors.text else colors.muted,
                         style = androidx.compose.material3.MaterialTheme.typography.headlineMedium.copy(
                             fontFeatureSettings = "tnum"
@@ -246,8 +247,7 @@ internal fun WeightJournalOverview(
                     }
                 }
                 Card(
-                    Modifier.weight(1f).fillMaxHeight()
-                        .testTag("weight_global_extrema"),
+                    Modifier.weight(1f).fillMaxHeight(),
                     shape = RoundedCornerShape(14.dp),
                     colors = CardDefaults.cardColors(containerColor = colors.card2),
                     border = BorderStroke(1.dp, colors.line)
@@ -262,6 +262,7 @@ internal fun WeightJournalOverview(
                             if (min != null && max != null)
                                 "${weightNumber(min, state.language)} / ${weightNumber(max, state.language)} kg"
                             else "—",
+                            modifier = Modifier.testTag("weight_global_extrema"),
                             color = colors.text,
                             fontWeight = FontWeight.SemiBold
                         )

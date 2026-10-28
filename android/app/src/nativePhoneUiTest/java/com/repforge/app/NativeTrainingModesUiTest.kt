@@ -35,8 +35,7 @@ class NativeTrainingModesUiTest {
     }
     private fun settings() {
         compose.onNodeWithTag("navigation_settings").performClick()
-        compose.onNodeWithTag("settings_list")
-            .performScrollToNode(hasTestTag("training_modes_global_preview"))
+        compose.revealSettingsControl("training_modes_global_preview", "settings_profile_summary", "training_profile_open")
     }
     private fun dismissSettingsStatus() {
         val text = nativeResources(fixture.context, current().language)
@@ -173,7 +172,7 @@ class NativeTrainingModesUiTest {
             "de" to "Trainingsstil und Progression",
             "ro" to "Stil de antrenament și progresie")) {
             fixture.selectLanguageThroughUi(compose, language)
-            compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("training_modes_global_preview"))
+            compose.revealSettingsControl("training_modes_global_preview", "settings_profile_summary", "training_profile_open")
             compose.onNodeWithText(expected).assertExists()
         }
     }

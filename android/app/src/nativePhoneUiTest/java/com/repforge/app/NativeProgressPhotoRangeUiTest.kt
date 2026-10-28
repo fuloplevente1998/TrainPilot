@@ -214,7 +214,7 @@ class NativeProgressPhotoRangeUiTest {
         screenshot("range")
         compose.onNodeWithTag("navigation_settings").performClick()
         fixture.selectLanguageThroughUi(compose, "en")
-        compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("theme_yellow"))
+        compose.revealSettingsControl("theme_yellow", "settings_theme_summary", "settings_theme_picker")
         compose.onNodeWithTag("theme_yellow").performScrollTo().performClick()
         compose.onNodeWithTag("navigation_back").performClick()
         compose.waitUntil(30_000) { exists("progress_list") }

@@ -74,7 +74,7 @@ class NativeGoogleMaintenanceUiTest {
                     }
                 } }
             }
-            compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("google_maintenance_drive-delete"))
+            compose.revealSettingsControl("google_maintenance_drive-delete", "settings_backup_summary")
             compose.onNodeWithTag("google_maintenance_drive-delete").performClick()
             compose.waitUntil(20_000) { compose.onAllNodesWithTag("google_maintenance_confirm").fetchSemanticsNodes().isNotEmpty() }
             NativeHealthBackupGate.begin(); backup = true

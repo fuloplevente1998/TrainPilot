@@ -70,6 +70,11 @@ class NativePhoneNavigationTest {
     private fun launch() {
         scenario = ActivityScenario.launch(MainActivity::class.java)
         compose.waitUntil(30000) { compose.onAllNodesWithTag("navigation_home").fetchSemanticsNodes().isNotEmpty() }
+        // The global header is composed before the destination finishes loading.
+        // Wait for the actual Home body, not only navigation chrome.
+        compose.waitUntil(30_000) {
+            compose.onAllNodesWithTag("shortcut_programs").fetchSemanticsNodes().isNotEmpty()
+        }
         compose.waitForIdle()
     }
     private fun tab(route: String) {
@@ -89,6 +94,7 @@ class NativePhoneNavigationTest {
             compose.onNodeWithTag(sectionTag).performClick()
         }
         compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag(targetTag))
+        compose.onNodeWithTag(targetTag).performScrollTo().assertIsDisplayed()
     }
 
     private fun openSettingsProfileEditor() {
@@ -230,10 +236,11 @@ class NativePhoneNavigationTest {
                 .getString(R.string.health_history_loading)).fetchSemanticsNodes().isEmpty()
         }
         capture("p1_health")
-        compose.onNodeWithTag("health_more_section").assertExists()
-        compose.onNodeWithTag("health_history_section").assertExists()
-        compose.onNodeWithTag("health_connect_section").assertExists()
-        compose.onNodeWithTag("health_open_watch_sync_card").assertExists()
+        for (tag in listOf("health_more_section", "health_history_section",
+            "health_connect_section", "health_open_watch_sync_card")) {
+            compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag(tag))
+            compose.onNodeWithTag(tag).performScrollTo().assertIsDisplayed()
+        }
         expandHealthSection("health_more_section", "health_metric_steps")
         compose.onNodeWithTag("health_metric_steps").assertIsDisplayed()
         capture("p1_health_metrics")
@@ -836,7 +843,9 @@ class NativePhoneNavigationTest {
         compose.onNodeWithTag("weight_save").performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("weight_input").fetchSemanticsNodes().isEmpty() }
         compose.onNodeWithTag("weight_journal_list").performScrollToIndex(0)
-        compose.waitUntil(15000) { compose.onAllNodesWithText("Aktuális: 81,5 kg").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(15000) { compose.onAllNodes(hasTestTag("weight_current_value") and
+            hasText("81,5 kg")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("weight_current_value").assertTextEquals("81,5 kg")
         compose.onNodeWithTag("weight_measurement_count").assertTextContains("200 mérés", substring = true)
         compose.onNodeWithTag("weight_global_extrema").assertTextContains("35 / 140 kg", substring = true)
         val old = runBlocking(Dispatchers.IO) { TrainPilotDatabase.getInstance(context).bodyWeightDao().getWeightById("weight-0000")!! }
@@ -915,8 +924,13 @@ class NativePhoneNavigationTest {
             .put(healthRecord("samsung-sleep", "SleepSessionRecord", "samsung.origin", HealthJournalStore.SAMSUNG, wake, wake + 3_600_000L, samsung)), store.generation())
         launch(); tab("health")
         expandHealthSection("health_history_section", "health_open_sleep")
-        compose.onNodeWithTag("health_open_sleep").performClick()
-        compose.waitUntil(15000) { compose.onAllNodesWithTag("health_record_samsung-sleep").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(15_000) {
+            compose.onAllNodes(hasTestTag("health_open_sleep") and isEnabled()).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("health_open_sleep").assertIsEnabled().performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("health_records_list").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("health_records_list").performScrollToNode(hasTestTag("health_record_samsung-sleep"))
+        compose.onNodeWithTag("health_record_samsung-sleep").assertExists()
         compose.onNodeWithTag("health_records_list").performScrollToNode(hasTestTag("health_record_expand_samsung-sleep"))
         compose.onNodeWithTag("health_record_expand_samsung-sleep").performScrollTo().assertIsDisplayed().performClick()
         compose.onNodeWithTag("health_records_list").performScrollToNode(hasText("Könnyű alvás"))
@@ -1293,7 +1307,7 @@ class NativePhoneNavigationTest {
 
     @Test fun customExerciseCanBeCreatedEditedAndDeletedWithoutStartingWorkout() {
         launch(); tab("training")
-        compose.onNodeWithText("Gyakorlatkönyvtár").performClick()
+        compose.onNodeWithTag("training_open_exercises").performScrollTo().assertIsDisplayed().performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("custom_exercise_create").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("custom_exercise_create").performClick()
         compose.onNodeWithTag("custom_exercise_name").performTextInput("Saját UI próba")
@@ -1336,7 +1350,7 @@ class NativePhoneNavigationTest {
 
     @Test fun invalidCustomVideoCannotWriteOrReplaceCatalog() {
         launch(); tab("training")
-        compose.onNodeWithText("Gyakorlatkönyvtár").performClick()
+        compose.onNodeWithTag("training_open_exercises").performScrollTo().assertIsDisplayed().performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("custom_exercise_create").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("custom_exercise_create").performClick()
         compose.onNodeWithTag("custom_exercise_name").performTextInput("Rossz videó")
@@ -1350,7 +1364,7 @@ class NativePhoneNavigationTest {
 
     @Test fun fullNativeLibraryShows106EntriesAndOpensItsOriginalVideoCard() {
         launch(); tab("training")
-        compose.onNodeWithText("Gyakorlatkönyvtár").performClick()
+        compose.onNodeWithTag("training_open_exercises").performScrollTo().assertIsDisplayed().performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("exercise_library_count").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("exercise_library_count").assertTextContains("106", substring = true)
         compose.onNodeWithTag("exercise_library_search").performTextInput(
@@ -1365,7 +1379,7 @@ class NativePhoneNavigationTest {
 
     @Test fun outdoorExerciseOffersOnlyExplicitUnverifiedSearchNotAnInventedVideo() {
         launch(); tab("training")
-        compose.onNodeWithText("Gyakorlatkönyvtár").performClick()
+        compose.onNodeWithTag("training_open_exercises").performScrollTo().assertIsDisplayed().performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("exercise_library_search").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("exercise_library_search").performTextInput("Futás")
         compose.onNodeWithTag("exercise_library_row_running").performClick()
@@ -1377,7 +1391,7 @@ class NativePhoneNavigationTest {
 
     @Test fun quickWorkoutShowsOriginalVideoWithoutStartingWorkout() {
         launch(); tab("training")
-        compose.onNodeWithText("Gyakorlat választása").performClick()
+        compose.onNodeWithTag("training_quick_workout").performScrollTo().assertIsDisplayed().performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("exercise_search").fetchSemanticsNodes().isNotEmpty() }
         val squats = com.repforge.app.data.db.NativeBuiltinCatalog.exercises.first { it.id == "db-squat" }.nameHu
         compose.onNodeWithTag("exercise_search").performTextInput(squats)
@@ -1388,7 +1402,7 @@ class NativePhoneNavigationTest {
 
     @Test fun exerciseFavoritesCanBeToggledFilteredAndRecoveredOnReentry() {
         launch(); tab("training")
-        compose.onNodeWithText("Gyakorlat választása").performClick()
+        compose.onNodeWithTag("training_quick_workout").performScrollTo().assertIsDisplayed().performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("exercise_search").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("exercise_search").performTextInput("Running")
         compose.waitUntil(15000) { compose.onAllNodesWithTag("exercise_favorite_running").fetchSemanticsNodes().isNotEmpty() }
@@ -1401,7 +1415,7 @@ class NativePhoneNavigationTest {
         compose.onNodeWithTag("exercise_select_running").assertExists()
         screenshot("quick_favorite_filter")
         compose.onNodeWithTag("navigation_back").performClick()
-        compose.onNodeWithText("Gyakorlat választása").performClick()
+        compose.onNodeWithTag("training_quick_workout").performScrollTo().assertIsDisplayed().performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("exercise_search").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("exercise_search").performTextInput("Running")
         compose.onNodeWithTag("exercise_favorite_running").assertTextContains("★")
@@ -1460,7 +1474,7 @@ class NativePhoneNavigationTest {
         compose.onNodeWithText(day).performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithText("Betöltés…").fetchSemanticsNodes().isEmpty() }
         expandHealthSection("health_more_section", "health_metric_weightKg")
-        compose.onNodeWithText("72,3").assertIsDisplayed()
+        compose.onNodeWithText("72,3").performScrollTo().assertIsDisplayed()
         screenshot("health_historical_weight")
     }
 

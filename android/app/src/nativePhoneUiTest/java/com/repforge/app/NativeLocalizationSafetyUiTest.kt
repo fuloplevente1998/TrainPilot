@@ -43,8 +43,9 @@ class NativeLocalizationSafetyUiTest {
         }
         compose.onNodeWithTag("navigation_settings").performClick()
         fixture.selectLanguageThroughUi(compose, "de")
-        compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("training_profile_open"))
-        compose.waitUntil(15_000) { fixture.selectedLanguage() == "de" && visible("Trainingsprofil") }
+        compose.revealSettingsControl("training_profile_open", "settings_profile_summary")
+        compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("settings_profile_summary"))
+        compose.waitUntil(15_000) { fixture.selectedLanguage() == "de" && visible("Trainingsprofil und Progression") }
         compose.onNodeWithTag("training_profile_open").performScrollTo().performClick()
         compose.onNodeWithTag("profile_field_weight").performTextReplacement("Infinity")
         compose.onNodeWithTag("profile_save").performClick()
@@ -58,6 +59,8 @@ class NativeLocalizationSafetyUiTest {
         assertFalse(fixture.profileJson().has("weight"))
         compose.onNodeWithText("Abbrechen").performClick()
 
+        compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("settings_privacy_summary"))
+        compose.onNodeWithTag("settings_privacy_summary").performScrollTo().performClick()
         compose.onNodeWithTag("settings_list").performScrollToNode(hasText("Alle lokalen Daten löschen (Erase Local)"))
         compose.onNodeWithText("Alle lokalen Daten löschen (Erase Local)").performClick()
         compose.waitUntil(15_000) { visible("Alle lokalen Daten löschen") }

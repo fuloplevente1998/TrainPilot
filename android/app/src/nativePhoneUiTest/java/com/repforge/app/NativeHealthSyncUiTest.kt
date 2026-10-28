@@ -7,6 +7,7 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.assertTextContains
 import androidx.test.core.app.ActivityScenario
@@ -51,7 +52,7 @@ class NativeHealthSyncUiTest {
 
         fun click(tag: String) {
             compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag(tag))
-            compose.onNodeWithTag(tag).performClick()
+            compose.onNodeWithTag(tag).performScrollTo().assertIsDisplayed().performClick()
         }
         click("health_sync_now"); click("health_sync_full")
         compose.runOnIdle { state.value = state.value.copy(healthRefreshing = true, syncStage = "DAYS", syncCompleted = 7, syncTotal = 30) }
@@ -60,7 +61,7 @@ class NativeHealthSyncUiTest {
         click("health_sync_cancel")
         compose.runOnIdle { state.value = state.value.copy(healthRefreshing = false, syncPartial = true) }
         compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_sync_failure"))
-        compose.onNodeWithTag("health_sync_failure").assertIsDisplayed()
+        compose.onNodeWithTag("health_sync_failure").performScrollTo().assertIsDisplayed()
         click("health_sync_retry")
         compose.runOnIdle {
             assertEquals(1, normal); assertEquals(1, full); assertEquals(1, cancelled); assertEquals(1, retried)

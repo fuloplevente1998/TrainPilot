@@ -8,6 +8,8 @@ import android.content.Context
 import com.repforge.app.ui.health.NativeHealthForegroundAdmission
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.isEnabled
+import androidx.compose.ui.test.onAllNodes
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -192,7 +194,11 @@ class NativeHealthAutoRefreshUiTest {
         openHealth()
         compose.onNodeWithTag("health_auto_refresh_switch").assertExists().assertIsOff()
         assertFalse(HealthJournalStore.get(context).preferences().optBoolean("autoOnOpen"))
-        compose.onNodeWithTag("health_auto_refresh_switch").performClick()
+        compose.waitUntil(15_000) {
+            compose.onAllNodes(hasTestTag("health_auto_refresh_switch") and isEnabled())
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("health_auto_refresh_switch").performScrollTo().assertIsDisplayed().performClick()
         compose.waitUntil(15_000) {
             HealthJournalStore.get(context).preferences().optBoolean("autoOnOpen")
         }
@@ -203,7 +209,11 @@ class NativeHealthAutoRefreshUiTest {
         openConnectionsIfNeeded()
         compose.onNodeWithTag("health_auto_refresh_switch").assertIsOn()
 
-        compose.onNodeWithTag("health_auto_refresh_switch").performClick()
+        compose.waitUntil(15_000) {
+            compose.onAllNodes(hasTestTag("health_auto_refresh_switch") and isEnabled())
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("health_auto_refresh_switch").performScrollTo().assertIsDisplayed().performClick()
         compose.waitUntil(15_000) {
             !HealthJournalStore.get(context).preferences().optBoolean("autoOnOpen")
         }
