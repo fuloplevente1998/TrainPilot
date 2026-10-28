@@ -202,37 +202,65 @@ fun JournalScreen(navController: NavController, language: String = "hu", viewMod
     editor?.let { JournalEditorDialog(it, language, viewModel::editDraft, viewModel::saveEditor, viewModel::cancelEditor) }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+/** Faithful 18:49 Studio 20dp-rounded horizontal workout card.
+ * The summary is the canonical paged native DB projection. Missing items such
+ * as total-volume or route thumbnail are not replaced by fake demo graphics.
+ */
 @Composable
 private fun JournalSummaryCard(row: JournalWorkoutSummary, text: Resources, locale: Locale, onOpen: () -> Unit) {
     val colors = LocalTrainPilotColors.current
-    TrainPilotSurfaceCard(Modifier.fillMaxWidth().testTag("journal_workout_${row.id}"), onClick = onOpen) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            TrainPilotIconBadge(Icons.Default.History)
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(row.programName, color = colors.muted, style = MaterialTheme.typography.labelMedium)
-                Text(row.dayName, color = colors.text, style = MaterialTheme.typography.titleMedium)
+    val stamp = remember(row.startedEpochMs, locale) {
+        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
+            .withLocale(locale).withZone(ZoneId.systemDefault())
+            .format(Instant.ofEpochMilli(row.startedEpochMs))
+    }
+    Surface(onClick = onOpen,
+        modifier = Modifier.fillMaxWidth().testTag("journal_workout_${row.id}"),
+        shape = RoundedCornerShape(20.dp), color = colors.card,
+        border = BorderStroke(1.dp, colors.line)) {
+        Row(Modifier.fillMaxWidth().padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Surface(Modifier.size(48.dp),
+                shape = CircleShape, color = colors.accent.copy(alpha = .16f)) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.FitnessCenter, contentDescription = null,
+                        modifier = Modifier.size(24.dp), tint = colors.accentText)
+                }
             }
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = colors.accentText)
-        }
-        // The Studio journal uses a distinct event-date row, but the time is the real saved
-        // workout timestamp (never a fixed demo date).
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Icon(Icons.Default.DateRange, contentDescription = null,
-                modifier = Modifier.size(16.dp), tint = colors.accentText)
-            Text(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).withLocale(locale)
-                .withZone(ZoneId.systemDefault()).format(Instant.ofEpochMilli(row.startedEpochMs)),
-                color = colors.muted, style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"))
-        }
-        HorizontalDivider(color = colors.line)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            TrainPilotStatusBadge(text.getString(R.string.journal_minutes, row.durationSeconds / 60))
-            TrainPilotStatusBadge(text.getString(R.string.journal_sets, row.completedSetsCount, row.totalSetsCount))
-            if (row.hasPr226) Row(verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Icon(Icons.Default.EmojiEvents, null, tint = colors.accentText)
-                Text(text.getString(R.string.journal_pr), color = colors.accentText)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(stamp, color = colors.muted,
+                    style = MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum"),
+                    modifier = Modifier.testTag("journal_date_${row.id}"))
+                Row(verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(row.dayName, modifier = Modifier.weight(1f, fill = false),
+                        color = colors.text, style = MaterialTheme.typography.titleMedium,
+                        maxLines = 2)
+                    Icon(Icons.Default.CheckCircle, contentDescription = null,
+                        tint = colors.success, modifier = Modifier.size(16.dp))
+                }
+                Text(row.programName, color = colors.muted,
+                    style = MaterialTheme.typography.bodySmall, maxLines = 1)
+                Text(
+                    text.getString(R.string.journal_minutes, row.durationSeconds / 60) +
+                        " · " + text.getString(R.string.journal_sets,
+                        row.completedSetsCount, row.totalSetsCount),
+                    color = colors.text, style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.testTag("journal_summary_${row.id}"))
+            }
+            Column(horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (row.hasPr226) {
+                    Surface(shape = RoundedCornerShape(8.dp), color = colors.accent) {
+                        Text("PR", style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold, color = colors.onAccent,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
+                    }
+                }
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = text.getString(R.string.journal_details),
+                    tint = colors.accentText, modifier = Modifier.size(20.dp))
             }
         }
     }
