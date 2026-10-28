@@ -1,4 +1,5 @@
 name: Studio ZIP Integration Audit
+# Runs on the selected branch only; report is read-only, does not build or merge.
 on:
   push:
     branches:
