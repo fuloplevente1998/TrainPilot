@@ -23,12 +23,20 @@ on:
       - '.github/workflows/native-android.yml'
       - 'scripts/run-native-wear-ui.sh'
       - 'scripts/run-native-signed-upgrade.sh'
+      - 'scripts/native/phone-ui-gate.py'
+      - 'scripts/native/evidence-summary.py'
+      - 'tests/native/test_phone_ui_gate_report.py'
+      - 'tests/native/test_evidence_summary.py'
   pull_request:
     paths:
       - 'android/**'
       - '.github/workflows/native-android.yml'
       - 'scripts/run-native-wear-ui.sh'
       - 'scripts/run-native-signed-upgrade.sh'
+      - 'scripts/native/phone-ui-gate.py'
+      - 'scripts/native/evidence-summary.py'
+      - 'tests/native/test_phone_ui_gate_report.py'
+      - 'tests/native/test_evidence_summary.py'
 
 permissions:
   contents: read
@@ -48,6 +56,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Validate native phone runner and evidence parser
+        working-directory: ${{ github.workspace }}
+        run: |
+          python3 -m unittest discover -s tests/native -p 'test_phone_ui_gate_report.py'
+          python3 -m unittest discover -s tests/native -p 'test_evidence_summary.py'
       - name: Set up Java 21
         uses: actions/setup-java@v4
         with:

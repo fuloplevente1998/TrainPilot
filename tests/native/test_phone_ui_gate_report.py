@@ -105,6 +105,28 @@ class EmulatorDisplayProfileTest(unittest.TestCase):
         self.assertEqual(440, d['requestedDensityDpi'])
         self.assertIn('Override density: 440', d['wmDensity'])
 
+    def test_default_compact_profile_isolates_launcher_without_display_overrides(self):
+        from unittest.mock import patch
+        with patch.object(gate, 'adb', side_effect=self.response) as calls:
+            profile = gate.configure_display()
+        calls.assert_any_call('shell', 'pm', 'disable-user', '--user', '0',
+                              'com.google.android.apps.nexuslauncher', check=False)
+        self.assertIsNotNone(profile['ciLauncherIsolation'])
+        self.assertIsNone(profile['requestedSizePx'])
+        self.assertIsNone(profile['requestedDensityDpi'])
+        self.assertFalse(any(c.args[:3] in (('shell', 'wm', 'size'),
+                                          ('shell', 'wm', 'density')) and len(c.args) > 3
+                             for c in calls.call_args_list))
+        self.assertFalse(any('com.repforge.app' in c.args for c in calls.call_args_list))
+
+    def test_default_setup_on_non_emulator_refuses_launcher_mutation(self):
+        from unittest.mock import patch
+        with patch.object(gate, 'adb', return_value=b'0\n') as calls:
+            with self.assertRaises(RuntimeError):
+                gate.configure_display()
+        self.assertEqual([(('shell', 'getprop', 'ro.kernel.qemu'), {})],
+                         [(c.args, c.kwargs) for c in calls.call_args_list])
+
     def test_pixels_without_density_cannot_accidentally_test_a_tablet_layout(self):
         from unittest.mock import patch
         with patch.object(gate, 'adb') as calls:

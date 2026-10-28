@@ -31,16 +31,14 @@ def configure_display(size="", density="", font_scale=""):
     if font_scale and (not re.fullmatch(r"\d+(?:\.\d+)?", font_scale) or
                        not .5 <= float(font_scale) <= 3):
         raise ValueError("Font scale must be a finite Android scale between 0.5 and 3")
-    if size or font_scale:
-        if adb("shell", "getprop", "ro.kernel.qemu").decode().strip() != "1":
-            raise RuntimeError("Display overrides are restricted to the disposable emulator")
-    launcher_state = None
+    if adb("shell", "getprop", "ro.kernel.qemu").decode().strip() != "1":
+        raise RuntimeError("Native UI setup is restricted to the disposable emulator")
+    # This unrelated launcher raised ANRs over the app in both owner-profile and
+    # default compact CI. Isolate it independently of optional display overrides.
+    # App ANRs, focus checks and instrumentation failures remain fail-closed.
+    launcher_state = adb("shell", "pm", "disable-user", "--user", "0",
+                         "com.google.android.apps.nexuslauncher", check=False).decode().strip()
     if size:
-        # This unrelated Google launcher raised an ANR over the native app during
-        # high-resolution CI. Disable only that package on the disposable emulator;
-        # app ANRs, focus checks and instrumentation failures remain fail-closed.
-        launcher_state = adb("shell", "pm", "disable-user", "--user", "0",
-                             "com.google.android.apps.nexuslauncher", check=False).decode().strip()
         adb("shell", "wm", "size", size)
         adb("shell", "wm", "density", density)
     if font_scale:
