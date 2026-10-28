@@ -1,5 +1,14 @@
 # TrainPilot – Studio UI folytatási pont
 
+## Új 08:11 export auditálva – 2026-10-28
+
+[Audit](reviews/AISTUDIO_0811_INTEGRATION_AUDIT.md), Native-AI-Studio@bc8e49fa,
+SHA2567af0b768…989890c, CRC PASS.07:48-hoz képest4Kotlin+1riport változott.
+Valódi előrelépés: backup callbackek végre átadva, modelmező-nevek javítva.
+Fotópicker valós, de nem ment privátfájlt, mégis sikert jelez.600ms Wear-fakeack,
+manufacturedsession, Demo fallback, elsőprogram=aktív és unsafe írások maradtak.
+Ez csakdocsreview; PR270 appforrás nem változik, gate40658293784/1a6b7102 folytatódik.
+
 ## Aktív kapu: telefonméretű AVD – 2026-10-28
 
 40655883561/12c99fd4: build/JVM+Wear+2upgradeSUCCESS, de a phone job az
