@@ -61,8 +61,28 @@ def scoped_processes(processes, sdk, port, uid):
         added = [p for p in processes if trusted(p) and p.ppid in chosen and p.pid not in chosen
                  and Path(p.executable).name in ('netsimd', 'netsim', 'netsim-daemon', 'crashpad_handler')]
         if not added:
-            return list(chosen.values())
+            break
         chosen.update((p.pid, p) for p in added)
+
+    # Crashpad is sometimes already reparented to PID 1 before our test trap
+    # snapshots /proc. Its inherited emulator stdio can keep the upstream
+    # runner action open even after the emulator exits. Scope this fallback to
+    # a single running SDK AVD, same owner/executable tree, and a helper born
+    # no earlier than that exact emulator. Never adopt older orphan helpers
+    # or any when another SDK AVD is present.
+    all_roots = [p for p in processes if trusted(p)
+                 and (Path(p.executable).name == 'emulator' or
+                      Path(p.executable).name.startswith('qemu-system-'))
+                 and option(p.argv, '-avd')]
+    if len(roots) == len(all_roots) == 1:
+        born = int(roots[0].start)
+        for p in processes:
+            if (trusted(p) and p.pid not in chosen and p.ppid == 1
+                    and p.state != 'Z'
+                    and Path(p.executable).name == 'crashpad_handler'
+                    and int(p.start) >= born):
+                chosen[p.pid] = p
+    return list(chosen.values())
 
 
 def remaining(processes):
