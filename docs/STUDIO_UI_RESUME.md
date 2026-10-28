@@ -1,5 +1,10 @@
 # TrainPilot – Studio UI folytatási pont
 
+## Aktuális egyagent-es folytatás
+
+Elsődleges friss checkpoint: [PR270_ACTIVE_CHECKPOINT.md](PR270_ACTIVE_CHECKPOINT.md).
+Az alábbi korábbi futási státuszok történetiek.
+
 ## Aktuális CI-izolációs javítás – 2026-10-28
 
 PR #270 **DRAFT**, ág `feat/studio-ui-topnav-trial-20261027`.
