@@ -63,9 +63,9 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: native-gradle-v2-${{ runner.os }}-${{ hashFiles('android/**/*.gradle', 'android/**/*.gradle.kts', 'android/gradle.properties', 'android/gradle/wrapper/gradle-wrapper.properties') }}-${{ github.run_id }}
+          key: native-gradle-v3-${{ runner.os }}-jdk21-${{ hashFiles('android/**/*.gradle', 'android/**/*.gradle.kts', 'android/gradle.properties', 'android/gradle/wrapper/gradle-wrapper.properties') }}
           restore-keys: |
-            native-gradle-v2-${{ runner.os }}-${{ hashFiles('android/**/*.gradle', 'android/**/*.gradle.kts', 'android/gradle.properties', 'android/gradle/wrapper/gradle-wrapper.properties') }}-
+            native-gradle-v3-${{ runner.os }}-jdk21-
             native-gradle-v2-${{ runner.os }}-
             native-gradle-v1-${{ runner.os }}-
       - name: Set up Android SDK
@@ -254,6 +254,26 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
+      - name: Restore API 35 upgrade AVD snapshot
+        id: upgrade-avd-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: native-avd-upgrade-v1-${{ runner.os }}-api35-google_apis-x86_64-pixel_2
+      - name: Create API 35 upgrade AVD snapshot
+        if: steps.upgrade-avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          force-avd-creation: false
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 2048
+          script: echo "Upgrade AVD snapshot ready."
       - name: Install original, seed, and update without uninstalling
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -261,8 +281,9 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_2
+          force-avd-creation: false
           disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 2048
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 2048 -no-snapshot-save
           script: bash scripts/run-native-signed-upgrade.sh
       - uses: actions/upload-artifact@v4
         if: always()
@@ -296,6 +317,26 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
+      - name: Restore Wear API 30 AVD snapshot
+        id: wear-avd-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: native-avd-wear-v1-${{ runner.os }}-api30-android-wear-x86-wearos_small_round
+      - name: Create Wear API 30 AVD snapshot
+        if: steps.wear-avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: android-wear
+          arch: x86
+          profile: wearos_small_round
+          force-avd-creation: false
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 2048
+          script: echo "Wear AVD snapshot ready."
       - uses: reactivecircus/android-emulator-runner@v2
         env:
           WEAR_SHARD: ${{ matrix.shard }}
@@ -304,8 +345,9 @@ jobs:
           target: android-wear
           arch: x86
           profile: wearos_small_round
+          force-avd-creation: false
           disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 2048
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 2048 -no-snapshot-save
           script: bash scripts/run-native-wear-ui.sh
       - uses: actions/upload-artifact@v4
         if: always()
@@ -335,6 +377,28 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
+      - name: Restore phone API 35 AVD snapshot
+        id: phone-avd-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: native-avd-phone-v1-${{ runner.os }}-api35-google_apis-x86_64-${{ inputs.phone_display_size != '' && 'pixel_7' || 'default' }}
+      - name: Create phone API 35 AVD snapshot
+        if: steps.phone-avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          profile: ${{ inputs.phone_display_size != '' && 'pixel_7' || '' }}
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          ram-size: 3072M
+          disk-size: 6000M
+          force-avd-creation: false
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: echo "Phone AVD snapshot ready."
       - uses: reactivecircus/android-emulator-runner@v2
         env:
           PHONE_UI_DISPLAY_SIZE: ${{ inputs.phone_display_size || '' }}
@@ -349,8 +413,9 @@ jobs:
           arch: x86_64
           ram-size: 3072M
           disk-size: 6000M
+          force-avd-creation: false
           disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot-save
           script: python3 scripts/native/phone-ui-gate.py --app phone-ui/app/app-debug.apk --tests phone-ui/test/app-debug-androidTest.apk --output phone-ui/results --commit "$GITHUB_SHA" --display-size "$PHONE_UI_DISPLAY_SIZE" --display-density "$PHONE_UI_DISPLAY_DENSITY" --font-scale "$PHONE_UI_FONT_SCALE"
       - name: Upload raw phone UI evidence and screenshots
         if: always()
