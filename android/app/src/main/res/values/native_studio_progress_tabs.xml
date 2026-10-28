@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="studio_progress_tab_progress">Fejlődés</string>
+    <string name="studio_progress_tab_statistics">Statisztikák</string>
+    <string name="studio_progress_tab_strength">Erőnlét (1RM)</string>
+    <string name="studio_progress_stats_records">Személyes rekordok</string>
+    <string name="studio_progress_stats_cardio">Kardióstatisztika</string>
+    <string name="studio_progress_pr_workouts">Rekordot tartalmazó edzések (30 nap)</string>
+</resources>
