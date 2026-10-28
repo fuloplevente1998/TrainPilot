@@ -1,5 +1,18 @@
 # TrainPilot – Studio UI folytatási pont
 
+## Aktív kapu: telefonméretű AVD – 2026-10-28
+
+40655883561/12c99fd4: build/JVM+Wear+2upgradeSUCCESS, de a phone job az
+emulátor-display readbacknél, instrumentáció ELŐTT megállt. Nincs phonePASS/kép.
+A kis320x640 AVD helyett owner-profile módban Pixel7 hardveralap, majd
+1080x2392/450dpi/font0.90 override. Preflight-hiba is ment failedmanifestet.
+A telefon384dp-s legkisebb szélességét a user képen igazolta:450dpi kiszámolva.
+Két későbbi Home-tesztlookup csoport is unmergedTextre javítva;main-appforrás
+változatlan12c99fd4-hez képest, testforrás új.12hosttesztPASS.
+FUTÓ canonical gate [40658293784](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40658293784),
+exact `1a6b7102dd2bce641447934f57f3799d0754c259`, owner-profileinputokkal.
+Még nincs PASS; ne indíts duplikált kaput. Main/verzió/aláírás/séma változatlan.
+
 ## Telefonhoz igazított emulátorkép – 2026-10-28
 
 User: Xiaomi Redmi Note 15, 1080×2392 álló, betűméret90%, más megjelenítés default.
