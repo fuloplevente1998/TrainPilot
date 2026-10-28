@@ -31,10 +31,17 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.Normalizer
 
+internal enum class QuickWorkoutFilter { ALL, STRENGTH, TIMED }
+
 /** Selection never starts a session or changes consent; only the explicit confirmation does. */
 @Composable
-internal fun QuickWorkoutScreen(outdoorOnly: Boolean, starting: Boolean,
-    onStart: (String, Boolean) -> Unit, onCancel: () -> Unit) {
+internal fun QuickWorkoutScreen(
+    outdoorOnly: Boolean,
+    filter: QuickWorkoutFilter = QuickWorkoutFilter.ALL,
+    starting: Boolean,
+    onStart: (String, Boolean) -> Unit,
+    onCancel: () -> Unit
+) {
     val context = LocalContext.current
     val colors = LocalTrainPilotColors.current
     val scope = rememberCoroutineScope()
@@ -67,16 +74,39 @@ internal fun QuickWorkoutScreen(outdoorOnly: Boolean, starting: Boolean,
     }.ifBlank { ex.nameHu }
     var recordRoute by remember(selected?.id) { mutableStateOf(settings.gpsStartChoices216[selected?.id] == true) }
     BackHandler(enabled = !starting) { if (selected != null) selected = null else onCancel() }
-    val list = remember(loaded?.first, query, outdoorOnly, settings.language, favorites, favoritesOnly) {
+    val list = remember(
+        loaded?.first, query, outdoorOnly, filter, settings.language, favorites, favoritesOnly
+    ) {
         val needle = searchKey(query)
         loaded?.first.orEmpty().filter { ex ->
+            val modeMatches = when (filter) {
+                QuickWorkoutFilter.ALL -> true
+                QuickWorkoutFilter.STRENGTH ->
+                    ex.measurementType == "strength" || ex.measurementType == "reps"
+                QuickWorkoutFilter.TIMED -> ex.measurementType == "time"
+            }
             (!favoritesOnly || ex.id in favorites) &&
+                modeMatches &&
                 (!outdoorOnly || NativeOutdoorStart.eligible(ex.id, ex.measurementType, ex.repUnit)) &&
                 needle in searchKey(listOf(ex.nameHu, ex.nameEn, ex.nameDe, ex.nameRo).joinToString(" "))
         }.sortedWith(compareBy<ExerciseLibraryEntity> { it.id !in favorites }.thenBy { name(it) })
     }
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(if (outdoorOnly) text[1] else text[0], style = MaterialTheme.typography.titleLarge, color = colors.text)
+        Text(
+            when {
+                outdoorOnly -> text[1]
+                filter == QuickWorkoutFilter.STRENGTH -> when (settings.language) {
+                    "en" -> "Strength"; "de" -> "Krafttraining"; "ro" -> "Forță"; else -> "Súlyzós"
+                }
+                filter == QuickWorkoutFilter.TIMED -> when (settings.language) {
+                    "en" -> "Timed / interval"; "de" -> "Zeit / Intervall"
+                    "ro" -> "Cronometrat / interval"; else -> "Időalapú / intervallum"
+                }
+                else -> text[0]
+            },
+            style = MaterialTheme.typography.titleLarge,
+            color = colors.text
+        )
         Text(text[2], color = colors.muted)
         OutlinedTextField(value = query, onValueChange = { query = it }, label = { Text(text[3]) },
             modifier = Modifier.fillMaxWidth().testTag("exercise_search"), enabled = !starting, singleLine = true)

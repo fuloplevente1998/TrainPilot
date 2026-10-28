@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.semantics.Role
@@ -24,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.repforge.app.ui.navigation.NativePlanningShortcuts
+import com.repforge.app.ui.home.QuickWorkoutFilter
 import com.repforge.app.ui.theme.LocalTrainPilotColors
 import com.repforge.app.ui.theme.TrainPilotDimensions
 import com.repforge.app.ui.components.TrainPilotActionSurface
@@ -40,9 +42,10 @@ import com.repforge.app.ui.text.nativeResources
 import androidx.compose.ui.platform.LocalContext
 
 /** Main's Training entry shows quick start and active program days; Programs remains separate. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun TrainingLandingScreen(language: String, activeProgramId: String, busy: Boolean,
-    onStart: (String, String) -> Unit, onQuick: (Boolean) -> Unit, onPrograms: () -> Unit,
+    onStart: (String, String) -> Unit, onQuick: (QuickWorkoutFilter, Boolean) -> Unit, onPrograms: () -> Unit,
     onCalendar: () -> Unit, onCoach: () -> Unit, onLibrary: () -> Unit,
     model: TrainingProgramsViewModel = viewModel()) {
     val state by model.uiState.collectAsStateWithLifecycle()
@@ -65,6 +68,7 @@ internal fun TrainingLandingScreen(language: String, activeProgramId: String, bu
         "en" -> en; "de" -> de; "ro" -> ro; else -> hu
     }.ifBlank { hu }
     val program = state.programs.firstOrNull { it.program.id == activeProgramId }
+    var quickSheetOpen by rememberSaveable { mutableStateOf(false) }
     LazyColumn(
         Modifier.fillMaxSize()
             .testTag("training_list")
@@ -81,7 +85,7 @@ internal fun TrainingLandingScreen(language: String, activeProgramId: String, bu
             ) {
                 Row(
                     Modifier.fillMaxWidth()
-                        .clickable(enabled = !busy, role = Role.Button) { onQuick(false) }
+                        .clickable(enabled = !busy, role = Role.Button) { quickSheetOpen = true }
                         .testTag("training_quick_workout")
                         .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -120,7 +124,7 @@ internal fun TrainingLandingScreen(language: String, activeProgramId: String, bu
                         "GPS", Icons.Default.DirectionsRun,
                         Modifier.fillMaxWidth().testTag("training_outdoor_workout"),
                         !busy
-                    ) { onQuick(true) }
+                    ) { onQuick(QuickWorkoutFilter.ALL, true) }
                 }
             } else {
                 Row(
@@ -140,7 +144,7 @@ internal fun TrainingLandingScreen(language: String, activeProgramId: String, bu
                         "GPS", Icons.Default.DirectionsRun,
                         Modifier.weight(1f).fillMaxHeight().testTag("training_outdoor_workout"),
                         !busy
-                    ) { onQuick(true) }
+                    ) { onQuick(QuickWorkoutFilter.ALL, true) }
                 }
             }
         }
@@ -186,7 +190,138 @@ internal fun TrainingLandingScreen(language: String, activeProgramId: String, bu
 
         item { NativePlanningShortcuts(language, !busy, onPrograms, onCalendar, onCoach) }
         item { Spacer(Modifier.height(TrainPilotDimensions.Page)) }
-    }}
+    }
+
+    if (quickSheetOpen) {
+        ModalBottomSheet(
+            onDismissRequest = { quickSheetOpen = false },
+            containerColor = colors.card,
+            dragHandle = { BottomSheetDefaults.DragHandle() }
+        ) {
+            LazyColumn(
+                Modifier.fillMaxWidth()
+                    .heightIn(max = 480.dp)
+                    .testTag("training_quick_sheet")
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            labels[1],
+                            color = colors.text,
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            resources.getString(R.string.studio_training_quick_subtitle),
+                            color = colors.muted,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+                item {
+                    StudioQuickChoiceRow(
+                        name("Súlyzós", "Strength", "Krafttraining", "Forță"),
+                        name(
+                            "Erő- és ismétlésalapú gyakorlatok",
+                            "Strength and repetition-based exercises",
+                            "Kraft- und wiederholungsbasierte Übungen",
+                            "Exerciții de forță și repetări"
+                        ),
+                        Icons.Default.FitnessCenter,
+                        "training_quick_strength"
+                    ) {
+                        quickSheetOpen = false
+                        onQuick(QuickWorkoutFilter.STRENGTH, false)
+                    }
+                }
+                item {
+                    StudioQuickChoiceRow(
+                        name("Időalapú / intervallum", "Timed / interval", "Zeit / Intervall", "Cronometrat / interval"),
+                        name(
+                            "Időre mért gyakorlatok és intervallumok",
+                            "Time-based exercises and intervals",
+                            "Zeitbasierte Übungen und Intervalle",
+                            "Exerciții cronometrate și intervale"
+                        ),
+                        Icons.Default.DirectionsRun,
+                        "training_quick_timed"
+                    ) {
+                        quickSheetOpen = false
+                        onQuick(QuickWorkoutFilter.TIMED, false)
+                    }
+                }
+                item {
+                    StudioQuickChoiceRow(
+                        resources.getString(R.string.studio_training_outdoor),
+                        resources.getString(R.string.studio_training_outdoor_subtitle),
+                        Icons.Default.DirectionsRun,
+                        "training_quick_outdoor_choice"
+                    ) {
+                        quickSheetOpen = false
+                        onQuick(QuickWorkoutFilter.ALL, true)
+                    }
+                }
+                item {
+                    StudioQuickChoiceRow(
+                        resources.getString(R.string.studio_training_exercise_picker),
+                        resources.getString(R.string.studio_training_exercise_subtitle),
+                        Icons.Default.MenuBook,
+                        "training_quick_library_choice"
+                    ) {
+                        quickSheetOpen = false
+                        onLibrary()
+                    }
+                }
+                item { Spacer(Modifier.height(24.dp)) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StudioQuickChoiceRow(
+    title: String,
+    subtitle: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    tag: String,
+    onClick: () -> Unit
+) {
+    val colors = LocalTrainPilotColors.current
+    Card(
+        modifier = Modifier.fillMaxWidth().testTag(tag)
+            .clickable(role = Role.Button, onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = colors.card2),
+        border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Surface(
+                Modifier.size(44.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = colors.accent.copy(alpha = .12f)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(icon, contentDescription = null, tint = colors.accentText,
+                        modifier = Modifier.size(24.dp))
+                }
+            }
+            Column(Modifier.weight(1f)) {
+                Text(title, color = colors.text,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold)
+                Text(subtitle, color = colors.muted,
+                    style = MaterialTheme.typography.bodySmall, maxLines = 2)
+            }
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = colors.muted)
+        }
+    }
+}
 
 @Composable
 private fun StudioTrainingActionTile(

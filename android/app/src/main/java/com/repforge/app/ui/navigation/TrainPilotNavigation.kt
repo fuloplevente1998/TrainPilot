@@ -65,6 +65,7 @@ import com.repforge.app.ui.workout.ActiveWorkoutViewModel
 import com.repforge.app.ui.programs.TrainingLandingScreen
 import com.repforge.app.ui.calendar.CalendarScreen
 import com.repforge.app.ui.home.QuickWorkoutScreen
+import com.repforge.app.ui.home.QuickWorkoutFilter
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.map
@@ -169,6 +170,7 @@ fun TrainPilotAppScaffold(
     var starting by remember { mutableStateOf(false) }
     // Memory-only user start intent. Process recreation/navigation cannot silently start GPS.
     var launchGps by remember { mutableStateOf<NativeWorkoutTarget?>(null) }
+    var quickWorkoutFilter by remember { mutableStateOf(QuickWorkoutFilter.ALL) }
     data class PendingProgram(val option: NativeProgramGpsChoice.Option, val dayId: String, val scheduleId: String?)
     var pendingProgram by remember { mutableStateOf<PendingProgram?>(null) }
     fun launchProgram(programId: String?, dayId: String, scheduleId: String?, option: NativeProgramGpsChoice.Option?, record: Boolean) {
@@ -406,6 +408,7 @@ fun TrainPilotAppScaffold(
                             }
                         },
                         onQuickWorkout = { outdoor ->
+                            quickWorkoutFilter = QuickWorkoutFilter.ALL
                             selectDestination(if (hasActiveWorkout) "training" else if (outdoor) "quick_outdoor" else "quick_workout")
                         }
                     )
@@ -413,7 +416,10 @@ fun TrainPilotAppScaffold(
                 composable(Screen.Training.route) {
                     TrainingLandingScreen(language = settings.language, activeProgramId = settings.activeProgramId,
                         busy = navigationBlocked, onStart = { programId, dayId -> startWorkout(programId, dayId) },
-                        onQuick = { outdoor -> selectDestination(if (hasActiveWorkout) "training" else if (outdoor) "quick_outdoor" else "quick_workout") },
+                        onQuick = { filter, outdoor ->
+                            quickWorkoutFilter = filter
+                            selectDestination(if (hasActiveWorkout) "training" else if (outdoor) "quick_outdoor" else "quick_workout")
+                        },
                         onPrograms = { selectDestination("programs") },
                         onCalendar = { selectDestination("calendar") }, onCoach = { selectDestination("coach") },
                         onLibrary = { selectDestination("exercise_library") })
@@ -460,7 +466,10 @@ fun TrainPilotAppScaffold(
                 }
                 for (outdoor in listOf(false, true)) {
                     composable(if (outdoor) "quick_outdoor" else "quick_workout") {
-                        QuickWorkoutScreen(outdoorOnly = outdoor, starting = starting,
+                        QuickWorkoutScreen(
+                            outdoorOnly = outdoor,
+                            filter = if (outdoor) QuickWorkoutFilter.ALL else quickWorkoutFilter,
+                            starting = starting,
                             onCancel = { navController.popBackStack() }, onStart = { exerciseId, gps ->
                                 if (!starting) {
                                     starting = true

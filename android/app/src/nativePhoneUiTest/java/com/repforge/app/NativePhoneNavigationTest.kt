@@ -92,6 +92,20 @@ class NativePhoneNavigationTest {
         }
         compose.waitForIdle()
     }
+    private fun openTrainingQuickChoice(choiceTag: String) {
+        compose.onNodeWithTag("training_quick_workout").performScrollTo()
+            .assertIsDisplayed().performClick()
+        compose.waitUntil(15_000) {
+            compose.onAllNodesWithTag("training_quick_sheet").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("training_quick_sheet")
+            .performScrollToNode(hasTestTag(choiceTag))
+        compose.onNodeWithTag(choiceTag).assertIsDisplayed().performClick()
+        compose.waitUntil(15_000) {
+            compose.onAllNodesWithTag("exercise_search").fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
     private fun openTrainingPrograms() {
         compose.onNodeWithTag("training_list")
             .performScrollToNode(hasTestTag("shortcut_programs"))
@@ -1413,8 +1427,7 @@ class NativePhoneNavigationTest {
 
     @Test fun quickWorkoutShowsOriginalVideoWithoutStartingWorkout() {
         launch(); tab("training")
-        compose.onNodeWithTag("training_quick_workout").performScrollTo().assertIsDisplayed().performClick()
-        compose.waitUntil(15000) { compose.onAllNodesWithTag("exercise_search").fetchSemanticsNodes().isNotEmpty() }
+        openTrainingQuickChoice("training_quick_strength")
         val squats = com.repforge.app.data.db.NativeBuiltinCatalog.exercises.first { it.id == "db-squat" }.nameHu
         compose.onNodeWithTag("exercise_search").performTextInput(squats)
         compose.onNodeWithTag("exercise_select_db-squat").performClick()
@@ -1424,8 +1437,7 @@ class NativePhoneNavigationTest {
 
     @Test fun exerciseFavoritesCanBeToggledFilteredAndRecoveredOnReentry() {
         launch(); tab("training")
-        compose.onNodeWithTag("training_quick_workout").performScrollTo().assertIsDisplayed().performClick()
-        compose.waitUntil(15000) { compose.onAllNodesWithTag("exercise_search").fetchSemanticsNodes().isNotEmpty() }
+        openTrainingQuickChoice("training_quick_outdoor_choice")
         compose.onNodeWithTag("exercise_search").performTextInput("Running")
         compose.waitUntil(15000) { compose.onAllNodesWithTag("exercise_favorite_running").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("exercise_favorite_running").performClick()
@@ -1437,8 +1449,7 @@ class NativePhoneNavigationTest {
         compose.onNodeWithTag("exercise_select_running").assertExists()
         screenshot("quick_favorite_filter")
         compose.onNodeWithTag("navigation_back").performClick()
-        compose.onNodeWithTag("training_quick_workout").performScrollTo().assertIsDisplayed().performClick()
-        compose.waitUntil(15000) { compose.onAllNodesWithTag("exercise_search").fetchSemanticsNodes().isNotEmpty() }
+        openTrainingQuickChoice("training_quick_outdoor_choice")
         compose.onNodeWithTag("exercise_search").performTextInput("Running")
         compose.onNodeWithTag("exercise_favorite_running").assertTextContains("★")
         assertFalse(ActiveWorkoutStore.current(context)?.optBoolean("active") == true)
