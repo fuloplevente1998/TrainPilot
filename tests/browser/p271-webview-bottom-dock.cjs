@@ -35,6 +35,33 @@ const server=http.createServer((req,res)=>{
       assert.equal(await page.locator('#tp271Header .tp271-header-brand strong').textContent(),'TrainPilot',width+': real original header');
       assert.equal(await page.locator('#tp271Header button[data-tp271-header]').count(),3,width+': Settings Language Theme in header');
       assert.equal(await page.locator('#tp271Dock button[aria-current="page"]').count(),1,width+': single active route');
+      // P1f: real Home cards follow the 1/4 mockup's visual reading order.
+      // This does not replace any saved program/Health state or CTA handler.
+      await page.waitForFunction(()=>{
+        const m=document.querySelector('#app main.rf221-home'),today=m?.querySelector('#rf223Today');
+        if(!m||!today)return false;
+        const nodes=[...m.children];
+        const ids=[m.querySelector('#tp271HomeGreeting'),m.querySelector(':scope > .hero.tp155-home-active-card'),
+          m.querySelector('#tp271HomeQuick'),today];
+        return ids.every(Boolean)&&ids.slice(0,-1).every((node,i)=>nodes.indexOf(node)<nodes.indexOf(ids[i+1]));
+      });
+      const homeOrder=await page.evaluate(()=>{
+        const m=document.querySelector('#app main.rf221-home');
+        return {
+          greeting:m.querySelector('#tp271HomeGreeting .tp271-home-hello')?.textContent,
+          hero:!!m.querySelector(':scope > .hero.tp155-home-active-card'),
+          quick:!!m.querySelector('#tp271HomeQuick'),
+          metrics:m.querySelectorAll('#rf223Today .tp5-today-metric').length,
+          order:[...m.children].map(x=>x.id||x.className.split?.(' ')[0]||x.tagName)
+        };
+      });
+      assert.ok(homeOrder.greeting?.length>0&&homeOrder.hero&&homeOrder.quick,width+': mockup greeting, real workout hero and real quick action '+JSON.stringify(homeOrder));
+      assert.equal(homeOrder.metrics,6,width+': all canonical Today readings survive reordered Home');
+      await page.locator('#tp271HomeQuick').click();
+      await page.waitForFunction(()=>document.querySelector('#tp155R4PanelHost')?.dataset.panel==='quick');
+      assert.equal(await page.evaluate(()=>!!state.session),false,width+': quick launch does not start training before selection');
+      await page.evaluate(()=>{tp155R4ClosePanel(false);go('home')});
+      await page.waitForSelector('main.rf221-home #tp271HomeGreeting');
       const grid=await page.evaluate(()=>{
         const e=document.querySelector('#app main.rf221-home #rf223Today .tp5-today-grid');
         return {columns:getComputedStyle(e).gridTemplateColumns.split(' ').length,tiles:e.querySelectorAll('.tp5-today-metric').length};
@@ -169,6 +196,6 @@ const server=http.createServer((req,res)=>{
       assert.deepEqual(errors,[],width+': no JS runtime errors');
       await page.close();
     }
-    console.log('PASS PR271 P1e: exactly five dock tabs, compact three-action header, secondary Workout entry points, real workout guard and main fallback.');
+    console.log('PASS PR271 P1f: mockup Home hierarchy, real Quick action, five tabs, compact header, secondary routes, workout guard and main fallback.');
   }finally{await browser?.close();await new Promise(resolve=>server.close(resolve))}
 })().catch(e=>{console.error(e);process.exitCode=1});
