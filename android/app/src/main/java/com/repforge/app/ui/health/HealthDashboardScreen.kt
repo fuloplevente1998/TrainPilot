@@ -871,16 +871,93 @@ internal fun HealthSelectedDayOverview(
                 color = colors.muted, style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.testTag("health_overview_partial"))
         }
-        HealthStudioActionRow(
+        HealthPulseTrendRow(
             title = strings.getString(R.string.health_record_heart_rate),
-            subtitle = strings.getString(R.string.health_records_title),
-            iconKey = "pulse", tag = "health_pulse_trend", onClick = onPulseTrend
+            subtitle = when (state.language) {
+                "en" -> "Last 7 calendar days • daily average heart rate"
+                "de" -> "Letzte 7 Kalendertage • täglicher Durchschnittspuls"
+                "ro" -> "Ultimele 7 zile calendaristice • puls mediu zilnic"
+                else -> "Elmúlt 7 naptári nap • napi átlagpulzus"
+            },
+            points = state.pulseTrend,
+            onClick = onPulseTrend
         )
         HealthStudioActionRow(
             title = strings.getString(R.string.weight_open),
             subtitle = strings.getString(R.string.health_metric_weightkg),
             iconKey = "weightKg", tag = "health_weight_journal", onClick = onWeightJournal
         )
+    }
+}
+
+@Composable
+private fun HealthPulseTrendRow(
+    title: String,
+    subtitle: String,
+    points: List<HealthPulseTrendPointUiModel>,
+    onClick: () -> Unit
+) {
+    val colors = LocalTrainPilotColors.current
+    TrainPilotSubtleSurface(
+        Modifier.fillMaxWidth().heightIn(min = 64.dp)
+            .testTag("health_pulse_trend")
+            .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick)
+    ) {
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Icon(trainPilotMetricIcon("pulse"), contentDescription = null,
+                modifier = Modifier.size(20.dp), tint = colors.accentText)
+            Column(Modifier.weight(1f)) {
+                Text(title, color = colors.text, style = MaterialTheme.typography.titleSmall)
+                Text(subtitle, color = colors.muted,
+                    style = MaterialTheme.typography.labelSmall, maxLines = 2)
+            }
+            HealthPulseSparkline(points)
+            Text("›", color = colors.accentText, style = MaterialTheme.typography.titleLarge)
+        }
+    }
+}
+
+@Composable
+private fun HealthPulseSparkline(points: List<HealthPulseTrendPointUiModel>) {
+    val colors = LocalTrainPilotColors.current
+    val available = points.mapIndexedNotNull { index, point ->
+        point.bpm?.takeIf { it.isFinite() && it > 0.0 }?.let { index to it }
+    }
+    if (available.size < 2) {
+        Text("—", color = colors.muted, modifier = Modifier.testTag("health_pulse_sparkline"))
+        return
+    }
+    val min = available.minOf { it.second }
+    val max = available.maxOf { it.second }
+    val range = (max - min).takeIf { it > 0.0 } ?: 1.0
+    androidx.compose.foundation.Canvas(
+        Modifier.width(96.dp).height(36.dp).testTag("health_pulse_sparkline")
+    ) {
+        val denominator = (points.size - 1).coerceAtLeast(1)
+        fun x(index: Int) = size.width * index / denominator.toFloat()
+        fun y(value: Double) = size.height -
+            ((value - min) / range).toFloat() * size.height
+        available.zipWithNext().forEach { (a, b) ->
+            if (b.first == a.first + 1) {
+                drawLine(
+                    color = colors.accent,
+                    start = androidx.compose.ui.geometry.Offset(x(a.first), y(a.second)),
+                    end = androidx.compose.ui.geometry.Offset(x(b.first), y(b.second)),
+                    strokeWidth = 3.dp.toPx()
+                )
+            }
+        }
+        available.forEach { (index, value) ->
+            drawCircle(
+                color = colors.accent,
+                radius = 2.5.dp.toPx(),
+                center = androidx.compose.ui.geometry.Offset(x(index), y(value))
+            )
+        }
     }
 }
 

@@ -46,6 +46,11 @@ data class HealthMetricItemUiModel(
     val isAvailable: Boolean
 )
 
+data class HealthPulseTrendPointUiModel(
+    val day: String,
+    val bpm: Double?
+)
+
 data class HealthDashboardUiState(
     val activeTab: String = "journal", // "journal" | "ble"
     val provider: String = "health_connect", // "health_connect" | "samsung_health"
@@ -75,6 +80,7 @@ data class HealthDashboardUiState(
     val metrics: List<HealthMetricItemUiModel> = emptyList(),
     val overviewMetrics: List<HealthMetricItemUiModel> = emptyList(),
     val additionalMetrics: List<HealthMetricItemUiModel> = emptyList(),
+    val pulseTrend: List<HealthPulseTrendPointUiModel> = emptyList(),
     val sleepSessionsSummaryText: String = "—",
     val lastSyncAt: String = "—",
     val bleState: BleDiscoveryUiState = BleDiscoveryUiState(),
@@ -98,7 +104,8 @@ data class HealthDashboardUiState(
 private data class HealthStudioOverviewAux(
     val workoutCount: Int,
     val recovery: NativeHomeRecoveryPresentation.Model?,
-    val selectedIsToday: Boolean
+    val selectedIsToday: Boolean,
+    val pulseTrend: List<HealthPulseTrendPointUiModel>
 )
 
 class HealthDashboardViewModel(application: Application) : AndroidViewModel(application) {
@@ -223,6 +230,7 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
             metrics = emptyList(),
             overviewMetrics = emptyList(),
             additionalMetrics = emptyList(),
+            pulseTrend = emptyList(),
             selectedDay = query.day.toString(), historyMonth = query.month.toString(), historyChannel = query.channel,
             availableDays = emptyList(), sleepSessionsSummaryText = "—", historyPartial = false)
         historyJob = viewModelScope.launch {
@@ -264,13 +272,38 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
                                 null
                             }
                         } else null
+                        val pulseTrend = try {
+                            val trendPage = healthStore.page(
+                                selected.minusDays(6).toString(), selected.toString(),
+                                "journal", "", 0L, 0L, 1
+                            )
+                            val summaries = trendPage.optJSONArray("days")
+                            val byDay = mutableMapOf<String, Double>()
+                            for (index in 0 until (summaries?.length() ?: 0)) {
+                                val summary = summaries?.optJSONObject(index) ?: continue
+                                val average = summary.optDouble("averageHeartRate", Double.NaN)
+                                if (average.isFinite() && average > 0.0) {
+                                    byDay[summary.optString("day")] = average
+                                }
+                            }
+                            (6 downTo 0).map { offset ->
+                                val date = selected.minusDays(offset.toLong()).toString()
+                                HealthPulseTrendPointUiModel(date, byDay[date])
+                            }
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (_: Exception) {
+                            emptyList()
+                        }
                         Triple(
                             Triple(language, prefs, page),
                             access,
                             Triple(
                                 background,
                                 healthStore.nativeSyncLastSuccess(),
-                                HealthStudioOverviewAux(workoutCount, recovery, selectedIsToday)
+                                HealthStudioOverviewAux(
+                                    workoutCount, recovery, selectedIsToday, pulseTrend
+                                )
                             )
                         )
                     }
@@ -287,7 +320,7 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
                 val additionalMetrics = buildStudioAdditionalMetrics(language, page.selected, metrics)
                 _uiState.value = _uiState.value.copy(language = language, historyLoading = false, historyError = false,
                     availableDays = page.days, metrics = metrics, overviewMetrics = overviewMetrics,
-                    additionalMetrics = additionalMetrics,
+                    additionalMetrics = additionalMetrics, pulseTrend = overviewAux.pulseTrend,
                     historyPartial = page.selected.optBoolean("partial"),
                     provider = prefs.optString("provider", HealthJournalStore.HC),
                     dailySourcePreference = prefs.optString("hcDailySource", "auto"),
@@ -309,7 +342,7 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Exception) { _uiState.value = _uiState.value.copy(historyLoading = false, historyError = true,
                 metrics = emptyList(), overviewMetrics = emptyList(), additionalMetrics = emptyList(),
-                dailySourceOptions = emptyList())
+                pulseTrend = emptyList(), dailySourceOptions = emptyList())
                 refreshBackgroundStatus()
             }
         }
