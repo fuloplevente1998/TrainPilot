@@ -29,16 +29,16 @@
   let dock=null,queued=false;
 
   function selectedKey(){
-    if (typeof window.state==='undefined' || !window.state) return 'home';
-    const tab=window.state.tab;
+    if (typeof state==='undefined' || !state) return 'home';
+    const tab=state.tab;
     if (tab==='health') return 'health';
-    if (tab==='history') return window.state.tp177JournalView==='progress'?'progress':'log';
+    if (tab==='history') return state.tp177JournalView==='progress'?'progress':'log';
     if (tab==='plan'||tab==='workout') return 'workout';
     if (tab==='stats') return 'log';
     return 'home';
   }
   function activeWorkout(){
-    try { return !!(window.state && window.state.session); } catch (_) { return false; }
+    try { return typeof state!=='undefined' && !!state.session; } catch (_) { return false; }
   }
   function sync(){
     queued=false;
