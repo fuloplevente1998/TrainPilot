@@ -61,10 +61,13 @@ import com.repforge.app.ui.theme.LocalTrainPilotColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.Instant
+import java.time.LocalDate
+import java.time.DayOfWeek
 import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.time.format.TextStyle
 import java.util.Locale
 
 @Composable
@@ -77,57 +80,200 @@ fun JournalScreen(navController: NavController, language: String = "hu", viewMod
     val colors = LocalTrainPilotColors.current
     val locale = remember(language) { Locale.forLanguageTag(language) }
     val listState = rememberLazyListState()
-    LaunchedEffect(state.query, state.month) { listState.scrollToItem(0) }
+    LaunchedEffect(state.query, state.month, state.day) { listState.scrollToItem(0) }
     var monthPickerOpen by rememberSaveable { mutableStateOf(false) }
+    var pickerMonthKey by rememberSaveable {
+        mutableStateOf(
+            (state.day?.let { YearMonth.from(it) } ?: state.month ?: YearMonth.now()).toString()
+        )
+    }
+    LaunchedEffect(monthPickerOpen) {
+        if (monthPickerOpen) {
+            pickerMonthKey =
+                (state.day?.let { YearMonth.from(it) } ?: state.month ?: YearMonth.now()).toString()
+        }
+    }
     if (monthPickerOpen) {
+        val pickerMonth = runCatching { YearMonth.parse(pickerMonthKey) }.getOrElse { YearMonth.now() }
+        val firstDay = pickerMonth.atDay(1)
+        val leading = (firstDay.dayOfWeek.value - DayOfWeek.MONDAY.value + 7) % 7
+        val totalCells = ((leading + pickerMonth.lengthOfMonth() + 6) / 7) * 7
+        val weekdayLabels = remember(locale) {
+            DayOfWeek.entries.map { day ->
+                day.getDisplayName(TextStyle.NARROW_STANDALONE, locale)
+            }
+        }
         AlertDialog(
             onDismissRequest = { monthPickerOpen = false },
             containerColor = colors.card,
-            title = { Text(text.getString(R.string.journal_all_months),
-                color = colors.text, style = MaterialTheme.typography.titleLarge) },
+            title = {
+                Text(
+                    text.getString(R.string.studio_journal_choose_date),
+                    color = colors.text,
+                    style = MaterialTheme.typography.titleLarge
+                )
+            },
             text = {
-                // Use actual calendar months rather than the prototype's fixed 2026 months.
-                LazyColumn(Modifier.heightIn(max = 360.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    item {
-                        TextButton(onClick = {
-                            viewModel.setMonth(null)
-                            monthPickerOpen = false
-                        }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
-                            .testTag("journal_picker_all")) {
-                            Text(text.getString(R.string.journal_all_months),
-                                color = if (state.month == null) colors.accentText else colors.text)
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        val recent = (0..3).map { YearMonth.now().minusMonths((3 - it).toLong()) }
+                        items(recent, key = { it.toString() }) { month ->
+                            FilterChip(
+                                selected = pickerMonth == month,
+                                onClick = { pickerMonthKey = month.toString() },
+                                label = {
+                                    Text(
+                                        month.month.getDisplayName(
+                                            TextStyle.SHORT_STANDALONE,
+                                            locale
+                                        )
+                                    )
+                                },
+                                modifier = Modifier.testTag("journal_picker_view_${month}")
+                            )
                         }
                     }
-                    items(24) { offset ->
-                        val date = YearMonth.now().minusMonths(offset.toLong())
-                        val selected = state.month == date
-                        Surface(onClick = {
-                            viewModel.setMonth(date)
-                            monthPickerOpen = false
-                        }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
-                            .testTag("journal_picker_${date}"),
-                            shape = RoundedCornerShape(10.dp),
-                            color = if (selected) colors.selectedSurface else colors.card2,
-                            border = BorderStroke(1.dp,
-                                if (selected) colors.selectedBorder else colors.line)) {
-                            Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text(date.format(DateTimeFormatter.ofPattern("LLLL yyyy", locale)),
-                                    color = colors.text, style = MaterialTheme.typography.bodyMedium)
-                                if (selected) Icon(Icons.Default.CheckCircle, contentDescription = null,
-                                    tint = colors.accentText, modifier = Modifier.size(18.dp))
+
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        IconButton(
+                            onClick = { pickerMonthKey = pickerMonth.minusMonths(1).toString() },
+                            modifier = Modifier.testTag("journal_picker_previous_month")
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                                contentDescription = text.getString(R.string.journal_previous_month),
+                                tint = colors.accentText
+                            )
+                        }
+                        Text(
+                            pickerMonth.format(DateTimeFormatter.ofPattern("LLLL yyyy", locale)),
+                            color = colors.text,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        IconButton(
+                            onClick = { pickerMonthKey = pickerMonth.plusMonths(1).toString() },
+                            modifier = Modifier.testTag("journal_picker_next_month")
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = text.getString(R.string.journal_next_month),
+                                tint = colors.accentText
+                            )
+                        }
+                    }
+
+                    Row(Modifier.fillMaxWidth()) {
+                        weekdayLabels.forEach { label ->
+                            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                                Text(
+                                    label,
+                                    color = colors.muted,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
                             }
                         }
                     }
+
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        repeat(totalCells / 7) { week ->
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                repeat(7) { column ->
+                                    val cell = week * 7 + column
+                                    val dayNumber = cell - leading + 1
+                                    if (dayNumber !in 1..pickerMonth.lengthOfMonth()) {
+                                        Spacer(Modifier.weight(1f).height(42.dp))
+                                    } else {
+                                        val date = pickerMonth.atDay(dayNumber)
+                                        val selected = state.day == date
+                                        val today = date == LocalDate.now()
+                                        Surface(
+                                            onClick = {
+                                                viewModel.setDay(date)
+                                                monthPickerOpen = false
+                                            },
+                                            modifier = Modifier.weight(1f).height(42.dp)
+                                                .testTag("journal_picker_day_${date}"),
+                                            shape = RoundedCornerShape(10.dp),
+                                            color = when {
+                                                selected -> colors.accent
+                                                today -> colors.accent.copy(alpha = .12f)
+                                                else -> colors.card2
+                                            },
+                                            border = BorderStroke(
+                                                1.dp,
+                                                when {
+                                                    selected -> colors.accent
+                                                    today -> colors.accent.copy(alpha = .45f)
+                                                    else -> colors.line
+                                                }
+                                            )
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Text(
+                                                    dayNumber.toString(),
+                                                    color = if (selected) colors.onAccent else colors.text,
+                                                    style = MaterialTheme.typography.labelLarge,
+                                                    fontWeight = if (selected || today)
+                                                        FontWeight.Bold else FontWeight.Normal
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    TextButton(
+                        onClick = {
+                            viewModel.setMonth(pickerMonth)
+                            monthPickerOpen = false
+                        },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                            .testTag("journal_picker_${pickerMonth}")
+                    ) {
+                        Text(
+                            text.getString(R.string.studio_journal_whole_month),
+                            color = colors.accentText
+                        )
+                    }
+
+                    TextButton(
+                        onClick = {
+                            viewModel.setMonth(null)
+                            monthPickerOpen = false
+                        },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                            .testTag("journal_picker_all")
+                    ) {
+                        Text(
+                            text.getString(R.string.journal_all_months),
+                            color = if (state.month == null && state.day == null)
+                                colors.accentText else colors.text
+                        )
+                    }
                 }
             },
-            confirmButton = { TextButton(onClick = { monthPickerOpen = false }) {
-                Text(text.getString(R.string.journal_close), color = colors.accentText)
-            } }
+            confirmButton = {
+                TextButton(onClick = { monthPickerOpen = false }) {
+                    Text(text.getString(R.string.journal_close), color = colors.accentText)
+                }
+            }
         )
     }
+
     Column(Modifier.fillMaxSize().background(colors.bg)
         .padding(horizontal = 16.dp).padding(top = 8.dp)) {
         // Exact approved Studio composition: independent 16dp search input,
@@ -164,8 +310,12 @@ fun JournalScreen(navController: NavController, language: String = "hu", viewMod
                     verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.CalendarMonth, contentDescription = null,
                         tint = colors.accentText, modifier = Modifier.size(18.dp))
-                    Text(state.month?.format(DateTimeFormatter.ofPattern("LLLL yyyy", locale))
-                        ?: text.getString(R.string.journal_all_months),
+                    Text(
+                        state.day?.format(
+                            DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)
+                        ) ?: state.month?.format(
+                            DateTimeFormatter.ofPattern("LLLL yyyy", locale)
+                        ) ?: text.getString(R.string.journal_all_months),
                         color = colors.text, style = MaterialTheme.typography.titleSmall,
                         modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
                         maxLines = 1)

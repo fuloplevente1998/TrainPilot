@@ -744,4 +744,6 @@
     <string name="studio_workout_elapsed">ELTELT IDŐ</string>
     <string name="studio_workout_average_pace">Átlagtempó</string>
     <string name="studio_workout_heart_rate">Pulzus</string>
+    <string name="studio_journal_choose_date">Dátum kiválasztása</string>
+    <string name="studio_journal_whole_month">Teljes hónap megjelenítése</string>
 </resources>

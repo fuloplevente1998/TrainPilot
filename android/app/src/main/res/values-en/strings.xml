@@ -744,4 +744,6 @@
     <string name="studio_workout_elapsed">ELAPSED TIME</string>
     <string name="studio_workout_average_pace">Average pace</string>
     <string name="studio_workout_heart_rate">Heart rate</string>
+    <string name="studio_journal_choose_date">Choose date</string>
+    <string name="studio_journal_whole_month">Show whole month</string>
 </resources>

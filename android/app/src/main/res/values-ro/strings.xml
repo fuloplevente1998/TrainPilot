@@ -744,4 +744,6 @@
     <string name="studio_workout_elapsed">TIMP SCURS</string>
     <string name="studio_workout_average_pace">Ritm mediu</string>
     <string name="studio_workout_heart_rate">Puls</string>
+    <string name="studio_journal_choose_date">Alege data</string>
+    <string name="studio_journal_whole_month">Afișează luna completă</string>
 </resources>
