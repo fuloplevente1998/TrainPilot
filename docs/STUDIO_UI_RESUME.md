@@ -1,5 +1,16 @@
 # TrainPilot – Studio UI folytatási pont
 
+## 2026-10-28: AI Studio 21:02 ZIP audit
+
+Az új felhasználói ZIP már GitHubon is elérhető (`dc6ffc18`); SHA256
+`db5ce026e2559366a7d3366332ab64affef7448839a7727f0dbfce447d7d65d9`, CRC PASS.
+Részletes statikus audit: [AISTUDIO_2102_NATIVE_INTEGRATION_AUDIT](reviews/AISTUDIO_2102_NATIVE_INTEGRATION_AUDIT.md).
+Valós, egyirányú natív settings-beolvasás van, de a launcher Studio demó-VM-et
+használ: edzésmentés/Health/Wear/settings-visszaírás nincs élesen bekötve.
+P0: a ZIP migrációs olvasási hibát üres mapre nyel le és elhagyja a migrationReady
+képernyőágat. Ezt ne vedd át. Ez a review nem változtat appforrást/nem futtat CI-t;
+a 18:49 vizuális kánont nem írja felül és nem állít runtime PASS-t.
+
 ## 2026-10-28: 18:49 Studio Napló-képernyő átültetése + emulátoros regresziók
 
 - A design-kánon továbbra is az eredeti **18:49 Studio ZIP**, nem a 20:14 összeépített hybrid. PR #270 DRAFT, main érintetlen.
