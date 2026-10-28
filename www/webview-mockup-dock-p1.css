@@ -1203,3 +1203,125 @@ html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="settings"] :is(
     padding: 8px 6px !important;
   }
 }
+
+/* P4b — retained native-connected flows: Health diagnostics and Settings.
+   The existing Health Connect/Wear/BLE, permission, Drive and local-backup
+   callbacks keep their original DOM and state. This is preview CSS only. */
+html.tp271-mockup-dock body #app main.tp168-health > :is(
+  details.tp168-more-panel, details.tp168-connect-panel, details.tp120-health-journal
+) {
+  min-width: 0 !important;
+  margin-block: 0 8px !important;
+  border-radius: 15px !important;
+  overflow: hidden;
+}
+html.tp271-mockup-dock body #app main.tp168-health > details.tp168-connect-panel > summary,
+html.tp271-mockup-dock body #app main.tp168-health > details.tp168-more-panel > summary,
+html.tp271-mockup-dock body #app main.tp168-health > details.tp120-health-journal > summary {
+  box-sizing: border-box;
+  min-height: 52px !important;
+  padding: 10px 12px !important;
+  gap: 8px !important;
+  font-weight: 760;
+  line-height: 1.2 !important;
+  overflow-wrap: anywhere;
+}
+html.tp271-mockup-dock body #app main.tp168-health :is(
+  details.tp168-connect-panel, details.tp168-more-panel, details.tp120-health-journal
+)[open] {
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--line)) !important;
+}
+html.tp271-mockup-dock body #app main.tp168-health :is(
+  details.tp168-connect-panel, details.tp168-more-panel, details.tp120-health-journal
+) > summary:focus-visible {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: -3px;
+}
+html.tp271-mockup-dock body #app main.tp168-health > .tp168-sync-tail {
+  box-sizing: border-box;
+  min-width: 0;
+  border-color: color-mix(in srgb, var(--accent) 21%, var(--line)) !important;
+  background: var(--tp-ui-card, var(--card)) !important;
+  box-shadow: none !important;
+}
+/* The settings header and every interactive section stay inside the one
+   original Round-4 panel: do not clone / move them into a separate route. */
+html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="settings"] main.tp1511-settings {
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 0 0 max(16px, env(safe-area-inset-bottom, 0px)) !important;
+}
+html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="settings"] main.tp1511-settings > .hero:first-child {
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 15px 14px !important;
+  margin: 0 0 10px !important;
+  border-radius: 17px !important;
+  background: var(--tp-ui-card, var(--card)) !important;
+  border: 1px solid color-mix(in srgb, var(--accent) 23%, var(--line)) !important;
+  box-shadow: none !important;
+}
+html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="settings"] main.tp1511-settings > .hero h1 {
+  font-size: clamp(22px, 6.3vw, 28px) !important;
+  line-height: 1.1 !important;
+  letter-spacing: -.018em;
+  overflow-wrap: anywhere;
+}
+html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="settings"] main.tp1511-settings > .setting,
+html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="settings"] main.tp1511-settings > details.tp197-mode-panel {
+  box-sizing: border-box;
+  min-width: 0;
+  margin-block: 0 9px !important;
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--line)) !important;
+  border-radius: 15px !important;
+  background: var(--tp-ui-card, var(--card)) !important;
+  box-shadow: none !important;
+}
+html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="settings"] :is(
+  .tp1511-head strong, .tp152-accordion > summary strong, .tp197-mode-panel > summary strong
+) {
+  font-size: clamp(13px, 3.7vw, 16px) !important;
+  line-height: 1.24 !important;
+  overflow-wrap: anywhere;
+}
+html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="settings"] :is(
+  .tp1511-head p, .tp152-accordion > summary p, .tp197-mode-panel > summary .small
+) {
+  line-height: 1.35 !important;
+  overflow-wrap: anywhere;
+}
+html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="settings"] .tp152-settings-backup .grid2 {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="settings"] .tp152-settings-backup .grid2 > .btn {
+  min-width: 0;
+  min-height: 46px;
+  white-space: normal;
+  padding: 10px 7px !important;
+  overflow-wrap: anywhere;
+}
+html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="settings"] .tp152-settings-backup .grid2 > .btn:first-child {
+  border-color: color-mix(in srgb, var(--accent) 64%, var(--line)) !important;
+}
+/* Accent is a theme token; no false connected/synced/backup success styling. */
+html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="settings"] :is(
+  .setting .btn, .setting summary, .tp197-mode-panel > summary, .tp197-choice > summary
+) {
+  touch-action: manipulation;
+}
+html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="settings"] :is(
+  .setting .btn, .setting summary, .tp197-mode-panel > summary
+):focus-visible {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 2px;
+}
+@media (max-width: 359px) {
+  html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="settings"] main.tp1511-settings > .hero:first-child {
+    padding: 12px 10px !important;
+  }
+  html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="settings"] .tp152-settings-backup .grid2 {
+    gap: 5px !important;
+  }
+}
