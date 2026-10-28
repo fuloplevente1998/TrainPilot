@@ -439,7 +439,6 @@ private data class StudioHomeVital(
     val icon: androidx.compose.ui.graphics.vector.ImageVector, val onClick: () -> Unit
 )
 
-@Composable
 private data class StudioHomeShortcutItem(
     val title: String,
     val subtitle: String,
