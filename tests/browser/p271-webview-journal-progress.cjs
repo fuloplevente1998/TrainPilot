@@ -124,14 +124,49 @@ const server=http.createServer((req,res)=>{
      assert.ok(boxes.overflow<=1,width+'/'+theme+': no horizontal Progress overflow '+JSON.stringify(boxes));
      if(width===393&&theme==='yellow'){
        fs.mkdirSync('ui-evidence',{recursive:true});
+       // Capture the actual first-frame layout, not the scroll position from
+       // the previous metric and chart interaction.
+       await page.evaluate(()=>{document.scrollingElement.scrollTop=0;const m=document.querySelector('#app main.tp177-progress');if(m)m.scrollTop=0;document.activeElement?.blur?.()});
        await page.screenshot({path:'ui-evidence/pr271-progress-393.png'});
-       await page.evaluate(()=>{state.tp177JournalView='log';go('history')});
+       await page.evaluate(()=>{state.tp177JournalView='log';go('history');document.scrollingElement.scrollTop=0;document.activeElement?.blur?.()});
        await page.screenshot({path:'ui-evidence/pr271-journal-393.png'});
      }
+     // P4a: the six live Health tiles and the original Round-4 Settings
+     // controls are still reachable in the trial shell at both phone widths.
+     await page.evaluate(()=>go('health'));
+     await page.waitForSelector('main.tp168-health .tp5-today-grid.tp5-today-full');
+     const health=await page.evaluate(()=>{
+       const main=document.querySelector('#app main.tp168-health'),grid=main.querySelector('.tp5-today-grid.tp5-today-full');
+       return {tiles:grid.querySelectorAll(':scope > .tp5-today-metric').length,
+         columns:getComputedStyle(grid).gridTemplateColumns.split(' ').length,
+         footer:parseFloat(getComputedStyle(main).paddingBottom),
+         overflow:document.documentElement.scrollWidth-innerWidth};
+     });
+     assert.equal(health.tiles,6,width+'/'+theme+': six actual Health metrics');
+     assert.equal(health.columns,3,width+'/'+theme+': three-column Health layout');
+     assert.ok(health.footer>=80,width+'/'+theme+': Health scroll clears dock');
+     assert.ok(health.overflow<=1,width+'/'+theme+': no Health horizontal overflow');
+     if(width===393&&theme==='yellow'){
+       await page.evaluate(()=>{document.scrollingElement.scrollTop=0;const m=document.querySelector('#app main.tp168-health');if(m)m.scrollTop=0;document.activeElement?.blur?.()});
+       await page.screenshot({path:'ui-evidence/pr271-health-393.png'});
+     }
+     await page.locator('.top .tp154-settings-action').click();
+     await page.waitForFunction(()=>document.querySelector('#tp155R4PanelHost')?.dataset.panel==='settings');
+     const settings=await page.evaluate(()=>{
+       const host=document.querySelector('#tp155R4PanelHost');
+       return {panel:!!host?.querySelector('.tp155-r4-panel'),
+         rows:host?.querySelectorAll('.setting').length||0,
+         overflow:document.documentElement.scrollWidth-innerWidth};
+     });
+     assert.equal(settings.panel,true,width+'/'+theme+': original Settings panel');
+     assert.ok(settings.rows>0,width+'/'+theme+': real Settings sections retained');
+     assert.ok(settings.overflow<=1,width+'/'+theme+': no Settings horizontal overflow');
+     if(width===393&&theme==='yellow')await page.screenshot({path:'ui-evidence/pr271-settings-393.png'});
+     await page.evaluate(()=>go('settings'));
    }
    assert.deepEqual(errors,[],width+': no runtime errors');
    await page.close();
   }
-  console.log('PASS PR271 P3a: real Journal history/date and Progress volume, periods, four metrics, anatomy and Coach, 320/393px & two themes');
+  console.log('PASS PR271 P3a/P4a: real Journal, Progress, Health 3x2 and Settings, 320/393px & two themes');
  }finally{await browser?.close();await new Promise(ok=>server.close(ok))}
 })().catch(e=>{console.error(e);process.exitCode=1});
