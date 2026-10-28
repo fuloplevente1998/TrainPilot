@@ -27,7 +27,30 @@ const server=http.createServer((req,res)=>{
    await page.evaluate(()=>go('history'));
    assert.equal(await page.locator('#tp271Dock').count(),0,width+': default main unchanged');
    await page.goto(url+'?tp271=1');
-   await page.waitForFunction(()=>window.TrainPilotBoot?.finished&&window.TrainPilotMockup271?.enabled);
+   await page.waitForFunction(()=>window.TrainPilotBoot?.finished&&window.TrainPilotMockup271?.enabled&&document.querySelector('#tp271Header'));
+   const header=page.locator('#tp271Header');
+   assert.equal(await header.count(),1,width+': one compact mockup header');
+   assert.equal(await header.locator('.tp271-header-brand strong').textContent(),'TrainPilot',width+': original brand');
+   assert.equal(await header.locator('.tp271-header-mark path').count(),1,width+': real launcher dumbbell silhouette');
+   assert.equal(await header.locator('button[data-tp271-header]').count(),3,width+': Settings, Language, Theme only');
+   assert.equal(await page.locator('#tp271Dock button[data-tp271-target]').count(),5,width+': exactly five permanent bottom tabs');
+   assert.equal(await page.locator('.top.tp154-nav-grid .tp151-nav-item').first().isVisible(),false,width+': no surviving 2x4 top navigation');
+   assert.equal(await page.locator('.top.tp154-nav-grid .tp154-settings-action').isVisible(),false,width+': original settings handler is accessible but not duplicated visually');
+   const headerSize=await header.evaluate(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height,overflow:document.documentElement.scrollWidth-innerWidth}));
+   assert.ok(headerSize.height>=44&&headerSize.height<=70,width+': compact header geometry '+JSON.stringify(headerSize));
+   assert.ok(headerSize.overflow<=1,width+': new header has no overflow');
+   if(width===393){
+     await header.locator('button[data-tp271-header="language"]').click();
+     assert.equal(await header.locator('.tp271-header-picker[data-kind="language"]').count(),1,'language picker lives in the header');
+     await header.locator('.tp271-header-picker button').filter({hasText:'English'}).click();
+     assert.equal(await page.evaluate(()=>rf212LangSetting()),'en','main language store updated through header');
+     await page.waitForFunction(()=>document.querySelector('#tp271Header button[data-tp271-header="settings"]')?.getAttribute('aria-label')==='Settings');
+     await page.locator('#tp271Header button[data-tp271-header="theme"]').click();
+     assert.equal(await page.locator('#tp271Header .tp271-header-picker[data-kind="theme"] .tp271-picker-option').count()>10,true,'all main theme choices preserved');
+     await page.locator('#tp271Header .tp271-header-picker[data-kind="theme"] .tp271-picker-option').filter({hasText:'Kék'}).first().click();
+     assert.equal(await page.evaluate(()=>rf200ThemeKey()),'classicBlue','main theme store updated through header');
+     await page.evaluate(()=>{rf212SetLang('system');rf200SetTheme('yellow')});
+   }
    await page.evaluate(()=>{
      state.session=null;state.workout=null;db.set('draft',null);
      const at=(offset,hour)=>{
@@ -167,7 +190,7 @@ const server=http.createServer((req,res)=>{
        await page.evaluate(()=>{document.scrollingElement.scrollTop=0;const m=document.querySelector('#app main.tp168-health');if(m)m.scrollTop=0;document.activeElement?.blur?.()});
        await page.screenshot({path:'ui-evidence/pr271-health-393.png'});
      }
-     await page.locator('.top .tp154-settings-action').click();
+     await page.locator('#tp271Header button[data-tp271-header="settings"]').click();
      await page.waitForFunction(()=>document.querySelector('#tp155R4PanelHost')?.dataset.panel==='settings');
      const settings=await page.evaluate(()=>{
        const host=document.querySelector('#tp155R4PanelHost');
@@ -212,6 +235,6 @@ const server=http.createServer((req,res)=>{
    assert.deepEqual(errors,[],width+': no runtime errors');
    await page.close();
   }
-  console.log('PASS PR271 P3a/P4b: first-frame and interaction screenshots; Health, Settings, four languages and themes');
+  console.log('PASS PR271 P1e/P4b: real compact gold header, three Settings shortcuts, five bottom tabs, localized data and screenshots');
  }finally{await browser?.close();await new Promise(ok=>server.close(ok))}
 })().catch(e=>{console.error(e);process.exitCode=1});
