@@ -85,7 +85,7 @@ const server=http.createServer((req,res)=>{
      db.set('history',[row('p271-journal-1',-1,12),row('p271-journal-2',-2,11),row('p271-journal-3',-5,10)]);
    });
    for(const theme of ['classicBlue','yellow']){
-     await page.evaluate(t=>{rf200SetTheme(t);state.tp177JournalView='log';go('history')},theme);
+     await page.evaluate(t=>{state.tp155JournalFilterOpen=false;rf200SetTheme(t);state.tp177JournalView='log';go('history')},theme);
      await page.waitForSelector('main.tp150-journal-compact .tp155-journal-filter');
      const journal=page.locator('main.tp150-journal-compact');
      if(width===393&&theme==='yellow'){
@@ -104,7 +104,10 @@ const server=http.createServer((req,res)=>{
      assert.equal(await first.locator('.history-body').isVisible(),true,width+'/'+theme+': workout sets/details still expand');
      assert.ok(await first.locator('.history-body').innerText().then(t=>t.length>10),width+'/'+theme+': real workout detail, not empty card');
      await first.locator(':scope > summary').click();
+     // Avoid carrying a native disclosure's open state between themes.
+     assert.equal(await filtered.getAttribute('open'),null,width+'/'+theme+': date filter starts closed');
      await filtered.locator(':scope > summary').click();
+     await page.waitForFunction(()=>document.querySelector('main.tp150-journal-compact details.tp155-journal-filter')?.open===true);
      assert.equal(await journal.locator('.tp155-journal-calendar').isVisible(),true,width+'/'+theme+': date filter opens');
      assert.equal(await journal.locator('.tp155-journal-day').count()>=28,true,width+'/'+theme+': actual month dates');
      const date=await journal.locator('.tp155-journal-day[aria-current="date"]').getAttribute('data-date');
