@@ -109,6 +109,20 @@ class NativePhoneNavigationTest {
         }
         fail("Host did not capture raw adb screenshot: $name")
     }
+    @Test fun originalGoldDumbbellLogoSurvivesStudioShellPort() {
+        launch()
+        // The displayed branding is the real trainpilot_launcher_foreground vector,
+        // not the 18:49 Studio prototype's mountain placeholder.
+        compose.onNodeWithTag("trainpilot_brand_dumbbell", useUnmergedTree = true)
+            .assertExists()
+        compose.onNodeWithTag("navigation_home").assertIsSelected()
+        screenshot("studio_original_gold_dumbbell", theme = "graphite_gold")
+        tab("progress")
+        compose.onNodeWithTag("trainpilot_brand_dumbbell", useUnmergedTree = true)
+            .assertExists()
+        compose.onNodeWithTag("navigation_progress").assertIsSelected()
+    }
+
     @Test fun studioJournalMonthSelectorFiltersRealPagedHistoryAndReturnsToAllMonths() {
         launch()
         tab("journal")
