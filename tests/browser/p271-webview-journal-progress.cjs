@@ -47,7 +47,7 @@ const server=http.createServer((req,res)=>{
      await page.waitForFunction(()=>document.querySelector('#tp271Header button[data-tp271-header="settings"]')?.getAttribute('aria-label')==='Settings');
      await page.locator('#tp271Header button[data-tp271-header="theme"]').click();
      assert.equal(await page.locator('#tp271Header .tp271-header-picker[data-kind="theme"] .tp271-picker-option').count()>10,true,'all main theme choices preserved');
-     await page.locator('#tp271Header .tp271-header-picker[data-kind="theme"] .tp271-picker-option').filter({hasText:'Kék'}).first().click();
+     await page.locator('#tp271Header .tp271-header-picker[data-kind="theme"] .tp271-picker-option[data-tp271-choice="classicBlue"]').click();
      assert.equal(await page.evaluate(()=>rf200ThemeKey()),'classicBlue','main theme store updated through header');
      await page.evaluate(()=>{rf212SetLang('system');rf200SetTheme('yellow')});
    }
