@@ -27,6 +27,8 @@ on:
       - 'scripts/native/evidence-summary.py'
       - 'tests/native/test_phone_ui_gate_report.py'
       - 'tests/native/test_evidence_summary.py'
+      - 'scripts/native/stop-ci-emulator.py'
+      - 'tests/native/test_stop_ci_emulator.py'
   pull_request:
     paths:
       - 'android/**'
@@ -37,6 +39,8 @@ on:
       - 'scripts/native/evidence-summary.py'
       - 'tests/native/test_phone_ui_gate_report.py'
       - 'tests/native/test_evidence_summary.py'
+      - 'scripts/native/stop-ci-emulator.py'
+      - 'tests/native/test_stop_ci_emulator.py'
 
 permissions:
   contents: read
@@ -61,6 +65,7 @@ jobs:
         run: |
           python3 -m unittest discover -s tests/native -p 'test_phone_ui_gate_report.py'
           python3 -m unittest discover -s tests/native -p 'test_evidence_summary.py'
+          python3 -m unittest discover -s tests/native -p 'test_stop_ci_emulator.py'
       - name: Set up Java 21
         uses: actions/setup-java@v4
         with:
@@ -350,7 +355,9 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 2048
           script: echo "Wear AVD snapshot ready."
-      - uses: reactivecircus/android-emulator-runner@v2
+      - name: Run Wear UI and stop its emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        timeout-minutes: 15
         env:
           WEAR_SHARD: ${{ matrix.shard }}
         with:

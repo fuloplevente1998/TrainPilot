@@ -1,7 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 mkdir -p wear-ui/results
-trap 'adb logcat -d > wear-ui/results/logcat.txt 2>/dev/null || true; adb shell dumpsys window > wear-ui/results/windows.txt 2>/dev/null || true; adb pull /sdcard/Pictures/TrainPilot-Wear-layout wear-ui/results/ >/dev/null 2>&1 || true' EXIT
+finish_wear_ui() {
+  local test_status=$?
+  trap - EXIT
+  set +e
+  # Capture evidence before disposing the AVD; a dead adb must not block upload.
+  timeout --kill-after=2s 10s adb logcat -d > wear-ui/results/logcat.txt 2>/dev/null
+  timeout --kill-after=2s 10s adb shell dumpsys window > wear-ui/results/windows.txt 2>/dev/null
+  timeout --kill-after=2s 20s adb pull /sdcard/Pictures/TrainPilot-Wear-layout wear-ui/results/ >/dev/null 2>&1
+  python3 scripts/native/stop-ci-emulator.py --test-exit-code "$test_status" \
+    --report wear-ui/results/emulator-cleanup.json
+  exit "$test_status"
+}
+trap finish_wear_ui EXIT
 # The prebuilt-APK lane starts tests immediately after boot. The Wear setup
 # wizard otherwise launches EmulatorStatusActivity late and steals window focus.
 adb shell settings put global device_provisioned 1

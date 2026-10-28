@@ -889,13 +889,24 @@ class NativePhoneNavigationTest {
         compose.waitUntil(15000) { compose.onAllNodes(hasTestTag("weight_measurement_count") and
             hasText("1500 mérés", substring = true)).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("weight_global_extrema").assertTextContains("35 / 140 kg", substring = true)
-        compose.onNodeWithTag("weight_range_choices").performScrollToNode(hasTestTag("weight_range_all"))
-        compose.onNodeWithTag("weight_range_all").performScrollTo().performClick()
+        fun selectInlineRange(range: String) {
+            // A chip's nearest scroll parent is horizontal. Reveal that row in
+            // the outer Health list first, then exercise the visible real chip.
+            revealHealthListTag("weight_range_choices")
+            compose.onNodeWithTag("weight_range_choices")
+                .performScrollToNode(hasTestTag("weight_range_$range"))
+            compose.onNodeWithTag("weight_range_$range").assertIsDisplayed().performClick()
+            compose.waitUntil(15_000) {
+                runBlocking(Dispatchers.IO) { settings.current().weightRange == range }
+            }
+            compose.onNodeWithTag("weight_range_$range").assertIsSelected()
+            revealHealthListTag("weight_chart_coverage")
+        }
+        selectInlineRange("all")
         compose.waitUntil(15000) { compose.onAllNodes(hasTestTag("weight_chart_coverage") and
             hasText("1500 mérés", substring = true)).fetchSemanticsNodes().isNotEmpty() }
         screenshot("weight_1500_full_coverage")
-        compose.onNodeWithTag("weight_range_choices").performScrollToNode(hasTestTag("weight_range_7"))
-        compose.onNodeWithTag("weight_range_7").performScrollTo().performClick()
+        selectInlineRange("7")
         compose.waitUntil(15000) { compose.onAllNodes(hasTestTag("weight_chart_coverage") and
             hasText("8 mérés", substring = true)).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("weight_measurement_count").assertTextContains("1500 mérés", substring = true)
@@ -1439,17 +1450,20 @@ class NativePhoneNavigationTest {
         compose.onNodeWithTag("training_open_exercises").performScrollTo().assertIsDisplayed().performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("exercise_library_count").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("exercise_library_count").assertTextContains("106", substring = true)
-        compose.onNodeWithTag("exercise_library_search").performTextInput(
-            com.repforge.app.data.db.NativeBuiltinCatalog.exercises.first { it.id == "db-squat" }.nameHu)
+        val squatName = com.repforge.app.data.db.NativeBuiltinCatalog.exercises.first { it.id == "db-squat" }.nameHu
+        compose.onNodeWithTag("exercise_library_search").performTextInput(squatName)
         compose.waitUntil(15_000) {
             compose.onAllNodesWithTag("exercise_library_row_db-squat").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithTag("exercise_library_list")
             .performScrollToNode(hasTestTag("exercise_library_row_db-squat"))
-        // On a 320dp emulator the card can be taller than the remaining
-        // viewport; verify it is actionable and actually opens its real details.
-        compose.onNodeWithTag("exercise_library_row_db-squat")
-            .performScrollTo().assertHasClickAction().performClick()
+        // The whole card can exceed the compact viewport. Tap its fully visible
+        // title, inside the same clickable row, instead of the clipped card center.
+        compose.onNodeWithTag("exercise_library_row_db-squat").assertHasClickAction()
+        compose.onNode(
+            hasText(squatName) and hasAnyAncestor(hasTestTag("exercise_library_row_db-squat")),
+            useUnmergedTree = true
+        ).performScrollTo().assertIsDisplayed().performClick()
         compose.waitUntil(15_000) {
             compose.onAllNodesWithTag("exercise_library_detail").fetchSemanticsNodes().isNotEmpty()
         }
