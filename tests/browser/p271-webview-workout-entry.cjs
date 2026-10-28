@@ -83,6 +83,46 @@ const server=http.createServer((req,res)=>{
     assert.equal(await page.locator('#tp271Dock:visible').count(),1,width+'/'+theme+': dock restores after closing Quick panel');
     await page.evaluate(()=>go('plan'));
 
+    // P2b: Studio exercise library styling is applied to the real filterable
+    // catalogue panel. Verify source-backed search, all editor callbacks,
+    // video controls when available and no lost bottom navigation.
+    await page.evaluate(()=>window.tp155R4OpenPanel('exercises', document.activeElement));
+    await page.waitForSelector('#tp155R4PanelHost[data-panel="exercises"] #libraryQuery');
+    const library=page.locator('#tp155R4PanelHost[data-panel="exercises"]');
+    assert.equal(await page.locator('#tp271Dock:visible').count(),0,width+'/'+theme+': dock hidden behind exercise catalogue');
+    assert.ok(await library.locator('#libraryResults .tp-library-card').count()>=100,width+'/'+theme+': full original exercise catalogue');
+    assert.equal(await library.locator('#libraryMuscle').count(),1,width+'/'+theme+': original muscle filter remains');
+    assert.equal(await library.locator('#libraryGear').count(),1,width+'/'+theme+': original equipment filter remains');
+    const query=library.locator('#libraryQuery');
+    await query.fill('plank');
+    await page.waitForFunction(()=>document.querySelectorAll('#tp155R4PanelHost[data-panel="exercises"] #libraryResults .tp-library-card').length>0);
+    const found=library.locator('#libraryResults .tp-library-card').first();
+    assert.ok((await found.innerText()).toLowerCase().includes('plank'),width+'/'+theme+': real library search filters rows');
+    const geometry=await library.evaluate(panel=>{
+      const filter=panel.querySelector('.tp155-library-filters'),input=panel.querySelector('#libraryQuery'),
+        card=panel.querySelector('#libraryResults .tp-library-card');
+      return {filterRadius:getComputedStyle(filter).borderTopLeftRadius,
+        searchHeight:input.getBoundingClientRect().height,
+        cardHeight:card.getBoundingClientRect().height,
+        width:card.getBoundingClientRect().width,
+        viewportWidth:innerWidth,
+        pageOverflow:document.documentElement.scrollWidth-innerWidth};
+    });
+    assert.ok(geometry.searchHeight>=44&&geometry.cardHeight>=55,width+'/'+theme+': accessible library controls '+JSON.stringify(geometry));
+    assert.ok(geometry.width<=geometry.viewportWidth&&geometry.pageOverflow<=1,width+'/'+theme+': no library overflow '+JSON.stringify(geometry));
+    await found.locator(':scope > summary').click();
+    assert.equal(await found.locator('.tp-library-body').isVisible(),true,width+'/'+theme+': original library detail expands');
+    assert.ok(await found.locator('.tp150-library-quick').count()>0,width+'/'+theme+': original quick action intact');
+    assert.ok(await found.locator('button[onclick*="chooseLibraryPlacement"]').count()>0,width+'/'+theme+': original add-to-program action intact');
+    if(width===393&&theme==='yellow'){
+      fs.mkdirSync('ui-evidence',{recursive:true});
+      await page.screenshot({path:'ui-evidence/pr271-exercise-catalogue-393.png'});
+    }
+    await page.evaluate(()=>window.tp155R4ClosePanel(false));
+    await page.waitForFunction(()=>!document.querySelector('#tp155R4PanelHost'));
+    assert.equal(await page.locator('#tp271Dock:visible').count(),1,width+'/'+theme+': bottom navigation returns from catalogue');
+    await page.evaluate(()=>go('plan'));
+
     // Start a real program day (without finalizing it) to prove engine
     // ownership remains canonical and the dock cannot obscure finish/timer.
     await page.evaluate(()=>startWorkout(activeProgram().days[0].id));
@@ -102,6 +142,6 @@ const server=http.createServer((req,res)=>{
    assert.deepEqual(errors,[],width+': no JavaScript errors');
    await page.close();
   }
-  console.log('PASS PR271 P2a: preview Workout mockup, genuine quick-search panel, nested program days/editor, original engine, 320/393px & basic/neon themes');
+  console.log('PASS PR271 P2b: preview Workout and exercise library mockup, genuine quick-search panel, nested program days/editor, original engine, 320/393px & basic/neon themes');
  }finally{await browser?.close();await new Promise(ok=>server.close(ok))}
 })().catch(err=>{console.error(err);process.exitCode=1});
