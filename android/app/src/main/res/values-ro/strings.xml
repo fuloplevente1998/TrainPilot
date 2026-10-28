@@ -714,4 +714,10 @@
     <string name="studio_progress_strength_estimate">1RM estimat (kg)</string>
     <string name="studio_progress_heaviest_set">Cea mai grea serie înregistrată</string>
     <string name="studio_settings_themes">Teme</string>
+    <string name="studio_settings_training_notifications">Antrenament și notificări</string>
+    <string name="studio_settings_timer_subtitle">Pauză implicită (apasă pentru modificare)</string>
+    <string name="studio_settings_rest_badge">%1$d s</string>
+    <string name="studio_settings_sound_subtitle">La finalul perioadei de pauză</string>
+    <string name="studio_settings_profile_progression">Profil de antrenament și progresie</string>
+    <string name="studio_settings_edit_badge">Edit.</string>
 </resources>

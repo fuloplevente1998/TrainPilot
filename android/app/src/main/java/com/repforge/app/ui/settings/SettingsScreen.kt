@@ -138,7 +138,7 @@ fun SettingsScreen(
     val initialIndex = when (initialSection) {
         "theme" -> 1
         "language" -> 2
-        "profile" -> 5
+        "profile" -> 6
         else -> 0
     }
     val listState = rememberLazyListState(
@@ -216,13 +216,147 @@ fun SettingsScreen(
             item { NativeThemePicker(state.settings, viewModel::setTheme) }
         }
         item { NativeLanguagePicker(state.settings.language, !state.replacementBusy, viewModel::setLanguage) }
+
         item {
-            OutlinedButton(onClick = { openedTimerJson = viewModel.beginTimerDefaults() },
-                enabled = !state.replacementBusy && !state.timerSaving,
-                modifier = Modifier.fillMaxWidth().testTag("settings_timer_open")) {
-                Text(strings.getString(R.string.native_timer_defaults_title))
+            Text(
+                strings.getString(R.string.studio_settings_training_notifications),
+                color = colors.muted,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth()
+                    .testTag("settings_timer_open")
+                    .clickable(enabled = !state.replacementBusy && !state.timerSaving) {
+                        openedTimerJson = viewModel.beginTimerDefaults()
+                    },
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = colors.card),
+                border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            strings.getString(R.string.native_timer_defaults_title),
+                            color = colors.text,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            strings.getString(R.string.studio_settings_timer_subtitle),
+                            color = colors.muted,
+                            fontSize = 11.sp
+                        )
+                    }
+                    Text(
+                        strings.getString(
+                            R.string.studio_settings_rest_badge,
+                            state.settings.restSeconds
+                        ),
+                        color = colors.accentText,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .background(colors.accent.copy(alpha = .15f), RoundedCornerShape(8.dp))
+                            .padding(horizontal = 8.dp, vertical = 5.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text("›", color = colors.accentText, fontSize = 22.sp)
+                }
             }
         }
+
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = colors.card),
+                border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            strings.getString(R.string.native_timer_defaults_sound),
+                            color = colors.text,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            strings.getString(R.string.studio_settings_sound_subtitle),
+                            color = colors.muted,
+                            fontSize = 11.sp
+                        )
+                    }
+                    Switch(
+                        checked = state.settings.soundEnabled,
+                        enabled = !state.replacementBusy,
+                        onCheckedChange = viewModel::setSoundEnabled,
+                        modifier = Modifier.testTag("settings_sound_switch"),
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = colors.onAccent,
+                            checkedTrackColor = colors.accent
+                        )
+                    )
+                }
+            }
+        }
+
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth()
+                    .testTag("training_profile_open")
+                    .clickable(enabled = !state.profileSaving && !state.replacementBusy) {
+                        openedProfileJson = state.settings.profileJson
+                        viewModel.clearProfileError()
+                        profileOpen = true
+                    },
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = colors.card),
+                border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            strings.getString(R.string.studio_settings_profile_progression),
+                            color = colors.text,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            strings.getString(R.string.native_settings_profile_info),
+                            color = colors.muted,
+                            fontSize = 11.sp,
+                            maxLines = 2
+                        )
+                    }
+                    Text(
+                        strings.getString(R.string.studio_settings_edit_badge),
+                        color = colors.accentText,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .background(colors.accent.copy(alpha = .15f), RoundedCornerShape(8.dp))
+                            .padding(horizontal = 8.dp, vertical = 5.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text("›", color = colors.accentText, fontSize = 22.sp)
+                }
+            }
+        }
+
+        // Keep the complete native progression-mode editor reachable below the compact Studio row.
         item {
             NativeTrainingModePicker(
                 language = state.settings.language,
@@ -234,24 +368,6 @@ fun SettingsScreen(
                 onUndo = { viewModel.undoTrainingMode("global", null) },
                 holder = globalModeState, showDialog = false
             )
-        }
-        item {
-            Card(modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = colors.card)) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(strings.getString(R.string.native_settings_profile_title), color = colors.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    Text(strings.getString(R.string.native_settings_profile_info), color = colors.muted, fontSize = 12.sp)
-                    OutlinedButton(onClick = {
-                        openedProfileJson = state.settings.profileJson
-                        viewModel.clearProfileError()
-                        profileOpen = true
-                    }, modifier = Modifier.fillMaxWidth().testTag("training_profile_open"),
-                        enabled = !state.profileSaving && !state.replacementBusy) {
-                        Text(strings.getString(R.string.native_settings_profile_edit))
-                    }
-                }
-            }
         }
 
         // 2. Google Cloud Szinkron (Drive appDataFolder + Managed Naptár)

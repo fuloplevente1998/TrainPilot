@@ -714,4 +714,10 @@
     <string name="studio_progress_strength_estimate">Geschätztes 1RM (kg)</string>
     <string name="studio_progress_heaviest_set">Schwerster erfasster Satz</string>
     <string name="studio_settings_themes">Designs</string>
+    <string name="studio_settings_training_notifications">Training und Benachrichtigungen</string>
+    <string name="studio_settings_timer_subtitle">Standard-Pausenzeit (zum Ändern tippen)</string>
+    <string name="studio_settings_rest_badge">%1$d s</string>
+    <string name="studio_settings_sound_subtitle">Wenn die Pausenzeit endet</string>
+    <string name="studio_settings_profile_progression">Trainingsprofil und Progression</string>
+    <string name="studio_settings_edit_badge">Bearb.</string>
 </resources>

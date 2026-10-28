@@ -714,4 +714,10 @@
     <string name="studio_progress_strength_estimate">Estimated 1RM (kg)</string>
     <string name="studio_progress_heaviest_set">Heaviest recorded set</string>
     <string name="studio_settings_themes">Themes</string>
+    <string name="studio_settings_training_notifications">Training and notifications</string>
+    <string name="studio_settings_timer_subtitle">Default rest time (tap to change)</string>
+    <string name="studio_settings_rest_badge">%1$d s</string>
+    <string name="studio_settings_sound_subtitle">When the rest period ends</string>
+    <string name="studio_settings_profile_progression">Training profile and progression</string>
+    <string name="studio_settings_edit_badge">Edit</string>
 </resources>
