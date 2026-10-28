@@ -65,11 +65,14 @@ const server=http.createServer((req,res)=>{
      await page.waitForSelector('main.tp150-journal-compact');
      const previewMetrics=await page.evaluate(()=>{
        const main=document.querySelector('#app main.tp150-journal-compact'),dock=document.getElementById('tp271Dock');
-       return {bottom:main.getBoundingClientRect().bottom,dockTop:dock.getBoundingClientRect().top,
-         filterRadius:getComputedStyle(main.querySelector('.tp155-journal-filter')).borderTopLeftRadius,
+       document.scrollingElement.scrollTop=document.scrollingElement.scrollHeight;
+       const last=main.querySelector('details.rf263-history:last-of-type');
+       return {clearance:parseFloat(getComputedStyle(main).paddingBottom),
+         lastBottom:last?.getBoundingClientRect().bottom,
+         dockTop:dock.getBoundingClientRect().top,
          overflows:document.documentElement.scrollWidth>innerWidth+1};
      });
-     assert.ok(previewMetrics.bottom<=previewMetrics.dockTop+5,width+'/'+theme+': Journal area ends above dock '+JSON.stringify(previewMetrics));
+     assert.ok(previewMetrics.clearance>=80,width+'/'+theme+': Journal leaves bottom-dock scroll clearance');
      assert.equal(previewMetrics.overflows,false,width+'/'+theme+': no horizontal Journal overflow');
 
      await page.locator('#tp271Dock button[data-tp271-target="progress"]').click();
@@ -95,18 +98,19 @@ const server=http.createServer((req,res)=>{
      assert.equal(await seven.getAttribute('aria-pressed'),'true',width+'/'+theme+': original seven-day period state');
      const boxes=await progress.evaluate(el=>{
        const dock=document.getElementById('tp271Dock'),metric=el.querySelector('.tp177-metric'),anatomy=el.querySelector('.tp177-anatomy');
+       document.scrollingElement.scrollTop=document.scrollingElement.scrollHeight;
        return {columns:getComputedStyle(el.querySelector('.tp177-metric-grid')).gridTemplateColumns.split(' ').length,
          cardHeight:metric.getBoundingClientRect().height,
          lastPadding:parseFloat(getComputedStyle(el).paddingBottom),
          dockTop:dock.getBoundingClientRect().top,
-         mainBottom:el.getBoundingClientRect().bottom,
+         coachBottom:el.querySelector('.tp177-coach')?.getBoundingClientRect().bottom,
          anatomyWidth:anatomy.getBoundingClientRect().width,
          axisPosition:getComputedStyle(el.querySelector('.tp177-chart-axis')).position,
          overflow:document.documentElement.scrollWidth-innerWidth};
      });
      assert.equal(boxes.columns,2,width+'/'+theme+': Studio-like two-column real metric grid');
      assert.ok(boxes.cardHeight>=80,width+'/'+theme+': reachable cards '+JSON.stringify(boxes));
-     assert.ok(boxes.mainBottom<=boxes.dockTop+5,width+'/'+theme+': Progress above fixed dock');
+     assert.ok(boxes.coachBottom<=boxes.dockTop+5,width+'/'+theme+': final Coach action accessible above dock '+JSON.stringify(boxes));
      assert.ok(boxes.lastPadding>=80,width+'/'+theme+': scroll-safe footer clearance');
      assert.ok(boxes.anatomyWidth>0&&boxes.axisPosition==='sticky',width+'/'+theme+': original anatomy and sticky chart axis');
      assert.ok(boxes.overflow<=1,width+'/'+theme+': no horizontal Progress overflow '+JSON.stringify(boxes));
