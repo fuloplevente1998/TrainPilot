@@ -62,6 +62,9 @@ const server=http.createServer((req,res)=>{
     const launchers=page.locator('main.tp152-plan #tp271WorkoutLaunchers button');
     await page.waitForFunction(()=>document.querySelectorAll('#tp271WorkoutLaunchers button').length===2);
     assert.equal(await launchers.count(),2,width+'/'+theme+': two actual Workout shortcuts');
+    // Muscle-only filtering must begin with an empty search, because the
+    // original library intentionally remembers searches across theme changes.
+    await page.evaluate(()=>{state.libraryFilter={group:'all',gear:'all',q:''}});
     await page.locator('#tp271WorkoutLaunchers button[data-tp271-launcher="library"]').click();
     await page.waitForSelector('#tp155R4PanelHost[data-panel="exercises"] .tp271-muscle-chips');
     const muscleChips=page.locator('#tp155R4PanelHost[data-panel="exercises"] .tp271-muscle-chip');
