@@ -2652,10 +2652,20 @@
     de:{hello:'Willkommen zurück!',hint:'Training und Tageswerte auf einen Blick.',draft:'Du kannst dein begonnenes Training fortsetzen.',quick:'Schnelles Training',quickHint:'Training im vorhandenen Auswahlmenü starten'},
     ro:{hello:'Bine ai revenit!',hint:'Antrenamentul și datele zilei într-un singur loc.',draft:'Poți relua antrenamentul întrerupt.',quick:'Antrenament rapid',quickHint:'Alege antrenamentul în meniul existent'}
   };
+  let observedHome=null,homeObserver=null;
   function previewHome(){
-    if(activeWorkout())return;
     const main=document.querySelector('#app main.rf221-home');
-    if(!main)return;
+    if(main!==observedHome){
+      homeObserver?.disconnect();
+      observedHome=main;
+      if(main&&typeof MutationObserver==='function'){
+        // Follow async insertion of the canonical Today/Coach sections without
+        // observing the full subtree or touching any stored health values.
+        homeObserver=new MutationObserver(scheduleSync);
+        homeObserver.observe(main,{childList:true});
+      }
+    }
+    if(!main||activeWorkout())return;
     const hero=main.querySelector(':scope > .hero.tp155-home-active-card');
     if(!hero)return;
     let greeting=main.querySelector(':scope > #tp271HomeGreeting');
