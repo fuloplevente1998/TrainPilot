@@ -51,6 +51,17 @@ const server=http.createServer((req,res)=>{
      assert.equal(await page.evaluate(()=>rf200ThemeKey()),'classicBlue','main theme store updated through header');
      await page.evaluate(()=>{rf212SetLang('system');rf200SetTheme('yellow')});
    }
+   await page.evaluate(()=>{state.session=null;state.workout=null;db.set('draft',null);go('plan')});
+   await page.waitForSelector('main.tp146-plan #tp271WorkoutQuickLinks');
+   const shortcuts=page.locator('main.tp146-plan #tp271WorkoutQuickLinks');
+   assert.equal(await shortcuts.locator('button[data-tp271-shortcut]').count(),3,width+': Programs Calendar Coach remain below in Workout');
+   for(const key of ['programs','calendar','coach']){
+     assert.equal(await shortcuts.locator('button[data-tp271-shortcut="'+key+'"]').isVisible(),true,width+': '+key+' reachable below');
+   }
+   await shortcuts.locator('button[data-tp271-shortcut="programs"]').click();
+   await page.waitForFunction(()=>state.tab==='programs');
+   assert.equal(await page.evaluate(()=>state.tab),'programs',width+': canonical Programs route not lost');
+   await page.evaluate(()=>go('history'));
    await page.evaluate(()=>{
      state.session=null;state.workout=null;db.set('draft',null);
      const at=(offset,hour)=>{
