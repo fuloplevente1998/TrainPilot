@@ -3,7 +3,7 @@
  * data storage, Wear state, Health data or any timer. No global go/render wrapper. */
 (function () {
   'use strict';
-  const enabled = new URLSearchParams(location.search).get('tp271') === '1';
+  const enabled = typeof window !== 'undefined' && typeof location !== 'undefined' && /(?:^|[?&])tp271=1(?:&|$)/.test(String(location.search || ''));
   if (!enabled) return;
 
   const labels = {
