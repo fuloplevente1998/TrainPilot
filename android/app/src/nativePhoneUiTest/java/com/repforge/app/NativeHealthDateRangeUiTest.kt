@@ -97,6 +97,8 @@ class NativeHealthDateRangeUiTest {
             compose.onAllNodesWithTag("navigation_health").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithTag("navigation_health").performScrollTo().assertIsDisplayed().performClick()
+        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_history_section"))
+        compose.onNodeWithTag("health_history_section").performClick()
         compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_open_records"))
         compose.onNodeWithTag("health_open_records").performClick()
         compose.waitUntil(15000) {

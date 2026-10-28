@@ -680,4 +680,14 @@
     <string name="studio_volume_retry">Reîncarcă graficul de volum</string>
     <string name="studio_volume_workouts">antrenamente</string>
     <string name="studio_health_watch_sync">Ceas și sincronizare</string>
+    <string name="studio_health_today_status">Starea de azi · %1$s</string>
+    <string name="studio_health_day_status">Stare zilnică · %1$s</string>
+    <string name="studio_health_overview_subtitle">O prezentare compactă a sănătății tale</string>
+    <string name="studio_health_more">Mai multe date de sănătate</string>
+    <string name="studio_health_more_subtitle">Tensiune, glicemie, respirație, distanță și alte măsurători</string>
+    <string name="studio_health_journal_subtitle">Selectarea zilei, măsurători detaliate și somn</string>
+    <string name="studio_health_connect_subtitle">Surse de date, permisiuni și sincronizare</string>
+    <string name="studio_health_watch_sync_subtitle">Dispozitive conectate și conexiune în fundal</string>
+    <string name="studio_health_connected_devices">Dispozitive conectate</string>
+    <string name="studio_health_connected_devices_subtitle">Conexiune ceas și sincronizare dispozitive</string>
 </resources>

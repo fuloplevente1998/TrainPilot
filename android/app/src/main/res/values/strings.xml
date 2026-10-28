@@ -680,4 +680,14 @@
     <string name="studio_volume_retry">Grafikon újratöltése</string>
     <string name="studio_volume_workouts">edzés</string>
     <string name="studio_health_watch_sync">Óra és szinkron</string>
+    <string name="studio_health_today_status">Mai állapot · %1$s</string>
+    <string name="studio_health_day_status">Napi állapot · %1$s</string>
+    <string name="studio_health_overview_subtitle">Az egészséged rövid áttekintése</string>
+    <string name="studio_health_more">További egészségadatok</string>
+    <string name="studio_health_more_subtitle">Vérnyomás, vércukor, légzésszám, távolság és további mérések</string>
+    <string name="studio_health_journal_subtitle">Napválasztás, részletes mérések és alvás</string>
+    <string name="studio_health_connect_subtitle">Adatforrások, engedélyek és szinkron</string>
+    <string name="studio_health_watch_sync_subtitle">Kapcsolt eszközök és háttérkapcsolat</string>
+    <string name="studio_health_connected_devices">Kapcsolt eszközök</string>
+    <string name="studio_health_connected_devices_subtitle">Órakapcsolat és eszközszinkron</string>
 </resources>

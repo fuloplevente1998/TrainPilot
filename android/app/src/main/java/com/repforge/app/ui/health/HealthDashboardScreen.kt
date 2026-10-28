@@ -206,25 +206,10 @@ fun HealthDashboardScreen(
                 }
             )
         } else {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp)
-                    .testTag("health_ble_subscreen_header"),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                TextButton(
-                    onClick = { viewModel.setTab("journal") },
-                    modifier = Modifier.testTag("health_ble_back")
-                ) {
-                    Text(strings.getString(R.string.health_history_title))
-                }
-                Text(
-                    strings.getString(R.string.native_health_ble_tab),
-                    color = colors.text,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+            HealthConnectedDevicesHeader(
+                language = state.language,
+                onBack = { viewModel.setTab("journal") }
+            )
             BleDiscoveryTabContent(
                 state = state,
                 bleRepo = viewModel.bleRepo,
@@ -275,14 +260,16 @@ fun HealthJournalTabContent(
     val colors = LocalTrainPilotColors.current
     val context = LocalContext.current
     val strings = remember(context, state.language) { nativeResources(context, state.language) }
-    val metricColumns = if (LocalDensity.current.fontScale > 1.3f || LocalConfiguration.current.screenWidthDp < 312) 1 else 2
+    val metricColumns =
+        if (LocalDensity.current.fontScale > 1.3f || LocalConfiguration.current.screenWidthDp < 312) 1 else 2
+    var moreExpanded by rememberSaveable { mutableStateOf(false) }
+    var journalExpanded by rememberSaveable { mutableStateOf(false) }
+    var connectExpanded by rememberSaveable { mutableStateOf(false) }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize().testTag("health_journal_list").padding(horizontal = 12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // Studio-inspired selected-day overview above the detailed health record browser.
-        // Values, missing-state and provider attribution all come from the native model.
-        // The selected day may be historical: do not label it "today" unconditionally.
         item(key = "health_selected_day_overview") {
             HealthSelectedDayOverview(
                 state = state,
@@ -290,235 +277,460 @@ fun HealthJournalTabContent(
                 onPulseTrend = { onOpenRecords("HeartRateRecord") }
             )
         }
-        item {
-            val text = com.repforge.app.ui.text.nativeResources(LocalContext.current, state.language)
-            TrainPilotHeroSurface(Modifier.fillMaxWidth()) {
-                Column(Modifier.fillMaxWidth().testTag("health_history")) {
-                    // Browsing a historical day must never be labelled "today".
-                    TrainPilotSectionHeader(strings.getString(R.string.health_history_title),
-                        icon = Icons.Default.FavoriteBorder)
-                    Text(state.historyMonth, color = colors.text, fontWeight = FontWeight.Bold)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        TextButton(onClick = onPreviousMonth, modifier = Modifier.testTag("health_previous_month")) { Text(text.getString(com.repforge.app.R.string.health_history_previous)) }
-                        TextButton(onClick = onNextMonth, enabled = state.historyMonth < java.time.YearMonth.now().toString()) { Text(text.getString(com.repforge.app.R.string.health_history_next)) }
+
+        item(key = "health_more_section") {
+            HealthStudioExpandableSection(
+                title = strings.getString(R.string.studio_health_more),
+                subtitle = strings.getString(R.string.studio_health_more_subtitle),
+                iconKey = "pulse",
+                tag = "health_more_section",
+                expanded = moreExpanded,
+                onToggle = { moreExpanded = !moreExpanded }
+            ) {
+                // All 26 genuine native readings and their original source/test tags stay reachable.
+                for (row in state.metrics.chunked(metricColumns)) {
+                    Row(
+                        Modifier.fillMaxWidth().height(IntrinsicSize.Max),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        for (metric in row) {
+                            HealthMetricTile(metric, Modifier.weight(1f).fillMaxHeight())
+                        }
+                        if (row.size < metricColumns) Spacer(Modifier.weight(1f))
                     }
-                    TextButton(onClick = onToday) { Text(text.getString(com.repforge.app.R.string.health_history_today)) }
-                    Text(text.getString(com.repforge.app.R.string.health_history_day, state.selectedDay), color = colors.text,
-                        modifier = Modifier.testTag("health_selected_day"))
-                    // Studio date strip: selected state is visible, keyboard/semantics enabled,
-                    // and selection continues to use the real paged history callback.
-                    androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.testTag("health_day_picker")) {
-                        items((state.availableDays + state.selectedDay).distinct().sortedDescending(),
-                            key = { it }) { day ->
-                            androidx.compose.material3.FilterChip(
-                                selected = day == state.selectedDay,
-                                onClick = { onDay(day) },
-                                label = { Text(day) },
-                                modifier = Modifier.heightIn(min = 48.dp).testTag("health_day_$day")
+                }
+            }
+        }
+
+        item(key = "health_history_section") {
+            HealthStudioExpandableSection(
+                title = strings.getString(R.string.health_history_title),
+                subtitle = strings.getString(R.string.studio_health_journal_subtitle),
+                iconKey = "pulse",
+                tag = "health_history_section",
+                expanded = journalExpanded,
+                onToggle = { journalExpanded = !journalExpanded }
+            ) {
+                val text = com.repforge.app.ui.text.nativeResources(LocalContext.current, state.language)
+                TrainPilotHeroSurface(Modifier.fillMaxWidth()) {
+                    Column(Modifier.fillMaxWidth().testTag("health_history")) {
+                        TrainPilotSectionHeader(
+                            strings.getString(R.string.health_history_title),
+                            icon = Icons.Default.FavoriteBorder
+                        )
+                        Text(state.historyMonth, color = colors.text, fontWeight = FontWeight.Bold)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            TextButton(
+                                onClick = onPreviousMonth,
+                                modifier = Modifier.testTag("health_previous_month")
+                            ) {
+                                Text(text.getString(com.repforge.app.R.string.health_history_previous))
+                            }
+                            TextButton(
+                                onClick = onNextMonth,
+                                enabled = state.historyMonth < java.time.YearMonth.now().toString()
+                            ) {
+                                Text(text.getString(com.repforge.app.R.string.health_history_next))
+                            }
+                        }
+                        TextButton(onClick = onToday) {
+                            Text(text.getString(com.repforge.app.R.string.health_history_today))
+                        }
+                        Text(
+                            text.getString(com.repforge.app.R.string.health_history_day, state.selectedDay),
+                            color = colors.text,
+                            modifier = Modifier.testTag("health_selected_day")
+                        )
+                        androidx.compose.foundation.lazy.LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.testTag("health_day_picker")
+                        ) {
+                            items(
+                                (state.availableDays + state.selectedDay).distinct().sortedDescending(),
+                                key = { it }
+                            ) { day ->
+                                androidx.compose.material3.FilterChip(
+                                    selected = day == state.selectedDay,
+                                    onClick = { onDay(day) },
+                                    label = { Text(day) },
+                                    modifier = Modifier.heightIn(min = 48.dp).testTag("health_day_$day")
+                                )
+                            }
+                        }
+                        androidx.compose.foundation.lazy.LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            items(
+                                listOf(
+                                    "journal", "health_connect", "samsung_health", "legacy",
+                                    com.repforge.app.HealthJournalStore.BLE
+                                )
+                            ) { channel ->
+                                val label = when (channel) {
+                                    "journal" -> text.getString(com.repforge.app.R.string.health_history_auto)
+                                    "health_connect" -> "Health Connect"
+                                    "samsung_health" -> "Samsung Health"
+                                    com.repforge.app.HealthJournalStore.BLE -> "BLE"
+                                    else -> text.getString(com.repforge.app.R.string.health_history_legacy)
+                                }
+                                androidx.compose.material3.FilterChip(
+                                    selected = state.historyChannel == channel,
+                                    onClick = { onChannel(channel) },
+                                    label = { Text(label) }
+                                )
+                            }
+                        }
+                        if (state.historyLoading) {
+                            Text(
+                                text.getString(com.repforge.app.R.string.health_history_loading),
+                                color = colors.muted
+                            )
+                        }
+                        if (state.historyError) {
+                            Text(
+                                text.getString(com.repforge.app.R.string.health_history_error),
+                                color = colors.dangerText
+                            )
+                        }
+                        TextButton(
+                            onClick = { onOpenRecords("") },
+                            enabled = !state.historyLoading,
+                            modifier = Modifier.testTag("health_open_records")
+                        ) {
+                            Text(text.getString(com.repforge.app.R.string.health_records_title))
+                        }
+                    }
+                }
+
+                TrainPilotSubtleSurface(Modifier.fillMaxWidth()) {
+                    Column {
+                        Text(
+                            com.repforge.app.ui.text.nativeResources(LocalContext.current, state.language)
+                                .getString(com.repforge.app.R.string.health_record_sleep),
+                            color = colors.accent2,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            state.sleepSessionsSummaryText,
+                            color = colors.text,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        TextButton(
+                            onClick = { onOpenRecords("SleepSessionRecord") },
+                            enabled = !state.historyLoading,
+                            modifier = Modifier.testTag("health_open_sleep")
+                        ) {
+                            Text(
+                                com.repforge.app.ui.text.nativeResources(LocalContext.current, state.language)
+                                    .getString(com.repforge.app.R.string.health_sleep_details)
                             )
                         }
                     }
-                    androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        items(listOf("journal", "health_connect", "samsung_health", "legacy", com.repforge.app.HealthJournalStore.BLE)) { channel ->
-                            val label = when (channel) { "journal" -> text.getString(com.repforge.app.R.string.health_history_auto)
-                                "health_connect" -> "Health Connect"; "samsung_health" -> "Samsung Health"; com.repforge.app.HealthJournalStore.BLE -> "BLE"; else -> text.getString(com.repforge.app.R.string.health_history_legacy) }
-                            androidx.compose.material3.FilterChip(selected = state.historyChannel == channel, onClick = { onChannel(channel) }, label = { Text(label) })
-                        }
-                    }
-                    if (state.historyLoading) Text(text.getString(com.repforge.app.R.string.health_history_loading), color = colors.muted)
-                    if (state.historyError) Text(text.getString(com.repforge.app.R.string.health_history_error), color = colors.dangerText)
-                    TextButton(onClick = { onOpenRecords("") }, enabled = !state.historyLoading,
-                        modifier = Modifier.testTag("health_open_records")) { Text(text.getString(com.repforge.app.R.string.health_records_title)) }
-            }
+                }
             }
         }
-        item { Spacer(Modifier.height(8.dp)) }
 
-        // Szolgáltató választó kártya (Health Connect vs Samsung Health)
-        item {
-            TrainPilotSectionSurface(Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier) {
+        item(key = "health_connect_section") {
+            HealthStudioExpandableSection(
+                title = "Health Connect",
+                subtitle = strings.getString(R.string.studio_health_connect_subtitle),
+                iconKey = "recovery",
+                tag = "health_connect_section",
+                expanded = connectExpanded,
+                onToggle = { connectExpanded = !connectExpanded }
+            ) {
+                TrainPilotSectionSurface(Modifier.fillMaxWidth()) {
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                strings.getString(R.string.native_health_source),
+                                color = colors.text,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            IconButton(
+                                onClick = onRefresh,
+                                enabled = !state.healthRefreshing,
+                                modifier = Modifier.size(48.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Refresh,
+                                    contentDescription = strings.getString(R.string.native_health_refresh),
+                                    tint = colors.accent
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(10.dp))
+                        val narrowProviders = LocalConfiguration.current.screenWidthDp < 360 ||
+                            LocalDensity.current.fontScale > 1.15f
+                        if (narrowProviders) {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                ProviderChoiceChip(
+                                    "Health Connect",
+                                    state.provider == "health_connect",
+                                    { onSelectProvider("health_connect") },
+                                    Modifier.fillMaxWidth().testTag("health_provider_hc")
+                                )
+                                ProviderChoiceChip(
+                                    "Samsung Health",
+                                    state.provider == "samsung_health",
+                                    { onSelectProvider("samsung_health") },
+                                    Modifier.fillMaxWidth().testTag("health_provider_samsung")
+                                )
+                            }
+                        } else {
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                ProviderChoiceChip(
+                                    "Health Connect",
+                                    state.provider == "health_connect",
+                                    { onSelectProvider("health_connect") },
+                                    Modifier.weight(1f).testTag("health_provider_hc")
+                                )
+                                ProviderChoiceChip(
+                                    "Samsung Health",
+                                    state.provider == "samsung_health",
+                                    { onSelectProvider("samsung_health") },
+                                    Modifier.weight(1f).testTag("health_provider_samsung")
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            strings.getString(R.string.native_health_provider_help),
+                            color = colors.muted,
+                            fontSize = 11.sp
+                        )
+                        if (state.provider == com.repforge.app.HealthJournalStore.HC) {
+                            val text = com.repforge.app.ui.text.nativeResources(LocalContext.current, state.language)
+                            Text(
+                                text.getString(com.repforge.app.R.string.health_daily_source_title),
+                                color = colors.text
+                            )
+                            androidx.compose.foundation.lazy.LazyRow(
+                                modifier = Modifier.testTag("health_daily_sources_row"),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(
+                                    listOf("auto", "priority") + state.dailySourceOptions,
+                                    key = { it }
+                                ) { choice ->
+                                    androidx.compose.material3.FilterChip(
+                                        selected = state.dailySourcePreference == choice,
+                                        enabled = !state.sourceSaving && !state.historyLoading,
+                                        onClick = { onDailySource(choice) },
+                                        modifier = Modifier.testTag("health_daily_$choice"),
+                                        label = {
+                                            Text(
+                                                when (choice) {
+                                                    "auto" -> text.getString(com.repforge.app.R.string.health_daily_source_auto)
+                                                    "priority" -> text.getString(com.repforge.app.R.string.health_daily_source_priority)
+                                                    else -> choice
+                                                }
+                                            )
+                                        }
+                                    )
+                                }
+                            }
+                            if (state.dailySourcePreference !in
+                                (listOf("auto", "priority") + state.dailySourceOptions)
+                            ) {
+                                Text(state.dailySourcePreference, color = colors.muted)
+                            }
+                            Text(
+                                text.getString(com.repforge.app.R.string.health_daily_source_hint),
+                                color = colors.muted
+                            )
+                            if (state.sourceSaveFailed) {
+                                Text(
+                                    text.getString(com.repforge.app.R.string.metadata_write_failed),
+                                    color = colors.danger
+                                )
+                            }
+                        }
+                        if (state.historyPartial) {
+                            Text(
+                                com.repforge.app.ui.text.nativeResources(LocalContext.current, state.language)
+                                    .getString(com.repforge.app.R.string.health_daily_source_partial),
+                                color = colors.muted,
+                                modifier = Modifier.testTag("health_daily_partial")
+                            )
+                        }
+                    }
+                }
+
+                TrainPilotSubtleSurface(
+                    Modifier.fillMaxWidth().testTag("health_auto_refresh_card")
+                ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(14.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(strings.getString(R.string.native_health_source), color = colors.text, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                        IconButton(onClick = onRefresh, enabled = !state.healthRefreshing, modifier = Modifier.size(48.dp)) {
-                            Icon(Icons.Default.Refresh, contentDescription = strings.getString(R.string.native_health_refresh), tint = colors.accent)
-                        }
-                    }
-                    Spacer(Modifier.height(10.dp))
-                    // Long German/Romanian text and fontScale must not squeeze provider actions.
-                    val narrowProviders = LocalConfiguration.current.screenWidthDp < 360 ||
-                        LocalDensity.current.fontScale > 1.15f
-                    if (narrowProviders) Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        ProviderChoiceChip("Health Connect", state.provider == "health_connect",
-                            { onSelectProvider("health_connect") },
-                            Modifier.fillMaxWidth().testTag("health_provider_hc"))
-                        ProviderChoiceChip("Samsung Health", state.provider == "samsung_health",
-                            { onSelectProvider("samsung_health") },
-                            Modifier.fillMaxWidth().testTag("health_provider_samsung"))
-                    } else Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        ProviderChoiceChip("Health Connect", state.provider == "health_connect",
-                            { onSelectProvider("health_connect") },
-                            Modifier.weight(1f).testTag("health_provider_hc"))
-                        ProviderChoiceChip("Samsung Health", state.provider == "samsung_health",
-                            { onSelectProvider("samsung_health") },
-                            Modifier.weight(1f).testTag("health_provider_samsung"))
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = strings.getString(R.string.native_health_provider_help),
-                        color = colors.muted,
-                        fontSize = 11.sp
-                    )
-                    if (state.provider == com.repforge.app.HealthJournalStore.HC) {
-                        val text = com.repforge.app.ui.text.nativeResources(LocalContext.current, state.language)
-                        Text(text.getString(com.repforge.app.R.string.health_daily_source_title), color = colors.text)
-                        androidx.compose.foundation.lazy.LazyRow(modifier = Modifier.testTag("health_daily_sources_row"), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            items(listOf("auto", "priority") + state.dailySourceOptions, key = { it }) { choice ->
-                                androidx.compose.material3.FilterChip(selected = state.dailySourcePreference == choice,
-                                    enabled = !state.sourceSaving && !state.historyLoading,
-                                    onClick = { onDailySource(choice) }, modifier = Modifier.testTag("health_daily_$choice"),
-                                    label = { Text(when (choice) {
-                                        "auto" -> text.getString(com.repforge.app.R.string.health_daily_source_auto)
-                                        "priority" -> text.getString(com.repforge.app.R.string.health_daily_source_priority)
-                                        else -> choice
-                                    }) })
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                strings.getString(R.string.native_health_auto_refresh_title),
+                                color = colors.text,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                strings.getString(R.string.native_health_auto_refresh_help),
+                                color = colors.muted,
+                                fontSize = 11.sp
+                            )
+                            if (state.autoOnOpenSaveFailed) {
+                                Text(
+                                    strings.getString(R.string.native_health_auto_refresh_save_error),
+                                    color = colors.dangerText,
+                                    fontSize = 11.sp,
+                                    modifier = Modifier.testTag("health_auto_refresh_save_error")
+                                )
                             }
                         }
-                        if (state.dailySourcePreference !in (listOf("auto", "priority") + state.dailySourceOptions))
-                            Text(state.dailySourcePreference, color = colors.muted)
-                        Text(text.getString(com.repforge.app.R.string.health_daily_source_hint), color = colors.muted)
-                        if (state.sourceSaveFailed) Text(text.getString(com.repforge.app.R.string.metadata_write_failed), color = colors.danger)
-                    }
-                    if (state.historyPartial) Text(com.repforge.app.ui.text.nativeResources(LocalContext.current, state.language)
-                        .getString(com.repforge.app.R.string.health_daily_source_partial), color = colors.muted,
-                        modifier = Modifier.testTag("health_daily_partial"))
-                }
-            }
-        }
-
-        // Foreground auto-on-open is intentionally independent of Android background job permission.
-        item {
-            TrainPilotSubtleSurface(Modifier.fillMaxWidth().testTag("health_auto_refresh_card")) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(14.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(strings.getString(R.string.native_health_auto_refresh_title),
-                            color = colors.text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                        Text(strings.getString(R.string.native_health_auto_refresh_help),
-                            color = colors.muted, fontSize = 11.sp)
-                        if (state.autoOnOpenSaveFailed) Text(
-                            strings.getString(R.string.native_health_auto_refresh_save_error),
-                            color = colors.dangerText, fontSize = 11.sp,
-                            modifier = Modifier.testTag("health_auto_refresh_save_error")
+                        Switch(
+                            checked = state.autoOnOpen,
+                            enabled = !state.autoOnOpenSaving && !state.historyLoading,
+                            onCheckedChange = onAutoOnOpen,
+                            modifier = Modifier
+                                .testTag("health_auto_refresh_switch")
+                                .semantics {
+                                    contentDescription =
+                                        strings.getString(R.string.native_health_auto_refresh_title)
+                                },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = colors.accent,
+                                checkedTrackColor = colors.card
+                            )
                         )
                     }
-                    Switch(
-                        checked = state.autoOnOpen,
-                        enabled = !state.autoOnOpenSaving && !state.historyLoading,
-                        onCheckedChange = onAutoOnOpen,
-                        modifier = Modifier.testTag("health_auto_refresh_switch")
-                            .semantics { contentDescription = strings.getString(R.string.native_health_auto_refresh_title) },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = colors.accent,
-                            checkedTrackColor = colors.card
+                    Column(Modifier.padding(horizontal = 14.dp, vertical = 4.dp)) {
+                        Text(
+                            strings.getString(R.string.native_health_sync_last, state.lastSyncAt),
+                            color = colors.muted,
+                            fontSize = 11.sp,
+                            modifier = Modifier.testTag("health_sync_last")
                         )
-                    )
+                        if (state.healthRefreshing) {
+                            Text(
+                                strings.getString(R.string.native_health_auto_refresh_running),
+                                color = colors.muted,
+                                modifier = Modifier.testTag("health_auto_refresh_running")
+                            )
+                            val progressText = when (state.syncStage) {
+                                "CHANGES" ->
+                                    strings.getString(R.string.native_health_sync_changes, state.syncPages)
+                                "DAYS", "COMPLETE" ->
+                                    strings.getString(
+                                        R.string.native_health_sync_days,
+                                        state.syncCompleted,
+                                        state.syncTotal
+                                    )
+                                else -> strings.getString(R.string.native_health_sync_preparing)
+                            }
+                            Text(
+                                progressText,
+                                color = colors.muted,
+                                modifier = Modifier.testTag("health_sync_progress")
+                            )
+                            TextButton(
+                                onClick = onCancelSync,
+                                modifier = Modifier.testTag("health_sync_cancel")
+                            ) {
+                                Text(strings.getString(R.string.native_health_sync_cancel))
+                            }
+                        } else {
+                            TextButton(
+                                onClick = onSync,
+                                modifier = Modifier.testTag("health_sync_now")
+                            ) {
+                                Text(strings.getString(R.string.native_health_sync_now))
+                            }
+                            TextButton(
+                                onClick = onFullSync,
+                                modifier = Modifier.testTag("health_sync_full")
+                            ) {
+                                Text(strings.getString(R.string.native_health_sync_full))
+                            }
+                        }
+                        if (state.syncFailed || state.syncPartial || state.syncCancelled) {
+                            Text(
+                                strings.getString(
+                                    when {
+                                        state.syncCancelled -> R.string.native_health_sync_cancelled
+                                        state.syncPartial -> R.string.native_health_sync_partial
+                                        else -> R.string.native_health_sync_failed
+                                    }
+                                ),
+                                color = colors.dangerText,
+                                modifier = Modifier.testTag("health_sync_failure")
+                            )
+                            if (!state.healthRefreshing) {
+                                TextButton(
+                                    onClick = onRetrySync,
+                                    modifier = Modifier.testTag("health_sync_retry")
+                                ) {
+                                    Text(strings.getString(R.string.native_health_sync_retry))
+                                }
+                            }
+                        }
+                    }
                 }
-                Column(Modifier.padding(horizontal = 14.dp, vertical = 4.dp)) {
-                    Text(strings.getString(R.string.native_health_sync_last, state.lastSyncAt),
-                        color = colors.muted, fontSize = 11.sp, modifier = Modifier.testTag("health_sync_last"))
-                    if (state.healthRefreshing) {
-                        Text(strings.getString(R.string.native_health_auto_refresh_running),
-                            color = colors.muted, modifier = Modifier.testTag("health_auto_refresh_running"))
-                        val progressText = when (state.syncStage) {
-                            "CHANGES" -> strings.getString(R.string.native_health_sync_changes, state.syncPages)
-                            "DAYS", "COMPLETE" -> strings.getString(R.string.native_health_sync_days, state.syncCompleted, state.syncTotal)
-                            else -> strings.getString(R.string.native_health_sync_preparing)
-                        }
-                        Text(progressText, color = colors.muted, modifier = Modifier.testTag("health_sync_progress"))
-                        TextButton(onClick = onCancelSync, modifier = Modifier.testTag("health_sync_cancel")) {
-                            Text(strings.getString(R.string.native_health_sync_cancel))
-                        }
-                    } else {
-                        TextButton(onClick = onSync, modifier = Modifier.testTag("health_sync_now")) {
-                            Text(strings.getString(R.string.native_health_sync_now))
-                        }
-                        TextButton(onClick = onFullSync, modifier = Modifier.testTag("health_sync_full")) {
-                            Text(strings.getString(R.string.native_health_sync_full))
-                        }
-                    }
-                    if (state.syncFailed || state.syncPartial || state.syncCancelled) {
-                        Text(strings.getString(when {
-                            state.syncCancelled -> R.string.native_health_sync_cancelled
-                            state.syncPartial -> R.string.native_health_sync_partial
-                            else -> R.string.native_health_sync_failed
-                        }), color = colors.dangerText, modifier = Modifier.testTag("health_sync_failure"))
-                        if (!state.healthRefreshing) TextButton(onClick = onRetrySync, modifier = Modifier.testTag("health_sync_retry")) {
-                            Text(strings.getString(R.string.native_health_sync_retry))
-                        }
-                    }
-                }
-            }
-        }
 
-        // Alvásnapló összefoglaló
-        item {
-            TrainPilotSubtleSurface(Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier) {
-                    Text(com.repforge.app.ui.text.nativeResources(LocalContext.current, state.language)
-                        .getString(com.repforge.app.R.string.health_record_sleep), color = colors.accent2, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(4.dp))
-                    Text(state.sleepSessionsSummaryText, color = colors.text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                    TextButton(onClick = { onOpenRecords("SleepSessionRecord") }, enabled = !state.historyLoading,
-                        modifier = Modifier.testTag("health_open_sleep")) {
-                        Text(com.repforge.app.ui.text.nativeResources(LocalContext.current, state.language)
-                            .getString(com.repforge.app.R.string.health_sleep_details))
+                TrainPilotSubtleSurface(Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(14.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                strings.getString(R.string.native_health_background_title),
+                                color = colors.text,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                strings.getString(R.string.native_health_background_help),
+                                color = colors.muted,
+                                fontSize = 11.sp
+                            )
+                            val text = com.repforge.app.ui.text.nativeResources(LocalContext.current, state.language)
+                            Text(
+                                text.getString(backgroundReasonResource(state.hcBackgroundBlock)),
+                                color = if (state.hcBackgroundBlock == BackgroundBlock.READY)
+                                    colors.muted else colors.dangerText,
+                                fontSize = 11.sp,
+                                modifier = Modifier.testTag("health_hc_background_status")
+                            )
+                            Text(
+                                text.getString(
+                                    if (state.hcBackgroundScheduled && state.hcBackground)
+                                        com.repforge.app.R.string.health_background_scheduled
+                                    else
+                                        com.repforge.app.R.string.health_background_not_scheduled
+                                ),
+                                color = colors.muted,
+                                fontSize = 11.sp
+                            )
+                        }
+                        Switch(
+                            checked = state.hcBackground,
+                            enabled = !state.backgroundSaving,
+                            modifier = Modifier.testTag("health_hc_background_switch"),
+                            onCheckedChange = onToggleHcBackground,
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = colors.accent,
+                                checkedTrackColor = colors.card
+                            )
+                        )
                     }
-                }
-            }
-        }
-
-        // Every one of the 26 readings and its original tag/source remains reachable.
-        items(state.metrics.chunked(metricColumns), key = { row -> row.first().key }) { row ->
-            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                for (metric in row) HealthMetricTile(metric, Modifier.weight(1f).fillMaxHeight())
-                if (row.size < metricColumns) Spacer(Modifier.weight(1f))
-            }
-        }
-
-        // Háttérszinkron kapcsoló kártya
-        item {
-            TrainPilotSubtleSurface(Modifier.fillMaxWidth()) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(14.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(strings.getString(R.string.native_health_background_title), color = colors.text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                        Text(strings.getString(R.string.native_health_background_help), color = colors.muted, fontSize = 11.sp)
-                        val text = com.repforge.app.ui.text.nativeResources(LocalContext.current, state.language)
-                        Text(text.getString(backgroundReasonResource(state.hcBackgroundBlock)),
-                            color = if (state.hcBackgroundBlock == BackgroundBlock.READY) colors.muted else colors.dangerText,
-                            fontSize = 11.sp, modifier = Modifier.testTag("health_hc_background_status"))
-                        Text(text.getString(if (state.hcBackgroundScheduled && state.hcBackground) com.repforge.app.R.string.health_background_scheduled
-                            else com.repforge.app.R.string.health_background_not_scheduled), color = colors.muted, fontSize = 11.sp)
-                    }
-                    Switch(
-                        checked = state.hcBackground,
-                        enabled = !state.backgroundSaving,
-                        modifier = Modifier.testTag("health_hc_background_switch"),
-                        onCheckedChange = onToggleHcBackground,
-                        colors = SwitchDefaults.colors(checkedThumbColor = colors.accent, checkedTrackColor = colors.card)
-                    )
                 }
             }
         }
@@ -526,7 +738,7 @@ fun HealthJournalTabContent(
         item(key = "health_watch_sync") {
             HealthStudioActionRow(
                 title = strings.getString(R.string.studio_health_watch_sync),
-                subtitle = strings.getString(R.string.native_health_ble_tab),
+                subtitle = strings.getString(R.string.studio_health_watch_sync_subtitle),
                 iconKey = "workouts",
                 tag = "health_open_watch_sync_card",
                 onClick = onOpenBle
@@ -556,9 +768,19 @@ internal fun HealthSelectedDayOverview(
         else -> 3
     }
     TrainPilotHeroSurface(Modifier.fillMaxWidth().testTag("health_selected_day_overview")) {
+        val selectedIsToday = state.selectedDay == java.time.LocalDate.now().toString()
         TrainPilotSectionHeader(
-            strings.getString(R.string.health_history_day, state.selectedDay),
+            strings.getString(
+                if (selectedIsToday) R.string.studio_health_today_status
+                else R.string.studio_health_day_status,
+                state.selectedDay
+            ),
             icon = Icons.Default.FavoriteBorder
+        )
+        Text(
+            strings.getString(R.string.studio_health_overview_subtitle),
+            color = colors.muted,
+            style = MaterialTheme.typography.bodySmall
         )
         for (chunk in metrics.chunked(columns)) {
             Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max),
@@ -644,6 +866,104 @@ internal fun HealthMetricTile(m: HealthMetricItemUiModel, modifier: Modifier = M
                 Text(m.unit, color = colors.muted, style = MaterialTheme.typography.labelSmall)
         }
         Text(m.sourceText, color = colors.muted, style = MaterialTheme.typography.bodySmall)
+    }
+}
+
+@Composable
+private fun HealthStudioExpandableSection(
+    title: String,
+    subtitle: String,
+    iconKey: String,
+    tag: String,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    val colors = LocalTrainPilotColors.current
+    TrainPilotSectionSurface(Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 64.dp)
+                .testTag(tag)
+                .clickable(
+                    role = androidx.compose.ui.semantics.Role.Button,
+                    onClick = onToggle
+                ),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Icon(
+                trainPilotMetricIcon(iconKey),
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = colors.accentText
+            )
+            Column(Modifier.weight(1f)) {
+                Text(title, color = colors.text, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    subtitle,
+                    color = colors.muted,
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 2
+                )
+            }
+            Text(
+                if (expanded) "⌄" else "›",
+                color = colors.accentText,
+                style = MaterialTheme.typography.titleLarge
+            )
+        }
+        if (expanded) {
+            Column(
+                Modifier.fillMaxWidth().padding(top = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                content()
+            }
+        }
+    }
+}
+
+@Composable
+private fun HealthConnectedDevicesHeader(
+    language: String,
+    onBack: () -> Unit
+) {
+    val colors = LocalTrainPilotColors.current
+    val context = LocalContext.current
+    val strings = remember(context, language) { nativeResources(context, language) }
+    TrainPilotSubtleSurface(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .testTag("health_ble_subscreen_header")
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            TextButton(
+                onClick = onBack,
+                modifier = Modifier.testTag("health_ble_back")
+            ) {
+                Text("‹", style = MaterialTheme.typography.headlineSmall)
+            }
+            Column(Modifier.weight(1f)) {
+                Text(
+                    strings.getString(R.string.studio_health_connected_devices),
+                    color = colors.text,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    strings.getString(R.string.studio_health_connected_devices_subtitle),
+                    color = colors.muted,
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
+        }
     }
 }
 

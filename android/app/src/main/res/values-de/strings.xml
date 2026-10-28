@@ -679,5 +679,15 @@
     <string name="studio_volume_loading">Volumendiagramm wird geladen…</string>
     <string name="studio_volume_retry">Volumendiagramm erneut laden</string>
     <string name="studio_volume_workouts">Trainings</string>
-    <string name="studio_health_watch_sync">Uhr & Synchronisierung</string>
+    <string name="studio_health_watch_sync">Uhr und Synchronisierung</string>
+    <string name="studio_health_today_status">Heutiger Status · %1$s</string>
+    <string name="studio_health_day_status">Tagesstatus · %1$s</string>
+    <string name="studio_health_overview_subtitle">Kurzübersicht deiner Gesundheitsdaten</string>
+    <string name="studio_health_more">Weitere Gesundheitsdaten</string>
+    <string name="studio_health_more_subtitle">Blutdruck, Blutzucker, Atmung, Distanz und weitere Messwerte</string>
+    <string name="studio_health_journal_subtitle">Tagesauswahl, Detailmessungen und Schlaf</string>
+    <string name="studio_health_connect_subtitle">Datenquellen, Berechtigungen und Synchronisierung</string>
+    <string name="studio_health_watch_sync_subtitle">Verbundene Geräte und Hintergrundverbindung</string>
+    <string name="studio_health_connected_devices">Verbundene Geräte</string>
+    <string name="studio_health_connected_devices_subtitle">Uhrverbindung und Gerätesynchronisierung</string>
 </resources>

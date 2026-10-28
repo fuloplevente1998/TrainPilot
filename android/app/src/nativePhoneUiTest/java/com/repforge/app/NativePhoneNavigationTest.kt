@@ -83,6 +83,14 @@ class NativePhoneNavigationTest {
         }
         compose.waitForIdle()
     }
+    private fun expandHealthSection(sectionTag: String, targetTag: String) {
+        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag(sectionTag))
+        if (compose.onAllNodesWithTag(targetTag).fetchSemanticsNodes().isEmpty()) {
+            compose.onNodeWithTag(sectionTag).performClick()
+        }
+        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag(targetTag))
+    }
+
     private fun snapshot(): JSONObject? {
         var result: JSONObject? = null
         instrumentation.runOnMainSync { result = ActiveWorkoutStore.current(context) }
@@ -211,7 +219,11 @@ class NativePhoneNavigationTest {
                 .getString(R.string.health_history_loading)).fetchSemanticsNodes().isEmpty()
         }
         capture("p1_health")
-        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_metric_steps"))
+        compose.onNodeWithTag("health_more_section").assertExists()
+        compose.onNodeWithTag("health_history_section").assertExists()
+        compose.onNodeWithTag("health_connect_section").assertExists()
+        compose.onNodeWithTag("health_open_watch_sync_card").assertExists()
+        expandHealthSection("health_more_section", "health_metric_steps")
         compose.onNodeWithTag("health_metric_steps").assertIsDisplayed()
         capture("p1_health_metrics")
         assertEquals("yellow", runBlocking(Dispatchers.IO) { settings.current().themeKey })
@@ -855,7 +867,7 @@ class NativePhoneNavigationTest {
             JSONObject().put("value", 73.4).put("unit", "kg")))
         store.importRecords(rows, store.generation())
         launch(); tab("health")
-        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_open_records"))
+        expandHealthSection("health_history_section", "health_open_records")
         compose.onNodeWithTag("health_open_records").performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("health_record_weight-30").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("health_records_next").performClick()
@@ -889,7 +901,7 @@ class NativePhoneNavigationTest {
             .put(healthRecord("hc-sleep", "SleepSessionRecord", "hc.origin", HealthJournalStore.HC, wake - 32_400_000L, wake, hc))
             .put(healthRecord("samsung-sleep", "SleepSessionRecord", "samsung.origin", HealthJournalStore.SAMSUNG, wake, wake + 3_600_000L, samsung)), store.generation())
         launch(); tab("health")
-        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_open_sleep"))
+        expandHealthSection("health_history_section", "health_open_sleep")
         compose.onNodeWithTag("health_open_sleep").performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("health_record_samsung-sleep").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("health_records_list").performScrollToNode(hasTestTag("health_record_expand_samsung-sleep"))
@@ -911,7 +923,7 @@ class NativePhoneNavigationTest {
         store.importRecords(org.json.JSONArray((0 until 26).map { i -> healthRecord("old-$i", "WeightRecord", "old.origin",
             HealthJournalStore.HC, time, time + 1, JSONObject().put("value", 72.3).put("unit", "kg")) }), store.generation())
         launch(); tab("health")
-        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_open_records"))
+        expandHealthSection("health_history_section", "health_open_records")
         compose.onNodeWithTag("health_open_records").performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("health_record_old-25").fetchSemanticsNodes().isNotEmpty() }
         runBlocking(Dispatchers.IO) { store.erase() }
@@ -930,7 +942,7 @@ class NativePhoneNavigationTest {
         val day = java.time.LocalDate.now().toString()
         store.healthDay(day, JSONObject().put("weightKg", 72.3), store.generation())
         launch(); tab("health")
-        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_daily_priority"))
+        expandHealthSection("health_connect_section", "health_daily_priority")
         compose.onNodeWithTag("health_daily_priority").performClick()
         compose.waitUntil(15000) { store.preferences().optString("hcDailySource") == "priority" &&
             compose.onAllNodesWithTag("health_daily_partial").fetchSemanticsNodes().isNotEmpty() }
@@ -950,7 +962,7 @@ class NativePhoneNavigationTest {
         store.healthDay(day, JSONObject().put("source", "@aggregate").put("steps", 123), store.generation())
         launch(); tab("health")
         compose.waitUntil(15000) { compose.onAllNodesWithTag("health_journal_list").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_daily_priority"))
+        expandHealthSection("health_connect_section", "health_daily_priority")
         compose.onNodeWithTag("health_daily_sources_row").performScrollToNode(hasTestTag("health_daily_origin.alpha"))
         compose.onNodeWithTag("health_daily_origin.alpha").performClick()
         compose.waitUntil(15000) { store.preferences().optString("hcDailySource") == "origin.alpha" &&
@@ -963,7 +975,7 @@ class NativePhoneNavigationTest {
 
     @Test fun healthBackgroundShowsSchedulingSeparatelyFromSavedOptIn() {
         launch(); tab("health")
-        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_hc_background_switch"))
+        expandHealthSection("health_connect_section", "health_hc_background_switch")
         compose.onNodeWithTag("health_hc_background_switch").assertIsOff()
         compose.onNodeWithTag("health_hc_background_status").assertExists()
         compose.onNodeWithText("Nincs ütemezett háttérfrissítés.").assertExists()
@@ -1429,12 +1441,12 @@ class NativePhoneNavigationTest {
         health.setPreferences(JSONObject().put("provider", HealthJournalStore.HC))
         health.healthDay(day, JSONObject().put("source", "@aggregate").put("weightKg", 72.3), health.generation())
         launch(); tab("health")
-        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_previous_month"))
+        expandHealthSection("health_history_section", "health_previous_month")
         compose.onNodeWithTag("health_previous_month").performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithText(day).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText(day).performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithText("Betöltés…").fetchSemanticsNodes().isEmpty() }
-        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_metric_weightKg"))
+        expandHealthSection("health_more_section", "health_metric_weightKg")
         compose.onNodeWithText("72,3").assertIsDisplayed()
         screenshot("health_historical_weight")
     }

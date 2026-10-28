@@ -45,6 +45,10 @@ class NativeHealthSyncUiTest {
                 }
             } }
         }
+        compose.onNodeWithTag("health_journal_list")
+            .performScrollToNode(hasTestTag("health_connect_section"))
+        compose.onNodeWithTag("health_connect_section").performClick()
+
         fun click(tag: String) {
             compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag(tag))
             compose.onNodeWithTag(tag).performClick()

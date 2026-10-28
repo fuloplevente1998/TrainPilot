@@ -679,5 +679,15 @@
     <string name="studio_volume_loading">Loading volume chart…</string>
     <string name="studio_volume_retry">Retry volume chart</string>
     <string name="studio_volume_workouts">workouts</string>
-    <string name="studio_health_watch_sync">Watch & sync</string>
+    <string name="studio_health_watch_sync">Watch and sync</string>
+    <string name="studio_health_today_status">Today · %1$s</string>
+    <string name="studio_health_day_status">Daily status · %1$s</string>
+    <string name="studio_health_overview_subtitle">A compact overview of your health</string>
+    <string name="studio_health_more">More health data</string>
+    <string name="studio_health_more_subtitle">Blood pressure, glucose, breathing, distance and more measurements</string>
+    <string name="studio_health_journal_subtitle">Day selection, detailed measurements and sleep</string>
+    <string name="studio_health_connect_subtitle">Data sources, permissions and sync</string>
+    <string name="studio_health_watch_sync_subtitle">Connected devices and background connection</string>
+    <string name="studio_health_connected_devices">Connected devices</string>
+    <string name="studio_health_connected_devices_subtitle">Watch connection and device sync</string>
 </resources>

@@ -55,6 +55,16 @@ class NativeHealthAutoRefreshUiTest {
         }
     }
 
+    private fun openConnectionsIfNeeded() {
+        compose.onNodeWithTag("health_journal_list")
+            .performScrollToNode(hasTestTag("health_connect_section"))
+        if (compose.onAllNodesWithTag("health_auto_refresh_switch").fetchSemanticsNodes().isEmpty()) {
+            compose.onNodeWithTag("health_connect_section").performClick()
+        }
+        compose.onNodeWithTag("health_journal_list")
+            .performScrollToNode(hasTestTag("health_auto_refresh_switch"))
+    }
+
     private fun openHealth() {
         scenario = ActivityScenario.launch(MainActivity::class.java)
         compose.waitUntil(20_000) {
@@ -66,8 +76,7 @@ class NativeHealthAutoRefreshUiTest {
         compose.waitUntil(20_000) {
             compose.onAllNodesWithTag("health_journal_list").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithTag("health_journal_list")
-            .performScrollToNode(hasTestTag("health_auto_refresh_switch"))
+        openConnectionsIfNeeded()
         compose.onNodeWithTag("health_auto_refresh_switch").assertExists()
     }
 
@@ -191,8 +200,7 @@ class NativeHealthAutoRefreshUiTest {
 
         compose.onNodeWithTag("navigation_home").performClick()
         compose.onNodeWithTag("navigation_health").performScrollTo().assertIsDisplayed().performClick()
-        compose.onNodeWithTag("health_journal_list")
-            .performScrollToNode(hasTestTag("health_auto_refresh_switch"))
+        openConnectionsIfNeeded()
         compose.onNodeWithTag("health_auto_refresh_switch").assertIsOn()
 
         compose.onNodeWithTag("health_auto_refresh_switch").performClick()
