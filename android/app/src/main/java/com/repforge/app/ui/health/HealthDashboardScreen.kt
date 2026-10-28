@@ -113,13 +113,13 @@ fun HealthDashboardScreen(
     onActiveWorkout: () -> Unit = {},
     viewModel: HealthDashboardViewModel = viewModel()
 ) {
+    val context = LocalContext.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val activeWorkout by ActiveWorkoutStore.snapshotFlow.collectAsStateWithLifecycle()
-    val persistedWear = remember(LocalContext.current) { WearLiveHealthStore.current(LocalContext.current) }
+    val persistedWear = remember(context) { WearLiveHealthStore.current(context) }
     val liveWear by WearLiveHealthStore.liveHealthFlow.collectAsStateWithLifecycle()
     val wear = liveWear ?: persistedWear
     val colors = LocalTrainPilotColors.current
-    val context = LocalContext.current
     val activity = context as? Activity
     val screenLifecycle = LocalLifecycleOwner.current
     DisposableEffect(screenLifecycle, activity, viewModel) {
