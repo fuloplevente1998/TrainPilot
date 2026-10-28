@@ -327,9 +327,16 @@ class NativePhoneNavigationTest {
         compose.onNodeWithTag("settings_theme_picker").assertIsDisplayed()
         compose.onNodeWithTag("navigation_back").performClick()
         compose.onNodeWithTag("journal_search").assertExists()
+        // The approved 18:49 header has an *inline* language dropdown,
+        // not a second Settings navigation. Persist through native DataStore.
         compose.onNodeWithTag("header_language").performClick()
-        compose.onNodeWithTag("settings_language_ro").assertIsDisplayed().assertIsSelected()
-        compose.onNodeWithTag("navigation_back").performClick()
+        compose.onNodeWithTag("header_language_ro").assertIsDisplayed()
+        compose.onNodeWithTag("header_language_en").performClick()
+        compose.waitUntil(10000) { runBlocking { settings.current().language == "en" } }
+        compose.onNodeWithTag("journal_search").assertExists()
+        compose.onNodeWithTag("header_language").performClick()
+        compose.onNodeWithTag("header_language_ro").performClick()
+        compose.waitUntil(10000) { runBlocking { settings.current().language == "ro" } }
         compose.onNodeWithTag("journal_search").assertExists()
     }
     @Test fun openingSettingsKeepsTheCanonicalWorkoutAndStopwatchRunning() {
