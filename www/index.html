@@ -2580,6 +2580,7 @@
       const button=document.createElement('button');
       button.type='button';
       button.className='tp271-picker-option';
+      button.dataset.tp271Choice=key;
       button.textContent=name;
       button.setAttribute('aria-pressed',String(key===current));
       if(kind==='theme'&&typeof RF200_THEMES==='object'){
