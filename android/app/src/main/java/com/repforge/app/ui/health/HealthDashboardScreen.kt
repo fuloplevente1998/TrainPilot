@@ -273,10 +273,10 @@ fun HealthDashboardScreen(
 @Composable
 fun HealthJournalTabContent(
     state: HealthDashboardUiState,
-    weightState: WeightJournalUiState,
+    weightState: WeightJournalUiState = WeightJournalUiState(),
     onWeightJournal: () -> Unit,
-    onWeightRange: (String) -> Unit,
-    onWeightRetry: () -> Unit,
+    onWeightRange: (String) -> Unit = {},
+    onWeightRetry: () -> Unit = {},
     onSelectProvider: (String) -> Unit,
     onToggleHcBackground: (Boolean) -> Unit,
     onAutoOnOpen: (Boolean) -> Unit,
