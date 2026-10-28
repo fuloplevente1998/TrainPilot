@@ -92,6 +92,8 @@ const server=http.createServer((req,res)=>{
       // All original secondary functions stay reachable in the compact top row.
       await page.locator('.top .tp151-nav-item[onclick*="programs"]').click();
       assert.equal(await page.evaluate(()=>state.tab),'programs',width+': Programs reachable');
+      await page.waitForFunction(()=>document.querySelector('#tp271Dock .tp271-dock-button.tp271-selected')?.dataset.tp271Target==='workout');
+      assert.equal(await page.locator('#tp271Dock [aria-current="page"]').count(),1,width+': Programs belongs to Workout main tab');
       await page.locator('.top .tp151-nav-item[onclick*="calendar"]').click();
       assert.equal(await page.locator('#tp155R4PanelHost').getAttribute('data-panel'),'calendar',width+': Calendar opens');
       await page.evaluate(()=>tp155R4ClosePanel(false));
