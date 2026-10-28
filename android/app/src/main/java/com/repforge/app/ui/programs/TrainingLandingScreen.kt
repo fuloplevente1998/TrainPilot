@@ -71,7 +71,7 @@ internal fun TrainingLandingScreen(language: String, activeProgramId: String, bu
                     Column(Modifier.weight(1f)) {
                         Text(labels[1], style = MaterialTheme.typography.labelMedium,
                             color = colors.accentText, fontWeight = FontWeight.Bold)
-                        Text(labels[2], style = MaterialTheme.typography.titleLarge, color = colors.text)
+                        Text(labels[0], style = MaterialTheme.typography.titleLarge, color = colors.text)
                     }
                     Icon(Icons.Default.ChevronRight, contentDescription = null, tint = colors.muted)
                 }
