@@ -95,6 +95,10 @@ const server=http.createServer((req,res)=>{
      await card.click();
      assert.equal(await card.getAttribute('aria-expanded'),'false',width+'/'+theme+': same detail can close');
      const chart=progress.locator('.tp177-volume-toggle');
+     // The real module intentionally remembers its expanded state when a
+     // theme changes. Normalize the test fixture before verifying expansion.
+     if(await chart.getAttribute('aria-expanded')==='true')await chart.click();
+     assert.equal(await chart.getAttribute('aria-expanded'),'false',width+'/'+theme+': volume starts compact for test');
      await chart.click();
      assert.equal(await chart.getAttribute('aria-expanded'),'true',width+'/'+theme+': volume expands original graph');
      const seven=progress.locator('.tp177-periods button[data-period="7d"]').first();
