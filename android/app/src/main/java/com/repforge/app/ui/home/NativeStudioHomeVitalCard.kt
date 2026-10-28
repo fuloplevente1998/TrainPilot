@@ -3,12 +3,14 @@ package com.repforge.app.ui.home
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,6 +27,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -60,9 +64,8 @@ internal fun NativeStudioHomeVitalCard(
         shape = shape, color = palette.card,
         modifier = modifier.heightIn(min = 48.dp)
             .border(1.dp, palette.line, shape)
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .testTag("home_metric_$key")
     ) {
+        Box {
         Column(
             modifier = Modifier.fillMaxWidth().padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -109,6 +112,13 @@ internal fun NativeStudioHomeVitalCard(
                     color = palette.muted.copy(alpha = .8f), maxLines = 2,
                     overflow = TextOverflow.Ellipsis)
             }
+        }
+        // Native test and screen reader values remain individually readable,
+        // without changing a single Studio card pixel or its full-area action.
+        Box(Modifier.matchParentSize()
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .testTag("home_metric_$key")
+            .semantics { contentDescription = "$title: $mainValue" })
         }
     }
 }
