@@ -145,3 +145,146 @@ html.tp271-mockup-dock body #app main.rf221-home #rf223Today .tp5-today-label {
 html.tp271-mockup-dock body #app main.rf221-home #rf223Today .tp5-today-value {
   font-size: clamp(13px, 4vw, 17px) !important;
 }
+
+
+/* P1d mockup Home visual hierarchy: four-board composition + selected Studio
+   card proportions. The opt-in preview is scrollable; production Home keeps
+   the original compact, non-scrolling arrangement. Zero fabricated content. */
+html.tp271-mockup-dock body #app main.rf221-home {
+  gap: 10px !important;
+  scroll-padding-block: 9px 20px;
+}
+html.tp271-mockup-dock body #app main.rf221-home > .hero.tp155-home-active-card {
+  box-sizing: border-box !important;
+  border: 1px solid color-mix(in srgb, var(--tp-program-accent, var(--accent)) 58%, var(--line)) !important;
+  border-radius: 19px !important;
+  padding: 14px 14px 12px !important;
+  background:
+    radial-gradient(circle at 100% 0%,
+      color-mix(in srgb, var(--tp-program-accent, var(--accent)) 13%, transparent),
+      transparent 62%),
+    var(--tp-ui-card, var(--card)) !important;
+  box-shadow: none !important;
+  margin-bottom: 0 !important;
+}
+html[data-tp-theme-family="basic"].tp271-mockup-dock body #app main.rf221-home > .hero.tp155-home-active-card {
+  background: var(--tp-ui-card, var(--card)) !important;
+  border-color: var(--line) !important;
+}
+html.tp271-mockup-dock body #app main.rf221-home > .hero .tp155-home-active-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(0, .95fr) !important;
+  gap: clamp(8px, 2.7vw, 14px) !important;
+  align-items: center !important;
+}
+html.tp271-mockup-dock body #app main.rf221-home .tp155-home-program-left h1 {
+  font-size: clamp(20px, 5.6vw, 28px) !important;
+  line-height: 1.13 !important;
+  overflow-wrap: anywhere;
+}
+html.tp271-mockup-dock body #app main.rf221-home .tp155-home-program-right {
+  border-left: 1px solid color-mix(in srgb, var(--accent) 32%, var(--line)) !important;
+  padding-left: clamp(8px, 2.7vw, 12px) !important;
+}
+html.tp271-mockup-dock body #app main.rf221-home .tp155-home-program-right .tp146-next-title {
+  font-size: clamp(12px, 3.6vw, 16px) !important;
+  line-height: 1.22 !important;
+  overflow-wrap: anywhere;
+  white-space: normal !important;
+}
+html.tp271-mockup-dock body #app main.rf221-home > .hero.tp155-home-active-card > .btn {
+  min-height: 44px !important;
+  border-radius: 12px !important;
+  font-weight: 800 !important;
+  margin-top: 11px !important;
+}
+
+/* A clear Studio-like action card under the hero. Onboarding remains the
+   original working planner, with its original form and callback. */
+html.tp271-mockup-dock body #app main.rf221-home > .onboarding {
+  border: 1px solid color-mix(in srgb, var(--accent) 23%, var(--line)) !important;
+  border-radius: 16px !important;
+  background: var(--tp-ui-card, var(--card)) !important;
+  box-shadow: none !important;
+}
+html.tp271-mockup-dock body #app main.rf221-home > .onboarding button {
+  min-height: 44px !important;
+  border-radius: 11px !important;
+}
+
+/* Real Today health/workout metrics: a two-column, six-tile Studio arrangement.
+   The original 'no data' and source dependent labels are not altered. */
+html.tp271-mockup-dock body #app main.rf221-home #rf223Today.tp5-home-today {
+  padding: 12px 12px 11px !important;
+  border-radius: 17px !important;
+  margin: 0 !important;
+}
+html.tp271-mockup-dock body #app main.rf221-home #rf223Today .rf223-title {
+  margin-bottom: 10px !important;
+}
+html.tp271-mockup-dock body #app main.rf221-home #rf223Today .rf223-title strong {
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  line-height: 1.25 !important;
+}
+html.tp271-mockup-dock body #app main.rf221-home #rf223Today .tp5-today-metric.stat {
+  box-sizing: border-box !important;
+  border-radius: 13px !important;
+  min-height: 76px !important;
+  justify-content: center !important;
+  gap: 4px !important;
+}
+html.tp271-mockup-dock body #app main.rf221-home #rf223Today .tp5-today-value {
+  font-variant-numeric: tabular-nums;
+  line-height: 1.13 !important;
+}
+html.tp271-mockup-dock body #app main.rf221-home #rf223Today button.tp5-today-metric {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+/* Coach remains the same real action and the same physical/themed background,
+   outline and shadow as its Coach panel. Improve inner text rhythm only. */
+html.tp271-mockup-dock body #app main.rf221-home #rf220CoachCard.tp166-home-coach {
+  border-radius: 17px !important;
+}
+html.tp271-mockup-dock body #app main.rf221-home #rf220CoachCard.tp166-home-coach .tp166-home-coach-copy h2 {
+  line-height: 1.24 !important;
+  letter-spacing: -.01em;
+}
+html.tp271-mockup-dock body #app main.rf221-home #rf220CoachCard.tp166-home-coach .tp166-home-coach-copy p {
+  line-height: 1.36 !important;
+}
+
+/* The original four quick actions remain real interactive controls in a
+   compact top strip, not a second router or a duplicated bottom dock. */
+html.tp271-mockup-dock body .top.tp154-nav-grid {
+  gap: 6px !important;
+  padding-bottom: 7px !important;
+}
+html.tp271-mockup-dock body .top.tp154-nav-grid .tp154-nav-cell {
+  border-radius: 12px !important;
+  min-height: 48px !important;
+}
+html.tp271-mockup-dock body .top.tp154-nav-grid .tp151-nav-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: clamp(10px, 2.9vw, 12px) !important;
+}
+@media (max-width: 359px) {
+  html.tp271-mockup-dock body #app main.rf221-home {
+    gap: 8px !important;
+  }
+  html.tp271-mockup-dock body #app main.rf221-home > .hero.tp155-home-active-card {
+    padding: 11px 10px !important;
+  }
+  html.tp271-mockup-dock body #app main.rf221-home .tp155-home-program-left h1 {
+    font-size: 19px !important;
+  }
+  html.tp271-mockup-dock body #app main.rf221-home .tp155-home-program-right .tp146-next-title {
+    font-size: 12px !important;
+  }
+  html.tp271-mockup-dock body #app main.rf221-home #rf223Today.tp5-home-today {
+    padding: 10px 8px !important;
+  }
+}
