@@ -152,6 +152,9 @@ fun SettingsScreen(
     var themeExpanded by rememberSaveable(initialSection) {
         mutableStateOf(initialSection == "theme")
     }
+    var profileExpanded by rememberSaveable(initialSection) {
+        mutableStateOf(initialSection == "profile")
+    }
     var backupExpanded by rememberSaveable { mutableStateOf(false) }
     var privacyExpanded by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(state.timerSavedSequence) {
@@ -433,15 +436,16 @@ fun SettingsScreen(
         item {
             Card(
                 modifier = Modifier.fillMaxWidth()
-                    .testTag("training_profile_open")
+                    .testTag("settings_profile_summary")
                     .clickable(enabled = !state.profileSaving && !state.replacementBusy) {
-                        openedProfileJson = state.settings.profileJson
-                        viewModel.clearProfileError()
-                        profileOpen = true
+                        profileExpanded = !profileExpanded
                     },
                 shape = RoundedCornerShape(18.dp),
                 colors = CardDefaults.cardColors(containerColor = colors.card),
-                border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    if (profileExpanded) colors.accent.copy(alpha = .55f) else colors.line
+                )
             ) {
                 Row(
                     Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
@@ -471,23 +475,39 @@ fun SettingsScreen(
                             .padding(horizontal = 8.dp, vertical = 5.dp)
                     )
                     Spacer(Modifier.width(8.dp))
-                    Text("›", color = colors.accentText, fontSize = 22.sp)
+                    Text(if (profileExpanded) "⌄" else "›", color = colors.accentText, fontSize = 22.sp)
                 }
             }
         }
 
-        // Keep the complete native progression-mode editor reachable below the compact Studio row.
-        item {
-            NativeTrainingModePicker(
-                language = state.settings.language,
-                raw = state.settings.trainingModes197Json,
-                activeProgramId = state.settings.activeProgramId,
-                scope = "global",
-                enabled = allowDataReplacement && !state.modeSaving && !state.replacementBusy,
-                onApprove = viewModel::approveTrainingMode,
-                onUndo = { viewModel.undoTrainingMode("global", null) },
-                holder = globalModeState, showDialog = false
-            )
+        if (profileExpanded) {
+            item {
+                OutlinedButton(
+                    onClick = {
+                        openedProfileJson = state.settings.profileJson
+                        viewModel.clearProfileError()
+                        profileOpen = true
+                    },
+                    modifier = Modifier.fillMaxWidth().height(48.dp)
+                        .testTag("training_profile_open"),
+                    enabled = !state.profileSaving && !state.replacementBusy
+                ) {
+                    Text(strings.getString(R.string.native_settings_profile_edit))
+                }
+            }
+            item {
+                NativeTrainingModePicker(
+                    language = state.settings.language,
+                    raw = state.settings.trainingModes197Json,
+                    activeProgramId = state.settings.activeProgramId,
+                    scope = "global",
+                    enabled = allowDataReplacement && !state.modeSaving && !state.replacementBusy,
+                    onApprove = viewModel::approveTrainingMode,
+                    onUndo = { viewModel.undoTrainingMode("global", null) },
+                    holder = globalModeState,
+                    showDialog = false
+                )
+            }
         }
 
         item {

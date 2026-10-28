@@ -91,6 +91,17 @@ class NativePhoneNavigationTest {
         compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag(targetTag))
     }
 
+    private fun openSettingsProfileEditor() {
+        compose.onNodeWithTag("settings_list")
+            .performScrollToNode(hasTestTag("settings_profile_summary"))
+        if (compose.onAllNodesWithTag("training_profile_open").fetchSemanticsNodes().isEmpty()) {
+            compose.onNodeWithTag("settings_profile_summary").performClick()
+        }
+        compose.onNodeWithTag("settings_list")
+            .performScrollToNode(hasTestTag("training_profile_open"))
+        compose.onNodeWithTag("training_profile_open").performClick()
+    }
+
     private fun snapshot(): JSONObject? {
         var result: JSONObject? = null
         instrumentation.runOnMainSync { result = ActiveWorkoutStore.current(context) }
@@ -270,8 +281,7 @@ class NativePhoneNavigationTest {
     @Test fun trainingProfilePersistsAfterSettingsReentryWithoutGuessingMeasurements() {
         launch()
         compose.onNodeWithTag("navigation_settings").performClick()
-        compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("training_profile_open"))
-        compose.onNodeWithTag("training_profile_open").performClick()
+        openSettingsProfileEditor()
         compose.onNodeWithTag("profile_field_age").performTextReplacement("28")
         compose.onNodeWithTag("profile_field_minutes").performTextReplacement("75")
         compose.onNodeWithTag("profile_field_goal").performTextReplacement("fitness")
@@ -284,8 +294,7 @@ class NativePhoneNavigationTest {
         }
         compose.onNodeWithTag("navigation_back").performClick()
         compose.onNodeWithTag("navigation_settings").performClick()
-        compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("training_profile_open"))
-        compose.onNodeWithTag("training_profile_open").performClick()
+        openSettingsProfileEditor()
         compose.onNodeWithTag("profile_field_age").assertTextContains("28")
         compose.onNodeWithTag("profile_field_minutes").assertTextContains("75")
         assertFalse(JSONObject(runBlocking(Dispatchers.IO) { settings.current().profileJson }).has("height"))
@@ -322,8 +331,7 @@ class NativePhoneNavigationTest {
         }
         launch()
         compose.onNodeWithTag("navigation_settings").performClick()
-        compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("training_profile_open"))
-        compose.onNodeWithTag("training_profile_open").performClick()
+        openSettingsProfileEditor()
         compose.onNodeWithTag("profile_field_weight").performTextReplacement("Infinity")
         compose.onNodeWithTag("profile_save").performClick()
         compose.waitUntil(15000) {
