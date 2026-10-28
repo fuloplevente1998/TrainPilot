@@ -357,38 +357,20 @@ internal fun StudioHomeVitals(
                 Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     row.forEach { tile ->
-                        Surface(Modifier.weight(1f).fillMaxHeight().heightIn(min = 48.dp)
-                            .border(1.dp, colors.line, RoundedCornerShape(18.dp)),
-                            color = colors.card, shape = RoundedCornerShape(18.dp)) {
-                            // Keep the real value/source as independent readable semantics,
-                            // while the transparent full-card action remains tappable.
-                            Box {
-                                Column(Modifier.padding(14.dp),
-                                    verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Icon(tile.icon, contentDescription = null,
-                                        tint = colors.accentText, modifier = Modifier.size(22.dp))
-                                    Text(tile.title, color = colors.muted,
-                                        style = MaterialTheme.typography.bodyMedium)
-                                }
-                                Text(tile.value, color = colors.text,
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    modifier = Modifier.testTag("home_metric_${tile.key}_value"))
-                                tile.detail?.let { detail ->
-                                    Text(detail, color = colors.muted,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        modifier = Modifier.testTag("home_metric_${tile.key}_source"))
-                                }
-                                }
-                                Box(Modifier.matchParentSize()
-                                    .clickable(enabled = enabled, role = Role.Button) { tile.onClick() }
-                                    .testTag("home_metric_${tile.key}")
-                                    .semantics {
-                                        contentDescription = "${tile.title}: ${tile.value}"
-                                    })
-                            }
-                        }
+                        // Exact 18:49 Studio HomeVitalCard composable layout, with
+                        // real native measurements and no fabricated status/progress.
+                        NativeStudioHomeVitalCard(
+                            key = tile.key,
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
+                            icon = tile.icon,
+                            iconTint = colors.accentText,
+                            title = tile.title,
+                            mainValue = tile.value,
+                            statusText = tile.detail,
+                            statusColor = colors.muted,
+                            enabled = enabled,
+                            onClick = tile.onClick
+                        )
                     }
                 }
             }
