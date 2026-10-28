@@ -1,9 +1,19 @@
 # TrainPilot – Studio UI folytatási pont
 
+## 2026-10-28: márkajelzés zárolása – eredeti arany súlyzó
+
+- **Felhasználói döntés (felülírja a Studio hegylogóját):** a TrainPilot fejlécében a **korábbi eredeti arany súlyzó** szerepel, **pontosan az indítóikon saját grafikájából**. Ez az anatómiai izomábra mellett a 18:49-es Studio-vizuál egyetlen további kifejezetten jóváhagyott kivétele. A hegycsúcsos Studio-logó nem maradhat alkalmazásbeli márkajelzésként.
+- `android/app/src/main/res/drawable/trainpilot_launcher_foreground.xml` a kanonikus gold-gradient súlyzóvektor; a változatlan `@mipmap/trainpilot_launcher` indítóikon erre a drawable-ra mutat. **Nem készítünk új súlyzót**, nincs árnyalat-/alakmódosítás.
+- Új `ui/navigation/TrainPilotBrandLogo.kt` ugyanazt az eredeti drawable-t használja Android `ImageView`-vel, ami az `aapt`-gradientet natívan, veszteség nélkül rendereli. Az új 18:49 Studio `NativeStudioShellHeader` és a régi/fallback `NativeMainHeader` is ezt hívja; mindkét hegyrajz eltávolítva.
+- `scripts/ci/verify_studio_native_safety.py` és `.github/workflows/studio-zip-integration-audit.yml` a manifest → launcher adaptive foreground → fejléckomponens változatlan logókapcsolatát ellenőrzi, a hegylogó visszatérését tiltja.
+- `NativePhoneNavigationTest.originalGoldDumbbellLogoSurvivesStudioShellPort` natív emulátoros UI teszt ellenőrzi a közös fejlécet Home/Progress lapokon, és nyers képernyőképet kér `studio_original_gold_dumbbell` néven.
+- **Utolsó app/UI+teszt commit:** `7073ee08f3643e0e7bf0859000c9f430f5b8d487`. A teljes fordítás és emulátoros teszt eredményét az adott SHA-hoz kapcsolódó Actions runon kell ellenőrizni; korábbi SUCCESS nem érvényes. PR #270 továbbra DRAFT, main változatlan.
+
+
 ## 2026-10-28: source-tree-first 18:49 Studio shell + real DataStore integration
 
 - **Approved source of truth** remains the original **18:49 AI Studio ZIP**; the 21:02 integrated ZIP is only an *integration technique reference*, not a safe drop-in. The actual native PR270 launcher, migration failure/retry/readiness screen, persisted backup, signed application identity, 5 real guarded routes and Wear/Health engines remain unchanged.
-- New compiled native `ui/navigation/NativeStudioShellHeader.kt`: the **actual 18:49 `TrainPilotGlobalTopHeaderAndNav` + `TopNavPillItem` layout port**, not generic native toolbar restyling. Source-aligned 12dp/10dp/8dp outer paddings, 8dp top controls gap, 26x18dp mountain path, 48dp language/theme/settings controls, #selected palette identifier, gold 5-tab capsules, correctly scrollable narrow/large-font tabs. **No DEMO label.**
+- New compiled native `ui/navigation/NativeStudioShellHeader.kt`: the **actual 18:49 `TrainPilotGlobalTopHeaderAndNav` + `TopNavPillItem` layout port**, not generic native toolbar restyling. Source-aligned 12dp/10dp/8dp outer paddings, 8dp top controls gap, **the owner's original gold DUMBBELL instead of the Studio mountain**, 48dp language/theme/settings controls, #selected palette identifier, gold 5-tab capsules, correctly scrollable narrow/large-font tabs. **No DEMO label.**
 - `TrainPilotNavigation.kt` now selects the exact Studio shell **for the five main routes**, preserving `destinationSelector` and `canNavigate` native finish/restore/ownership fences. Secondary workout/settings/edit routes keep their proven native lifecycle/back shells until source-faithful ports are ready. No new app identity or demo ViewModel.
 - The Studio header language popup is now a **real durable native operation** via `TrainPilotSettingsStore.setLanguage()` with its `NativeDataReplacement.mutate` guard. It remains disabled behind navigation fence and failures do not claim success. The theme icon temporarily links to *real* native theme settings rather than a nonpersistent Studio palette prototype.
 - `NativePhoneNavigationTest.settingsThemeAndLanguageChangesReturnToTheirOrigin` now tests four-language Studio inline dropdown directly with Room/DataStore re-read, while retaining main menu/Journal navigation and theme tests.
