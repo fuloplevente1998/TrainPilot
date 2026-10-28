@@ -59,8 +59,12 @@ const server=http.createServer((req,res)=>{
      assert.equal(await journal.locator('.tp155-journal-day').count()>=28,true,width+'/'+theme+': actual month dates');
      const date=await journal.locator('.tp155-journal-day[aria-current="date"]').getAttribute('data-date');
      assert.ok(date,width+'/'+theme+': real today is indicated');
+     // The canonical Round-4 Journal picker selects a range in two taps:
+     // first tap stores a pending start; second tap commits start/end.
      await journal.locator('.tp155-journal-day[aria-current="date"]').click();
-     assert.equal(await page.evaluate(()=>rf263HistoryFilter.from===rf263HistoryFilter.to&&!!rf263HistoryFilter.from),true,width+'/'+theme+': date filter updates original range state');
+     assert.equal(await page.evaluate(()=>!!state.tp155JournalRangeStart),true,width+'/'+theme+': first date is pending');
+     await journal.locator('.tp155-journal-day[data-date="'+date+'"]').click();
+     assert.equal(await page.evaluate(()=>rf263HistoryFilter.from===rf263HistoryFilter.to&&!!rf263HistoryFilter.from),true,width+'/'+theme+': second tap commits the original date-range filter');
      await page.evaluate(()=>{if(typeof window.rf263ClearHistoryFilter==='function')window.rf263ClearHistoryFilter();go('history')});
      await page.waitForSelector('main.tp150-journal-compact');
      const previewMetrics=await page.evaluate(()=>{
