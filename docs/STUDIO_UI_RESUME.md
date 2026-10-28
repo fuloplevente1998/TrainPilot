@@ -1,5 +1,18 @@
 # TrainPilot – Studio UI folytatási pont
 
+## Aktív pontos diagnosztika/javítás – 2026-10-28
+
+1a6b7102/40658293784: display readback1080x2392/450dpi/0.90 VALÓS,
+1344JVM+3Wear+2upgradeSUCCESS, dephone75missing: NexusLauncherANR fedte az
+appot, hostfocusguard leállt.44terminal41PASS/3FAIL, nincs PNG/phonePASS.
+2fontFAIL diagnózisa konkrét: paragraphWidth=Int.MAX_VALUE, maxWidth=Infinity.
+Javítás a27cc2fe: görgetett pillparent EXPLICIT mért width +TextfillMaxWidth,
+csak az idegen NexusLauncher tiltva a disposable emulátorban; appANR/focusguard
+és az eredeti overflowassert továbbra szigorú.12hosttesztPASS.
+FUTÓ canonical ownergate [40660277579](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40660277579),
+exact `a27cc2fe674dd7a707bb0f2f6590fd1ef74f6f5d`.MégUNRUN/nemPASS;
+ne indíts duplikált tesztkaput.08:11audit docs-only, nem módosítja a gate forrását.
+
 ## Új 08:11 export auditálva – 2026-10-28
 
 [Audit](reviews/AISTUDIO_0811_INTEGRATION_AUDIT.md), Native-AI-Studio@bc8e49fa,
