@@ -458,5 +458,9 @@
   {
     "file": "tests/browser/p271-webview-workout-entry.cjs",
     "estimatedSeconds": 25
+  },
+  {
+    "file": "tests/browser/p271-webview-journal-progress.cjs",
+    "estimatedSeconds": 24
   }
 ]
