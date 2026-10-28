@@ -78,7 +78,11 @@ class NativePhoneNavigationTest {
         compose.waitForIdle()
     }
     private fun tab(route: String) {
-        compose.onNodeWithTag("navigation_$route").performScrollTo().assertIsDisplayed().performClick()
+        val destination = compose.onNodeWithTag("navigation_$route")
+        // The main header scrolls; the active-workout secondary header is fixed.
+        // Already visible navigation needs no scrollable ancestor.
+        if (runCatching { destination.assertIsDisplayed() }.isFailure) destination.performScrollTo()
+        destination.assertIsDisplayed().performClick()
         // A click is not an admission receipt: await actual selected destination
         // before starting the next screen's work/screenshot.
         compose.waitUntil(15_000) {
