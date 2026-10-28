@@ -731,4 +731,12 @@
     <string name="studio_settings_privacy_subtitle">Data handling, health backup and local data</string>
     <string name="studio_settings_private_photos">Private workout photos</string>
     <string name="studio_settings_private_photos_subtitle">Open private progress photos</string>
+    <string name="studio_training_quick_subtitle">Start a short workout now</string>
+    <string name="studio_training_exercise_picker">Exercise selector</string>
+    <string name="studio_training_exercise_subtitle">Search, filter and swap</string>
+    <string name="studio_training_exercise_count">%1$d ex.</string>
+    <string name="studio_training_outdoor">Outdoor workout</string>
+    <string name="studio_training_outdoor_subtitle">Run, walk or cycle with GPS</string>
+    <string name="studio_training_current_program">Current program</string>
+    <string name="studio_training_all">All</string>
 </resources>

@@ -731,4 +731,12 @@
     <string name="studio_settings_privacy_subtitle">Adatkezelés, egészségmentés és helyi adatok</string>
     <string name="studio_settings_private_photos">Privát edzésfotók</string>
     <string name="studio_settings_private_photos_subtitle">A privát fejlődésfotók megnyitása</string>
+    <string name="studio_training_quick_subtitle">Indíts egy rövid edzést most</string>
+    <string name="studio_training_exercise_picker">Gyakorlatválasztó</string>
+    <string name="studio_training_exercise_subtitle">Keresés, szűrés, csere</string>
+    <string name="studio_training_exercise_count">%1$d gyak.</string>
+    <string name="studio_training_outdoor">Kültéri edzés</string>
+    <string name="studio_training_outdoor_subtitle">Futás, séta, kerékpár GPS-szel</string>
+    <string name="studio_training_current_program">Jelenlegi program</string>
+    <string name="studio_training_all">Összes</string>
 </resources>

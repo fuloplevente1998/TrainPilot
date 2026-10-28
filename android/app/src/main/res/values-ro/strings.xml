@@ -731,4 +731,12 @@
     <string name="studio_settings_privacy_subtitle">Gestionarea datelor, copia datelor de sănătate și date locale</string>
     <string name="studio_settings_private_photos">Fotografii private de antrenament</string>
     <string name="studio_settings_private_photos_subtitle">Deschide fotografiile private de progres</string>
+    <string name="studio_training_quick_subtitle">Pornește acum un antrenament scurt</string>
+    <string name="studio_training_exercise_picker">Selector exerciții</string>
+    <string name="studio_training_exercise_subtitle">Caută, filtrează și schimbă</string>
+    <string name="studio_training_exercise_count">%1$d ex.</string>
+    <string name="studio_training_outdoor">Antrenament în aer liber</string>
+    <string name="studio_training_outdoor_subtitle">Alergare, mers sau ciclism cu GPS</string>
+    <string name="studio_training_current_program">Program curent</string>
+    <string name="studio_training_all">Toate</string>
 </resources>
