@@ -31,7 +31,9 @@ const server=http.createServer((req,res)=>{
       await page.waitForFunction(()=>window.TrainPilotBoot?.finished && window.TrainPilotMockup271?.enabled);
       await page.locator('#tp271Dock .tp271-dock-button').first().waitFor();
       assert.equal(await page.locator('#tp271Dock .tp271-dock-button:visible').count(),5,width+': five lower buttons');
-      assert.equal(await page.locator('.top.tp154-nav-grid .tp154-nav-cell:visible').count(),4,width+': four upper actions remain');
+      assert.equal(await page.locator('.top.tp154-nav-grid .tp154-nav-cell:visible').count(),0,width+': old 2x4 navigation hidden');
+      assert.equal(await page.locator('#tp271Header .tp271-header-brand strong').textContent(),'TrainPilot',width+': real original header');
+      assert.equal(await page.locator('#tp271Header button[data-tp271-header]').count(),3,width+': Settings Language Theme in header');
       assert.equal(await page.locator('#tp271Dock button[aria-current="page"]').count(),1,width+': single active route');
       const grid=await page.evaluate(()=>{
         const e=document.querySelector('#app main.rf221-home #rf223Today .tp5-today-grid');
@@ -89,18 +91,24 @@ const server=http.createServer((req,res)=>{
         assert.equal(await page.locator('#tp271Dock [aria-current="page"]').count(),1,width+'/'+key+': exactly one active');
       }
 
-      // All original secondary functions stay reachable in the compact top row.
-      await page.locator('.top .tp151-nav-item[onclick*="programs"]').click();
+      // All original secondary functions remain reachable through the
+      // mockup Workout quick links rather than resurrecting a top 2x4 grid.
+      await page.locator('#tp271Dock button[data-tp271-target="workout"]').click();
+      const shortcuts=page.locator('#tp271WorkoutQuickLinks');
+      await shortcuts.waitFor();
+      assert.equal(await shortcuts.locator('button').count(),3,width+': three secondary Workout routes');
+      await shortcuts.locator('[data-tp271-shortcut="programs"]').click();
       assert.equal(await page.evaluate(()=>state.tab),'programs',width+': Programs reachable');
       await page.waitForFunction(()=>document.querySelector('#tp271Dock .tp271-dock-button.tp271-selected')?.dataset.tp271Target==='workout');
       assert.equal(await page.locator('#tp271Dock [aria-current="page"]').count(),1,width+': Programs belongs to Workout main tab');
-      await page.locator('.top .tp151-nav-item[onclick*="calendar"]').click();
+      await page.evaluate(()=>go('plan'));
+      await shortcuts.locator('[data-tp271-shortcut="calendar"]').click();
       assert.equal(await page.locator('#tp155R4PanelHost').getAttribute('data-panel'),'calendar',width+': Calendar opens');
       await page.evaluate(()=>tp155R4ClosePanel(false));
-      await page.locator('.top .tp154-coach-action').click();
+      await shortcuts.locator('[data-tp271-shortcut="coach"]').click();
       assert.equal(await page.locator('#tp155R4PanelHost').getAttribute('data-panel'),'coach',width+': Coach opens');
       await page.evaluate(()=>tp155R4ClosePanel(false));
-      await page.locator('.top .tp154-settings-action').click();
+      await page.locator('#tp271Header [data-tp271-header="settings"]').click();
       assert.equal(await page.locator('#tp155R4PanelHost').getAttribute('data-panel'),'settings',width+': Settings opens');
       await page.evaluate(()=>tp155R4ClosePanel(false));
 
@@ -161,6 +169,6 @@ const server=http.createServer((req,res)=>{
       assert.deepEqual(errors,[],width+': no JS runtime errors');
       await page.close();
     }
-    console.log('PASS PR271 P1b: opt-in lower five-tab dock, all secondary entries, real Progress state, live workout guard, language and default main fallback.');
+    console.log('PASS PR271 P1e: exactly five dock tabs, compact three-action header, secondary Workout entry points, real workout guard and main fallback.');
   }finally{await browser?.close();await new Promise(resolve=>server.close(resolve))}
 })().catch(e=>{console.error(e);process.exitCode=1});
