@@ -115,10 +115,18 @@ fun HealthDashboardScreen(
     navController: NavController,
     onWeightJournal: () -> Unit,
     onActiveWorkout: () -> Unit = {},
+    initialSection: String? = null,
+    onInitialSectionConsumed: () -> Unit = {},
     viewModel: HealthDashboardViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    LaunchedEffect(initialSection) {
+        if (initialSection == "devices") {
+            viewModel.setTab("ble")
+            onInitialSectionConsumed()
+        }
+    }
     val activeWorkout by ActiveWorkoutStore.snapshotFlow.collectAsStateWithLifecycle()
     val persistedWear = remember(context) { WearLiveHealthStore.current(context) }
     val liveWear by WearLiveHealthStore.liveHealthFlow.collectAsStateWithLifecycle()

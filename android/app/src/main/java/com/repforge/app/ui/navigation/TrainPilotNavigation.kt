@@ -171,6 +171,8 @@ fun TrainPilotAppScaffold(
     // Memory-only user start intent. Process recreation/navigation cannot silently start GPS.
     var launchGps by remember { mutableStateOf<NativeWorkoutTarget?>(null) }
     var quickWorkoutFilter by remember { mutableStateOf(QuickWorkoutFilter.ALL) }
+    var healthEntrySection by remember { mutableStateOf<String?>(null) }
+    var progressEntrySection by remember { mutableStateOf<String?>(null) }
     data class PendingProgram(val option: NativeProgramGpsChoice.Option, val dayId: String, val scheduleId: String?)
     var pendingProgram by remember { mutableStateOf<PendingProgram?>(null) }
     fun launchProgram(programId: String?, dayId: String, scheduleId: String?, option: NativeProgramGpsChoice.Option?, record: Boolean) {
@@ -386,7 +388,10 @@ fun TrainPilotAppScaffold(
                         onCalendar = { selectDestination("calendar") }, onCoach = { selectDestination("coach") },
                         onPrograms = { selectDestination("programs") }, language = settings.language, busy = navigationBlocked,
                         onProfile = { settingsSection = "profile"; selectDestination("settings") },
-                        onWatch = { settingsSection = "general"; selectDestination("settings") },
+                        onWatch = {
+                            healthEntrySection = "devices"
+                            selectDestination("health")
+                        },
                         onPersonalPlan = {
                             selectDestination("programs")
                             if (navController.currentDestination?.route == "programs") personalPlannerRequested = true
@@ -448,13 +453,19 @@ fun TrainPilotAppScaffold(
                     JournalScreen(navController = navController, language = settings.language)
                 }
                 composable(Screen.Progress.route) {
-                    ProgressScreen(onWeightJournal = { selectDestination("weight_journal") })
+                    ProgressScreen(
+                        onWeightJournal = { selectDestination("weight_journal") },
+                        initialSection = progressEntrySection,
+                        onInitialSectionConsumed = { progressEntrySection = null }
+                    )
                 }
                 composable(Screen.Health.route) {
                     HealthDashboardScreen(
                         navController = navController,
                         onWeightJournal = { selectDestination("weight_journal") },
-                        onActiveWorkout = { selectDestination("training") }
+                        onActiveWorkout = { selectDestination("training") },
+                        initialSection = healthEntrySection,
+                        onInitialSectionConsumed = { healthEntrySection = null }
                     )
                 }
                 composable("weight_journal") {
@@ -496,8 +507,14 @@ fun TrainPilotAppScaffold(
                         navController = navController,
                         allowDataReplacement = !hasActiveWorkout,
                         initialSection = settingsSection,
-                        onConnectedDevices = { selectDestination("health") },
-                        onPrivatePhotos = { selectDestination("progress") }
+                        onConnectedDevices = {
+                            healthEntrySection = "devices"
+                            selectDestination("health")
+                        },
+                        onPrivatePhotos = {
+                            progressEntrySection = "photos"
+                            selectDestination("progress")
+                        }
                     )
                 }
             }

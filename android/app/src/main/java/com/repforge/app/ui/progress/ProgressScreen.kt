@@ -87,6 +87,8 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun ProgressScreen(
     onWeightJournal: () -> Unit,
+    initialSection: String? = null,
+    onInitialSectionConsumed: () -> Unit = {},
     viewModel: ProgressViewModel = viewModel(),
     weightViewModel: WeightJournalViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
@@ -99,6 +101,15 @@ fun ProgressScreen(
     // Presentation-only Studio section state. Native filters and query state stay in the ViewModel.
     val studioSection = remember { mutableIntStateOf(0) }
     val statisticsSection = remember { mutableIntStateOf(0) }
+    val listState = rememberLazyListState()
+    LaunchedEffect(initialSection, state.loading, state.loadError, state.periodTotals) {
+        if (initialSection == "photos" && !state.loading && !state.loadError) {
+            studioSection.intValue = 0
+            val photoIndex = if (state.periodTotals != null) 5 else 4
+            listState.scrollToItem(photoIndex)
+            onInitialSectionConsumed()
+        }
+    }
 
     // A Room write is not required for a new day/week or an OS time-zone
     // change. ON_RESUME also catches returning from a backgrounded app or
@@ -144,7 +155,7 @@ fun ProgressScreen(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp).testTag("progress_list"),
-        state = rememberLazyListState(),
+        state = listState,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item { Spacer(Modifier.height(8.dp)) }
