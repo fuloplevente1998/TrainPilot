@@ -446,5 +446,9 @@
   {
     "file": "tests/browser/startup-fit-once-236.cjs",
     "estimatedSeconds": 9
+  },
+  {
+    "file": "tests/browser/p271-webview-home-mockup.cjs",
+    "estimatedSeconds": 25
   }
 ]
