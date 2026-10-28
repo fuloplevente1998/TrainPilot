@@ -5,7 +5,8 @@
 User: Xiaomi Redmi Note 15, 1080×2392 álló, betűméret90%, más megjelenítés default.
 A canonical native-android.yml új opcionális phone_display_size / density /
 font_scale inputjai a futó emulátort állítják, nem a PNG-t méretezik át.
-Tervezett profil1080x2392/440dpi/0.90; 440dpi FELTÉTELEZETT, nem telefonból olvasott.
+Telefonról küldött fejlesztői kép: legkisebb szélesség384dp.
+Profil1080x2392/450dpi/0.90; 1080×160/384=450, nem panel-PPI.
 Runner readback+PNG-IHDR ellenőrzés és manifest-provenance;11hosttesztPASS.
 A c894forrású közös gate40653023009 még a régi kompakt profilon fut;
 ne szakítsd meg új dispatch-csel. Lezárás után külön ellenőrizd a telefonprofilt.

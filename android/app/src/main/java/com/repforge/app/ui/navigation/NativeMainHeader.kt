@@ -160,8 +160,8 @@ internal fun NativeTopNavigation(route: String, settingsOrigin: String, language
                         color = if (active) colors.accent else colors.text,
                         fontSize = 10.sp,
                         fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
-                        maxLines = 1, softWrap = false,
-                        overflow = if (scrollable) TextOverflow.Visible else TextOverflow.Ellipsis
+                        maxLines = 1, softWrap = true,
+                        overflow = if (scrollable) TextOverflow.Clip else TextOverflow.Ellipsis
                     )
                 }
             }

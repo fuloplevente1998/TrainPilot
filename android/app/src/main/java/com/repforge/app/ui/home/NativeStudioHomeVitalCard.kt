@@ -87,14 +87,14 @@ internal fun NativeStudioHomeVitalCard(
                 modifier = Modifier.testTag("home_metric_${key}_value")
             )
             if (statusText != null) {
-                Box(if (key == "steps") Modifier.testTag("home_metric_steps_unit")
+                Box(if (key == "steps") Modifier.testTag("home_metric_steps_source")
                     .semantics(mergeDescendants = true) {} else Modifier) {
                 Text(
                     text = statusText,
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontWeight = FontWeight.SemiBold),
                     color = statusColor,
-                    modifier = Modifier.testTag("home_metric_${key}_source")
+                    modifier = Modifier.testTag(if (key == "steps") "home_metric_steps_unit" else "home_metric_${key}_source")
                 )
                 }
             }

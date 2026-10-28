@@ -526,7 +526,7 @@ class NativePhoneNavigationTest {
                 compose.onAllNodesWithTag("home_loading").fetchSemanticsNodes().isEmpty() }
         }
         awaitHomeProgram("Naptári célprogram")
-        compose.onNodeWithTag("home_day_name").assertTextEquals("Naptári célnap")
+        compose.onNodeWithTag("home_day_name", useUnmergedTree = true).assertTextEquals("Naptári célnap")
         val activeName = runBlocking(Dispatchers.IO) { db.programDao().getProgramWithDaysById("home-basic")!!.program.nameHu }
         runBlocking(Dispatchers.IO) { db.calendarScheduleDao().upsertEntry(planned.copy(status = "skipped")) }
         awaitHomeProgram(activeName)

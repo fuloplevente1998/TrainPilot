@@ -105,3 +105,19 @@ workflow parameter and regenerate; do not claim pixel/layout equivalence yet.
 Local host regression suite: 11/11 PASS, including pixel/density pairing,
 read-back mismatch rejection, and raw PNG geometry checks. Device-profile runtime
 still pending. Native app/test source remains identical to c894f653.
+
+## Corrective gate and confirmed owner dimensions
+
+40653023009 / c894f653: build, all Wear and both signed upgrades SUCCESS;
+phone raw12801406371:119main114PASS/5FAIL+4GPSPASS,118/123 overall,
+0missing/crash. Full-unit artifact12800278854 downloaded for raw verification.
+Remaining exact failures: no-wrap Visible text paragraph overflow in both tab
+variants; steps unit tag on a parent in unmerged semantics; day label inside a
+clickable card; test expecting system-English set units while app is Hungarian.
+Corrections use bounded soft-wrapped single-line text, actual Text unit tags,
+unmerged day lookup, and explicit app-language resources without weakening assertions.
+
+User then supplied developer-settings screenshot showing **smallest width384dp**.
+At1080px this implies **450 logical DPI** (1080×160/384), replacing the earlier
+provisional440. Confirmed profile:1080x2392,450dpi,fontScale0.90. The next common
+full gate must use these inputs and verify unchanged raw PNG pixel dimensions.

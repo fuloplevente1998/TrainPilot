@@ -266,9 +266,9 @@ internal fun NativeStudioShellHeader(
                                     fontSize = 10.sp,
                                     fontWeight = if (active) FontWeight.Bold else FontWeight.Medium),
                                     color = if (active) colors.accentText else colors.text,
-                                    maxLines = 1, softWrap = false,
+                                    maxLines = 1, softWrap = true,
                                     overflow = if (scrollable)
-                                        TextOverflow.Visible else TextOverflow.Ellipsis)
+                                        TextOverflow.Clip else TextOverflow.Ellipsis)
                             }
                         }
                     }
