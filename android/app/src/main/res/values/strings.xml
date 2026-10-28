@@ -746,4 +746,13 @@
     <string name="studio_workout_heart_rate">Pulzus</string>
     <string name="studio_journal_choose_date">Dátum kiválasztása</string>
     <string name="studio_journal_whole_month">Teljes hónap megjelenítése</string>
+    <string name="studio_progress_pr_workouts_count">%1$d PR-t tartalmazó edzés</string>
+    <string name="studio_progress_pr_workouts_hint">Az elmúlt 30 nap tartósan rögzített edzésadataiból.</string>
+    <string name="studio_weight_current_label">Testsúly</string>
+    <string name="studio_weight_change">Változás</string>
+    <string name="studio_weight_min_max_label">Minimum / Maximum</string>
+    <string name="studio_weight_range_7d">7d</string>
+    <string name="studio_weight_range_30d">30d</string>
+    <string name="studio_weight_range_3m">3h</string>
+    <string name="studio_weight_range_1y">1é</string>
 </resources>

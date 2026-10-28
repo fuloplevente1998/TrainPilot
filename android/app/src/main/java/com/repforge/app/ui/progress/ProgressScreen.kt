@@ -192,9 +192,9 @@ fun ProgressScreen(
                     }
                 }
                 if (statisticsSection.intValue == 0) {
-                    state.periodTotals?.let { totals ->
-                        item(key = "progress_statistics_overview") {
-                            ProgressPeriodOverview(totals, state.language)
+                    state.periodTotals?.takeIf { it.prWorkouts > 0 }?.let { totals ->
+                        item(key = "progress_personal_records_summary") {
+                            ProgressPersonalRecordsSummary(totals.prWorkouts, state.language)
                         }
                     }
                 } else {
@@ -252,6 +252,35 @@ fun ProgressScreen(
         item { Spacer(Modifier.height(80.dp)) }
     }
 
+}
+
+@Composable
+private fun ProgressPersonalRecordsSummary(count: Int, language: String) {
+    val colors = LocalTrainPilotColors.current
+    val context = LocalContext.current
+    val strings = remember(context, language) { nativeResources(context, language) }
+    TrainPilotHeroSurface(
+        Modifier.fillMaxWidth().testTag("progress_personal_records_summary")
+    ) {
+        Text(
+            strings.getString(R.string.studio_progress_stats_records),
+            color = colors.accentText,
+            style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            strings.getString(R.string.studio_progress_pr_workouts_count, count),
+            color = colors.text,
+            style = androidx.compose.material3.MaterialTheme.typography.headlineMedium.copy(
+                fontFeatureSettings = "tnum"
+            )
+        )
+        Text(
+            strings.getString(R.string.studio_progress_pr_workouts_hint),
+            color = colors.muted,
+            style = androidx.compose.material3.MaterialTheme.typography.bodySmall
+        )
+    }
 }
 
 /** Studio's total-volume panel with four authentic native history ranges.
