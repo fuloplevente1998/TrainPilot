@@ -53,7 +53,7 @@ internal fun NativeStudioMuscleCard(state: ProgressUiState,
         Column(Modifier.padding(14.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(strings.getString(R.string.native_progress_muscle_load),
+                Text(strings.getString(R.string.studio_muscle_title),
                     Modifier.weight(1f), style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold, color = colors.text)
                 Surface(Modifier.heightIn(min = 48.dp).widthIn(min = 48.dp)
@@ -108,7 +108,7 @@ internal fun NativeStudioMuscleCard(state: ProgressUiState,
                     }
                     BoxWithConstraints(Modifier.fillMaxWidth()) {
                         // The Studio side-by-side layout expands vertically for narrow/large text.
-                        if (maxWidth < 300.dp || LocalDensity.current.fontScale > 1.3f) {
+                        if (maxWidth < 240.dp || LocalDensity.current.fontScale > 1.3f) {
                             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                 NativeMuscleLoadVisual(state.muscleLoads, state.language, Modifier.fillMaxWidth())
                                 bars()

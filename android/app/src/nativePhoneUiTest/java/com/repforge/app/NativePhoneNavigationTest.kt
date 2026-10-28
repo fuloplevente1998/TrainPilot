@@ -522,7 +522,7 @@ class NativePhoneNavigationTest {
         }
         launch()
         fun awaitHomeProgram(name: String) {
-            compose.waitUntil(15000) { compose.onAllNodes(hasTestTag("home_program_name") and hasText(name)).fetchSemanticsNodes().isNotEmpty() &&
+            compose.waitUntil(15000) { compose.onAllNodes(hasTestTag("home_program_name") and hasText(name), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() &&
                 compose.onAllNodesWithTag("home_loading").fetchSemanticsNodes().isEmpty() }
         }
         awaitHomeProgram("Naptári célprogram")
@@ -1426,6 +1426,7 @@ class NativePhoneNavigationTest {
         health.setPreferences(JSONObject().put("provider", HealthJournalStore.HC))
         health.healthDay(day, JSONObject().put("source", "@aggregate").put("weightKg", 72.3), health.generation())
         launch(); tab("health")
+        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_previous_month"))
         compose.onNodeWithTag("health_previous_month").performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithText(day).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText(day).performClick()

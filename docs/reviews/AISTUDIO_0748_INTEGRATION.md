@@ -69,3 +69,20 @@ Previous common gate 40634885209 built/JVM, all three Wear and both signed upgra
 successfully, but phone artifact 12793976161 reports 117 main tests, 19 failures.
 This is not a green baseline for current changes. Current gate must independently
 verify raw instrumentation, JVM XML and actual screenshots before claiming PASS.
+
+## First exact-source runtime and correction
+
+40649976268 / 52e31054: raw JVM artifact 12799173855, 168 XML files,
+1344 tests / 0 failure / 0 error / 0 skip. Wear raw 12799747282/12800381325/
+12799613734: 68+59+56=183 PASS, no missing/crash. Both signed upgrade jobs SUCCESS.
+Phone raw 12799797327: 119 main, 113 PASS / 6 FAIL +4 isolated GPS PASS,
+117/123 overall, zero missing/runner crash. This is NOT a green common gate.
+
+Corrections from actual failures: give scrollable Text itself a measured minimum
+width (not just its parent); read child unit/program tags from the unmerged tree
+inside genuine clickable Studio cards; scroll the lazy month selector into view;
+assert the full localized set count (Compose assertTextContains defaults to exact
+string matching). The actual PNG also showed the muscle figure stacked on normal
+320dp: preserve side-by-side layout at normal fontScale, stack only at very narrow
+width or large fontScale, and use the Studio muscle-card title in all four locales.
+A new exact-source common gate is required for these corrections.

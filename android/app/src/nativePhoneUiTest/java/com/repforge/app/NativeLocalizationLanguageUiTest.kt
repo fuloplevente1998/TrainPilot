@@ -64,7 +64,7 @@ class NativeLocalizationLanguageUiTest {
             ).getValue(language)
             for ((key, expectedUnit) in listOf("steps" to expectedUnits.first,
                 "workouts" to expectedUnits.second)) {
-                compose.onNodeWithTag("home_metric_${key}_unit").performScrollTo()
+                compose.onNodeWithTag("home_metric_${key}_unit", useUnmergedTree = true).performScrollTo()
                     .assertIsDisplayed().assertTextEquals(expectedUnit)
             }
             // #263 replaced the misleading generic readiness unit with actual

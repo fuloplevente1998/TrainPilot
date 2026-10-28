@@ -156,6 +156,7 @@ internal fun NativeTopNavigation(route: String, settingsOrigin: String, language
                     Spacer(Modifier.height(3.dp))
                     Text(
                         labels[index], style = tabTextStyle,
+                        modifier = if (scrollable) Modifier.widthIn(min = tabWidth - 20.dp) else Modifier,
                         color = if (active) colors.accent else colors.text,
                         fontSize = 10.sp,
                         fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,

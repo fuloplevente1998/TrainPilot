@@ -260,7 +260,9 @@ internal fun NativeStudioShellHeader(
                                     tint = if (active) colors.accent else colors.muted,
                                     modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.height(3.dp))
-                                Text(labels[index], style = MaterialTheme.typography.labelSmall.copy(
+                                Text(labels[index],
+                                    modifier = if (scrollable) Modifier.widthIn(min = tabWidth - 20.dp) else Modifier,
+                                    style = MaterialTheme.typography.labelSmall.copy(
                                     fontSize = 10.sp,
                                     fontWeight = if (active) FontWeight.Bold else FontWeight.Medium),
                                     color = if (active) colors.accentText else colors.text,
