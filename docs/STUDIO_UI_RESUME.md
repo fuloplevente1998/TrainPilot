@@ -8,9 +8,12 @@ font_scale inputjai a futó emulátort állítják, nem a PNG-t méretezik át.
 Telefonról küldött fejlesztői kép: legkisebb szélesség384dp.
 Profil1080x2392/450dpi/0.90; 1080×160/384=450, nem panel-PPI.
 Runner readback+PNG-IHDR ellenőrzés és manifest-provenance;11hosttesztPASS.
-A c894forrású közös gate40653023009 még a régi kompakt profilon fut;
-ne szakítsd meg új dispatch-csel. Lezárás után külön ellenőrizd a telefonprofilt.
-Az Android app/test forrás ebben a profilcommitban nem változik.
+Előző kompakt gate40653023009/c894 LEZÁRTFAIL:1344JVM+183Wear+
+2upgradePASS,phone118/123 (5FAIL),0missing/crash. Mind5hiba javítva12c99fd4:
+boundedsoftWrap text, valósTextunit-tag, unmergednapcím, appnyelvHUassert.
+Új canonical teljesgate [40655883561](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40655883561),
+exact `12c99fd4f177a231b3897d002fc1b3a096bb2832`,1080x2392/450dpi/0.90:
+IN PROGRESS, még nemPASS. Ne indíts duplikált gate-et. Nyersképek innen várhatók.
 
 ## 2026-10-28: 07:48 export natív izomkártya + UI regressziók
 
