@@ -1,5 +1,19 @@
 # TrainPilot – agent munkarend
 
+## Studio: zöld kapu és új képreferencia – 2026-10-28
+
+PR270 exact a27cc2fe / Actions40660277579: 7/7 SUCCESS, nyersen ellenőrzött
+1344 unit + 123 phone + 183 Wear PASS, 0 failure/error/skip/missing/crash;
+mindkét signed upgrade SUCCESS. 71 eredeti PNG validált, 1080×2392/450dpi/0.90,
+384dp szélesség. Galéria: docs/design/previews/studio-a27cc2fe-owner/README.md.
+A felhasználó 18 valódi Studio-appképe az elsődleges vizuális cél:
+docs/design/STUDIO_DRIVE_VISUAL_REFERENCE_2026-10-28.md + JSON hash/Drive-index.
+Teljes vizuális egyezés még nincs kész: Home sűrűség, Progress/Health hierarchia
+eltér; részletes portlista ott. A Drive-eredetik nem kerültek GitHubra.
+Önálló BLE-próbafül nem kívánt végleges termékoldal; Wear/HC/Samsung az irány.
+Aktuális belépési pont docs/STUDIO_UI_RESUME.md; az alábbi régi CI-státuszok
+történetiek. A checkpoint csak docs/képbizonyíték; ne indíts duplikált CI-t.
+
 ## Studio increment01 QA-javítások – 2026-10-27
 
 40539957380 exact0fb350a4 lezártFAIL. Root JVM12750582974:1333PASS;

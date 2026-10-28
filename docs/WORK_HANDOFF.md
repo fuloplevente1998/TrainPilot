@@ -1,5 +1,15 @@
 # TrainPilot – aktuális átadás
 
+## Aktuális Studio-belépési pont – 2026-10-28
+
+PR270: [STUDIO_UI_RESUME.md](STUDIO_UI_RESUME.md). Exact a27cc2fe,
+Actions40660277579 teljes kapu zöld: 1344 unit + 123 phone + 183 Wear PASS,
+mindkét signed upgrade SUCCESS. 71 változatlan 1080×2392 PNG ellenőrizve,
+450 logikai dpi / 384dp / 90% betűméret. [Új galéria](design/previews/studio-a27cc2fe-owner/README.md).
+Felhasználói elsődleges vizuál: [18 Drive-kép és eltéréslista](design/STUDIO_DRIVE_VISUAL_REFERENCE_2026-10-28.md).
+Teljes Studio-vizuál még nincs kész; régi UI-hierarchiák további portja szükséges.
+Az alábbi korábbi eredményeket a friss Studio-folytatási pont felülírja.
+
 ## Studio increment01 QA-javítások – 2026-10-27
 
 40539957380 exact0fb350a4 lezártFAIL. Root JVM12750582974:1333PASS;

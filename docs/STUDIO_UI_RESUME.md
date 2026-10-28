@@ -1,5 +1,36 @@
 # TrainPilot – Studio UI folytatási pont
 
+## Aktuális ellenőrzött állapot és vizuális cél – 2026-10-28
+
+**A teljes natív kapu zöld.** Actions
+[40660277579](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40660277579),
+exact app/test/runner forrás `a27cc2fe674dd7a707bb0f2f6590fd1ef74f6f5d`: 7/7 SUCCESS.
+Nyers bizonyíték: **1344 unit + 123 telefonos (119 main + 4 GPS) + 183 Wear PASS**;
+0 failure/error/skip/missing/runner-crash. Mindkét aláírt régi→natív frissítés SUCCESS.
+71 eredeti PNG: SHA256/byte-szám/PIL/méret ellenőrizve, mind 1080×2392.
+Valós readback: 450 logikai dpi, 384 dp szélesség, fontScale 0.90.
+[Hét eredeti natív kép és gépi bizonyíték](design/previews/studio-a27cc2fe-owner/README.md).
+Ez emulátoros bizonyíték, nem felhasználói készülékes elfogadás.
+
+**Új elsődleges vizuális referencia:** a felhasználó 18 valódi AI Studio-appképe a
+[Drive-mappában](https://drive.google.com/drive/folders/1G-s2Llme03Wah_7J_TDrS_xs5go9Ut9V).
+Mind megnyitva; [képenkénti index és konkrét eltérések](design/STUDIO_DRIVE_VISUAL_REFERENCE_2026-10-28.md).
+A teljes Studio-vizuál MÉG NEM kész: a natív Home nagyobb helyet foglal, a Fejlődés
+régi főpanelt mutat, az Egészség hierarchiája eltér. A zöld teszt ezt nem helyettesíti.
+A referencia appon belüli nézetét kell követni; a Chrome/Studio-keret nem termék-UI.
+Eredeti súlyzóvektor + natív anatómia marad, demóadat/ál-Wear-ack nem kerül be.
+
+Következő fejlesztési csomag: közös Studio felületek és telefonos sűrűség pontosítása,
+majd teljes Home, Fejlődés és Egészség hierarchia átültetése a meglévő natív állapotokra.
+Az önálló BLE-próbafül nem kívánt végleges termékoldal; Wear OS / Health Connect /
+Samsung Health az elfogadott irány. A még hiányzó részleteket a referencia-index sorolja.
+08:11 export audit kész, biztonságos részei többnyire már létező natív útvonalak;
+nem importáltuk a demó ViewModelt. PR270 DRAFT, main/verzió/aláírás/séma változatlan.
+Ez a lezáró checkpoint csak dokumentáció és eredeti bizonyíték; új CI nem szükséges.
+
+Az alábbi korábbi futási feljegyzések történetiek. A bennük szereplő „FUTÓ” vagy
+„IN PROGRESS” állapotokat a fenti, nyersen ellenőrzött zöld eredmény felülírja.
+
 ## Aktív pontos diagnosztika/javítás – 2026-10-28
 
 1a6b7102/40658293784: display readback1080x2392/450dpi/0.90 VALÓS,
@@ -71,7 +102,7 @@ Main, applicationId, aláírás, verzió, motor és séma változatlan.
 ## 2026-10-28: 05:42 Native-AI-Studio ZIP ellenőrzés
 
 - Új user-source: külön [Native-AI-Studio 05:42 ZIP](https://github.com/fuloplevente1998/Native-AI-Studio/blob/2db71628c604fb361e7197a7c41b2a0ed9299cea/trainpilot-oct-28-2026-5-42-24-am.zip), 8,861,301 bytes, SHA-256 `8f91e79d604de2415ee57bd6094c453f1512a0f2b1c93caf354da31f75b6a308`; **ne használd automatikus drop-in cserére**.
-- [Pontos PR270 audit](docs/ai-studio/PR270_0542_NATIVE_AI_STUDIO_REVIEW.md), [külön, csak olvasó GitHub Actions run #40634881569](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40634881569) PASS (CRC és source compare; *nem* build). Artifact tartalmaz `05:42 ← 21:02` valós 3 Kotlin diffet. A ZIP 21:02-höz képest **4 módosított fájl**: Studio TrainPilotViewModel, natív MainActivity, LegacyLocalStorageReader és AISTUDIO_REFINEMENT_REPORT.md. 0 hozzáadott / törölt fájl.
+- [Pontos PR270 audit](ai-studio/PR270_0542_NATIVE_AI_STUDIO_REVIEW.md), [külön, csak olvasó GitHub Actions run #40634881569](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40634881569) PASS (CRC és source compare; *nem* build). Artifact tartalmaz `05:42 ← 21:02` valós 3 Kotlin diffet. A ZIP 21:02-höz képest **4 módosított fájl**: Studio TrainPilotViewModel, natív MainActivity, LegacyLocalStorageReader és AISTUDIO_REFINEMENT_REPORT.md. 0 hozzáadott / törölt fájl.
 - **Jó:** migrációs WebView timeout 60 sec, hiba nem válik `emptyMap()`-pé, migrationReady/retry megjelenik, native environment bind, Room workout/weight read, egyes DataStore writes.
 - **Rossz / nem kész:** az edzésmentés fix 38 perc / 1280 kg / PR / üres exercise-lista JSON-t küld a migrátorba és sikernek jelzi az aszinkron DB-írás előtt; Health `+120` fake step, Wear ownership fake toggle, settings mentési hibák elnyelése és hard-coded timer defaults, real saved workouts fake 30/15 work/rest címkékkel és DEMO elemekkel keverve, sandbox `applicationId`.
 - A **18:49 Studio export marad az elfogadott vizuál**; a kivétel a **korábbi eredeti arany súlyzó indítóikon** és main natív izomábra. PR270 natív workout engine + Room + Health/Wear + migráció/adatcsere/mentés az autoritatív állapot; az AI Studio 05:42 csak kipróbált integrációs minták forrása. Draft PR, main nem érintett.

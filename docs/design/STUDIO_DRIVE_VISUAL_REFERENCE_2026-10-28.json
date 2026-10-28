@@ -1,0 +1,207 @@
+{
+  "folder_url": "https://drive.google.com/drive/folders/1G-s2Llme03Wah_7J_TDrS_xs5go9Ut9V",
+  "accepted_on": "2026-10-28",
+  "kind": "owner-approved AI Studio app visual reference",
+  "original_images_republished": false,
+  "scope": "Inner app viewport; browser and Studio device controls excluded",
+  "files": [
+    {
+      "index": 1,
+      "screen": "Kezdőlap felső része",
+      "file_name": "Screenshot_2026-10-28-10-06-51-654_com.android.chrome.jpg",
+      "drive_file_id": "1E8AjQh25hEE3HZBgtD7Fieigw7trVqlg",
+      "url": "https://drive.google.com/file/d/1E8AjQh25hEE3HZBgtD7Fieigw7trVqlg/view?usp=drivesdk",
+      "bytes": 483136,
+      "width_px": 1080,
+      "height_px": 2392,
+      "sha256": "703f866b51bf01492a50b8dfb118a196ce9e4bfc6924e6a12e638b094f1d2c33"
+    },
+    {
+      "index": 2,
+      "screen": "Kezdőlap alsó része",
+      "file_name": "Screenshot_2026-10-28-10-06-56-335_com.android.chrome.jpg",
+      "drive_file_id": "1ikPr3PyAB4zihaVhpuye-jAHM4Pi6aJY",
+      "url": "https://drive.google.com/file/d/1ikPr3PyAB4zihaVhpuye-jAHM4Pi6aJY/view?usp=drivesdk",
+      "bytes": 488247,
+      "width_px": 1080,
+      "height_px": 2392,
+      "sha256": "2c3af8461fd8555386c10ca38c9016ad0d2c14502737229dbd4303b8c6215af3"
+    },
+    {
+      "index": 3,
+      "screen": "Gyors edzés választópanel",
+      "file_name": "Screenshot_2026-10-28-10-07-04-012_com.android.chrome.jpg",
+      "drive_file_id": "1w92SWCah4908dqgDdY0jLPQchBnlbYte",
+      "url": "https://drive.google.com/file/d/1w92SWCah4908dqgDdY0jLPQchBnlbYte/view?usp=drivesdk",
+      "bytes": 453083,
+      "width_px": 1080,
+      "height_px": 2392,
+      "sha256": "0229b95b49f8b4c40e3a69d28cef19061370862f83bbf9d7718bc7effcf78126"
+    },
+    {
+      "index": 4,
+      "screen": "Gyakorlatkönyvtár",
+      "file_name": "Screenshot_2026-10-28-10-07-07-949_com.android.chrome.jpg",
+      "drive_file_id": "1rIcCMMEdhgw4slnEhRMvShUMlMg-Io7K",
+      "url": "https://drive.google.com/file/d/1rIcCMMEdhgw4slnEhRMvShUMlMg-Io7K/view?usp=drivesdk",
+      "bytes": 530140,
+      "width_px": 1080,
+      "height_px": 2392,
+      "sha256": "a6e10efcbd13ee9799531e9ac112489ad7f3b9d044946a6fe13f3e40c856a570"
+    },
+    {
+      "index": 5,
+      "screen": "Kültéri GPS-mérés",
+      "file_name": "Screenshot_2026-10-28-10-07-11-761_com.android.chrome.jpg",
+      "drive_file_id": "1rS5gchkLnNcJUz1r08GMKnA2YALOsX1h",
+      "url": "https://drive.google.com/file/d/1rS5gchkLnNcJUz1r08GMKnA2YALOsX1h/view?usp=drivesdk",
+      "bytes": 586369,
+      "width_px": 1080,
+      "height_px": 2392,
+      "sha256": "7f3d71be4dd3a643672dfff0b2802e87c09747ed9bed1e3c9d86cd7be8b445b1"
+    },
+    {
+      "index": 6,
+      "screen": "Napló dátumválasztó",
+      "file_name": "Screenshot_2026-10-28-10-07-20-734_com.android.chrome.jpg",
+      "drive_file_id": "1J8qlaupcVZ6SYYSGku8JrQTLfWuhe-kX",
+      "url": "https://drive.google.com/file/d/1J8qlaupcVZ6SYYSGku8JrQTLfWuhe-kX/view?usp=drivesdk",
+      "bytes": 399509,
+      "width_px": 1080,
+      "height_px": 2392,
+      "sha256": "acb0f759abaff5e3ecda3d688854cfa9eeb14e259f9bec484e5d6bb81248b767"
+    },
+    {
+      "index": 7,
+      "screen": "Fejlődés áttekintés",
+      "file_name": "Screenshot_2026-10-28-10-07-25-657_com.android.chrome.jpg",
+      "drive_file_id": "12PmYLBdMTs9F3GkhSsOdOPVxuPRqIjkr",
+      "url": "https://drive.google.com/file/d/12PmYLBdMTs9F3GkhSsOdOPVxuPRqIjkr/view?usp=drivesdk",
+      "bytes": 509380,
+      "width_px": 1080,
+      "height_px": 2392,
+      "sha256": "3a18bf629a15c5189bf185d047bcde8ad774f30dc65ddda7b5a0a05055d02847"
+    },
+    {
+      "index": 8,
+      "screen": "Statisztika választó",
+      "file_name": "Screenshot_2026-10-28-10-07-29-463_com.android.chrome.jpg",
+      "drive_file_id": "1pJm62y7JvNUIeBvf-tjT4DZYn9HMZ5jF",
+      "url": "https://drive.google.com/file/d/1pJm62y7JvNUIeBvf-tjT4DZYn9HMZ5jF/view?usp=drivesdk",
+      "bytes": 265397,
+      "width_px": 1080,
+      "height_px": 2392,
+      "sha256": "04db12cd469aadd754c4dc3f29800ed4d74a9725e3758f99b12a9423c507c0ec"
+    },
+    {
+      "index": 9,
+      "screen": "Erő és 1RM",
+      "file_name": "Screenshot_2026-10-28-10-07-35-398_com.android.chrome.jpg",
+      "drive_file_id": "1dY_Q9nFzDEfIJZZjYpsq-1AkSaCF0Q4k",
+      "url": "https://drive.google.com/file/d/1dY_Q9nFzDEfIJZZjYpsq-1AkSaCF0Q4k/view?usp=drivesdk",
+      "bytes": 377856,
+      "width_px": 1080,
+      "height_px": 2392,
+      "sha256": "7d818c3ea06c23197d81aeaa3d9a4fdbecf3510c34a5ccc05825bf4bef4c3f84"
+    },
+    {
+      "index": 10,
+      "screen": "Egészség áttekintés",
+      "file_name": "Screenshot_2026-10-28-10-07-39-160_com.android.chrome.jpg",
+      "drive_file_id": "1grw-lmXyEz8t7LmVCgmOKF2Hls-kR0Jr",
+      "url": "https://drive.google.com/file/d/1grw-lmXyEz8t7LmVCgmOKF2Hls-kR0Jr/view?usp=drivesdk",
+      "bytes": 593580,
+      "width_px": 1080,
+      "height_px": 2392,
+      "sha256": "8e3049a4cdc6e2810ebdb82a210179d985f01440d6daa59a9ce41636f41de046"
+    },
+    {
+      "index": 11,
+      "screen": "Egészség alsó része",
+      "file_name": "Screenshot_2026-10-28-10-07-41-987_com.android.chrome.jpg",
+      "drive_file_id": "15HNU-WrsSeDVEtakOhcLjyJtcSaKaBdy",
+      "url": "https://drive.google.com/file/d/15HNU-WrsSeDVEtakOhcLjyJtcSaKaBdy/view?usp=drivesdk",
+      "bytes": 553392,
+      "width_px": 1080,
+      "height_px": 2392,
+      "sha256": "be7e00e1d3ece70f94588609ebce22ed4b97bf15ba7818e325cadf4aabe456e3"
+    },
+    {
+      "index": 12,
+      "screen": "Testsúly részletek",
+      "file_name": "Screenshot_2026-10-28-10-07-48-691_com.android.chrome.jpg",
+      "drive_file_id": "1bm3ve-DJFgh_wakzm_Ae3CVrRE3NVoVE",
+      "url": "https://drive.google.com/file/d/1bm3ve-DJFgh_wakzm_Ae3CVrRE3NVoVE/view?usp=drivesdk",
+      "bytes": 501621,
+      "width_px": 1080,
+      "height_px": 2392,
+      "sha256": "d712ce8795e69e27ee4c28ab979b260e008c30cf9471fe9a818267145a228965"
+    },
+    {
+      "index": 13,
+      "screen": "További egészségadatok",
+      "file_name": "Screenshot_2026-10-28-10-07-52-382_com.android.chrome.jpg",
+      "drive_file_id": "1WwkhpYDpQ9JAmPUF_4vRCAEOn9HcKGDi",
+      "url": "https://drive.google.com/file/d/1WwkhpYDpQ9JAmPUF_4vRCAEOn9HcKGDi/view?usp=drivesdk",
+      "bytes": 509695,
+      "width_px": 1080,
+      "height_px": 2392,
+      "sha256": "2e975ea95dc2a29a6154c526af1c5649dab01a2a3024a4df72c2ec35bb66a842"
+    },
+    {
+      "index": 14,
+      "screen": "Egészségnapló részletek",
+      "file_name": "Screenshot_2026-10-28-10-07-55-988_com.android.chrome.jpg",
+      "drive_file_id": "1MEf4dgSR7tbe2DHwoPNDhzYollyHZ7Ue",
+      "url": "https://drive.google.com/file/d/1MEf4dgSR7tbe2DHwoPNDhzYollyHZ7Ue/view?usp=drivesdk",
+      "bytes": 522063,
+      "width_px": 1080,
+      "height_px": 2392,
+      "sha256": "270dc3e36796bbed69b0e6e4ecc158932846effac6ef857657c1480b653bc93e"
+    },
+    {
+      "index": 15,
+      "screen": "Kapcsolt eszközök",
+      "file_name": "Screenshot_2026-10-28-10-08-01-901_com.android.chrome.jpg",
+      "drive_file_id": "1aY3MRU--pHhvuWrmUFw1LkvyCDLXPnm0",
+      "url": "https://drive.google.com/file/d/1aY3MRU--pHhvuWrmUFw1LkvyCDLXPnm0/view?usp=drivesdk",
+      "bytes": 529291,
+      "width_px": 1080,
+      "height_px": 2392,
+      "sha256": "d20771a88fd93641988e436c1369b7b12d00125502539d19bc296b2ff2bac15d"
+    },
+    {
+      "index": 16,
+      "screen": "Beállítások felső része",
+      "file_name": "Screenshot_2026-10-28-10-08-05-545_com.android.chrome.jpg",
+      "drive_file_id": "1jZFNfnUhDS1DKa1B5P1KwFLEdBbnipUc",
+      "url": "https://drive.google.com/file/d/1jZFNfnUhDS1DKa1B5P1KwFLEdBbnipUc/view?usp=drivesdk",
+      "bytes": 449466,
+      "width_px": 1080,
+      "height_px": 2392,
+      "sha256": "bc00ab1b033ddf59b60edc7e9f28773b6231effa2aa616424ec445c5dc98ed9c"
+    },
+    {
+      "index": 17,
+      "screen": "Beállítások alsó része",
+      "file_name": "Screenshot_2026-10-28-10-08-11-155_com.android.chrome.jpg",
+      "drive_file_id": "1Gatc7FlgzMvvBMcUXixNZIJeV1kzXUdx",
+      "url": "https://drive.google.com/file/d/1Gatc7FlgzMvvBMcUXixNZIJeV1kzXUdx/view?usp=drivesdk",
+      "bytes": 542682,
+      "width_px": 1080,
+      "height_px": 2392,
+      "sha256": "eae3cfad46da4e91b7c7a750046499b3ea575b6fb15f7ac1dce91fe2a2de280b"
+    },
+    {
+      "index": 18,
+      "screen": "Fejléc nyelvválasztó",
+      "file_name": "Screenshot_2026-10-28-10-08-14-749_com.android.chrome.jpg",
+      "drive_file_id": "1ZNah4KBz2sMjeBHvBRtMRI_Q65PUjWuD",
+      "url": "https://drive.google.com/file/d/1ZNah4KBz2sMjeBHvBRtMRI_Q65PUjWuD/view?usp=drivesdk",
+      "bytes": 541219,
+      "width_px": 1080,
+      "height_px": 2392,
+      "sha256": "2964875593e01854b0ce69db2e6b91e14667648636521fbe6792b04487301c06"
+    }
+  ]
+}

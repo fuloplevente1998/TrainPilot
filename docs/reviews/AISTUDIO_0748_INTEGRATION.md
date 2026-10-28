@@ -1,5 +1,37 @@
 # AI Studio 07:48 integration — 2026-10-28
 
+## Final verified result
+
+Canonical full run [40660277579](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40660277579)
+on exact `a27cc2fe674dd7a707bb0f2f6590fd1ef74f6f5d`: **all seven jobs SUCCESS**.
+Independent raw artifact verification:
+
+| Evidence | Artifact | Actual result |
+|---|---|---|
+| JVM XML | 12804230727 | 168 XML files, 1344 tests, 0 failures/errors/skips |
+| Phone instrumentation | 12804148382 | 119 main + 4 isolated GPS = 123 PASS, 0 missing/crash/skip |
+| Wear shard 0 | 12804601518 | 68 PASS |
+| Wear shard 1 | 12804281823 | 59 PASS |
+| Wear shard 2 | 12804486239 | 56 PASS |
+| Signed upgrades | Both jobs in run | v1.3.71 and perf-20261022 to native SUCCESS |
+
+Wear case IDs are unique across all 183 tests; no failures, missing cases, skips
+or runner crashes. All 71 raw PNGs match manifest byte count/SHA256, decode and
+measure **1080×2392**. Actual readback: size override 1080×2392, density override
+450, fontScale 0.9; width 384 dp. This is logical display density, not panel PPI.
+The dedicated owner-profile emulator disables only its unrelated NexusLauncher
+before app launch; app focus/ANR/instrumentation failure detection stays strict.
+
+[Original native PNG gallery and machine-readable evidence](../design/previews/studio-a27cc2fe-owner/README.md).
+This proves the tested integration and regression gate; complete Studio visual
+parity and the owner's physical-device acceptance are still pending.
+
+The owner subsequently selected [18 actual Studio screenshots as the primary
+visual reference](../design/STUDIO_DRIVE_VISUAL_REFERENCE_2026-10-28.md).
+The index records remaining Home/Progress/Health hierarchy and density gaps.
+No app changes follow the frozen green source in this documentation checkpoint.
+The earlier pending/failure notes below are historical and superseded by this result.
+
 ## Exact source
 
 Native-AI-Studio@f1d964223338010db27d883192117d56e0d076b1:
