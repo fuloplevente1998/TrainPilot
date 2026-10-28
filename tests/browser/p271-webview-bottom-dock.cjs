@@ -33,6 +33,12 @@ const server=http.createServer((req,res)=>{
       assert.equal(await page.locator('#tp271Dock .tp271-dock-button:visible').count(),5,width+': five lower buttons');
       assert.equal(await page.locator('.top.tp154-nav-grid .tp154-nav-cell:visible').count(),4,width+': four upper actions remain');
       assert.equal(await page.locator('#tp271Dock button[aria-current="page"]').count(),1,width+': single active route');
+      const grid=await page.evaluate(()=>{
+        const e=document.querySelector('#app main.rf221-home #rf223Today .tp5-today-grid');
+        return {columns:getComputedStyle(e).gridTemplateColumns.split(' ').length,tiles:e.querySelectorAll('.tp5-today-metric').length};
+      });
+      assert.equal(grid.columns,2,width+': Studio-inspired two-column Home summary');
+      assert.equal(grid.tiles,6,width+': all six real Home metrics preserved');
       const bounds=await page.evaluate(()=>{
         const nav=document.getElementById('tp271Dock').getBoundingClientRect();
         const main=document.querySelector('#app main').getBoundingClientRect();
