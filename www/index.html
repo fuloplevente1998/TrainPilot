@@ -2558,6 +2558,8 @@
       button.classList.toggle('tp271-selected',on);
     }
     document.documentElement.classList.toggle('tp271-has-workout',activeWorkout());
+    previewActions();
+    muscleShortcuts();
   }
   function scheduleSync(){
     if (queued) return;
@@ -2572,6 +2574,125 @@
       window.go({workout:'plan',log:'history'}[key]||key);
     }
     scheduleSync();
+  }
+
+  /* P2c: present two real Workout actions and filter shortcuts only in the
+     explicit preview. The shipped app remains the sole catalogue/GPS/session
+     implementation. No new router, no second workout state, no demo values. */
+  const workoutLabels={
+    hu:{library:'Gyakorlatválasztó',libraryHint:'Valódi kereső és szűrők',outdoor:'Kültéri edzés',outdoorHint:'Futás, séta, kerékpár • GPS az edzésben',muscles:'Izomcsoportok'},
+    en:{library:'Exercise library',libraryHint:'Search and filter real exercises',outdoor:'Outdoor workout',outdoorHint:'Run, walk, cycle • GPS during workout',muscles:'Muscle groups'},
+    de:{library:'Übungsbibliothek',libraryHint:'Übungen suchen und filtern',outdoor:'Outdoor-Training',outdoorHint:'Laufen, Gehen, Rad • GPS im Training',muscles:'Muskelgruppen'},
+    ro:{library:'Bibliotecă exerciții',libraryHint:'Caută și filtrează exerciții',outdoor:'Antrenament afară',outdoorHint:'Alergare, mers, bicicletă • GPS în antrenament',muscles:'Grupe musculare'}
+  };
+  let panelObserver=null,observedPanel=null;
+  function previewActions(){
+    const main=document.querySelector('#app main.tp152-plan');
+    if(!main||activeWorkout())return;
+    const entry=main.querySelector('.tp150-quick-entry-minimal');
+    if(!entry)return;
+    let section=main.querySelector('#tp271WorkoutLaunchers');
+    if(!section){
+      section=document.createElement('section');
+      section.id='tp271WorkoutLaunchers';
+      section.className='tp271-workout-launchers';
+      const defs=[['library','book-open'],['outdoor','map']];
+      for(const [key,glyph] of defs){
+        const button=document.createElement('button');
+        button.type='button';
+        button.className='tp271-workout-launcher';
+        button.dataset.tp271Launcher=key;
+        const icon=document.createElement('span');
+        icon.className='tp271-launcher-icon';
+        icon.setAttribute('aria-hidden','true');
+        icon.textContent=glyph==='map'?'⌁':'▦';
+        const copy=document.createElement('span');
+        copy.className='tp271-launcher-copy';
+        const heading=document.createElement('strong'),hint=document.createElement('small');
+        heading.className='tp271-launcher-title';hint.className='tp271-launcher-hint';
+        copy.append(heading,hint);
+        const arrow=document.createElement('span');
+        arrow.className='tp271-launcher-arrow';arrow.textContent='›';
+        arrow.setAttribute('aria-hidden','true');
+        button.append(icon,copy,arrow);
+        button.addEventListener('click',()=>{
+          if(activeWorkout()||typeof window.tp155R4OpenPanel!=='function')return;
+          if(key==='outdoor'){
+            // Outdoor activities are existing TP106 distance exercises.
+            // Opening the prefiltered Quick panel must NOT start GNSS.
+            state.tp155QuickQuery='running';
+            state.tp155QuickGroup='all';
+            state.tp155QuickGear='all';
+            window.tp155R4OpenPanel('quick',button);
+          }else{
+            window.tp155R4OpenPanel('exercises',button);
+          }
+          scheduleSync();
+        });
+        section.appendChild(button);
+      }
+      entry.insertAdjacentElement('afterend',section);
+    }
+    const t=workoutLabels[getLang()];
+    for(const button of section.querySelectorAll('button[data-tp271-launcher]')){
+      const key=button.dataset.tp271Launcher;
+      button.querySelector('.tp271-launcher-title').textContent=t[key];
+      button.querySelector('.tp271-launcher-hint').textContent=t[key+'Hint'];
+      button.setAttribute('aria-label',t[key]+': '+t[key+'Hint']);
+    }
+  }
+  function muscleShortcuts(){
+    const host=document.getElementById('tp155R4PanelHost');
+    if(host!==observedPanel){
+      panelObserver?.disconnect();
+      observedPanel=host;
+      if(host&&typeof MutationObserver==='function'){
+        panelObserver=new MutationObserver(scheduleSync);
+        panelObserver.observe(host,{childList:true,subtree:true});
+      }
+    }
+    const panel=host?.dataset?.panel;
+    if(panel!=='exercises'&&panel!=='quick')return;
+    const id=panel==='exercises'?'libraryMuscle':'tp155QuickMuscle';
+    const select=host.querySelector('#'+id);
+    if(!select)return;
+    const filters=select.closest('label')?.parentElement;
+    if(!filters)return;
+    const wrapper=panel==='exercises'
+      ?host.querySelector('.tp155-library-filters')
+      :host.querySelector('.tp155-quick-controls');
+    if(!wrapper)return;
+    let bar=wrapper.querySelector('.tp271-muscle-chips');
+    if(!bar){
+      bar=document.createElement('div');
+      bar.className='tp271-muscle-chips';
+      bar.setAttribute('role','group');
+      const t=workoutLabels[getLang()];
+      bar.setAttribute('aria-label',t.muscles);
+      for(const option of Array.from(select.options)){
+        const chip=document.createElement('button');
+        chip.type='button';chip.className='tp271-muscle-chip';
+        chip.dataset.tp271Muscle=option.value;
+        chip.textContent=option.textContent.trim();
+        chip.addEventListener('click',()=>{
+          select.value=chip.dataset.tp271Muscle;
+          // Reuse the existing onchange -> tp155LibraryFilter or
+          // tp155QuickFilter. Do not duplicate filtering logic.
+          select.dispatchEvent(new Event('change',{bubbles:true}));
+          scheduleSync();
+        });
+        bar.appendChild(chip);
+      }
+      if(panel==='exercises')filters.insertAdjacentElement('beforebegin',bar);
+      else wrapper.querySelector('.tp155-quick-filter')?.insertAdjacentElement('beforebegin',bar);
+      select.addEventListener('change',scheduleSync);
+    }
+    bar.setAttribute('aria-label',workoutLabels[getLang()].muscles);
+    for(const chip of bar.querySelectorAll('.tp271-muscle-chip')){
+      const on=chip.dataset.tp271Muscle===select.value;
+      chip.setAttribute('aria-pressed',on?'true':'false');
+      chip.classList.toggle('tp271-muscle-selected',on);
+    }
   }
   function install(){
     if(dock) return;
@@ -2593,6 +2714,10 @@
     }
     document.body.appendChild(dock);
     document.documentElement.classList.add('tp271-mockup-dock');
+    // Round-4 panels are direct body children and are not observed by #app.
+    if(typeof MutationObserver==='function'){
+      new MutationObserver(scheduleSync).observe(document.body,{childList:true});
+    }
     const app=document.getElementById('app');
     if(app&&typeof MutationObserver==='function'){
       // Observe only direct #app children. Each render swaps this root; no
