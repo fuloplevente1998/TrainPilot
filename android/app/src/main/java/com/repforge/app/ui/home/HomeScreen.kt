@@ -51,6 +51,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.repforge.app.ui.theme.TrainPilotNumericFont
 import com.repforge.app.ui.components.TrainPilotSectionSurface
 import com.repforge.app.ui.components.TrainPilotPrimaryButton
@@ -266,16 +268,14 @@ fun HomeScreen(
             if (stacked) Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 options.forEachIndexed { index, (title, icon, action) ->
                     StudioHomeShortcut(title, icon,
-                        Modifier.fillMaxWidth().testTag(
-                            listOf("home_shortcut_programs", "home_shortcut_calendar",
-                                "home_shortcut_coach")[index]), !busy, action)
+                        listOf("programs", "calendar", "coach")[index],
+                        Modifier.fillMaxWidth(), !busy, action)
                 }
             } else Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 options.forEachIndexed { index, (title, icon, action) ->
                     StudioHomeShortcut(title, icon,
-                        Modifier.weight(1f).testTag(
-                            listOf("home_shortcut_programs", "home_shortcut_calendar",
-                                "home_shortcut_coach")[index]), !busy, action)
+                        listOf("programs", "calendar", "coach")[index],
+                        Modifier.weight(1f), !busy, action)
                 }
             }
         }
@@ -357,14 +357,14 @@ internal fun StudioHomeVitals(
                 Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     row.forEach { tile ->
-                        Surface(Modifier.weight(1f).fillMaxHeight()
-                            .heightIn(min = 48.dp)
-                            .testTag("home_metric_${tile.key}")
-                            .border(1.dp, colors.line, RoundedCornerShape(18.dp))
-                            .clickable(enabled = enabled, role = Role.Button) { tile.onClick() },
+                        Surface(Modifier.weight(1f).fillMaxHeight().heightIn(min = 48.dp)
+                            .border(1.dp, colors.line, RoundedCornerShape(18.dp)),
                             color = colors.card, shape = RoundedCornerShape(18.dp)) {
-                            Column(Modifier.padding(14.dp),
-                                verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            // Keep the real value/source as independent readable semantics,
+                            // while the transparent full-card action remains tappable.
+                            Box {
+                                Column(Modifier.padding(14.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Icon(tile.icon, contentDescription = null,
@@ -380,6 +380,13 @@ internal fun StudioHomeVitals(
                                         style = MaterialTheme.typography.bodySmall,
                                         modifier = Modifier.testTag("home_metric_${tile.key}_source"))
                                 }
+                                }
+                                Box(Modifier.matchParentSize()
+                                    .clickable(enabled = enabled, role = Role.Button) { tile.onClick() }
+                                    .testTag("home_metric_${tile.key}")
+                                    .semantics {
+                                        contentDescription = "${tile.title}: ${tile.value}"
+                                    })
                             }
                         }
                     }
@@ -396,13 +403,16 @@ private data class StudioHomeVital(
 @Composable
 private fun StudioHomeShortcut(title: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
-    modifier: Modifier, enabled: Boolean, onClick: () -> Unit) {
+    route: String, modifier: Modifier, enabled: Boolean, onClick: () -> Unit) {
     val colors = LocalTrainPilotColors.current
     Surface(modifier.heightIn(min = 48.dp)
+        .testTag("shortcut_$route")
         .border(1.dp, colors.line, RoundedCornerShape(16.dp))
         .clickable(enabled = enabled, role = Role.Button) { onClick() },
         shape = RoundedCornerShape(16.dp), color = colors.card) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 12.dp),
+        Column(Modifier.fillMaxWidth()
+            .testTag("home_shortcut_$route")
+            .padding(horizontal = 12.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Icon(icon, contentDescription = null, tint = colors.accentText,
                 modifier = Modifier.size(22.dp))
