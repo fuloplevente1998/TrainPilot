@@ -134,19 +134,39 @@ class NativePhoneNavigationTest {
         }
     }
 
+    // LazyColumn can hide descendants of an expanded, taller-than-viewport item
+    // on compact devices; walk the actual viewport rather than assuming the
+    // target has already been materialized in its semantics tree.
+    private fun revealHealthListTag(tag: String) {
+        val list = compose.onNodeWithTag("health_journal_list")
+        for (attempt in 0 until 24) {
+            if (compose.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()) {
+                compose.onNodeWithTag(tag).performScrollTo().assertIsDisplayed()
+                return
+            }
+            list.performTouchInput { swipeUp() }
+        }
+        throw AssertionError("Health control $tag remained unreachable after scrolling")
+    }
+
     private fun expandHealthSection(sectionTag: String, targetTag: String) {
         compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag(sectionTag))
-        if (compose.onAllNodesWithTag(targetTag).fetchSemanticsNodes().isEmpty()) {
+        if (sectionTag == "health_more_section") {
+            // The five compact readings are a different group from the original
+            // 26 native metrics. Expand both levels explicitly; target absence
+            // alone cannot tell whether a lazy section is open.
             compose.onNodeWithTag(sectionTag).performClick()
+            revealHealthListTag("health_all_metrics_toggle")
+            compose.onNodeWithTag("health_all_metrics_toggle")
+                .assertTextContains("Összes mérés").performClick()
+            revealHealthListTag(targetTag)
+        } else {
+            if (compose.onAllNodesWithTag(targetTag).fetchSemanticsNodes().isEmpty()) {
+                compose.onNodeWithTag(sectionTag).performClick()
+            }
+            compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag(targetTag))
+            compose.onNodeWithTag(targetTag).performScrollTo().assertIsDisplayed()
         }
-        if (sectionTag == "health_more_section" &&
-            compose.onAllNodesWithTag(targetTag).fetchSemanticsNodes().isEmpty()) {
-            compose.onNodeWithTag("health_journal_list")
-                .performScrollToNode(hasTestTag("health_all_metrics_toggle"))
-            compose.onNodeWithTag("health_all_metrics_toggle").performClick()
-        }
-        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag(targetTag))
-        compose.onNodeWithTag(targetTag).performScrollTo().assertIsDisplayed()
     }
 
     private fun openSettingsProfileEditor() {
@@ -1426,8 +1446,10 @@ class NativePhoneNavigationTest {
         }
         compose.onNodeWithTag("exercise_library_list")
             .performScrollToNode(hasTestTag("exercise_library_row_db-squat"))
+        // On a 320dp emulator the card can be taller than the remaining
+        // viewport; verify it is actionable and actually opens its real details.
         compose.onNodeWithTag("exercise_library_row_db-squat")
-            .performScrollTo().assertIsDisplayed().performClick()
+            .performScrollTo().assertHasClickAction().performClick()
         compose.waitUntil(15_000) {
             compose.onAllNodesWithTag("exercise_library_detail").fetchSemanticsNodes().isNotEmpty()
         }
