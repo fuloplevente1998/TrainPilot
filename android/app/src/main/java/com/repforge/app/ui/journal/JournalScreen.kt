@@ -2,6 +2,7 @@ package com.repforge.app.ui.journal
 
 import android.content.res.Resources
 import android.graphics.BitmapFactory
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -18,6 +20,12 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.DirectionsRun
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -68,25 +76,112 @@ fun JournalScreen(navController: NavController, language: String = "hu", viewMod
     val locale = remember(language) { Locale.forLanguageTag(language) }
     val listState = rememberLazyListState()
     LaunchedEffect(state.query, state.month) { listState.scrollToItem(0) }
-    Column(Modifier.fillMaxSize().background(colors.bg).padding(horizontal = 16.dp)) {
-        TrainPilotSectionSurface(Modifier.fillMaxWidth().testTag("journal_filters")) {
-        OutlinedTextField(state.query, viewModel::setSearch, modifier = Modifier.fillMaxWidth().testTag("journal_search"),
-            label = { Text(text.getString(R.string.journal_search)) }, singleLine = true)
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-            IconButton(onClick = { viewModel.setMonth((state.month ?: YearMonth.now()).minusMonths(1)) }) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, text.getString(R.string.journal_previous_month))
+    var monthPickerOpen by rememberSaveable { mutableStateOf(false) }
+    if (monthPickerOpen) {
+        AlertDialog(
+            onDismissRequest = { monthPickerOpen = false },
+            containerColor = colors.card,
+            title = { Text(text.getString(R.string.journal_all_months),
+                color = colors.text, style = MaterialTheme.typography.titleLarge) },
+            text = {
+                // Use actual calendar months rather than the prototype's fixed 2026 months.
+                LazyColumn(Modifier.heightIn(max = 360.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    item {
+                        TextButton(onClick = {
+                            viewModel.setMonth(null)
+                            monthPickerOpen = false
+                        }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                            .testTag("journal_picker_all")) {
+                            Text(text.getString(R.string.journal_all_months),
+                                color = if (state.month == null) colors.accentText else colors.text)
+                        }
+                    }
+                    items(24) { offset ->
+                        val date = YearMonth.now().minusMonths(offset.toLong())
+                        val selected = state.month == date
+                        Surface(onClick = {
+                            viewModel.setMonth(date)
+                            monthPickerOpen = false
+                        }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                            .testTag("journal_picker_${date}"),
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (selected) colors.selectedSurface else colors.card2,
+                            border = BorderStroke(1.dp,
+                                if (selected) colors.selectedBorder else colors.line)) {
+                            Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(date.format(DateTimeFormatter.ofPattern("LLLL yyyy", locale)),
+                                    color = colors.text, style = MaterialTheme.typography.bodyMedium)
+                                if (selected) Icon(Icons.Default.CheckCircle, contentDescription = null,
+                                    tint = colors.accentText, modifier = Modifier.size(18.dp))
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { monthPickerOpen = false }) {
+                Text(text.getString(R.string.journal_close), color = colors.accentText)
+            } }
+        )
+    }
+    Column(Modifier.fillMaxSize().background(colors.bg)
+        .padding(horizontal = 16.dp).padding(top = 8.dp)) {
+        // Exact approved Studio composition: independent 16dp search input,
+        // 40dp circular month arrows and a central 14dp outlined picker.
+        OutlinedTextField(
+            state.query, viewModel::setSearch,
+            modifier = Modifier.fillMaxWidth().testTag("journal_search"),
+            placeholder = { Text(text.getString(R.string.journal_search), color = colors.muted) },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null,
+                tint = colors.muted) },
+            shape = RoundedCornerShape(16.dp), singleLine = true
+        )
+        Spacer(Modifier.height(10.dp))
+        Row(Modifier.fillMaxWidth().testTag("journal_filters"),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Surface(onClick = {
+                viewModel.setMonth((state.month ?: YearMonth.now()).minusMonths(1))
+            }, modifier = Modifier.size(40.dp).testTag("journal_previous_month"),
+                shape = CircleShape, color = colors.card,
+                border = BorderStroke(1.dp, colors.line)) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                        text.getString(R.string.journal_previous_month), tint = colors.accentText)
+                }
             }
-            TextButton(onClick = { viewModel.setMonth(if (state.month == null) YearMonth.now() else null) },
-                modifier = Modifier.weight(1f).heightIn(min = 48.dp).testTag("journal_month")) {
-                Text(state.month?.format(DateTimeFormatter.ofPattern("LLLL yyyy", locale)) ?: text.getString(R.string.journal_all_months),
-                    style = MaterialTheme.typography.labelLarge.copy(fontFeatureSettings = "tnum"))
+            Surface(onClick = { monthPickerOpen = true },
+                modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                    .testTag("journal_month"),
+                shape = RoundedCornerShape(14.dp), color = colors.card,
+                border = BorderStroke(1.dp, colors.accent.copy(alpha = .5f))) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.CalendarMonth, contentDescription = null,
+                        tint = colors.accentText, modifier = Modifier.size(18.dp))
+                    Text(state.month?.format(DateTimeFormatter.ofPattern("LLLL yyyy", locale))
+                        ?: text.getString(R.string.journal_all_months),
+                        color = colors.text, style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+                        maxLines = 1)
+                    Icon(Icons.Default.ExpandMore, contentDescription = null, tint = colors.accentText)
+                }
             }
-            IconButton(onClick = { viewModel.setMonth((state.month ?: YearMonth.now()).plusMonths(1)) }) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, text.getString(R.string.journal_next_month))
+            Surface(onClick = {
+                viewModel.setMonth((state.month ?: YearMonth.now()).plusMonths(1))
+            }, modifier = Modifier.size(40.dp).testTag("journal_next_month"),
+                shape = CircleShape, color = colors.card,
+                border = BorderStroke(1.dp, colors.line)) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        text.getString(R.string.journal_next_month), tint = colors.accentText)
+                }
             }
         }
-        }
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(10.dp))
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().testTag("journal_list"),
             contentPadding = PaddingValues(bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (workouts.loadState.refresh is LoadState.Loading) item { JournalLoading(text) }
