@@ -87,6 +87,50 @@ internal fun NativeMainHeader(route: String, language: String, enabled: Boolean,
     }
 }
 
+/** Secondary/editor title row under the shared Studio shell.
+ * Back continues through TrainPilotNavigation's native lifecycle/finalization guard.
+ */
+@Composable
+internal fun NativeStudioSecondaryRouteBar(
+    route: String,
+    language: String,
+    backEnabled: Boolean,
+    onBack: () -> Unit
+) {
+    val colors = LocalTrainPilotColors.current
+    Surface(color = colors.bg) {
+        Row(
+            Modifier.fillMaxWidth()
+                .padding(start = 12.dp, end = 12.dp, bottom = 8.dp)
+                .heightIn(min = TrainPilotDimensions.Control),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            IconButton(
+                onClick = onBack,
+                enabled = backEnabled,
+                modifier = Modifier.size(TrainPilotDimensions.Control)
+                    .testTag("navigation_back")
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    NativeMainMenu.backLabel(language),
+                    tint = if (backEnabled) colors.text else colors.muted
+                )
+            }
+            Text(
+                NativeMainMenu.title(route, language),
+                modifier = Modifier.weight(1f),
+                color = colors.text,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
 /** Studio-inspired five-pill navigation, intentionally fixed below the header.
  * Keep the canonical navigation_* test tags and native navigation guards.
  * No demo state or action is added here.

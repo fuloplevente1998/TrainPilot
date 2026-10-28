@@ -319,11 +319,11 @@ fun TrainPilotAppScaffold(
         containerColor = colors.bg,
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
-            if (currentRoute in NativeMainMenu.routes) {
-                // Approved 18:49 Studio header/5-tab component tree, not the
-                // native header being made to merely resemble its screenshots.
-                // All actions remain native; the theme selector opens the real
-                // settings and the language menu *persists* through DataStore.
+            Column {
+                // The approved Studio brand/language/theme/settings shell and five
+                // primary tabs remain visible on main and secondary destinations.
+                // NativeMainMenu.selected() maps every editor/detail route to its
+                // real primary parent; no new navigation state is invented here.
                 NativeStudioShellHeader(
                     route = currentRoute,
                     settingsOrigin = settingsOrigin,
@@ -344,19 +344,16 @@ fun TrainPilotAppScaffold(
                     onTheme = { settingsSection = "theme"; selectDestination("settings") },
                     onSettings = { settingsSection = "general"; selectDestination("settings") }
                 )
-            } else Column {
-                // Secondary/editor routes retain the native lifecycle / Back
-                // and Wear finalization fences until their Studio screens are ported.
-                NativeMainHeader(currentRoute, settings.language, enabled = !navigationBlocked,
-                    onBack = if (currentRoute in NativeMainMenu.secondaryRoutes) ({ goBack() }) else null,
-                    onSettings = { settingsSection = "general"; selectDestination("settings") },
-                    onLanguage = { settingsSection = "language"; selectDestination("settings") },
-                    onTheme = { settingsSection = "theme"; selectDestination("settings") },
-                    onHome = { selectDestination("home") },
-                    backEnabled = !starting && !editorFinishing &&
-                        (activeSnapshot?.optBoolean("finalizationPending") != true || settingsOrigin == "active_workout"))
-                NativeTopNavigation(currentRoute, settingsOrigin, settings.language,
-                    enabled = !navigationBlocked, onSelect = destinationSelector)
+                if (currentRoute in NativeMainMenu.secondaryRoutes) {
+                    NativeStudioSecondaryRouteBar(
+                        route = currentRoute,
+                        language = settings.language,
+                        backEnabled = !starting && !editorFinishing &&
+                            (activeSnapshot?.optBoolean("finalizationPending") != true ||
+                                settingsOrigin == "active_workout"),
+                        onBack = { goBack() }
+                    )
+                }
             }
         },
         bottomBar = {
