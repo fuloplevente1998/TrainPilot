@@ -5,6 +5,10 @@ Root works alone; separate agents remain stopped. No merge/release authorized.
 
 ## Current repair
 
+Initial source a560ee34 /run40748357263 was superseded by the focused crashpad
+cleanup follow-up after the full completed Wear log became available. Inspect
+the latest branch-source run, not the superseded candidate.
+
 The next canonical run must validate both phone and Wear; no runtime success yet.
 Application change: ExerciseLibraryScreen uses one scroll owner for its header and
 results. Video/favorite actions sit below the title row, preserving readable and
@@ -24,16 +28,22 @@ each instrumentation invocation, while retaining raw evidence and screenshot che
 
 Wear's scoped process cleanup worked in run40743423923 (screenshot evidence:
 matched PID2993, adbExitCode0, remainingPids[], result stopped, testExitCode0).
-The upstream action then blocked in its second, unbounded adb emu kill. A CI-only
+The full log shows the second adb call returned (endgroup within40ms), but the
+action remained open until its15minute deadline. Runner cleanup then found an
+orphan SDK crashpad_handler (PID2997), alongside adb. Scoped cleanup now also
+captures this known SDK helper while it is an emulator descendant, before adb
+shutdown can reparent it, and terminates it with the existing bounded escalation.
+An unrelated crashpad/other AVD remains excluded. A CI-only
 SDK adb guard is installed AFTER SDK setup via the action's pre-launch hook.
 It keeps the original executable as adb.trainpilot-real on this disposable runner,
 forwards all regular/physical-device commands unchanged, and bounds only the exact
 `-s emulator-N emu kill` call to10seconds plus2seconds kill grace. Nonzero timeout
-status is preserved; test errors are never converted to success. Both Wear action
+status is preserved; test errors are never converted to success. The adb guard is defense in depth, not the demonstrated residual-hang cause.
+Both Wear action
 invocations and the phone action use it; always-upload and job/step limits remain.
 Five guard host tests include a genuinely hung subprocess and nonzero timeout,
 normal argv/exit preservation, exact matching, CI refusal and idempotent setup.
-Together14runner +34parser +7scoped-cleanup +5guard tests PASS. YAML, py_compile,
+Together14runner +34parser +8scoped-cleanup +5guard tests PASS (61total). YAML, py_compile,
 shell syntax and diff checks PASS. Kotlin/Android runtime await canonical Actions.
 
 ## Last complete phone evidence

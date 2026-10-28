@@ -43,6 +43,22 @@ class ScopedEmulatorCleanupTest(unittest.TestCase):
                     stop.cleanup(dict(self.env, **change))
                 snapshot.assert_not_called()
 
+    def test_crashpad_is_scoped_before_emulator_shutdown_and_reaped_after_reparenting(self):
+        root = self.process()
+        crashpad = self.process(13, 10, exe='/sdk/emulator/lib64/crashpad_handler')
+        foreign = self.process(14, 20, exe='/sdk/emulator/lib64/crashpad_handler')
+        self.assertEqual([10, 13], [p.pid for p in stop.scoped_processes(
+            [root, crashpad, foreign], '/sdk', '5554', 1000)])
+        with patch.object(stop.os, 'getuid', return_value=1000), \
+             patch.object(stop, 'process_snapshot', return_value=[root, crashpad, foreign]), \
+             patch.object(stop.subprocess, 'run', return_value=type('Result', (), {'returncode': 0})()), \
+             patch.object(stop, 'wait_until_stopped', side_effect=[[crashpad], []]), \
+             patch.object(stop, 'send_signal') as send:
+            result = stop.cleanup(self.env)
+        self.assertEqual('stopped', result['result'])
+        self.assertEqual([13], result['termPids'])
+        send.assert_called_once_with([crashpad], signal.SIGTERM)
+
     def test_adb_timeout_uses_independent_term_and_kill_deadlines(self):
         root = self.process()
         with patch.object(stop.os, 'getuid', return_value=1000), \

@@ -47,7 +47,7 @@ def option(argv, name):
 
 
 def scoped_processes(processes, sdk, port, uid):
-    """Match SDK emulator roots by explicit AVD+port; include only their netsim children."""
+    """Match SDK emulator roots by explicit AVD+port and their known SDK helpers."""
     sdk_emulator = Path(sdk).resolve() / 'emulator'
 
     def trusted(p):
@@ -59,7 +59,7 @@ def scoped_processes(processes, sdk, port, uid):
     chosen = {p.pid: p for p in roots}
     while True:
         added = [p for p in processes if trusted(p) and p.ppid in chosen and p.pid not in chosen
-                 and Path(p.executable).name in ('netsimd', 'netsim', 'netsim-daemon')]
+                 and Path(p.executable).name in ('netsimd', 'netsim', 'netsim-daemon', 'crashpad_handler')]
         if not added:
             return list(chosen.values())
         chosen.update((p.pid, p) for p in added)
