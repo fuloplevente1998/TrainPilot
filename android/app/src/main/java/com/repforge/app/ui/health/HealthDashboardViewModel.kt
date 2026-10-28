@@ -74,6 +74,7 @@ data class HealthDashboardUiState(
     val backgroundWriteFailed: Boolean = false,
     val metrics: List<HealthMetricItemUiModel> = emptyList(),
     val overviewMetrics: List<HealthMetricItemUiModel> = emptyList(),
+    val additionalMetrics: List<HealthMetricItemUiModel> = emptyList(),
     val sleepSessionsSummaryText: String = "—",
     val lastSyncAt: String = "—",
     val bleState: BleDiscoveryUiState = BleDiscoveryUiState(),
@@ -221,6 +222,7 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
             historyError = false,
             metrics = emptyList(),
             overviewMetrics = emptyList(),
+            additionalMetrics = emptyList(),
             selectedDay = query.day.toString(), historyMonth = query.month.toString(), historyChannel = query.channel,
             availableDays = emptyList(), sleepSessionsSummaryText = "—", historyPartial = false)
         historyJob = viewModelScope.launch {
@@ -282,8 +284,10 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
                 val overviewMetrics = buildStudioOverviewMetrics(
                     language, page.selected, metrics, overviewAux
                 )
+                val additionalMetrics = buildStudioAdditionalMetrics(language, page.selected, metrics)
                 _uiState.value = _uiState.value.copy(language = language, historyLoading = false, historyError = false,
                     availableDays = page.days, metrics = metrics, overviewMetrics = overviewMetrics,
+                    additionalMetrics = additionalMetrics,
                     historyPartial = page.selected.optBoolean("partial"),
                     provider = prefs.optString("provider", HealthJournalStore.HC),
                     dailySourcePreference = prefs.optString("hcDailySource", "auto"),
@@ -304,7 +308,8 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
                 }
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Exception) { _uiState.value = _uiState.value.copy(historyLoading = false, historyError = true,
-                metrics = emptyList(), overviewMetrics = emptyList(), dailySourceOptions = emptyList())
+                metrics = emptyList(), overviewMetrics = emptyList(), additionalMetrics = emptyList(),
+                dailySourceOptions = emptyList())
                 refreshBackgroundStatus()
             }
         }
@@ -369,6 +374,54 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
             isAvailable = recoveryAvailable
         )
         return NativeHealthMetrics.studioOverview(full, sleep, workouts, recovery)
+    }
+
+    private fun buildStudioAdditionalMetrics(
+        language: String,
+        day: JSONObject,
+        full: List<HealthMetricItemUiModel>
+    ): List<HealthMetricItemUiModel> {
+        val text = com.repforge.app.ui.text.nativeResources(context, language)
+        val noData = text.getString(com.repforge.app.R.string.health_history_no_data)
+        val byKey = full.associateBy { it.key }
+        val systolic = byKey["bloodPressureSystolic"]
+        val diastolic = byKey["bloodPressureDiastolic"]
+        val pressureAvailable = systolic?.isAvailable == true && diastolic?.isAvailable == true
+        val pressure = HealthMetricItemUiModel(
+            key = "bloodPressure",
+            label = text.getString(com.repforge.app.R.string.health_record_blood_pressure),
+            valueText = if (pressureAvailable) "${systolic!!.valueText}/${diastolic!!.valueText}" else "—",
+            unit = "mmHg",
+            sourceText = if (pressureAvailable) {
+                if (systolic!!.sourceText == diastolic!!.sourceText) systolic.sourceText
+                else "${systolic.sourceText} / ${diastolic.sourceText}"
+            } else noData,
+            isAvailable = pressureAvailable
+        )
+
+        val rawDistance = day.optDouble("distanceMeters", Double.NaN)
+        val distanceBase = byKey["distanceMeters"]
+        val distanceAvailable = distanceBase?.isAvailable == true &&
+            rawDistance.isFinite() && rawDistance >= 0.0
+        val distance = distanceBase?.copy(
+            valueText = if (distanceAvailable) {
+                NumberFormat.getNumberInstance(Locale.forLanguageTag(language)).apply {
+                    minimumFractionDigits = 0
+                    maximumFractionDigits = 2
+                }.format(rawDistance / 1000.0)
+            } else "—",
+            unit = "km",
+            isAvailable = distanceAvailable,
+            sourceText = if (distanceAvailable) distanceBase.sourceText else noData
+        )
+
+        return listOfNotNull(
+            pressure,
+            byKey["bloodGlucoseMmolL"],
+            byKey["respiratoryRate"],
+            distance,
+            byKey["oxygenSaturationPercent"]
+        )
     }
 
     fun setDailySourcePreference(value: String) {

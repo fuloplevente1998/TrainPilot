@@ -288,6 +288,7 @@ fun HealthJournalTabContent(
     val metricColumns =
         if (LocalDensity.current.fontScale > 1.3f || LocalConfiguration.current.screenWidthDp < 312) 1 else 2
     var moreExpanded by rememberSaveable { mutableStateOf(false) }
+    var allMetricsExpanded by rememberSaveable { mutableStateOf(false) }
     var journalExpanded by rememberSaveable { mutableStateOf(false) }
     var connectExpanded by rememberSaveable { mutableStateOf(false) }
 
@@ -312,8 +313,9 @@ fun HealthJournalTabContent(
                 expanded = moreExpanded,
                 onToggle = { moreExpanded = !moreExpanded }
             ) {
-                // All 26 genuine native readings and their original source/test tags stay reachable.
-                for (row in state.metrics.chunked(metricColumns)) {
+                // Drive 13's supported compact readings first. Body temperature is
+                // intentionally absent until a real provider/ingest field exists.
+                for (row in state.additionalMetrics.chunked(metricColumns)) {
                     Row(
                         Modifier.fillMaxWidth().height(IntrinsicSize.Max),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -322,6 +324,37 @@ fun HealthJournalTabContent(
                             HealthMetricTile(metric, Modifier.weight(1f).fillMaxHeight())
                         }
                         if (row.size < metricColumns) Spacer(Modifier.weight(1f))
+                    }
+                }
+
+                TextButton(
+                    onClick = { allMetricsExpanded = !allMetricsExpanded },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                        .testTag("health_all_metrics_toggle")
+                ) {
+                    Text(
+                        when (state.language) {
+                            "en" -> if (allMetricsExpanded) "Show fewer readings" else "All readings"
+                            "de" -> if (allMetricsExpanded) "Weniger Messwerte" else "Alle Messwerte"
+                            "ro" -> if (allMetricsExpanded) "Mai puține măsurători" else "Toate măsurătorile"
+                            else -> if (allMetricsExpanded) "Kevesebb mérés" else "Összes mérés"
+                        },
+                        color = colors.accentText
+                    )
+                }
+
+                if (allMetricsExpanded) {
+                    // Every original native metric and source/test tag stays reachable.
+                    for (row in state.metrics.chunked(metricColumns)) {
+                        Row(
+                            Modifier.fillMaxWidth().height(IntrinsicSize.Max),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            for (metric in row) {
+                                HealthMetricTile(metric, Modifier.weight(1f).fillMaxHeight())
+                            }
+                            if (row.size < metricColumns) Spacer(Modifier.weight(1f))
+                        }
                     }
                 }
             }

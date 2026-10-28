@@ -120,6 +120,12 @@ class NativePhoneNavigationTest {
         if (compose.onAllNodesWithTag(targetTag).fetchSemanticsNodes().isEmpty()) {
             compose.onNodeWithTag(sectionTag).performClick()
         }
+        if (sectionTag == "health_more_section" &&
+            compose.onAllNodesWithTag(targetTag).fetchSemanticsNodes().isEmpty()) {
+            compose.onNodeWithTag("health_journal_list")
+                .performScrollToNode(hasTestTag("health_all_metrics_toggle"))
+            compose.onNodeWithTag("health_all_metrics_toggle").performClick()
+        }
         compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag(targetTag))
         compose.onNodeWithTag(targetTag).performScrollTo().assertIsDisplayed()
     }
