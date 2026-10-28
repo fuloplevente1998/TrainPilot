@@ -118,7 +118,10 @@ data class ProgressPeriodTotals(
     val workoutCount: Int,
     val totalVolumeKg: Double,
     val completedSets: Int,
-    val prWorkouts: Int
+    val prWorkouts: Int,
+    val strengthWorkoutCount: Int,
+    val durationWorkoutCount: Int,
+    val totalDurationSeconds: Long
 )
 
 @Dao
@@ -291,7 +294,14 @@ interface WorkoutHistoryDao {
             COALESCE(SUM(CASE WHEN w.totalVolumeKg > 0.0
                 AND w.totalVolumeKg < 1.0e308 THEN w.totalVolumeKg ELSE 0.0 END), 0.0) AS totalVolumeKg,
             COALESCE(SUM(CASE WHEN w.completedSetsCount > 0 THEN w.completedSetsCount ELSE 0 END), 0) AS completedSets,
-            COALESCE(SUM(CASE WHEN w.hasPr226 = 1 THEN 1 ELSE 0 END), 0) AS prWorkouts
+            COALESCE(SUM(CASE WHEN w.hasPr226 = 1 THEN 1 ELSE 0 END), 0) AS prWorkouts,
+            COALESCE(SUM(CASE WHEN EXISTS (
+                SELECT 1 FROM workout_history_exercises e
+                WHERE e.workoutHistoryId = w.id
+                  AND e.measurementType IN ('strength', 'reps')
+            ) THEN 1 ELSE 0 END), 0) AS strengthWorkoutCount,
+            COALESCE(SUM(CASE WHEN w.durationSeconds > 0 THEN 1 ELSE 0 END), 0) AS durationWorkoutCount,
+            COALESCE(SUM(CASE WHEN w.durationSeconds > 0 THEN w.durationSeconds ELSE 0 END), 0) AS totalDurationSeconds
         FROM workout_history w
         WHERE w.finishedEpochMs >= :fromInclusive AND w.finishedEpochMs < :toExclusive
           AND w.finishedEpochMs > w.startedEpochMs
@@ -300,6 +310,23 @@ interface WorkoutHistoryDao {
                  OR (t.workoutKey <> '' AND t.workoutKey = w.workoutKey))
     """)
     suspend fun getProgressPeriodTotals(fromInclusive: Long, toExclusive: Long): ProgressPeriodTotals
+
+    /** Persisted #226 badge arrays only; no raw workout JSON/set/photo/GPS hydration. */
+    @Query("""
+        SELECT w.prRecordsJson226
+        FROM workout_history w
+        WHERE w.finishedEpochMs >= :fromInclusive AND w.finishedEpochMs < :toExclusive
+          AND w.finishedEpochMs > w.startedEpochMs
+          AND w.hasPr226 = 1
+          AND NOT EXISTS (SELECT 1 FROM history_tombstones t
+              WHERE (t.primaryId <> '' AND t.primaryId IN (w.id, w.syncId, w.workoutKey))
+                 OR (t.workoutKey <> '' AND t.workoutKey = w.workoutKey))
+        ORDER BY w.finishedEpochMs ASC, w.id ASC
+    """)
+    suspend fun getProgressPeriodPrRecordJson(
+        fromInclusive: Long,
+        toExclusive: Long
+    ): List<String>
 
     /** No photos, routes, set rows or raw JSON are read to build the volume chart.
      * Finished timestamp is the chart's date; data replacement/tombstones are respected.

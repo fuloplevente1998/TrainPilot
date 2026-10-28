@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
 
 data class MuscleLoadUiModel(
     val muscleKey: String,
@@ -38,12 +39,19 @@ data class Exercise1RmPointUiModel(
     val e1rmKg: Double
 )
 
+internal object NativeProgressPeriodProjection {
+    fun countPrRecords(rows: List<String>): Int = rows.sumOf { raw ->
+        runCatching { JSONArray(raw).length() }.getOrDefault(0)
+    }
+}
+
 data class ProgressUiState(
     val muscleLoads: List<MuscleLoadUiModel> = emptyList(),
     val selectedMuscleRange: NativeVolumeRange = NativeVolumeRange.THREE_MONTHS,
     val muscleLoading: Boolean = true,
     val muscleError: Boolean = false,
     val periodTotals: ProgressPeriodTotals? = null,
+    val periodPrRecords: Int = 0,
     val selectedVolumeRange: NativeVolumeRange = NativeVolumeRange.MONTH,
     val volumeSnapshot: NativeVolumeSnapshot? = null,
     val volumeLoading: Boolean = true,
@@ -170,8 +178,13 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
                         val (fromInclusive, toExclusive) = NativeProgressQuery.thirtyDayWindow(now, zone)
                         val totals = db.workoutHistoryDao().getProgressPeriodTotals(
                             fromInclusive, toExclusive)
+                        val prRecords = NativeProgressPeriodProjection.countPrRecords(
+                            db.workoutHistoryDao().getProgressPeriodPrRecordJson(
+                                fromInclusive, toExclusive
+                            )
+                        )
                         val photos = runCatching { NativeProgressPhotoData.load(db) }
-                        (Triple(language to exercises, photos, totals) to stamp) to
+                        (Triple(language to exercises, photos, totals to prRecords) to stamp) to
                             NativeDataReplacement.continuationForCurrentData(context)
                     }
                 }
@@ -184,7 +197,8 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
                 summaryRequestedStamp = result.second
                 _uiState.update { it.copy(
                     language = language, exercises = exercises,
-                    periodTotals = result.first.third,
+                    periodTotals = result.first.third.first,
+                    periodPrRecords = result.first.third.second,
                     progressPhotos = result.first.second.getOrDefault(emptyList()),
                     selectedPhotoId = it.selectedPhotoId?.takeIf { photoId ->
                         result.first.second.getOrNull()?.any { photo -> photo.id == photoId } == true
@@ -195,7 +209,8 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
                 selectExercise(id)
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Exception) { _uiState.update { it.copy(loading = false, loadError = true,
-                periodTotals = null, photosLoading = false, photosError = true) } }
+                periodTotals = null, periodPrRecords = 0,
+                photosLoading = false, photosError = true) } }
         }
     }
 

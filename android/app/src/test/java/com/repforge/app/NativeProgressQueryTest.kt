@@ -65,17 +65,47 @@ class NativeProgressQueryTest {
         val zone = ZoneId.of("Europe/Budapest")
         val now = LocalDate.of(2026, 10, 27).atTime(12, 0).atZone(zone).toInstant().toEpochMilli()
         val (start, until) = NativeProgressQuery.thirtyDayWindow(now, zone)
-        suspend fun add(i: Int, finished: Long, volume: Double, sets: Int, pr: Boolean,
-            complete: Boolean = true) {
-            db.workoutHistoryDao().insertWorkout(JournalTestFixtures.row(i).copy(
-                startedEpochMs = if (complete) finished - 60_000 else finished,
+        suspend fun add(
+            i: Int,
+            finished: Long,
+            volume: Double,
+            sets: Int,
+            pr: Boolean,
+            duration: Int = 60,
+            prRecords: String = "[]",
+            strength: Boolean = true,
+            complete: Boolean = true
+        ) {
+            val history = JournalTestFixtures.row(i).copy(
+                startedEpochMs = if (complete) finished - duration * 1000L else finished,
                 finishedEpochMs = finished,
-                totalVolumeKg = volume, completedSetsCount = sets, hasPr226 = pr
-            ))
+                durationSeconds = if (complete) duration else 0,
+                totalVolumeKg = volume,
+                completedSetsCount = sets,
+                hasPr226 = pr,
+                prRecordsJson226 = prRecords
+            )
+            db.workoutHistoryDao().insertWorkout(history)
+            db.workoutHistoryDao().insertExercise(
+                WorkoutHistoryExerciseEntity(
+                    workoutHistoryId = history.id,
+                    exerciseId = "progress-$i",
+                    nameHu = "Teszt",
+                    nameEn = "Test",
+                    loadType = if (strength) "dumbbell" else "bodyweight",
+                    repUnit = if (strength) "ism." else "km",
+                    measurementType = if (strength) "strength" else "distance",
+                    orderIndex = 0,
+                    actualRir = null,
+                    setRir229 = false
+                )
+            )
         }
-        add(1, start + 90_000, 125.0, 4, true)
-        add(2, now - 90_000, 225.5, 6, false)
-        add(3, now - 180_000, 999.0, 5, true)
+        add(1, start + 90_000, 125.0, 4, true, duration = 1800,
+            prRecords = """[{"id":"pr-a"},{"id":"pr-b"}]""")
+        add(2, now - 90_000, 225.5, 6, false, duration = 3600)
+        add(3, now - 180_000, 999.0, 5, true, duration = 2400,
+            prRecords = """[{"id":"deleted"}]""")
         add(4, start - 1, 800.0, 8, true)
         add(5, now + 1000, 700.0, 7, true)
         add(6, now - 300_000, 300.0, 3, true, complete = false)
@@ -86,6 +116,20 @@ class NativeProgressQueryTest {
         assertEquals(350.5, totals.totalVolumeKg, 1e-6)
         assertEquals(10, totals.completedSets)
         assertEquals(1, totals.prWorkouts)
+        assertEquals(2, totals.strengthWorkoutCount)
+        assertEquals(2, totals.durationWorkoutCount)
+        assertEquals(5400L, totals.totalDurationSeconds)
+        val prRows = db.workoutHistoryDao().getProgressPeriodPrRecordJson(start, until)
+        assertEquals(
+            2,
+            com.repforge.app.ui.progress.NativeProgressPeriodProjection.countPrRecords(prRows)
+        )
+        assertEquals(
+            2,
+            com.repforge.app.ui.progress.NativeProgressPeriodProjection.countPrRecords(
+                listOf("""[{"id":"a"},{"id":"b"}]""", "not-json", "[]")
+            )
+        )
     }
 
     @Test fun volumeRangesRespectLocalCalendarAndDstChange() {

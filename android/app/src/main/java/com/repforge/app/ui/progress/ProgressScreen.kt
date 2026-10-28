@@ -176,7 +176,7 @@ fun ProgressScreen(
         // Studio's four-metric summary comes from bounded, tombstone-safe native Room aggregates.
         state.periodTotals?.let { totals ->
             item(key = "progress_period_overview") {
-                ProgressPeriodOverview(totals, state.language)
+                ProgressPeriodOverview(totals, state.periodPrRecords, state.language)
             }
         }
 
@@ -432,7 +432,11 @@ private fun ProgressVolumeChart(
  * The DB aggregate is the source of truth; no DEMO counters are introduced here.
  */
 @Composable
-private fun ProgressPeriodOverview(totals: ProgressPeriodTotals, language: String) {
+private fun ProgressPeriodOverview(
+    totals: ProgressPeriodTotals,
+    prRecords: Int,
+    language: String
+) {
     val colors = LocalTrainPilotColors.current
     val context = LocalContext.current
     val strings = remember(context, language) { nativeResources(context, language) }
@@ -442,11 +446,38 @@ private fun ProgressPeriodOverview(totals: ProgressPeriodTotals, language: Strin
             minimumFractionDigits = 0
         }
     }
+    fun label(hu: String, en: String, de: String, ro: String) = when (language) {
+        "en" -> en
+        "de" -> de
+        "ro" -> ro
+        else -> hu
+    }
+    val averageVolume = if (totals.strengthWorkoutCount > 0)
+        totals.totalVolumeKg / totals.strengthWorkoutCount else null
+    val averageMinutes = if (totals.durationWorkoutCount > 0)
+        totals.totalDurationSeconds.toDouble() / totals.durationWorkoutCount / 60.0 else null
+    val durationText = averageMinutes?.let {
+        val value = number.format(it)
+        when (language) {
+            "hu" -> "$value perc"
+            else -> "$value min"
+        }
+    } ?: "—"
     val entries = listOf(
-        R.string.studio_progress_period_workouts to number.format(totals.workoutCount),
-        R.string.studio_progress_period_volume to "${number.format(totals.totalVolumeKg)} kg",
-        R.string.studio_progress_period_sets to number.format(totals.completedSets),
-        R.string.studio_progress_period_pr_workouts to number.format(totals.prWorkouts)
+        label("PR rekordok", "PR records", "PR-Rekorde", "Recorduri PR") to number.format(prRecords),
+        strings.getString(R.string.studio_progress_period_workouts) to number.format(totals.workoutCount),
+        label(
+            "Átlagos volumen / erőedzés",
+            "Average volume / strength workout",
+            "Ø Volumen / Krafttraining",
+            "Volum mediu / antrenament de forță"
+        ) to (averageVolume?.let { "${number.format(it)} kg" } ?: "—"),
+        label(
+            "Átlagos edzésidő",
+            "Average workout duration",
+            "Ø Trainingsdauer",
+            "Durata medie a antrenamentului"
+        ) to durationText
     )
     val stack = LocalConfiguration.current.screenWidthDp < 320 ||
         LocalDensity.current.fontScale > 1.3f
@@ -458,7 +489,7 @@ private fun ProgressPeriodOverview(totals: ProgressPeriodTotals, language: Strin
                 horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 for ((label, value) in row) {
                     TrainPilotMetricSurface(Modifier.weight(1f).fillMaxHeight()) {
-                        Text(strings.getString(label),
+                        Text(label,
                             style = androidx.compose.material3.MaterialTheme.typography.labelMedium,
                             color = colors.muted)
                         Text(value, style = androidx.compose.material3.MaterialTheme.typography.titleLarge.copy(
