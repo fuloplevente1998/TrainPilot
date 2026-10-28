@@ -126,3 +126,22 @@ html.tp271-mockup-dock:has(#tp3PlannerPanelHost) body #tp271Dock {
     transition: none !important;
   }
 }
+
+/* P1c visual parity: Studio's compact two-column Home overview.
+   All six main measurements remain present and actionable; 2x2 primary
+   readings are followed by the two original workout/recovery readings. */
+html.tp271-mockup-dock body #app main.rf221-home #rf223Today .tp5-today-grid.tp5-today-compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 7px !important;
+}
+html.tp271-mockup-dock body #app main.rf221-home #rf223Today .tp5-today-metric.stat {
+  min-height: 72px !important;
+  padding: 8px 9px !important;
+}
+html.tp271-mockup-dock body #app main.rf221-home #rf223Today .tp5-today-label {
+  font-size: 11px !important;
+  line-height: 1.1 !important;
+}
+html.tp271-mockup-dock body #app main.rf221-home #rf223Today .tp5-today-value {
+  font-size: clamp(13px, 4vw, 17px) !important;
+}
