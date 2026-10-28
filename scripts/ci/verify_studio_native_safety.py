@@ -42,6 +42,28 @@ def main():
     if launchers != [".MainActivity"]:
         fail(f"Production launcher unexpectedly changed: {launchers}")
 
+    # Explicit branding contract: the owner's original GOLD DUMBBELL belongs
+    # in both the installed launcher and every native Studio/main header.
+    # The 18:49 Studio mountain is not the approved TrainPilot brand.
+    application = manifest.find("application")
+    if application is None or application.get(ns + "icon") != "@mipmap/trainpilot_launcher":
+        fail("Production launcher must keep the original TrainPilot dumbbell icon")
+    launcher = ET.parse(app / "src/main/res/mipmap-anydpi-v26/trainpilot_launcher.xml").getroot()
+    fg = launcher.find("foreground")
+    if fg is None or fg.get(ns + "drawable") != "@drawable/trainpilot_launcher_foreground":
+        fail("Adaptive launcher must use the original gold dumbbell foreground")
+    brand_vector = (app / "src/main/res/drawable/trainpilot_launcher_foreground.xml").read_text(encoding="utf-8")
+    must_contain(brand_vector, r"#FFF1A0", "Original dumbbell gradient highlight")
+    must_contain(brand_vector, r"#DEA12A", "Original dumbbell gradient shadow")
+    brand = (app / "src/main/java/com/repforge/app/ui/navigation/TrainPilotBrandLogo.kt").read_text(encoding="utf-8")
+    must_contain(brand, r"setImageResource\\(R\\.drawable\\.trainpilot_launcher_foreground\\)",
+                 "Native header must reuse the EXACT launcher vector")
+    for screen in ("NativeStudioShellHeader.kt", "NativeMainHeader.kt"):
+        header = (app / "src/main/java/com/repforge/app/ui/navigation" / screen).read_text(encoding="utf-8")
+        must_contain(header, r"TrainPilotBrandLogo\\(", f"{screen} approved dumbbell brand")
+        if "NativeStudioBrand(" in header or "TrainPilotMountainLogo(" in header:
+            fail(f"{screen}: Studio mountain cannot replace the user's gold dumbbell")
+
     reader = (app / "src/main/java/com/repforge/app/data/migration/"
               "LegacyLocalStorageReader.kt").read_text(encoding="utf-8")
     must_contain(reader, r"withTimeout\(60_000\)", "Legacy read 60-second guard")
