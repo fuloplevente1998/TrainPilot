@@ -94,6 +94,9 @@ import com.repforge.app.R
 import com.repforge.app.ActiveWorkoutStore
 import com.repforge.app.WearLiveHealthStore
 import com.repforge.app.ui.text.nativeResources
+import com.repforge.app.ui.progress.WeightJournalOverview
+import com.repforge.app.ui.progress.WeightJournalUiState
+import com.repforge.app.ui.progress.WeightJournalViewModel
 import androidx.compose.runtime.remember
 import com.repforge.app.ui.theme.LocalTrainPilotColors
 
@@ -117,10 +120,12 @@ fun HealthDashboardScreen(
     onActiveWorkout: () -> Unit = {},
     initialSection: String? = null,
     onInitialSectionConsumed: () -> Unit = {},
-    viewModel: HealthDashboardViewModel = viewModel()
+    viewModel: HealthDashboardViewModel = viewModel(),
+    weightViewModel: WeightJournalViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val weightState by weightViewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(initialSection) {
         if (initialSection == "devices") {
             viewModel.setTab("ble")
@@ -196,7 +201,10 @@ fun HealthDashboardScreen(
         if (state.activeTab == "journal") {
             HealthJournalTabContent(
                 state = state,
+                weightState = weightState,
                 onWeightJournal = onWeightJournal,
+                onWeightRange = weightViewModel::setRange,
+                onWeightRetry = weightViewModel::retryReads,
                 onOpenBle = { viewModel.setTab("ble") },
                 onSelectProvider = { viewModel.setProvider(it, activity) },
                 onAutoOnOpen = viewModel::setAutoOnOpen,
@@ -264,7 +272,10 @@ fun HealthDashboardScreen(
 @Composable
 fun HealthJournalTabContent(
     state: HealthDashboardUiState,
+    weightState: WeightJournalUiState,
     onWeightJournal: () -> Unit,
+    onWeightRange: (String) -> Unit,
+    onWeightRetry: () -> Unit,
     onSelectProvider: (String) -> Unit,
     onToggleHcBackground: (Boolean) -> Unit,
     onAutoOnOpen: (Boolean) -> Unit,
@@ -299,7 +310,10 @@ fun HealthJournalTabContent(
         item(key = "health_selected_day_overview") {
             HealthSelectedDayOverview(
                 state = state,
+                weightState = weightState,
                 onWeightJournal = onWeightJournal,
+                onWeightRange = onWeightRange,
+                onWeightRetry = onWeightRetry,
                 onPulseTrend = { onOpenRecords("HeartRateRecord") }
             )
         }
@@ -838,13 +852,20 @@ fun HealthJournalTabContent(
 @Composable
 internal fun HealthSelectedDayOverview(
     state: HealthDashboardUiState,
+    weightState: WeightJournalUiState,
     onWeightJournal: () -> Unit,
+    onWeightRange: (String) -> Unit,
+    onWeightRetry: () -> Unit,
     onPulseTrend: () -> Unit
 ) {
     val colors = LocalTrainPilotColors.current
     val ctx = LocalContext.current
     val strings = remember(ctx, state.language) { nativeResources(ctx, state.language) }
     val metrics = state.overviewMetrics
+    var weightExpanded by rememberSaveable { mutableStateOf(false) }
+    val bodyFitnessMetrics = state.metrics.filter {
+        it.key in setOf("bodyFatPercent", "oxygenSaturationPercent", "vo2Max")
+    }
     val fontScale = LocalDensity.current.fontScale
     val width = LocalConfiguration.current.screenWidthDp
     val columns = when {
@@ -911,9 +932,84 @@ internal fun HealthSelectedDayOverview(
         )
         HealthStudioActionRow(
             title = strings.getString(R.string.weight_open),
-            subtitle = strings.getString(R.string.health_metric_weightkg),
-            iconKey = "weightKg", tag = "health_weight_journal", onClick = onWeightJournal
+            subtitle = buildString {
+                append(
+                    weightState.currentKg?.let {
+                        java.text.NumberFormat.getNumberInstance(
+                            java.util.Locale.forLanguageTag(state.language)
+                        ).apply { maximumFractionDigits = 1 }.format(it) + " kg"
+                    } ?: "—"
+                )
+                append(" · ")
+                append(
+                    when (state.language) {
+                        "en" -> if (weightExpanded) "Hide details" else "Measurement, change and trend"
+                        "de" -> if (weightExpanded) "Details ausblenden" else "Messung, Änderung und Trend"
+                        "ro" -> if (weightExpanded) "Ascunde detaliile" else "Măsurare, schimbare și tendință"
+                        else -> if (weightExpanded) "Részletek elrejtése" else "Mérés, változás és trend"
+                    }
+                )
+            },
+            iconKey = "weightKg",
+            tag = "health_weight_journal",
+            onClick = { weightExpanded = !weightExpanded }
         )
+        if (weightExpanded) {
+            Column(
+                Modifier.fillMaxWidth().testTag("health_weight_inline_panel"),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                if (bodyFitnessMetrics.isNotEmpty()) {
+                    Text(
+                        when (state.language) {
+                            "en" -> "Body & fitness"
+                            "de" -> "Körper & Fitness"
+                            "ro" -> "Corp și fitness"
+                            else -> "Test és fittség"
+                        },
+                        color = colors.accentText,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        when (state.language) {
+                            "en" -> "Body fat, SpO₂ and VO₂max from the selected Health day"
+                            "de" -> "Körperfett, SpO₂ und VO₂max des gewählten Gesundheitstags"
+                            "ro" -> "Grăsime corporală, SpO₂ și VO₂max din ziua selectată"
+                            else -> "Testzsír, SpO₂ és VO₂max a kiválasztott egészségnapból"
+                        },
+                        color = colors.muted,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    val fitnessColumns =
+                        if (LocalConfiguration.current.screenWidthDp < 350 ||
+                            LocalDensity.current.fontScale > 1.2f) 1 else 3
+                    for (chunk in bodyFitnessMetrics.chunked(fitnessColumns)) {
+                        Row(
+                            Modifier.fillMaxWidth().height(IntrinsicSize.Max),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            chunk.forEach { metric ->
+                                HealthMetricTile(
+                                    metric,
+                                    Modifier.weight(1f).fillMaxHeight()
+                                )
+                            }
+                            repeat(fitnessColumns - chunk.size) {
+                                Spacer(Modifier.weight(1f))
+                            }
+                        }
+                    }
+                }
+                WeightJournalOverview(
+                    state = weightState,
+                    onRange = onWeightRange,
+                    onAction = onWeightJournal,
+                    actionLabel = R.string.weight_add,
+                    onRetry = onWeightRetry
+                )
+            }
+        }
     }
 }
 

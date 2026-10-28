@@ -92,6 +92,25 @@ class NativePhoneNavigationTest {
         }
         compose.waitForIdle()
     }
+    private fun expandInlineWeight() {
+        compose.onNodeWithTag("health_weight_journal").performScrollTo()
+            .assertIsDisplayed().performClick()
+        compose.waitUntil(15_000) {
+            compose.onAllNodesWithTag("health_weight_inline_panel").fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
+    private fun openFullWeightJournal() {
+        expandInlineWeight()
+        compose.onNodeWithTag("health_journal_list")
+            .performScrollToNode(hasTestTag("weight_journal_action"))
+        compose.onNodeWithTag("weight_journal_action").performScrollTo()
+            .assertIsDisplayed().performClick()
+        compose.waitUntil(15_000) {
+            compose.onAllNodesWithTag("weight_journal_list").fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
     private fun openTrainingQuickChoice(choiceTag: String) {
         compose.onNodeWithTag("training_quick_workout").performScrollTo()
             .assertIsDisplayed().performClick()
@@ -804,7 +823,7 @@ class NativePhoneNavigationTest {
 
     @Test fun weightJournalSupportsDatedAddEditAndConfirmedExactDeletion() {
         launch(); tab("health")
-        compose.onNodeWithTag("health_weight_journal").performClick()
+        openFullWeightJournal()
         compose.onNodeWithTag("weight_journal_action").performClick()
         compose.onNodeWithTag("weight_input").performTextReplacement("72,3")
         compose.onNodeWithTag("weight_date").performTextReplacement("2026-10-20")
@@ -846,7 +865,7 @@ class NativePhoneNavigationTest {
     @Test fun weightOverviewCoversFifteenHundredMeasurementsAcrossRangeChanges() {
         seedLargeWeightJournal(1500)
         launch(); tab("health")
-        compose.onNodeWithTag("health_weight_journal").performClick()
+        expandInlineWeight()
         compose.waitUntil(15000) { compose.onAllNodes(hasTestTag("weight_measurement_count") and
             hasText("1500 mérés", substring = true)).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("weight_global_extrema").assertTextContains("35 / 140 kg", substring = true)
@@ -867,7 +886,7 @@ class NativePhoneNavigationTest {
     @Test fun pagedWeightEditUpdatesOverviewWithoutChangingCountOrOlderMeasurements() {
         seedLargeWeightJournal(200)
         launch(); tab("health")
-        compose.onNodeWithTag("health_weight_journal").performClick()
+        openFullWeightJournal()
         compose.waitUntil(15000) { compose.onAllNodes(hasTestTag("weight_measurement_count") and
             hasText("200 mérés", substring = true)).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("weight_journal_list").performScrollToNode(hasTestTag("weight_edit_weight-0199"))
@@ -888,7 +907,7 @@ class NativePhoneNavigationTest {
 
     @Test fun failedWeightSaveKeepsTheDialogAndInputForExplicitRetry() {
         launch(); tab("health")
-        compose.onNodeWithTag("health_weight_journal").performClick()
+        openFullWeightJournal()
         compose.onNodeWithTag("weight_journal_action").performClick()
         compose.onNodeWithTag("weight_input").performTextReplacement("74,5")
         context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE).edit().putBoolean("blocked", true).commit()
