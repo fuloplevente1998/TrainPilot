@@ -776,7 +776,7 @@ internal fun HealthSelectedDayOverview(
     val colors = LocalTrainPilotColors.current
     val ctx = LocalContext.current
     val strings = remember(ctx, state.language) { nativeResources(ctx, state.language) }
-    val metrics = NativeHealthMetrics.overview(state.metrics)
+    val metrics = state.overviewMetrics
     val fontScale = LocalDensity.current.fontScale
     val width = LocalConfiguration.current.screenWidthDp
     val columns = when {
