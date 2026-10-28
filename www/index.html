@@ -2685,59 +2685,98 @@
     ro:{library:'Bibliotecă exerciții',libraryHint:'Caută și filtrează exerciții',outdoor:'Antrenament afară',outdoorHint:'Alergare, mers, bicicletă • GPS în antrenament',muscles:'Grupe musculare'}
   };
   let panelObserver=null,observedPanel=null;
+  const workoutShortcutLabels={
+    hu:{programs:'Programok',calendar:'Naptár',coach:'Coach',nav:'Edzés további lehetőségei'},
+    en:{programs:'Programs',calendar:'Calendar',coach:'Coach',nav:'More workout options'},
+    de:{programs:'Programme',calendar:'Kalender',coach:'Coach',nav:'Weitere Trainingsoptionen'},
+    ro:{programs:'Programe',calendar:'Calendar',coach:'Coach',nav:'Alte opțiuni de antrenament'}
+  };
   function previewActions(){
-    const main=document.querySelector('#app main.tp152-plan');
+    const main=document.querySelector('#app main.tp146-plan');
     if(!main||activeWorkout())return;
     const entry=main.querySelector('.tp150-quick-entry-minimal');
-    if(!entry)return;
-    let section=main.querySelector('#tp271WorkoutLaunchers');
-    if(!section){
-      section=document.createElement('section');
-      section.id='tp271WorkoutLaunchers';
-      section.className='tp271-workout-launchers';
-      const defs=[['library','book-open'],['outdoor','map']];
-      for(const [key,glyph] of defs){
+    if(entry){
+      let section=main.querySelector('#tp271WorkoutLaunchers');
+      if(!section){
+        section=document.createElement('section');
+        section.id='tp271WorkoutLaunchers';
+        section.className='tp271-workout-launchers';
+        const defs=[['library','book-open'],['outdoor','map']];
+        for(const [key,glyph] of defs){
+          const button=document.createElement('button');
+          button.type='button';
+          button.className='tp271-workout-launcher';
+          button.dataset.tp271Launcher=key;
+          const icon=document.createElement('span');
+          icon.className='tp271-launcher-icon';
+          icon.setAttribute('aria-hidden','true');
+          icon.textContent=glyph==='map'?'⌁':'▦';
+          const copy=document.createElement('span');
+          copy.className='tp271-launcher-copy';
+          const heading=document.createElement('strong'),hint=document.createElement('small');
+          heading.className='tp271-launcher-title';hint.className='tp271-launcher-hint';
+          copy.append(heading,hint);
+          const arrow=document.createElement('span');
+          arrow.className='tp271-launcher-arrow';arrow.textContent='›';
+          arrow.setAttribute('aria-hidden','true');
+          button.append(icon,copy,arrow);
+          button.addEventListener('click',()=>{
+            if(activeWorkout()||typeof window.tp155R4OpenPanel!=='function')return;
+            if(key==='outdoor'){
+              // Prefilter the existing Quick panel without starting GPS.
+              state.tp155QuickQuery='running';
+              state.tp155QuickGroup='all';
+              state.tp155QuickGear='all';
+              window.tp155R4OpenPanel('quick',button);
+            }else window.tp155R4OpenPanel('exercises',button);
+            scheduleSync();
+          });
+          section.appendChild(button);
+        }
+        entry.insertAdjacentElement('afterend',section);
+      }
+      const t=workoutLabels[getLang()];
+      for(const button of section.querySelectorAll('button[data-tp271-launcher]')){
+        const key=button.dataset.tp271Launcher;
+        button.querySelector('.tp271-launcher-title').textContent=t[key];
+        button.querySelector('.tp271-launcher-hint').textContent=t[key+'Hint'];
+        button.setAttribute('aria-label',t[key]+': '+t[key+'Hint']);
+      }
+    }
+    // These three destinations previously lived in the now-hidden 2x4 top
+    // grid. Their canonical handlers remain; surface them below in Workout.
+    let shortcuts=main.querySelector('#tp271WorkoutQuickLinks');
+    if(!shortcuts){
+      shortcuts=document.createElement('nav');
+      shortcuts.id='tp271WorkoutQuickLinks';
+      shortcuts.className='tp271-workout-shortcuts';
+      const glyphs={programs:'☷',calendar:'▦',coach:'✦'};
+      for(const key of ['programs','calendar','coach']){
         const button=document.createElement('button');
         button.type='button';
-        button.className='tp271-workout-launcher';
-        button.dataset.tp271Launcher=key;
-        const icon=document.createElement('span');
-        icon.className='tp271-launcher-icon';
-        icon.setAttribute('aria-hidden','true');
-        icon.textContent=glyph==='map'?'⌁':'▦';
-        const copy=document.createElement('span');
-        copy.className='tp271-launcher-copy';
-        const heading=document.createElement('strong'),hint=document.createElement('small');
-        heading.className='tp271-launcher-title';hint.className='tp271-launcher-hint';
-        copy.append(heading,hint);
-        const arrow=document.createElement('span');
-        arrow.className='tp271-launcher-arrow';arrow.textContent='›';
-        arrow.setAttribute('aria-hidden','true');
-        button.append(icon,copy,arrow);
+        button.dataset.tp271Shortcut=key;
+        button.className='tp271-workout-shortcut';
+        const glyph=document.createElement('span');
+        glyph.className='tp271-shortcut-icon';glyph.textContent=glyphs[key];
+        glyph.setAttribute('aria-hidden','true');
+        const label=document.createElement('span');label.className='tp271-shortcut-label';
+        button.append(glyph,label);
         button.addEventListener('click',()=>{
-          if(activeWorkout()||typeof window.tp155R4OpenPanel!=='function')return;
-          if(key==='outdoor'){
-            // Outdoor activities are existing TP106 distance exercises.
-            // Opening the prefiltered Quick panel must NOT start GNSS.
-            state.tp155QuickQuery='running';
-            state.tp155QuickGroup='all';
-            state.tp155QuickGear='all';
-            window.tp155R4OpenPanel('quick',button);
-          }else{
-            window.tp155R4OpenPanel('exercises',button);
-          }
+          if(activeWorkout())return;
+          if(key==='coach')document.querySelector('.top.tp154-nav-grid .tp154-coach-action')?.click();
+          else if(typeof window.go==='function')window.go(key);
           scheduleSync();
         });
-        section.appendChild(button);
+        shortcuts.appendChild(button);
       }
-      entry.insertAdjacentElement('afterend',section);
+      main.appendChild(shortcuts);
     }
-    const t=workoutLabels[getLang()];
-    for(const button of section.querySelectorAll('button[data-tp271-launcher]')){
-      const key=button.dataset.tp271Launcher;
-      button.querySelector('.tp271-launcher-title').textContent=t[key];
-      button.querySelector('.tp271-launcher-hint').textContent=t[key+'Hint'];
-      button.setAttribute('aria-label',t[key]+': '+t[key+'Hint']);
+    const t=workoutShortcutLabels[getLang()];
+    shortcuts.setAttribute('aria-label',t.nav);
+    for(const button of shortcuts.querySelectorAll('button[data-tp271-shortcut]')){
+      const title=t[button.dataset.tp271Shortcut];
+      button.querySelector('.tp271-shortcut-label').textContent=title;
+      button.setAttribute('aria-label',title);
     }
   }
   function muscleShortcuts(){
