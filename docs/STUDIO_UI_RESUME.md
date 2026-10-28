@@ -8,7 +8,13 @@ NativeStudioMuscleCard + független, calendar/DST/tombstone-safe 1/7/30nap/3hó
 Room lekérdezés, revision/cancellation/restore-guard, valódi részletsorozatszám.
 Felsőtab láthatóvá görgetés az UI-tesztekben, valós fontmérés, Home unit-tag-ek
 és aktuális Settings profil-entry tesztjavítva. Új Room teszt +2Compose teszt,
-nyers emulátoros képkérés. Futási eredmény még UNRUN; közös gate indítandó.
+nyers emulátoros képkérés. Első gate 40649976268 /52e31054:1344JVM+183Wear+2upgradePASS,
+phone119main113PASS/6FAIL+4GPSPASS,0missing/crash. Javítás c894f653:
+valósTextminWidth, unmerged unit/program keresés, lazy hónapscroll, pontos
+lokalizált sorozatszám-assert; 320dp normálfont side-by-side és4locale címsor.
+Új közös gate [40653023009](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40653023009)
+exact app/test `c894f6534d9f09eaa5c5a5d97c97c6365f08beae`: IN PROGRESS.
+Ez még nem PASS. Ne indíts duplikált gate-et vagy új appmódosítást eredmény nélkül.
 A ZIP session-generálását/fake Wear-ackját/DEMO fallbackjeit nem vettük át.
 Main, applicationId, aláírás, verzió, motor és séma változatlan.
 
