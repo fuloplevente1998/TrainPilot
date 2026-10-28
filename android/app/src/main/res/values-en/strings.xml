@@ -739,4 +739,9 @@
     <string name="studio_training_outdoor_subtitle">Run, walk or cycle with GPS</string>
     <string name="studio_training_current_program">Current program</string>
     <string name="studio_training_all">All</string>
+    <string name="studio_workout_gps_route">GPS route</string>
+    <string name="studio_workout_gps_accuracy">GPS ±%1$d m</string>
+    <string name="studio_workout_elapsed">ELAPSED TIME</string>
+    <string name="studio_workout_average_pace">Average pace</string>
+    <string name="studio_workout_heart_rate">Heart rate</string>
 </resources>

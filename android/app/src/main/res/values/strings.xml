@@ -739,4 +739,9 @@
     <string name="studio_training_outdoor_subtitle">Futás, séta, kerékpár GPS-szel</string>
     <string name="studio_training_current_program">Jelenlegi program</string>
     <string name="studio_training_all">Összes</string>
+    <string name="studio_workout_gps_route">GPS útvonal</string>
+    <string name="studio_workout_gps_accuracy">GPS ±%1$d m</string>
+    <string name="studio_workout_elapsed">ELTELT IDŐ</string>
+    <string name="studio_workout_average_pace">Átlagtempó</string>
+    <string name="studio_workout_heart_rate">Pulzus</string>
 </resources>

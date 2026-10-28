@@ -739,4 +739,9 @@
     <string name="studio_training_outdoor_subtitle">Alergare, mers sau ciclism cu GPS</string>
     <string name="studio_training_current_program">Program curent</string>
     <string name="studio_training_all">Toate</string>
+    <string name="studio_workout_gps_route">Rută GPS</string>
+    <string name="studio_workout_gps_accuracy">GPS ±%1$d m</string>
+    <string name="studio_workout_elapsed">TIMP SCURS</string>
+    <string name="studio_workout_average_pace">Ritm mediu</string>
+    <string name="studio_workout_heart_rate">Puls</string>
 </resources>
