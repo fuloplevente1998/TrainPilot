@@ -56,11 +56,12 @@ def main():
     must_contain(brand_vector, r"#FFF1A0", "Original dumbbell gradient highlight")
     must_contain(brand_vector, r"#DEA12A", "Original dumbbell gradient shadow")
     brand = (app / "src/main/java/com/repforge/app/ui/navigation/TrainPilotBrandLogo.kt").read_text(encoding="utf-8")
-    must_contain(brand, r"setImageResource\\(R\\.drawable\\.trainpilot_launcher_foreground\\)",
-                 "Native header must reuse the EXACT launcher vector")
+    if "setImageResource(R.drawable.trainpilot_launcher_foreground)" not in brand:
+        fail("Native header must reuse the EXACT launcher vector")
     for screen in ("NativeStudioShellHeader.kt", "NativeMainHeader.kt"):
         header = (app / "src/main/java/com/repforge/app/ui/navigation" / screen).read_text(encoding="utf-8")
-        must_contain(header, r"TrainPilotBrandLogo\\(", f"{screen} approved dumbbell brand")
+        if "TrainPilotBrandLogo(" not in header:
+            fail(f"{screen}: original gold dumbbell header logo is missing")
         if "NativeStudioBrand(" in header or "TrainPilotMountainLogo(" in header:
             fail(f"{screen}: Studio mountain cannot replace the user's gold dumbbell")
 
