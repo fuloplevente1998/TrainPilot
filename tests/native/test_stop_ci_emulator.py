@@ -35,6 +35,41 @@ class ScopedEmulatorCleanupTest(unittest.TestCase):
         items = [root, netsim, other_avd, other_netsim, foreign, other_user, non_emulator_child]
         self.assertEqual([10, 11], [p.pid for p in stop.scoped_processes(items, '/sdk', '5554', 1000)])
 
+    def test_reparented_crashpad_is_scoped_only_to_one_recent_sdk_emulator(self):
+        root = self.process()
+        old = stop.Process(11, 1, '122', '/sdk/emulator/lib64/crashpad_handler',
+                           ('/sdk/emulator/lib64/crashpad_handler',), 1000)
+        orphan = stop.Process(12, 1, '124', '/sdk/emulator/lib64/crashpad_handler',
+                              ('/sdk/emulator/lib64/crashpad_handler',), 1000)
+        foreign = stop.Process(13, 1, '124', '/usr/bin/crashpad_handler',
+                               ('/usr/bin/crashpad_handler',), 1000)
+        other_user = stop.Process(14, 1, '124', '/sdk/emulator/lib64/crashpad_handler',
+                                  ('/sdk/emulator/lib64/crashpad_handler',), 2000)
+        current = [root, old, orphan, foreign, other_user]
+        self.assertEqual([10, 12], [p.pid for p in stop.scoped_processes(current, '/sdk', '5554', 1000)])
+        # The same SDK may host another AVD. In that case no parentless
+        # crashpad is attributable to our exact emulator, so touch none.
+        second_root = self.process(20, port='5556')
+        self.assertEqual([10], [p.pid for p in stop.scoped_processes(
+            current + [second_root], '/sdk', '5554', 1000)])
+        self.assertEqual([], stop.scoped_processes(
+            [old, orphan, foreign, other_user], '/sdk', '5554', 1000))
+
+    def test_orphan_crashpad_is_terminated_when_emulator_exits(self):
+        root = self.process()
+        orphan = stop.Process(12, 1, '124', '/sdk/emulator/lib64/crashpad_handler',
+                              ('/sdk/emulator/lib64/crashpad_handler',), 1000)
+        with patch.object(stop.os, 'getuid', return_value=1000), \
+             patch.object(stop, 'process_snapshot', return_value=[root, orphan]), \
+             patch.object(stop.subprocess, 'run', return_value=type('Result', (), {'returncode': 0})()), \
+             patch.object(stop, 'wait_until_stopped', side_effect=[[orphan], []]), \
+             patch.object(stop, 'send_signal') as send:
+            result = stop.cleanup(self.env)
+        self.assertEqual('stopped', result['result'])
+        self.assertEqual([10, 12], result['matchedPids'])
+        self.assertEqual([12], result['termPids'])
+        send.assert_called_once_with([orphan], signal.SIGTERM)
+
     def test_real_device_or_missing_ci_identity_cannot_mutate_processes(self):
         for change in ({'GITHUB_ACTIONS': 'false'}, {'ANDROID_SERIAL': 'physical-device'},
                        {'ANDROID_HOME': ''}, {'EMULATOR_PORT': '5554;kill'}):
