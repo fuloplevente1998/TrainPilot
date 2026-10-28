@@ -67,6 +67,7 @@ internal fun TrainingLandingScreen(language: String, activeProgramId: String, bu
     val program = state.programs.firstOrNull { it.program.id == activeProgramId }
     LazyColumn(
         Modifier.fillMaxSize()
+            .testTag("training_list")
             .padding(horizontal = 16.dp)
             .padding(top = 8.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)

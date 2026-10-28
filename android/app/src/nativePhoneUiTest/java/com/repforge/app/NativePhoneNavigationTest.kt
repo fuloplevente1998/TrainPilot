@@ -92,6 +92,15 @@ class NativePhoneNavigationTest {
         }
         compose.waitForIdle()
     }
+    private fun openTrainingPrograms() {
+        compose.onNodeWithTag("training_list")
+            .performScrollToNode(hasTestTag("shortcut_programs"))
+        compose.onNodeWithTag("shortcut_programs").assertIsDisplayed().performClick()
+        compose.waitUntil(15_000) {
+            compose.onAllNodesWithTag("program_list").fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
     private fun expandHealthSection(sectionTag: String, targetTag: String) {
         compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag(sectionTag))
         if (compose.onAllNodesWithTag(targetTag).fetchSemanticsNodes().isEmpty()) {
@@ -1038,7 +1047,7 @@ class NativePhoneNavigationTest {
         val db = TrainPilotDatabase.getInstance(context)
         val baseline = runBlocking(Dispatchers.IO) { db.programDao().getProgramIds().toSet() }
         launch(); tab("training")
-        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
+        openTrainingPrograms()
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("personal_planner_open"))
         compose.onNodeWithTag("personal_planner_open").performClick()
         compose.onNodeWithTag("personal_preview").assertExists()
@@ -1060,7 +1069,7 @@ class NativePhoneNavigationTest {
         val db = TrainPilotDatabase.getInstance(context)
         val baseline = runBlocking(Dispatchers.IO) { db.programDao().getProgramIds().toSet() }
         launch(); tab("training")
-        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
+        openTrainingPrograms()
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("personal_planner_open"))
         compose.onNodeWithTag("personal_planner_open").performClick()
         compose.waitUntil(15000) {
@@ -1085,7 +1094,7 @@ class NativePhoneNavigationTest {
         val db = TrainPilotDatabase.getInstance(context)
         val baseline = runBlocking(Dispatchers.IO) { db.programDao().getProgramIds().toSet() }
         launch(); tab("training")
-        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
+        openTrainingPrograms()
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("personal_planner_open"))
         compose.onNodeWithTag("personal_planner_open").performClick()
         compose.waitUntil(15000) {
@@ -1130,7 +1139,7 @@ class NativePhoneNavigationTest {
         }
         val baseline = runBlocking(Dispatchers.IO) { db.programDao().getProgramIds().toSet() }
         launch(); tab("training")
-        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
+        openTrainingPrograms()
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("personal_planner_open"))
         compose.onNodeWithTag("personal_planner_open").performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("personal_preview_loading").fetchSemanticsNodes().isEmpty() &&
@@ -1161,7 +1170,7 @@ class NativePhoneNavigationTest {
         }
         val baseline = runBlocking(Dispatchers.IO) { db.programDao().getProgramIds().toSet() }
         launch(); tab("training")
-        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
+        openTrainingPrograms()
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("personal_planner_open"))
         compose.onNodeWithTag("personal_planner_open").performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("personal_preview_loading").fetchSemanticsNodes().isEmpty() &&
@@ -1182,7 +1191,7 @@ class NativePhoneNavigationTest {
                 .put("gear", org.json.JSONArray().put("dumbbells").put("barbell")))
         }
         launch(); tab("training")
-        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
+        openTrainingPrograms()
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("personal_planner_open"))
         compose.onNodeWithTag("personal_planner_open").performClick()
         compose.waitUntil(15000) {
@@ -1210,7 +1219,7 @@ class NativePhoneNavigationTest {
 
     @Test fun personalPlannerRequiresExplicitDurationAndEquipment() {
         launch(); tab("training")
-        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
+        openTrainingPrograms()
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("personal_planner_open"))
         compose.onNodeWithTag("personal_planner_open").performClick()
         compose.waitUntil(15000) {
@@ -1222,7 +1231,7 @@ class NativePhoneNavigationTest {
 
     @Test fun programEditorCreatesCustomPlanAndRenamesDayWithoutStartingWorkout() {
         launch(); tab("training")
-        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
+        openTrainingPrograms()
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("program_create"))
         compose.onNodeWithTag("program_create").performClick()
         compose.onNodeWithTag("program_editor_name").performTextInput("Saját időterv")
@@ -1243,7 +1252,7 @@ class NativePhoneNavigationTest {
 
     @Test fun programEditorAddsRealCatalogExerciseToNewDay() {
         launch(); tab("training")
-        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
+        openTrainingPrograms()
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("program_create"))
         compose.onNodeWithTag("program_create").performClick()
         compose.onNodeWithTag("program_editor_name").performTextInput("Gyakorlatos terv")
@@ -1295,7 +1304,7 @@ class NativePhoneNavigationTest {
         val before = runBlocking(Dispatchers.IO) {
             db.programDao().getProgramWithDaysById("home-basic")!! }
         launch(); tab("training")
-        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
+        openTrainingPrograms()
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("program_home-basic"))
         compose.onNodeWithTag("program_edit_home-basic").performClick()
         compose.onNodeWithTag("program_editor_name").performTextClearance()
@@ -1373,7 +1382,15 @@ class NativePhoneNavigationTest {
         compose.onNodeWithTag("exercise_library_count").assertTextContains("106", substring = true)
         compose.onNodeWithTag("exercise_library_search").performTextInput(
             com.repforge.app.data.db.NativeBuiltinCatalog.exercises.first { it.id == "db-squat" }.nameHu)
-        compose.onNodeWithTag("exercise_library_row_db-squat").performClick()
+        compose.waitUntil(15_000) {
+            compose.onAllNodesWithTag("exercise_library_row_db-squat").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("exercise_library_list")
+            .performScrollToNode(hasTestTag("exercise_library_row_db-squat"))
+        compose.onNodeWithTag("exercise_library_row_db-squat").assertIsDisplayed().performClick()
+        compose.waitUntil(15_000) {
+            compose.onAllNodesWithTag("exercise_library_detail").fetchSemanticsNodes().isNotEmpty()
+        }
         compose.onNodeWithTag("exercise_library_detail").assertExists()
         compose.onNodeWithTag("exercise_library_video").assertExists()
         compose.onNodeWithText("Videó forrása: Mike Hildebrandt").assertExists()
