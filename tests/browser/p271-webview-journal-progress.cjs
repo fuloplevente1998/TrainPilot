@@ -146,6 +146,12 @@ const server=http.createServer((req,res)=>{
      assert.equal(health.columns,3,width+'/'+theme+': three-column Health layout');
      assert.ok(health.footer>=80,width+'/'+theme+': Health scroll clears dock');
      assert.ok(health.overflow<=1,width+'/'+theme+': no Health horizontal overflow');
+     const healthDetails=page.locator('main.tp168-health details.tp168-more-panel');
+     assert.equal(await healthDetails.count(),1,width+'/'+theme+': complete canonical Health detail disclosure');
+     await healthDetails.locator(':scope > summary').click();
+     assert.equal(await healthDetails.getAttribute('open'),'true',width+'/'+theme+': original Health details open');
+     await healthDetails.locator(':scope > summary').click();
+     assert.equal(await healthDetails.getAttribute('open'),null,width+'/'+theme+': original Health details close');
      if(width===393&&theme==='yellow'){
        await page.evaluate(()=>{document.scrollingElement.scrollTop=0;const m=document.querySelector('#app main.tp168-health');if(m)m.scrollTop=0;document.activeElement?.blur?.()});
        await page.screenshot({path:'ui-evidence/pr271-health-393.png'});
@@ -161,12 +167,29 @@ const server=http.createServer((req,res)=>{
      assert.equal(settings.panel,true,width+'/'+theme+': original Settings panel');
      assert.ok(settings.rows>0,width+'/'+theme+': real Settings sections retained');
      assert.ok(settings.overflow<=1,width+'/'+theme+': no Settings horizontal overflow');
-     if(width===393&&theme==='yellow')await page.screenshot({path:'ui-evidence/pr271-settings-393.png'});
+     const settingsRoot=page.locator('#tp155R4PanelHost[data-panel="settings"] main.tp1511-settings');
+     assert.equal(await settingsRoot.count(),1,width+'/'+theme+': canonical Settings screen retained');
+     const backup=settingsRoot.locator('.tp152-settings-backup');
+     assert.equal(await backup.count(),1,width+'/'+theme+': local backup card retained');
+     assert.equal(await backup.locator('button[onclick="exportData()"]').count(),1,width+'/'+theme+': original backup/export command');
+     assert.equal(await backup.locator('button[onclick="chooseImport()"]').count(),1,width+'/'+theme+': original restore/import command');
+     assert.equal(await settingsRoot.locator('.rf212-language').count(),1,width+'/'+theme+': persisted language control retained');
+     const backupGrid=await backup.locator('.grid2').evaluate(el=>({
+       columns:getComputedStyle(el).gridTemplateColumns.split(' ').length,
+       buttons:[...el.querySelectorAll('button')].every(b=>getComputedStyle(b).display!=='none')
+     }));
+     assert.equal(backupGrid.columns,2,width+'/'+theme+': compact two-column backup actions');
+     assert.equal(backupGrid.buttons,true,width+'/'+theme+': backup actions not hidden');
+     if(width===393&&theme==='yellow'){
+       await page.screenshot({path:'ui-evidence/pr271-settings-393.png'});
+       await page.locator('#tp155R4PanelHost[data-panel="settings"] .tp155-r4-panel').evaluate(el=>{el.scrollTop=el.scrollHeight});
+       await page.screenshot({path:'ui-evidence/pr271-settings-bottom-393.png'});
+     }
      await page.evaluate(()=>go('settings'));
    }
    assert.deepEqual(errors,[],width+': no runtime errors');
    await page.close();
   }
-  console.log('PASS PR271 P3a/P4a: real Journal, Progress, Health 3x2 and Settings, 320/393px & two themes');
+  console.log('PASS PR271 P3a/P4b: real Journal, Progress, Health details, Settings language/backup and 3x2 metrics at 320/393px & two themes');
  }finally{await browser?.close();await new Promise(ok=>server.close(ok))}
 })().catch(e=>{console.error(e);process.exitCode=1});
