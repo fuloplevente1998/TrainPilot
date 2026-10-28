@@ -36,6 +36,7 @@ class NativeHealthSyncUiTest {
             activity.onActivity { screen -> screen.setContent {
                 TrainPilotTheme(TrainPilotUserSettings()) {
                     HealthJournalTabContent(state.value,
+                        onWeightJournal = {},
                         onSelectProvider = {}, onToggleHcBackground = {}, onAutoOnOpen = {}, onRefresh = {},
                         onPreviousMonth = {}, onNextMonth = {}, onDay = {}, onChannel = {}, onToday = {},
                         onOpenRecords = {}, onDailySource = {},
