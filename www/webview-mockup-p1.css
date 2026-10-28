@@ -52,17 +52,21 @@ html body #app main.rf221-home #rf223Today button.tp5-today-metric:focus-visible
   outline-offset: 2px;
 }
 
-/* Keep the existing Coach/Recovery calculation and CTA, but make its summary
-   visually distinct from ordinary status tiles, in every saved palette. */
+/* Coach's painted frame must remain IDENTICAL to the existing overlay
+   recommendation (phone-ux-95-98). Use only an inset presentation accent,
+   not an overriding background/border/shadow. Never create a second CTA. */
 html body #app main.rf221-home #rf220CoachCard.tp166-home-coach {
-  border-color: var(--tp-mockup-edge) !important;
-  background: var(--tp-mockup-soft) !important;
-  box-shadow: none !important;
+  position: relative;
 }
-html[data-tp-theme-family="vivid"] body #app main.rf221-home #rf220CoachCard.tp166-home-coach {
-  background: linear-gradient(140deg,
-    color-mix(in srgb, var(--accent) 13%, var(--card)),
-    var(--tp-ui-card, var(--card))) !important;
+html body #app main.rf221-home #rf220CoachCard.tp166-home-coach::after {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block: 14px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--accent);
+  pointer-events: none;
 }
 
 /* Preserve the established static matte/basic and neon/vivid distinction.
