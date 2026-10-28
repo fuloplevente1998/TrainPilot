@@ -1325,3 +1325,159 @@ html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="settings"] :is(
     gap: 5px !important;
   }
 }
+
+
+/* P1e – replace the last visible pieces of the old 2×4 navigation.
+   Original nav buttons stay in DOM for existing Round-4 handlers/back logic.
+   Only this opt-in branch renders a single logo/action header + five-tab dock. */
+html.tp271-mockup-dock body .top.tp154-nav-grid,
+html.tp271-mockup-dock.tp-nav-compact body .top.tp154-nav-grid {
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  grid-auto-rows: auto !important;
+  align-items: stretch !important;
+  justify-content: center !important;
+  position: relative !important;
+  top: 0 !important;
+  width: 100% !important;
+  min-height: 60px !important;
+  height: auto !important;
+  padding: calc(5px + env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-right, 0px)) 5px max(10px, env(safe-area-inset-left, 0px)) !important;
+  margin: 0 !important;
+  gap: 0 !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 18%, var(--line)) !important;
+  background: var(--tp-ui-bg, var(--bg)) !important;
+}
+html.tp271-mockup-dock body .top.tp154-nav-grid > :not(#tp271Header) {
+  display: none !important;
+}
+html.tp271-mockup-dock body .top.tp154-nav-grid > #tp271Header {
+  box-sizing: border-box;
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  max-width: 760px;
+  min-width: 0;
+  height: 48px;
+  margin-inline: auto;
+  position: relative;
+  z-index: 4;
+}
+html.tp271-mockup-dock body #tp271Header .tp271-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+html.tp271-mockup-dock body #tp271Header .tp271-header-mark {
+  width: 32px;
+  height: 30px;
+  min-width: 32px;
+  flex: 0 0 32px;
+  display: block;
+  overflow: visible;
+}
+html.tp271-mockup-dock body #tp271Header .tp271-header-brand strong {
+  color: var(--accent);
+  font-size: clamp(14px, 4vw, 17px);
+  font-weight: 850;
+  letter-spacing: -.025em;
+  white-space: nowrap;
+}
+html.tp271-mockup-dock body #tp271Header .tp271-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: clamp(3px, 1.4vw, 8px);
+  flex: 0 0 auto;
+}
+html.tp271-mockup-dock body #tp271Header .tp271-header-action {
+  box-sizing: border-box;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: clamp(42px, 12vw, 46px);
+  height: 44px;
+  min-width: 42px;
+  min-height: 44px;
+  padding: 8px;
+  border: 1px solid transparent;
+  border-radius: 13px;
+  color: var(--text);
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+html.tp271-mockup-dock body #tp271Header .tp271-header-action svg {
+  display: block;
+  width: 23px;
+  height: 23px;
+}
+html.tp271-mockup-dock body #tp271Header .tp271-header-lang span {
+  font-weight: 850;
+  font-size: 15px;
+  line-height: 1;
+}
+html.tp271-mockup-dock body #tp271Header .tp271-header-action:hover,
+html.tp271-mockup-dock body #tp271Header .tp271-header-action:active {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--card));
+}
+html.tp271-mockup-dock body #tp271Header :is(.tp271-header-action,.tp271-picker-option):focus-visible {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 1px;
+}
+html.tp271-mockup-dock body #tp271Header .tp271-header-picker {
+  box-sizing: border-box;
+  position: absolute;
+  z-index: 100;
+  top: calc(100% + 6px);
+  right: 0;
+  width: min(290px, calc(100vw - 20px));
+  max-height: min(370px, 60dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+  padding: 9px;
+  border-radius: 15px;
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--line));
+  background: var(--tp-ui-card, var(--card));
+  box-shadow: 0 15px 35px rgba(0,0,0,.34);
+}
+html.tp271-mockup-dock body #tp271Header .tp271-picker-option {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+  text-align: left;
+  color: var(--text);
+  background: var(--card2);
+  border: 1px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+}
+html.tp271-mockup-dock body #tp271Header .tp271-picker-option[aria-pressed="true"] {
+  color: var(--text);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, var(--card));
+}
+html.tp271-mockup-dock body #tp271Header .tp271-theme-swatch {
+  display: inline-block;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  flex: 0 0 17px;
+  border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+}
+/* The dock is the only permanent main-route menu. Program/Calendar/Coach
+   retain their original existing entry points inside the Workout content. */
