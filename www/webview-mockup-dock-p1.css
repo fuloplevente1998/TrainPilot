@@ -1,0 +1,120 @@
+/* PR #271 / P1b – opt-in mockup bottom navigation.
+ * Enabled only with ?tp271=1. The legacy main experience and all 8 original
+ * canonical commands remain unchanged without this flag. */
+html.tp271-mockup-dock {
+  --tp271-dock-height: 82px;
+}
+html.tp271-mockup-dock body .top.tp154-nav-grid {
+  /* 4 surviving quick entries: Calendar, Programs, Coach, Settings.
+     Main destinations are now in the bottom dock, not duplicated up here. */
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+html.tp271-mockup-dock body .top.tp154-nav-grid .tp151-nav-item:is(
+  [onclick*="go('home')"],
+  [onclick*="go('plan')"],
+  [onclick*="go('history')"],
+  [onclick*="go('health')"]
+) {
+  display: none !important;
+}
+html.tp271-mockup-dock body .top.tp154-nav-grid > .tp137-selection {
+  display: none !important;
+}
+html.tp271-mockup-dock body .top.tp154-nav-grid .tp154-nav-cell {
+  min-height: 46px !important;
+  padding-block: 4px !important;
+}
+
+/* One persistent, single-click dock. We do not clone event handlers or
+   duplicate navigation state; JS delegates to existing go/progress commands. */
+html.tp271-mockup-dock body #tp271Dock {
+  position: fixed;
+  z-index: 60;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 5px);
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 3px;
+  align-items: stretch;
+  width: min(760px, calc(100vw - 12px));
+  height: 69px;
+  padding: 5px;
+  border-radius: 17px;
+  background: var(--tp-ui-bg, var(--bg));
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--line));
+  box-shadow: 0 4px 18px rgba(0, 0, 0, .25);
+}
+html.tp271-mockup-dock body #tp271Dock .tp271-dock-button {
+  min-width: 0;
+  min-height: 56px;
+  padding: 4px 1px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+  font-family: var(--tp-ui-font, system-ui);
+  font-weight: 700;
+  line-height: 1.1;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+html.tp271-mockup-dock body #tp271Dock .tp271-dock-icon {
+  display: block;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+}
+html.tp271-mockup-dock body #tp271Dock .tp271-dock-label {
+  font-size: clamp(9px, 2.8vw, 12px);
+  line-height: 1.15;
+  max-width: 100%;
+  overflow-wrap: normal;
+  white-space: nowrap;
+}
+html.tp271-mockup-dock body #tp271Dock .tp271-dock-button.tp271-selected {
+  border-color: color-mix(in srgb, var(--accent) 65%, var(--line));
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 15%, var(--card));
+}
+html.tp271-mockup-dock body #tp271Dock .tp271-dock-button.tp271-selected .tp271-dock-icon {
+  color: var(--accent);
+}
+html.tp271-mockup-dock body #tp271Dock .tp271-dock-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+html.tp271-mockup-dock body #app main:not(.tp153-workout) {
+  /* Reserve space below scrolling pages for the new fixed safe-area dock. */
+  padding-bottom: calc(var(--tp271-dock-height) + env(safe-area-inset-bottom, 0px)) !important;
+}
+html.tp271-mockup-dock body #app main.tp107-fit-home {
+  height: max(0px, calc(100dvh - var(--tp107-nav-height, 132px) - var(--tp271-dock-height) - 2px)) !important;
+  max-height: max(0px, calc(100dvh - var(--tp107-nav-height, 132px) - var(--tp271-dock-height) - 2px)) !important;
+}
+html.tp271-mockup-dock body #app main.tp107-fit-health {
+  max-height: max(0px, calc(100dvh - var(--tp107-nav-height, 132px) - var(--tp271-dock-height) - 2px)) !important;
+}
+/* Never overlap native/web workout controls, a confirmation or an editor.
+   The host modal's own active focus and Back contract remain authoritative. */
+html.tp271-mockup-dock.tp271-has-workout body #tp271Dock,
+html.tp271-mockup-dock.tp3-planner-open body #tp271Dock,
+html.tp271-mockup-dock.tp155-r4-panel-open body #tp271Dock,
+html.tp271-mockup-dock:has(#tp155R4PanelHost) body #tp271Dock,
+html.tp271-mockup-dock:has(#tp3PlannerPanelHost) body #tp271Dock {
+  display: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  html.tp271-mockup-dock body #tp271Dock,
+  html.tp271-mockup-dock body #tp271Dock .tp271-dock-button {
+    animation: none !important;
+    transition: none !important;
+  }
+}
