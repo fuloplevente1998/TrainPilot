@@ -1,7 +1,6 @@
 package com.repforge.app.ui.navigation
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -25,11 +24,7 @@ import com.repforge.app.R
 import com.repforge.app.ui.text.nativeResources
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.compositeOver
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -60,7 +55,7 @@ internal fun NativeMainHeader(route: String, language: String, enabled: Boolean,
                     .clickable(enabled = enabled && onHome != null, role = Role.Button) { onHome?.invoke() }
                     .semantics { contentDescription = NativeMainMenu.title("home", language) }
                     .testTag("header_home"), verticalAlignment = Alignment.CenterVertically) {
-                NativeStudioBrand(Modifier.size(26.dp, 18.dp))
+                TrainPilotBrandLogo()
                 Text("TrainPilot", Modifier.weight(1f).padding(horizontal = 8.dp),
                     color = if (enabled) colors.accentText else colors.muted,
                     style = MaterialTheme.typography.titleMedium.copy(letterSpacing = (-0.2).sp),
@@ -89,20 +84,6 @@ internal fun NativeMainHeader(route: String, language: String, enabled: Boolean,
                     tint = if (enabled && route != "settings") colors.muted else colors.muted.copy(alpha = .4f))
             }
         }
-    }
-}
-
-/** Exact mountain path from the supplied Studio reference; decorative brand only. */
-@Composable
-private fun NativeStudioBrand(modifier: Modifier) {
-    val ink = LocalTrainPilotColors.current.accentText
-    Canvas(modifier) {
-        val w = size.width; val h = size.height
-        val path = Path().apply {
-            moveTo(w * .06f, h * .86f); lineTo(w * .34f, h * .20f)
-            lineTo(w * .54f, h * .66f); lineTo(w * .72f, h * .26f); lineTo(w * .94f, h * .86f)
-        }
-        drawPath(path, ink, style = Stroke(h * .22f, cap = StrokeCap.Round, join = StrokeJoin.Round))
     }
 }
 
