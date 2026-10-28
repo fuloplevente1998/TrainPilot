@@ -2545,9 +2545,65 @@
   function activeWorkout(){
     try { return typeof state!=='undefined' && !!state.session; } catch (_) { return false; }
   }
+  /* P1e: a true one-line mobile header, not the old 2x4 command grid.
+     The original navigation elements remain in the DOM as canonical
+     action owners; the compact menu forwards user clicks to them. */
+  const headerWords={
+    hu:{brand:'TrainPilot',menu:'Továbbiak',settings:'Beállítások',programs:'Programok',calendar:'Naptár',coach:'Coach'},
+    en:{brand:'TrainPilot',menu:'More',settings:'Settings',programs:'Programs',calendar:'Calendar',coach:'Coach'},
+    de:{brand:'TrainPilot',menu:'Mehr',settings:'Einstellungen',programs:'Programme',calendar:'Kalender',coach:'Coach'},
+    ro:{brand:'TrainPilot',menu:'Mai mult',settings:'Setări',programs:'Programe',calendar:'Calendar',coach:'Coach'}
+  };
+  function previewHeader(){
+    if(activeWorkout())return;
+    const top=document.querySelector('.top.tp154-nav-grid');
+    if(!top)return;
+    let header=top.querySelector(':scope > #tp271Header');
+    if(!header){
+      header=document.createElement('div');
+      header.id='tp271Header';
+      header.className='tp271-header';
+      header.innerHTML='<div class="tp271-header-brand">'+
+        '<svg class="tp271-header-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M5 7v10M2 9v6M19 7v10M22 9v6M5 12h14"/></svg>'+
+        '<div class="tp271-header-copy"><span class="tp271-header-kicker"></span><strong class="tp271-header-title"></strong></div></div>'+
+        '<div class="tp271-header-actions"><details class="tp271-header-more"><summary aria-label=""><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></summary>'+
+        '<div class="tp271-more-sheet" role="group">'+
+        ['programs','calendar','coach'].map(key=>'<button type="button" data-tp271-extra="'+key+'"></button>').join('')+'</div></details>'+
+        '<button id="tp271HeaderSettings" type="button" class="tp271-header-settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l-1.8 1.8a1.7 1.7 0 0 0-1.88-.34l-.67.28a1.7 1.7 0 0 0-1.03 1.56v.82h-2.6v-.82a1.7 1.7 0 0 0-1.03-1.56l-.67-.28a1.7 1.7 0 0 0-1.88.34l-1.8-1.8A1.7 1.7 0 0 0 6.72 15l-.28-.67A1.7 1.7 0 0 0 4.88 13.3H4v-2.6h.88a1.7 1.7 0 0 0 1.56-1.03L6.72 9a1.7 1.7 0 0 0-.34-1.88l1.8-1.8a1.7 1.7 0 0 0 1.88.34l.67-.28a1.7 1.7 0 0 0 1.03-1.56V3h2.6v.82a1.7 1.7 0 0 0 1.03 1.56l.67.28a1.7 1.7 0 0 0 1.88-.34l1.8 1.8A1.7 1.7 0 0 0 19.4 9l.28.67a1.7 1.7 0 0 0 1.56 1.03h.76v2.6h-.76a1.7 1.7 0 0 0-1.56 1.03Z"/></svg></button></div>';
+      for(const button of header.querySelectorAll('[data-tp271-extra]')){
+        button.addEventListener('click',()=>{
+          const key=button.dataset.tp271Extra;
+          header.querySelector('.tp271-header-more').open=false;
+          const selector=key==='coach'?'.tp154-coach-action':
+            '.tp151-nav-item[onclick*="'+key+'"]';
+          top.querySelector(selector)?.click();
+          scheduleSync();
+        });
+      }
+      header.querySelector('#tp271HeaderSettings').addEventListener('click',()=>{
+        header.querySelector('.tp271-header-more').open=false;
+        top.querySelector('.tp154-settings-action')?.click();
+        scheduleSync();
+      });
+      header.querySelector('.tp271-header-more').addEventListener('keydown',event=>{
+        if(event.key==='Escape'){event.preventDefault();event.currentTarget.open=false;event.currentTarget.querySelector('summary')?.focus();}
+      });
+      top.appendChild(header);
+    }
+    const language=getLang(),t=labels[language],w=headerWords[language],key=selectedKey();
+    header.querySelector('.tp271-header-kicker').textContent=w.brand;
+    header.querySelector('.tp271-header-title').textContent=key==='home'?t.home:t[key];
+    const menu=header.querySelector('.tp271-header-more > summary');
+    menu.setAttribute('aria-label',w.menu);
+    header.querySelector('#tp271HeaderSettings').setAttribute('aria-label',w.settings);
+    for(const button of header.querySelectorAll('[data-tp271-extra]')){
+      button.textContent=w[button.dataset.tp271Extra];
+    }
+  }
   function sync(){
     queued=false;
     if (!dock || !dock.isConnected) return;
+    previewHeader();
     const language=getLang(),t=labels[language],active=selectedKey();
     dock.setAttribute('aria-label',t.nav);
     for(const button of dock.querySelectorAll('button[data-tp271-target]')){
