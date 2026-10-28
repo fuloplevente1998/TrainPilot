@@ -408,16 +408,30 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
             isAvailable = true
         )
         val recoveryAvailable = aux.recovery?.value != null
+        // Health must retain the same provenance and freshness qualifications
+        // as the canonical Home recovery projection. A TrainPilot estimate must
+        // never look like a Samsung Health measurement.
+        val recoverySource = when (aux.recovery?.source) {
+            NativeHomeRecoveryPresentation.Source.SAMSUNG ->
+                text.getString(com.repforge.app.R.string.native_home_recovery_samsung)
+            NativeHomeRecoveryPresentation.Source.TRAINPILOT_ESTIMATE ->
+                text.getString(com.repforge.app.R.string.native_home_recovery_estimate)
+            else -> text.getString(com.repforge.app.R.string.native_home_recovery_no_data)
+        }
+        val recoveryNotices = listOfNotNull(
+            text.getString(com.repforge.app.R.string.native_home_recovery_partial)
+                .takeIf { aux.recovery?.partial == true },
+            text.getString(com.repforge.app.R.string.native_home_recovery_stale)
+                .takeIf { aux.recovery?.stale == true },
+            text.getString(com.repforge.app.R.string.native_home_recovery_read_error)
+                .takeIf { aux.recovery?.refreshFailed == true }
+        )
         val recovery = HealthMetricItemUiModel(
             key = "recovery",
             label = text.getString(com.repforge.app.R.string.native_home_recovery),
             valueText = aux.recovery?.displayValue ?: "—",
             unit = "",
-            sourceText = when (aux.recovery?.source) {
-                NativeHomeRecoveryPresentation.Source.SAMSUNG -> "Samsung Health"
-                NativeHomeRecoveryPresentation.Source.TRAINPILOT_ESTIMATE -> "TrainPilot"
-                else -> noData
-            },
+            sourceText = (listOf(recoverySource) + recoveryNotices).joinToString(" · "),
             isAvailable = recoveryAvailable
         )
         return NativeHealthMetrics.studioOverview(full, sleep, workouts, recovery)

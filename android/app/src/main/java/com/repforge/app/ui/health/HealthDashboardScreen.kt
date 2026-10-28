@@ -910,6 +910,11 @@ internal fun HealthSelectedDayOverview(
                             }
                         }, color = if (metric.isAvailable) colors.text else colors.muted,
                             style = MaterialTheme.typography.titleLarge.copy(fontFeatureSettings = "tnum"))
+                        if (metric.key == "recovery") {
+                            Text(metric.sourceText, color = colors.muted,
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.testTag("health_recovery_source"))
+                        }
                     }
                 }
                 repeat(columns - chunk.size) { Spacer(Modifier.weight(1f)) }
