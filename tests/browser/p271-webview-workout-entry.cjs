@@ -86,7 +86,7 @@ const server=http.createServer((req,res)=>{
     // P2b: Studio exercise library styling is applied to the real filterable
     // catalogue panel. Verify source-backed search, all editor callbacks,
     // video controls when available and no lost bottom navigation.
-    await page.evaluate(()=>window.tp155R4OpenPanel('exercises', document.activeElement));
+    await page.evaluate(()=>{state.libraryFilter={group:'all',gear:'all',q:''};window.tp155R4OpenPanel('exercises', document.activeElement)});
     await page.waitForSelector('#tp155R4PanelHost[data-panel="exercises"] #libraryQuery');
     const library=page.locator('#tp155R4PanelHost[data-panel="exercises"]');
     assert.equal(await page.locator('#tp271Dock:visible').count(),0,width+'/'+theme+': dock hidden behind exercise catalogue');
