@@ -1,19 +1,30 @@
 # Natív folytatási pont – rövid kontextus
 
-## Aktív CI-javítás – 2026-10-28
+## Aktuális átadható checkpoint – 2026-10-28
 
-PR #270 DRAFT. Javított alkalmazás-/tesztforrás: `4fda309b6b03799e22a7f3bb0efd51259bf8f275`.
-[Quick 40690752040](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40690752040) SUCCESS
-(natív forrásbesorolás; a legacy npm-job nem alkalmazható).
-[Teljes kapu 40690747562](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40690747562)
-FOLYAMATBAN, 1080×2392 /450dpi /fontScale0.90. Még nincs teljes runtime PASS.
-A 40684735676 előző futás telefonon 87/123 PASS, 36 FAIL; JVM1345 és Wear183 PASS.
-Mind123 telefonos teszt megmaradt; csak aktuális UI-navigáció/readiness/scroll és
-súlyérték-testTag javítás. Verzió/appid/aláírás/motor/adatút változatlan.
-[Részletes CI-riport](reviews/PR270_CI_REPAIR_2026-10-28.md) ·
-[Friss Drive01–18 audit](reviews/STUDIO_DRIVE_01_18_AUDIT_2026-10-28.md).
-Teljes Studio-vizuális egyezés és készülékes elfogadás továbbra nyitott.
-A következő lépés a futó kapu végállapota és nyers eredményeinek ellenőrzése.
+PR #270 **DRAFT**, ág `feat/studio-ui-topnav-trial-20261027`.
+Legújabb javított alkalmazás-/tesztforrás: **`17e7aeb84e03f9a10a34e3aa51d4c7c38faf3f80`**.
+[Quick 40695107774](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40695107774) SUCCESS
+(natív forrásbesorolás; legacy npm nem alkalmazható).
+[Új teljes kapu 40695107665](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40695107665)
+**FOLYAMATBAN** a checkpoint készítésekor; a két utolsó javítás runtime-eredménye még nem igazolt.
+
+Utolsó nyersen ellenőrzött teljes futás: **40690747562 / `4fda309b` = FAILURE**:
+JVM **1345 PASS**, Wear **183 PASS**, mindkét signed upgrade SUCCESS;
+telefon **121/123 PASS, 2 FAIL**, 0 error/skip/missing/crash. Mind70 eredeti PNG
+hash/byte/struktúra/méret ellenőrizve, 1080×2392 /450dpi /fontScale0.90.
+A két maradék hiba tesztsegédje javítva: látható fix navfül görgetése;
+nyitott Settings-szekció téves összecsukása lazy child hiánya miatt.
+Mind123 teszt megmaradt. Verzió/appid/aláírás/motor/adatút változatlan.
+
+[Részletes javítás és következő lépések](reviews/PR270_CI_REPAIR_2026-10-28.md) ·
+[Gépi eredmények, APK-hashek és linkek](builds/2026-10-28-pr270-ci-repair.json) ·
+[Drive01–18 audit](reviews/STUDIO_DRIVE_01_18_AUDIT_2026-10-28.md).
+**A dizájn még köztes; teljes Studio-vizuális egyezés és készülékes elfogadás nincs.**
+Első folytatási lépés: a **40695107665** végállapota és friss nyers artifactjai.
+Ez automatikus PR-kapu, owner-profile input nélkül; szükség esetén külön kézi
+owner-profile futás: 1080x2392 /450 /0.90, ugyanazon fagyasztott forráson.
+Main merge/release/verzióemelés nincs. A későbbi docs-only HEAD nem új alkalmazásbuild.
 
 ## Korábbi zöld Studio-baseline – 2026-10-28
 

@@ -50,3 +50,12 @@ Reference 03 opens a bottom sheet with strength, timed/interval, outdoor and exe
 ## Next visual acceptance evidence
 
 After the functional gate is green, capture the same final app source at the owner profile on Graphite/Gold: Home top/bottom, Training chooser, library, GPS with genuine empty/error or fixture route state, Journal open calendar, all three Progress tabs, Health overview and each expanded panel, devices, Settings top/bottom and language menu. Compare matched app viewports with matched scroll positions. Full current-head owner-profile coverage and physical-device acceptance remain unverified; this source audit is not a visual-parity PASS.
+
+## Later owner-profile evidence at handoff
+
+Run40690747562 / source4fda309b produced70 original1080×2392 PNGs with actual
+450dpi/fontScale0.9 readback. Their manifest SHA256/bytes/PNG structure/dimensions
+were verified. The phone gate still failed two test-helper cases (121/123 pass),
+so this is not a full functional or visual-parity acceptance. Latest candidate17e7aeb8
+repairs those helpers without changing the application layout; its new gate40695107665
+is in progress at handoff. No fresh all-screen visual-parity claim is made.

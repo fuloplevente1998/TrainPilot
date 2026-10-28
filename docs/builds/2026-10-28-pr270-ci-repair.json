@@ -1,0 +1,187 @@
+{
+  "run_id": 40690747562,
+  "tested_source_commit": "4fda309b6b03799e22a7f3bb0efd51259bf8f275",
+  "tested_source_tree": "2ca493282c86f0b8ab263a27e94794a69699edff",
+  "ci_checkout_confirmed_raw_logs": true,
+  "jvm": {
+    "artifact_id": 12816888642,
+    "xml_files": 168,
+    "tests": 1345,
+    "failure": 0,
+    "error": 0,
+    "skipped": 0,
+    "duplicates": 0
+  },
+  "signed_apks": [
+    {
+      "role": "phone",
+      "artifact_id": 12816853690,
+      "bytes": 5042721,
+      "sha256": "e33d7aee9703056b3ff9ce334c4286d9de9c56909392ec2e3bbbc8f3951a8dd7",
+      "certificate_sha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+      "package": "com.repforge.app",
+      "versionCode": 2736,
+      "versionName": "1.3.71-native-test",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/40690747562/artifacts/12816853690"
+    },
+    {
+      "role": "wear",
+      "artifact_id": 12817926407,
+      "bytes": 5109898,
+      "sha256": "abedc61f3e0f02f4bd7beafe3b8dac04803f0e643979bcc21413b169805e47c9",
+      "certificate_sha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+      "package": "com.repforge.app",
+      "versionCode": 2736,
+      "versionName": "1.3.71-native-test",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/40690747562/artifacts/12817926407"
+    }
+  ],
+  "signatures": {
+    "local_certificate_extraction": "both match original baseline",
+    "cryptographic_v2_verification": "CI apksigner verify --verbose succeeded; raw logs retained",
+    "original_signer_continuity": "CI pinned original release SHA256 and signer equality succeeded"
+  },
+  "wear": [
+    {
+      "artifact_id": 12817289468,
+      "shard": 0,
+      "format": "raw instrumentation; no XML",
+      "declared": [
+        68
+      ],
+      "started": 68,
+      "terminal": 68,
+      "passed": 68,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "missing": 0,
+      "duplicates": 0,
+      "summary_ok": true,
+      "instrumentation_final_code": [
+        "-1"
+      ],
+      "crash_marker": false
+    },
+    {
+      "artifact_id": 12817424631,
+      "shard": 1,
+      "format": "raw instrumentation; no XML",
+      "declared": [
+        59
+      ],
+      "started": 59,
+      "terminal": 59,
+      "passed": 59,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "missing": 0,
+      "duplicates": 0,
+      "summary_ok": true,
+      "instrumentation_final_code": [
+        "-1"
+      ],
+      "crash_marker": false
+    },
+    {
+      "artifact_id": 12818156225,
+      "shard": 2,
+      "format": "raw instrumentation; no XML",
+      "declared": [
+        56
+      ],
+      "started": 56,
+      "terminal": 56,
+      "passed": 56,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "missing": 0,
+      "duplicates": 0,
+      "summary_ok": true,
+      "instrumentation_final_code": [
+        "-1"
+      ],
+      "crash_marker": false
+    }
+  ],
+  "phone": {
+    "artifact_id": 12819106901,
+    "tests": 123,
+    "passed": 121,
+    "failures": 2,
+    "errors": 0,
+    "skipped": 0,
+    "missing": 0,
+    "runner_crash": false,
+    "screenshots": 70,
+    "all_screenshot_hashes_sizes_png_structure_checked": true,
+    "dimensions": [
+      1080,
+      2392
+    ],
+    "display": {
+      "requestedSizePx": "1080x2392",
+      "requestedDensityDpi": 450,
+      "wmSize": "Physical size: 1080x2400\nOverride size: 1080x2392",
+      "wmDensity": "Physical density: 420\nOverride density: 450",
+      "fontScale": "0.9",
+      "ciLauncherIsolation": "Package com.google.android.apps.nexuslauncher new state: disabled-user"
+    },
+    "manifest_sha256": "14727e27757f64862e74bb4c597e6d82237527c55d27a083f5018185a3787aeb",
+    "independent_debug_apk_hashes_match_manifest": true,
+    "failed_cases": [
+      "NativePhoneNavigationTest.openingSettingsKeepsTheCanonicalWorkoutAndStopwatchRunning",
+      "NativeTrainingModesUiTest.modePickerShowsSelectedLanguageInAllFourNativeLocalizations"
+    ]
+  },
+  "full_workflow_success": false,
+  "signed_upgrades": [
+    {
+      "artifact_id": 12817243530,
+      "baseline": "v1.3.71",
+      "seed_ok": true,
+      "verify_first_start_ok": true,
+      "verify_second_start_ok": true,
+      "passed": true,
+      "installed_version": "versionCode=2736 minSdk=26 targetSdk=36\n    versionName=1.3.71-native-test",
+      "source_evidence": "artifact name carries exact4fda source; workflow uses same run signed phone artifact",
+      "limit": "raw results are pass/fail from NativeMigrationProbe against seeded CI fixture; no field-by-field snapshot artifact or device acceptance"
+    },
+    {
+      "artifact_id": 12818281077,
+      "baseline": "v1.3.71-perf-20261022",
+      "seed_ok": true,
+      "verify_first_start_ok": true,
+      "verify_second_start_ok": true,
+      "passed": true,
+      "installed_version": "versionCode=2736 minSdk=26 targetSdk=36\n    versionName=1.3.71-native-test",
+      "source_evidence": "artifact name carries exact4fda source; workflow uses same run signed phone artifact",
+      "limit": "raw results are pass/fail from NativeMigrationProbe against seeded CI fixture; no field-by-field snapshot artifact or device acceptance"
+    }
+  ],
+  "wear_totals": {
+    "started": 183,
+    "terminal": 183,
+    "passed": 183,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "missing": 0,
+    "cross_shard_duplicate_cases": 0
+  },
+  "run_conclusion": "failure",
+  "latest_candidate": {
+    "commit": "17e7aeb84e03f9a10a34e3aa51d4c7c38faf3f80",
+    "tree": "07fbbda27bdc5da9fa43a2bd4d966ba83877bb2c",
+    "full_run": 40695107665,
+    "full_run_status": "in_progress_at_checkpoint",
+    "quick_run": 40695107774,
+    "quick_conclusion": "success",
+    "original_test_methods_retained": 123,
+    "changes": "Two test helpers only: fixed visible nav; actual header expansion glyph instead of lazy-child inference. Runtime not yet established."
+  },
+  "visual_parity": "partial; see STUDIO_DRIVE_01_18_AUDIT_2026-10-28.md",
+  "device_acceptance": false
+}
