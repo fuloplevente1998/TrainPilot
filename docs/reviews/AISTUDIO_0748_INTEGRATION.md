@@ -86,3 +86,22 @@ string matching). The actual PNG also showed the muscle figure stacked on normal
 320dp: preserve side-by-side layout at normal fontScale, stack only at very narrow
 width or large fontScale, and use the Studio muscle-card title in all four locales.
 A new exact-source common gate is required for these corrections.
+
+## User phone preview profile
+
+User supplied Xiaomi Redmi Note 15, 1080x2392 portrait pixels (2392:1080),
+90% system font size and otherwise default display sizing. Add optional display
+size/density/font-scale inputs to the existing canonical workflow, not a second
+build pipeline. The runner configures the disposable emulator before app launch,
+reads back wm size/density/font_scale, records them in the manifest, and verifies
+every raw PNG IHDR matches requested pixel dimensions. No image resizing/cropping.
+
+Requested preview: 1080x2392, fontScale=0.90. Density=440dpi is an explicitly
+provisional phone-sized profile (~393dp wide), not an observed Redmi system value.
+Physical panel PPI must not be substituted for Android logical display density.
+If an actual device DPI/smallest-width reading becomes available, change the
+workflow parameter and regenerate; do not claim pixel/layout equivalence yet.
+
+Local host regression suite: 11/11 PASS, including pixel/density pairing,
+read-back mismatch rejection, and raw PNG geometry checks. Device-profile runtime
+still pending. Native app/test source remains identical to c894f653.

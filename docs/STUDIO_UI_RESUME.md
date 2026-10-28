@@ -1,5 +1,16 @@
 # TrainPilot – Studio UI folytatási pont
 
+## Telefonhoz igazított emulátorkép – 2026-10-28
+
+User: Xiaomi Redmi Note 15, 1080×2392 álló, betűméret90%, más megjelenítés default.
+A canonical native-android.yml új opcionális phone_display_size / density /
+font_scale inputjai a futó emulátort állítják, nem a PNG-t méretezik át.
+Tervezett profil1080x2392/440dpi/0.90; 440dpi FELTÉTELEZETT, nem telefonból olvasott.
+Runner readback+PNG-IHDR ellenőrzés és manifest-provenance;11hosttesztPASS.
+A c894forrású közös gate40653023009 még a régi kompakt profilon fut;
+ne szakítsd meg új dispatch-csel. Lezárás után külön ellenőrizd a telefonprofilt.
+Az Android app/test forrás ebben a profilcommitban nem változik.
+
 ## 2026-10-28: 07:48 export natív izomkártya + UI regressziók
 
 [Részletes integráció](reviews/AISTUDIO_0748_INTEGRATION.md).
