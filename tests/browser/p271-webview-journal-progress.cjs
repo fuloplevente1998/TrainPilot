@@ -60,7 +60,7 @@ const server=http.createServer((req,res)=>{
      const date=await journal.locator('.tp155-journal-day[aria-current="date"]').getAttribute('data-date');
      assert.ok(date,width+'/'+theme+': real today is indicated');
      await journal.locator('.tp155-journal-day[aria-current="date"]').click();
-     assert.equal(await page.evaluate(()=>!!state.tp155JournalSelected||!!state.rf263SelectedDate||!!state.tp155JournalDate),true,width+'/'+theme+': date filter updates real state');
+     assert.equal(await page.evaluate(()=>rf263HistoryFilter.from===rf263HistoryFilter.to&&!!rf263HistoryFilter.from),true,width+'/'+theme+': date filter updates original range state');
      await page.evaluate(()=>{if(typeof window.rf263ClearHistoryFilter==='function')window.rf263ClearHistoryFilter();go('history')});
      await page.waitForSelector('main.tp150-journal-compact');
      const previewMetrics=await page.evaluate(()=>{
