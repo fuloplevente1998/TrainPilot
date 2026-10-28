@@ -693,7 +693,7 @@
     <string name="studio_home_programs_subtitle">Trainingspläne</string>
     <string name="studio_home_calendar_subtitle">Planung</string>
     <string name="studio_health_watch_connection">Uhrverbindung</string>
-    <string name="studio_health_wear_connected">Ein Wear-OS-Status wurde von der Uhr empfangen.</string>
+    <string name="studio_health_wear_connected">Ein Live-Wear-OS-Status kommt von der Uhr.</string>
     <string name="studio_health_wear_not_connected">Kein aktiver Wear-OS-Status.</string>
     <string name="studio_health_active_workout_control">Aktives Training steuern</string>
     <string name="studio_health_phone_controls">Telefon steuert</string>
@@ -755,4 +755,5 @@
     <string name="studio_weight_range_30d">30T</string>
     <string name="studio_weight_range_3m">3M</string>
     <string name="studio_weight_range_1y">1J</string>
+    <string name="studio_health_wear_last_seen">Ein früherer Wear-OS-Status ist verfügbar; das bestätigt keine Live-Verbindung.</string>
 </resources>

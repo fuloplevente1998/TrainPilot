@@ -693,7 +693,7 @@
     <string name="studio_home_programs_subtitle">Planuri de antrenament</string>
     <string name="studio_home_calendar_subtitle">Planificare</string>
     <string name="studio_health_watch_connection">Conexiune ceas</string>
-    <string name="studio_health_wear_connected">A fost primită o stare Wear OS de la ceas.</string>
+    <string name="studio_health_wear_connected">Este primită o stare Wear OS live de la ceas.</string>
     <string name="studio_health_wear_not_connected">Nu există o stare Wear OS activă.</string>
     <string name="studio_health_active_workout_control">Control antrenament activ</string>
     <string name="studio_health_phone_controls">Telefonul controlează</string>
@@ -755,4 +755,5 @@
     <string name="studio_weight_range_30d">30z</string>
     <string name="studio_weight_range_3m">3l</string>
     <string name="studio_weight_range_1y">1a</string>
+    <string name="studio_health_wear_last_seen">Este disponibilă o stare Wear OS anterioară; aceasta nu confirmă o conexiune live.</string>
 </resources>

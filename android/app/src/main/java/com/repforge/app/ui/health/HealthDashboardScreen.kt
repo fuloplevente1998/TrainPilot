@@ -240,7 +240,8 @@ fun HealthDashboardScreen(
             BleDiscoveryTabContent(
                 state = state,
                 bleRepo = viewModel.bleRepo,
-                wearConnected = wear != null,
+                wearStateKnown = wear != null,
+                wearStateUpdatedAt = wear?.optLong("updatedAt", 0L) ?: 0L,
                 activeWorkout = activeWorkout?.optBoolean("active", false) == true,
                 activeWorkoutTitle = activeWorkout?.optString("dayName").orEmpty()
                     .ifBlank { activeWorkout?.optString("programName").orEmpty() },
@@ -1351,7 +1352,8 @@ private fun HealthSyncSummaryCard(
 fun BleDiscoveryTabContent(
     state: HealthDashboardUiState,
     bleRepo: com.repforge.app.BleDiscoveryRepository,
-    wearConnected: Boolean = false,
+    wearStateKnown: Boolean = false,
+    wearStateUpdatedAt: Long = 0L,
     activeWorkout: Boolean = false,
     activeWorkoutTitle: String = "",
     timerOwner: String = "phone",
@@ -1362,6 +1364,16 @@ fun BleDiscoveryTabContent(
     val ble = state.bleState
     val context = LocalContext.current
     val strings = remember(context, state.language) { nativeResources(context, state.language) }
+    var wearClockMs by remember { androidx.compose.runtime.mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(wearStateUpdatedAt, activeWorkout) {
+        while (true) {
+            wearClockMs = System.currentTimeMillis()
+            kotlinx.coroutines.delay(5_000L)
+        }
+    }
+    val wearFresh = wearStateKnown && wearStateUpdatedAt > 0L &&
+        kotlin.math.abs(wearClockMs - wearStateUpdatedAt) <= 15_000L
+    val wearLive = activeWorkout && wearFresh
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().testTag("health_ble_list").padding(horizontal = 12.dp),
@@ -1391,14 +1403,14 @@ fun BleDiscoveryTabContent(
                         shape = CircleShape,
                         color = colors.card2,
                         border = androidx.compose.foundation.BorderStroke(
-                            1.dp, if (wearConnected) colors.accent else colors.line
+                            1.dp, if (wearLive) colors.accent else colors.line
                         )
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 Icons.Default.Favorite,
                                 contentDescription = null,
-                                tint = if (wearConnected) colors.accentText else colors.muted,
+                                tint = if (wearLive) colors.accentText else colors.muted,
                                 modifier = Modifier.size(24.dp)
                             )
                         }
@@ -1411,11 +1423,15 @@ fun BleDiscoveryTabContent(
                         )
                         Text(
                             strings.getString(
-                                if (wearConnected) R.string.studio_health_wear_connected
-                                else R.string.studio_health_wear_not_connected
+                                when {
+                                    wearLive -> R.string.studio_health_wear_connected
+                                    wearStateKnown -> R.string.studio_health_wear_last_seen
+                                    else -> R.string.studio_health_wear_not_connected
+                                }
                             ),
-                            color = if (wearConnected) colors.success else colors.muted,
-                            style = MaterialTheme.typography.bodySmall
+                            color = if (wearLive) colors.success else colors.muted,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.testTag("health_connected_wear_status")
                         )
                     }
                 }

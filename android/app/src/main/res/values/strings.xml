@@ -693,7 +693,7 @@
     <string name="studio_home_programs_subtitle">Edzéstervek</string>
     <string name="studio_home_calendar_subtitle">Tervezés</string>
     <string name="studio_health_watch_connection">Órakapcsolat</string>
-    <string name="studio_health_wear_connected">Kapcsolódó Wear OS állapot érkezett az óráról.</string>
+    <string name="studio_health_wear_connected">Élő Wear OS állapot érkezik az óráról.</string>
     <string name="studio_health_wear_not_connected">Nincs aktív Wear OS állapot.</string>
     <string name="studio_health_active_workout_control">Aktív edzés vezérlése</string>
     <string name="studio_health_phone_controls">Telefon vezérli</string>
@@ -755,4 +755,5 @@
     <string name="studio_weight_range_30d">30d</string>
     <string name="studio_weight_range_3m">3h</string>
     <string name="studio_weight_range_1y">1é</string>
+    <string name="studio_health_wear_last_seen">Korábbi Wear OS állapot elérhető; ez nem igazol élő kapcsolatot.</string>
 </resources>
