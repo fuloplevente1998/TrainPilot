@@ -99,6 +99,14 @@ html.tp271-mockup-dock body #app main.tp107-fit-home {
   height: max(0px, calc(100dvh - var(--tp107-nav-height, 132px) - var(--tp271-dock-height) - 2px)) !important;
   max-height: max(0px, calc(100dvh - var(--tp107-nav-height, 132px) - var(--tp271-dock-height) - 2px)) !important;
 }
+/* The Studio reference uses a scrollable Home. With the dock occupying
+   screen space, never clip a saved-draft hero or a lower Health disclosure. */
+html.tp271-mockup-dock body #app main.tp107-fit-home,
+html.tp271-mockup-dock body #app main.tp107-fit-health {
+  overflow-y: auto !important;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+}
 html.tp271-mockup-dock body #app main.tp107-fit-health {
   max-height: max(0px, calc(100dvh - var(--tp107-nav-height, 132px) - var(--tp271-dock-height) - 2px)) !important;
 }
