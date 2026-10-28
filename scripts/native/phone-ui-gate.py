@@ -46,7 +46,7 @@ def configure_display(size="", density="", font_scale=""):
         sizes = re.findall(r"\d+x\d+", actual_size)
         densities = re.findall(r"\d+", actual_density)
         if not sizes or sizes[-1] != size or not densities or int(densities[-1]) != int(density):
-            raise RuntimeError("Emulator did not apply the requested display profile")
+            raise RuntimeError(f"Emulator did not apply {size}@{density}dpi: {actual_size!r}; {actual_density!r}")
     if font_scale and float(actual_font) != float(font_scale):
         raise RuntimeError("Emulator did not apply the requested font scale")
     return {"requestedSizePx": size or None, "requestedDensityDpi": int(density) if density else None,
@@ -146,13 +146,15 @@ def main():
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     (output / "screenshots").mkdir(exist_ok=True)
-    display = configure_display(args.display_size, args.display_density, args.font_scale)
-    manifest = {"display": display, "commit": args.commit, "appSha256": digest(args.app), "testSha256": digest(args.tests),
+    manifest = {"display": {"requestedSizePx": args.display_size or None,
+                            "requestedDensityDpi": args.display_density or None,
+                            "requestedFontScale": args.font_scale or None}, "commit": args.commit, "appSha256": digest(args.app), "testSha256": digest(args.tests),
                 "imageOrigin": "unmodified-adb-exec-out-screencap-p", "data": "isolated-emulator-test-fixtures",
                 "device": adb("shell", "getprop", "ro.product.model").decode().strip(),
                 "result": "running", "api": adb("shell", "getprop", "ro.build.version.sdk").decode().strip(), "screenshots": []}
     process = None
     try:
+        manifest["display"] = configure_display(args.display_size, args.display_density, args.font_scale)
         adb("install", "-r", "-t", str(args.app))
         adb("install", "-r", "-t", str(args.tests))
         for permission in ["POST_NOTIFICATIONS", "ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]:

@@ -121,3 +121,26 @@ class EmulatorDisplayProfileTest(unittest.TestCase):
         self.assertEqual((1080, 2392), gate.screenshot_dimensions(png, '1080x2392'))
         with self.assertRaises(ValueError):
             gate.screenshot_dimensions(png, '320x640')
+
+
+class DisplayFailureEvidenceTest(unittest.TestCase):
+    def test_preflight_failure_still_preserves_failed_manifest_before_install(self):
+        from unittest.mock import patch
+        import json
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            apk = root / 'fixture.apk'
+            apk.write_bytes(b'host-only placeholder; never installed')
+            output = root / 'results'
+            argv = ['gate', '--app', str(apk), '--tests', str(apk), '--output', str(output),
+                    '--commit', 'source', '--display-size', '1080x2392',
+                    '--display-density', '450', '--font-scale', '0.90']
+            with patch('sys.argv', argv), patch.object(gate, 'adb', return_value=b'') as calls, \
+                 patch.object(gate, 'configure_display', side_effect=RuntimeError('profile rejected')):
+                with self.assertRaises(RuntimeError):
+                    gate.main()
+            manifest = json.loads((output / 'manifest.json').read_text())
+            self.assertEqual('failed', manifest['result'])
+            self.assertEqual('1080x2392', manifest['display']['requestedSizePx'])
+            self.assertEqual([], manifest['screenshots'])
+            self.assertFalse(any(c.args[0] == 'install' for c in calls.call_args_list))

@@ -90,11 +90,11 @@ class NativeLocalizationLanguageUiTest {
                 "en" -> day.nameEn; "de" -> day.nameDe; "ro" -> day.nameRo; else -> day.nameHu
             }.ifBlank { day.nameHu }
             compose.waitUntil(15_000) {
-                compose.onAllNodes(hasTestTag("home_program_name") and hasText(expectedProgram))
+                compose.onAllNodes(hasTestTag("home_program_name") and hasText(expectedProgram), useUnmergedTree = true)
                     .fetchSemanticsNodes().isNotEmpty()
             }
-            compose.onNodeWithTag("home_program_name").performScrollTo().assertTextEquals(expectedProgram)
-            compose.onNodeWithTag("home_day_name").assertTextEquals(expectedDay)
+            compose.onNodeWithTag("home_program_name", useUnmergedTree = true).performScrollTo().assertTextEquals(expectedProgram)
+            compose.onNodeWithTag("home_day_name", useUnmergedTree = true).assertTextEquals(expectedDay)
             compose.onNodeWithTag("navigation_settings").performClick()
         }
         val appLanguageUnlikeSystem = cases.map { it.first }.first { it != systemLanguage }

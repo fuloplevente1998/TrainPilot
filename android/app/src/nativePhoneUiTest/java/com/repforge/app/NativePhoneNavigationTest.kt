@@ -540,14 +540,14 @@ class NativePhoneNavigationTest {
             db.programDao().saveProgramWithDays(source.program.copy(nameHu = "Frissített célprogram"), source.days)
         }
         awaitHomeProgram("Frissített célprogram")
-        compose.onNodeWithTag("home_metric_workouts_value").performScrollTo().assertTextEquals("0")
+        compose.onNodeWithTag("home_metric_workouts_value", useUnmergedTree = true).performScrollTo().assertTextEquals("0")
         runBlocking(Dispatchers.IO) {
             val now = java.time.Instant.now()
             com.repforge.app.data.migration.LegacyWebViewMigrator(context, db, settings).saveWorkoutJsonToRoom(JSONObject()
                 .put("id", "home-live-count").put("started", now.minusSeconds(1).toString()).put("finished", now.toString())
                 .put("exercises", org.json.JSONArray()))
         }
-        compose.waitUntil(15000) { compose.onAllNodes(hasTestTag("home_metric_workouts_value") and hasText("1")).fetchSemanticsNodes().isNotEmpty() &&
+        compose.waitUntil(15000) { compose.onAllNodes(hasTestTag("home_metric_workouts_value") and hasText("1"), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() &&
             compose.onAllNodesWithTag("home_loading").fetchSemanticsNodes().isEmpty() }
         compose.onNodeWithTag("home_start_workout").performScrollTo().assertIsEnabled().performClick()
         compose.waitUntil(15000) { snapshot()?.optBoolean("active") == true }

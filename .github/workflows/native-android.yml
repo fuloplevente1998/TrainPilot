@@ -341,6 +341,9 @@ jobs:
           PHONE_UI_DISPLAY_DENSITY: ${{ inputs.phone_display_density || '' }}
           PHONE_UI_FONT_SCALE: ${{ inputs.phone_font_scale || '' }}
         with:
+          # wm size cannot exceed the small default AVD's hardware scaling limit.
+          # A real-size hardware profile is required before applying owner geometry.
+          profile: ${{ inputs.phone_display_size != '' && 'pixel_7' || '' }}
           api-level: 35
           target: google_apis
           arch: x86_64

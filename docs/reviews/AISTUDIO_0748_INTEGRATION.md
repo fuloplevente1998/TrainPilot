@@ -121,3 +121,15 @@ User then supplied developer-settings screenshot showing **smallest width384dp**
 At1080px this implies **450 logical DPI** (1080×160/384), replacing the earlier
 provisional440. Confirmed profile:1080x2392,450dpi,fontScale0.90. The next common
 full gate must use these inputs and verify unchanged raw PNG pixel dimensions.
+
+## Owner-profile preflight correction
+
+40655883561 /12c99fd4: native build/JVM, all Wear and both signed upgrade jobs
+SUCCESS. Phone job122710908905 failed BEFORE instrumentation because the old
+320x640 base AVD did not apply the requested1080x2392 geometry; dimension readback
+correctly rejected it. No phone runtime PASS or PNG is claimed for this run.
+Next profile run uses a Pixel7 hardware base before applying1080x2392/450/0.90.
+Preflight failures now preserve a failed manifest and actual readback diagnostic.
+Local host suite12PASS. No APK/main-source behavior changed in this correction.
+Two remaining Home child-text lookup groups in the later localization/history
+assertions are also updated to the actual unmerged Text nodes; assertions stay.
