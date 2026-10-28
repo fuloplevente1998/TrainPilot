@@ -51,10 +51,20 @@ const server=http.createServer((req,res)=>{
      assert.equal(await page.evaluate(()=>rf200ThemeKey()),'classicBlue','main theme store updated through header');
      await page.evaluate(()=>{rf212SetLang('system');rf200SetTheme('yellow')});
    }
+   if(width===393){
+     fs.mkdirSync('ui-evidence',{recursive:true});
+     await page.evaluate(()=>{state.session=null;go('home');document.scrollingElement.scrollTop=0});
+     await page.waitForSelector('main.rf221-home');
+     await page.screenshot({path:'ui-evidence/pr271-new-header-home-393.png'});
+   }
    await page.evaluate(()=>{state.session=null;state.workout=null;db.set('draft',null);go('plan')});
    await page.waitForSelector('main.tp146-plan #tp271WorkoutQuickLinks');
    const shortcuts=page.locator('main.tp146-plan #tp271WorkoutQuickLinks');
    assert.equal(await shortcuts.locator('button[data-tp271-shortcut]').count(),3,width+': Programs Calendar Coach remain below in Workout');
+   if(width===393){
+     await page.evaluate(()=>{document.scrollingElement.scrollTop=0;document.activeElement?.blur?.()});
+     await page.screenshot({path:'ui-evidence/pr271-workout-shortcuts-393.png',fullPage:true});
+   }
    for(const key of ['programs','calendar','coach']){
      assert.equal(await shortcuts.locator('button[data-tp271-shortcut="'+key+'"]').isVisible(),true,width+': '+key+' reachable below');
    }
