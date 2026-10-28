@@ -1013,6 +1013,10 @@ private fun StudioGpsMetricCard(
     }
 }
 
+private fun measuredTime(seconds: Long?): String = seconds?.let {
+    "${it / 60}:${(it % 60).toString().padStart(2, '0')}"
+} ?: "—"
+
 @Composable
 private fun IntervalOptions(
     state: ActiveWorkoutUiState,

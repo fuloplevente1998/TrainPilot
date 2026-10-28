@@ -406,6 +406,7 @@ internal fun ExerciseLibraryScreen(language: String, model: ExerciseLibraryViewM
                 }
             }
         }
+    }
     if (editorOpen) {
         CustomExerciseDialog(exercise = editingExercise, language = language,
             saving = state.saving, error = state.editError,
