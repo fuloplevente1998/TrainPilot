@@ -2,7 +2,6 @@ package com.repforge.app.ui.navigation
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -53,10 +52,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -76,6 +71,7 @@ import com.repforge.app.ui.theme.LocalTrainPilotColors
 /**
  * Source-structure port of the user-approved 18:49 Studio
  * TrainPilotGlobalTopHeaderAndNav + TopNavPillItem.
+ * Explicit brand exception: the original GOLD DUMBBELL launcher symbol stays.
  *
  * Only presentation is ported: native DataStore owns language/palette, native
  * NavHost owns navigation, and native execution fences own click permissions.
@@ -123,18 +119,9 @@ internal fun NativeStudioShellHeader(
                     .padding(horizontal = 4.dp, vertical = 2.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically) {
-                    Canvas(Modifier.size(26.dp, 18.dp)) {
-                        val p = Path().apply {
-                            moveTo(size.width * .06f, size.height * .86f)
-                            lineTo(size.width * .34f, size.height * .20f)
-                            lineTo(size.width * .54f, size.height * .66f)
-                            lineTo(size.width * .72f, size.height * .26f)
-                            lineTo(size.width * .94f, size.height * .86f)
-                        }
-                        drawPath(p, colors.accent,
-                            style = Stroke(size.height * .22f,
-                                cap = StrokeCap.Round, join = StrokeJoin.Round))
-                    }
+                    // Brand exception explicitly approved by the owner:
+                    // exact original gold dumbbell used by the launcher icon.
+                    TrainPilotBrandLogo()
                     Text("TrainPilot", style = MaterialTheme.typography.titleMedium.copy(
                         letterSpacing = (-.2).sp), fontWeight = FontWeight.Bold,
                         color = colors.accentText, maxLines = 1,
