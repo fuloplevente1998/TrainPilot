@@ -1,6 +1,21 @@
 # TrainPilot – aktuális átadás
 
-## Aktuális Studio-belépési pont – 2026-10-28
+## Aktív CI-javítás – 2026-10-28
+
+PR #270 DRAFT. Javított alkalmazás-/tesztforrás: `4fda309b6b03799e22a7f3bb0efd51259bf8f275`.
+[Quick 40690752040](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40690752040) SUCCESS
+(natív forrásbesorolás; a legacy npm-job nem alkalmazható).
+[Teljes kapu 40690747562](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40690747562)
+FOLYAMATBAN, 1080×2392 /450dpi /fontScale0.90. Még nincs teljes runtime PASS.
+A 40684735676 előző futás telefonon 87/123 PASS, 36 FAIL; JVM1345 és Wear183 PASS.
+Mind123 telefonos teszt megmaradt; csak aktuális UI-navigáció/readiness/scroll és
+súlyérték-testTag javítás. Verzió/appid/aláírás/motor/adatút változatlan.
+[Részletes CI-riport](reviews/PR270_CI_REPAIR_2026-10-28.md) ·
+[Friss Drive01–18 audit](reviews/STUDIO_DRIVE_01_18_AUDIT_2026-10-28.md).
+Teljes Studio-vizuális egyezés és készülékes elfogadás továbbra nyitott.
+A következő lépés a futó kapu végállapota és nyers eredményeinek ellenőrzése.
+
+## Korábbi zöld Studio-baseline – 2026-10-28
 
 PR270: [STUDIO_UI_RESUME.md](STUDIO_UI_RESUME.md). Exact a27cc2fe,
 Actions40660277579 teljes kapu zöld: 1344 unit + 123 phone + 183 Wear PASS,
