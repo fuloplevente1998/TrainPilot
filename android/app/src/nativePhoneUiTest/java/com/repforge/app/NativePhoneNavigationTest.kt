@@ -1387,7 +1387,8 @@ class NativePhoneNavigationTest {
         }
         compose.onNodeWithTag("exercise_library_list")
             .performScrollToNode(hasTestTag("exercise_library_row_db-squat"))
-        compose.onNodeWithTag("exercise_library_row_db-squat").assertIsDisplayed().performClick()
+        compose.onNodeWithTag("exercise_library_row_db-squat")
+            .performScrollTo().assertIsDisplayed().performClick()
         compose.waitUntil(15_000) {
             compose.onAllNodesWithTag("exercise_library_detail").fetchSemanticsNodes().isNotEmpty()
         }
