@@ -1481,3 +1481,50 @@ html.tp271-mockup-dock body #tp271Header .tp271-theme-swatch {
 }
 /* The dock is the only permanent main-route menu. Program/Calendar/Coach
    retain their original existing entry points inside the Workout content. */
+
+
+/* P1e: secondary routes live in Workout content, not a second top menu. */
+html.tp271-mockup-dock body #app main.tp146-plan #tp271WorkoutQuickLinks {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: clamp(5px, 1.5vw, 9px) !important;
+  min-width: 0;
+  margin: 12px 0 3px !important;
+  padding: 0;
+  border: 0;
+}
+html.tp271-mockup-dock body #app main.tp146-plan #tp271WorkoutQuickLinks .tp271-workout-shortcut {
+  box-sizing: border-box;
+  display: flex;
+  min-width: 0;
+  min-height: 86px;
+  padding: 10px 5px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--line));
+  border-radius: 14px;
+  color: var(--text);
+  background: var(--tp-ui-card, var(--card));
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+  box-shadow: none;
+}
+html.tp271-mockup-dock body #app main.tp146-plan #tp271WorkoutQuickLinks .tp271-shortcut-icon {
+  font-size: 24px;
+  line-height: 1;
+  color: var(--accent);
+}
+html.tp271-mockup-dock body #app main.tp146-plan #tp271WorkoutQuickLinks .tp271-shortcut-label {
+  font-size: clamp(10px, 3vw, 13px);
+  font-weight: 750;
+  line-height: 1.18;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+html.tp271-mockup-dock body #app main.tp146-plan #tp271WorkoutQuickLinks .tp271-workout-shortcut:focus-visible {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 2px;
+}
