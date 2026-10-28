@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="studio_progress_tab_progress">Progres</string>
+    <string name="studio_progress_tab_statistics">Statistici</string>
+    <string name="studio_progress_tab_strength">Forță (1RM)</string>
+    <string name="studio_progress_stats_records">Recorduri personale</string>
+    <string name="studio_progress_stats_cardio">Statistici cardio</string>
+    <string name="studio_progress_pr_workouts">Antrenamente cu record (30 zile)</string>
+</resources>
