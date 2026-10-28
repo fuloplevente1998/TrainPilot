@@ -149,7 +149,7 @@ const server=http.createServer((req,res)=>{
      const healthDetails=page.locator('main.tp168-health details.tp168-more-panel');
      assert.equal(await healthDetails.count(),1,width+'/'+theme+': complete canonical Health detail disclosure');
      await healthDetails.locator(':scope > summary').click();
-     assert.equal(await healthDetails.getAttribute('open'),'true',width+'/'+theme+': original Health details open');
+     assert.notEqual(await healthDetails.getAttribute('open'),null,width+'/'+theme+': original Health details open');
      await healthDetails.locator(':scope > summary').click();
      assert.equal(await healthDetails.getAttribute('open'),null,width+'/'+theme+': original Health details close');
      if(width===393&&theme==='yellow'){
