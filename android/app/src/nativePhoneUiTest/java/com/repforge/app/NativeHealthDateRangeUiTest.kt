@@ -1,5 +1,9 @@
 package com.repforge.app
 
+import androidx.compose.ui.test.assertIsDisplayed
+
+import androidx.compose.ui.test.performScrollTo
+
 import android.content.Context
 import android.content.Intent
 import android.view.View
@@ -92,7 +96,7 @@ class NativeHealthDateRangeUiTest {
         compose.waitUntil(30000) {
             compose.onAllNodesWithTag("navigation_health").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithTag("navigation_health").performClick()
+        compose.onNodeWithTag("navigation_health").performScrollTo().assertIsDisplayed().performClick()
         compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_open_records"))
         compose.onNodeWithTag("health_open_records").performClick()
         compose.waitUntil(15000) {

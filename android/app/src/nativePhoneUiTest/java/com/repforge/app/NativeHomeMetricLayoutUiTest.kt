@@ -109,14 +109,22 @@ class NativeHomeMetricLayoutUiTest {
         compose.onNodeWithText(source).performScrollTo().assertIsDisplayed().assertTextEquals(source)
     }
 
-    @Test fun studioTabsWithLargeGermanTextKeepEveryLabelAndSelectionAccessible() {
+    @Test fun studioTabsWithLargeGermanTextKeepEveryLabelAndSelectionAccessible() = largeGermanTabs(false)
+
+    @Test fun actualStudioShellKeepsLargeGermanTabsAndSelectionAccessible() = largeGermanTabs(true)
+
+    private fun largeGermanTabs(studioShell: Boolean) {
         compose.setContent {
             val density = LocalDensity.current.density
             var route by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("home") }
             CompositionLocalProvider(LocalDensity provides Density(density, 2f)) {
                 TrainPilotTheme(TrainPilotUserSettings()) {
                     androidx.compose.foundation.layout.Box(Modifier.width(320.dp)) {
-                        com.repforge.app.ui.navigation.NativeTopNavigation(route, "home", "de",
+                        if (studioShell) com.repforge.app.ui.navigation.NativeStudioShellHeader(
+                            route, "home", "de", "graphite_gold", route != "health",
+                            onHome = { route = "home" }, onSelect = { route = it },
+                            onSelectLanguage = {}, onTheme = {}, onSettings = {})
+                        else com.repforge.app.ui.navigation.NativeTopNavigation(route, "home", "de",
                             enabled = route != "health", onSelect = { route = it })
                     }
                 }

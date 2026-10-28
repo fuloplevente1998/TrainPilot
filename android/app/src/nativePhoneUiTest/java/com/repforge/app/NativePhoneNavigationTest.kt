@@ -73,7 +73,7 @@ class NativePhoneNavigationTest {
         compose.waitForIdle()
     }
     private fun tab(route: String) {
-        compose.onNodeWithTag("navigation_$route").performClick()
+        compose.onNodeWithTag("navigation_$route").performScrollTo().assertIsDisplayed().performClick()
         // A click is not an admission receipt: await actual selected destination
         // before starting the next screen's work/screenshot.
         compose.waitUntil(15_000) {
@@ -195,6 +195,7 @@ class NativePhoneNavigationTest {
         compose.waitUntil(30_000) { compose.onAllNodesWithTag("journal_workout_p1-visual-1").fetchSemanticsNodes().isNotEmpty() }
         capture("p1_journal")
         tab("progress")
+        compose.onNodeWithTag("progress_list").performScrollToNode(hasTestTag("anatomical_muscle_heatmap_card"))
         compose.waitUntil(30_000) { compose.onAllNodesWithTag("progress_anatomy_loaded", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
         capture("p1_progress")
         compose.onNodeWithTag("progress_anatomy").performScrollTo().performClick()
@@ -255,7 +256,7 @@ class NativePhoneNavigationTest {
 
     @Test fun trainingProfilePersistsAfterSettingsReentryWithoutGuessingMeasurements() {
         launch()
-        compose.onNodeWithTag("home_profile_open").performScrollTo().performClick()
+        compose.onNodeWithTag("navigation_settings").performClick()
         compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("training_profile_open"))
         compose.onNodeWithTag("training_profile_open").performClick()
         compose.onNodeWithTag("profile_field_age").performTextReplacement("28")

@@ -200,6 +200,28 @@ class NativeProgressQueryTest {
         assertEquals(1, result.first { it.muscleKey == "legs" }.setsCount)
     }
 
+    @Test fun studioMusclePeriodsUseRealSetsCalendarBoundariesAndTombstones() = runBlocking {
+        db.exerciseLibraryDao().upsertExercise(TrainPilotDatabase.defaultExercises().first { it.id == "goblet-squat" })
+        val zone = ZoneId.of("Europe/Budapest")
+        val today = LocalDate.of(2026, 10, 27)
+        val now = today.atTime(12, 0).atZone(zone).toInstant().toEpochMilli()
+        suspend fun add(i: Int, days: Long, done: Boolean = true) = insert(i, 20.0, "10", done,
+            epoch = today.minusDays(days).atTime(1, 0).atZone(zone).toInstant().toEpochMilli())
+        add(1, 0); add(2, 6); add(3, 29); add(4, 60); add(5, 150)
+        add(6, 0, false); add(7, 0); add(8, -1)
+        db.workoutHistoryDao().upsertTombstone(HistoryTombstoneEntity(
+            primaryId = "w-0007", workoutKey = "key-7", idsJson = "[\"w-0007\"]", deletedAt = 1))
+        for ((range, expected) in listOf(NativeVolumeRange.DAY to 1, NativeVolumeRange.WEEK to 2,
+            NativeVolumeRange.MONTH to 3, NativeVolumeRange.THREE_MONTHS to 4)) {
+            val (from, until) = NativeVolumeProjection.queryBounds(range, now, zone)
+            val loads = NativeProgressQuery.muscle(db.workoutHistoryDao()
+                .getProgressMuscleSummary(from, until - 1), "de")
+            assertEquals(expected, loads.first { it.muscleKey == "legs" }.setsCount)
+            assertEquals(1f, loads.first { it.muscleKey == "legs" }.loadPercentage)
+            assertTrue(loads.filter { it.muscleKey != "legs" }.all { it.setsCount == 0 })
+        }
+    }
+
     @Test fun muscleLabelsAreLocalizedAndCardioMapsToLegs() {
         val raw = listOf(ProgressMuscleSummary("cardio", 4), ProgressMuscleSummary("legs", 2))
         for (lang in listOf("hu", "en", "de", "ro")) {

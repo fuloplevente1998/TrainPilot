@@ -130,10 +130,15 @@ internal fun NativeTopNavigation(route: String, settingsOrigin: String, language
                     else -> if (active) Icons.Default.Favorite else Icons.Default.FavoriteBorder
                 }
                 val shape = RoundedCornerShape(12.dp)
+                val density = LocalDensity.current
+                val tabTextStyle = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 10.sp, fontWeight = if (active) FontWeight.Bold else FontWeight.Medium)
+                val measured = androidx.compose.ui.text.rememberTextMeasurer().measure(
+                    labels[index], style = tabTextStyle, softWrap = false, maxLines = 1)
+                val tabWidth = maxOf(76.dp, with(density) { measured.size.width.toDp() } + 24.dp)
                 val fill = if (active) colors.accent.copy(alpha = .22f).compositeOver(colors.card) else colors.card
                 Column(
-                    modifier = (if (scrollable) Modifier.widthIn(min =
-                        if (LocalDensity.current.fontScale > 1.5f) 114.dp else 84.dp)
+                    modifier = (if (scrollable) Modifier.widthIn(min = tabWidth)
                         else Modifier.weight(1f)).heightIn(min = 48.dp)
                         .clip(shape)
                         .background(fill)
@@ -150,7 +155,7 @@ internal fun NativeTopNavigation(route: String, settingsOrigin: String, language
                         tint = if (active) colors.accent else colors.muted)
                     Spacer(Modifier.height(3.dp))
                     Text(
-                        labels[index],
+                        labels[index], style = tabTextStyle,
                         color = if (active) colors.accent else colors.text,
                         fontSize = 10.sp,
                         fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,

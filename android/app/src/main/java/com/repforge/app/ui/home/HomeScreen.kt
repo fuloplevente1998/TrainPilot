@@ -282,7 +282,7 @@ fun HomeScreen(
 
         // Original Studio lower cards: the existing real active-calories/workout
         // count and Coach readiness are surfaced with *no invented advice*.
-        StudioHomeGoalsRow(state.todayMetrics, strings.getString(R.string.native_home_today_status),
+        StudioHomeGoalsRow(state.todayMetrics, language, strings.getString(R.string.native_home_today_status),
             !busy, onPersonalPlan)
         StudioHomeCoachCard(state, language, !busy, onCoach)
 
@@ -406,7 +406,7 @@ private fun StudioHomeShortcut(title: String,
 }
 
 @Composable
-private fun StudioHomeGoalsRow(metrics: TodayMetricsUiModel,
+private fun StudioHomeGoalsRow(metrics: TodayMetricsUiModel, language: String,
     title: String, enabled: Boolean, onOpen: () -> Unit) {
     val colors = LocalTrainPilotColors.current
     Surface(Modifier.fillMaxWidth().heightIn(min = 48.dp)
@@ -421,8 +421,14 @@ private fun StudioHomeGoalsRow(metrics: TodayMetricsUiModel,
                 Text(metrics.caloriesText, color = colors.muted,
                     style = MaterialTheme.typography.bodySmall)
             }
-            Text(metrics.workoutCountText, color = colors.accentText,
-                style = MaterialTheme.typography.labelLarge)
+            Column(horizontalAlignment = Alignment.End) {
+                Text(metrics.workoutCountText, color = colors.accentText,
+                    modifier = Modifier.testTag("home_metric_workouts_value"),
+                    style = MaterialTheme.typography.labelLarge)
+                Text(nativeResources(LocalContext.current, language).getString(R.string.native_home_unit_workouts),
+                    modifier = Modifier.testTag("home_metric_workouts_unit"),
+                    color = colors.muted, style = MaterialTheme.typography.labelSmall)
+            }
             Icon(Icons.Default.ChevronRight, contentDescription = null, tint = colors.accentText)
         }
     }

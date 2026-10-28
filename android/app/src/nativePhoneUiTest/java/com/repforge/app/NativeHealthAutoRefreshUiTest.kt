@@ -1,5 +1,9 @@
 package com.repforge.app
 
+import androidx.compose.ui.test.assertIsDisplayed
+
+import androidx.compose.ui.test.performScrollTo
+
 import android.content.Context
 import com.repforge.app.ui.health.NativeHealthForegroundAdmission
 import androidx.compose.ui.test.assertIsOff
@@ -56,7 +60,7 @@ class NativeHealthAutoRefreshUiTest {
         compose.waitUntil(20_000) {
             compose.onAllNodesWithTag("navigation_health").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithTag("navigation_health").performClick()
+        compose.onNodeWithTag("navigation_health").performScrollTo().assertIsDisplayed().performClick()
         // LazyColumn creates off-screen children only when scrolled into view.
         // Waiting for the switch before scrolling deadlocks this instrumentation test.
         compose.waitUntil(20_000) {
@@ -186,7 +190,7 @@ class NativeHealthAutoRefreshUiTest {
         compose.onNodeWithTag("health_auto_refresh_switch").assertIsOn()
 
         compose.onNodeWithTag("navigation_home").performClick()
-        compose.onNodeWithTag("navigation_health").performClick()
+        compose.onNodeWithTag("navigation_health").performScrollTo().assertIsDisplayed().performClick()
         compose.onNodeWithTag("health_journal_list")
             .performScrollToNode(hasTestTag("health_auto_refresh_switch"))
         compose.onNodeWithTag("health_auto_refresh_switch").assertIsOn()

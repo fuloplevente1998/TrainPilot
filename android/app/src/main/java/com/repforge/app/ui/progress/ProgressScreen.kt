@@ -171,18 +171,8 @@ fun ProgressScreen(
             }
         }
 
-        // 1. #177 Izom-anatómia terheléstérkép
-        item {
-            TrainPilotSectionSurface(Modifier.fillMaxWidth()) {
-                Column {
-                    TrainPilotSectionHeader(strings.getString(R.string.native_progress_muscle_load), icon = Icons.Default.AccessibilityNew)
-                    Text(strings.getString(R.string.native_progress_month_sets), color = colors.muted, fontSize = 11.sp)
-                    Spacer(Modifier.height(14.dp))
-
-                    MuscleLoadPanel(state.muscleLoads, state.language)
-
-                }
-            }
+        item(key = "studio_muscle_heatmap") {
+            NativeStudioMuscleCard(state, viewModel::selectMuscleRange, viewModel::retryMuscle)
         }
 
         // 2. 1RM Fejlődési diagram
@@ -604,62 +594,4 @@ fun TrendCanvas(points: List<Double>) {
             drawCircle(color = colors.accent2, radius = 3.dp.toPx(), center = o)
         }
     }
-}
-
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun MuscleLoadPanel(loads: List<MuscleLoadUiModel>, language: String) {
-    val colors = LocalTrainPilotColors.current
-    val context = LocalContext.current
-    val strings = remember(context, language) { nativeResources(context, language) }
-    val percent = remember(language) { java.text.NumberFormat.getPercentInstance(java.util.Locale.forLanguageTag(language)) }
-    val bars: @Composable () -> Unit = {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            for (load in loads) Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(load.label, Modifier.weight(1f), color = colors.text, style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
-                    Text(strings.getString(R.string.native_progress_sets_count, load.setsCount),
-                        color = colors.muted, style = androidx.compose.material3.MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum"))
-                }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Box(Modifier.weight(1f).height(8.dp).clip(CircleShape).background(colors.card2)) {
-                        Box(Modifier.fillMaxWidth(load.loadPercentage).height(8.dp).clip(CircleShape)
-                            .background(muscleLoadColor(load.loadPercentage, colors)))
-                    }
-                    Text(if (load.setsCount == 0) "—" else percent.format(load.loadPercentage.toDouble()),
-                        color = colors.muted, style = androidx.compose.material3.MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum"))
-                }
-            }
-        }
-    }
-    // The original main front/back anatomy is the central visual, not a tiny thumbnail.
-    // Preserve the real tinted muscle-mask renderer and set percentages; the Studio
-    // outline/illustrative DEMO body is deliberately NOT substituted here.
-    // On phones the full body image gets the available width, with load bars below;
-    // on wider tablets both can appear side-by-side without squeezing the anatomy.
-    val fullBody = LocalConfiguration.current.screenWidthDp < 600 ||
-        LocalDensity.current.fontScale > 1.3f
-    if (fullBody) Column(Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        NativeMuscleLoadVisual(loads, language, Modifier.fillMaxWidth())
-        bars()
-    } else Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        NativeMuscleLoadVisual(loads, language, Modifier.weight(1.05f))
-        Box(Modifier.weight(0.95f)) { bars() }
-    }
-    Spacer(Modifier.height(12.dp))
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        for ((label, color) in listOf(R.string.native_visual_load_low to colors.loadLow,
-            R.string.native_visual_load_medium to colors.loadMedium, R.string.native_visual_load_high to colors.loadHigh)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Box(Modifier.size(8.dp).clip(CircleShape).background(color))
-                Text(strings.getString(label), color = colors.muted, style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
-            }
-        }
-    }
-    Spacer(Modifier.height(6.dp))
-    Text(strings.getString(R.string.native_visual_load_note), color = colors.muted,
-        style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
 }

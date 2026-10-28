@@ -87,6 +87,8 @@ internal fun NativeStudioHomeVitalCard(
                 modifier = Modifier.testTag("home_metric_${key}_value")
             )
             if (statusText != null) {
+                Box(if (key == "steps") Modifier.testTag("home_metric_steps_unit")
+                    .semantics(mergeDescendants = true) {} else Modifier) {
                 Text(
                     text = statusText,
                     style = MaterialTheme.typography.bodySmall.copy(
@@ -94,6 +96,7 @@ internal fun NativeStudioHomeVitalCard(
                     color = statusColor,
                     modifier = Modifier.testTag("home_metric_${key}_source")
                 )
+                }
             }
             if (progressFraction != null && progressFraction.isFinite()) {
                 Spacer(Modifier.height(2.dp))

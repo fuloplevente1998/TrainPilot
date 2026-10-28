@@ -231,10 +231,15 @@ internal fun NativeStudioShellHeader(
                             else -> if (active) Icons.Default.Favorite else Icons.Default.FavoriteBorder
                         }
                         val shape = RoundedCornerShape(12.dp)
+                        val density = LocalDensity.current
+                        val tabTextStyle = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 10.sp, fontWeight = if (active) FontWeight.Bold else FontWeight.Medium)
+                        val measured = androidx.compose.ui.text.rememberTextMeasurer().measure(
+                            labels[index], style = tabTextStyle, softWrap = false, maxLines = 1)
+                        val tabWidth = maxOf(76.dp, with(density) { measured.size.width.toDp() } + 24.dp)
                         Surface(
                             modifier = (if (scrollable)
-                                Modifier.widthIn(min = if (LocalDensity.current.fontScale > 1.5f)
-                                    114.dp else 76.dp)
+                                Modifier.widthIn(min = tabWidth)
                             else Modifier.weight(1f))
                                 .heightIn(min = 48.dp)
                                 .border(if (active) 1.5.dp else 1.dp,

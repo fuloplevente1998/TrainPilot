@@ -1,5 +1,17 @@
 # TrainPilot – Studio UI folytatási pont
 
+## 2026-10-28: 07:48 export natív izomkártya + UI regressziók
+
+[Részletes integráció](reviews/AISTUDIO_0748_INTEGRATION.md).
+Pinned bemenet Native-AI-Studio@f1d96422, SHA256 a5054821…3380191, CRC PASS.
+NativeStudioMuscleCard + független, calendar/DST/tombstone-safe 1/7/30nap/3hó
+Room lekérdezés, revision/cancellation/restore-guard, valódi részletsorozatszám.
+Felsőtab láthatóvá görgetés az UI-tesztekben, valós fontmérés, Home unit-tag-ek
+és aktuális Settings profil-entry tesztjavítva. Új Room teszt +2Compose teszt,
+nyers emulátoros képkérés. Futási eredmény még UNRUN; közös gate indítandó.
+A ZIP session-generálását/fake Wear-ackját/DEMO fallbackjeit nem vettük át.
+Main, applicationId, aláírás, verzió, motor és séma változatlan.
+
 ## 2026-10-28: 05:42 Native-AI-Studio ZIP ellenőrzés
 
 - Új user-source: külön [Native-AI-Studio 05:42 ZIP](https://github.com/fuloplevente1998/Native-AI-Studio/blob/2db71628c604fb361e7197a7c41b2a0ed9299cea/trainpilot-oct-28-2026-5-42-24-am.zip), 8,861,301 bytes, SHA-256 `8f91e79d604de2415ee57bd6094c453f1512a0f2b1c93caf354da31f75b6a308`; **ne használd automatikus drop-in cserére**.

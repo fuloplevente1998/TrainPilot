@@ -53,7 +53,7 @@ class NativeProgressPhotoRangeUiTest {
     private fun enterProgress() {
         scenario = fixture.launch()
         compose.waitUntil(30_000) { exists("navigation_progress") }
-        compose.onNodeWithTag("navigation_progress").performClick()
+        compose.onNodeWithTag("navigation_progress").performScrollTo().assertIsDisplayed().performClick()
         compose.waitUntil(30_000) { exists("progress_list") }
     }
 
@@ -125,6 +125,33 @@ class NativeProgressPhotoRangeUiTest {
             Thread.sleep(100)
         }
         fail("Raw screenshot missing: ${name}")
+    }
+
+    @Test fun studioMusclePeriodPillReadsStoredSetsAndKeepsOtherFiltersIndependent() {
+        runBlocking(Dispatchers.IO) {
+            seedWorkout(1, 1, emptyList())
+            seedWorkout(2, 45, emptyList())
+        }
+        enterProgress()
+        fun awaitCard() {
+            compose.onNodeWithTag("progress_list").performScrollToNode(hasTestTag("anatomical_muscle_heatmap_card"))
+            compose.waitUntil(30_000) {
+                compose.onAllNodesWithTag("progress_muscle_loading").fetchSemanticsNodes().isEmpty() &&
+                    compose.onAllNodesWithTag("muscle_chip_legs").fetchSemanticsNodes().isNotEmpty()
+            }
+        }
+        awaitCard()
+        compose.onNodeWithTag("muscle_chip_legs").performScrollTo().performClick()
+        compose.onNodeWithTag("muscle_selected_sets").performScrollTo().assertTextContains("2")
+        screenshot("studio_muscle_three_months")
+        compose.onNodeWithTag("muscle_heatmap_period_pill").performScrollTo().performClick()
+        awaitCard()
+        compose.onNodeWithTag("muscle_chip_legs").performScrollTo().performClick()
+        compose.onNodeWithTag("muscle_selected_sets").performScrollTo().assertTextContains("1")
+        screenshot("studio_muscle_month")
+        compose.onNodeWithTag("progress_list").performScrollToNode(hasTestTag("progress_volume_range_month"))
+        compose.onNodeWithTag("progress_volume_range_month").assertIsSelected()
+        assertEquals(2, runBlocking(Dispatchers.IO) { fixture.database.workoutHistoryDao().getAllWorkoutsWithDetails().size })
     }
 
     @Test fun emptyGalleryAndStrengthStatesAreDistinct() {
