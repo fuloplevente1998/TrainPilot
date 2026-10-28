@@ -679,4 +679,5 @@
     <string name="studio_volume_loading">Se încarcă graficul de volum…</string>
     <string name="studio_volume_retry">Reîncarcă graficul de volum</string>
     <string name="studio_volume_workouts">antrenamente</string>
+    <string name="studio_health_watch_sync">Ceas și sincronizare</string>
 </resources>

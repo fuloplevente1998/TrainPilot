@@ -679,4 +679,5 @@
     <string name="studio_volume_loading">Volumengrafikon betöltése…</string>
     <string name="studio_volume_retry">Grafikon újratöltése</string>
     <string name="studio_volume_workouts">edzés</string>
+    <string name="studio_health_watch_sync">Óra és szinkron</string>
 </resources>

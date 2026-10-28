@@ -62,10 +62,6 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.material3.TabRowDefaults
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -178,34 +174,11 @@ fun HealthDashboardScreen(
                 .getString(com.repforge.app.R.string.health_background_error),
             color = colors.dangerText, modifier = Modifier.testTag("health_background_error").padding(12.dp)
         )
-        // Két fül: Egészségnapló vs #111 BLE Eszközkereső
-        TabRow(
-            selectedTabIndex = if (state.activeTab == "journal") 0 else 1,
-            containerColor = colors.card,
-            contentColor = colors.text,
-            indicator = {
-                TabRowDefaults.SecondaryIndicator(
-                    modifier = Modifier.tabIndicatorOffset(it[if (state.activeTab == "journal") 0 else 1]),
-                    color = colors.accent
-                )
-            }
-        ) {
-            Tab(
-                selected = state.activeTab == "journal",
-                onClick = { viewModel.setTab("journal") },
-                text = { Text(com.repforge.app.ui.text.nativeResources(context, state.language).getString(com.repforge.app.R.string.health_history_title), fontWeight = FontWeight.Bold) }
-            )
-            Tab(
-                selected = state.activeTab == "ble",
-                onClick = { viewModel.setTab("ble") },
-                text = { Text(strings.getString(R.string.native_health_ble_tab), fontWeight = FontWeight.Bold) }
-            )
-        }
-
         if (state.activeTab == "journal") {
             HealthJournalTabContent(
                 state = state,
                 onWeightJournal = onWeightJournal,
+                onOpenBle = { viewModel.setTab("ble") },
                 onSelectProvider = { viewModel.setProvider(it, activity) },
                 onAutoOnOpen = viewModel::setAutoOnOpen,
                 onToggleHcBackground = { enable ->
@@ -233,6 +206,25 @@ fun HealthDashboardScreen(
                 }
             )
         } else {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp)
+                    .testTag("health_ble_subscreen_header"),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                TextButton(
+                    onClick = { viewModel.setTab("journal") },
+                    modifier = Modifier.testTag("health_ble_back")
+                ) {
+                    Text(strings.getString(R.string.health_history_title))
+                }
+                Text(
+                    strings.getString(R.string.native_health_ble_tab),
+                    color = colors.text,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            }
             BleDiscoveryTabContent(
                 state = state,
                 bleRepo = viewModel.bleRepo,
@@ -274,6 +266,7 @@ fun HealthJournalTabContent(
     onToday: () -> Unit,
     onOpenRecords: (String) -> Unit,
     onDailySource: (String) -> Unit,
+    onOpenBle: () -> Unit = {},
     onSync: () -> Unit = {},
     onFullSync: () -> Unit = {},
     onCancelSync: () -> Unit = {},
@@ -530,6 +523,16 @@ fun HealthJournalTabContent(
             }
         }
 
+        item(key = "health_watch_sync") {
+            HealthStudioActionRow(
+                title = strings.getString(R.string.studio_health_watch_sync),
+                subtitle = strings.getString(R.string.native_health_ble_tab),
+                iconKey = "workouts",
+                tag = "health_open_watch_sync_card",
+                onClick = onOpenBle
+            )
+        }
+
         item { Spacer(Modifier.height(80.dp)) }
     }
 }
@@ -656,8 +659,8 @@ fun BleDiscoveryTabContent(
     val strings = remember(context, state.language) { nativeResources(context, state.language) }
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize().testTag("health_ble_list").padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        modifier = Modifier.fillMaxSize().testTag("health_ble_list").padding(horizontal = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         item { Spacer(Modifier.height(8.dp)) }
 

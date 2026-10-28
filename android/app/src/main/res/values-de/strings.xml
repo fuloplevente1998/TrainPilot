@@ -679,4 +679,5 @@
     <string name="studio_volume_loading">Volumendiagramm wird geladen…</string>
     <string name="studio_volume_retry">Volumendiagramm erneut laden</string>
     <string name="studio_volume_workouts">Trainings</string>
+    <string name="studio_health_watch_sync">Uhr & Synchronisierung</string>
 </resources>

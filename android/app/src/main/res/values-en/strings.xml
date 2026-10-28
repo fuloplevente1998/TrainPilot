@@ -679,4 +679,5 @@
     <string name="studio_volume_loading">Loading volume chart…</string>
     <string name="studio_volume_retry">Retry volume chart</string>
     <string name="studio_volume_workouts">workouts</string>
+    <string name="studio_health_watch_sync">Watch & sync</string>
 </resources>
