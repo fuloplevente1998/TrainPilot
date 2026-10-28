@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="studio_progress_tab_progress">Fortschritt</string>
+    <string name="studio_progress_tab_statistics">Statistiken</string>
+    <string name="studio_progress_tab_strength">Kraft (1RM)</string>
+    <string name="studio_progress_stats_records">Persönliche Rekorde</string>
+    <string name="studio_progress_stats_cardio">Kardiostatistik</string>
+    <string name="studio_progress_pr_workouts">Trainings mit Rekord (30 Tage)</string>
+</resources>
