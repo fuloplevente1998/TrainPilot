@@ -117,6 +117,7 @@ private fun backgroundReasonResource(reason: BackgroundBlock): Int = when (reaso
 fun HealthDashboardScreen(
     navController: NavController,
     onWeightJournal: () -> Unit,
+    onWeightAdd: () -> Unit = onWeightJournal,
     onActiveWorkout: () -> Unit = {},
     initialSection: String? = null,
     onInitialSectionConsumed: () -> Unit = {},
@@ -203,6 +204,7 @@ fun HealthDashboardScreen(
                 state = state,
                 weightState = weightState,
                 onWeightJournal = onWeightJournal,
+                onWeightAdd = onWeightAdd,
                 onWeightRange = weightViewModel::setRange,
                 onWeightRetry = weightViewModel::retryReads,
                 onOpenBle = { viewModel.setTab("ble") },
@@ -275,6 +277,7 @@ fun HealthJournalTabContent(
     state: HealthDashboardUiState,
     weightState: WeightJournalUiState = WeightJournalUiState(),
     onWeightJournal: () -> Unit,
+    onWeightAdd: () -> Unit = onWeightJournal,
     onWeightRange: (String) -> Unit = {},
     onWeightRetry: () -> Unit = {},
     onSelectProvider: (String) -> Unit,
@@ -313,6 +316,7 @@ fun HealthJournalTabContent(
                 state = state,
                 weightState = weightState,
                 onWeightJournal = onWeightJournal,
+                onWeightAdd = onWeightAdd,
                 onWeightRange = onWeightRange,
                 onWeightRetry = onWeightRetry,
                 onPulseTrend = { onOpenRecords("HeartRateRecord") }
@@ -855,6 +859,7 @@ internal fun HealthSelectedDayOverview(
     state: HealthDashboardUiState,
     weightState: WeightJournalUiState,
     onWeightJournal: () -> Unit,
+    onWeightAdd: () -> Unit,
     onWeightRange: (String) -> Unit,
     onWeightRetry: () -> Unit,
     onPulseTrend: () -> Unit
@@ -1010,7 +1015,7 @@ internal fun HealthSelectedDayOverview(
                 WeightJournalOverview(
                     state = weightState,
                     onRange = onWeightRange,
-                    onAction = onWeightJournal,
+                    onAction = onWeightAdd,
                     actionLabel = R.string.weight_add,
                     onRetry = onWeightRetry
                 )

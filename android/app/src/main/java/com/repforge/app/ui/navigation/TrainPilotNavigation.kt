@@ -460,6 +460,7 @@ fun TrainPilotAppScaffold(
                     HealthDashboardScreen(
                         navController = navController,
                         onWeightJournal = { selectDestination("weight_journal") },
+                        onWeightAdd = { selectDestination("weight_journal_add") },
                         onActiveWorkout = { selectDestination("training") },
                         initialSection = healthEntrySection,
                         onInitialSectionConsumed = { healthEntrySection = null }
@@ -467,6 +468,11 @@ fun TrainPilotAppScaffold(
                 }
                 composable("weight_journal") {
                     com.repforge.app.ui.progress.WeightJournalScreen()
+                }
+                // The Health card's "+ New measurement" goes directly to the
+                // existing native editor, preserving its Room/write guards.
+                composable("weight_journal_add") {
+                    com.repforge.app.ui.progress.WeightJournalScreen(initiallyAdding = true)
                 }
                 composable("active_workout") {
                     ActiveWorkoutScreen(navController = navController, language = settings.language, launchGps = launchGps,

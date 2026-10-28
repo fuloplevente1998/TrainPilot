@@ -52,12 +52,17 @@ import java.time.LocalDate
 import java.util.Locale
 
 @Composable
-fun WeightJournalScreen(viewModel: WeightJournalViewModel = viewModel()) {
+fun WeightJournalScreen(
+    viewModel: WeightJournalViewModel = viewModel(),
+    initiallyAdding: Boolean = false
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val entries = viewModel.entries.collectAsLazyPagingItems()
     val resources = nativeResources(LocalContext.current, state.language)
     val colors = LocalTrainPilotColors.current
-    var adding by rememberSaveable { mutableStateOf(false) }
+    // Only the explicit new-measurement route opens the canonical editor
+    // immediately. The ordinary journal route still opens the list.
+    var adding by rememberSaveable { mutableStateOf(initiallyAdding) }
     // Keep the exact version the user opened, so a concurrent update cannot be silently overwritten.
     var editing by remember { mutableStateOf<BodyWeightEntryEntity?>(null) }
     var deleting by remember { mutableStateOf<BodyWeightEntryEntity?>(null) }

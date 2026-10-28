@@ -41,6 +41,15 @@ class NativeMainMenuTest {
         assertEquals("progress", NativeMainMenu.selected("progress"))
         assertEquals("health", NativeMainMenu.selected("weight_journal"))
     }
+    @Test fun directWeightAddKeepsHealthParentAndNativeJournalTitle() {
+        assertTrue("weight_journal_add" in NativeMainMenu.secondaryRoutes)
+        assertEquals("health", NativeMainMenu.selected("weight_journal_add"))
+        assertEquals("weight_journal_add", NativeMainMenu.destination("weight_journal_add", false))
+        for (lang in listOf("hu", "en", "de", "ro"))
+            assertEquals(NativeMainMenu.title("weight_journal", lang),
+                NativeMainMenu.title("weight_journal_add", lang))
+    }
+
     @Test fun settingsKeepsTheOriginTabIncludingActiveWorkoutAndNestedViews() {
         for (origin in NativeMainMenu.routes + listOf("active_workout", "calendar", "coach", "programs", "exercise_library"))
             assertEquals(NativeMainMenu.selected(origin), NativeMainMenu.selected("settings", origin))
