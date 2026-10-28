@@ -66,6 +66,7 @@ jobs:
           say('NEW_FILES',sorted(set(new)-set(old))[:70])
           say('REMOVED_FILES',sorted(set(old)-set(new))[:70])
           say('MODIFIED_KOTLIN', [p for p in changed if p.endswith(('.kt','.java'))][:100])
+          say('MODIFIED_OTHER', [p for p in changed if not p.endswith(('.kt','.java'))][:100])
           for package in ['com/example/','com/repforge/app/']:
               prefix='app/src/main/java/'+package
               n={p for p in new if p.startswith(prefix) and p.endswith(('.kt','.java'))}
@@ -128,6 +129,28 @@ jobs:
                   if match:
                       segment=source[match.start():match.start()+2600]
                       say('METHOD',name,fun,'\n',segment[:1500].replace('\r',''))
+          # Export only selected public Kotlin files, no ZIP bytecode execution.
+          import difflib
+          extracts=Path('studio_0542_selected_sources')
+          extracts.mkdir(exist_ok=True)
+          selected=[
+              'app/src/main/java/com/repforge/app/MainActivity.kt',
+              'app/src/main/java/com/repforge/app/data/migration/LegacyLocalStorageReader.kt',
+              'app/src/main/java/com/example/ui/viewmodel/TrainPilotViewModel.kt'
+          ]
+          for source_path in selected:
+              if source_path in new:
+                  short=source_path.rsplit('/',1)[-1]
+                  if 'com/example/' in source_path: short='Studio_'+short
+                  elif 'migration/' in source_path: short='Migration_'+short
+                  else: short='Native_'+short
+                  (extracts/short).write_bytes(new[source_path])
+                  if source_path in old:
+                      previous=old[source_path].decode('utf8','replace').splitlines(keepends=True)
+                      latest=new[source_path].decode('utf8','replace').splitlines(keepends=True)
+                      diff=''.join(difflib.unified_diff(previous,latest,
+                          fromfile='21:02/'+short,tofile='05:42/'+short,n=5))
+                      (extracts/('delta_'+short+'.diff')).write_text(diff,encoding='utf8')
           say('LIMITATION: static read-only comparison, no ZIP code executed, no independent native build or APK/screen visual parity implied.')
           Path('studio_0542_native_audit.txt').write_text('\n'.join(report)+'\n',encoding='utf8')
           PY
@@ -136,5 +159,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: studio-0542-native-integration-review
-          path: studio_0542_native_audit.txt
+          path: |
+            studio_0542_native_audit.txt
+            studio_0542_selected_sources/
           if-no-files-found: warn
