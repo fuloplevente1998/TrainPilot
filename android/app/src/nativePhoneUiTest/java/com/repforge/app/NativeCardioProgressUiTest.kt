@@ -33,13 +33,29 @@ class NativeCardioProgressUiTest {
     private fun hasText(text: String) =
         compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
 
+    private fun openCardioSection() {
+        compose.onNodeWithTag("progress_list")
+            .performScrollToNode(hasTestTag("progress_section_tab_1"))
+        compose.onNodeWithTag("progress_section_tab_1").performClick()
+        compose.onNodeWithTag("progress_list")
+            .performScrollToNode(hasTestTag("progress_stats_subtab_1"))
+        compose.onNodeWithTag("progress_stats_subtab_1").performClick()
+        compose.onNodeWithTag("progress_list").performScrollToNode(hasTestTag("progress_cardio"))
+        compose.waitUntil(30_000) { exists("progress_cardio_all") }
+    }
+
+    private fun openStrengthSection() {
+        compose.onNodeWithTag("progress_list")
+            .performScrollToNode(hasTestTag("progress_section_tab_2"))
+        compose.onNodeWithTag("progress_section_tab_2").performClick()
+    }
+
     private fun enterProgress() {
         scenario = fixture.launch()
         compose.waitUntil(30_000) { exists("navigation_progress") }
         compose.onNodeWithTag("navigation_progress").performClick()
         compose.waitUntil(30_000) { exists("progress_list") }
-        compose.onNodeWithTag("progress_list").performScrollToNode(hasTestTag("progress_cardio"))
-        compose.waitUntil(30_000) { exists("progress_cardio_all") }
+        openCardioSection()
     }
 
     private suspend fun insert(id: Int, activity: String, meters: Double?, reps: String) {
@@ -97,7 +113,8 @@ class NativeCardioProgressUiTest {
         compose.onNodeWithTag("progress_cardio_record_running_3000").assertExists()
         compose.onNodeWithTag("progress_cardio_all").performClick()
         compose.waitUntil(30_000) { hasText("5,00") }
-        // The existing strength/1RM card remains on the same real native screen.
+        // Strength/1RM remains reachable through the Studio section navigation.
+        openStrengthSection()
         compose.onNodeWithTag("progress_list")
             .performScrollToNode(hasTestTag("progress_exercise_choices"))
         compose.onNodeWithTag("progress_exercise_choices").assertExists()
@@ -145,8 +162,8 @@ class NativeCardioProgressUiTest {
                     runBlocking { fixture.settings.current().themeKey == theme }
             }
             compose.onNodeWithTag("navigation_back").performClick()
-            compose.onNodeWithTag("progress_list")
-                .performScrollToNode(hasTestTag("progress_cardio"))
+            compose.waitUntil(30_000) { exists("progress_list") }
+            openCardioSection()
             compose.waitUntil(30_000) { hasText(heading) && exists("progress_cardio_empty") }
             compose.onNodeWithTag("progress_cardio_all").assertExists()
         }
