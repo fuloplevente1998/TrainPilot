@@ -454,5 +454,9 @@
   {
     "file": "tests/browser/p271-webview-bottom-dock.cjs",
     "estimatedSeconds": 35
+  },
+  {
+    "file": "tests/browser/p271-webview-workout-entry.cjs",
+    "estimatedSeconds": 25
   }
 ]
