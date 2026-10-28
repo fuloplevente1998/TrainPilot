@@ -216,91 +216,94 @@ internal fun ExerciseLibraryScreen(language: String, model: ExerciseLibraryViewM
             }
         } else {
             val displayMuscles = listOf("legs", "chest", "back", "shoulders", "arms", "core", "cardio")
-            Column(
-                Modifier.fillMaxSize().padding(top = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+            // Headers scroll with results, so compact screens and the IME cannot
+            // consume the entire exercise viewport.
+            LazyColumn(
+                Modifier.fillMaxSize().padding(top = 8.dp).testTag("exercise_library_list"),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Text(
-                    strings.getString(R.string.studio_training_exercise_picker),
-                    color = colors.text,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 24.sp
-                )
-                OutlinedTextField(
-                    value = query,
-                    onValueChange = { query = it },
-                    singleLine = true,
-                    placeholder = { Text(labels.search) },
-                    leadingIcon = {
-                        Icon(Icons.Default.Search, contentDescription = null, tint = colors.muted)
-                    },
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier.fillMaxWidth().testTag("exercise_library_search")
-                )
-                Row(
-                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    FilterChip(
-                        selected = muscle.isEmpty() && !favoritesOnly,
-                        onClick = { muscle = ""; favoritesOnly = false },
-                        label = { Text(labels.all) }
-                    )
-                    for (part in displayMuscles) {
-                        FilterChip(
-                            selected = muscle == part && !favoritesOnly,
-                            onClick = { muscle = part; favoritesOnly = false },
-                            label = { Text(muscleName(part, strings)) },
-                            modifier = Modifier.testTag("exercise_library_muscle_${part}")
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(
+                            strings.getString(R.string.studio_training_exercise_picker),
+                            color = colors.text,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 24.sp
                         )
+                        OutlinedTextField(
+                            value = query,
+                            onValueChange = { query = it },
+                            singleLine = true,
+                            placeholder = { Text(labels.search) },
+                            leadingIcon = {
+                                Icon(Icons.Default.Search, contentDescription = null, tint = colors.muted)
+                            },
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier.fillMaxWidth().testTag("exercise_library_search")
+                        )
+                        Row(
+                            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            FilterChip(
+                                selected = muscle.isEmpty() && !favoritesOnly,
+                                onClick = { muscle = ""; favoritesOnly = false },
+                                label = { Text(labels.all) }
+                            )
+                            for (part in displayMuscles) {
+                                FilterChip(
+                                    selected = muscle == part && !favoritesOnly,
+                                    onClick = { muscle = part; favoritesOnly = false },
+                                    label = { Text(muscleName(part, strings)) },
+                                    modifier = Modifier.testTag("exercise_library_muscle_${part}")
+                                )
+                            }
+                            FilterChip(
+                                selected = favoritesOnly,
+                                onClick = { favoritesOnly = !favoritesOnly; if (favoritesOnly) muscle = "" },
+                                label = { Text("★ ${labels.favorites}") },
+                                modifier = Modifier.testTag("exercise_library_favorites")
+                            )
+                        }
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                "${state.rows.size} (${visible.size})",
+                                color = colors.text,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.testTag("exercise_library_count")
+                            )
+                            TextButton(
+                                onClick = {
+                                    editingExercise = null
+                                    editorOpen = true
+                                    model.clearEditOutcome()
+                                },
+                                modifier = Modifier.testTag("custom_exercise_create")
+                            ) {
+                                Text("+ ${strings.getString(R.string.native_library_29)}", color = colors.accentText)
+                            }
+                        }
+                        if (state.writeFailed) {
+                            Text(labels.saveError, color = colors.danger,
+                                modifier = Modifier.testTag("exercise_library_favorite_error"))
+                        }
                     }
-                    FilterChip(
-                        selected = favoritesOnly,
-                        onClick = { favoritesOnly = !favoritesOnly; if (favoritesOnly) muscle = "" },
-                        label = { Text("★ ${labels.favorites}") },
-                        modifier = Modifier.testTag("exercise_library_favorites")
-                    )
-                }
-                Row(
-                    Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        "${state.rows.size} (${visible.size})",
-                        color = colors.text,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.testTag("exercise_library_count")
-                    )
-                    TextButton(
-                        onClick = {
-                            editingExercise = null
-                            editorOpen = true
-                            model.clearEditOutcome()
-                        },
-                        modifier = Modifier.testTag("custom_exercise_create")
-                    ) {
-                        Text("+ ${strings.getString(R.string.native_library_29)}", color = colors.accentText)
-                    }
-                }
-                if (state.writeFailed) {
-                    Text(labels.saveError, color = colors.danger,
-                        modifier = Modifier.testTag("exercise_library_favorite_error"))
                 }
                 if (visible.isEmpty()) {
-                    Text(labels.empty, color = colors.muted)
+                    item { Text(labels.empty, color = colors.muted) }
                 } else {
-                    LazyColumn(
-                        Modifier.weight(1f).testTag("exercise_library_list"),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        items(visible, key = { it.id }) { ex ->
-                            val demo = remember(ex) { NativeExerciseDemo.resolve(ex) }
-                            Card(
-                                shape = RoundedCornerShape(18.dp),
-                                colors = CardDefaults.cardColors(containerColor = colors.card),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
-                            ) {
+                    items(visible, key = { it.id }) { ex ->
+                        val demo = remember(ex) { NativeExerciseDemo.resolve(ex) }
+                        Card(
+                            shape = RoundedCornerShape(18.dp),
+                            colors = CardDefaults.cardColors(containerColor = colors.card),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
+                        ) {
+                            Column {
                                 Row(
                                     Modifier.fillMaxWidth().padding(12.dp),
                                     verticalAlignment = Alignment.CenterVertically
@@ -366,6 +369,12 @@ internal fun ExerciseLibraryScreen(language: String, model: ExerciseLibraryViewM
                                             maxLines = 2
                                         )
                                     }
+                                    Icon(Icons.Default.ChevronRight, contentDescription = null,
+                                        tint = colors.muted, modifier = Modifier.size(20.dp))
+                                }
+                                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+                                    horizontalArrangement = Arrangement.End,
+                                    verticalAlignment = Alignment.CenterVertically) {
                                     if (demo?.kind == NativeExerciseDemo.Kind.VIDEO) {
                                         Surface(
                                             shape = RoundedCornerShape(9.dp),
@@ -396,14 +405,12 @@ internal fun ExerciseLibraryScreen(language: String, model: ExerciseLibraryViewM
                                         Text(if (ex.id in state.favorites) "★" else "☆",
                                             color = colors.accentText)
                                     }
-                                    Icon(Icons.Default.ChevronRight, contentDescription = null,
-                                        tint = colors.muted, modifier = Modifier.size(20.dp))
                                 }
                             }
                         }
-                        item { Spacer(Modifier.height(80.dp)) }
                     }
                 }
+                item { Spacer(Modifier.height(80.dp)) }
             }
         }
     }

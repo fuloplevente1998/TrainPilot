@@ -178,12 +178,17 @@ def main():
         for filename, selector, mode in invocations:
             if mode:
                 prepare_gps_permissions(mode)
+            print(f"Phone UI: starting {filename}", flush=True)
+            heartbeat = time.monotonic()
             with (output / filename).open("wb") as log:
                 process = subprocess.Popen(["adb", "shell", "am", "instrument", "-w", "-r", *selector,
                                             "com.repforge.app.test/androidx.test.runner.AndroidJUnitRunner"],
                                            stdout=log, stderr=subprocess.STDOUT)
                 deadline = time.monotonic() + args.timeout
                 while process.poll() is None:
+                    if time.monotonic() - heartbeat >= 30:
+                        print(f"Phone UI: {filename} running; {len(manifest['screenshots'])} screenshots captured", flush=True)
+                        heartbeat = time.monotonic()
                     if time.monotonic() > deadline:
                         raise TimeoutError("Native phone instrumentation exceeded deadline")
                     raw = adb("shell", "cat", "/data/local/tmp/trainpilot-shot-request", check=False).decode().strip()
@@ -224,6 +229,7 @@ def main():
                     adb("logcat", "-d", "-v", "brief", "-s", "NativeModeApproval:*", "NativeLibraryEdit:*",
                         "NativeNavigation:*", "NativeIntervalPanel:*", check=False, timeout=30))
             results.append(process.returncode == 0 and valid)
+            print(f"Phone UI: {filename} {'PASS' if results[-1] else 'FAIL'}", flush=True)
         if not all(results) or not seen:
             raise RuntimeError("Native phone UI failed or produced no screenshots; inspect raw artifacts")
         manifest["result"] = "success"

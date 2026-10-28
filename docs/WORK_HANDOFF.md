@@ -1,5 +1,8 @@
 # TrainPilot – aktuális átadás
 
+**Current PR270 entry: [active checkpoint](PR270_ACTIVE_CHECKPOINT.md).**
+The CI snapshots below are historical.
+
 ## Aktuális CI-izolációs javítás – 2026-10-28
 
 PR #270 **DRAFT**, ág `feat/studio-ui-topnav-trial-20261027`.

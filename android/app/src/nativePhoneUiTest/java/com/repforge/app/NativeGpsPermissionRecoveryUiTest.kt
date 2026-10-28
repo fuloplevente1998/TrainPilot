@@ -124,7 +124,8 @@ class NativeGpsPermissionRecoveryUiTest {
     }
 
     private fun waitDialog() {
-        compose.waitUntil(15_000) { compose.onAllNodesWithTag("gps_recovery_dialog").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("gps_recovery_dialog")
+            .fetchSemanticsNodes(atLeastOneRootRequired = false).isNotEmpty() }
     }
 
     @Test fun approximateGrantOpensAppPermissionRouteAndBackDoesNotStartMeasurement() {

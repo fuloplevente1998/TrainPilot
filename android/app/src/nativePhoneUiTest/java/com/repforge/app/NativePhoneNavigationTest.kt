@@ -1392,7 +1392,9 @@ class NativePhoneNavigationTest {
         launch(); tab("training")
         compose.onNodeWithTag("training_open_exercises").performScrollTo().assertIsDisplayed().performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("custom_exercise_create").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("custom_exercise_create").performClick()
+        compose.onNodeWithTag("exercise_library_list")
+            .performScrollToNode(hasTestTag("custom_exercise_create"))
+        compose.onNodeWithTag("custom_exercise_create").assertIsDisplayed().performClick()
         compose.onNodeWithTag("custom_exercise_name").performTextInput("Saját UI próba")
         compose.onNodeWithTag("custom_exercise_save").performClick()
         val db = TrainPilotDatabase.getInstance(context)
@@ -1435,7 +1437,9 @@ class NativePhoneNavigationTest {
         launch(); tab("training")
         compose.onNodeWithTag("training_open_exercises").performScrollTo().assertIsDisplayed().performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("custom_exercise_create").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("custom_exercise_create").performClick()
+        compose.onNodeWithTag("exercise_library_list")
+            .performScrollToNode(hasTestTag("custom_exercise_create"))
+        compose.onNodeWithTag("custom_exercise_create").assertIsDisplayed().performClick()
         compose.onNodeWithTag("custom_exercise_name").performTextInput("Rossz videó")
         compose.onNodeWithTag("custom_exercise_video").performTextInput("javascript:alert(1)")
         compose.onNodeWithTag("custom_exercise_save").performClick()
@@ -1452,9 +1456,6 @@ class NativePhoneNavigationTest {
         compose.onNodeWithTag("exercise_library_count").assertTextContains("106", substring = true)
         val squatName = com.repforge.app.data.db.NativeBuiltinCatalog.exercises.first { it.id == "db-squat" }.nameHu
         compose.onNodeWithTag("exercise_library_search").performTextInput(squatName)
-        compose.waitUntil(15_000) {
-            compose.onAllNodesWithTag("exercise_library_row_db-squat").fetchSemanticsNodes().isNotEmpty()
-        }
         compose.onNodeWithTag("exercise_library_list")
             .performScrollToNode(hasTestTag("exercise_library_row_db-squat"))
         // The whole card can exceed the compact viewport. Tap its fully visible
@@ -1479,7 +1480,9 @@ class NativePhoneNavigationTest {
         compose.onNodeWithTag("training_open_exercises").performScrollTo().assertIsDisplayed().performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("exercise_library_search").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("exercise_library_search").performTextInput("Futás")
-        compose.onNodeWithTag("exercise_library_row_running").performClick()
+        compose.onNodeWithTag("exercise_library_list")
+            .performScrollToNode(hasTestTag("exercise_library_row_running"))
+        compose.onNodeWithTag("exercise_library_row_running").assertIsDisplayed().performClick()
         compose.onNodeWithTag("exercise_library_unverified").assertExists()
         compose.onNodeWithTag("exercise_library_search_video").assertExists()
         compose.onNodeWithTag("exercise_library_video").assertDoesNotExist()
