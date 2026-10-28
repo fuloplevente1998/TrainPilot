@@ -1,5 +1,16 @@
 # TrainPilot – Studio UI folytatási pont
 
+## 2026-10-28: új 05:42 AI Studio export audit
+
+Forrás: Native-AI-Studio@2db71628, ZIP SHA256
+`8f91e79d604de2415ee57bd6094c453f1512a0f2b1c93caf354da31f75b6a308`, CRC PASS.
+[Részletes audit](reviews/AISTUDIO_0542_NATIVE_INTEGRATION_AUDIT.md).
+A 21:02-höz képest 4 fájl változott, a képernyők byteazonosak.
+Migrációs timeout/hibatovábbadás és readiness/retry javítva a ZIP-ben;
+settings/Room hívások hozzáadva, de fake üres edzés mentése, +120 Health lépés,
+nem nyugtázott Wear-átadás és kanonikus repositoryt megkerülő írások maradtak.
+Ne importáld a ZIP adapterét egészben. Ez statikus audit, appforrás/CI változatlan.
+
 ## 2026-10-28: márkajelzés zárolása – eredeti arany súlyzó
 
 - **Felhasználói döntés (felülírja a Studio hegylogóját):** a TrainPilot fejlécében a **korábbi eredeti arany súlyzó** szerepel, **pontosan az indítóikon saját grafikájából**. Ez az anatómiai izomábra mellett a 18:49-es Studio-vizuál egyetlen további kifejezetten jóváhagyott kivétele. A hegycsúcsos Studio-logó nem maradhat alkalmazásbeli márkajelzésként.
