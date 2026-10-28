@@ -2536,9 +2536,9 @@
   function selectedKey(){
     if (typeof state==='undefined' || !state) return 'home';
     const tab=state.tab;
-    if (tab==='health') return 'health';
+    if (tab==='health'||tab==='weight') return 'health';
     if (tab==='history') return state.tp177JournalView==='progress'?'progress':'log';
-    if (tab==='plan'||tab==='workout') return 'workout';
+    if (tab==='plan'||tab==='workout'||tab==='programs') return 'workout';
     if (tab==='stats') return 'log';
     return 'home';
   }
