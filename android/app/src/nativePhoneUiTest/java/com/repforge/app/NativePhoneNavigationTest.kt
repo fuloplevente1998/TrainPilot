@@ -109,6 +109,22 @@ class NativePhoneNavigationTest {
         }
         fail("Host did not capture raw adb screenshot: $name")
     }
+    @Test fun studioJournalMonthSelectorFiltersRealPagedHistoryAndReturnsToAllMonths() {
+        launch()
+        tab("journal")
+        compose.onNodeWithTag("journal_search").assertExists()
+        compose.onNodeWithTag("journal_month").performClick()
+        compose.onNodeWithTag("journal_picker_all").assertExists()
+        val current = java.time.YearMonth.now().toString()
+        compose.onNodeWithTag("journal_picker_$current").performClick()
+        compose.onNodeWithTag("journal_month").assertExists()
+        screenshot("studio_journal_month_selected", theme = "graphite_gold")
+        compose.onNodeWithTag("journal_month").performClick()
+        compose.onNodeWithTag("journal_picker_all").performClick()
+        compose.onNodeWithTag("journal_month").assertExists()
+        screenshot("studio_journal_all_months", theme = "graphite_gold")
+    }
+
     @Test fun coldStartRecoveryRequiresExplicitResumeBeforeOpeningTheApp() {
         val token = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
         val dir = java.io.File(context.noBackupFilesDir, "archive_transactions/$token").apply { mkdirs() }
