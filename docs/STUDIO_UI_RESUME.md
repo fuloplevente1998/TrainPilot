@@ -1,5 +1,15 @@
 # TrainPilot – Studio UI folytatási pont
 
+## 2026-10-28: 05:42 Native-AI-Studio ZIP ellenőrzés
+
+- Új user-source: külön [Native-AI-Studio 05:42 ZIP](https://github.com/fuloplevente1998/Native-AI-Studio/blob/2db71628c604fb361e7197a7c41b2a0ed9299cea/trainpilot-oct-28-2026-5-42-24-am.zip), 8,861,301 bytes, SHA-256 `8f91e79d604de2415ee57bd6094c453f1512a0f2b1c93caf354da31f75b6a308`; **ne használd automatikus drop-in cserére**.
+- [Pontos PR270 audit](docs/ai-studio/PR270_0542_NATIVE_AI_STUDIO_REVIEW.md), [külön, csak olvasó GitHub Actions run #40634881569](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40634881569) PASS (CRC és source compare; *nem* build). Artifact tartalmaz `05:42 ← 21:02` valós 3 Kotlin diffet. A ZIP 21:02-höz képest **4 módosított fájl**: Studio TrainPilotViewModel, natív MainActivity, LegacyLocalStorageReader és AISTUDIO_REFINEMENT_REPORT.md. 0 hozzáadott / törölt fájl.
+- **Jó:** migrációs WebView timeout 60 sec, hiba nem válik `emptyMap()`-pé, migrationReady/retry megjelenik, native environment bind, Room workout/weight read, egyes DataStore writes.
+- **Rossz / nem kész:** az edzésmentés fix 38 perc / 1280 kg / PR / üres exercise-lista JSON-t küld a migrátorba és sikernek jelzi az aszinkron DB-írás előtt; Health `+120` fake step, Wear ownership fake toggle, settings mentési hibák elnyelése és hard-coded timer defaults, real saved workouts fake 30/15 work/rest címkékkel és DEMO elemekkel keverve, sandbox `applicationId`.
+- A **18:49 Studio export marad az elfogadott vizuál**; a kivétel a **korábbi eredeti arany súlyzó indítóikon** és main natív izomábra. PR270 natív workout engine + Room + Health/Wear + migráció/adatcsere/mentés az autoritatív állapot; az AI Studio 05:42 csak kipróbált integrációs minták forrása. Draft PR, main nem érintett.
+- Következő: *külön* Studio ViewModel DEMO írások helyett a PR270 végleges natív műveletek bekötése; valódi APK build, migrációs és visszaolvasási teszt, exact-SHA emulátoros képek.
+
+
 ## 2026-10-28: új 05:42 AI Studio export audit
 
 Forrás: Native-AI-Studio@2db71628, ZIP SHA256
