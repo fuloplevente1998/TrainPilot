@@ -1,0 +1,138 @@
+name: Studio ZIP Integration Audit
+on:
+  push:
+    branches:
+      - feat/studio-ui-topnav-trial-20261027
+    paths:
+      - .github/workflows/studio-zip-integration-audit.yml
+      - docs/ai-studio/trainpilot-oct-27-2026-9-02-00-pm.zip
+      - docs/ai-studio/trainpilot-oct-27-2026-6-49-09-pm.zip
+permissions:
+  contents: read
+jobs:
+  inspect:
+    name: Audit 21-02 Studio merge vs 18-49 reference and native PR
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Inspect source, launcher, binding and design parity
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          from hashlib import sha256
+          import json, re, xml.etree.ElementTree as ET
+          root=Path('.')
+          old=root/'docs/ai-studio/trainpilot-oct-27-2026-6-49-09-pm.zip'
+          new=root/'docs/ai-studio/trainpilot-oct-27-2026-9-02-00-pm.zip'
+          report=[]
+          def out(*items): report.append(' '.join(map(str,items)))
+          def files(z): return {x.filename for x in z.infolist() if not x.is_dir()}
+          def nameset(ns, prefix): return {n for n in ns if n.startswith(prefix) and n.endswith('.kt')}
+          def digest(v): return sha256(v).hexdigest()[:16]
+          def excerpt(z, path, maxlen=1600):
+              if path not in z.namelist(): return '<missing>'
+              s=z.read(path).decode('utf-8','replace')
+              return s[:maxlen].replace('\\r','')
+          with ZipFile(old) as o, ZipFile(new) as n:
+              a=files(o); b=files(n)
+              pref='app/src/main/java/'
+              studio='app/src/main/java/com/example/'
+              native='app/src/main/java/com/repforge/app/'
+              oldstudio=nameset(a,studio); newstudio=nameset(b,studio)
+              newnative=nameset(b,native)
+              out('=== GITHUB ARCHIVED ZIP COMPARISON ===')
+              for label,path,ns in [('APPROVED 18:49',old,a),('NEW 21:02',new,b)]:
+                  out(label,'bytes=',path.stat().st_size,'sha256=',sha256(path.read_bytes()).hexdigest(),
+                      'entries=',len(ns),'Kotlin=',sum(q.endswith('.kt') for q in ns))
+              out('NEW FILES vs approved=',len(b-a),'REMOVED=',len(a-b))
+              out('STUDIO original Kotlin=',len(oldstudio),'new Studio Kotlin=',len(newstudio),
+                  'new native Kotlin=',len(newnative))
+              common=oldstudio & newstudio
+              same=sorted(p for p in common if o.read(p)==n.read(p))
+              changed=sorted(common-set(same))
+              out('Original Studio Kotlin byte-for-byte unchanged:',len(same),'of',len(common))
+              out('Changed original Studio Kotlin:',json.dumps(changed,ensure_ascii=False))
+              out('Missing original Studio Kotlin:',json.dumps(sorted(oldstudio-newstudio),ensure_ascii=False))
+              out('Added new Studio Kotlin:',json.dumps(sorted(newstudio-oldstudio),ensure_ascii=False))
+              out('New native Kotlin files (sample):',json.dumps(sorted(newnative)[:27],ensure_ascii=False))
+              out('=== APP MANIFEST AND ENTRYPOINT ===')
+              manifest='app/src/main/AndroidManifest.xml'
+              if manifest in b:
+                  m=n.read(manifest).decode('utf-8','replace')
+                  out('new manifest:',m[:2400])
+                  try:
+                      tree=ET.fromstring(m)
+                      ns='{http://schemas.android.com/apk/res/android}'
+                      for act in tree.findall('.//activity'):
+                          for intent in act.findall('./intent-filter'):
+                              acts=[x.attrib.get(ns+'name') for x in intent.findall('./action')]
+                              cats=[x.attrib.get(ns+'name') for x in intent.findall('./category')]
+                              if 'android.intent.action.MAIN' in acts:
+                                  out('REAL LAUNCHER:',act.attrib.get(ns+'name'),
+                                      'launcherCategory=', 'android.intent.category.LAUNCHER' in cats)
+                  except Exception as e: out('MANIFEST PARSE ERROR:',str(e))
+              for source in ('app/src/main/java/com/example/MainActivity.kt',
+                             'app/src/main/java/com/repforge/app/MainActivity.kt'):
+                  if source in b:
+                      code=n.read(source).decode('utf-8','replace')
+                      out('ENTRY SOURCE',source,'bytes=',len(code),'sha=',digest(code.encode()),
+                          'Studio imports:',re.findall(r'^import com\\.example[^\\n]*',code,re.M)[:15])
+                      out('SOURCE EXCERPT',source,code[:900].replace('\\n',' '))
+              gradle='app/build.gradle.kts'
+              if gradle in b:
+                  g=n.read(gradle).decode('utf-8','replace')
+                  for field in ('namespace','applicationId','versionCode','versionName'):
+                      out('BUILD',field,re.findall(r'\\b'+field+r'\\s*=\\s*[^\\n]+',g)[:4])
+              out('=== IS NATIVE UI WIRED TO STUDIO? ===')
+              direct=[]
+              for path in sorted(newnative):
+                  code=n.read(path).decode('utf-8','replace')
+                  imports=re.findall(r'^import\\s+com\\.example[^\\n]*',code,re.M)
+                  if imports: direct.append((path,imports[:5]))
+              out('Native Kotlin files importing com.example=',len(direct),json.dumps(direct[:30],ensure_ascii=False))
+              for word in ('TrainPilotGlobalTopHeaderAndNav','ProgressTabScreen','LogTabScreen','HealthTabScreen','HomeScreen','TrainPilotPalette'):
+                  locations=[]
+                  for path in sorted(newnative):
+                      code=n.read(path).decode('utf-8','replace')
+                      if word in code: locations.append(path)
+                  out('Native source reference',word,'count=',len(locations),'paths=',json.dumps(locations[:12]))
+              out('=== NATIVE EXPORTED CODE vs PR #270 WORKTREE ===')
+              parity=[]
+              for path in newnative:
+                  local=root/'android'/path
+                  if local.is_file():
+                      zipdata=n.read(path)
+                      localdata=local.read_bytes()
+                      parity.append((path,zipdata==localdata,digest(zipdata),digest(localdata)))
+              out('Identical native Kotlin files=',sum(p[1] for p in parity),'of worktree matches=',len(parity))
+              out('Different native UI source examples:',json.dumps([p for p in sorted(parity) if not p[1] and '/ui/' in p[0]][:30],ensure_ascii=False))
+              out('ZIP-only native Kotlin files=',len(newnative)-len(parity))
+              out('=== REFERENCE SCREEN SIGNATURES ===')
+              for tail in ('ui/screens/HomeScreen.kt','ui/screens/WorkoutAndPlanningScreens.kt',
+                           'ui/screens/LogAndProgressScreens.kt',
+                           'ui/screens/HealthCoachAndSettingsScreens.kt',
+                           'ui/components/TrainPilotCommonComponents.kt',
+                           'ui/theme/TrainPilotPalettes.kt'):
+                  file=studio+tail
+                  if file in b:
+                      v=n.read(file).decode('utf-8','replace')
+                      fns=re.findall(r'^\\s*(?:internal\\s+|private\\s+)?fun\\s+(\\w+)\\s*\\(',v,re.M)
+                      out('STUDIO',tail,'functions=',len(fns),'names=',json.dumps(fns[:70],ensure_ascii=False))
+              out('=== VERDICT LIMITATIONS ===')
+              out('Static source audit only. Build runtime fidelity and screenshots MUST be independently verified.')
+              out('Approved design reference remains 18:49 regardless of whether 21:02 is an improved integration.')
+          Path('studio_zip_audit_report.txt').write_text('\\n'.join(report)+'\\n',encoding='utf-8')
+          print('\\n'.join(report))
+          PY
+      - name: Store full audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: studio-2102-vs-1849-source-audit
+          path: studio_zip_audit_report.txt
+          if-no-files-found: warn
