@@ -36,6 +36,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -252,7 +254,10 @@ private fun JournalSummaryCard(row: JournalWorkoutSummary, text: Resources, loca
             Column(horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (row.hasPr226) {
-                    Surface(shape = RoundedCornerShape(8.dp), color = colors.accent) {
+                    Surface(modifier = Modifier.testTag("journal_pr_${row.id}")
+                        .semantics {
+                            contentDescription = text.getString(R.string.journal_pr)
+                        }, shape = RoundedCornerShape(8.dp), color = colors.accent) {
                         Text("PR", style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold, color = colors.onAccent,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
