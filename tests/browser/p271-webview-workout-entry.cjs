@@ -56,6 +56,35 @@ const server=http.createServer((req,res)=>{
     assert.ok(plan.frameTop>plan.quickTop,width+'/'+theme+': mockup quick card precedes active program');
     assert.ok(plan.overflow<=1,width+'/'+theme+': no horizontal overflow '+JSON.stringify(plan));
 
+
+    // P2c: both Studio entry cards call the real panel APIs. No fake GPS
+    // initiation, no second workout engine and no lost existing data.
+    const launchers=page.locator('main.tp152-plan #tp271WorkoutLaunchers button');
+    await page.waitForFunction(()=>document.querySelectorAll('#tp271WorkoutLaunchers button').length===2);
+    assert.equal(await launchers.count(),2,width+'/'+theme+': two actual Workout shortcuts');
+    await page.locator('#tp271WorkoutLaunchers button[data-tp271-launcher="library"]').click();
+    await page.waitForSelector('#tp155R4PanelHost[data-panel="exercises"] .tp271-muscle-chips');
+    const muscleChips=page.locator('#tp155R4PanelHost[data-panel="exercises"] .tp271-muscle-chip');
+    assert.ok(await muscleChips.count()>=6,width+'/'+theme+': real muscle options exposed as chips');
+    assert.equal(await page.locator('#tp155R4PanelHost[data-panel="exercises"] #libraryMuscle').count(),1,width+'/'+theme+': native muscle select preserved');
+    await page.locator('#tp155R4PanelHost[data-panel="exercises"] button[data-tp271-muscle="legs"]').click();
+    await page.waitForFunction(()=>document.querySelector('#tp155R4PanelHost[data-panel="exercises"] #libraryMuscle')?.value==='legs');
+    assert.equal(await page.evaluate(()=>state.libraryFilter.group),'legs',width+'/'+theme+': original catalogue filter executes');
+    assert.equal(await page.locator('#tp155R4PanelHost[data-panel="exercises"] button[data-tp271-muscle="legs"][aria-pressed="true"]').count(),1,width+'/'+theme+': chip mirrors real selected group');
+    assert.ok(await page.locator('#tp155R4PanelHost[data-panel="exercises"] #libraryResults .tp-library-card').count()>0,width+'/'+theme+': real filtered catalogue');
+    await page.locator('#tp155R4PanelHost[data-panel="exercises"] button[data-tp271-muscle="all"]').click();
+    await page.waitForFunction(()=>state.libraryFilter.group==='all');
+    await page.evaluate(()=>window.tp155R4ClosePanel(false));
+    await page.waitForFunction(()=>!document.querySelector('#tp155R4PanelHost'));
+    await page.locator('#tp271WorkoutLaunchers button[data-tp271-launcher="outdoor"]').click();
+    await page.waitForSelector('#tp155R4PanelHost[data-panel="quick"] .tp271-muscle-chips');
+    assert.equal(await page.locator('#tp155R4PanelHost[data-panel="quick"] #tp155QuickQuery').inputValue(),'running',width+'/'+theme+': outdoor entry prefilters real running exercise');
+    assert.equal(await page.locator('#tp155R4PanelHost[data-panel="quick"] .tp152-quick-row[data-exercise-id="running"]').count(),1,width+'/'+theme+': real distance activity offered');
+    assert.equal(await page.evaluate(()=>!!state.session),false,width+'/'+theme+': entering Outdoor does not auto-start workout or GPS');
+    assert.equal(await page.locator('#tp155R4PanelHost[data-panel="quick"] button[data-tp271-muscle="all"][aria-pressed="true"]').count(),1,width+'/'+theme+': quick muscle shortcuts share real filter');
+    await page.evaluate(()=>window.tp155R4ClosePanel(false));
+    await page.waitForFunction(()=>!document.querySelector('#tp155R4PanelHost'));
+
     const first=page.locator('main.tp152-plan .tp152-day').first();
     await first.locator(':scope > summary').click();
     assert.equal(await first.locator('.tp152-start-day').isVisible(),true,width+'/'+theme+': real day start CTA');
@@ -142,6 +171,6 @@ const server=http.createServer((req,res)=>{
    assert.deepEqual(errors,[],width+': no JavaScript errors');
    await page.close();
   }
-  console.log('PASS PR271 P2b: preview Workout and exercise library mockup, genuine quick-search panel, nested program days/editor, original engine, 320/393px & basic/neon themes');
+  console.log('PASS PR271 P2c: preview Workout, outdoor entry and real muscle-filter chips, genuine quick-search panel, nested program days/editor, original engine, 320/393px & basic/neon themes');
  }finally{await browser?.close();await new Promise(ok=>server.close(ok))}
 })().catch(err=>{console.error(err);process.exitCode=1});
