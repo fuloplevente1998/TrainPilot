@@ -128,6 +128,26 @@ jobs:
               out('Static source audit only. Build runtime fidelity and screenshots MUST be independently verified.')
               out('Approved design reference remains 18:49 regardless of whether 21:02 is an improved integration.')
           Path('studio_zip_audit_report.txt').write_text('\n'.join(report)+'\n',encoding='utf-8')
+          # Pull out a small, precisely-scoped set of sources for human review,
+          # without exporting private user data or the entire native app ZIP.
+          subset=Path('studio_zip_audit_sources')
+          subset.mkdir(exist_ok=True)
+          wanted=(
+              'app/src/main/java/com/repforge/app/MainActivity.kt',
+              'app/src/main/java/com/example/MainActivity.kt',
+              'app/src/main/java/com/example/ui/viewmodel/TrainPilotViewModel.kt',
+              'app/src/main/java/com/example/data/DemoDataProvider.kt',
+              'app/src/main/java/com/example/ui/screens/HomeScreen.kt',
+              'app/src/main/java/com/example/ui/screens/LogAndProgressScreens.kt',
+              'app/src/main/java/com/example/ui/theme/TrainPilotPalettes.kt',
+              'app/src/main/java/com/example/ui/theme/Type.kt',
+              'app/src/main/AndroidManifest.xml',
+              'app/build.gradle.kts'
+          )
+          with ZipFile(new) as check:
+              for source in wanted:
+                  if source in check.namelist():
+                      (subset/source.replace('/','_')).write_bytes(check.read(source))
           print('\n'.join(report))
           PY
       - name: Store full audit evidence
@@ -135,5 +155,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: studio-2102-vs-1849-source-audit
-          path: studio_zip_audit_report.txt
+          path: |
+            studio_zip_audit_report.txt
+            studio_zip_audit_sources/
           if-no-files-found: warn
