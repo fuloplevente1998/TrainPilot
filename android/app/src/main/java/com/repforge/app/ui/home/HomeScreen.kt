@@ -126,9 +126,9 @@ fun HomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
-            .padding(horizontal = 16.dp)
-            .padding(top = 8.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(horizontal = 12.dp)
+            .padding(top = 6.dp, bottom = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         if (state.hasImportedDraft) Button(onClick = onResumeDraft, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
             Text(strings.getString(R.string.native_home_resume_draft))
@@ -147,10 +147,10 @@ fun HomeScreen(
             }
         }
         Text(strings.getString(R.string.studio_home_greeting),
-            style = MaterialTheme.typography.headlineLarge, color = colors.text,
+            style = MaterialTheme.typography.headlineMedium, color = colors.text,
             modifier = Modifier.testTag("home_studio_greeting"))
         Text(strings.getString(if (hasActiveSession) R.string.studio_home_active_intro else R.string.studio_home_overview),
-            style = MaterialTheme.typography.bodyLarge, color = colors.muted)
+            style = MaterialTheme.typography.bodyMedium, color = colors.muted)
         TrainPilotSectionSurface(Modifier.fillMaxWidth().testTag("home_personal_planner")) {
             Text(strings.getString(R.string.studio_home_planner_title), style = MaterialTheme.typography.titleMedium)
             Text(strings.getString(R.string.studio_home_planner_info), style = MaterialTheme.typography.bodySmall,
@@ -167,13 +167,13 @@ fun HomeScreen(
                 .clickable(enabled = !busy, role = Role.Button) { onPrograms() },
                 verticalAlignment = Alignment.CenterVertically) {
                 Surface(
-                    modifier = Modifier.size(56.dp)
-                        .border(1.dp, colors.accent.copy(alpha = .3f), RoundedCornerShape(14.dp)),
-                    shape = RoundedCornerShape(14.dp), color = colors.accent.copy(alpha = .14f)
+                    modifier = Modifier.size(48.dp)
+                        .border(1.dp, colors.accent.copy(alpha = .3f), RoundedCornerShape(13.dp)),
+                    shape = RoundedCornerShape(13.dp), color = colors.accent.copy(alpha = .14f)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(Icons.Default.FitnessCenter, contentDescription = null,
-                            modifier = Modifier.size(28.dp), tint = colors.accentText)
+                            modifier = Modifier.size(24.dp), tint = colors.accentText)
                     }
                 }
                 Spacer(Modifier.width(14.dp))
@@ -196,7 +196,7 @@ fun HomeScreen(
                     } ?: strings.getString(if (state.loading)
                         R.string.home_state_loading else R.string.home_state_no_target),
                         Modifier.testTag("home_day_name"), color = colors.text,
-                        style = MaterialTheme.typography.titleLarge.copy(fontSize = 21.sp))
+                        style = MaterialTheme.typography.titleLarge.copy(fontSize = 19.sp))
                     Text(programName, Modifier.testTag("home_program_name"),
                         color = colors.muted, style = MaterialTheme.typography.bodyMedium)
                     if (!hasActiveSession && target != null)
@@ -212,9 +212,9 @@ fun HomeScreen(
                     else target?.let { onStartWorkout(it.programId, it.dayId, it.scheduleId) }
                 },
                 enabled = !busy && (hasActiveSession || (!state.loading && target != null)),
-                modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
                     .testTag("home_start_workout"),
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = colors.accent,
                     contentColor = colors.onAccent)
             ) {
@@ -298,12 +298,12 @@ private fun StudioHomeNavigationRow(
 ) {
     val colors = LocalTrainPilotColors.current
     Surface(modifier.heightIn(min = 48.dp)
-        .border(1.dp, colors.line, RoundedCornerShape(18.dp))
+        .border(1.dp, colors.line, RoundedCornerShape(16.dp))
         .clickable(enabled = enabled, role = Role.Button) { onClick() },
-        shape = RoundedCornerShape(18.dp), color = colors.card) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+        shape = RoundedCornerShape(16.dp), color = colors.card) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 11.dp),
             verticalAlignment = Alignment.CenterVertically) {
-            Surface(Modifier.size(44.dp), shape = RoundedCornerShape(12.dp),
+            Surface(Modifier.size(40.dp), shape = RoundedCornerShape(11.dp),
                 color = colors.card2) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(icon, contentDescription = null, tint = colors.accentText,
@@ -317,7 +317,7 @@ private fun StudioHomeNavigationRow(
             }
             if (connected != null) Box(Modifier.size(14.dp).clip(CircleShape)
                 .background(if (connected) colors.success else colors.muted))
-            else Icon(Icons.Default.ChevronRight, contentDescription = null, tint = colors.muted)
+            else Icon(Icons.Default.ChevronRight, contentDescription = null, tint = colors.muted, modifier = Modifier.size(20.dp))
         }
     }
 }

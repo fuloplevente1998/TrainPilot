@@ -242,6 +242,7 @@ class NativePhoneNavigationTest {
     }
     @Test fun progressSelectorCanReachExercisesBeyondOldEightItemLimit() {
         launch(); tab("progress")
+        compose.onNodeWithTag("progress_section_tab_2").performClick()
         val target = com.repforge.app.data.db.NativeBuiltinCatalog.exercises.last()
         compose.onNodeWithTag("progress_list").performScrollToNode(hasTestTag("progress_exercise_choices"))
         compose.waitUntil(15000) {

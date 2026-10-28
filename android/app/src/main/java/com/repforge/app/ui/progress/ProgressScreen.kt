@@ -96,6 +96,9 @@ fun ProgressScreen(
     val context = LocalContext.current
     val strings = remember(context, state.language) { nativeResources(context, state.language) }
     val lifecycleOwner = LocalLifecycleOwner.current
+    // Presentation-only Studio section state. Native filters and query state stay in the ViewModel.
+    val studioSection = remember { mutableIntStateOf(0) }
+    val statisticsSection = remember { mutableIntStateOf(0) }
 
     // A Room write is not required for a new day/week or an OS time-zone
     // change. ON_RESUME also catches returning from a backgrounded app or
@@ -140,9 +143,9 @@ fun ProgressScreen(
     }
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp).testTag("progress_list"),
+        modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp).testTag("progress_list"),
         state = rememberLazyListState(),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item { Spacer(Modifier.height(8.dp)) }
         if (state.loading) item {
@@ -155,6 +158,12 @@ fun ProgressScreen(
             }
         }
 
+        item(key = "progress_studio_sections") {
+            StudioProgressTabs(studioSection.intValue, state.language) { studioSection.intValue = it }
+        }
+
+        when (studioSection.intValue) {
+            0 -> {
         // Original Studio 2x2 time-range selector and tappable volume bars,
         // driven entirely by persisted, completed native workout history.
         item(key = "progress_volume_chart") {
@@ -175,6 +184,31 @@ fun ProgressScreen(
             NativeStudioMuscleCard(state, viewModel::selectMuscleRange, viewModel::retryMuscle)
         }
 
+            }
+            1 -> {
+                item(key = "progress_statistics_sections") {
+                    StudioProgressStatisticsTabs(statisticsSection.intValue, state.language) {
+                        statisticsSection.intValue = it
+                    }
+                }
+                if (statisticsSection.intValue == 0) {
+                    state.periodTotals?.let { totals ->
+                        item(key = "progress_statistics_overview") {
+                            ProgressPeriodOverview(totals, state.language)
+                        }
+                    }
+                } else {
+        item(key = "progress_cardio") {
+            NativeCardioProgressPanel(
+                state = state,
+                onSelectActivity = viewModel::selectCardioActivity,
+                onRetry = viewModel::retryCardio
+            )
+        }
+
+                }
+            }
+            else -> {
         // 2. 1RM Fejlődési diagram
         item {
             TrainPilotHeroSurface(Modifier.fillMaxWidth()) {
@@ -270,16 +304,12 @@ fun ProgressScreen(
             }
         }
 
-        item(key = "progress_photos") {
-            NativeProgressPhotoGallery(state, viewModel::openPhoto, viewModel::closePhoto)
+            }
         }
 
-        item(key = "progress_cardio") {
-            NativeCardioProgressPanel(
-                state = state,
-                onSelectActivity = viewModel::selectCardioActivity,
-                onRetry = viewModel::retryCardio
-            )
+        // Private progress photos stay reachable independently of the Studio analytics section.
+        item(key = "progress_photos") {
+            NativeProgressPhotoGallery(state, viewModel::openPhoto, viewModel::closePhoto)
         }
 
         item {

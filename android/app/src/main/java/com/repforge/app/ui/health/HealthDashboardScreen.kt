@@ -172,10 +172,6 @@ fun HealthDashboardScreen(
     }
 
     Column(modifier = Modifier.fillMaxSize().background(colors.bg)) {
-        TextButton(onClick = onWeightJournal, modifier = Modifier.testTag("health_weight_journal")) {
-            Text(com.repforge.app.ui.text.nativeResources(context, state.language)
-                .getString(com.repforge.app.R.string.weight_open))
-        }
         state.statusMessage?.let { Text(it, color = colors.muted, modifier = Modifier.padding(12.dp)) }
         if (state.backgroundWriteFailed) Text(
             com.repforge.app.ui.text.nativeResources(context, state.language)
@@ -209,6 +205,7 @@ fun HealthDashboardScreen(
         if (state.activeTab == "journal") {
             HealthJournalTabContent(
                 state = state,
+                onWeightJournal = onWeightJournal,
                 onSelectProvider = { viewModel.setProvider(it, activity) },
                 onAutoOnOpen = viewModel::setAutoOnOpen,
                 onToggleHcBackground = { enable ->
@@ -265,6 +262,7 @@ fun HealthDashboardScreen(
 @Composable
 fun HealthJournalTabContent(
     state: HealthDashboardUiState,
+    onWeightJournal: () -> Unit,
     onSelectProvider: (String) -> Unit,
     onToggleHcBackground: (Boolean) -> Unit,
     onAutoOnOpen: (Boolean) -> Unit,
@@ -286,14 +284,18 @@ fun HealthJournalTabContent(
     val strings = remember(context, state.language) { nativeResources(context, state.language) }
     val metricColumns = if (LocalDensity.current.fontScale > 1.3f || LocalConfiguration.current.screenWidthDp < 312) 1 else 2
     LazyColumn(
-        modifier = Modifier.fillMaxSize().testTag("health_journal_list").padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        modifier = Modifier.fillMaxSize().testTag("health_journal_list").padding(horizontal = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         // Studio-inspired selected-day overview above the detailed health record browser.
         // Values, missing-state and provider attribution all come from the native model.
         // The selected day may be historical: do not label it "today" unconditionally.
         item(key = "health_selected_day_overview") {
-            if (state.metrics.isNotEmpty()) HealthSelectedDayOverview(state)
+            HealthSelectedDayOverview(
+                state = state,
+                onWeightJournal = onWeightJournal,
+                onPulseTrend = { onOpenRecords("HeartRateRecord") }
+            )
         }
         item {
             val text = com.repforge.app.ui.text.nativeResources(LocalContext.current, state.language)
@@ -534,17 +536,20 @@ fun HealthJournalTabContent(
 
 /** Compact Studio header while the original full metric grid / provider controls remain below. */
 @Composable
-internal fun HealthSelectedDayOverview(state: HealthDashboardUiState) {
+internal fun HealthSelectedDayOverview(
+    state: HealthDashboardUiState,
+    onWeightJournal: () -> Unit,
+    onPulseTrend: () -> Unit
+) {
     val colors = LocalTrainPilotColors.current
     val ctx = LocalContext.current
     val strings = remember(ctx, state.language) { nativeResources(ctx, state.language) }
     val metrics = NativeHealthMetrics.overview(state.metrics)
-    if (metrics.isEmpty()) return
     val fontScale = LocalDensity.current.fontScale
     val width = LocalConfiguration.current.screenWidthDp
     val columns = when {
         width < 312 || fontScale > 1.3f -> 1
-        width < 400 || fontScale > 1.15f -> 2
+        width < 350 || fontScale > 1.2f -> 2
         else -> 3
     }
     TrainPilotHeroSurface(Modifier.fillMaxWidth().testTag("health_selected_day_overview")) {
@@ -573,8 +578,6 @@ internal fun HealthSelectedDayOverview(state: HealthDashboardUiState) {
                             }
                         }, color = if (metric.isAvailable) colors.text else colors.muted,
                             style = MaterialTheme.typography.titleLarge.copy(fontFeatureSettings = "tnum"))
-                        Text(metric.sourceText, color = colors.muted,
-                            style = MaterialTheme.typography.labelSmall)
                     }
                 }
                 repeat(columns - chunk.size) { Spacer(Modifier.weight(1f)) }
@@ -584,6 +587,41 @@ internal fun HealthSelectedDayOverview(state: HealthDashboardUiState) {
             Text(strings.getString(R.string.health_daily_source_partial),
                 color = colors.muted, style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.testTag("health_overview_partial"))
+        }
+        HealthStudioActionRow(
+            title = strings.getString(R.string.health_record_heart_rate),
+            subtitle = strings.getString(R.string.health_records_title),
+            iconKey = "pulse", tag = "health_pulse_trend", onClick = onPulseTrend
+        )
+        HealthStudioActionRow(
+            title = strings.getString(R.string.weight_open),
+            subtitle = strings.getString(R.string.health_metric_weightkg),
+            iconKey = "weightKg", tag = "health_weight_journal", onClick = onWeightJournal
+        )
+    }
+}
+
+@Composable
+private fun HealthStudioActionRow(
+    title: String, subtitle: String, iconKey: String, tag: String, onClick: () -> Unit
+) {
+    val colors = LocalTrainPilotColors.current
+    TrainPilotSubtleSurface(
+        Modifier.fillMaxWidth().heightIn(min = 56.dp).testTag(tag)
+            .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick)
+    ) {
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Icon(trainPilotMetricIcon(iconKey), contentDescription = null,
+                modifier = Modifier.size(20.dp), tint = colors.accentText)
+            Column(Modifier.weight(1f)) {
+                Text(title, color = colors.text, style = MaterialTheme.typography.titleSmall)
+                Text(subtitle, color = colors.muted, style = MaterialTheme.typography.labelSmall, maxLines = 2)
+            }
+            Text("›", color = colors.accentText, style = MaterialTheme.typography.titleLarge)
         }
     }
 }

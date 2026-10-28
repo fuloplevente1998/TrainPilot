@@ -159,6 +159,7 @@ class NativeProgressPhotoRangeUiTest {
         compose.onNodeWithTag("progress_list").performScrollToNode(hasTestTag("progress_photo_gallery"))
         compose.waitUntil(30_000) { exists("progress_photo_empty") }
         screenshot("empty")
+        compose.onNodeWithTag("progress_section_tab_2").performClick()
         compose.onNodeWithTag("progress_list").performScrollToNode(hasTestTag("progress_strength_ranges"))
         compose.waitUntil(30_000) { exists("progress_strength_empty") }
         compose.onNodeWithTag("progress_strength_days_90").assertIsSelected()
@@ -195,6 +196,7 @@ class NativeProgressPhotoRangeUiTest {
     @Test fun strengthRangeRemainsIndependentAcrossLanguageAndTheme() {
         runBlocking(Dispatchers.IO) { seedWorkout(2, 120) }
         enterProgress()
+        compose.onNodeWithTag("progress_section_tab_2").performClick()
         compose.onNodeWithTag("progress_list").performScrollToNode(hasTestTag("progress_strength_ranges"))
         compose.onNodeWithTag("progress_strength_all").performClick()
         compose.waitUntil(30_000) { !exists("progress_strength_loading") }
@@ -210,6 +212,7 @@ class NativeProgressPhotoRangeUiTest {
         compose.onNodeWithTag("theme_yellow").performScrollTo().performClick()
         compose.onNodeWithTag("navigation_back").performClick()
         compose.waitUntil(30_000) { exists("progress_list") }
+        compose.onNodeWithTag("progress_section_tab_2").performClick()
         compose.onNodeWithTag("progress_list").performScrollToNode(hasTestTag("progress_strength_ranges"))
         compose.onNodeWithTag("progress_strength_days_30").assertIsSelected()
         compose.waitUntil(30_000) { exists("progress_strength_empty") }
