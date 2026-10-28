@@ -693,7 +693,8 @@ class NativePhoneNavigationTest {
         }
         launch(); tab("journal")
         compose.waitUntil(15000) { compose.onAllNodesWithTag("journal_workout_watch-pr").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("journal_workout_watch-pr").assertTextContains("Személyes csúcs")
+        compose.onNodeWithTag("journal_pr_watch-pr", useUnmergedTree = true)
+            .assertContentDescriptionEquals("Személyes csúcs")
         screenshot("journal_large_history_pr")
     }
 
