@@ -1,5 +1,19 @@
 # TrainPilot – Studio UI folytatási pont
 
+## 2026-10-28: 18:49 Studio Napló-képernyő átültetése + emulátoros regresziók
+
+- A design-kánon továbbra is az eredeti **18:49 Studio ZIP**, nem a 20:14 összeépített hybrid. PR #270 DRAFT, main érintetlen.
+- A **2026-10-27 20:00 körüli teljes natív gate** `40574479567` a PR `5826baa6` head-et beolvasztó `2dcc0e2d` merge commitból **valódi, módosítatlan Android emulátoros képeket mentett**, például `nativephonenavigationtest_6c31e101_home_hu_classicblue_1.png`, `...progress_hu_classicblue_4.png`. Artifact `TrainPilot-Native-Phone-UI-Evidence` (artifact ID `12768292712`). **Nem** ez a mostani HEAD! Build, JVM, Wear és signed upgrade sikeres volt, de phone Compose gate FAILED: több UI szemantikai / navigációs hiba + emulátoros graphics/buffer hiba. Soha ne állíts overall PASS-t.
+- `NativeMainHeader.kt`: a 2.0-s German fontScale melletti `Startseite` clipping kijavítva, görgethető tabok tartománya feliratfüggően szélesebb.
+- `HomeScreen.kt`: Studio kompakt csempékre visszakötve a natív `shortcut_programs`, `shortcut_calendar`, `shortcut_coach` tesztazonosítók, úgy hogy az új Studio tag-ek is rendelkezésre állnak. A 2×2 Health bento teljes kártyás kattintása megmaradt, valódi érték/source szemantikája külön tesztelhető lett, így az orvosi adatok és a Coach source nem vesztek el a clickable felületekben.
+- `TrainingLandingScreen.kt`: a kétszer szereplő „Gyakorlat választása” felirat miatt pontatlan text-by-query teszt/akció elkerülése; egyetlen valós CTA maradt.
+- `JournalScreen.kt`: az eddig csak átstylingolt Napló helyett az eredeti 18:49-es Compose-referencia szerkezete: külön 16dp-search mező keresés ikonnal, 40dp kerek előző/következő hónap, 14dp kijelölt hónapválasztó; a felugró választó 24 tényleges naptári hónapot és „Összes hónap” lehetőséget kínál. Valós Room `JournalViewModel.setMonth` / `setSearch`, lapozás, törlés, részletek, GPS útvonalak változatlanok.
+- Az eddigi régi, függőlegesen összeállított Napló-kártyákat az 18:49-es **20dp radius, 48dp kör ikon, vízszintes dátum/főcím/részletek/PR** Studio komponensekre cseréltük; a valós Room `JournalWorkoutSummary` azonban csak dátumot, programot, napot, időt és sorozatot tartalmaz: nem ábrázolunk DEMO/hamis GPS vagy volumen adatot. A kompakt PR jelvény full „Személyes csúcs” screen-reader szöveget kapott.
+- `NativePhoneNavigationTest`: Studio hónapválasztó valós filter és mindenkori aktuális `YearMonth` állapot tesztje, két nyers emulátoros screenshot request; régi nagy history PR-teszt a Studio kompakt jelvény teljes accessibility labeljét ellenőrzi.
+- **Jelenlegi utolsó UI+teszt commit:** `a3266f861d2ed33ec9287e13bfa6907289cb99dc` (a feljegyzés után HEAD változhat), telefonos release gate `40630969697` SUCCESS; a Quick és teljes Android/Wear gate `40630975620` / `40630975645` az utolsó ellenőrzéskor még futott/queue. Pontos HEAD + CI státusz az újabb ellenőrzésben legyen frissítve.
+- Következő: test failure-ből megmaradó Health navigate/performance, Journal month UI és teljes képernyős diff; 18:49-es Progress 3 sub-tabs/muscle/statistics/1RM összeállítás; Health PulseInnerBox/card expansions; 32 eredeti Studio-téma. Minden képernyő csak aktuális emulátoros egyezéssel fogadható el.
+
+
 ## PINNED DESIGN SOURCE — user correction (2026-10-27)
 
 **Visual reference = the approved original 18:49 Studio export ONLY.**
