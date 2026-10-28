@@ -97,6 +97,10 @@ class EmulatorDisplayProfileTest(unittest.TestCase):
         with patch.object(gate, 'adb', side_effect=self.response) as calls:
             d = gate.configure_display('1080x2392', '440', '1.0')
         calls.assert_any_call('shell', 'wm', 'size', '1080x2392')
+        disabled = [c.args for c in calls.call_args_list if 'disable-user' in c.args]
+        self.assertEqual([('shell', 'pm', 'disable-user', '--user', '0',
+                           'com.google.android.apps.nexuslauncher')], disabled)
+        self.assertFalse(any('com.repforge.app' in c for c in disabled))
         self.assertEqual('1080x2392', d['requestedSizePx'])
         self.assertEqual(440, d['requestedDensityDpi'])
         self.assertIn('Override density: 440', d['wmDensity'])

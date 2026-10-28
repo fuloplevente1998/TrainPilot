@@ -34,7 +34,13 @@ def configure_display(size="", density="", font_scale=""):
     if size or font_scale:
         if adb("shell", "getprop", "ro.kernel.qemu").decode().strip() != "1":
             raise RuntimeError("Display overrides are restricted to the disposable emulator")
+    launcher_state = None
     if size:
+        # This unrelated Google launcher raised an ANR over the native app during
+        # high-resolution CI. Disable only that package on the disposable emulator;
+        # app ANRs, focus checks and instrumentation failures remain fail-closed.
+        launcher_state = adb("shell", "pm", "disable-user", "--user", "0",
+                             "com.google.android.apps.nexuslauncher", check=False).decode().strip()
         adb("shell", "wm", "size", size)
         adb("shell", "wm", "density", density)
     if font_scale:
@@ -50,7 +56,8 @@ def configure_display(size="", density="", font_scale=""):
     if font_scale and float(actual_font) != float(font_scale):
         raise RuntimeError("Emulator did not apply the requested font scale")
     return {"requestedSizePx": size or None, "requestedDensityDpi": int(density) if density else None,
-            "wmSize": actual_size, "wmDensity": actual_density, "fontScale": actual_font}
+            "wmSize": actual_size, "wmDensity": actual_density, "fontScale": actual_font,
+            "ciLauncherIsolation": launcher_state}
 
 
 def screenshot_dimensions(png, expected_size=""):

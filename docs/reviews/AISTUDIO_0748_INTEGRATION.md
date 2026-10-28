@@ -133,3 +133,17 @@ Preflight failures now preserve a failed manifest and actual readback diagnostic
 Local host suite12PASS. No APK/main-source behavior changed in this correction.
 Two remaining Home child-text lookup groups in the later localization/history
 assertions are also updated to the actual unmerged Text nodes; assertions stay.
+
+## High-resolution diagnostics (no successful phone claim)
+
+40658293784/1a6b7102: profile readback VERIFIED1080x2392,450dpi,font0.90.
+Phone artifact12802169028 has failedmanifest and raw instrumentation but no PNG.
+Host focus check aborted when an unrelated Nexus Launcher ANR dialog covered the
+native app. Raw:44terminal=41PASS/3FAIL,75missing; not a complete phone run.
+One Health UI failure was window-focus loss; two tab failures now expose the exact
+cause: `paragraphWidth=2.14748365E9`, input `maxWidth=Infinity`, even after min-width
+changes. Fix the scrolling pill's MAX width as well: explicit measured width on
+parent and fillMaxWidth on Text, preserving the actual overflow assertions.
+Only the unrelated Nexus Launcher package is disabled on the disposable owner-profile
+emulator; no app ANR or focus/parser assertion is suppressed. Native app/source
+failure still fails the run. All other jobs in this gate SUCCESS.

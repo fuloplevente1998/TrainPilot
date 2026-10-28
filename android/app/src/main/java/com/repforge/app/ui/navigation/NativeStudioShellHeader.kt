@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
@@ -239,7 +240,7 @@ internal fun NativeStudioShellHeader(
                         val tabWidth = maxOf(76.dp, with(density) { measured.size.width.toDp() } + 24.dp)
                         Surface(
                             modifier = (if (scrollable)
-                                Modifier.widthIn(min = tabWidth)
+                                Modifier.width(tabWidth)
                             else Modifier.weight(1f))
                                 .heightIn(min = 48.dp)
                                 .border(if (active) 1.5.dp else 1.dp,
@@ -261,7 +262,7 @@ internal fun NativeStudioShellHeader(
                                     modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.height(3.dp))
                                 Text(labels[index],
-                                    modifier = if (scrollable) Modifier.widthIn(min = tabWidth - 20.dp) else Modifier,
+                                    modifier = if (scrollable) Modifier.fillMaxWidth() else Modifier,
                                     style = MaterialTheme.typography.labelSmall.copy(
                                     fontSize = 10.sp,
                                     fontWeight = if (active) FontWeight.Bold else FontWeight.Medium),

@@ -138,7 +138,7 @@ internal fun NativeTopNavigation(route: String, settingsOrigin: String, language
                 val tabWidth = maxOf(76.dp, with(density) { measured.size.width.toDp() } + 24.dp)
                 val fill = if (active) colors.accent.copy(alpha = .22f).compositeOver(colors.card) else colors.card
                 Column(
-                    modifier = (if (scrollable) Modifier.widthIn(min = tabWidth)
+                    modifier = (if (scrollable) Modifier.width(tabWidth)
                         else Modifier.weight(1f)).heightIn(min = 48.dp)
                         .clip(shape)
                         .background(fill)
@@ -156,7 +156,7 @@ internal fun NativeTopNavigation(route: String, settingsOrigin: String, language
                     Spacer(Modifier.height(3.dp))
                     Text(
                         labels[index], style = tabTextStyle,
-                        modifier = if (scrollable) Modifier.widthIn(min = tabWidth - 20.dp) else Modifier,
+                        modifier = if (scrollable) Modifier.fillMaxWidth() else Modifier,
                         color = if (active) colors.accent else colors.text,
                         fontSize = 10.sp,
                         fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
