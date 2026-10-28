@@ -2643,10 +2643,68 @@
       button.title=words[button.dataset.tp271Header];
     }
   }
+  /* P1f: real Home hierarchy based on the 1/4 design reference.
+     Move DOM nodes, not data: the canonical hero/onboarding/Health/Coach
+     keep their original callbacks, forms and state. */
+  const homeWords={
+    hu:{hello:'Szia!',hint:'A mai edzésed és adataid egy helyen.',draft:'Folytathatod a félbehagyott edzésed.',quick:'Gyors edzés',quickHint:'Új edzés indítása a meglévő edzésválasztóban'},
+    en:{hello:'Welcome back!',hint:'Your workout and daily readings in one place.',draft:'Your unfinished workout is ready to resume.',quick:'Quick workout',quickHint:'Choose a workout in the original launcher'},
+    de:{hello:'Willkommen zurück!',hint:'Training und Tageswerte auf einen Blick.',draft:'Du kannst dein begonnenes Training fortsetzen.',quick:'Schnelles Training',quickHint:'Training im vorhandenen Auswahlmenü starten'},
+    ro:{hello:'Bine ai revenit!',hint:'Antrenamentul și datele zilei într-un singur loc.',draft:'Poți relua antrenamentul întrerupt.',quick:'Antrenament rapid',quickHint:'Alege antrenamentul în meniul existent'}
+  };
+  function previewHome(){
+    if(activeWorkout())return;
+    const main=document.querySelector('#app main.rf221-home');
+    if(!main)return;
+    const hero=main.querySelector(':scope > .hero.tp155-home-active-card');
+    if(!hero)return;
+    let greeting=main.querySelector(':scope > #tp271HomeGreeting');
+    if(!greeting){
+      greeting=document.createElement('section');
+      greeting.id='tp271HomeGreeting';
+      greeting.className='tp271-home-greeting';
+      greeting.innerHTML='<strong class="tp271-home-hello"></strong><p class="tp271-home-hint"></p>';
+    }
+    if(main.firstElementChild!==greeting)main.insertBefore(greeting,main.firstElementChild);
+    // The canonical active-program/resume hero now follows the greeting,
+    // even when the legacy home puts onboarding before the saved program.
+    if(greeting.nextElementSibling!==hero)greeting.insertAdjacentElement('afterend',hero);
+    let quick=main.querySelector(':scope > #tp271HomeQuick');
+    if(!quick){
+      quick=document.createElement('button');
+      quick.type='button';
+      quick.id='tp271HomeQuick';
+      quick.className='tp271-home-quick';
+      quick.innerHTML='<span class="tp271-home-quick-icon" aria-hidden="true">▶</span><span class="tp271-home-quick-copy"><strong></strong><small></small></span><span class="tp271-home-quick-arrow" aria-hidden="true">›</span>';
+      quick.addEventListener('click',()=>{
+        if(activeWorkout()||typeof window.go!=='function')return;
+        window.go('plan');
+        // Use the existing Quick Workout button, which owns all session,
+        // draft-replacement, wearable, permission and GPS decisions.
+        requestAnimationFrame(()=>{
+          const original=document.querySelector('#app main.tp146-plan .tp150-quick-entry-minimal > button');
+          original?.click();
+        });
+      });
+    }
+    if(hero.nextElementSibling!==quick)hero.insertAdjacentElement('afterend',quick);
+    const onboarding=main.querySelector(':scope > .onboarding');
+    if(onboarding&&quick.nextElementSibling!==onboarding)quick.insertAdjacentElement('afterend',onboarding);
+    const today=main.querySelector('#rf223Today');
+    const after=onboarding||quick;
+    if(today&&after.nextElementSibling!==today)after.insertAdjacentElement('afterend',today);
+    const w=homeWords[getLang()]||homeWords.hu;
+    greeting.querySelector('.tp271-home-hello').textContent=w.hello;
+    greeting.querySelector('.tp271-home-hint').textContent=main.classList.contains('tp-home-draft-compact')?w.draft:w.hint;
+    quick.querySelector('.tp271-home-quick-copy strong').textContent=w.quick;
+    quick.querySelector('.tp271-home-quick-copy small').textContent=w.quickHint;
+    quick.setAttribute('aria-label',w.quick+': '+w.quickHint);
+  }
   function sync(){
     queued=false;
     if (!dock || !dock.isConnected) return;
     previewHeader();
+    previewHome();
     const language=getLang(),t=labels[language],active=selectedKey();
     dock.setAttribute('aria-label',t.nav);
     for(const button of dock.querySelectorAll('button[data-tp271-target]')){
