@@ -370,6 +370,33 @@ fun HealthJournalTabContent(
                 onToggle = { journalExpanded = !journalExpanded }
             ) {
                 val text = com.repforge.app.ui.text.nativeResources(LocalContext.current, state.language)
+                state.recentDaySummaries.forEach { summary ->
+                    TrainPilotSubtleSurface(
+                        Modifier.fillMaxWidth().testTag("health_day_summary_${summary.day}")
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                            Text(
+                                summary.dateText,
+                                color = colors.text,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                summary.summaryText,
+                                color = colors.muted,
+                                style = MaterialTheme.typography.bodySmall,
+                                maxLines = 2
+                            )
+                            if (summary.partial) {
+                                Text(
+                                    text.getString(R.string.health_daily_source_partial),
+                                    color = colors.muted,
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            }
+                        }
+                    }
+                }
                 TrainPilotHeroSurface(Modifier.fillMaxWidth()) {
                     Column(Modifier.fillMaxWidth().testTag("health_history")) {
                         TrainPilotSectionHeader(

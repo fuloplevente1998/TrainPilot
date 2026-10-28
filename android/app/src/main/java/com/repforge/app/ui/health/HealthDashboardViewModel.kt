@@ -34,6 +34,8 @@ import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -49,6 +51,13 @@ data class HealthMetricItemUiModel(
 data class HealthPulseTrendPointUiModel(
     val day: String,
     val bpm: Double?
+)
+
+data class HealthDaySummaryUiModel(
+    val day: String,
+    val dateText: String,
+    val summaryText: String,
+    val partial: Boolean
 )
 
 data class HealthDashboardUiState(
@@ -81,6 +90,7 @@ data class HealthDashboardUiState(
     val overviewMetrics: List<HealthMetricItemUiModel> = emptyList(),
     val additionalMetrics: List<HealthMetricItemUiModel> = emptyList(),
     val pulseTrend: List<HealthPulseTrendPointUiModel> = emptyList(),
+    val recentDaySummaries: List<HealthDaySummaryUiModel> = emptyList(),
     val sleepSessionsSummaryText: String = "—",
     val lastSyncAt: String = "—",
     val bleState: BleDiscoveryUiState = BleDiscoveryUiState(),
@@ -231,6 +241,7 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
             overviewMetrics = emptyList(),
             additionalMetrics = emptyList(),
             pulseTrend = emptyList(),
+            recentDaySummaries = emptyList(),
             selectedDay = query.day.toString(), historyMonth = query.month.toString(), historyChannel = query.channel,
             availableDays = emptyList(), sleepSessionsSummaryText = "—", historyPartial = false)
         historyJob = viewModelScope.launch {
@@ -318,9 +329,11 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
                     language, page.selected, metrics, overviewAux
                 )
                 val additionalMetrics = buildStudioAdditionalMetrics(language, page.selected, metrics)
+                val recentDaySummaries = buildHealthDaySummaries(language, page.summaries)
                 _uiState.value = _uiState.value.copy(language = language, historyLoading = false, historyError = false,
                     availableDays = page.days, metrics = metrics, overviewMetrics = overviewMetrics,
                     additionalMetrics = additionalMetrics, pulseTrend = overviewAux.pulseTrend,
+                    recentDaySummaries = recentDaySummaries,
                     historyPartial = page.selected.optBoolean("partial"),
                     provider = prefs.optString("provider", HealthJournalStore.HC),
                     dailySourcePreference = prefs.optString("hcDailySource", "auto"),
@@ -342,7 +355,8 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Exception) { _uiState.value = _uiState.value.copy(historyLoading = false, historyError = true,
                 metrics = emptyList(), overviewMetrics = emptyList(), additionalMetrics = emptyList(),
-                pulseTrend = emptyList(), dailySourceOptions = emptyList())
+                pulseTrend = emptyList(), recentDaySummaries = emptyList(),
+                dailySourceOptions = emptyList())
                 refreshBackgroundStatus()
             }
         }
@@ -407,6 +421,60 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
             isAvailable = recoveryAvailable
         )
         return NativeHealthMetrics.studioOverview(full, sleep, workouts, recovery)
+    }
+
+    private fun buildHealthDaySummaries(
+        language: String,
+        summaries: List<JSONObject>
+    ): List<HealthDaySummaryUiModel> {
+        val text = com.repforge.app.ui.text.nativeResources(context, language)
+        val locale = Locale.forLanguageTag(language)
+        val number0 = NumberFormat.getNumberInstance(locale).apply {
+            maximumFractionDigits = 0
+        }
+        val number1 = NumberFormat.getNumberInstance(locale).apply {
+            minimumFractionDigits = 0
+            maximumFractionDigits = 1
+        }
+        val dateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+            .withLocale(locale)
+        fun value(day: JSONObject, key: String): Double? =
+            day.optDouble(key, Double.NaN).takeIf { it.isFinite() }
+        return summaries
+            .sortedByDescending { it.optString("day") }
+            .take(3)
+            .mapNotNull { day ->
+                val date = runCatching { LocalDate.parse(day.optString("day")) }.getOrNull()
+                    ?: return@mapNotNull null
+                val sleep = value(day, "sleepMinutes")?.takeIf { it > 0.0 }?.let {
+                    number1.format(it / 60.0) + " h"
+                } ?: "—"
+                val pulse = value(day, "averageHeartRate")?.takeIf { it > 0.0 }?.let {
+                    number0.format(it) + " bpm"
+                } ?: "—"
+                val steps = value(day, "steps")?.takeIf { it >= 0.0 }?.let {
+                    number0.format(it)
+                } ?: "—"
+                val calories = value(day, "activeCalories")?.takeIf { it >= 0.0 }?.let {
+                    number0.format(it) + " kcal"
+                } ?: "—"
+                HealthDaySummaryUiModel(
+                    day = date.toString(),
+                    dateText = date.format(dateFormatter),
+                    summaryText = buildString {
+                        append(text.getString(com.repforge.app.R.string.native_home_sleep))
+                        append(": "); append(sleep)
+                        append(" • ")
+                        append(text.getString(com.repforge.app.R.string.native_home_pulse))
+                        append(": "); append(pulse)
+                        append(" • ")
+                        append(text.getString(com.repforge.app.R.string.native_home_steps))
+                        append(": "); append(steps)
+                        append(" • "); append(calories)
+                    },
+                    partial = day.optBoolean("partial", false)
+                )
+            }
     }
 
     private fun buildStudioAdditionalMetrics(
