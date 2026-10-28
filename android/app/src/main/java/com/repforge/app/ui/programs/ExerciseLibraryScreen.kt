@@ -5,6 +5,8 @@ import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,11 +14,17 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -26,6 +34,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,6 +43,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -40,6 +51,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.repforge.app.R
@@ -203,51 +215,197 @@ internal fun ExerciseLibraryScreen(language: String, model: ExerciseLibraryViewM
                 Spacer(Modifier.height(80.dp))
             }
         } else {
-            Text(labels.title, color = colors.text, fontWeight = FontWeight.Bold)
-            OutlinedButton(onClick = { editingExercise = null; editorOpen = true; model.clearEditOutcome() },
-                modifier = Modifier.fillMaxWidth().testTag("custom_exercise_create")) {
-                Text(strings.getString(R.string.native_library_29))
-            }
-            Text("${state.rows.size} ${labels.count}", color = colors.muted,
-                modifier = Modifier.testTag("exercise_library_count"))
-            OutlinedTextField(value = query, onValueChange = { query = it }, singleLine = true,
-                label = { Text(labels.search) }, modifier = Modifier.fillMaxWidth().testTag("exercise_library_search"))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                FilterChip(selected = favoritesOnly, onClick = { favoritesOnly = !favoritesOnly },
-                    label = { Text(labels.favorites) }, modifier = Modifier.testTag("exercise_library_favorites"))
-                Text("${visible.size} / ${state.rows.size}", color = colors.muted)
-            }
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(selected = muscle.isEmpty(), onClick = { muscle = "" }, label = { Text(labels.all) })
-                for (part in muscles) FilterChip(selected = muscle == part, onClick = { muscle = part },
-                    label = { Text(muscleName(part, strings)) }, modifier = Modifier.testTag("exercise_library_muscle_$part"))
-            }
-            if (state.writeFailed) Text(labels.saveError, color = colors.danger,
-                modifier = Modifier.testTag("exercise_library_favorite_error"))
-            if (visible.isEmpty()) Text(labels.empty, color = colors.muted)
-            else LazyColumn(Modifier.weight(1f).testTag("exercise_library_list"),
-                verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(visible, key = { it.id }) { ex ->
-                    Card(colors = CardDefaults.cardColors(containerColor = colors.card)) {
-                        Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f).clickable { selectedId = ex.id; openingError = false }
-                                .padding(8.dp).testTag("exercise_library_row_${ex.id}")) {
-                                Text(localized(ex, language), color = colors.text)
-                                Text(muscleName(ex.primaryMuscle, strings), color = colors.muted)
-                            }
-                            TextButton(onClick = { model.toggleFavorite(ex.id) }, enabled = !state.saving,
-                                modifier = Modifier.testTag("exercise_library_favorite_${ex.id}").semantics {
-                                    contentDescription = if (ex.id in state.favorites) labels.removeFavorite else labels.addFavorite
-                                }) {
-                                Text(if (ex.id in state.favorites) "★" else "☆", color = colors.accentText)
-                            }
-                        }
+            val displayMuscles = listOf("legs", "chest", "back", "shoulders", "arms", "core", "cardio")
+            Column(
+                Modifier.fillMaxSize().padding(top = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    strings.getString(R.string.studio_training_exercise_picker),
+                    color = colors.text,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 24.sp
+                )
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    singleLine = true,
+                    placeholder = { Text(labels.search) },
+                    leadingIcon = {
+                        Icon(Icons.Default.Search, contentDescription = null, tint = colors.muted)
+                    },
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth().testTag("exercise_library_search")
+                )
+                Row(
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = muscle.isEmpty() && !favoritesOnly,
+                        onClick = { muscle = ""; favoritesOnly = false },
+                        label = { Text(labels.all) }
+                    )
+                    for (part in displayMuscles) {
+                        FilterChip(
+                            selected = muscle == part && !favoritesOnly,
+                            onClick = { muscle = part; favoritesOnly = false },
+                            label = { Text(muscleName(part, strings)) },
+                            modifier = Modifier.testTag("exercise_library_muscle_${part}")
+                        )
+                    }
+                    FilterChip(
+                        selected = favoritesOnly,
+                        onClick = { favoritesOnly = !favoritesOnly; if (favoritesOnly) muscle = "" },
+                        label = { Text("★ ${labels.favorites}") },
+                        modifier = Modifier.testTag("exercise_library_favorites")
+                    )
+                }
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        "${state.rows.size} (${visible.size})",
+                        color = colors.text,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.testTag("exercise_library_count")
+                    )
+                    TextButton(
+                        onClick = {
+                            editingExercise = null
+                            editorOpen = true
+                            model.clearEditOutcome()
+                        },
+                        modifier = Modifier.testTag("custom_exercise_create")
+                    ) {
+                        Text("+ ${strings.getString(R.string.native_library_29)}", color = colors.accentText)
                     }
                 }
-                item { Spacer(Modifier.height(80.dp)) }
+                if (state.writeFailed) {
+                    Text(labels.saveError, color = colors.danger,
+                        modifier = Modifier.testTag("exercise_library_favorite_error"))
+                }
+                if (visible.isEmpty()) {
+                    Text(labels.empty, color = colors.muted)
+                } else {
+                    LazyColumn(
+                        Modifier.weight(1f).testTag("exercise_library_list"),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        items(visible, key = { it.id }) { ex ->
+                            val demo = remember(ex) { NativeExerciseDemo.resolve(ex) }
+                            Card(
+                                shape = RoundedCornerShape(18.dp),
+                                colors = CardDefaults.cardColors(containerColor = colors.card),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
+                            ) {
+                                Row(
+                                    Modifier.fillMaxWidth().padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Surface(
+                                        modifier = Modifier.size(54.dp),
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = colors.card2
+                                    ) {
+                                        androidx.compose.foundation.layout.Box(
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                Icons.Default.FitnessCenter,
+                                                contentDescription = null,
+                                                tint = colors.accentText,
+                                                modifier = Modifier.size(26.dp)
+                                            )
+                                        }
+                                    }
+                                    Spacer(Modifier.width(12.dp))
+                                    Column(
+                                        Modifier.weight(1f)
+                                            .clickable(role = Role.Button) {
+                                                selectedId = ex.id
+                                                openingError = false
+                                            }
+                                            .testTag("exercise_library_row_${ex.id}")
+                                            .padding(vertical = 4.dp)
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(7.dp)
+                                        ) {
+                                            Text(
+                                                localized(ex, language),
+                                                color = colors.text,
+                                                style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.SemiBold,
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                            Surface(
+                                                shape = RoundedCornerShape(9.dp),
+                                                color = colors.accent.copy(alpha = .14f),
+                                                border = androidx.compose.foundation.BorderStroke(
+                                                    1.dp, colors.accent.copy(alpha = .35f)
+                                                )
+                                            ) {
+                                                Text(
+                                                    muscleName(ex.primaryMuscle, strings),
+                                                    color = colors.accentText,
+                                                    style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                                                )
+                                            }
+                                        }
+                                        val detail = description(ex, language).lineSequence()
+                                            .firstOrNull().orEmpty().ifBlank { ex.loadType }
+                                        Text(
+                                            detail,
+                                            color = colors.muted,
+                                            style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                                            maxLines = 2
+                                        )
+                                    }
+                                    if (demo?.kind == NativeExerciseDemo.Kind.VIDEO) {
+                                        Surface(
+                                            shape = RoundedCornerShape(9.dp),
+                                            color = colors.danger.copy(alpha = .75f),
+                                            modifier = Modifier
+                                                .clickable(role = Role.Button) { open(demo) }
+                                                .testTag("exercise_library_row_video_${ex.id}")
+                                        ) {
+                                            Text(
+                                                "▶ ${labels.video}",
+                                                color = colors.dangerText,
+                                                style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+                                            )
+                                        }
+                                        Spacer(Modifier.width(6.dp))
+                                    }
+                                    TextButton(
+                                        onClick = { model.toggleFavorite(ex.id) },
+                                        enabled = !state.saving,
+                                        modifier = Modifier.testTag("exercise_library_favorite_${ex.id}")
+                                            .semantics {
+                                                contentDescription =
+                                                    if (ex.id in state.favorites) labels.removeFavorite
+                                                    else labels.addFavorite
+                                            }
+                                    ) {
+                                        Text(if (ex.id in state.favorites) "★" else "☆",
+                                            color = colors.accentText)
+                                    }
+                                    Icon(Icons.Default.ChevronRight, contentDescription = null,
+                                        tint = colors.muted, modifier = Modifier.size(20.dp))
+                                }
+                            }
+                        }
+                        item { Spacer(Modifier.height(80.dp)) }
+                    }
+                }
             }
         }
-    }
     if (editorOpen) {
         CustomExerciseDialog(exercise = editingExercise, language = language,
             saving = state.saving, error = state.editError,
