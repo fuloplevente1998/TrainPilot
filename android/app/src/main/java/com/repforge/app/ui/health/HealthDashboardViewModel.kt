@@ -286,7 +286,7 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
                         val pulseTrend = try {
                             val trendPage = healthStore.page(
                                 selected.minusDays(6).toString(), selected.toString(),
-                                "journal", "", 0L, 0L, 1
+                                query.channel, "", 0L, 0L, 1
                             )
                             val summaries = trendPage.optJSONArray("days")
                             val byDay = mutableMapOf<String, Double>()
