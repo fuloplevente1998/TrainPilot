@@ -315,7 +315,34 @@ fun TrainPilotAppScaffold(
         containerColor = colors.bg,
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
-            Column {
+            if (currentRoute in NativeMainMenu.routes) {
+                // Approved 18:49 Studio header/5-tab component tree, not the
+                // native header being made to merely resemble its screenshots.
+                // All actions remain native; the theme selector opens the real
+                // settings and the language menu *persists* through DataStore.
+                NativeStudioShellHeader(
+                    route = currentRoute,
+                    settingsOrigin = settingsOrigin,
+                    language = settings.language,
+                    themeKey = settings.themeKey,
+                    enabled = !navigationBlocked,
+                    onHome = { selectDestination("home") },
+                    onSelect = destinationSelector,
+                    onSelectLanguage = { code ->
+                        scope.launch(Dispatchers.Main.immediate) {
+                            try { onboardingStore.setLanguage(code) }
+                            catch (cancelled: CancellationException) { throw cancelled }
+                            catch (_: Exception) {
+                                snackbar.showSnackbar("Language change could not be saved.")
+                            }
+                        }
+                    },
+                    onTheme = { settingsSection = "theme"; selectDestination("settings") },
+                    onSettings = { settingsSection = "general"; selectDestination("settings") }
+                )
+            } else Column {
+                // Secondary/editor routes retain the native lifecycle / Back
+                // and Wear finalization fences until their Studio screens are ported.
                 NativeMainHeader(currentRoute, settings.language, enabled = !navigationBlocked,
                     onBack = if (currentRoute in NativeMainMenu.secondaryRoutes) ({ goBack() }) else null,
                     onSettings = { settingsSection = "general"; selectDestination("settings") },
@@ -324,7 +351,6 @@ fun TrainPilotAppScaffold(
                     onHome = { selectDestination("home") },
                     backEnabled = !starting && !editorFinishing &&
                         (activeSnapshot?.optBoolean("finalizationPending") != true || settingsOrigin == "active_workout"))
-                // Intentional Studio design: primary tabs are placed ABOVE all pages.
                 NativeTopNavigation(currentRoute, settingsOrigin, settings.language,
                     enabled = !navigationBlocked, onSelect = destinationSelector)
             }
