@@ -44,6 +44,12 @@ const server=http.createServer((req,res)=>{
      await page.evaluate(t=>{rf200SetTheme(t);state.tp177JournalView='log';go('history')},theme);
      await page.waitForSelector('main.tp150-journal-compact .tp155-journal-filter');
      const journal=page.locator('main.tp150-journal-compact');
+     if(width===393&&theme==='yellow'){
+       fs.mkdirSync('ui-evidence',{recursive:true});
+       await page.waitForFunction(()=>document.querySelector('#tp271Dock button[data-tp271-target="log"]')?.getAttribute('aria-current')==='page');
+       await page.evaluate(()=>{document.scrollingElement.scrollTop=0;document.activeElement?.blur?.()});
+       await page.screenshot({path:'ui-evidence/pr271-journal-393.png'});
+     }
      assert.equal(await journal.locator('.tp177-journal-tabs button').count(),3,width+'/'+theme+': three real Journal destinations');
      assert.equal(await journal.locator('details.rf263-history').count(),3,width+'/'+theme+': actual saved workouts remain');
      const filtered=journal.locator('.tp155-journal-filter');
@@ -83,6 +89,11 @@ const server=http.createServer((req,res)=>{
      await page.waitForSelector('main.tp177-progress .tp177-volume-panel');
      assert.equal(await page.evaluate(()=>state.tp177JournalView),'progress',width+'/'+theme+': canonical Journal Progress state');
      const progress=page.locator('main.tp177-progress');
+     if(width===393&&theme==='yellow'){
+       await page.waitForFunction(()=>document.querySelector('#tp271Dock button[data-tp271-target="progress"]')?.getAttribute('aria-current')==='page');
+       await page.evaluate(()=>{document.scrollingElement.scrollTop=0;document.activeElement?.blur?.()});
+       await page.screenshot({path:'ui-evidence/pr271-progress-393.png'});
+     }
      assert.equal(await progress.locator('.tp177-journal-tabs button').count(),3,width+'/'+theme+': three original tabs retained');
      assert.equal(await progress.locator('.tp177-metric').count(),4,width+'/'+theme+': four actual metrics retained');
      assert.equal(await progress.locator('.tp177-chart-axis').count(),1,width+'/'+theme+': original chart axis preserved');
@@ -123,13 +134,13 @@ const server=http.createServer((req,res)=>{
      assert.ok(boxes.anatomyWidth>0&&boxes.axisPosition==='sticky',width+'/'+theme+': original anatomy and sticky chart axis');
      assert.ok(boxes.overflow<=1,width+'/'+theme+': no horizontal Progress overflow '+JSON.stringify(boxes));
      if(width===393&&theme==='yellow'){
-       fs.mkdirSync('ui-evidence',{recursive:true});
-       // Capture the actual first-frame layout, not the scroll position from
-       // the previous metric and chart interaction.
+       // Keep interaction-state evidence separate from real first frames.
        await page.evaluate(()=>{document.scrollingElement.scrollTop=0;const m=document.querySelector('#app main.tp177-progress');if(m)m.scrollTop=0;document.activeElement?.blur?.()});
-       await page.screenshot({path:'ui-evidence/pr271-progress-393.png'});
+       await page.screenshot({path:'ui-evidence/pr271-progress-volume-expanded-393.png'});
        await page.evaluate(()=>{state.tp177JournalView='log';go('history');document.scrollingElement.scrollTop=0;document.activeElement?.blur?.()});
-       await page.screenshot({path:'ui-evidence/pr271-journal-393.png'});
+       await page.waitForFunction(()=>document.querySelector('#tp271Dock button[data-tp271-target="log"]')?.getAttribute('aria-current')==='page');
+       assert.equal(await page.locator('#tp271Dock button[aria-current="page"]').count(),1,'only Journal selected when returning from Progress');
+       await page.screenshot({path:'ui-evidence/pr271-journal-filter-expanded-393.png'});
      }
      // P4a: the six live Health tiles and the original Round-4 Settings
      // controls are still reachable in the trial shell at both phone widths.
@@ -187,9 +198,20 @@ const server=http.createServer((req,res)=>{
      }
      await page.evaluate(()=>go('settings'));
    }
+   if(width===393){
+     const localized={hu:'Egészség',en:'Health',de:'Gesundheit',ro:'Sănătate'};
+     for(const [lang,label] of Object.entries(localized)){
+       await page.evaluate(x=>rf212SetLang(x),lang);
+       await page.waitForFunction(x=>document.documentElement.lang===x&&document.querySelector('#tp271Dock button[data-tp271-target="health"] .tp271-dock-label')?.textContent===({hu:'Egészség',en:'Health',de:'Gesundheit',ro:'Sănătate'}[x]),lang);
+       assert.equal(await page.locator('#tp271Dock button[data-tp271-target="health"] .tp271-dock-label').textContent(),label,lang+': canonical saved language drives dock');
+       assert.equal(await page.evaluate(()=>rf212LangSetting()),lang,lang+': main language persisted');
+       assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),lang+': no language overflow');
+     }
+     await page.evaluate(()=>rf212SetLang('hu'));
+   }
    assert.deepEqual(errors,[],width+': no runtime errors');
    await page.close();
   }
-  console.log('PASS PR271 P3a/P4b: real Journal, Progress, Health details, Settings language/backup and 3x2 metrics at 320/393px & two themes');
+  console.log('PASS PR271 P3a/P4b: first-frame and interaction screenshots; Health, Settings, four languages and themes');
  }finally{await browser?.close();await new Promise(ok=>server.close(ok))}
 })().catch(e=>{console.error(e);process.exitCode=1});
