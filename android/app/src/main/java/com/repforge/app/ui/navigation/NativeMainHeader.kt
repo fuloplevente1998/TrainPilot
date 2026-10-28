@@ -151,7 +151,8 @@ internal fun NativeTopNavigation(route: String, settingsOrigin: String, language
                 val shape = RoundedCornerShape(12.dp)
                 val fill = if (active) colors.accent.copy(alpha = .22f).compositeOver(colors.card) else colors.card
                 Column(
-                    modifier = (if (scrollable) Modifier.widthIn(min = 76.dp)
+                    modifier = (if (scrollable) Modifier.widthIn(min =
+                        if (LocalDensity.current.fontScale > 1.5f) 114.dp else 84.dp)
                         else Modifier.weight(1f)).heightIn(min = 48.dp)
                         .clip(shape)
                         .background(fill)
