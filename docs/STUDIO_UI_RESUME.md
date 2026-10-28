@@ -1,30 +1,32 @@
 # TrainPilot – Studio UI folytatási pont
 
-## Aktuális átadható checkpoint – 2026-10-28
+## Aktuális CI-izolációs javítás – 2026-10-28
 
 PR #270 **DRAFT**, ág `feat/studio-ui-topnav-trial-20261027`.
-Legújabb javított alkalmazás-/tesztforrás: **`17e7aeb84e03f9a10a34e3aa51d4c7c38faf3f80`**.
-[Quick 40695107774](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40695107774) SUCCESS
-(natív forrásbesorolás; legacy npm nem alkalmazható).
-[Új teljes kapu 40695107665](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40695107665)
-**FOLYAMATBAN** a checkpoint készítésekor; a két utolsó javítás runtime-eredménye még nem igazolt.
+Javított kapuforrás: **`d1839cfa1f0fb277efb5a57318fac4039e44933c`**;
+az Android alkalmazás-/tesztforrás változatlan a **`350d7f54`** állapothoz képest.
+[Quick40736984836](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40736984836) SUCCESS.
+[Teljes40736984933](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40736984933)
+**FOLYAMATBAN** a checkpoint készítésekor; runtime PASS még nincs.
 
-Utolsó nyersen ellenőrzött teljes futás: **40690747562 / `4fda309b` = FAILURE**:
-JVM **1345 PASS**, Wear **183 PASS**, mindkét signed upgrade SUCCESS;
-telefon **121/123 PASS, 2 FAIL**, 0 error/skip/missing/crash. Mind70 eredeti PNG
-hash/byte/struktúra/méret ellenőrizve, 1080×2392 /450dpi /fontScale0.90.
-A két maradék hiba tesztsegédje javítva: látható fix navfül görgetése;
-nyitott Settings-szekció téves összecsukása lazy child hiánya miatt.
-Mind123 teszt megmaradt. Verzió/appid/aláírás/motor/adatút változatlan.
+Az előző40724759390 /350d7f54 telefonos futást az idegen NexusLauncher ANR
+fókuszvesztése állította meg:119 főtesztből44 lezárt=43PASS/1FAIL,75missing,
+0screenshot; a4GPSpróba nem indult. Az apphiba további kizárásához újrafutás kell.
+A meglévő launcher-izoláció most a default kompakt emulátorra is kiterjed;
+fizikai eszközön setup előtt megáll, az app fókusz/ANR/hiba guardjai megmaradnak.
+14runner+34evidence hostteszt és workflow YAML/trigger ellenőrzés PASS.
+A canonical workflow most runner/parser módosításra is indul, hosttesztjei Gradle előtt futnak.
 
-[Részletes javítás és következő lépések](reviews/PR270_CI_REPAIR_2026-10-28.md) ·
-[Gépi eredmények, APK-hashek és linkek](builds/2026-10-28-pr270-ci-repair.json) ·
-[Drive01–18 audit](reviews/STUDIO_DRIVE_01_18_AUDIT_2026-10-28.md).
-**A dizájn még köztes; teljes Studio-vizuális egyezés és készülékes elfogadás nincs.**
-Első folytatási lépés: a **40695107665** végállapota és friss nyers artifactjai.
-Ez automatikus PR-kapu, owner-profile input nélkül; szükség esetén külön kézi
-owner-profile futás: 1080x2392 /450 /0.90, ugyanazon fagyasztott forráson.
-Main merge/release/verzióemelés nincs. A későbbi docs-only HEAD nem új alkalmazásbuild.
+Az előző build/aláírás és2signedupgrade SUCCESS, JVM1345PASS.
+Wear nyers183PASS, **de mind3job CANCELLED**; teljes kapu nem sikeres.
+[CI-diagnózis és folytatás](reviews/PR270_CI_LAUNCHER_REPAIR_2026-10-28.md) ·
+[Gépi bizonylat/APK-hashek](builds/2026-10-28-pr270-launcher-repair.json) ·
+[Friss350 UI-audit](reviews/PR270_UI_AUDIT_350_2026-10-28.md).
+A korábbi szerkezeti UI-hiányok nagyrészt megvalósultak;3P2 maradt a recovery
+forrás/minősítésénél, súlymérés közvetlen megnyitásánál és pulzusgörbe forrásánál.
+Teljes vizuális egyezés és készülékes elfogadás továbbra nyitott.
+Első folytatási lépés a40736984933 végállapota és friss nyers artifactjai.
+Main/release/verzió/appid/aláírás változatlan; docs-only HEAD nem új alkalmazásbuild.
 
 ## Korábbi zöld Studio-baseline és vizuális cél – 2026-10-28
 
