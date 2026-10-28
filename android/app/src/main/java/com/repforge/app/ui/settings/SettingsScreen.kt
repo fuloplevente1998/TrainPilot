@@ -51,6 +51,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.testTag
@@ -93,6 +94,9 @@ fun SettingsScreen(
     var profileOpen by remember { mutableStateOf(false) }
     var openedProfileJson by remember { mutableStateOf("{}") }
     var openedTimerJson by remember { mutableStateOf<String?>(null) }
+    var themeExpanded by rememberSaveable(initialSection) {
+        mutableStateOf(initialSection == "theme")
+    }
     LaunchedEffect(state.timerSavedSequence) {
         if (state.timerSavedSequence > 0) openedTimerJson = null
     }
@@ -131,9 +135,16 @@ fun SettingsScreen(
     }
 
     // Presentation-only entry points reuse the original settings controls/writers.
-    val initialIndex = when (initialSection) { "language" -> 1; "theme" -> 4; "profile" -> 5; else -> 0 }
-    val listState = rememberLazyListState(initialFirstVisibleItemIndex =
-        if (initialIndex > 0 && !allowDataReplacement) initialIndex + 1 else initialIndex)
+    val initialIndex = when (initialSection) {
+        "theme" -> 1
+        "language" -> 2
+        "profile" -> 5
+        else -> 0
+    }
+    val listState = rememberLazyListState(
+        initialFirstVisibleItemIndex =
+            if (initialIndex > 0 && !allowDataReplacement) initialIndex + 1 else initialIndex
+    )
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp).testTag("settings_list"),
@@ -144,6 +155,66 @@ fun SettingsScreen(
             Text(strings.getString(R.string.native_settings_workout_running), color = colors.muted)
         }
 
+        item {
+            val paletteIndex = TrainPilotSettingsStore.AVAILABLE_THEMES
+                .indexOfFirst { it.key == state.settings.themeKey }
+                .takeIf { it >= 0 }?.plus(1)
+            Card(
+                modifier = Modifier.fillMaxWidth()
+                    .testTag("settings_theme_summary")
+                    .clickable(enabled = !state.replacementBusy) {
+                        themeExpanded = !themeExpanded
+                    },
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = colors.card),
+                border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Palette,
+                        contentDescription = null,
+                        tint = colors.accentText,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            strings.getString(R.string.studio_settings_themes),
+                            color = colors.text,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            state.settings.let {
+                                TrainPilotSettingsStore.AVAILABLE_THEMES
+                                    .firstOrNull { theme -> theme.key == it.themeKey }
+                                    ?.displayName(it.language)
+                            } ?: state.settings.themeKey,
+                            color = colors.muted,
+                            fontSize = 11.sp
+                        )
+                    }
+                    paletteIndex?.let {
+                        Text(
+                            "#$it",
+                            color = colors.accentText,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .background(colors.accent.copy(alpha = .15f), RoundedCornerShape(8.dp))
+                                .padding(horizontal = 8.dp, vertical = 5.dp)
+                        )
+                    }
+                    Text(if (themeExpanded) "⌄" else "›", color = colors.accentText, fontSize = 22.sp)
+                }
+            }
+        }
+        if (themeExpanded) {
+            item { NativeThemePicker(state.settings, viewModel::setTheme) }
+        }
         item { NativeLanguagePicker(state.settings.language, !state.replacementBusy, viewModel::setLanguage) }
         item {
             OutlinedButton(onClick = { openedTimerJson = viewModel.beginTimerDefaults() },
@@ -164,7 +235,6 @@ fun SettingsScreen(
                 holder = globalModeState, showDialog = false
             )
         }
-        item { NativeThemePicker(state.settings, viewModel::setTheme) }
         item {
             Card(modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),

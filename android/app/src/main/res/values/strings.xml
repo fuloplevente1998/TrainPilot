@@ -713,4 +713,5 @@
     <string name="studio_progress_strength_exercise">Gyakorlat (1RM becslés)</string>
     <string name="studio_progress_strength_estimate">1RM becslés (kg)</string>
     <string name="studio_progress_heaviest_set">Legnehezebb rögzített sorozat</string>
+    <string name="studio_settings_themes">Témák</string>
 </resources>

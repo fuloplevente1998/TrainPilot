@@ -713,4 +713,5 @@
     <string name="studio_progress_strength_exercise">Exercițiu (1RM estimat)</string>
     <string name="studio_progress_strength_estimate">1RM estimat (kg)</string>
     <string name="studio_progress_heaviest_set">Cea mai grea serie înregistrată</string>
+    <string name="studio_settings_themes">Teme</string>
 </resources>

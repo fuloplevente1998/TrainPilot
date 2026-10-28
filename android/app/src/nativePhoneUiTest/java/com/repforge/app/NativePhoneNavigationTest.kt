@@ -343,6 +343,11 @@ class NativePhoneNavigationTest {
             compose.onNodeWithTag("settings_language_$language").performClick()
             compose.waitUntil(10000) { runBlocking { settings.current().language == language } }
             compose.onNodeWithTag("settings_language_$language").assertIsSelected()
+            if (compose.onAllNodesWithTag("theme_$theme").fetchSemanticsNodes().isEmpty()) {
+                compose.onNodeWithTag("settings_list")
+                    .performScrollToNode(hasTestTag("settings_theme_summary"))
+                compose.onNodeWithTag("settings_theme_summary").performClick()
+            }
             compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("theme_$theme"))
             compose.onNodeWithTag("theme_$theme").performScrollTo().assertIsDisplayed().performClick()
             compose.waitUntil(10000) { runBlocking { settings.current().themeKey == theme && settings.current().language == language } }
