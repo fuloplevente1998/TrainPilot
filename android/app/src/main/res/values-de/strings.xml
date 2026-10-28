@@ -690,4 +690,6 @@
     <string name="studio_health_watch_sync_subtitle">Verbundene Geräte und Hintergrundverbindung</string>
     <string name="studio_health_connected_devices">Verbundene Geräte</string>
     <string name="studio_health_connected_devices_subtitle">Uhrverbindung und Gerätesynchronisierung</string>
+    <string name="studio_home_programs_subtitle">Trainingspläne</string>
+    <string name="studio_home_calendar_subtitle">Planung</string>
 </resources>

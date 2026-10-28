@@ -126,9 +126,9 @@ fun HomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
-            .padding(horizontal = 12.dp)
-            .padding(top = 6.dp, bottom = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+            .padding(horizontal = 16.dp)
+            .padding(top = 8.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         if (state.hasImportedDraft) Button(onClick = onResumeDraft, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
             Text(strings.getString(R.string.native_home_resume_draft))
@@ -151,29 +151,72 @@ fun HomeScreen(
             modifier = Modifier.testTag("home_studio_greeting"))
         Text(strings.getString(if (hasActiveSession) R.string.studio_home_active_intro else R.string.studio_home_overview),
             style = MaterialTheme.typography.bodyMedium, color = colors.muted)
-        TrainPilotSectionSurface(Modifier.fillMaxWidth().testTag("home_personal_planner")) {
-            Text(strings.getString(R.string.studio_home_planner_title), style = MaterialTheme.typography.titleMedium)
-            Text(strings.getString(R.string.studio_home_planner_info), style = MaterialTheme.typography.bodySmall,
-                color = colors.muted)
-            TrainPilotPrimaryButton(strings.getString(R.string.studio_home_new_plan), onPersonalPlan,
-                Modifier.fillMaxWidth().testTag("home_personal_plan"), !busy)
+        Surface(
+            shape = RoundedCornerShape(18.dp),
+            color = colors.card,
+            modifier = Modifier.fillMaxWidth()
+                .border(1.dp, colors.line, RoundedCornerShape(18.dp))
+                .testTag("home_personal_planner")
+        ) {
+            Column(
+                Modifier.fillMaxWidth().padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(strings.getString(R.string.studio_home_planner_title),
+                    style = MaterialTheme.typography.titleMedium, color = colors.text)
+                Text(strings.getString(R.string.studio_home_planner_info),
+                    style = MaterialTheme.typography.bodySmall, color = colors.muted)
+                Button(
+                    onClick = onPersonalPlan,
+                    enabled = !busy,
+                    modifier = Modifier.fillMaxWidth().height(44.dp).testTag("home_personal_plan"),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = colors.accent, contentColor = colors.onAccent
+                    )
+                ) {
+                    Text(strings.getString(R.string.studio_home_new_plan),
+                        style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                }
+            }
         }
 
         // Accepted 18:49 Studio hero structure: 56dp warm-gold icon, real status,
         // primary action, and a details affordance, not a generic native card.
-        TrainPilotHeroSurface(Modifier.fillMaxWidth()
-            .testTag("home_today_hero")) {
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = colors.card,
+            modifier = Modifier.fillMaxWidth()
+                .border(
+                    width = 1.dp,
+                    brush = Brush.linearGradient(
+                        listOf(colors.accent.copy(alpha = .55f), colors.line)
+                    ),
+                    shape = RoundedCornerShape(20.dp)
+                )
+                .testTag("home_today_hero")
+        ) {
+            Column(
+                Modifier.fillMaxWidth()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(colors.card2.copy(alpha = .65f), colors.card)
+                        )
+                    )
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
             Row(Modifier.fillMaxWidth().testTag("home_hero_workout_card")
                 .clickable(enabled = !busy, role = Role.Button) { onPrograms() },
                 verticalAlignment = Alignment.CenterVertically) {
                 Surface(
-                    modifier = Modifier.size(48.dp)
-                        .border(1.dp, colors.accent.copy(alpha = .3f), RoundedCornerShape(13.dp)),
-                    shape = RoundedCornerShape(13.dp), color = colors.accent.copy(alpha = .14f)
+                    modifier = Modifier.size(56.dp)
+                        .border(1.dp, colors.accent.copy(alpha = .3f), RoundedCornerShape(14.dp)),
+                    shape = RoundedCornerShape(14.dp), color = colors.accent.copy(alpha = .14f)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(Icons.Default.FitnessCenter, contentDescription = null,
-                            modifier = Modifier.size(24.dp), tint = colors.accentText)
+                            modifier = Modifier.size(28.dp), tint = colors.accentText)
                     }
                 }
                 Spacer(Modifier.width(14.dp))
@@ -196,7 +239,7 @@ fun HomeScreen(
                     } ?: strings.getString(if (state.loading)
                         R.string.home_state_loading else R.string.home_state_no_target),
                         Modifier.testTag("home_day_name"), color = colors.text,
-                        style = MaterialTheme.typography.titleLarge.copy(fontSize = 19.sp))
+                        style = MaterialTheme.typography.titleLarge.copy(fontSize = 21.sp))
                     Text(programName, Modifier.testTag("home_program_name"),
                         color = colors.muted, style = MaterialTheme.typography.bodyMedium)
                     if (!hasActiveSession && target != null)
@@ -212,9 +255,9 @@ fun HomeScreen(
                     else target?.let { onStartWorkout(it.programId, it.dayId, it.scheduleId) }
                 },
                 enabled = !busy && (hasActiveSession || (!state.loading && target != null)),
-                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                modifier = Modifier.fillMaxWidth().height(50.dp)
                     .testTag("home_start_workout"),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = colors.accent,
                     contentColor = colors.onAccent)
             ) {
@@ -223,6 +266,7 @@ fun HomeScreen(
                 Text(strings.getString(if (hasActiveSession)
                     R.string.native_workout_component_resume else R.string.native_home_start_workout),
                     style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            }
             }
         }
 
@@ -258,24 +302,37 @@ fun HomeScreen(
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             val stacked = maxWidth < 320.dp || LocalDensity.current.fontScale > 1.3f
             val options = listOf(
-                Triple(strings.getString(R.string.native_home_next_workout),
-                    Icons.Default.ViewAgenda, onPrograms),
-                Triple(NativeMainMenu.title("calendar", language),
-                    Icons.Default.CalendarMonth, onCalendar),
-                Triple(NativeMainMenu.title("coach", language),
-                    Icons.Default.Psychology, onCoach)
+                StudioHomeShortcutItem(
+                    title = NativeMainMenu.title("programs", language),
+                    subtitle = strings.getString(R.string.studio_home_programs_subtitle),
+                    icon = Icons.Default.ViewAgenda,
+                    route = "programs",
+                    action = onPrograms
+                ),
+                StudioHomeShortcutItem(
+                    title = NativeMainMenu.title("calendar", language),
+                    subtitle = strings.getString(R.string.studio_home_calendar_subtitle),
+                    icon = Icons.Default.CalendarMonth,
+                    route = "calendar",
+                    action = onCalendar
+                ),
+                StudioHomeShortcutItem(
+                    title = NativeMainMenu.title("coach", language),
+                    subtitle = state.todayMetrics.recoveryText,
+                    icon = Icons.Default.Psychology,
+                    route = "coach",
+                    action = onCoach
+                )
             )
             if (stacked) Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                options.forEachIndexed { index, (title, icon, action) ->
-                    StudioHomeShortcut(title, icon,
-                        listOf("programs", "calendar", "coach")[index],
-                        Modifier.fillMaxWidth(), !busy, action)
+                options.forEach { item ->
+                    StudioHomeShortcut(item.title, item.subtitle, item.icon, item.route,
+                        Modifier.fillMaxWidth(), !busy, item.action)
                 }
             } else Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                options.forEachIndexed { index, (title, icon, action) ->
-                    StudioHomeShortcut(title, icon,
-                        listOf("programs", "calendar", "coach")[index],
-                        Modifier.weight(1f), !busy, action)
+                options.forEach { item ->
+                    StudioHomeShortcut(item.title, item.subtitle, item.icon, item.route,
+                        Modifier.weight(1f), !busy, item.action)
                 }
             }
         }
@@ -298,12 +355,12 @@ private fun StudioHomeNavigationRow(
 ) {
     val colors = LocalTrainPilotColors.current
     Surface(modifier.heightIn(min = 48.dp)
-        .border(1.dp, colors.line, RoundedCornerShape(16.dp))
+        .border(1.dp, colors.line, RoundedCornerShape(18.dp))
         .clickable(enabled = enabled, role = Role.Button) { onClick() },
-        shape = RoundedCornerShape(16.dp), color = colors.card) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 11.dp),
+        shape = RoundedCornerShape(18.dp), color = colors.card) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically) {
-            Surface(Modifier.size(40.dp), shape = RoundedCornerShape(11.dp),
+            Surface(Modifier.size(44.dp), shape = RoundedCornerShape(12.dp),
                 color = colors.card2) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(icon, contentDescription = null, tint = colors.accentText,
@@ -383,9 +440,24 @@ private data class StudioHomeVital(
 )
 
 @Composable
-private fun StudioHomeShortcut(title: String,
+private data class StudioHomeShortcutItem(
+    val title: String,
+    val subtitle: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val route: String,
+    val action: () -> Unit
+)
+
+@Composable
+private fun StudioHomeShortcut(
+    title: String,
+    subtitle: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
-    route: String, modifier: Modifier, enabled: Boolean, onClick: () -> Unit) {
+    route: String,
+    modifier: Modifier,
+    enabled: Boolean,
+    onClick: () -> Unit
+) {
     val colors = LocalTrainPilotColors.current
     Surface(modifier.heightIn(min = 48.dp)
         .testTag("shortcut_$route")
@@ -400,6 +472,8 @@ private fun StudioHomeShortcut(title: String,
                 modifier = Modifier.size(22.dp))
             Spacer(Modifier.height(2.dp))
             Text(title, color = colors.text, style = MaterialTheme.typography.titleSmall,
+                maxLines = 2)
+            Text(subtitle, color = colors.muted, style = MaterialTheme.typography.bodySmall,
                 maxLines = 2)
         }
     }

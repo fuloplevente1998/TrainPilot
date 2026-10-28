@@ -690,4 +690,6 @@
     <string name="studio_health_watch_sync_subtitle">Kapcsolt eszközök és háttérkapcsolat</string>
     <string name="studio_health_connected_devices">Kapcsolt eszközök</string>
     <string name="studio_health_connected_devices_subtitle">Órakapcsolat és eszközszinkron</string>
+    <string name="studio_home_programs_subtitle">Edzéstervek</string>
+    <string name="studio_home_calendar_subtitle">Tervezés</string>
 </resources>

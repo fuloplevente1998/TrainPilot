@@ -690,4 +690,6 @@
     <string name="studio_health_watch_sync_subtitle">Connected devices and background connection</string>
     <string name="studio_health_connected_devices">Connected devices</string>
     <string name="studio_health_connected_devices_subtitle">Watch connection and device sync</string>
+    <string name="studio_home_programs_subtitle">Training plans</string>
+    <string name="studio_home_calendar_subtitle">Planning</string>
 </resources>

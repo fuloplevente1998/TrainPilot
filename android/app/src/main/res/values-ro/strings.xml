@@ -690,4 +690,6 @@
     <string name="studio_health_watch_sync_subtitle">Dispozitive conectate și conexiune în fundal</string>
     <string name="studio_health_connected_devices">Dispozitive conectate</string>
     <string name="studio_health_connected_devices_subtitle">Conexiune ceas și sincronizare dispozitive</string>
+    <string name="studio_home_programs_subtitle">Planuri de antrenament</string>
+    <string name="studio_home_calendar_subtitle">Planificare</string>
 </resources>
