@@ -209,103 +209,31 @@ fun ProgressScreen(
                 }
             }
             else -> {
-        // 2. 1RM Fejlődési diagram
-        item {
-            TrainPilotHeroSurface(Modifier.fillMaxWidth()) {
-                Column {
-                    TrainPilotSectionHeader(strings.getString(R.string.native_progress_1rm_chart), icon = Icons.Default.TrendingUp)
-                    Text(strings.getString(R.string.native_progress_1rm_description), color = colors.muted, fontSize = 11.sp)
-                    if (!state.strengthLoading && !state.strengthError && state.exercise1RmTrend.isNotEmpty()) {
+                item(key = "progress_strength_selector") {
+                    ProgressStrengthSelector(
+                        state = state,
+                        onRange = viewModel::selectStrengthRange,
+                        onExercise = viewModel::selectExercise
+                    )
+                }
+
+                item(key = "progress_strength_chart") {
+                    ProgressStrengthChart(
+                        state = state,
+                        onRetry = viewModel::retryStrength
+                    )
+                }
+
+                if (!state.strengthLoading && !state.strengthError &&
+                    state.exercise1RmTrend.isNotEmpty()
+                ) {
+                    item(key = "progress_strength_summary") {
                         ProgressStrengthSnapshot(state.exercise1RmTrend, state.language)
-                    }
-                    Spacer(Modifier.height(12.dp))
-
-                    // Independent strength date window. Cardio and weight keep their own filters.
-                    LazyRow(
-                        modifier = Modifier.testTag("progress_strength_ranges"),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(NativeStrengthRange.values().toList(), key = { it.name }) { range ->
-                            val title = when (range) {
-                                NativeStrengthRange.DAYS_30 -> R.string.native_progress_strength_30
-                                NativeStrengthRange.DAYS_90 -> R.string.native_progress_strength_90
-                                NativeStrengthRange.YEAR -> R.string.native_progress_strength_year
-                                NativeStrengthRange.ALL -> R.string.native_progress_strength_all
-                            }
-                            FilterChip(
-                                selected = state.selectedStrengthRange == range,
-                                onClick = { viewModel.selectStrengthRange(range) },
-                                label = { Text(strings.getString(title)) },
-                                modifier = Modifier.heightIn(min = 48.dp)
-                                    .testTag("progress_strength_${range.name.lowercase()}")
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(12.dp))
-
-                    // Gyakorlat választó chip sor
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.testTag("progress_exercise_choices")) {
-                        items(state.exercises, key = { it.id }) { ex ->
-                            val isSelected = ex.id == state.selectedExerciseId
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(if (isSelected) colors.accent else colors.card2)
-                                    .clickable { viewModel.selectExercise(ex.id) }
-                                    .testTag("progress_exercise_${ex.id}")
-                                    .padding(horizontal = 10.dp, vertical = 6.dp)
-                            ) {
-                                Text(when (state.language) {
-                                    "en" -> ex.nameEn; "de" -> ex.nameDe; "ro" -> ex.nameRo
-                                    else -> ex.nameHu
-                                }.ifBlank { ex.nameHu },
-                                    color = if (isSelected) colors.onAccent else colors.text,
-                                    fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
-                            }
-                        }
-                    }
-                    Spacer(Modifier.height(14.dp))
-
-                    // 1RM Canvas grafikon
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(140.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(colors.card2)
-                            .padding(12.dp)
-                    ) {
-                        when {
-                            state.strengthLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                Text(strings.getString(R.string.native_progress_strength_loading),
-                                    color = colors.muted, modifier = Modifier.testTag("progress_strength_loading"))
-                            }
-                            state.strengthError -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                androidx.compose.material3.TextButton(
-                                    onClick = viewModel::retryStrength,
-                                    modifier = Modifier.testTag("progress_strength_retry")
-                                ) {
-                                    Text(strings.getString(R.string.native_progress_retry), color = colors.danger)
-                                }
-                            }
-                            state.exercise1RmTrend.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                Text(strings.getString(
-                                    if (state.selectedStrengthRange == NativeStrengthRange.ALL)
-                                        R.string.native_progress_no_history
-                                    else R.string.native_progress_strength_empty
-                                ), color = colors.muted, fontSize = 12.sp,
-                                    modifier = Modifier.testTag("progress_strength_empty"))
-                            }
-                            else -> TrendCanvas(points = state.exercise1RmTrend.map { it.e1rmKg })
-                        }
                     }
                 }
             }
         }
 
-            }
-        }
 
         // Private progress photos stay reachable independently of the Studio analytics section.
         item(key = "progress_photos") {
@@ -349,7 +277,7 @@ private fun ProgressVolumeChart(
     val snapshot = state.volumeSnapshot?.takeIf {
         it.range == state.selectedVolumeRange
     }
-    val narrow = LocalConfiguration.current.screenWidthDp < 480 ||
+    val narrow = LocalConfiguration.current.screenWidthDp < 384 ||
         LocalDensity.current.fontScale > 1.15f
     val rangeLabels = listOf(
         R.string.studio_volume_one_day, R.string.studio_volume_week,
@@ -516,6 +444,177 @@ private fun ProgressPeriodOverview(totals: ProgressPeriodTotals, language: Strin
     }
 }
 
+@Composable
+private fun ProgressStrengthSelector(
+    state: ProgressUiState,
+    onRange: (NativeStrengthRange) -> Unit,
+    onExercise: (String) -> Unit
+) {
+    val colors = LocalTrainPilotColors.current
+    val context = LocalContext.current
+    val strings = remember(context, state.language) { nativeResources(context, state.language) }
+    Card(
+        modifier = Modifier.fillMaxWidth().testTag("progress_strength_selector"),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = colors.card),
+        border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
+    ) {
+        Column(
+            Modifier.fillMaxWidth().padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                strings.getString(R.string.studio_progress_strength_exercise),
+                color = colors.muted,
+                style = androidx.compose.material3.MaterialTheme.typography.labelSmall
+            )
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.testTag("progress_exercise_choices")
+            ) {
+                items(state.exercises, key = { it.id }) { ex ->
+                    val isSelected = ex.id == state.selectedExerciseId
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (isSelected) colors.accent else colors.card2)
+                            .clickable(role = Role.Button) { onExercise(ex.id) }
+                            .testTag("progress_exercise_${ex.id}")
+                            .padding(horizontal = 10.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            when (state.language) {
+                                "en" -> ex.nameEn
+                                "de" -> ex.nameDe
+                                "ro" -> ex.nameRo
+                                else -> ex.nameHu
+                            }.ifBlank { ex.nameHu },
+                            color = if (isSelected) colors.onAccent else colors.text,
+                            style = androidx.compose.material3.MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+            LazyRow(
+                modifier = Modifier.testTag("progress_strength_ranges"),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                items(NativeStrengthRange.values().toList(), key = { it.name }) { range ->
+                    val title = when (range) {
+                        NativeStrengthRange.DAYS_30 -> R.string.native_progress_strength_30
+                        NativeStrengthRange.DAYS_90 -> R.string.native_progress_strength_90
+                        NativeStrengthRange.YEAR -> R.string.native_progress_strength_year
+                        NativeStrengthRange.ALL -> R.string.native_progress_strength_all
+                    }
+                    FilterChip(
+                        selected = state.selectedStrengthRange == range,
+                        onClick = { onRange(range) },
+                        label = { Text(strings.getString(title)) },
+                        modifier = Modifier.heightIn(min = 48.dp)
+                            .testTag("progress_strength_${range.name.lowercase()}")
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProgressStrengthChart(
+    state: ProgressUiState,
+    onRetry: () -> Unit
+) {
+    val colors = LocalTrainPilotColors.current
+    val context = LocalContext.current
+    val strings = remember(context, state.language) { nativeResources(context, state.language) }
+    val number = remember(state.language) {
+        NumberFormat.getNumberInstance(Locale.forLanguageTag(state.language)).apply {
+            maximumFractionDigits = 1
+            minimumFractionDigits = 0
+        }
+    }
+    val latest = if (!state.strengthLoading && !state.strengthError) {
+        strengthSnapshot(state.exercise1RmTrend)?.first
+    } else null
+    Card(
+        modifier = Modifier.fillMaxWidth().testTag("progress_strength_chart_card"),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = colors.card),
+        border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
+    ) {
+        Column(
+            Modifier.fillMaxWidth().padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                strings.getString(R.string.studio_progress_strength_estimate),
+                color = colors.muted,
+                style = androidx.compose.material3.MaterialTheme.typography.labelMedium
+            )
+            Text(
+                latest?.let { "${number.format(it.e1rmKg)} kg" } ?: "—",
+                color = colors.text,
+                style = androidx.compose.material3.MaterialTheme.typography.headlineLarge.copy(
+                    fontFeatureSettings = "tnum"
+                ),
+                modifier = Modifier.testTag("progress_latest_1rm")
+            )
+            Text(
+                strings.getString(R.string.native_progress_1rm_description),
+                color = colors.muted,
+                style = androidx.compose.material3.MaterialTheme.typography.bodySmall
+            )
+            Box(
+                modifier = Modifier.fillMaxWidth().height(120.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(colors.card2)
+                    .padding(12.dp)
+            ) {
+                when {
+                    state.strengthLoading -> Box(
+                        Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            strings.getString(R.string.native_progress_strength_loading),
+                            color = colors.muted,
+                            modifier = Modifier.testTag("progress_strength_loading")
+                        )
+                    }
+                    state.strengthError -> Box(
+                        Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        androidx.compose.material3.TextButton(
+                            onClick = onRetry,
+                            modifier = Modifier.testTag("progress_strength_retry")
+                        ) {
+                            Text(strings.getString(R.string.native_progress_retry), color = colors.danger)
+                        }
+                    }
+                    state.exercise1RmTrend.isEmpty() -> Box(
+                        Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            strings.getString(
+                                if (state.selectedStrengthRange == NativeStrengthRange.ALL)
+                                    R.string.native_progress_no_history
+                                else R.string.native_progress_strength_empty
+                            ),
+                            color = colors.muted,
+                            style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.testTag("progress_strength_empty")
+                        )
+                    }
+                    else -> TrendCanvas(points = state.exercise1RmTrend.map { it.e1rmKg })
+                }
+            }
+        }
+    }
+}
+
 /** The source trend is an ascending time-series for the selected exercise and date range.
  * Missing/invalid calculations never become values in the Studio summary cards.
  */
@@ -533,55 +632,79 @@ internal fun strengthSnapshot(
  */
 @Composable
 private fun ProgressStrengthSnapshot(
-    estimates: List<Exercise1RmPointUiModel>, language: String
+    estimates: List<Exercise1RmPointUiModel>,
+    language: String
 ) {
-    val (latest, best) = strengthSnapshot(estimates) ?: return
+    val (_, bestEstimate) = strengthSnapshot(estimates) ?: return
+    val heaviestSet = estimates
+        .filter { it.weightKg.isFinite() && it.weightKg > 0.0 && it.reps > 0 }
+        .maxWithOrNull(
+            compareBy<Exercise1RmPointUiModel> { it.weightKg }
+                .thenBy { it.reps }
+        )
     val narrow = LocalConfiguration.current.screenWidthDp < 360 ||
         LocalDensity.current.fontScale > 1.3f
-    val text = nativeResources(LocalContext.current, language)
+    val strings = nativeResources(LocalContext.current, language)
     val number = NumberFormat.getNumberInstance(Locale.forLanguageTag(language)).apply {
         maximumFractionDigits = 1
         minimumFractionDigits = 0
     }
-    val latestCard: @Composable (Modifier) -> Unit = { modifier ->
-        TrainPilotMetricSurface(modifier.testTag("progress_latest_1rm")) {
-            Text(text.getString(R.string.studio_progress_latest_1rm),
-                style = androidx.compose.material3.MaterialTheme.typography.labelMedium,
-                color = LocalTrainPilotColors.current.muted)
-            Text("${number.format(latest.e1rmKg)} kg",
-                style = androidx.compose.material3.MaterialTheme.typography.titleLarge.copy(
-                    fontFeatureSettings = "tnum"),
-                color = LocalTrainPilotColors.current.text)
-            Text(latest.date,
-                style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
-                color = LocalTrainPilotColors.current.muted)
-        }
-    }
-    val bestCard: @Composable (Modifier) -> Unit = { modifier ->
+    val estimateCard: @Composable (Modifier) -> Unit = { modifier ->
         TrainPilotMetricSurface(modifier.testTag("progress_best_1rm")) {
-            Text(text.getString(R.string.studio_progress_best_1rm),
+            Text(
+                strings.getString(R.string.studio_progress_best_1rm),
                 style = androidx.compose.material3.MaterialTheme.typography.labelMedium,
-                color = LocalTrainPilotColors.current.muted)
-            Text("${number.format(best.e1rmKg)} kg",
+                color = LocalTrainPilotColors.current.muted
+            )
+            Text(
+                "${number.format(bestEstimate.e1rmKg)} kg",
                 style = androidx.compose.material3.MaterialTheme.typography.titleLarge.copy(
-                    fontFeatureSettings = "tnum"),
-                color = LocalTrainPilotColors.current.accentText)
-            Text(best.date,
+                    fontFeatureSettings = "tnum"
+                ),
+                color = LocalTrainPilotColors.current.accentText
+            )
+            Text(
+                bestEstimate.date,
                 style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
-                color = LocalTrainPilotColors.current.muted)
+                color = LocalTrainPilotColors.current.muted
+            )
         }
     }
-    Spacer(Modifier.height(12.dp))
+    val setCard: @Composable (Modifier) -> Unit = { modifier ->
+        TrainPilotMetricSurface(modifier.testTag("progress_best_set")) {
+            Text(
+                strings.getString(R.string.studio_progress_heaviest_set),
+                style = androidx.compose.material3.MaterialTheme.typography.labelMedium,
+                color = LocalTrainPilotColors.current.muted
+            )
+            Text(
+                heaviestSet?.let { "${number.format(it.weightKg)} kg × ${it.reps}" } ?: "—",
+                style = androidx.compose.material3.MaterialTheme.typography.titleLarge.copy(
+                    fontFeatureSettings = "tnum"
+                ),
+                color = LocalTrainPilotColors.current.text
+            )
+            if (heaviestSet != null) {
+                Text(
+                    heaviestSet.date,
+                    style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                    color = LocalTrainPilotColors.current.muted
+                )
+            }
+        }
+    }
     if (narrow) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            latestCard(Modifier.fillMaxWidth())
-            bestCard(Modifier.fillMaxWidth())
+            estimateCard(Modifier.fillMaxWidth())
+            setCard(Modifier.fillMaxWidth())
         }
     } else {
-        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            latestCard(Modifier.weight(1f).fillMaxHeight())
-            bestCard(Modifier.weight(1f).fillMaxHeight())
+        Row(
+            Modifier.fillMaxWidth().height(IntrinsicSize.Max),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            estimateCard(Modifier.weight(1f).fillMaxHeight())
+            setCard(Modifier.weight(1f).fillMaxHeight())
         }
     }
 }

@@ -710,4 +710,7 @@
     <string name="studio_health_selected_source">Ausgewählte Datenquelle</string>
     <string name="studio_health_ble_tools">BLE- / RDFit-Geräte</string>
     <string name="studio_health_ble_tools_subtitle">Erweiterte Gerätesuche und Hintergrundverbindung</string>
+    <string name="studio_progress_strength_exercise">Übung (geschätztes 1RM)</string>
+    <string name="studio_progress_strength_estimate">Geschätztes 1RM (kg)</string>
+    <string name="studio_progress_heaviest_set">Schwerster erfasster Satz</string>
 </resources>
