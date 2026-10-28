@@ -3,9 +3,13 @@ package com.repforge.app.ui.navigation
 /** Accepted five-tab hierarchy; secondary destinations keep a primary parent. */
 internal object NativeMainMenu {
     val routes = listOf("home", "training", "journal", "progress", "health")
-    /** Latest Studio 18:49 design: 320dp screens and scaled DE/RO text stay scrollable. */
+    /**
+     * The owner profile is 384dp wide; after the shell's 12dp side paddings the
+     * five Studio tabs have 360dp and fit as one fixed row. Narrow phones and
+     * enlarged text keep the horizontal-scroll fallback.
+     */
     fun topTabsScrollable(availableWidthDp: Float, fontScale: Float): Boolean =
-        availableWidthDp < 400f || fontScale > 1.15f
+        availableWidthDp < 360f || fontScale > 1.15f
 
     /** Ensure selected top pill becomes visible; resistant to extreme scroll widths. */
     fun topTabScrollTarget(maxScrollPx: Int, index: Int, tabCount: Int = routes.size): Int {
