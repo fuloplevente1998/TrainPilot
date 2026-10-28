@@ -720,4 +720,15 @@
     <string name="studio_settings_sound_subtitle">La finalul perioadei de pauză</string>
     <string name="studio_settings_profile_progression">Profil de antrenament și progresie</string>
     <string name="studio_settings_edit_badge">Edit.</string>
+    <string name="studio_settings_google_sync">Sincronizare Google</string>
+    <string name="studio_settings_devices_data">Dispozitive și date</string>
+    <string name="studio_settings_connected_devices">Dispozitive conectate</string>
+    <string name="studio_settings_connected_devices_subtitle">Gestionează Wear OS, Health Connect, Samsung Health și BLE</string>
+    <string name="studio_settings_manage_badge">Gestionare</string>
+    <string name="studio_settings_backup_restore">Copie de siguranță și restaurare</string>
+    <string name="studio_settings_backup_subtitle">Copie locală JSON / ZIP și Google Drive</string>
+    <string name="studio_settings_privacy_permissions">Confidențialitate și permisiuni</string>
+    <string name="studio_settings_privacy_subtitle">Gestionarea datelor, copia datelor de sănătate și date locale</string>
+    <string name="studio_settings_private_photos">Fotografii private de antrenament</string>
+    <string name="studio_settings_private_photos_subtitle">Deschide fotografiile private de progres</string>
 </resources>

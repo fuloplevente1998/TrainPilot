@@ -74,11 +74,66 @@ import com.repforge.app.data.store.TrainPilotSettingsStore
 import com.repforge.app.ui.theme.LocalTrainPilotColors
 
 @Composable
+private fun StudioSettingsActionCard(
+    title: String,
+    subtitle: String,
+    tag: String,
+    badge: String? = null,
+    enabled: Boolean = true,
+    onClick: () -> Unit
+) {
+    val colors = LocalTrainPilotColors.current
+    Card(
+        modifier = Modifier.fillMaxWidth()
+            .testTag(tag)
+            .clickable(enabled = enabled, onClick = onClick),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = colors.card),
+        border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    title,
+                    color = colors.text,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    subtitle,
+                    color = colors.muted,
+                    fontSize = 11.sp,
+                    maxLines = 2
+                )
+            }
+            badge?.let {
+                Text(
+                    it,
+                    color = colors.accentText,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .background(colors.accent.copy(alpha = .15f), RoundedCornerShape(8.dp))
+                        .padding(horizontal = 8.dp, vertical = 5.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+            }
+            Text("›", color = colors.accentText, fontSize = 22.sp)
+        }
+    }
+}
+
+@Composable
 fun SettingsScreen(
     navController: NavController,
     allowDataReplacement: Boolean = true,
     viewModel: SettingsViewModel = viewModel(),
-    initialSection: String = "general"
+    initialSection: String = "general",
+    onConnectedDevices: () -> Unit = {},
+    onPrivatePhotos: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val colors = LocalTrainPilotColors.current
@@ -97,6 +152,8 @@ fun SettingsScreen(
     var themeExpanded by rememberSaveable(initialSection) {
         mutableStateOf(initialSection == "theme")
     }
+    var backupExpanded by rememberSaveable { mutableStateOf(false) }
+    var privacyExpanded by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(state.timerSavedSequence) {
         if (state.timerSavedSequence > 0) openedTimerJson = null
     }
@@ -136,9 +193,9 @@ fun SettingsScreen(
 
     // Presentation-only entry points reuse the original settings controls/writers.
     val initialIndex = when (initialSection) {
-        "theme" -> 1
-        "language" -> 2
-        "profile" -> 6
+        "theme" -> 2
+        "language" -> 3
+        "profile" -> 7
         else -> 0
     }
     val listState = rememberLazyListState(
@@ -153,6 +210,69 @@ fun SettingsScreen(
         item { Spacer(Modifier.height(8.dp)) }
         if (!allowDataReplacement) item {
             Text(strings.getString(R.string.native_settings_workout_running), color = colors.muted)
+        }
+
+        item {
+            val gs = state.googleSyncState
+            Card(
+                modifier = Modifier.fillMaxWidth().testTag("settings_google_summary"),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = colors.card),
+                border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
+            ) {
+                Column(
+                    Modifier.fillMaxWidth().padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            if (gs.connectedEmail.isNotEmpty()) Icons.Default.CloudDone else Icons.Default.CloudSync,
+                            contentDescription = null,
+                            tint = colors.accentText,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                strings.getString(R.string.studio_settings_google_sync),
+                                color = colors.text,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                if (gs.connectedEmail.isNotEmpty()) gs.connectedEmail
+                                else strings.getString(R.string.native_settings_google_help),
+                                color = colors.muted,
+                                fontSize = 11.sp,
+                                maxLines = 2
+                            )
+                        }
+                    }
+                    Button(
+                        onClick = {
+                            activity?.let {
+                                if (gs.connectedEmail.isNotEmpty()) viewModel.syncDriveCloud(it)
+                                else viewModel.connectGoogle(it)
+                            }
+                        },
+                        enabled = !gs.isBusy && !state.replacementBusy,
+                        modifier = Modifier.fillMaxWidth().height(44.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (gs.connectedEmail.isNotEmpty()) colors.card2 else colors.accent,
+                            contentColor = if (gs.connectedEmail.isNotEmpty()) colors.text else colors.onAccent
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            strings.getString(
+                                if (gs.connectedEmail.isNotEmpty()) R.string.native_settings_drive_sync
+                                else R.string.native_settings_google_login
+                            ),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
         }
 
         item {
@@ -370,6 +490,53 @@ fun SettingsScreen(
             )
         }
 
+        item {
+            Text(
+                strings.getString(R.string.studio_settings_devices_data),
+                color = colors.muted,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+        item {
+            StudioSettingsActionCard(
+                title = strings.getString(R.string.studio_settings_connected_devices),
+                subtitle = strings.getString(R.string.studio_settings_connected_devices_subtitle),
+                tag = "settings_connected_devices",
+                badge = strings.getString(R.string.studio_settings_manage_badge),
+                onClick = onConnectedDevices
+            )
+        }
+        item {
+            StudioSettingsActionCard(
+                title = strings.getString(R.string.studio_settings_backup_restore),
+                subtitle = strings.getString(R.string.studio_settings_backup_subtitle),
+                tag = "settings_backup_summary",
+                badge = "JSON",
+                enabled = !state.replacementBusy,
+                onClick = { backupExpanded = !backupExpanded }
+            )
+        }
+        item {
+            StudioSettingsActionCard(
+                title = strings.getString(R.string.studio_settings_privacy_permissions),
+                subtitle = strings.getString(R.string.studio_settings_privacy_subtitle),
+                tag = "settings_privacy_summary",
+                badge = strings.getString(R.string.studio_settings_manage_badge),
+                onClick = { privacyExpanded = !privacyExpanded }
+            )
+        }
+        item {
+            StudioSettingsActionCard(
+                title = strings.getString(R.string.studio_settings_private_photos),
+                subtitle = strings.getString(R.string.studio_settings_private_photos_subtitle),
+                tag = "settings_private_photos",
+                onClick = onPrivatePhotos
+            )
+        }
+
+        // Detailed native controls stay available behind the compact Studio rows.
+        if (backupExpanded) {
         // 2. Google Cloud Szinkron (Drive appDataFolder + Managed Naptár)
         item {
             val gs = state.googleSyncState
@@ -494,6 +661,10 @@ fun SettingsScreen(
             }
         }
 
+
+        }
+
+        if (privacyExpanded) {
         // 4. Haptika (#227) és Adatvédelmi opciók
         item {
             Card(
@@ -575,6 +746,9 @@ fun SettingsScreen(
                     }
                 }
             }
+        }
+
+
         }
 
         item { Spacer(Modifier.height(80.dp)) }

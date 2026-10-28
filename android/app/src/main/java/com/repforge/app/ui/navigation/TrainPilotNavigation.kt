@@ -483,7 +483,13 @@ fun TrainPilotAppScaffold(
                     }
                 }
                 composable("settings") {
-                    SettingsScreen(navController = navController, allowDataReplacement = !hasActiveWorkout, initialSection = settingsSection)
+                    SettingsScreen(
+                        navController = navController,
+                        allowDataReplacement = !hasActiveWorkout,
+                        initialSection = settingsSection,
+                        onConnectedDevices = { selectDestination("health") },
+                        onPrivatePhotos = { selectDestination("progress") }
+                    )
                 }
             }
         }

@@ -720,4 +720,15 @@
     <string name="studio_settings_sound_subtitle">Wenn die Pausenzeit endet</string>
     <string name="studio_settings_profile_progression">Trainingsprofil und Progression</string>
     <string name="studio_settings_edit_badge">Bearb.</string>
+    <string name="studio_settings_google_sync">Google-Synchronisierung</string>
+    <string name="studio_settings_devices_data">Geräte und Daten</string>
+    <string name="studio_settings_connected_devices">Verbundene Geräte</string>
+    <string name="studio_settings_connected_devices_subtitle">Wear OS, Health Connect, Samsung Health und BLE verwalten</string>
+    <string name="studio_settings_manage_badge">Verwalten</string>
+    <string name="studio_settings_backup_restore">Sichern und wiederherstellen</string>
+    <string name="studio_settings_backup_subtitle">Lokale JSON-/ZIP- und Google-Drive-Sicherung</string>
+    <string name="studio_settings_privacy_permissions">Datenschutz und Berechtigungen</string>
+    <string name="studio_settings_privacy_subtitle">Datenverarbeitung, Gesundheitssicherung und lokale Daten</string>
+    <string name="studio_settings_private_photos">Private Trainingsfotos</string>
+    <string name="studio_settings_private_photos_subtitle">Private Fortschrittsfotos öffnen</string>
 </resources>

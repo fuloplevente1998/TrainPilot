@@ -720,4 +720,15 @@
     <string name="studio_settings_sound_subtitle">When the rest period ends</string>
     <string name="studio_settings_profile_progression">Training profile and progression</string>
     <string name="studio_settings_edit_badge">Edit</string>
+    <string name="studio_settings_google_sync">Google sync</string>
+    <string name="studio_settings_devices_data">Devices and data</string>
+    <string name="studio_settings_connected_devices">Connected devices</string>
+    <string name="studio_settings_connected_devices_subtitle">Manage Wear OS, Health Connect, Samsung Health and BLE</string>
+    <string name="studio_settings_manage_badge">Manage</string>
+    <string name="studio_settings_backup_restore">Backup and restore</string>
+    <string name="studio_settings_backup_subtitle">Local JSON / ZIP and Google Drive backup</string>
+    <string name="studio_settings_privacy_permissions">Privacy and permissions</string>
+    <string name="studio_settings_privacy_subtitle">Data handling, health backup and local data</string>
+    <string name="studio_settings_private_photos">Private workout photos</string>
+    <string name="studio_settings_private_photos_subtitle">Open private progress photos</string>
 </resources>
