@@ -1,4 +1,5 @@
 name: AI Studio 0542 Native Merge Review
+# Source-only audit: never builds, executes or imports code from the linked ZIP.
 on:
   push:
     branches: [feat/studio-ui-topnav-trial-20261027]
