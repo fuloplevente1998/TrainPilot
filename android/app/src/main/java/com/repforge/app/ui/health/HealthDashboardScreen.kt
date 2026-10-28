@@ -87,6 +87,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.repforge.app.R
+import com.repforge.app.ActiveWorkoutStore
+import com.repforge.app.WearLiveHealthStore
 import com.repforge.app.ui.text.nativeResources
 import androidx.compose.runtime.remember
 import com.repforge.app.ui.theme.LocalTrainPilotColors
@@ -108,9 +110,14 @@ private fun backgroundReasonResource(reason: BackgroundBlock): Int = when (reaso
 fun HealthDashboardScreen(
     navController: NavController,
     onWeightJournal: () -> Unit,
+    onActiveWorkout: () -> Unit = {},
     viewModel: HealthDashboardViewModel = viewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val activeWorkout by ActiveWorkoutStore.snapshotFlow.collectAsStateWithLifecycle()
+    val persistedWear = remember(LocalContext.current) { WearLiveHealthStore.current(LocalContext.current) }
+    val liveWear by WearLiveHealthStore.liveHealthFlow.collectAsStateWithLifecycle()
+    val wear = liveWear ?: persistedWear
     val colors = LocalTrainPilotColors.current
     val context = LocalContext.current
     val activity = context as? Activity
@@ -213,6 +220,12 @@ fun HealthDashboardScreen(
             BleDiscoveryTabContent(
                 state = state,
                 bleRepo = viewModel.bleRepo,
+                wearConnected = wear != null,
+                activeWorkout = activeWorkout?.optBoolean("active", false) == true,
+                activeWorkoutTitle = activeWorkout?.optString("dayName").orEmpty()
+                    .ifBlank { activeWorkout?.optString("programName").orEmpty() },
+                timerOwner = activeWorkout?.optString("timerOwner", "phone").orEmpty(),
+                onActiveWorkout = onActiveWorkout,
                 onToggleBleBackground = { enable ->
                     if (enable && state.bleBackgroundBlock in setOf(BackgroundBlock.BLUETOOTH_PERMISSION, BackgroundBlock.NOTIFICATION_PERMISSION)) {
                         val permissions = buildList {
@@ -968,9 +981,102 @@ private fun HealthConnectedDevicesHeader(
 }
 
 @Composable
+private fun HealthOwnerStatusPill(
+    text: String,
+    selected: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val colors = LocalTrainPilotColors.current
+    Surface(
+        modifier = modifier.heightIn(min = 54.dp),
+        shape = RoundedCornerShape(12.dp),
+        color = if (selected) colors.accent.copy(alpha = .18f) else colors.card2,
+        border = androidx.compose.foundation.BorderStroke(
+            if (selected) 1.5.dp else 1.dp,
+            if (selected) colors.accent else colors.line
+        )
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text,
+                color = if (selected) colors.accentText else colors.text,
+                style = MaterialTheme.typography.labelLarge
+            )
+            if (selected) {
+                Icon(
+                    Icons.Default.Check,
+                    contentDescription = null,
+                    tint = colors.accentText,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun HealthSyncSummaryCard(
+    title: String,
+    subtitle: String,
+    selectedLabel: String,
+    active: Boolean,
+    selected: Boolean,
+    tag: String
+) {
+    val colors = LocalTrainPilotColors.current
+    TrainPilotSubtleSurface(Modifier.fillMaxWidth().testTag(tag)) {
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Surface(
+                Modifier.size(44.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = if (active) colors.accent.copy(alpha = .12f) else colors.card
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.Default.FavoriteBorder,
+                        contentDescription = null,
+                        tint = if (active) colors.accentText else colors.muted,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            }
+            Column(Modifier.weight(1f)) {
+                Text(title, color = colors.text, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    subtitle,
+                    color = if (active) colors.success else colors.muted,
+                    style = MaterialTheme.typography.bodySmall
+                )
+                if (selected) {
+                    Text(
+                        selectedLabel,
+                        color = colors.accentText,
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
+            }
+            Text("›", color = colors.muted, style = MaterialTheme.typography.titleLarge)
+        }
+    }
+}
+
+@Composable
 fun BleDiscoveryTabContent(
     state: HealthDashboardUiState,
     bleRepo: com.repforge.app.BleDiscoveryRepository,
+    wearConnected: Boolean = false,
+    activeWorkout: Boolean = false,
+    activeWorkoutTitle: String = "",
+    timerOwner: String = "phone",
+    onActiveWorkout: () -> Unit = {},
     onToggleBleBackground: (Boolean) -> Unit
 ) {
     val colors = LocalTrainPilotColors.current
@@ -984,6 +1090,165 @@ fun BleDiscoveryTabContent(
     ) {
         item { Spacer(Modifier.height(8.dp)) }
 
+        item {
+            Text(
+                strings.getString(R.string.studio_health_watch_connection),
+                color = colors.text,
+                style = MaterialTheme.typography.titleLarge
+            )
+        }
+
+        item {
+            TrainPilotHeroSurface(
+                Modifier.fillMaxWidth().testTag("health_connected_wear_card")
+            ) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Surface(
+                        Modifier.size(52.dp),
+                        shape = CircleShape,
+                        color = colors.card2,
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp, if (wearConnected) colors.accent else colors.line
+                        )
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.Default.Favorite,
+                                contentDescription = null,
+                                tint = if (wearConnected) colors.accentText else colors.muted,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            strings.getString(R.string.native_home_wear_watch),
+                            color = colors.text,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            strings.getString(
+                                if (wearConnected) R.string.studio_health_wear_connected
+                                else R.string.studio_health_wear_not_connected
+                            ),
+                            color = if (wearConnected) colors.success else colors.muted,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+            }
+        }
+
+        item {
+            TrainPilotSectionSurface(
+                Modifier.fillMaxWidth().testTag("health_connected_active_workout")
+            ) {
+                TrainPilotSectionHeader(
+                    strings.getString(R.string.studio_health_active_workout_control),
+                    icon = Icons.Default.Sync
+                )
+                if (activeWorkout) {
+                    if (activeWorkoutTitle.isNotBlank()) {
+                        Text(
+                            activeWorkoutTitle,
+                            color = colors.text,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        HealthOwnerStatusPill(
+                            strings.getString(R.string.studio_health_phone_controls),
+                            selected = timerOwner != "watch",
+                            Modifier.weight(1f)
+                        )
+                        HealthOwnerStatusPill(
+                            strings.getString(R.string.studio_health_watch_controls),
+                            selected = timerOwner == "watch",
+                            Modifier.weight(1f)
+                        )
+                    }
+                    Button(
+                        onClick = onActiveWorkout,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                            .testTag("health_connected_open_workout"),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = colors.accent,
+                            contentColor = colors.onAccent
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(strings.getString(R.string.studio_health_open_active_workout))
+                    }
+                } else {
+                    Text(
+                        strings.getString(R.string.studio_health_no_active_workout),
+                        color = colors.muted,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        }
+
+        item {
+            Text(
+                strings.getString(R.string.studio_health_sync_sources),
+                color = colors.text,
+                style = MaterialTheme.typography.titleLarge
+            )
+        }
+
+        item {
+            HealthSyncSummaryCard(
+                title = "Health Connect",
+                subtitle = when {
+                    !state.hcSupported -> strings.getString(R.string.studio_health_source_unsupported)
+                    state.hcGranted -> strings.getString(R.string.studio_health_source_ready)
+                    else -> strings.getString(R.string.studio_health_source_permission_needed)
+                },
+                selectedLabel = strings.getString(R.string.studio_health_selected_source),
+                active = state.hcSupported && state.hcGranted,
+                selected = state.provider == "health_connect",
+                tag = "health_connected_hc"
+            )
+        }
+
+        item {
+            HealthSyncSummaryCard(
+                title = "Samsung Health",
+                subtitle = when {
+                    !state.samsungInstalled -> strings.getString(R.string.studio_health_source_not_installed)
+                    state.samsungAvailable -> strings.getString(R.string.studio_health_source_available)
+                    else -> strings.getString(R.string.studio_health_source_unavailable)
+                },
+                selectedLabel = strings.getString(R.string.studio_health_selected_source),
+                active = state.samsungAvailable,
+                selected = state.provider == "samsung_health",
+                tag = "health_connected_samsung"
+            )
+        }
+
+        item {
+            Text(
+                strings.getString(R.string.studio_health_ble_tools),
+                color = colors.text,
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(top = 4.dp).testTag("health_connected_ble_tools")
+            )
+            Text(
+                strings.getString(R.string.studio_health_ble_tools_subtitle),
+                color = colors.muted,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+
+        // Existing RDFit/BLE tools stay fully native and functional below the product summary.
         // #111 Keresés vezérlő panel
         item {
             Card(

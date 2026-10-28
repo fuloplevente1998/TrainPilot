@@ -692,4 +692,22 @@
     <string name="studio_health_connected_devices_subtitle">Watch connection and device sync</string>
     <string name="studio_home_programs_subtitle">Training plans</string>
     <string name="studio_home_calendar_subtitle">Planning</string>
+    <string name="studio_health_watch_connection">Watch connection</string>
+    <string name="studio_health_wear_connected">A Wear OS status has been received from the watch.</string>
+    <string name="studio_health_wear_not_connected">No active Wear OS status.</string>
+    <string name="studio_health_active_workout_control">Active workout control</string>
+    <string name="studio_health_phone_controls">Phone controls</string>
+    <string name="studio_health_watch_controls">Watch controls</string>
+    <string name="studio_health_open_active_workout">Open active workout</string>
+    <string name="studio_health_no_active_workout">No active workout.</string>
+    <string name="studio_health_sync_sources">Health sync</string>
+    <string name="studio_health_source_unsupported">Not supported on this device</string>
+    <string name="studio_health_source_ready">Read access granted</string>
+    <string name="studio_health_source_permission_needed">Read permission required</string>
+    <string name="studio_health_source_not_installed">Not installed</string>
+    <string name="studio_health_source_available">Available</string>
+    <string name="studio_health_source_unavailable">Currently unavailable</string>
+    <string name="studio_health_selected_source">Selected data source</string>
+    <string name="studio_health_ble_tools">BLE / RDFit devices</string>
+    <string name="studio_health_ble_tools_subtitle">Advanced device discovery and background connection</string>
 </resources>

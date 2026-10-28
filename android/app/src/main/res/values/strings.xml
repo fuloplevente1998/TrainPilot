@@ -692,4 +692,22 @@
     <string name="studio_health_connected_devices_subtitle">Órakapcsolat és eszközszinkron</string>
     <string name="studio_home_programs_subtitle">Edzéstervek</string>
     <string name="studio_home_calendar_subtitle">Tervezés</string>
+    <string name="studio_health_watch_connection">Órakapcsolat</string>
+    <string name="studio_health_wear_connected">Kapcsolódó Wear OS állapot érkezett az óráról.</string>
+    <string name="studio_health_wear_not_connected">Nincs aktív Wear OS állapot.</string>
+    <string name="studio_health_active_workout_control">Aktív edzés vezérlése</string>
+    <string name="studio_health_phone_controls">Telefon vezérli</string>
+    <string name="studio_health_watch_controls">Óra vezérli</string>
+    <string name="studio_health_open_active_workout">Aktív edzés megnyitása</string>
+    <string name="studio_health_no_active_workout">Nincs aktív edzés.</string>
+    <string name="studio_health_sync_sources">Egészségügyi szinkron</string>
+    <string name="studio_health_source_unsupported">Nem támogatott ezen a készüléken</string>
+    <string name="studio_health_source_ready">Olvasási hozzáférés engedélyezve</string>
+    <string name="studio_health_source_permission_needed">Olvasási engedély szükséges</string>
+    <string name="studio_health_source_not_installed">Nincs telepítve</string>
+    <string name="studio_health_source_available">Elérhető</string>
+    <string name="studio_health_source_unavailable">Jelenleg nem elérhető</string>
+    <string name="studio_health_selected_source">Kiválasztott adatforrás</string>
+    <string name="studio_health_ble_tools">BLE / RDFit eszközök</string>
+    <string name="studio_health_ble_tools_subtitle">Haladó eszközkeresés és háttérkapcsolat</string>
 </resources>

@@ -692,4 +692,22 @@
     <string name="studio_health_connected_devices_subtitle">Uhrverbindung und Gerätesynchronisierung</string>
     <string name="studio_home_programs_subtitle">Trainingspläne</string>
     <string name="studio_home_calendar_subtitle">Planung</string>
+    <string name="studio_health_watch_connection">Uhrverbindung</string>
+    <string name="studio_health_wear_connected">Ein Wear-OS-Status wurde von der Uhr empfangen.</string>
+    <string name="studio_health_wear_not_connected">Kein aktiver Wear-OS-Status.</string>
+    <string name="studio_health_active_workout_control">Aktives Training steuern</string>
+    <string name="studio_health_phone_controls">Telefon steuert</string>
+    <string name="studio_health_watch_controls">Uhr steuert</string>
+    <string name="studio_health_open_active_workout">Aktives Training öffnen</string>
+    <string name="studio_health_no_active_workout">Kein aktives Training.</string>
+    <string name="studio_health_sync_sources">Gesundheitssynchronisierung</string>
+    <string name="studio_health_source_unsupported">Auf diesem Gerät nicht unterstützt</string>
+    <string name="studio_health_source_ready">Lesezugriff erlaubt</string>
+    <string name="studio_health_source_permission_needed">Leseberechtigung erforderlich</string>
+    <string name="studio_health_source_not_installed">Nicht installiert</string>
+    <string name="studio_health_source_available">Verfügbar</string>
+    <string name="studio_health_source_unavailable">Derzeit nicht verfügbar</string>
+    <string name="studio_health_selected_source">Ausgewählte Datenquelle</string>
+    <string name="studio_health_ble_tools">BLE- / RDFit-Geräte</string>
+    <string name="studio_health_ble_tools_subtitle">Erweiterte Gerätesuche und Hintergrundverbindung</string>
 </resources>

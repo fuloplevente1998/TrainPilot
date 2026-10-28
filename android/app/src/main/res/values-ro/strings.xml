@@ -692,4 +692,22 @@
     <string name="studio_health_connected_devices_subtitle">Conexiune ceas și sincronizare dispozitive</string>
     <string name="studio_home_programs_subtitle">Planuri de antrenament</string>
     <string name="studio_home_calendar_subtitle">Planificare</string>
+    <string name="studio_health_watch_connection">Conexiune ceas</string>
+    <string name="studio_health_wear_connected">A fost primită o stare Wear OS de la ceas.</string>
+    <string name="studio_health_wear_not_connected">Nu există o stare Wear OS activă.</string>
+    <string name="studio_health_active_workout_control">Control antrenament activ</string>
+    <string name="studio_health_phone_controls">Telefonul controlează</string>
+    <string name="studio_health_watch_controls">Ceasul controlează</string>
+    <string name="studio_health_open_active_workout">Deschide antrenamentul activ</string>
+    <string name="studio_health_no_active_workout">Nu există antrenament activ.</string>
+    <string name="studio_health_sync_sources">Sincronizare sănătate</string>
+    <string name="studio_health_source_unsupported">Nu este acceptat pe acest dispozitiv</string>
+    <string name="studio_health_source_ready">Acces de citire permis</string>
+    <string name="studio_health_source_permission_needed">Este necesară permisiunea de citire</string>
+    <string name="studio_health_source_not_installed">Nu este instalat</string>
+    <string name="studio_health_source_available">Disponibil</string>
+    <string name="studio_health_source_unavailable">Momentan indisponibil</string>
+    <string name="studio_health_selected_source">Sursă de date selectată</string>
+    <string name="studio_health_ble_tools">Dispozitive BLE / RDFit</string>
+    <string name="studio_health_ble_tools_subtitle">Căutare avansată și conexiune în fundal</string>
 </resources>
