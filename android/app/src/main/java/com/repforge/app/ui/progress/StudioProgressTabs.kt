@@ -48,10 +48,12 @@ internal fun StudioProgressTabs(
     val colors = LocalTrainPilotColors.current
     val context = LocalContext.current
     val labels = listOf(
-        R.string.studio_progress_tab_progress,
-        R.string.studio_progress_tab_statistics,
-        R.string.studio_progress_tab_strength
-    ).map { nativeResources(context, language).getString(it) }
+        "📈" to R.string.studio_progress_tab_progress,
+        "📊" to R.string.studio_progress_tab_statistics,
+        "🏋️" to R.string.studio_progress_tab_strength
+    ).map { (icon, label) ->
+        "$icon ${nativeResources(context, language).getString(label)}"
+    }
     val scroll = LocalConfiguration.current.screenWidthDp < 355 ||
         LocalDensity.current.fontScale > 1.3f
     val shape = RoundedCornerShape(14.dp)
