@@ -450,5 +450,9 @@
   {
     "file": "tests/browser/uiux-277-programs.cjs",
     "estimatedSeconds": 18
+  },
+  {
+    "file": "tests/browser/uiux-277-workout-start.cjs",
+    "estimatedSeconds": 18
   }
 ]
