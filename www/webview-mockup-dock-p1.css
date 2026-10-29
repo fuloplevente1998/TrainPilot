@@ -349,7 +349,8 @@ html.tp271-mockup-dock body #app main.tp152-plan > .tp124-active-program-frame {
   padding: 0 !important;
   margin: 0 !important;
   min-width: 0;
-  overflow: visible;
+  /* Preserve the original program paint boundary after flattening. */
+  overflow: hidden;
   background: transparent !important;
   box-shadow: none !important;
 }

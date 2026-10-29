@@ -214,8 +214,16 @@ const server=http.createServer((req,res)=>{
     await page.evaluate(()=>{state.session=null;state.workout=null;db.set('draft',null);go('home')});
     if(width===393&&theme==='yellow'){
       await page.evaluate(()=>go('plan'));
+      await page.waitForSelector('main.tp152-plan #tp271WorkoutLaunchers .tp271-workout-launcher');
+      // Capture the complete destination after its existing finite reveal,
+      // not the intermediate paint immediately following go('plan').
+      await page.evaluate(async()=>{
+        const animations=document.getAnimations().filter(a=>
+          a.effect?.target?.closest?.('#app main')&&a.effect.getTiming().iterations!==Infinity);
+        await Promise.all(animations.map(a=>a.finished.catch(()=>{})));
+      });
       fs.mkdirSync('ui-evidence',{recursive:true});
-      await page.screenshot({path:'ui-evidence/pr271-workout-entry-393.png'});
+      await page.screenshot({path:'ui-evidence/pr271-workout-entry-393.png',animations:'disabled'});
     }
    }
    assert.deepEqual(errors,[],width+': no JavaScript errors');
