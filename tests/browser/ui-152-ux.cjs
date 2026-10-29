@@ -145,7 +145,7 @@ const server=http.createServer((req,res)=>{
   assert.equal(await page.locator('#tp3PlannerPanelHost').count(),1,'closing a dropdown must keep the planner panel open');
 
   await page.evaluate(()=>go('settings'));await page.waitForSelector('#tp155R4PanelHost[data-panel="settings"] .tp152-settings');
-  await page.locator('[data-settings-group="appearance"] > summary').click();
+  if(!await page.locator('[data-settings-group="appearance"]').evaluate(x=>x.open))await page.locator('[data-settings-group="appearance"] > summary').click();
   const settingsHost=page.locator('#tp155R4PanelHost[data-panel="settings"]');
   const themePanel=settingsHost.locator('.tp155-theme-setting');assert.equal(await themePanel.count(),1,'theme palette must use the aligned Settings card');
   assert.match(await themePanel.evaluate(e=>e.textContent||''),/Neon színek/,'vivid theme group must be renamed to Neon színek');
@@ -158,8 +158,8 @@ const server=http.createServer((req,res)=>{
   assert.equal(await settingsHost.locator('.tp152-settings > details.tp152-accordion').count(),0,'Settings must not keep a nested accordion after Theme becomes a list dialog');
   assert.equal(await settingsHost.locator('.tp152-settings > .tp152-settings-backup').count(),1,'Backup group remains directly available');
   assert.equal(await settingsHost.locator('.tp152-settings > .tp152-settings-profile').count(),1,'Reset group remains directly available');
-  const dangerStyle=await settingsHost.locator('.tp152-settings-profile .btn.danger').evaluate(e=>getComputedStyle(e).backgroundColor);
-  const safeStyle=await settingsHost.locator('.tp152-settings-profile .btn.secondary').evaluate(e=>getComputedStyle(e).backgroundColor);
+  const dangerStyle=await settingsHost.locator('.tp277-reset-actions .btn.danger').evaluate(e=>getComputedStyle(e).backgroundColor);
+  const safeStyle=await settingsHost.locator('.tp277-reset-actions .btn.secondary').evaluate(e=>getComputedStyle(e).backgroundColor);
   assert.notEqual(dangerStyle,safeStyle,'destructive actions must keep a distinct red danger treatment');
   assert.equal(await page.evaluate(()=>tp152T('historyEdit')),'Naplózott edzés módosítása');
   const settingsActive=page.locator('.rf208-settings-btn.active');assert.equal(await settingsActive.count(),1,'Settings grid cell must stay visibly active while its sheet is open');

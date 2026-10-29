@@ -5176,7 +5176,7 @@ render=function(custom){const r=rf260RenderBase(custom);rf260EnhanceSelects();rf
 let rf260NavCompact=false;
 const RF260_NAV_COMPACT_ENTER=56,RF260_NAV_COMPACT_EXIT=8;
 
-window.addEventListener?.('scroll',()=>{rf260ScrollState();rf260CloseSelects()},{passive:true});
+window.addEventListener?.('scroll',()=>{rf260ScrollState();const provider=document.querySelector('.tp-health-provider .tp-select.open');rf260CloseSelects(provider);if(provider)rf260PositionSelect(provider)},{passive:true});
 window.addEventListener?.('resize',()=>{rf260CloseSelects();rf260ScrollState()},{passive:true});
 window.visualViewport?.addEventListener?.('resize',()=>rf260RepositionOpenSelects(),{passive:true});
 window.visualViewport?.addEventListener?.('scroll',()=>rf260RepositionOpenSelects(),{passive:true});
@@ -11332,7 +11332,7 @@ renderWorkout=function(){
  const rows=sets.map(function(s,si){
   const load=e.loadType==='bodyweight'?'<span class="small muted tp153-bodyweight">'+esc(tp149T('workout.bodyweight'))+'</span>':'<label class="small">'+esc(tp149LoadLabel(e.loadType))+'<input class="field" aria-label="'+esc(tp149LoadLabel(e.loadType))+'" inputmode="decimal" value="'+esc(s.weight==null?'':s.weight)+'" oninput="upd('+i+','+si+',\'weight\',this.value)"></label>';
   const unit=tp149RepUnit(e.repUnit);
-  const prior=previousSets[si],previous=prior?.done?formatSet(e,prior):'—';
+  const prior=previousSets[si],previous=prior?.done?((Number(prior.weight)>0?tp149FormatNumber(prior.weight)+'×':'')+String(prior.reps||'—')):'—';
   const eligible=typeof tp197RirEligible==='function'&&tp197RirEligible(state.session,se)&&s.done===true;
   const lastDone=sets.map((set,index)=>set.done?index:-1).filter(index=>index>=0).at(-1);
   const rir=eligible?'<label class="small tp277-set-rir tp229-rir">RIR<input id="'+(si===lastDone?'tp197ActualRir':'tp229ActualRir-'+si)+'" class="field" data-set-id="'+esc(s.setId||'')+'" type="number" inputmode="numeric" min="0" max="10" step="1" value="'+(tp229RirValid(s.actualRir)?Number(s.actualRir):'')+'" placeholder="—" aria-describedby="tp197RirNote tp229RirSummary" oninput="tp197RirInput(this)"></label>':'<span class="tp277-set-rir small muted">RIR<br>—</span>';
@@ -11341,7 +11341,7 @@ renderWorkout=function(){
  const feedback=typeof rf152FeedbackHtml==='function'?rf152FeedbackHtml(se,true):'';
  const quickAdd=quick&&typeof tp150qwT==='function'?'<section class="card tp150-quick-add" id="tp150QuickAdd"><div class="tp150-quick-add-head"><strong>'+esc(tp150qwT('title'))+'</strong><span class="badge">'+esc(tp150qwT('exerciseCount',{count:state.session.exercises.length}))+'</span></div><button class="btn secondary block" onclick="tp150QuickPicker()">'+esc(tp150qwT('addAnother'))+'</button></section>':'';
  const demo=tp153WorkoutVideo(e.id),guide=(note||demo)?'<details class="tp153-workout-guide tp154-workout-guide"><summary><span class="tp154-workout-guide-title">▶ '+esc(tp149T('video.demoTitle'))+'</span><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp154-workout-guide-body">'+(note?'<p class="note tp153-workout-note">'+esc(note)+'</p>':'')+demo+'</div></details>':'';
- const body='<main class="tp149-workout tp153-workout tp277-workout"><section class="card tp153-workout-head"><div class="tp153-workout-topline"><span class="small muted">'+esc(title)+'</span><strong>'+(i+1)+'/'+total+'</strong><span class="tp277-elapsed">⏱ '+esc(sessionDuration(Object.assign({},state.session,{finished:new Date().toISOString()})))+'</span></div><h1>'+esc(name)+'</h1><div class="tp153-workout-prescription"><span>'+esc(tp149T('workout.target'))+': <b>'+sets.length+' × '+esc(target)+'</b></span></div>'+guide+'<div class="progress"><div style="width:'+pct+'%"></div></div></section><div class="section tp153-sets-title">'+esc(tp149T('workout.sets'))+'</div>'+rows+upcoming+feedback+quickAdd+'<div class="tp153-workout-actions"><button class="btn block" data-tp-workout-next onclick="nextExercise()">'+esc(tp149T(i===total-1?'workout.finish':'workout.next'))+'</button><button class="btn secondary block" onclick="prevExercise()" '+(i===0?'disabled':'')+'>'+esc(tp149T('workout.previous'))+'</button></div></main>';
+ const body='<main class="tp149-workout tp153-workout tp277-workout"><section class="card tp153-workout-head"><div class="tp153-workout-topline"><span class="small muted">'+esc(title)+'</span><strong>'+(i+1)+'/'+total+'</strong><output class="tp277-elapsed">⏱ '+esc(sessionDuration(Object.assign({},state.session,{finished:new Date().toISOString()})))+'</output></div><h1>'+esc(name)+'</h1><div class="tp153-workout-prescription"><span>'+esc(tp149T('workout.target'))+': <b>'+sets.length+' × '+esc(target)+'</b></span></div>'+guide+'<div class="progress"><div style="width:'+pct+'%"></div></div></section><div class="section tp153-sets-title">'+esc(tp149T('workout.sets'))+'</div>'+rows+upcoming+feedback+quickAdd+'<div class="tp153-workout-actions"><button class="btn block" data-tp-workout-next onclick="nextExercise()">'+esc(tp149T(i===total-1?'workout.finish':'workout.next'))+'</button><button class="btn secondary block" onclick="prevExercise()" '+(i===0?'disabled':'')+'>'+esc(tp149T('workout.previous'))+'</button></div></main>';
  render(shell(body));
  if(typeof rf110DecorateTimedWorkout==='function')rf110DecorateTimedWorkout();
  if(typeof tp120AfterRender==='function')tp120AfterRender();
@@ -12451,7 +12451,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
    if(document.querySelector?.('#tpTemporalPicker,#tp2628Dialog,.video-modal,.video-overlay'))return typeof backBase==='function'?backBase.apply(this,arguments):true;
    if(!dayHost&&state.rf260MovingScheduleId){window.tp155CancelCalendarMove();return true;}
    if(state?.rf151HistoryEdit||state?.tp151EditingScheduleId)return typeof backBase==='function'?backBase.apply(this,arguments):true;
-   const opened=panelHost?[...panelHost.querySelectorAll('details[open]')].reverse():[];
+   const opened=panelHost?[...panelHost.querySelectorAll('details[open]:not(.tp277-settings-group)')].reverse():[];
    if(opened.length){opened[0].open=false;return true}
    return window.tp155R4ClosePanel();
   }

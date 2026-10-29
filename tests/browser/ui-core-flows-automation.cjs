@@ -255,7 +255,7 @@ async function bootPage(page, base) {
         go('settings');
       });
 
-      await page.locator('[data-settings-group="appearance"] > summary').click();
+      if(!await page.locator('[data-settings-group="appearance"]').evaluate(x=>x.open))await page.locator('[data-settings-group="appearance"] > summary').click();
       const langSelect = page.locator('#tp155R4PanelHost .rf212-language select');
       await langSelect.waitFor({ state: 'visible' });
 
