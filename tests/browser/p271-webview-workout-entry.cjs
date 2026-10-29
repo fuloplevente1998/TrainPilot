@@ -122,7 +122,21 @@ const server=http.createServer((req,res)=>{
     await page.waitForFunction(()=>!document.querySelector('#tp155R4PanelHost'));
 
     const first=page.locator('main.tp152-plan .tp152-day').first();
-    await first.locator(':scope > summary').click();
+    // The summary contains a separate Order button. Its center may be the
+    // summary's center on narrow screens; exercise both targets explicitly.
+    const orderedIds=await page.evaluate(()=>activeProgram().days[0].exercises.slice());
+    const dayWasOpen=await first.evaluate(el=>el.open);
+    await first.locator(':scope > summary .tp128-order-open').click();
+    await page.locator('#tp2628Dialog .tp128-order-list').waitFor({state:'visible'});
+    assert.equal(await first.evaluate(el=>el.open),dayWasOpen,width+'/'+theme+': Order does not toggle day disclosure');
+    await page.locator('#tp2628Dialog [data-tp2628-cancel]').click();
+    await page.locator('#tp2628Dialog').waitFor({state:'hidden'});
+    assert.deepEqual(await page.evaluate(()=>activeProgram().days[0].exercises),orderedIds,width+'/'+theme+': cancelling Order leaves exercises unchanged');
+    const daySummary=first.locator(':scope > summary');
+    if(await first.evaluate(el=>el.open))await daySummary.click({position:{x:8,y:8}});
+    await daySummary.click({position:{x:8,y:8}});
+    await first.locator('.tp152-start-day').waitFor({state:'visible'});
+    assert.equal(await first.evaluate(el=>el.open),true,width+'/'+theme+': original day disclosure opens');
     assert.equal(await first.locator('.tp152-start-day').isVisible(),true,width+'/'+theme+': real day start CTA');
     const editor=first.locator('.tp152-exercise').first();
     await editor.locator(':scope > summary').click();
@@ -130,7 +144,7 @@ const server=http.createServer((req,res)=>{
     const editorValues=await editor.locator('.tp152-edit-grid input').count();
     assert.ok(editorValues>=2,width+'/'+theme+': real editable fields retained');
     await editor.locator(':scope > summary').click();
-    await first.locator(':scope > summary').click();
+    await daySummary.click({position:{x:8,y:8}});
 
     await page.locator('main.tp152-plan .tp150-quick-entry-minimal button').click();
     await page.waitForSelector('#tp155R4PanelHost[data-panel="quick"] #tp155QuickQuery');
