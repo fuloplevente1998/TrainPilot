@@ -8496,24 +8496,64 @@ rf2211PlanWeeks=function(){
  db.set('plannerSettings',Object.assign({},plannerSettings(),{mode:mode,time:time,minutes:minutes,weekdays:weekdays}));addScheduleBatch(out);if(typeof cloudChanged==='function')cloudChanged();render();if(window.TrainPilot110)tp153Toast(window.TrainPilot110.t('replanned'),1800);
 };
 
+/* PR279: undo a completed calendar item without erasing its workout journal. */
+var tp279CalendarUndoText=function(key){
+ const words={
+  hu:{undo:'Visszavonás',done:'Teljesítve'},
+  en:{undo:'Undo completion',done:'Completed'},
+  de:{undo:'Rückgängig',done:'Abgeschlossen'},
+  ro:{undo:'Anulează finalizarea',done:'Finalizat'}
+ };
+ return (words[typeof rf212Lang==='function'?rf212Lang():'hu']||words.en)[key]||key;
+};
+var tp279UndoScheduleComplete=function(id){
+ const rows=scheduled(),i=rows.findIndex(x=>String(x.id)===String(id)&&!x.cancelled);
+ if(i<0||typeof rf209ScheduleDone!=='function'||!rf209ScheduleDone(rows[i]))return false;
+ const original=rows[i],logs=history();
+ const nextRow={...original,status:'planned',updatedAt:Date.now()};
+ delete nextRow.completedAt;
+ const nextRows=rows.map((x,index)=>index===i?nextRow:x);
+ // The journal remains intact. Remove only the schedule link that would
+ // otherwise make the calendar immediately mark the same item completed again.
+ const linked=logs.some(x=>String(x.scheduleId||'')===String(id));
+ const nextLogs=linked?logs.map(x=>{
+  if(String(x.scheduleId||'')!==String(id))return x;
+  const result={...x};delete result.scheduleId;return result;
+ }):logs;
+ try{
+  if(linked)db.set('history',nextLogs);
+  db.set('scheduled',nextRows);
+ }catch(error){
+  try{db.set('scheduled',rows)}catch(_){}
+  if(linked)try{db.set('history',logs)}catch(_){}
+  return false;
+ }
+ if(typeof cloudChanged==='function')cloudChanged();
+ render();return true;
+};
+
 rf2211DayPicker=function(){
  const date=rf2211Selected();if(!date)return '';
  const p=activeProgram(),days=rf2211Days(),item=scheduleOnDate(date).find(function(x){return !x.cancelled;});
  const title=tp149FormatDate(new Date(date+'T12:00'),{month:'long',day:'numeric',weekday:'long'});
  if(item){
   const d=programDay(p,item.dayId||item.workout),name=tp149ProgramDayName(p,d)||item.dayId||item.workout;
-  return '<div class="card rf2211-picker"><div><strong>'+esc(title)+'</strong><div class="small muted">'+esc(tp149T('calendar.scheduled',{day:name}))+'</div></div><button class="btn danger" onclick="rf2211DeleteDate()">'+esc(tp149T('common.delete'))+'</button></div>';
+  const done=typeof rf209ScheduleDone==='function'&&rf209ScheduleDone(item);
+  return '<div class="card rf2211-picker"><div><strong>'+esc(title)+'</strong><div class="small muted">'+esc(tp149T('calendar.scheduled',{day:name}))+(done?' · '+esc(tp279CalendarUndoText('done')):'')+'</div></div><div class="tp279-calendar-actions">'+(done?'<button type="button" class="btn secondary tp279-undo-schedule" data-schedule-id="'+esc(item.id)+'" onclick="tp279UndoScheduleComplete(this.dataset.scheduleId)">'+esc(tp279CalendarUndoText('undo'))+'</button>':'')+'<button type="button" class="btn danger" onclick="rf2211DeleteDate()">'+esc(tp149T('common.delete'))+'</button></div></div>';
  }
  return '<div class="card rf2211-picker"><strong>'+esc(title)+'</strong><div class="small muted">'+esc(tp149T('calendar.chooseDay'))+'</div><div class="rf2211-daybuttons">'+days.map(function(d){return '<button class="btn" onclick="rf2211AddDay(\''+esc(d.id)+'\')">'+esc(tp149ProgramDayName(p,d))+'</button>';}).join('')+'</div></div>';
 };
 
 scheduleListHtml=function(){
  const isDone=function(x){return typeof rf209ScheduleDone==='function'?rf209ScheduleDone(x):(x.status==='completed'||history().some(function(h){return h.scheduleId===x.id;}));};
- const items=scheduled().filter(function(x){return !x.cancelled&&!isDone(x);}).sort(function(a,b){return Date.parse(a.start)-Date.parse(b.start);}).slice(-120);
+ const items=scheduled().filter(function(x){return !x.cancelled;}).sort(function(a,b){return Date.parse(a.start)-Date.parse(b.start);}).slice(-120);
  if(!items.length)return '<div class="muted">'+esc(tp149T('calendar.noPlanned'))+'</div>';
  return items.map(function(x){
   const p=programById(x.programId||'home-basic'),d=programDay(p,x.dayId||x.workout),skipped=x.status==='skipped',moving=state?.rf260MovingScheduleId===x.id;
   const title=p&&d?tp146ProgramDayTitle(p,d):(x.dayId||x.workout||'');
+  if(isDone(x)){
+   return '<div class="card schedule-card tp146-schedule-card tp279-completed-schedule"><div class="tp146-schedule-head"><div class="tp146-schedule-copy"><strong class="tp146-schedule-title">'+esc(title)+'</strong><div class="small muted">'+esc(tp149FormatDateTime(x.start))+' • '+esc(tp279CalendarUndoText('done'))+'</div></div><button type="button" class="btn danger tp146-schedule-delete" data-schedule-id="'+esc(x.id)+'" onclick="rf209DeleteSchedule(this.dataset.scheduleId)">'+esc(tp149T('common.delete'))+'</button></div><div class="schedule-actions tp279-calendar-actions"><button type="button" class="btn secondary tp279-undo-schedule" data-schedule-id="'+esc(x.id)+'" onclick="tp279UndoScheduleComplete(this.dataset.scheduleId)">'+esc(tp279CalendarUndoText('undo'))+'</button></div></div>';
+  }
   return '<div class="card schedule-card tp146-schedule-card"><div class="tp146-schedule-head"><div class="tp146-schedule-copy"><strong class="tp146-schedule-title">'+esc(title)+'</strong><div class="small muted">'+esc(tp149FormatDateTime(x.start))+' • '+esc(tp149T(skipped?'calendar.status.skipped':'calendar.status.planned'))+'</div></div><button class="btn danger tp146-schedule-delete" onclick="rf209DeleteSchedule(\''+esc(x.id)+'\')">'+esc(tp149T('common.delete'))+'</button></div><div class="schedule-actions tp146-schedule-actions-row"><button class="btn" onclick="startScheduledById(\''+esc(x.id)+'\')">'+esc(tp149T('calendar.action.start'))+'</button><button class="btn secondary '+(moving?'tp-action-active':'')+'" data-tp-move-id="'+esc(x.id)+'" aria-pressed="'+(moving?'true':'false')+'" onclick="rf260OpenScheduleMove(\''+esc(x.id)+'\',this)">'+esc(tp149T('calendar.action.move'))+'</button><button class="btn secondary '+(skipped?'tp-selected':'')+'" aria-pressed="'+(skipped?'true':'false')+'" onclick="skipSchedule(\''+esc(x.id)+'\')">'+esc(tp149T(skipped?'calendar.action.restore':'calendar.action.skip'))+'</button></div></div>';
  }).join('');
 };

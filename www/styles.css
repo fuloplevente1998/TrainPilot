@@ -618,3 +618,15 @@ html body #app main.tp168-health>.tp168-sync-tail{padding:6px 8px!important;gap:
  html body #app .tp277-program-card .rf103-program-main{gap:5px!important;grid-template-columns:30px minmax(0,1fr) auto!important}
  html body #app .tp277-program-card .rf103-program-activate{max-width:82px!important;padding:5px!important;font-size:10px!important}
 }
+
+/* PR279 calendar correction: the existing completed workout log remains intact. */
+html body #app .tp279-calendar-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0}
+html body #app .tp279-calendar-actions>.btn{min-height:44px;min-width:0;white-space:normal}
+html body #app .tp279-completed-schedule{margin-block:6px!important}
+html body #app .tp279-completed-schedule .tp146-schedule-head{gap:7px}
+html body #app .tp279-completed-schedule .tp146-schedule-copy{min-width:0;overflow-wrap:anywhere}
+html body #app .tp279-completed-schedule .tp279-undo-schedule{flex:1}
+@media(max-width:359px){
+ html body #app .rf2211-picker>.tp279-calendar-actions{width:100%}
+ html body #app .rf2211-picker>.tp279-calendar-actions>.btn{flex:1}
+}

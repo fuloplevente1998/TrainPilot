@@ -65,6 +65,26 @@ await page.locator('.tp152-program-card').first().evaluate(x=>x.open=true);await
  }
  await page.locator('.tp152-day').first().evaluate(x=>x.open=true);await snap('02-workout-start-open');
  if(version==='after'){assert.equal(await page.locator('.tp152-day').first().locator('.tp277-day-preview').isVisible(),false,'Open day hides the duplicate exercise preview');await page.locator('.tp152-day').first().evaluate(x=>x.open=false);assert.equal(await page.locator('.tp152-day').first().locator('.tp277-day-preview').isVisible(),true,'Closed day restores preview');}
+ if(version==='after'&&config.width===393&&config.theme==='yellow'){
+  await page.evaluate(()=>{
+   window.__tp279OriginalScheduled=scheduled();
+   const logs=history(),row=logs[0],id='tp279-test-schedule';
+   db.set('history',[{...row,scheduleId:id},...logs.slice(1)]);
+   db.set('scheduled',[{id,programId:row.programId,dayId:row.dayId,workout:row.workout,start:row.started,end:row.finished,status:'completed',completedAt:row.finished,cancelled:false}]);
+   go('calendar');
+  });
+  assert.equal(await page.locator('.tp279-completed-schedule .tp279-undo-schedule').count(),1,'Completed calendar item exposes Undo');
+  await page.locator('.tp279-completed-schedule .tp279-undo-schedule').click();
+  const undone=await page.evaluate(()=>{
+   const current=scheduled()[0],match=history().find(h=>h.id==='277-log-0');
+   return {status:current.status,completedAt:current.completedAt,historyRetained:!!match,historyUnlinked:!match.scheduleId,stillDone:rf209ScheduleDone(current)};
+  });
+  assert.equal(undone.status,'planned');assert.equal(undone.completedAt,undefined);
+  assert.equal(undone.historyRetained,true);assert.equal(undone.historyUnlinked,true);
+  assert.equal(undone.stillDone,false,'Undo does not re-complete from the linked journal');
+  report.checks.push({calendarUndo:undone});
+  await page.evaluate(()=>{db.set('scheduled',window.__tp279OriginalScheduled);delete window.__tp279OriginalScheduled;});
+ }
  await page.evaluate(()=>go('settings'));await snap('01-settings');
  if(version==='after'){assert.equal(await page.locator('[data-settings-group]').count(),6);await page.locator('[data-settings-group="appearance"]').evaluate(x=>x.open=true);}await snap('01-settings-open');
  await page.evaluate(()=>{tp155R4ClosePanel(false);go('history');});await snap('07-journal');
