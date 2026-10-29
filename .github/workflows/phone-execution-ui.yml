@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches: ['fix/p0-162-157-safe-wear-sync', 'perf/**', 'feat/pr277-uiux-implementation-20261029']
-    paths: ['www/app.js', 'android/app/**', '.github/workflows/phone-execution-ui.yml']
+    paths: ['www/**', 'android/app/**', '.github/workflows/phone-execution-ui.yml']
 
 permissions:
   contents: read
