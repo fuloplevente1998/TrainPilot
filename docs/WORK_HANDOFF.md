@@ -2,6 +2,8 @@
 
 ### Katalógus célzott korrekció
 
+A teljes natív izomcsoport-választó megmarad; a katalógusban nem hozunk létre mellette még egy azonos szűrésű chip-sort. A gyorsedzés chip-sora változatlan. Ez több listaterületet ad funkcióvesztés nélkül.
+
 8684fb5e-n Quick/Performance és a menü/sticky tesztcsomag sikeres. A katalógus 320px próbája jogosan megállt: a felső blokk 347px, találatok 215px. Az örökölt setting-label margókat és fő grid gap-et nullázzuk; a hosszú leírás teljes szélességet kap, a bezárás helyét csak a cím foglalja. Nem gyengítjük a minimum találati terület elvárását; 320px diagnosztikai kép és részmagasságok bekerülnek.
 
 ## PR #271 – felhasználói navigációs döntés: vissza a 2×4 menühöz

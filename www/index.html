@@ -2678,7 +2678,7 @@
       }
     }
     const panel=host?.dataset?.panel;
-    if(panel!=='exercises'&&panel!=='quick')return;
+    if(panel!=='quick')return;
     const id=panel==='exercises'?'libraryMuscle':'tp155QuickMuscle';
     const select=host.querySelector('#'+id);
     if(!select)return;

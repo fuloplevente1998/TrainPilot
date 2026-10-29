@@ -99,9 +99,8 @@ const server=http.createServer((req,res)=>{
     // original library intentionally remembers searches across theme changes.
     await page.evaluate(()=>{state.libraryFilter={group:'all',gear:'all',q:''}});
     await page.locator('#tp271WorkoutLaunchers button[data-tp271-launcher="library"]').click();
-    await page.waitForSelector('#tp155R4PanelHost[data-panel="exercises"] .tp271-muscle-chips');
-    const muscleChips=page.locator('#tp155R4PanelHost[data-panel="exercises"] .tp271-muscle-chip');
-    assert.ok(await muscleChips.count()>=6,width+'/'+theme+': real muscle options exposed as chips');
+    await page.waitForSelector('#tp155R4PanelHost[data-panel="exercises"] #libraryMuscle');
+    assert.equal(await page.locator('#tp155R4PanelHost[data-panel="exercises"] .tp271-muscle-chip').count(),0,width+'/'+theme+': catalogue has one muscle filter, without a duplicate chip row');
     assert.equal(await page.locator('#tp155R4PanelHost[data-panel="exercises"] #libraryMuscle').count(),1,width+'/'+theme+': native muscle select preserved');
     const compact=await page.locator('#tp155R4PanelHost[data-panel="exercises"]').evaluate(el=>{
       const title=el.querySelector('.hero h1'),results=el.querySelector('#libraryResults'),panel=el.querySelector('main');
@@ -110,20 +109,20 @@ const server=http.createServer((req,res)=>{
         resultHeight:results.getBoundingClientRect().height,
         viewport:innerHeight,
         parts:[...panel.children].map(c=>({class:c.className,height:c.getBoundingClientRect().height,margin:getComputedStyle(c).margin,gap:getComputedStyle(c).gap})),
-        chips:[...el.querySelectorAll('.tp271-muscle-chip')].every(c=>c.getBoundingClientRect().height>=44)};
+        selectHeight:el.querySelector('#libraryMuscle').closest('.tp-select')?.querySelector('.tp-select-trigger')?.getBoundingClientRect().height||el.querySelector('#libraryMuscle').getBoundingClientRect().height};
     });
     if(width===320&&theme==='classicBlue'){fs.mkdirSync('ui-evidence',{recursive:true});await page.screenshot({path:'ui-evidence/pr271-catalogue-compact-320.png',animations:'disabled'});}
     assert.ok(compact.font<=18,width+'/'+theme+': compact catalogue title');
     assert.ok(compact.stack<=300&&compact.resultHeight>=compact.viewport*.4,width+'/'+theme+': catalogue reserves space for results '+JSON.stringify(compact));
-    assert.ok(compact.chips,width+'/'+theme+': compact chips retain 44px tap height');
+    assert.ok(compact.selectHeight>=38,width+'/'+theme+': native muscle selector remains reachable');
     if(width===393&&theme==='yellow')await page.screenshot({path:'ui-evidence/pr271-catalogue-compact-393.png',animations:'disabled'});
 
-    await page.locator('#tp155R4PanelHost[data-panel="exercises"] button[data-tp271-muscle="legs"]').click();
+    await page.evaluate(()=>{const s=document.getElementById('libraryMuscle');s.value='legs';s.dispatchEvent(new Event('change',{bubbles:true}));});
     await page.waitForFunction(()=>document.querySelector('#tp155R4PanelHost[data-panel="exercises"] #libraryMuscle')?.value==='legs');
     assert.equal(await page.evaluate(()=>state.libraryFilter.group),'legs',width+'/'+theme+': original catalogue filter executes');
-    assert.equal(await page.locator('#tp155R4PanelHost[data-panel="exercises"] button[data-tp271-muscle="legs"][aria-pressed="true"]').count(),1,width+'/'+theme+': chip mirrors real selected group');
+    assert.equal(await page.locator('#libraryMuscle').inputValue(),'legs',width+'/'+theme+': original selector stores selected group');
     assert.ok(await page.locator('#tp155R4PanelHost[data-panel="exercises"] #libraryResults .tp-library-card').count()>0,width+'/'+theme+': real filtered catalogue');
-    await page.locator('#tp155R4PanelHost[data-panel="exercises"] button[data-tp271-muscle="all"]').click();
+    await page.evaluate(()=>{const s=document.getElementById('libraryMuscle');s.value='all';s.dispatchEvent(new Event('change',{bubbles:true}));});
     await page.waitForFunction(()=>state.libraryFilter.group==='all');
     await page.evaluate(()=>window.tp155R4ClosePanel(false));
     await page.waitForFunction(()=>!document.querySelector('#tp155R4PanelHost'));
