@@ -317,8 +317,12 @@ private fun ProgressVolumeChart(
     val snapshot = state.volumeSnapshot?.takeIf {
         it.range == state.selectedVolumeRange
     }
-    val narrow = LocalConfiguration.current.screenWidthDp < 384 ||
+    // Phone widths must give the 2x2 period selector the full card width.
+    // At 384dp the chart beside it squeezed labels into vertical text.
+    val narrow = LocalConfiguration.current.screenWidthDp < 600 ||
         LocalDensity.current.fontScale > 1.15f
+    val singleColumnRanges = LocalConfiguration.current.screenWidthDp < 300 ||
+        LocalDensity.current.fontScale >= 1.4f
     val rangeLabels = listOf(
         R.string.studio_volume_one_day, R.string.studio_volume_week,
         R.string.studio_volume_month, R.string.studio_volume_three_months
@@ -326,13 +330,14 @@ private fun ProgressVolumeChart(
     val ranges = NativeVolumeRange.values().toList()
     val control: @Composable () -> Unit = {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            for (pair in ranges.chunked(2)) {
+            for (pair in ranges.chunked(if (singleColumnRanges) 1 else 2)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     for (range in pair) {
                         FilterChip(
                             selected = range == state.selectedVolumeRange,
                             onClick = { onRange(range) },
-                            label = { Text(strings.getString(rangeLabels[range.ordinal])) },
+                            label = { Text(strings.getString(rangeLabels[range.ordinal]),
+                                maxLines = 1, softWrap = false) },
                             modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                                 .testTag("progress_volume_range_${range.name.lowercase()}")
                         )
