@@ -446,5 +446,9 @@
   {
     "file": "tests/browser/startup-fit-once-236.cjs",
     "estimatedSeconds": 9
+  },
+  {
+    "file": "tests/browser/uiux-277-programs.cjs",
+    "estimatedSeconds": 18
   }
 ]
