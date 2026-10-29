@@ -53,7 +53,7 @@ class NativeProgressPhotoRangeUiTest {
     private fun enterProgress() {
         scenario = fixture.launch()
         compose.waitUntil(30_000) { exists("navigation_progress") }
-        compose.onNodeWithTag("navigation_progress").performScrollTo().assertIsDisplayed().performClick()
+        compose.openStudioTab("progress")
         compose.waitUntil(30_000) { exists("progress_list") }
     }
 
