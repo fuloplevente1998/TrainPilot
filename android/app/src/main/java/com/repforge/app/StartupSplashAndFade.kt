@@ -382,7 +382,12 @@ internal class StartupScreen private constructor(
     private val fallback = Runnable { ready(true) }
 
     init {
-        splash.setKeepOnScreenCondition { !attached && !failed && !removed && !activity.isFinishing }
+        // A pure Compose activity never attaches the optional custom logo layer.
+        // markNativeReady() cancels the 8-second fallback, so readiness itself
+        // MUST release the platform splash or it can cover the working app forever.
+        splash.setKeepOnScreenCondition {
+            keepSystemSplash(attached, ready, failed, removed, activity.isFinishing)
+        }
         splash.setOnExitAnimationListener { provider ->
             val ov = overlay
             if (removed || failed || ov == null || !animationsEnabled()) {
@@ -400,6 +405,13 @@ internal class StartupScreen private constructor(
     }
 
     companion object {
+        /** Platform splash admission, also used by real-device regression tests. */
+        @JvmStatic
+        fun keepSystemSplash(
+            attached: Boolean, ready: Boolean, failed: Boolean,
+            removed: Boolean, activityFinishing: Boolean
+        ): Boolean = !attached && !ready && !failed && !removed && !activityFinishing
+
         @JvmStatic
         fun install(activity: Activity): StartupScreen {
             return StartupScreen(activity, activity.installSplashScreen())
