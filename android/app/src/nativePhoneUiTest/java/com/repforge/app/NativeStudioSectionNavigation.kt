@@ -26,3 +26,17 @@ internal fun ComposeTestRule.revealSettingsControl(tag: String, section: String,
     onNodeWithTag("settings_list").performScrollToNode(hasTestTag(tag))
     onNodeWithTag(tag).performScrollTo().assertIsDisplayed()
 }
+
+/** Studio tabs are fixed at owner width, but scroll horizontally on compact
+ * devices and with large text. Only scroll when the destination is off-screen;
+ * always assert the native tab is visible before clicking it.
+ */
+internal fun ComposeTestRule.openStudioTab(destination: String) {
+    val tab = onNodeWithTag("navigation_$destination")
+    try {
+        tab.assertIsDisplayed()
+    } catch (_: AssertionError) {
+        tab.performScrollTo().assertIsDisplayed()
+    }
+    tab.performClick()
+}
