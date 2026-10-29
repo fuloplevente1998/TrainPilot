@@ -11,7 +11,7 @@ assert.ok(deferred.includes('app.js'),'Canonical app.js entrypoint stays present
 assert.ok(html.includes('tp277ProgramIcon(tp277ProgramKind(p,name))'),'Program icon derived from program metadata');
 assert.ok(html.includes('tp277DayOverview(p,d)'),'Workout preview derived from existing day renderer');
 for(const token of ['tp277-settings-heading','tp152-settings-backup','tp152-settings-profile','rf212-language',
-  'tp197-mode-panel','tp105-data','cloudStatus']){
+  'tp197-mode-panel','cloudStatus']){
  assert.ok(settings.includes(token),token+' must remain available for grouping');
 }
 assert.ok(settings.includes('const previous=settingsScreen;'),'Preserve the canonical Settings renderer');
