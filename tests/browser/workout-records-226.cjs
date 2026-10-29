@@ -25,6 +25,16 @@ const server=http.createServer((req,res)=>{
   const card=page.locator('details[data-tp152-history-key]').filter({has:page.locator('.tp226-pr-badge')});
   assert.equal(await card.evaluate(x=>x.open),false,'Workout starts collapsed');
   assert.equal(await badge.isVisible(),true,'Genuine PR badge must be visible on a collapsed journal card');
+  // PR278 visual regression: a closed PR is a themed pill, not a native gray button.
+  const closedStyle=await badge.evaluate(e=>{
+   const s=getComputedStyle(e),r=e.getBoundingClientRect(),card=e.closest('details').getBoundingClientRect();
+   return {radius:parseFloat(s.borderTopLeftRadius),background:s.backgroundColor,display:s.display,height:r.height,cardHeight:card.height};
+  });
+  assert.ok(closedStyle.radius>=20,'Closed PR must be visibly rounded: '+JSON.stringify(closedStyle));
+  assert.notEqual(closedStyle.background,'rgb(239, 239, 239)','No browser-default gray PR button');
+  assert.equal(closedStyle.display,'inline-flex','Themed PR pill keeps its inline layout');
+  assert.ok(closedStyle.height>=44,'PR remains a 44px touch target');
+  assert.ok(closedStyle.cardHeight<160,'Closed short-title workout stays compact: '+JSON.stringify(closedStyle));
   await card.locator(':scope > summary .history-title').click();
   assert.equal(await card.evaluate(x=>x.open),true,'Workout opens independently of its PR badge');
   const detail=card.locator(':scope > .tp3-combined-history-body > .tp226-pr-details');
