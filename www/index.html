@@ -1979,7 +1979,7 @@
  // Prefer actual program goal/type metadata; use localized name only as a fallback.
  const tp277ProgramKind=function(p,name){
   const classify=function(value){
-   const s=String(value||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();
+   const s=String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
    if(/functional|funkcion|funktionell|functionalitate/.test(s))return 'functional';
    if(/hypertroph|izom|muscle|muskel|hipertrof|tomegnovel/.test(s))return 'muscle';
    if(/endurance|cardio|kardio|allokepess|ausdauer|rezistenta|running|futas|lauf|cycling|kerekpar/.test(s))return 'endurance';
