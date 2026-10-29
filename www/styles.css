@@ -566,4 +566,5 @@ html body #app .tp277-set-row:not(.tp164-per-side-row){padding-block:6px!importa
  html body #app .tp277-set-row .tp277-set-previous small{display:inline}
 }
 
-html body #app .tp277-shared-sets .tp277-set-row label{font-size:0}
+html body #app .tp277-shared-sets .tp277-set-row label{position:relative}
+.tp277-shared-sets .tp277-field-label{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap;border:0}
