@@ -59,5 +59,15 @@ if [[ "$home_ready" != true ]]; then
   exit 1
 fi
 adb shell dumpsys battery > wear-ui/results/battery-before.txt
+# Distinguish boot/setup failures from a started instrumentation invocation.
+python3 - <<'PYBOOT'
+import json
+from pathlib import Path
+p = Path('wear-ui/results/startup.json')
+if p.exists():
+    status = json.loads(p.read_text())
+    status['instrumentationStarted'] = True
+    p.write_text(json.dumps(status, indent=2) + '\n')
+PYBOOT
 adb shell am instrument -w -r -e numShards 3 -e shardIndex "${WEAR_SHARD:?}" com.repforge.app.test/androidx.test.runner.AndroidJUnitRunner | tee wear-ui/results/instrumentation.txt
 grep -E 'OK \([1-9][0-9]* tests?\)' wear-ui/results/instrumentation.txt

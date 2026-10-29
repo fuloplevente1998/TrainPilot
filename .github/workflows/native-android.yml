@@ -340,30 +340,24 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - name: Restore Wear API 30 AVD snapshot
-        id: wear-avd-cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.android/avd/*
-            ~/.android/adb*
-          key: native-avd-wear-v1-${{ runner.os }}-api30-android-wear-x86-wearos_small_round
-      - name: Create Wear API 30 AVD snapshot
-        if: steps.wear-avd-cache.outputs.cache-hit != 'true'
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          pre-emulator-launch-script: python3 scripts/native/install-ci-adb-guard.py
-          api-level: 30
-          target: android-wear
-          arch: x86
-          profile: wearos_small_round
-          force-avd-creation: false
-          disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 2048
-          script: echo "Wear AVD snapshot ready."
+      - name: Record Wear cold-boot intent before emulator startup
+        env:
+          WEAR_SHARD: ${{ matrix.shard }}
+        run: |
+          mkdir -p wear-ui/results
+          python3 - <<'PYBOOT'
+          import json, os
+          from pathlib import Path
+          Path('wear-ui/results/startup.json').write_text(json.dumps({
+              'commit': os.environ['GITHUB_SHA'],
+              'shard': os.environ['WEAR_SHARD'],
+              'bootMode': 'fresh-avd-no-snapshot',
+              'instrumentationStarted': False,
+          }, indent=2) + '\n')
+          PYBOOT
       - name: Run Wear UI and stop its emulator
         uses: reactivecircus/android-emulator-runner@v2
-        timeout-minutes: 15
+        timeout-minutes: 20
         env:
           WEAR_SHARD: ${{ matrix.shard }}
         with:
@@ -372,10 +366,30 @@ jobs:
           target: android-wear
           arch: x86
           profile: wearos_small_round
-          force-avd-creation: false
+          force-avd-creation: true
           disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 2048 -no-snapshot-save
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 2048 -no-snapshot
           script: bash scripts/run-native-wear-ui.sh
+      - name: Collect Wear startup diagnostics on failure
+        if: failure()
+        timeout-minutes: 2
+        run: |
+          mkdir -p wear-ui/results
+          # The action may already have stopped the failed AVD. Preserve each
+          # command's status, including timeout/offline, without changing the gate.
+          set +e
+          for probe in devices boot logcat memory disk; do
+            case "$probe" in
+              devices) command=(adb devices -l) ;;
+              boot) command=(adb -s emulator-5554 shell getprop) ;;
+              logcat) command=(adb -s emulator-5554 logcat -d) ;;
+              memory) command=(free -m) ;;
+              disk) command=(df -h) ;;
+            esac
+            timeout --kill-after=2s 10s "${command[@]}" > "wear-ui/results/startup-$probe.txt" 2>&1
+            echo "exitCode=$?" >> "wear-ui/results/startup-$probe.txt"
+          done
+          exit 0
       - uses: actions/upload-artifact@v4
         if: always()
         with:

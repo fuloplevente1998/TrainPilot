@@ -1,5 +1,44 @@
 # PR270 active checkpoint
 
+Updated 2026-10-29. PR270 remains DRAFT, base `feat/native-android-migration`.
+Root works alone. No merge/release/version/signing/data changes.
+
+## Current Wear startup repair
+
+Verified incoming HEAD `151ced0ac367b5b1d5cccc6294d42317a71fa280`.
+Canonical run [40761838896](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40761838896)
+used merge `a59be2bcfe063673cf9c578ffe15b85edd4b9dba`: build/unit/signing,
+phone, both signed upgrades and Wear1/2 SUCCESS; Wear0 FAILED before instrumentation.
+Quick40761838890 SUCCESS. These are GitHub job outcomes; no new raw XML count claimed.
+
+Wear0 log: `default_boot` snapshot restored at20:31:13 UTC, then empty
+`sys.boot_completed` through20:41:28, boot timeout. No Wear0 result directory existed,
+so upload also failed. Snapshot corruption is NOT proven; this repair removes
+snapshot restoration as a dependency instead of weakening test assertions.
+
+Wear now creates a fresh AVD with `-no-snapshot`, like the established phone lane.
+The old shared Wear AVD/adb cache and snapshot-creation invocation are removed.
+All3 shards, fail-fast:false, instrumentation/strict nonempty success check,
+scoped cleanup, SDK adb shutdown guard and always-upload remain. Step budget20min
+allows cold boot plus tests within the existing25min job. Prelaunch startup.json
+and bounded failure diagnostics preserve evidence even when the test script never runs.
+
+Local verification:63 Python host tests PASS; shell syntax, workflow YAML,
+cold-boot/matrix/strict-upload invariants and git diff --check PASS.
+Android runtime still awaits the new canonical full run; do not call the fix proven yet.
+
+## UI status
+
+The older350d7f54 audit is stale for its three P2 findings: ebe9e739 scopes the pulse
+trend to query.channel;32e95607 displays recovery source/qualifications;
+151ced0a opens the existing weight editor with an explicit add intent.
+Do not duplicate these native features. Full Studio visual parity is not established.
+Use the18 referenced Drive images and new same-profile native screenshots;
+the previous run used compact320x640, so it cannot prove owner-profile parity.
+
+## Historical repair context
+
+
 Updated 2026-10-28. PR remains DRAFT on `feat/studio-ui-topnav-trial-20261027`.
 Root works alone; separate agents remain stopped. No merge/release authorized.
 
