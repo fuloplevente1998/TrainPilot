@@ -109,8 +109,10 @@ const server=http.createServer((req,res)=>{
         stack:results.getBoundingClientRect().top-panel.getBoundingClientRect().top,
         resultHeight:results.getBoundingClientRect().height,
         viewport:innerHeight,
+        parts:[...panel.children].map(c=>({class:c.className,height:c.getBoundingClientRect().height,margin:getComputedStyle(c).margin,gap:getComputedStyle(c).gap})),
         chips:[...el.querySelectorAll('.tp271-muscle-chip')].every(c=>c.getBoundingClientRect().height>=44)};
     });
+    if(width===320&&theme==='classicBlue'){fs.mkdirSync('ui-evidence',{recursive:true});await page.screenshot({path:'ui-evidence/pr271-catalogue-compact-320.png',animations:'disabled'});}
     assert.ok(compact.font<=18,width+'/'+theme+': compact catalogue title');
     assert.ok(compact.stack<=300&&compact.resultHeight>=compact.viewport*.4,width+'/'+theme+': catalogue reserves space for results '+JSON.stringify(compact));
     assert.ok(compact.chips,width+'/'+theme+': compact chips retain 44px tap height');

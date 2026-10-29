@@ -1,5 +1,9 @@
 # TrainPilot – aktuális átadás
 
+### Katalógus célzott korrekció
+
+8684fb5e-n Quick/Performance és a menü/sticky tesztcsomag sikeres. A katalógus 320px próbája jogosan megállt: a felső blokk 347px, találatok 215px. Az örökölt setting-label margókat és fő grid gap-et nullázzuk; a hosszú leírás teljes szélességet kap, a bezárás helyét csak a cím foglalja. Nem gyengítjük a minimum találati terület elvárását; 320px diagnosztikai kép és részmagasságok bekerülnek.
+
 ## PR #271 – felhasználói navigációs döntés: vissza a 2×4 menühöz
 
 A telefonos próba során a Programok/Naptár/Coach az oldal aljára került és nehezen volt megtalálható. A felhasználó kifejezetten az „Eredeti 2×4 menü” opciót választotta. Az alsó dock és az azt helyettesítő külön fejléc megszűnik; az eredeti nyolc felső gomb és kanonikus eseménykezelő látható. A mockup felület/kártyák, valódi adatok, témák, fade, katalógustömörítés és sticky Napló-fülek megmaradnak. A korábbi ötfüles navigáció tesztelvárása elavult; a próbák az eredeti nyolc gomb tényleges elérhetőségét ellenőrzik. A tp271-mockup-dock CSS-osztály neve kompatibilitási scope, nem létrehozott dock.

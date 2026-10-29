@@ -596,6 +596,20 @@ html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="quick"] #tp150QuickRes
 }
 
 
+/* Do not inherit broad setting-label margins or grid gaps in the catalogue. */
+html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="exercises"] .tp155-exercise-panel {
+  gap: 0 !important;
+}
+html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="exercises"] .tp155-library-filters label {
+  margin: 0 !important;
+  line-height: 1.2 !important;
+}
+html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="exercises"] .tp155-exercise-panel > .hero {
+  padding-right: 2px !important;
+}
+html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="exercises"] .tp155-exercise-panel > .hero h1 {
+  padding-right: 44px;
+}
 /* Compact catalogue header/filter stack; preserve the real fields and 44px taps. */
 html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="exercises"] .hero :is(h1,p) {
   margin: 0 !important;
