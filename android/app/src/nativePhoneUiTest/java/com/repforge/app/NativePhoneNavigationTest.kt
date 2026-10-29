@@ -343,8 +343,11 @@ class NativePhoneNavigationTest {
     }
 
     @Test fun phoneCanBrowseHomeTabsAfterWatchDeletedWorkoutWithSuspendedCommands() {
-        val execution = PhoneWorkoutExecution.store(context)
-        execution.suspendCommands(true)
+        lateinit var execution: PhoneWorkoutExecutionStore
+        instrumentation.runOnMainSync {
+            execution = PhoneWorkoutExecution.store(context)
+            execution.suspendCommands(true)
+        }
         assertFalse("Test fixture must have no active workout",
             ActiveWorkoutStore.current(context)?.optBoolean("active") == true)
         launch()
