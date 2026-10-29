@@ -47,7 +47,7 @@ async function outdoor(page){await page.evaluate(()=>{
  }
 await page.locator('.tp152-program-card').first().evaluate(x=>x.open=true);await snap('08-programs-open');
  await page.evaluate(()=>go('plan'));await snap('02-workout-start');await page.locator('.tp152-day').first().evaluate(x=>x.open=true);await snap('02-workout-start-open');
- if(version==='after'){assert.equal(await page.locator('.tp152-day').first().locator('.tp277-day-preview').isVisible(),false,'Open day hides the duplicate exercise preview');await page.locator('.tp152-day').first().locator(':scope > summary').click();assert.equal(await page.locator('.tp152-day').first().locator('.tp277-day-preview').isVisible(),true,'Closed day restores preview');}
+ if(version==='after'){assert.equal(await page.locator('.tp152-day').first().locator('.tp277-day-preview').isVisible(),false,'Open day hides the duplicate exercise preview');await page.locator('.tp152-day').first().evaluate(x=>x.open=false);assert.equal(await page.locator('.tp152-day').first().locator('.tp277-day-preview').isVisible(),true,'Closed day restores preview');}
  await page.evaluate(()=>go('settings'));await snap('01-settings');
  if(version==='after'){assert.equal(await page.locator('[data-settings-group]').count(),6);await page.locator('[data-settings-group="appearance"]').evaluate(x=>x.open=true);}await snap('01-settings-open');
  await page.evaluate(()=>{tp155R4ClosePanel(false);go('history');});await snap('07-journal');
