@@ -45,17 +45,17 @@ const server=http.createServer((req,res)=>{
     assert.equal(overview.active,false,'opening Workout must not silently start a session');
     assert.ok(overview.pageOverflow<=2,width+'/'+theme+': no horizontal overflow');
     const first=p.locator('main.tp152-plan .tp152-day').first();
-    await first.locator(':scope > summary').click();
+    await first.locator(':scope > summary .tp152-day-title-copy').click();
     assert.ok(await first.getAttribute('open')!==null,'day must remain expandable');
     const videos=await first.locator('.tp152-day-body .tp-play-btn').count();
     assert.equal(videos,overview.videoExpected,'existing exercise demonstration controls remain in detail');
     assert.ok(await first.locator('.tp152-start-day').isVisible(),'existing start button remains accessible');
-    await first.locator(':scope > summary').click();
+    await first.locator(':scope > summary .tp152-day-title-copy').click();
    }
    // Actual phone start through the original control; no fake second action.
    await p.evaluate(()=>{state.session=null;db.set('draft',null);go('plan')});
    const firstDay=p.locator('main.tp152-plan .tp152-day').first();
-   await firstDay.locator(':scope > summary').click();
+   await firstDay.locator(':scope > summary .tp152-day-title-copy').click();
    await firstDay.locator('.tp152-start-day').click();
    await p.waitForFunction(()=>!!state.session);
    assert.ok(await p.evaluate(()=>!!db.get('draft',null)?.session),width+': workout start must persist draft');
