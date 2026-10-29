@@ -35,8 +35,7 @@ class NativeTrainingModesUiTest {
     }
     private fun settings() {
         compose.onNodeWithTag("navigation_settings").performClick()
-        compose.onNodeWithTag("settings_list")
-            .performScrollToNode(hasTestTag("training_modes_global_preview"))
+        compose.revealSettingsControl("training_modes_global_preview", "settings_profile_summary", "training_profile_open")
     }
     private fun dismissSettingsStatus() {
         val text = nativeResources(fixture.context, current().language)
@@ -173,7 +172,7 @@ class NativeTrainingModesUiTest {
             "de" to "Trainingsstil und Progression",
             "ro" to "Stil de antrenament și progresie")) {
             fixture.selectLanguageThroughUi(compose, language)
-            compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("training_modes_global_preview"))
+            compose.revealSettingsControl("training_modes_global_preview", "settings_profile_summary", "training_profile_open")
             compose.onNodeWithText(expected).assertExists()
         }
     }
@@ -213,7 +212,7 @@ class NativeTrainingModesUiTest {
             }
         } catch (failure: Throwable) {
             throw AssertionError("Program mode comparison: " +
-                compose.onRoot(useUnmergedTree = true).printToString().take(8500), failure)
+                compose.onAllNodes(isRoot(), useUnmergedTree = true).printToString().take(8500), failure)
         }
         compose.onNodeWithTag("training_modes_program_comparison_0").assertExists()
         compose.onNodeWithTag("training_modes_program_approve").assertIsEnabled().performClick()
@@ -230,10 +229,17 @@ class NativeTrainingModesUiTest {
             .getString(R.string.native_modes_approve)
         dismissStatus(buttonLabel)
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("training_modes_program_inherit"))
-        compose.onNodeWithTag("training_modes_program_inherit").performClick()
-        compose.waitUntil(30_000) {
-            compose.onAllNodesWithTag("training_modes_program_approve").fetchSemanticsNodes()
-                .any { it.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.Disabled) == null }
+        compose.onNodeWithTag("training_modes_program_inherit").performScrollTo().assertIsDisplayed()
+            .assertIsEnabled().performClick()
+        compose.onNodeWithTag("training_modes_program_dialog").assertExists()
+        try {
+            compose.waitUntil(30_000) {
+                compose.onAllNodesWithTag("training_modes_program_approve").fetchSemanticsNodes()
+                    .any { it.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.Disabled) == null }
+            }
+        } catch (failure: Throwable) {
+            throw AssertionError("Program inheritance comparison: " +
+                compose.onAllNodes(isRoot(), useUnmergedTree = true).printToString().take(12000), failure)
         }
         compose.onNodeWithTag("training_modes_program_approve").assertIsEnabled().performClick()
         compose.waitUntil(15_000) {

@@ -70,10 +70,19 @@ class NativePhoneNavigationTest {
     private fun launch() {
         scenario = ActivityScenario.launch(MainActivity::class.java)
         compose.waitUntil(30000) { compose.onAllNodesWithTag("navigation_home").fetchSemanticsNodes().isNotEmpty() }
+        // The global header is composed before the destination finishes loading.
+        // Wait for the actual Home body, not only navigation chrome.
+        compose.waitUntil(30_000) {
+            compose.onAllNodesWithTag("shortcut_programs").fetchSemanticsNodes().isNotEmpty()
+        }
         compose.waitForIdle()
     }
     private fun tab(route: String) {
-        compose.onNodeWithTag("navigation_$route").performClick()
+        val destination = compose.onNodeWithTag("navigation_$route")
+        // The main header scrolls; the active-workout secondary header is fixed.
+        // Already visible navigation needs no scrollable ancestor.
+        if (runCatching { destination.assertIsDisplayed() }.isFailure) destination.performScrollTo()
+        destination.assertIsDisplayed().performClick()
         // A click is not an admission receipt: await actual selected destination
         // before starting the next screen's work/screenshot.
         compose.waitUntil(15_000) {
@@ -83,6 +92,101 @@ class NativePhoneNavigationTest {
         }
         compose.waitForIdle()
     }
+    private fun expandInlineWeight() {
+        compose.onNodeWithTag("health_weight_journal").performScrollTo()
+            .assertIsDisplayed().performClick()
+        compose.waitUntil(15_000) {
+            compose.onAllNodesWithTag("health_weight_inline_panel").fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
+    private fun openFullWeightJournal() {
+        expandInlineWeight()
+        compose.onNodeWithTag("health_journal_list")
+            .performScrollToNode(hasTestTag("weight_journal_action"))
+        compose.onNodeWithTag("weight_journal_action").performScrollTo()
+            .assertIsDisplayed().performClick()
+        compose.waitUntil(15_000) {
+            compose.onAllNodesWithTag("weight_journal_list").fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
+    private fun openTrainingQuickChoice(choiceTag: String) {
+        compose.onNodeWithTag("training_quick_workout").performScrollTo()
+            .assertIsDisplayed().performClick()
+        compose.waitUntil(15_000) {
+            compose.onAllNodesWithTag("training_quick_sheet").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("training_quick_sheet")
+            .performScrollToNode(hasTestTag(choiceTag))
+        compose.onNodeWithTag(choiceTag).assertIsDisplayed().performClick()
+        compose.waitUntil(15_000) {
+            compose.onAllNodesWithTag("exercise_search").fetchSemanticsNodes().isNotEmpty()
+        }
+        // The loaded exercise list, not the search field, proves async catalog
+        // initialization has finished before typing triggers another recomposition.
+        compose.waitUntil(20_000) {
+            compose.onAllNodesWithTag("quick_exercise_list").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("quick_exercise_list").assertIsDisplayed()
+        compose.waitForIdle()
+    }
+
+    private fun openTrainingPrograms() {
+        compose.onNodeWithTag("training_list")
+            .performScrollToNode(hasTestTag("shortcut_programs"))
+        compose.onNodeWithTag("shortcut_programs").assertIsDisplayed().performClick()
+        compose.waitUntil(15_000) {
+            compose.onAllNodesWithTag("program_list").fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
+    // LazyColumn can hide descendants of an expanded, taller-than-viewport item
+    // on compact devices; walk the actual viewport rather than assuming the
+    // target has already been materialized in its semantics tree.
+    private fun revealHealthListTag(tag: String) {
+        val list = compose.onNodeWithTag("health_journal_list")
+        for (attempt in 0 until 24) {
+            if (compose.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()) {
+                compose.onNodeWithTag(tag).performScrollTo().assertIsDisplayed()
+                return
+            }
+            list.performTouchInput { swipeUp() }
+        }
+        throw AssertionError("Health control $tag remained unreachable after scrolling")
+    }
+
+    private fun expandHealthSection(sectionTag: String, targetTag: String) {
+        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag(sectionTag))
+        if (sectionTag == "health_more_section") {
+            // The five compact readings are a different group from the original
+            // 26 native metrics. Expand both levels explicitly; target absence
+            // alone cannot tell whether a lazy section is open.
+            compose.onNodeWithTag(sectionTag).performClick()
+            revealHealthListTag("health_all_metrics_toggle")
+            compose.onNodeWithTag("health_all_metrics_toggle")
+                .assertTextContains("Összes mérés").performClick()
+            revealHealthListTag(targetTag)
+        } else {
+            if (compose.onAllNodesWithTag(targetTag).fetchSemanticsNodes().isEmpty()) {
+                compose.onNodeWithTag(sectionTag).performClick()
+            }
+            compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag(targetTag))
+            compose.onNodeWithTag(targetTag).performScrollTo().assertIsDisplayed()
+        }
+    }
+
+    private fun openSettingsProfileEditor() {
+        compose.onNodeWithTag("settings_list")
+            .performScrollToNode(hasTestTag("settings_profile_summary"))
+        if (compose.onAllNodesWithTag("training_profile_open").fetchSemanticsNodes().isEmpty()) {
+            compose.onNodeWithTag("settings_profile_summary").performClick()
+        }
+        compose.onNodeWithTag("settings_list")
+            .performScrollToNode(hasTestTag("training_profile_open"))
+        compose.onNodeWithTag("training_profile_open").performClick()
+    }
+
     private fun snapshot(): JSONObject? {
         var result: JSONObject? = null
         instrumentation.runOnMainSync { result = ActiveWorkoutStore.current(context) }
@@ -109,6 +213,50 @@ class NativePhoneNavigationTest {
         }
         fail("Host did not capture raw adb screenshot: $name")
     }
+    @Test fun originalGoldDumbbellLogoSurvivesStudioShellPort() {
+        launch()
+        // The displayed branding is the real trainpilot_launcher_foreground vector,
+        // not the 18:49 Studio prototype's mountain placeholder.
+        compose.onNodeWithTag("trainpilot_brand_dumbbell", useUnmergedTree = true)
+            .assertExists()
+        compose.onNodeWithTag("navigation_home").assertIsSelected()
+        val brandLayouts = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+        compose.onNodeWithTag("header_brand_text", useUnmergedTree = true).assertIsDisplayed()
+            .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { it(brandLayouts) }
+        screenshot("studio_original_gold_dumbbell", theme = "graphite_gold")
+        assertTrue("Brand layout: " + brandLayouts.joinToString { "size=${it.size}, paragraph=${it.multiParagraph.width}, constraints=${it.layoutInput.constraints}" },
+            brandLayouts.isNotEmpty() && brandLayouts.none { it.hasVisualOverflow })
+        tab("progress")
+        compose.onNodeWithTag("trainpilot_brand_dumbbell", useUnmergedTree = true)
+            .assertExists()
+        compose.onNodeWithTag("navigation_progress").assertIsSelected()
+        compose.onNodeWithTag("progress_list").performScrollToNode(hasTestTag("progress_total_volume_card"))
+        compose.onNodeWithTag("progress_total_volume_card").assertIsDisplayed()
+        screenshot("studio_progress_overview", theme = "graphite_gold")
+        compose.onNodeWithTag("navigation_settings").performClick()
+        compose.onNodeWithTag("settings_google_summary").assertIsDisplayed()
+        screenshot("studio_settings_initial", theme = "graphite_gold")
+        compose.onNodeWithTag("settings_theme_summary").performScrollTo().performClick()
+        compose.onNodeWithTag("settings_theme_picker").performScrollTo().assertIsDisplayed()
+        screenshot("studio_settings_compact_themes", theme = "graphite_gold")
+    }
+
+    @Test fun studioJournalMonthSelectorFiltersRealPagedHistoryAndReturnsToAllMonths() {
+        launch()
+        tab("journal")
+        compose.onNodeWithTag("journal_search").assertExists()
+        compose.onNodeWithTag("journal_month").performClick()
+        compose.onNodeWithTag("journal_picker_all").assertExists()
+        val current = java.time.YearMonth.now().toString()
+        compose.onNodeWithTag("journal_picker_$current").performClick()
+        compose.onNodeWithTag("journal_month").assertExists()
+        screenshot("studio_journal_month_selected", theme = "graphite_gold")
+        compose.onNodeWithTag("journal_month").performClick()
+        compose.onNodeWithTag("journal_picker_all").performClick()
+        compose.onNodeWithTag("journal_month").assertExists()
+        screenshot("studio_journal_all_months", theme = "graphite_gold")
+    }
+
     @Test fun coldStartRecoveryRequiresExplicitResumeBeforeOpeningTheApp() {
         val token = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
         val dir = java.io.File(context.noBackupFilesDir, "archive_transactions/$token").apply { mkdirs() }
@@ -151,6 +299,11 @@ class NativePhoneNavigationTest {
         }
         fun capture(screen: String) = screenshot(screen, "hu", "yellow", "synthetic_disposable_p1_visual_fixture")
         launch()
+        scenario?.onActivity { activity ->
+            val bars = androidx.core.view.WindowCompat.getInsetsController(activity.window, activity.window.decorView)
+            assertFalse("Dark native surfaces need light status-bar icons", bars.isAppearanceLightStatusBars)
+            assertFalse("Dark native surfaces need light navigation-bar icons", bars.isAppearanceLightNavigationBars)
+        }
         compose.waitUntil(30_000) { compose.onAllNodesWithTag("home_loading").fetchSemanticsNodes().isEmpty() }
         capture("p1_home")
         compose.onNodeWithTag("home_metric_recovery").performScrollTo()
@@ -160,6 +313,7 @@ class NativePhoneNavigationTest {
         compose.waitUntil(30_000) { compose.onAllNodesWithTag("journal_workout_p1-visual-1").fetchSemanticsNodes().isNotEmpty() }
         capture("p1_journal")
         tab("progress")
+        compose.onNodeWithTag("progress_list").performScrollToNode(hasTestTag("anatomical_muscle_heatmap_card"))
         compose.waitUntil(30_000) { compose.onAllNodesWithTag("progress_anatomy_loaded", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
         capture("p1_progress")
         compose.onNodeWithTag("progress_anatomy").performScrollTo().performClick()
@@ -175,7 +329,12 @@ class NativePhoneNavigationTest {
                 .getString(R.string.health_history_loading)).fetchSemanticsNodes().isEmpty()
         }
         capture("p1_health")
-        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_metric_steps"))
+        for (tag in listOf("health_more_section", "health_history_section",
+            "health_connect_section", "health_open_watch_sync_card")) {
+            compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag(tag))
+            compose.onNodeWithTag(tag).performScrollTo().assertIsDisplayed()
+        }
+        expandHealthSection("health_more_section", "health_metric_steps")
         compose.onNodeWithTag("health_metric_steps").assertIsDisplayed()
         capture("p1_health_metrics")
         assertEquals("yellow", runBlocking(Dispatchers.IO) { settings.current().themeKey })
@@ -186,7 +345,8 @@ class NativePhoneNavigationTest {
     @Test fun fiveTabsAndSecondaryPlanningEntriesUseActualNativeScreens() {
         launch(); screenshot("home")
         for (route in listOf("training", "journal", "progress", "health")) { tab(route); screenshot(route) }
-        tab("home")
+        compose.onNodeWithTag("header_home").performClick()
+        compose.onNodeWithTag("navigation_home").assertIsSelected()
         for (route in listOf("programs", "calendar", "coach")) {
             try {
                 compose.waitUntil(10_000) { compose.onAllNodesWithTag("shortcut_$route").fetchSemanticsNodes().isNotEmpty() }
@@ -205,6 +365,7 @@ class NativePhoneNavigationTest {
     }
     @Test fun progressSelectorCanReachExercisesBeyondOldEightItemLimit() {
         launch(); tab("progress")
+        compose.onNodeWithTag("progress_section_tab_2").performClick()
         val target = com.repforge.app.data.db.NativeBuiltinCatalog.exercises.last()
         compose.onNodeWithTag("progress_list").performScrollToNode(hasTestTag("progress_exercise_choices"))
         compose.waitUntil(15000) {
@@ -220,8 +381,7 @@ class NativePhoneNavigationTest {
     @Test fun trainingProfilePersistsAfterSettingsReentryWithoutGuessingMeasurements() {
         launch()
         compose.onNodeWithTag("navigation_settings").performClick()
-        compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("training_profile_open"))
-        compose.onNodeWithTag("training_profile_open").performClick()
+        openSettingsProfileEditor()
         compose.onNodeWithTag("profile_field_age").performTextReplacement("28")
         compose.onNodeWithTag("profile_field_minutes").performTextReplacement("75")
         compose.onNodeWithTag("profile_field_goal").performTextReplacement("fitness")
@@ -234,12 +394,34 @@ class NativePhoneNavigationTest {
         }
         compose.onNodeWithTag("navigation_back").performClick()
         compose.onNodeWithTag("navigation_settings").performClick()
-        compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("training_profile_open"))
-        compose.onNodeWithTag("training_profile_open").performClick()
+        openSettingsProfileEditor()
         compose.onNodeWithTag("profile_field_age").assertTextContains("28")
         compose.onNodeWithTag("profile_field_minutes").assertTextContains("75")
         assertFalse(JSONObject(runBlocking(Dispatchers.IO) { settings.current().profileJson }).has("height"))
         screenshot("training_profile_edited")
+        val strings = com.repforge.app.ui.text.nativeResources(context, "hu")
+        compose.onNodeWithText(strings.getString(R.string.native_profile_18)).performClick()
+        compose.onNodeWithTag("navigation_back").performClick()
+        val profileBefore = runBlocking(Dispatchers.IO) { settings.current().profileJson }
+        val programsBefore = runBlocking(Dispatchers.IO) {
+            TrainPilotDatabase.getInstance(context).programDao().getProgramsWithDays()
+                .associate { it.program.id to it.program.rawJson }
+        }
+        compose.onNodeWithTag("home_personal_plan").performScrollTo().performClick()
+        compose.onNodeWithTag("personal_preview").assertExists()
+        compose.waitUntil(30_000) { compose.onAllNodesWithTag("personal_preview_loading").fetchSemanticsNodes().isEmpty() }
+        screenshot("home_personal_plan_preview")
+        compose.onNodeWithText(strings.getString(R.string.native_preview_10)).performClick()
+        compose.onNodeWithTag("personal_preview").assertDoesNotExist()
+        assertEquals(profileBefore, runBlocking(Dispatchers.IO) { settings.current().profileJson })
+        assertEquals(programsBefore, runBlocking(Dispatchers.IO) {
+            TrainPilotDatabase.getInstance(context).programDao().getProgramsWithDays()
+                .associate { it.program.id to it.program.rawJson }
+        })
+        assertTrue(snapshot()?.optBoolean("active") != true)
+        compose.onNodeWithTag("navigation_back").performClick()
+        compose.onNodeWithTag("home_studio_greeting").assertExists()
+        compose.onNodeWithTag("navigation_home").assertIsSelected()
     }
 
     @Test fun invalidTrainingProfileDoesNotOverwriteStoredProfile() {
@@ -249,8 +431,7 @@ class NativePhoneNavigationTest {
         }
         launch()
         compose.onNodeWithTag("navigation_settings").performClick()
-        compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("training_profile_open"))
-        compose.onNodeWithTag("training_profile_open").performClick()
+        openSettingsProfileEditor()
         compose.onNodeWithTag("profile_field_weight").performTextReplacement("Infinity")
         compose.onNodeWithTag("profile_save").performClick()
         compose.waitUntil(15000) {
@@ -270,6 +451,11 @@ class NativePhoneNavigationTest {
             compose.onNodeWithTag("settings_language_$language").performClick()
             compose.waitUntil(10000) { runBlocking { settings.current().language == language } }
             compose.onNodeWithTag("settings_language_$language").assertIsSelected()
+            if (compose.onAllNodesWithTag("theme_$theme").fetchSemanticsNodes().isEmpty()) {
+                compose.onNodeWithTag("settings_list")
+                    .performScrollToNode(hasTestTag("settings_theme_summary"))
+                compose.onNodeWithTag("settings_theme_summary").performClick()
+            }
             compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("theme_$theme"))
             compose.onNodeWithTag("theme_$theme").performScrollTo().assertIsDisplayed().performClick()
             compose.waitUntil(10000) { runBlocking { settings.current().themeKey == theme && settings.current().language == language } }
@@ -278,6 +464,21 @@ class NativePhoneNavigationTest {
         compose.onNodeWithTag("navigation_back").performClick()
         compose.onNodeWithTag("journal_search").assertExists()
         compose.onNodeWithText("Caută antrenamente sau exerciții").assertExists()
+        compose.onNodeWithTag("header_theme").performClick()
+        compose.onNodeWithTag("settings_theme_picker").assertIsDisplayed()
+        compose.onNodeWithTag("navigation_back").performClick()
+        compose.onNodeWithTag("journal_search").assertExists()
+        // The approved 18:49 header has an *inline* language dropdown,
+        // not a second Settings navigation. Persist through native DataStore.
+        compose.onNodeWithTag("header_language").performClick()
+        compose.onNodeWithTag("header_language_ro").assertIsDisplayed()
+        compose.onNodeWithTag("header_language_en").performClick()
+        compose.waitUntil(10000) { runBlocking { settings.current().language == "en" } }
+        compose.onNodeWithTag("journal_search").assertExists()
+        compose.onNodeWithTag("header_language").performClick()
+        compose.onNodeWithTag("header_language_ro").performClick()
+        compose.waitUntil(10000) { runBlocking { settings.current().language == "ro" } }
+        compose.onNodeWithTag("journal_search").assertExists()
     }
     @Test fun openingSettingsKeepsTheCanonicalWorkoutAndStopwatchRunning() {
         val quickLaunch = runBlocking { NativeWorkoutSession.startQuickWorkout(context, "plank", false) }
@@ -447,11 +648,11 @@ class NativePhoneNavigationTest {
         }
         launch()
         fun awaitHomeProgram(name: String) {
-            compose.waitUntil(15000) { compose.onAllNodes(hasTestTag("home_program_name") and hasText(name)).fetchSemanticsNodes().isNotEmpty() &&
+            compose.waitUntil(15000) { compose.onAllNodes(hasTestTag("home_program_name") and hasText(name), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() &&
                 compose.onAllNodesWithTag("home_loading").fetchSemanticsNodes().isEmpty() }
         }
         awaitHomeProgram("Naptári célprogram")
-        compose.onNodeWithTag("home_day_name").assertTextEquals("Naptári célnap")
+        compose.onNodeWithTag("home_day_name", useUnmergedTree = true).assertTextEquals("Naptári célnap")
         val activeName = runBlocking(Dispatchers.IO) { db.programDao().getProgramWithDaysById("home-basic")!!.program.nameHu }
         runBlocking(Dispatchers.IO) { db.calendarScheduleDao().upsertEntry(planned.copy(status = "skipped")) }
         awaitHomeProgram(activeName)
@@ -465,14 +666,14 @@ class NativePhoneNavigationTest {
             db.programDao().saveProgramWithDays(source.program.copy(nameHu = "Frissített célprogram"), source.days)
         }
         awaitHomeProgram("Frissített célprogram")
-        compose.onNodeWithTag("home_metric_workouts_value").performScrollTo().assertTextEquals("0")
+        compose.onNodeWithTag("home_metric_workouts_value", useUnmergedTree = true).performScrollTo().assertTextEquals("0")
         runBlocking(Dispatchers.IO) {
             val now = java.time.Instant.now()
             com.repforge.app.data.migration.LegacyWebViewMigrator(context, db, settings).saveWorkoutJsonToRoom(JSONObject()
                 .put("id", "home-live-count").put("started", now.minusSeconds(1).toString()).put("finished", now.toString())
                 .put("exercises", org.json.JSONArray()))
         }
-        compose.waitUntil(15000) { compose.onAllNodes(hasTestTag("home_metric_workouts_value") and hasText("1")).fetchSemanticsNodes().isNotEmpty() &&
+        compose.waitUntil(15000) { compose.onAllNodes(hasTestTag("home_metric_workouts_value") and hasText("1"), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() &&
             compose.onAllNodesWithTag("home_loading").fetchSemanticsNodes().isEmpty() }
         compose.onNodeWithTag("home_start_workout").performScrollTo().assertIsEnabled().performClick()
         compose.waitUntil(15000) { snapshot()?.optBoolean("active") == true }
@@ -656,13 +857,14 @@ class NativePhoneNavigationTest {
         }
         launch(); tab("journal")
         compose.waitUntil(15000) { compose.onAllNodesWithTag("journal_workout_watch-pr").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("journal_workout_watch-pr").assertTextContains("Személyes csúcs")
+        compose.onNodeWithTag("journal_pr_watch-pr", useUnmergedTree = true)
+            .assertContentDescriptionEquals("Személyes csúcs")
         screenshot("journal_large_history_pr")
     }
 
     @Test fun weightJournalSupportsDatedAddEditAndConfirmedExactDeletion() {
         launch(); tab("health")
-        compose.onNodeWithTag("health_weight_journal").performClick()
+        openFullWeightJournal()
         compose.onNodeWithTag("weight_journal_action").performClick()
         compose.onNodeWithTag("weight_input").performTextReplacement("72,3")
         compose.onNodeWithTag("weight_date").performTextReplacement("2026-10-20")
@@ -704,17 +906,28 @@ class NativePhoneNavigationTest {
     @Test fun weightOverviewCoversFifteenHundredMeasurementsAcrossRangeChanges() {
         seedLargeWeightJournal(1500)
         launch(); tab("health")
-        compose.onNodeWithTag("health_weight_journal").performClick()
+        expandInlineWeight()
         compose.waitUntil(15000) { compose.onAllNodes(hasTestTag("weight_measurement_count") and
             hasText("1500 mérés", substring = true)).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("weight_global_extrema").assertTextContains("35 / 140 kg", substring = true)
-        compose.onNodeWithTag("weight_range_choices").performScrollToNode(hasTestTag("weight_range_all"))
-        compose.onNodeWithTag("weight_range_all").performScrollTo().performClick()
+        fun selectInlineRange(range: String) {
+            // A chip's nearest scroll parent is horizontal. Reveal that row in
+            // the outer Health list first, then exercise the visible real chip.
+            revealHealthListTag("weight_range_choices")
+            compose.onNodeWithTag("weight_range_choices")
+                .performScrollToNode(hasTestTag("weight_range_$range"))
+            compose.onNodeWithTag("weight_range_$range").assertIsDisplayed().performClick()
+            compose.waitUntil(15_000) {
+                runBlocking(Dispatchers.IO) { settings.current().weightRange == range }
+            }
+            compose.onNodeWithTag("weight_range_$range").assertIsSelected()
+            revealHealthListTag("weight_chart_coverage")
+        }
+        selectInlineRange("all")
         compose.waitUntil(15000) { compose.onAllNodes(hasTestTag("weight_chart_coverage") and
             hasText("1500 mérés", substring = true)).fetchSemanticsNodes().isNotEmpty() }
         screenshot("weight_1500_full_coverage")
-        compose.onNodeWithTag("weight_range_choices").performScrollToNode(hasTestTag("weight_range_7"))
-        compose.onNodeWithTag("weight_range_7").performScrollTo().performClick()
+        selectInlineRange("7")
         compose.waitUntil(15000) { compose.onAllNodes(hasTestTag("weight_chart_coverage") and
             hasText("8 mérés", substring = true)).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("weight_measurement_count").assertTextContains("1500 mérés", substring = true)
@@ -725,7 +938,7 @@ class NativePhoneNavigationTest {
     @Test fun pagedWeightEditUpdatesOverviewWithoutChangingCountOrOlderMeasurements() {
         seedLargeWeightJournal(200)
         launch(); tab("health")
-        compose.onNodeWithTag("health_weight_journal").performClick()
+        openFullWeightJournal()
         compose.waitUntil(15000) { compose.onAllNodes(hasTestTag("weight_measurement_count") and
             hasText("200 mérés", substring = true)).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("weight_journal_list").performScrollToNode(hasTestTag("weight_edit_weight-0199"))
@@ -734,7 +947,9 @@ class NativePhoneNavigationTest {
         compose.onNodeWithTag("weight_save").performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("weight_input").fetchSemanticsNodes().isEmpty() }
         compose.onNodeWithTag("weight_journal_list").performScrollToIndex(0)
-        compose.waitUntil(15000) { compose.onAllNodesWithText("Aktuális: 81,5 kg").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(15000) { compose.onAllNodes(hasTestTag("weight_current_value") and
+            hasText("81,5 kg")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("weight_current_value").assertTextEquals("81,5 kg")
         compose.onNodeWithTag("weight_measurement_count").assertTextContains("200 mérés", substring = true)
         compose.onNodeWithTag("weight_global_extrema").assertTextContains("35 / 140 kg", substring = true)
         val old = runBlocking(Dispatchers.IO) { TrainPilotDatabase.getInstance(context).bodyWeightDao().getWeightById("weight-0000")!! }
@@ -744,7 +959,7 @@ class NativePhoneNavigationTest {
 
     @Test fun failedWeightSaveKeepsTheDialogAndInputForExplicitRetry() {
         launch(); tab("health")
-        compose.onNodeWithTag("health_weight_journal").performClick()
+        openFullWeightJournal()
         compose.onNodeWithTag("weight_journal_action").performClick()
         compose.onNodeWithTag("weight_input").performTextReplacement("74,5")
         context.getSharedPreferences("trainpilot_data_replacement", Context.MODE_PRIVATE).edit().putBoolean("blocked", true).commit()
@@ -778,7 +993,7 @@ class NativePhoneNavigationTest {
             JSONObject().put("value", 73.4).put("unit", "kg")))
         store.importRecords(rows, store.generation())
         launch(); tab("health")
-        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_open_records"))
+        expandHealthSection("health_history_section", "health_open_records")
         compose.onNodeWithTag("health_open_records").performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("health_record_weight-30").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("health_records_next").performClick()
@@ -812,9 +1027,14 @@ class NativePhoneNavigationTest {
             .put(healthRecord("hc-sleep", "SleepSessionRecord", "hc.origin", HealthJournalStore.HC, wake - 32_400_000L, wake, hc))
             .put(healthRecord("samsung-sleep", "SleepSessionRecord", "samsung.origin", HealthJournalStore.SAMSUNG, wake, wake + 3_600_000L, samsung)), store.generation())
         launch(); tab("health")
-        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_open_sleep"))
-        compose.onNodeWithTag("health_open_sleep").performClick()
-        compose.waitUntil(15000) { compose.onAllNodesWithTag("health_record_samsung-sleep").fetchSemanticsNodes().isNotEmpty() }
+        expandHealthSection("health_history_section", "health_open_sleep")
+        compose.waitUntil(15_000) {
+            compose.onAllNodes(hasTestTag("health_open_sleep") and isEnabled()).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("health_open_sleep").assertIsEnabled().performClick()
+        compose.waitUntil(15000) { compose.onAllNodesWithTag("health_records_list").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("health_records_list").performScrollToNode(hasTestTag("health_record_samsung-sleep"))
+        compose.onNodeWithTag("health_record_samsung-sleep").assertExists()
         compose.onNodeWithTag("health_records_list").performScrollToNode(hasTestTag("health_record_expand_samsung-sleep"))
         compose.onNodeWithTag("health_record_expand_samsung-sleep").performScrollTo().assertIsDisplayed().performClick()
         compose.onNodeWithTag("health_records_list").performScrollToNode(hasText("Könnyű alvás"))
@@ -834,7 +1054,7 @@ class NativePhoneNavigationTest {
         store.importRecords(org.json.JSONArray((0 until 26).map { i -> healthRecord("old-$i", "WeightRecord", "old.origin",
             HealthJournalStore.HC, time, time + 1, JSONObject().put("value", 72.3).put("unit", "kg")) }), store.generation())
         launch(); tab("health")
-        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_open_records"))
+        expandHealthSection("health_history_section", "health_open_records")
         compose.onNodeWithTag("health_open_records").performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("health_record_old-25").fetchSemanticsNodes().isNotEmpty() }
         runBlocking(Dispatchers.IO) { store.erase() }
@@ -853,7 +1073,7 @@ class NativePhoneNavigationTest {
         val day = java.time.LocalDate.now().toString()
         store.healthDay(day, JSONObject().put("weightKg", 72.3), store.generation())
         launch(); tab("health")
-        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_daily_priority"))
+        expandHealthSection("health_connect_section", "health_daily_priority")
         compose.onNodeWithTag("health_daily_priority").performClick()
         compose.waitUntil(15000) { store.preferences().optString("hcDailySource") == "priority" &&
             compose.onAllNodesWithTag("health_daily_partial").fetchSemanticsNodes().isNotEmpty() }
@@ -873,7 +1093,7 @@ class NativePhoneNavigationTest {
         store.healthDay(day, JSONObject().put("source", "@aggregate").put("steps", 123), store.generation())
         launch(); tab("health")
         compose.waitUntil(15000) { compose.onAllNodesWithTag("health_journal_list").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_daily_priority"))
+        expandHealthSection("health_connect_section", "health_daily_priority")
         compose.onNodeWithTag("health_daily_sources_row").performScrollToNode(hasTestTag("health_daily_origin.alpha"))
         compose.onNodeWithTag("health_daily_origin.alpha").performClick()
         compose.waitUntil(15000) { store.preferences().optString("hcDailySource") == "origin.alpha" &&
@@ -886,7 +1106,7 @@ class NativePhoneNavigationTest {
 
     @Test fun healthBackgroundShowsSchedulingSeparatelyFromSavedOptIn() {
         launch(); tab("health")
-        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_hc_background_switch"))
+        expandHealthSection("health_connect_section", "health_hc_background_switch")
         compose.onNodeWithTag("health_hc_background_switch").assertIsOff()
         compose.onNodeWithTag("health_hc_background_status").assertExists()
         compose.onNodeWithText("Nincs ütemezett háttérfrissítés.").assertExists()
@@ -896,7 +1116,9 @@ class NativePhoneNavigationTest {
     @Test fun bleBackgroundCannotClaimToStartWithoutARememberedWatch() {
         assertTrue(BleWatchPreference(context).clear())
         launch(); tab("health")
-        compose.onNodeWithText("BLE Okosóra (#111)").performClick()
+        compose.onNodeWithTag("health_journal_list")
+            .performScrollToNode(hasTestTag("health_open_watch_sync_card"))
+        compose.onNodeWithTag("health_open_watch_sync_card").performClick()
         compose.onNodeWithTag("health_ble_list").performScrollToNode(hasTestTag("health_ble_background_switch"))
         compose.onNodeWithTag("health_ble_background_switch").assertIsOff()
         compose.onNodeWithTag("health_ble_background_switch").performClick()
@@ -916,7 +1138,7 @@ class NativePhoneNavigationTest {
         val db = TrainPilotDatabase.getInstance(context)
         val baseline = runBlocking(Dispatchers.IO) { db.programDao().getProgramIds().toSet() }
         launch(); tab("training")
-        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
+        openTrainingPrograms()
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("personal_planner_open"))
         compose.onNodeWithTag("personal_planner_open").performClick()
         compose.onNodeWithTag("personal_preview").assertExists()
@@ -938,7 +1160,7 @@ class NativePhoneNavigationTest {
         val db = TrainPilotDatabase.getInstance(context)
         val baseline = runBlocking(Dispatchers.IO) { db.programDao().getProgramIds().toSet() }
         launch(); tab("training")
-        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
+        openTrainingPrograms()
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("personal_planner_open"))
         compose.onNodeWithTag("personal_planner_open").performClick()
         compose.waitUntil(15000) {
@@ -963,7 +1185,7 @@ class NativePhoneNavigationTest {
         val db = TrainPilotDatabase.getInstance(context)
         val baseline = runBlocking(Dispatchers.IO) { db.programDao().getProgramIds().toSet() }
         launch(); tab("training")
-        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
+        openTrainingPrograms()
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("personal_planner_open"))
         compose.onNodeWithTag("personal_planner_open").performClick()
         compose.waitUntil(15000) {
@@ -1008,7 +1230,7 @@ class NativePhoneNavigationTest {
         }
         val baseline = runBlocking(Dispatchers.IO) { db.programDao().getProgramIds().toSet() }
         launch(); tab("training")
-        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
+        openTrainingPrograms()
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("personal_planner_open"))
         compose.onNodeWithTag("personal_planner_open").performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("personal_preview_loading").fetchSemanticsNodes().isEmpty() &&
@@ -1039,7 +1261,7 @@ class NativePhoneNavigationTest {
         }
         val baseline = runBlocking(Dispatchers.IO) { db.programDao().getProgramIds().toSet() }
         launch(); tab("training")
-        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
+        openTrainingPrograms()
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("personal_planner_open"))
         compose.onNodeWithTag("personal_planner_open").performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("personal_preview_loading").fetchSemanticsNodes().isEmpty() &&
@@ -1060,7 +1282,7 @@ class NativePhoneNavigationTest {
                 .put("gear", org.json.JSONArray().put("dumbbells").put("barbell")))
         }
         launch(); tab("training")
-        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
+        openTrainingPrograms()
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("personal_planner_open"))
         compose.onNodeWithTag("personal_planner_open").performClick()
         compose.waitUntil(15000) {
@@ -1088,7 +1310,7 @@ class NativePhoneNavigationTest {
 
     @Test fun personalPlannerRequiresExplicitDurationAndEquipment() {
         launch(); tab("training")
-        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
+        openTrainingPrograms()
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("personal_planner_open"))
         compose.onNodeWithTag("personal_planner_open").performClick()
         compose.waitUntil(15000) {
@@ -1100,7 +1322,7 @@ class NativePhoneNavigationTest {
 
     @Test fun programEditorCreatesCustomPlanAndRenamesDayWithoutStartingWorkout() {
         launch(); tab("training")
-        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
+        openTrainingPrograms()
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("program_create"))
         compose.onNodeWithTag("program_create").performClick()
         compose.onNodeWithTag("program_editor_name").performTextInput("Saját időterv")
@@ -1121,7 +1343,7 @@ class NativePhoneNavigationTest {
 
     @Test fun programEditorAddsRealCatalogExerciseToNewDay() {
         launch(); tab("training")
-        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
+        openTrainingPrograms()
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("program_create"))
         compose.onNodeWithTag("program_create").performClick()
         compose.onNodeWithTag("program_editor_name").performTextInput("Gyakorlatos terv")
@@ -1173,7 +1395,7 @@ class NativePhoneNavigationTest {
         val before = runBlocking(Dispatchers.IO) {
             db.programDao().getProgramWithDaysById("home-basic")!! }
         launch(); tab("training")
-        compose.onNodeWithTag("shortcut_programs").performScrollTo().performClick()
+        openTrainingPrograms()
         compose.onNodeWithTag("program_list").performScrollToNode(hasTestTag("program_home-basic"))
         compose.onNodeWithTag("program_edit_home-basic").performClick()
         compose.onNodeWithTag("program_editor_name").performTextClearance()
@@ -1189,9 +1411,11 @@ class NativePhoneNavigationTest {
 
     @Test fun customExerciseCanBeCreatedEditedAndDeletedWithoutStartingWorkout() {
         launch(); tab("training")
-        compose.onNodeWithText("Gyakorlatkönyvtár").performClick()
+        compose.onNodeWithTag("training_open_exercises").performScrollTo().assertIsDisplayed().performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("custom_exercise_create").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("custom_exercise_create").performClick()
+        compose.onNodeWithTag("exercise_library_list")
+            .performScrollToNode(hasTestTag("custom_exercise_create"))
+        compose.onNodeWithTag("custom_exercise_create").assertIsDisplayed().performClick()
         compose.onNodeWithTag("custom_exercise_name").performTextInput("Saját UI próba")
         compose.onNodeWithTag("custom_exercise_save").performClick()
         val db = TrainPilotDatabase.getInstance(context)
@@ -1232,9 +1456,11 @@ class NativePhoneNavigationTest {
 
     @Test fun invalidCustomVideoCannotWriteOrReplaceCatalog() {
         launch(); tab("training")
-        compose.onNodeWithText("Gyakorlatkönyvtár").performClick()
+        compose.onNodeWithTag("training_open_exercises").performScrollTo().assertIsDisplayed().performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("custom_exercise_create").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("custom_exercise_create").performClick()
+        compose.onNodeWithTag("exercise_library_list")
+            .performScrollToNode(hasTestTag("custom_exercise_create"))
+        compose.onNodeWithTag("custom_exercise_create").assertIsDisplayed().performClick()
         compose.onNodeWithTag("custom_exercise_name").performTextInput("Rossz videó")
         compose.onNodeWithTag("custom_exercise_video").performTextInput("javascript:alert(1)")
         compose.onNodeWithTag("custom_exercise_save").performClick()
@@ -1246,12 +1472,23 @@ class NativePhoneNavigationTest {
 
     @Test fun fullNativeLibraryShows106EntriesAndOpensItsOriginalVideoCard() {
         launch(); tab("training")
-        compose.onNodeWithText("Gyakorlatkönyvtár").performClick()
+        compose.onNodeWithTag("training_open_exercises").performScrollTo().assertIsDisplayed().performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("exercise_library_count").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("exercise_library_count").assertTextContains("106", substring = true)
-        compose.onNodeWithTag("exercise_library_search").performTextInput(
-            com.repforge.app.data.db.NativeBuiltinCatalog.exercises.first { it.id == "db-squat" }.nameHu)
-        compose.onNodeWithTag("exercise_library_row_db-squat").performClick()
+        val squatName = com.repforge.app.data.db.NativeBuiltinCatalog.exercises.first { it.id == "db-squat" }.nameHu
+        compose.onNodeWithTag("exercise_library_search").performTextInput(squatName)
+        compose.onNodeWithTag("exercise_library_list")
+            .performScrollToNode(hasTestTag("exercise_library_row_db-squat"))
+        // The whole card can exceed the compact viewport. Tap its fully visible
+        // title, inside the same clickable row, instead of the clipped card center.
+        compose.onNodeWithTag("exercise_library_row_db-squat").assertHasClickAction()
+        compose.onNode(
+            hasText(squatName) and hasAnyAncestor(hasTestTag("exercise_library_row_db-squat")),
+            useUnmergedTree = true
+        ).performScrollTo().assertIsDisplayed().performClick()
+        compose.waitUntil(15_000) {
+            compose.onAllNodesWithTag("exercise_library_detail").fetchSemanticsNodes().isNotEmpty()
+        }
         compose.onNodeWithTag("exercise_library_detail").assertExists()
         compose.onNodeWithTag("exercise_library_video").assertExists()
         compose.onNodeWithText("Videó forrása: Mike Hildebrandt").assertExists()
@@ -1261,10 +1498,12 @@ class NativePhoneNavigationTest {
 
     @Test fun outdoorExerciseOffersOnlyExplicitUnverifiedSearchNotAnInventedVideo() {
         launch(); tab("training")
-        compose.onNodeWithText("Gyakorlatkönyvtár").performClick()
+        compose.onNodeWithTag("training_open_exercises").performScrollTo().assertIsDisplayed().performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithTag("exercise_library_search").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("exercise_library_search").performTextInput("Futás")
-        compose.onNodeWithTag("exercise_library_row_running").performClick()
+        compose.onNodeWithTag("exercise_library_list")
+            .performScrollToNode(hasTestTag("exercise_library_row_running"))
+        compose.onNodeWithTag("exercise_library_row_running").assertIsDisplayed().performClick()
         compose.onNodeWithTag("exercise_library_unverified").assertExists()
         compose.onNodeWithTag("exercise_library_search_video").assertExists()
         compose.onNodeWithTag("exercise_library_video").assertDoesNotExist()
@@ -1273,8 +1512,7 @@ class NativePhoneNavigationTest {
 
     @Test fun quickWorkoutShowsOriginalVideoWithoutStartingWorkout() {
         launch(); tab("training")
-        compose.onNodeWithText("Gyakorlat választása").performClick()
-        compose.waitUntil(15000) { compose.onAllNodesWithTag("exercise_search").fetchSemanticsNodes().isNotEmpty() }
+        openTrainingQuickChoice("training_quick_strength")
         val squats = com.repforge.app.data.db.NativeBuiltinCatalog.exercises.first { it.id == "db-squat" }.nameHu
         compose.onNodeWithTag("exercise_search").performTextInput(squats)
         compose.onNodeWithTag("exercise_select_db-squat").performClick()
@@ -1284,8 +1522,7 @@ class NativePhoneNavigationTest {
 
     @Test fun exerciseFavoritesCanBeToggledFilteredAndRecoveredOnReentry() {
         launch(); tab("training")
-        compose.onNodeWithText("Gyakorlat választása").performClick()
-        compose.waitUntil(15000) { compose.onAllNodesWithTag("exercise_search").fetchSemanticsNodes().isNotEmpty() }
+        openTrainingQuickChoice("training_quick_outdoor_choice")
         compose.onNodeWithTag("exercise_search").performTextInput("Running")
         compose.waitUntil(15000) { compose.onAllNodesWithTag("exercise_favorite_running").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("exercise_favorite_running").performClick()
@@ -1297,8 +1534,7 @@ class NativePhoneNavigationTest {
         compose.onNodeWithTag("exercise_select_running").assertExists()
         screenshot("quick_favorite_filter")
         compose.onNodeWithTag("navigation_back").performClick()
-        compose.onNodeWithText("Gyakorlat választása").performClick()
-        compose.waitUntil(15000) { compose.onAllNodesWithTag("exercise_search").fetchSemanticsNodes().isNotEmpty() }
+        openTrainingQuickChoice("training_quick_outdoor_choice")
         compose.onNodeWithTag("exercise_search").performTextInput("Running")
         compose.onNodeWithTag("exercise_favorite_running").assertTextContains("★")
         assertFalse(ActiveWorkoutStore.current(context)?.optBoolean("active") == true)
@@ -1350,12 +1586,13 @@ class NativePhoneNavigationTest {
         health.setPreferences(JSONObject().put("provider", HealthJournalStore.HC))
         health.healthDay(day, JSONObject().put("source", "@aggregate").put("weightKg", 72.3), health.generation())
         launch(); tab("health")
+        expandHealthSection("health_history_section", "health_previous_month")
         compose.onNodeWithTag("health_previous_month").performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithText(day).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText(day).performClick()
         compose.waitUntil(15000) { compose.onAllNodesWithText("Betöltés…").fetchSemanticsNodes().isEmpty() }
-        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_metric_weightKg"))
-        compose.onNodeWithText("72,3").assertIsDisplayed()
+        expandHealthSection("health_more_section", "health_metric_weightKg")
+        compose.onNodeWithText("72,3").performScrollTo().assertIsDisplayed()
         screenshot("health_historical_weight")
     }
 

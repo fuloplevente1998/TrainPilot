@@ -45,9 +45,9 @@ data class ThemePaletteOption(
 data class TrainPilotUserSettings(
     val language: String = "hu",
     val activeProgramId: String = "home-basic",
-    val themeKey: String = "classicBlue",
-    val themeAccent: String = "#4d8fbe",
-    val themeAccent2: String = "#7cb4d6",
+    val themeKey: String = "graphite_gold",
+    val themeAccent: String = "#e5b842",
+    val themeAccent2: String = "#4ca6a8",
     val themeFamily: String = "basic",
     val restSeconds: Int = 90,
     val workSeconds: Int = 30,
@@ -111,6 +111,8 @@ class TrainPilotSettingsStore(private val context: Context) {
 
         // Effective main 7473b30 palette: final Basic overrides + original Vivid keys.
         val AVAILABLE_THEMES = listOf(
+            // Exact Studio 18:49 Graphite & Gold primary UI palette; preserves all legacy keys.
+            ThemePaletteOption("graphite_gold", "Grafit & Arany (Studio)", "Graphite & Gold (Studio)", "#e5b842", "#4ca6a8", "basic", "Graphit & Gold (Studio)", "Grafit & Auriu (Studio)"),
             ThemePaletteOption("classicBlue", "Kék", "Blue", "#4d8fbe", "#7cb4d6", "basic", "Blau", "Albastru"),
             ThemePaletteOption("classicGreen", "Zöld", "Green", "#4d946a", "#7ab18d", "basic", "Grün", "Verde"),
             ThemePaletteOption("classicRed", "Piros", "Red", "#b95f63", "#d58a8d", "basic", "Rot", "Roșu"),
@@ -159,9 +161,9 @@ class TrainPilotSettingsStore(private val context: Context) {
         TrainPilotUserSettings(
             language = prefs[KEY_LANGUAGE] ?: "hu",
             activeProgramId = prefs[KEY_ACTIVE_PROGRAM_ID] ?: "home-basic",
-            themeKey = prefs[KEY_THEME_KEY] ?: "classicBlue",
-            themeAccent = prefs[KEY_THEME_ACCENT] ?: "#4d8fbe",
-            themeAccent2 = prefs[KEY_THEME_ACCENT2] ?: "#7cb4d6",
+            themeKey = prefs[KEY_THEME_KEY] ?: "graphite_gold",
+            themeAccent = prefs[KEY_THEME_ACCENT] ?: "#e5b842",
+            themeAccent2 = prefs[KEY_THEME_ACCENT2] ?: "#4ca6a8",
             themeFamily = prefs[KEY_THEME_FAMILY] ?: "basic",
             restSeconds = (prefs[KEY_REST_SECONDS] ?: 90).coerceIn(0, 3600),
             workSeconds = (prefs[KEY_WORK_SECONDS] ?: 30).coerceIn(1, 3600),

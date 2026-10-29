@@ -1,5 +1,7 @@
 package com.repforge.app
 
+import androidx.compose.ui.test.assertIsDisplayed
+
 import android.content.Context
 import android.content.Intent
 import android.view.View
@@ -92,7 +94,9 @@ class NativeHealthDateRangeUiTest {
         compose.waitUntil(30000) {
             compose.onAllNodesWithTag("navigation_health").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithTag("navigation_health").performClick()
+        compose.openStudioTab("health")
+        compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_history_section"))
+        compose.onNodeWithTag("health_history_section").performClick()
         compose.onNodeWithTag("health_journal_list").performScrollToNode(hasTestTag("health_open_records"))
         compose.onNodeWithTag("health_open_records").performClick()
         compose.waitUntil(15000) {
@@ -123,9 +127,16 @@ class NativeHealthDateRangeUiTest {
         openBrowser()
         compose.onNodeWithText("From date").assertExists()
         compose.onNodeWithText("To date").assertExists()
+        // A compact viewport can defer composing the first record inside the
+        // nested lazy list. Wait for the real journal query (or its explicit
+        // failure), then scroll that list to the imported row before asserting.
         compose.waitUntil(15000) {
-            compose.onAllNodesWithTag("health_record_today").fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithTag("health_records_list").fetchSemanticsNodes().isNotEmpty() ||
+                compose.onAllNodesWithTag("health_records_error").fetchSemanticsNodes().isNotEmpty()
         }
+        compose.onNodeWithTag("health_records_error").assertDoesNotExist()
+        compose.onNodeWithTag("health_records_list")
+            .performScrollToNode(hasTestTag("health_record_today"))
         compose.onNodeWithTag("health_record_today").assertExists()
         compose.onNodeWithTag("health_record_yesterday").assertDoesNotExist()
 

@@ -5,9 +5,11 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.repforge.app.NativeDataReplacement
 import com.repforge.app.data.db.ExerciseLibraryEntity
+import com.repforge.app.data.db.ProgressPeriodTotals
 import com.repforge.app.data.db.TrainPilotDatabase
 import com.repforge.app.data.store.TrainPilotSettingsStore
 import java.time.ZoneId
+import java.time.Instant
 import java.time.LocalDate
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -21,6 +23,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
 
 data class MuscleLoadUiModel(
     val muscleKey: String,
@@ -36,8 +39,23 @@ data class Exercise1RmPointUiModel(
     val e1rmKg: Double
 )
 
+internal object NativeProgressPeriodProjection {
+    fun countPrRecords(rows: List<String>): Int = rows.sumOf { raw ->
+        runCatching { JSONArray(raw).length() }.getOrDefault(0)
+    }
+}
+
 data class ProgressUiState(
     val muscleLoads: List<MuscleLoadUiModel> = emptyList(),
+    val selectedMuscleRange: NativeVolumeRange = NativeVolumeRange.THREE_MONTHS,
+    val muscleLoading: Boolean = true,
+    val muscleError: Boolean = false,
+    val periodTotals: ProgressPeriodTotals? = null,
+    val periodPrRecords: Int = 0,
+    val selectedVolumeRange: NativeVolumeRange = NativeVolumeRange.MONTH,
+    val volumeSnapshot: NativeVolumeSnapshot? = null,
+    val volumeLoading: Boolean = true,
+    val volumeError: Boolean = false,
     val exercises: List<ExerciseLibraryEntity> = emptyList(),
     val selectedExerciseId: String = "goblet-squat",
     val exercise1RmTrend: List<Exercise1RmPointUiModel> = emptyList(),
@@ -65,7 +83,14 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
 
     private val _uiState = MutableStateFlow(ProgressUiState())
     val uiState: StateFlow<ProgressUiState> = _uiState.asStateFlow()
+    private var muscleJob: Job? = null
+    private var muscleRevision = 0L
+    private var muscleRequestedStamp: Pair<LocalDate, ZoneId>? = null
     private var summaryJob: Job? = null
+    private var summaryRequestedStamp: Pair<LocalDate, ZoneId>? = null
+    private var volumeJob: Job? = null
+    private var volumeRevision = 0L
+    private var volumeRequestedStamp: Pair<LocalDate, ZoneId>? = null
     private var trendJob: Job? = null
     private var trendRevision = 0L
     private var strengthRequestedStamp: Pair<LocalDate, ZoneId>? = null
@@ -81,16 +106,27 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
     fun onCardioScreenResumed() {
         refreshCardioForClock(NativeCardioCalendarRefresh.Trigger.SCREEN_RESUME)
         refreshStrengthForClock()
+        refreshSummaryForClock()
     }
 
     fun onCardioSystemClockChanged() {
         refreshCardioForClock(NativeCardioCalendarRefresh.Trigger.SYSTEM_CLOCK_CHANGE)
         refreshStrengthForClock()
+        refreshSummaryForClock()
     }
 
     fun onCardioCalendarTick() {
         refreshCardioForClock(NativeCardioCalendarRefresh.Trigger.CALENDAR_TICK)
         refreshStrengthForClock()
+        refreshSummaryForClock()
+    }
+
+    private fun refreshSummaryForClock() {
+        val zone = ZoneId.systemDefault()
+        val stamp = LocalDate.now(zone) to zone
+        if (!_uiState.value.muscleLoading && stamp != muscleRequestedStamp) reloadMuscle()
+        if (!_uiState.value.loading && stamp != summaryRequestedStamp) loadProgressData()
+        else if (stamp != volumeRequestedStamp && !_uiState.value.volumeLoading) reloadVolume()
     }
 
     private fun refreshStrengthForClock() {
@@ -124,6 +160,8 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun loadProgressData() {
+        reloadMuscle()
+        reloadVolume()
         summaryJob?.cancel()
         trendJob?.cancel() // Same-ID strength reads from the previous dataset are stale too.
         trendRevision++
@@ -133,35 +171,144 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
                 val (result, admission) = withContext(Dispatchers.IO) {
                     NativeDataReplacement.mutate(context) {
                         val now = System.currentTimeMillis()
+                        val zone = ZoneId.systemDefault()
+                        val stamp = Instant.ofEpochMilli(now).atZone(zone).toLocalDate() to zone
                         val language = store.current().language
                         val exercises = db.exerciseLibraryDao().getAllExercises()
-                        val groups = db.workoutHistoryDao().getProgressMuscleSummary(
-                            now - 30L * 86_400_000L, now)
+                        val (fromInclusive, toExclusive) = NativeProgressQuery.thirtyDayWindow(now, zone)
+                        val totals = db.workoutHistoryDao().getProgressPeriodTotals(
+                            fromInclusive, toExclusive)
+                        val prRecords = NativeProgressPeriodProjection.countPrRecords(
+                            db.workoutHistoryDao().getProgressPeriodPrRecordJson(
+                                fromInclusive, toExclusive
+                            )
+                        )
                         val photos = runCatching { NativeProgressPhotoData.load(db) }
-                        (Triple(language, exercises, groups) to photos) to
+                        (Triple(language to exercises, photos, totals to prRecords) to stamp) to
                             NativeDataReplacement.continuationForCurrentData(context)
                     }
                 }
                 admission.requireCurrent(context)
-                val language = result.first.first
-                val exercises = result.first.second
-                val muscle = NativeProgressQuery.muscle(result.first.third, language)
+                val language = result.first.first.first
+                val exercises = result.first.first.second
                 val id = _uiState.value.selectedExerciseId
                     .takeIf { selected -> exercises.any { it.id == selected } }
                     ?: exercises.firstOrNull()?.id.orEmpty()
+                summaryRequestedStamp = result.second
                 _uiState.update { it.copy(
-                    language = language, exercises = exercises, muscleLoads = muscle,
-                    progressPhotos = result.second.getOrDefault(emptyList()),
+                    language = language, exercises = exercises,
+                    periodTotals = result.first.third.first,
+                    periodPrRecords = result.first.third.second,
+                    progressPhotos = result.first.second.getOrDefault(emptyList()),
                     selectedPhotoId = it.selectedPhotoId?.takeIf { photoId ->
-                        result.second.getOrNull()?.any { photo -> photo.id == photoId } == true
+                        result.first.second.getOrNull()?.any { photo -> photo.id == photoId } == true
                     },
-                    photosLoading = false, photosError = result.second.isFailure,
+                    photosLoading = false, photosError = result.first.second.isFailure,
                     selectedExerciseId = id, loading = false, loadError = false
                 ) }
                 selectExercise(id)
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Exception) { _uiState.update { it.copy(loading = false, loadError = true,
+                periodTotals = null, periodPrRecords = 0,
                 photosLoading = false, photosError = true) } }
+        }
+    }
+
+    fun selectMuscleRange(range: NativeVolumeRange) {
+        if (_uiState.value.selectedMuscleRange == range) return
+        _uiState.update { it.copy(selectedMuscleRange = range) }
+        reloadMuscle()
+    }
+
+    fun retryMuscle() = reloadMuscle()
+
+    /** Studio's period pill reads the existing six-group SQL projection. A period change
+     * never changes strength, volume or cardio filters, nor the stored workouts.
+     */
+    private fun reloadMuscle() {
+        muscleJob?.cancel()
+        val revision = ++muscleRevision
+        val range = _uiState.value.selectedMuscleRange
+        muscleJob = viewModelScope.launch {
+            _uiState.update { it.copy(muscleLoading = true, muscleError = false, muscleLoads = emptyList()) }
+            try {
+                val now = System.currentTimeMillis()
+                val zone = ZoneId.systemDefault()
+                val stamp = Instant.ofEpochMilli(now).atZone(zone).toLocalDate() to zone
+                val (loads, admission) = withContext(Dispatchers.IO) {
+                    NativeDataReplacement.mutate(context) {
+                        val (from, until) = NativeVolumeProjection.queryBounds(range, now, zone)
+                        // This existing DAO uses an inclusive upper bound.
+                        NativeProgressQuery.muscle(db.workoutHistoryDao()
+                            .getProgressMuscleSummary(from, until - 1), store.current().language) to
+                            NativeDataReplacement.continuationForCurrentData(context)
+                    }
+                }
+                admission.requireCurrent(context)
+                if (revision != muscleRevision || range != _uiState.value.selectedMuscleRange) return@launch
+                val currentZone = ZoneId.systemDefault()
+                if (stamp != (LocalDate.now(currentZone) to currentZone)) {
+                    reloadMuscle()
+                    return@launch
+                }
+                muscleRequestedStamp = stamp
+                _uiState.update { it.copy(muscleLoads = loads, muscleLoading = false, muscleError = false) }
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) {
+                if (revision == muscleRevision) _uiState.update {
+                    it.copy(muscleLoads = emptyList(), muscleLoading = false, muscleError = true)
+                }
+            }
+        }
+    }
+
+    fun selectVolumeRange(range: NativeVolumeRange) {
+        if (_uiState.value.selectedVolumeRange == range) return
+        _uiState.update { it.copy(selectedVolumeRange = range) }
+        reloadVolume()
+    }
+
+    fun retryVolume() = reloadVolume()
+
+    /** Independent from strength/cardio filters and from the canonical 30-day overview.
+     * Revision checks avoid publishing a stale period after rapid user switching.
+     */
+    private fun reloadVolume() {
+        volumeJob?.cancel()
+        val revision = ++volumeRevision
+        val range = _uiState.value.selectedVolumeRange
+        volumeJob = viewModelScope.launch {
+            _uiState.update {
+                it.copy(volumeLoading = true, volumeError = false, volumeSnapshot = null)
+            }
+            try {
+                val now = System.currentTimeMillis()
+                val zone = ZoneId.systemDefault()
+                val (snapshot, admission) = withContext(Dispatchers.IO) {
+                    NativeDataReplacement.mutate(context) {
+                        val (from, until) = NativeVolumeProjection.queryBounds(range, now, zone)
+                        val rows = db.workoutHistoryDao().getProgressVolumeRows(from, until)
+                        NativeVolumeProjection.summarize(range, now, zone, rows) to
+                            NativeDataReplacement.continuationForCurrentData(context)
+                    }
+                }
+                admission.requireCurrent(context)
+                if (revision != volumeRevision || range != _uiState.value.selectedVolumeRange) return@launch
+                val currentZone = ZoneId.systemDefault()
+                val currentDate = LocalDate.now(currentZone)
+                if (currentZone != zone || currentDate != snapshot.endDate) {
+                    reloadVolume()
+                    return@launch
+                }
+                volumeRequestedStamp = snapshot.endDate to zone
+                _uiState.update { it.copy(volumeLoading = false, volumeError = false,
+                    volumeSnapshot = snapshot) }
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) {
+                if (revision == volumeRevision) _uiState.update {
+                    it.copy(volumeLoading = false, volumeError = true, volumeSnapshot = null)
+                }
+            }
         }
     }
 

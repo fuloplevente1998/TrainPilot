@@ -3,12 +3,27 @@ package com.repforge.app.ui.navigation
 /** Accepted five-tab hierarchy; secondary destinations keep a primary parent. */
 internal object NativeMainMenu {
     val routes = listOf("home", "training", "journal", "progress", "health")
-    val secondaryRoutes = listOf("programs", "calendar", "coach", "quick_workout", "quick_outdoor", "active_workout", "settings", "weight_journal", "exercise_library")
+    /**
+     * The owner profile is 384dp wide; after the shell's 12dp side paddings the
+     * five Studio tabs have 360dp and fit as one fixed row. Narrow phones and
+     * enlarged text keep the horizontal-scroll fallback.
+     */
+    fun topTabsScrollable(availableWidthDp: Float, fontScale: Float): Boolean =
+        availableWidthDp < 360f || fontScale > 1.15f
+
+    /** Ensure selected top pill becomes visible; resistant to extreme scroll widths. */
+    fun topTabScrollTarget(maxScrollPx: Int, index: Int, tabCount: Int = routes.size): Int {
+        if (maxScrollPx <= 0 || tabCount <= 1) return 0
+        val validIndex = index.coerceIn(0, tabCount - 1)
+        return ((maxScrollPx.toLong() * validIndex) / (tabCount - 1)).toInt()
+    }
+
+    val secondaryRoutes = listOf("programs", "calendar", "coach", "quick_workout", "quick_outdoor", "active_workout", "settings", "weight_journal", "exercise_library", "weight_journal_add")
 
     fun selected(route: String, settingsOrigin: String = "home"): String = when (route) {
         "active_workout", "quick_workout", "quick_outdoor", "programs", "exercise_library" -> "training"
         "calendar", "coach" -> "home"
-        "weight_journal" -> "health"
+        "weight_journal", "weight_journal_add" -> "health"
         "settings" -> if (settingsOrigin == "settings") "home" else selected(settingsOrigin)
         else -> route.takeIf { it in routes } ?: "home"
     }
@@ -39,10 +54,10 @@ internal object NativeMainMenu {
     fun title(route: String, language: String): String {
         if (route in routes) return labels(language)[routes.indexOf(route)]
         val names = when (language) {
-            "en" -> listOf("Programs", "Calendar", "Coach", "Quick workout", "Outdoor workout", "Training", "Settings", "Weight journal", "Exercise library", "Back")
-            "de" -> listOf("Programme", "Kalender", "Coach", "Schnelltraining", "Training im Freien", "Training", "Einstellungen", "Gewichtsprotokoll", "Übungsbibliothek", "Zurück")
-            "ro" -> listOf("Programe", "Calendar", "Coach", "Antrenament rapid", "Antrenament în aer liber", "Antrenament", "Setări", "Jurnal de greutate", "Bibliotecă de exerciții", "Înapoi")
-            else -> listOf("Programok", "Naptár", "Coach", "Gyors edzés", "Szabadtéri edzés", "Edzés", "Beállítások", "Testsúlynapló", "Gyakorlatkönyvtár", "Vissza")
+            "en" -> listOf("Programs", "Calendar", "Coach", "Quick workout", "Outdoor workout", "Training", "Settings", "Weight journal", "Exercise library", "Weight journal", "Back")
+            "de" -> listOf("Programme", "Kalender", "Coach", "Schnelltraining", "Training im Freien", "Training", "Einstellungen", "Gewichtsprotokoll", "Übungsbibliothek", "Gewichtsprotokoll", "Zurück")
+            "ro" -> listOf("Programe", "Calendar", "Coach", "Antrenament rapid", "Antrenament în aer liber", "Antrenament", "Setări", "Jurnal de greutate", "Bibliotecă de exerciții", "Jurnal de greutate", "Înapoi")
+            else -> listOf("Programok", "Naptár", "Coach", "Gyors edzés", "Szabadtéri edzés", "Edzés", "Beállítások", "Testsúlynapló", "Gyakorlatkönyvtár", "Testsúlynapló", "Vissza")
         }
         return names[secondaryRoutes.indexOf(route).takeIf { it >= 0 } ?: names.lastIndex]
     }

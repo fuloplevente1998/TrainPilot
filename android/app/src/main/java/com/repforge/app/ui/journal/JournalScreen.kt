@@ -2,6 +2,7 @@ package com.repforge.app.ui.journal
 
 import android.content.res.Resources
 import android.graphics.BitmapFactory
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,12 +12,20 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.DirectionsRun
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -27,6 +36,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -50,10 +61,13 @@ import com.repforge.app.ui.theme.LocalTrainPilotColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.Instant
+import java.time.LocalDate
+import java.time.DayOfWeek
 import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.time.format.TextStyle
 import java.util.Locale
 
 @Composable
@@ -66,26 +80,260 @@ fun JournalScreen(navController: NavController, language: String = "hu", viewMod
     val colors = LocalTrainPilotColors.current
     val locale = remember(language) { Locale.forLanguageTag(language) }
     val listState = rememberLazyListState()
-    LaunchedEffect(state.query, state.month) { listState.scrollToItem(0) }
-    Column(Modifier.fillMaxSize().background(colors.bg).padding(horizontal = 16.dp)) {
-        TrainPilotSectionSurface(Modifier.fillMaxWidth().testTag("journal_filters")) {
-        OutlinedTextField(state.query, viewModel::setSearch, modifier = Modifier.fillMaxWidth().testTag("journal_search"),
-            label = { Text(text.getString(R.string.journal_search)) }, singleLine = true)
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-            IconButton(onClick = { viewModel.setMonth((state.month ?: YearMonth.now()).minusMonths(1)) }) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, text.getString(R.string.journal_previous_month))
-            }
-            TextButton(onClick = { viewModel.setMonth(if (state.month == null) YearMonth.now() else null) },
-                modifier = Modifier.weight(1f).heightIn(min = 48.dp).testTag("journal_month")) {
-                Text(state.month?.format(DateTimeFormatter.ofPattern("LLLL yyyy", locale)) ?: text.getString(R.string.journal_all_months),
-                    style = MaterialTheme.typography.labelLarge.copy(fontFeatureSettings = "tnum"))
-            }
-            IconButton(onClick = { viewModel.setMonth((state.month ?: YearMonth.now()).plusMonths(1)) }) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, text.getString(R.string.journal_next_month))
+    LaunchedEffect(state.query, state.month, state.day) { listState.scrollToItem(0) }
+    var monthPickerOpen by rememberSaveable { mutableStateOf(false) }
+    var pickerMonthKey by rememberSaveable {
+        mutableStateOf(
+            (state.day?.let { YearMonth.from(it) } ?: state.month ?: YearMonth.now()).toString()
+        )
+    }
+    LaunchedEffect(monthPickerOpen) {
+        if (monthPickerOpen) {
+            pickerMonthKey =
+                (state.day?.let { YearMonth.from(it) } ?: state.month ?: YearMonth.now()).toString()
+        }
+    }
+    if (monthPickerOpen) {
+        val pickerMonth = runCatching { YearMonth.parse(pickerMonthKey) }.getOrElse { YearMonth.now() }
+        val firstDay = pickerMonth.atDay(1)
+        val leading = (firstDay.dayOfWeek.value - DayOfWeek.MONDAY.value + 7) % 7
+        val totalCells = ((leading + pickerMonth.lengthOfMonth() + 6) / 7) * 7
+        val weekdayLabels = remember(locale) {
+            DayOfWeek.entries.map { day ->
+                day.getDisplayName(TextStyle.NARROW_STANDALONE, locale)
             }
         }
+        AlertDialog(
+            onDismissRequest = { monthPickerOpen = false },
+            containerColor = colors.card,
+            title = {
+                Text(
+                    text.getString(R.string.studio_journal_choose_date),
+                    color = colors.text,
+                    style = MaterialTheme.typography.titleLarge
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        val recent = (0..3).map { YearMonth.now().minusMonths((3 - it).toLong()) }
+                        items(recent, key = { it.toString() }) { month ->
+                            FilterChip(
+                                selected = pickerMonth == month,
+                                onClick = { pickerMonthKey = month.toString() },
+                                label = {
+                                    Text(
+                                        month.month.getDisplayName(
+                                            TextStyle.SHORT_STANDALONE,
+                                            locale
+                                        )
+                                    )
+                                },
+                                modifier = Modifier.testTag("journal_picker_view_${month}")
+                            )
+                        }
+                    }
+
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        IconButton(
+                            onClick = { pickerMonthKey = pickerMonth.minusMonths(1).toString() },
+                            modifier = Modifier.testTag("journal_picker_previous_month")
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                                contentDescription = text.getString(R.string.journal_previous_month),
+                                tint = colors.accentText
+                            )
+                        }
+                        Text(
+                            pickerMonth.format(DateTimeFormatter.ofPattern("LLLL yyyy", locale)),
+                            color = colors.text,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        IconButton(
+                            onClick = { pickerMonthKey = pickerMonth.plusMonths(1).toString() },
+                            modifier = Modifier.testTag("journal_picker_next_month")
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = text.getString(R.string.journal_next_month),
+                                tint = colors.accentText
+                            )
+                        }
+                    }
+
+                    Row(Modifier.fillMaxWidth()) {
+                        weekdayLabels.forEach { label ->
+                            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                                Text(
+                                    label,
+                                    color = colors.muted,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        repeat(totalCells / 7) { week ->
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                repeat(7) { column ->
+                                    val cell = week * 7 + column
+                                    val dayNumber = cell - leading + 1
+                                    if (dayNumber !in 1..pickerMonth.lengthOfMonth()) {
+                                        Spacer(Modifier.weight(1f).height(42.dp))
+                                    } else {
+                                        val date = pickerMonth.atDay(dayNumber)
+                                        val selected = state.day == date
+                                        val today = date == LocalDate.now()
+                                        Surface(
+                                            onClick = {
+                                                viewModel.setDay(date)
+                                                monthPickerOpen = false
+                                            },
+                                            modifier = Modifier.weight(1f).height(42.dp)
+                                                .testTag("journal_picker_day_${date}"),
+                                            shape = RoundedCornerShape(10.dp),
+                                            color = when {
+                                                selected -> colors.accent
+                                                today -> colors.accent.copy(alpha = .12f)
+                                                else -> colors.card2
+                                            },
+                                            border = BorderStroke(
+                                                1.dp,
+                                                when {
+                                                    selected -> colors.accent
+                                                    today -> colors.accent.copy(alpha = .45f)
+                                                    else -> colors.line
+                                                }
+                                            )
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Text(
+                                                    dayNumber.toString(),
+                                                    color = if (selected) colors.onAccent else colors.text,
+                                                    style = MaterialTheme.typography.labelLarge,
+                                                    fontWeight = if (selected || today)
+                                                        FontWeight.Bold else FontWeight.Normal
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    TextButton(
+                        onClick = {
+                            viewModel.setMonth(pickerMonth)
+                            monthPickerOpen = false
+                        },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                            .testTag("journal_picker_${pickerMonth}")
+                    ) {
+                        Text(
+                            text.getString(R.string.studio_journal_whole_month),
+                            color = colors.accentText
+                        )
+                    }
+
+                    TextButton(
+                        onClick = {
+                            viewModel.setMonth(null)
+                            monthPickerOpen = false
+                        },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                            .testTag("journal_picker_all")
+                    ) {
+                        Text(
+                            text.getString(R.string.journal_all_months),
+                            color = if (state.month == null && state.day == null)
+                                colors.accentText else colors.text
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { monthPickerOpen = false }) {
+                    Text(text.getString(R.string.journal_close), color = colors.accentText)
+                }
+            }
+        )
+    }
+
+    Column(Modifier.fillMaxSize().background(colors.bg)
+        .padding(horizontal = 16.dp).padding(top = 8.dp)) {
+        // Exact approved Studio composition: independent 16dp search input,
+        // 40dp circular month arrows and a central 14dp outlined picker.
+        OutlinedTextField(
+            state.query, viewModel::setSearch,
+            modifier = Modifier.fillMaxWidth().testTag("journal_search"),
+            placeholder = { Text(text.getString(R.string.journal_search), color = colors.muted) },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null,
+                tint = colors.muted) },
+            shape = RoundedCornerShape(16.dp), singleLine = true
+        )
+        Spacer(Modifier.height(10.dp))
+        Row(Modifier.fillMaxWidth().testTag("journal_filters"),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Surface(onClick = {
+                viewModel.setMonth((state.month ?: YearMonth.now()).minusMonths(1))
+            }, modifier = Modifier.size(40.dp).testTag("journal_previous_month"),
+                shape = CircleShape, color = colors.card,
+                border = BorderStroke(1.dp, colors.line)) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                        text.getString(R.string.journal_previous_month), tint = colors.accentText)
+                }
+            }
+            Surface(onClick = { monthPickerOpen = true },
+                modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                    .testTag("journal_month"),
+                shape = RoundedCornerShape(14.dp), color = colors.card,
+                border = BorderStroke(1.dp, colors.accent.copy(alpha = .5f))) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.CalendarMonth, contentDescription = null,
+                        tint = colors.accentText, modifier = Modifier.size(18.dp))
+                    Text(
+                        state.day?.format(
+                            DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)
+                        ) ?: state.month?.format(
+                            DateTimeFormatter.ofPattern("LLLL yyyy", locale)
+                        ) ?: text.getString(R.string.journal_all_months),
+                        color = colors.text, style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+                        maxLines = 1)
+                    Icon(Icons.Default.ExpandMore, contentDescription = null, tint = colors.accentText)
+                }
+            }
+            Surface(onClick = {
+                viewModel.setMonth((state.month ?: YearMonth.now()).plusMonths(1))
+            }, modifier = Modifier.size(40.dp).testTag("journal_next_month"),
+                shape = CircleShape, color = colors.card,
+                border = BorderStroke(1.dp, colors.line)) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        text.getString(R.string.journal_next_month), tint = colors.accentText)
+                }
+            }
         }
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(10.dp))
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().testTag("journal_list"),
             contentPadding = PaddingValues(bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (workouts.loadState.refresh is LoadState.Loading) item { JournalLoading(text) }
@@ -106,30 +354,68 @@ fun JournalScreen(navController: NavController, language: String = "hu", viewMod
     editor?.let { JournalEditorDialog(it, language, viewModel::editDraft, viewModel::saveEditor, viewModel::cancelEditor) }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+/** Faithful 18:49 Studio 20dp-rounded horizontal workout card.
+ * The summary is the canonical paged native DB projection. Missing items such
+ * as total-volume or route thumbnail are not replaced by fake demo graphics.
+ */
 @Composable
 private fun JournalSummaryCard(row: JournalWorkoutSummary, text: Resources, locale: Locale, onOpen: () -> Unit) {
     val colors = LocalTrainPilotColors.current
-    TrainPilotSurfaceCard(Modifier.fillMaxWidth().testTag("journal_workout_${row.id}"), onClick = onOpen) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            TrainPilotIconBadge(Icons.Default.History)
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(row.programName, color = colors.muted, style = MaterialTheme.typography.labelMedium)
-                Text(row.dayName, color = colors.text, style = MaterialTheme.typography.titleMedium)
+    val stamp = remember(row.startedEpochMs, locale) {
+        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
+            .withLocale(locale).withZone(ZoneId.systemDefault())
+            .format(Instant.ofEpochMilli(row.startedEpochMs))
+    }
+    Surface(onClick = onOpen,
+        modifier = Modifier.fillMaxWidth().testTag("journal_workout_${row.id}"),
+        shape = RoundedCornerShape(20.dp), color = colors.card,
+        border = BorderStroke(1.dp, colors.line)) {
+        Row(Modifier.fillMaxWidth().padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Surface(Modifier.size(48.dp),
+                shape = CircleShape, color = colors.accent.copy(alpha = .16f)) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.FitnessCenter, contentDescription = null,
+                        modifier = Modifier.size(24.dp), tint = colors.accentText)
+                }
             }
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = colors.accentText)
-        }
-        Text(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).withLocale(locale)
-            .withZone(ZoneId.systemDefault()).format(Instant.ofEpochMilli(row.startedEpochMs)), color = colors.muted,
-            style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"))
-        HorizontalDivider(color = colors.line)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            TrainPilotStatusBadge(text.getString(R.string.journal_minutes, row.durationSeconds / 60))
-            TrainPilotStatusBadge(text.getString(R.string.journal_sets, row.completedSetsCount, row.totalSetsCount))
-            if (row.hasPr226) Row(verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Icon(Icons.Default.EmojiEvents, null, tint = colors.accentText)
-                Text(text.getString(R.string.journal_pr), color = colors.accentText)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(stamp, color = colors.muted,
+                    style = MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum"),
+                    modifier = Modifier.testTag("journal_date_${row.id}"))
+                Row(verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(row.dayName, modifier = Modifier.weight(1f, fill = false),
+                        color = colors.text, style = MaterialTheme.typography.titleMedium,
+                        maxLines = 2)
+                    Icon(Icons.Default.CheckCircle, contentDescription = null,
+                        tint = colors.success, modifier = Modifier.size(16.dp))
+                }
+                Text(row.programName, color = colors.muted,
+                    style = MaterialTheme.typography.bodySmall, maxLines = 1)
+                Text(
+                    text.getString(R.string.journal_minutes, row.durationSeconds / 60) +
+                        " · " + text.getString(R.string.journal_sets,
+                        row.completedSetsCount, row.totalSetsCount),
+                    color = colors.text, style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.testTag("journal_summary_${row.id}"))
+            }
+            Column(horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (row.hasPr226) {
+                    Surface(modifier = Modifier.testTag("journal_pr_${row.id}")
+                        .semantics {
+                            contentDescription = text.getString(R.string.journal_pr)
+                        }, shape = RoundedCornerShape(8.dp), color = colors.accent) {
+                        Text("PR", style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold, color = colors.onAccent,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
+                    }
+                }
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = text.getString(R.string.journal_details),
+                    tint = colors.accentText, modifier = Modifier.size(20.dp))
             }
         }
     }

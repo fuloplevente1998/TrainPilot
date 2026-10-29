@@ -53,8 +53,14 @@ class NativeProgressPhotoRangeUiTest {
     private fun enterProgress() {
         scenario = fixture.launch()
         compose.waitUntil(30_000) { exists("navigation_progress") }
-        compose.onNodeWithTag("navigation_progress").performClick()
+        compose.openStudioTab("progress")
         compose.waitUntil(30_000) { exists("progress_list") }
+    }
+
+    private fun selectProgressSection(index: Int) {
+        compose.onNodeWithTag("progress_list")
+            .performScrollToNode(hasTestTag("progress_section_tab_$index"))
+        compose.onNodeWithTag("progress_section_tab_$index").performClick()
     }
 
     private suspend fun seedWorkout(index: Int, ageDays: Int, photoIds: List<Pair<String, String?>> = emptyList()) {
@@ -127,11 +133,39 @@ class NativeProgressPhotoRangeUiTest {
         fail("Raw screenshot missing: ${name}")
     }
 
+    @Test fun studioMusclePeriodPillReadsStoredSetsAndKeepsOtherFiltersIndependent() {
+        runBlocking(Dispatchers.IO) {
+            seedWorkout(1, 1, emptyList())
+            seedWorkout(2, 45, emptyList())
+        }
+        enterProgress()
+        fun awaitCard() {
+            compose.onNodeWithTag("progress_list").performScrollToNode(hasTestTag("anatomical_muscle_heatmap_card"))
+            compose.waitUntil(30_000) {
+                compose.onAllNodesWithTag("progress_muscle_loading").fetchSemanticsNodes().isEmpty() &&
+                    compose.onAllNodesWithTag("muscle_chip_legs").fetchSemanticsNodes().isNotEmpty()
+            }
+        }
+        awaitCard()
+        compose.onNodeWithTag("muscle_chip_legs").performScrollTo().performClick()
+        compose.onNodeWithTag("muscle_selected_sets").performScrollTo().assertTextEquals(com.repforge.app.ui.text.nativeResources(fixture.context, "hu").getString(R.string.native_progress_sets_count, 2))
+        screenshot("studio_muscle_three_months")
+        compose.onNodeWithTag("muscle_heatmap_period_pill").performScrollTo().performClick()
+        awaitCard()
+        compose.onNodeWithTag("muscle_chip_legs").performScrollTo().performClick()
+        compose.onNodeWithTag("muscle_selected_sets").performScrollTo().assertTextEquals(com.repforge.app.ui.text.nativeResources(fixture.context, "hu").getString(R.string.native_progress_sets_count, 1))
+        screenshot("studio_muscle_month")
+        compose.onNodeWithTag("progress_list").performScrollToNode(hasTestTag("progress_volume_range_month"))
+        compose.onNodeWithTag("progress_volume_range_month").assertIsSelected()
+        assertEquals(2, runBlocking(Dispatchers.IO) { fixture.database.workoutHistoryDao().getAllWorkoutsWithDetails().size })
+    }
+
     @Test fun emptyGalleryAndStrengthStatesAreDistinct() {
         enterProgress()
         compose.onNodeWithTag("progress_list").performScrollToNode(hasTestTag("progress_photo_gallery"))
         compose.waitUntil(30_000) { exists("progress_photo_empty") }
         screenshot("empty")
+        selectProgressSection(2)
         compose.onNodeWithTag("progress_list").performScrollToNode(hasTestTag("progress_strength_ranges"))
         compose.waitUntil(30_000) { exists("progress_strength_empty") }
         compose.onNodeWithTag("progress_strength_days_90").assertIsSelected()
@@ -168,6 +202,7 @@ class NativeProgressPhotoRangeUiTest {
     @Test fun strengthRangeRemainsIndependentAcrossLanguageAndTheme() {
         runBlocking(Dispatchers.IO) { seedWorkout(2, 120) }
         enterProgress()
+        selectProgressSection(2)
         compose.onNodeWithTag("progress_list").performScrollToNode(hasTestTag("progress_strength_ranges"))
         compose.onNodeWithTag("progress_strength_all").performClick()
         compose.waitUntil(30_000) { !exists("progress_strength_loading") }
@@ -179,10 +214,11 @@ class NativeProgressPhotoRangeUiTest {
         screenshot("range")
         compose.onNodeWithTag("navigation_settings").performClick()
         fixture.selectLanguageThroughUi(compose, "en")
-        compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("theme_yellow"))
+        compose.revealSettingsControl("theme_yellow", "settings_theme_summary", "settings_theme_picker")
         compose.onNodeWithTag("theme_yellow").performScrollTo().performClick()
         compose.onNodeWithTag("navigation_back").performClick()
         compose.waitUntil(30_000) { exists("progress_list") }
+        selectProgressSection(2)
         compose.onNodeWithTag("progress_list").performScrollToNode(hasTestTag("progress_strength_ranges"))
         compose.onNodeWithTag("progress_strength_days_30").assertIsSelected()
         compose.waitUntil(30_000) { exists("progress_strength_empty") }

@@ -1,0 +1,194 @@
+{
+  "commit": "a27cc2fe674dd7a707bb0f2f6590fd1ef74f6f5d",
+  "phone": [
+    {
+      "status": "PASS",
+      "declared": 119,
+      "executed": 119,
+      "passed": 119,
+      "failed": 0,
+      "missing": 0,
+      "crashed": false,
+      "skipped": 0
+    },
+    {
+      "status": "PASS",
+      "declared": 1,
+      "executed": 1,
+      "passed": 1,
+      "failed": 0,
+      "missing": 0,
+      "crashed": false,
+      "skipped": 0
+    },
+    {
+      "status": "PASS",
+      "declared": 1,
+      "executed": 1,
+      "passed": 1,
+      "failed": 0,
+      "missing": 0,
+      "crashed": false,
+      "skipped": 0
+    },
+    {
+      "status": "PASS",
+      "declared": 1,
+      "executed": 1,
+      "passed": 1,
+      "failed": 0,
+      "missing": 0,
+      "crashed": false,
+      "skipped": 0
+    },
+    {
+      "status": "PASS",
+      "declared": 1,
+      "executed": 1,
+      "passed": 1,
+      "failed": 0,
+      "missing": 0,
+      "crashed": false,
+      "skipped": 0
+    }
+  ],
+  "wear": [
+    {
+      "status": "PASS",
+      "executed": 68,
+      "passed": 68,
+      "failed": 0,
+      "missing": 0,
+      "crashed": false,
+      "skipped": 0
+    },
+    {
+      "status": "PASS",
+      "executed": 59,
+      "passed": 59,
+      "failed": 0,
+      "missing": 0,
+      "crashed": false,
+      "skipped": 0
+    },
+    {
+      "status": "PASS",
+      "executed": 56,
+      "passed": 56,
+      "failed": 0,
+      "missing": 0,
+      "crashed": false,
+      "skipped": 0
+    }
+  ],
+  "jvm": {
+    "xml_files": 168,
+    "tests": 1344,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "display": {
+    "requestedSizePx": "1080x2392",
+    "requestedDensityDpi": 450,
+    "wmSize": "Physical size: 1080x2400\nOverride size: 1080x2392",
+    "wmDensity": "Physical density: 420\nOverride density: 450",
+    "fontScale": "0.9",
+    "ciLauncherIsolation": "Package com.google.android.apps.nexuslauncher new state: disabled-user"
+  },
+  "screenshots_verified": 71,
+  "run_id": 40660277579,
+  "run_url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/40660277579",
+  "artifacts": {
+    "jvm": 12804230727,
+    "phone": 12804148382,
+    "wear": [
+      12804601518,
+      12804281823,
+      12804486239
+    ]
+  },
+  "signed_upgrade_jobs": "Both original v1.3.71 and perf-20261022 succeeded",
+  "app_sha256": "d246190940ede05a60881009b9ab6f93927781dc02cdbaef04b56543c885dc6e",
+  "test_apk_sha256": "2fa195ed07b5d83d6a743a5828cd1c412ad2b34171a44ac32b973574e98c9c2a",
+  "image_origin": "unmodified-adb-exec-out-screencap-p",
+  "gallery": [
+    {
+      "label": "Kezdőlap, Graphite/Gold #1",
+      "file": "home.png",
+      "artifact_file": "screenshots/nativephonenavigationtest_33760035_studio_original_gold_dumbbell_hu_graphite_gold_1.png",
+      "sha256": "f767239fd8d70522d6dfa90c98ef6458f44abc15be1a785bba526e88e2c61da8",
+      "bytes": 205911,
+      "width_px": 1080,
+      "height_px": 2392,
+      "theme": "graphite_gold",
+      "language": "hu"
+    },
+    {
+      "label": "Edzés, sárga #12",
+      "file": "training.png",
+      "artifact_file": "screenshots/nativephonenavigationtest_ed0ff362_p1_training_hu_yellow_3.png",
+      "sha256": "764f1c4a5f8b873af7a057d789f9ce8a723973d5faecfba51cf8928153ec56a8",
+      "bytes": 185883,
+      "width_px": 1080,
+      "height_px": 2392,
+      "theme": "yellow",
+      "language": "hu"
+    },
+    {
+      "label": "Napló, sárga #12",
+      "file": "journal.png",
+      "artifact_file": "screenshots/nativephonenavigationtest_ed0ff362_p1_journal_hu_yellow_4.png",
+      "sha256": "e5e9e3a2c5e415b6a9b79eca9cb4a6882edaf5960f004ae6cb307077b98f9b6c",
+      "bytes": 163474,
+      "width_px": 1080,
+      "height_px": 2392,
+      "theme": "yellow",
+      "language": "hu"
+    },
+    {
+      "label": "Egészség, sárga #12",
+      "file": "health.png",
+      "artifact_file": "screenshots/nativephonenavigationtest_ed0ff362_p1_health_hu_yellow_7.png",
+      "sha256": "4e80f8a4f29ec11039d5eb0239a2d6f7040e92f62f0841dc033e5a58a4bce737",
+      "bytes": 241206,
+      "width_px": 1080,
+      "height_px": 2392,
+      "theme": "yellow",
+      "language": "hu"
+    },
+    {
+      "label": "Fejlődés, sárga #12",
+      "file": "progress.png",
+      "artifact_file": "screenshots/nativephonenavigationtest_ed0ff362_p1_progress_hu_yellow_5.png",
+      "sha256": "b353e2694cc4ccaa260224585b08c74dba60bf2df860e73f6922765b72e3f234",
+      "bytes": 304800,
+      "width_px": 1080,
+      "height_px": 2392,
+      "theme": "yellow",
+      "language": "hu"
+    },
+    {
+      "label": "Izomterhelés, 3 hónap / 2 sorozat",
+      "file": "muscle-three-months.png",
+      "artifact_file": "screenshots/g10_2f394a8_studio_muscle_three_months_1.png",
+      "sha256": "a59d9e47bfa79a61e595e928859e446e31ccf95b0df24f502dbc26d7d895d5c6",
+      "bytes": 285327,
+      "width_px": 1080,
+      "height_px": 2392,
+      "theme": "classicBlue",
+      "language": "hu"
+    },
+    {
+      "label": "Izomterhelés, 30 nap / 1 sorozat",
+      "file": "muscle-month.png",
+      "artifact_file": "screenshots/g10_2f394a8_studio_muscle_month_2.png",
+      "sha256": "dd56a4542fd69331a94433d328699434354173b8ce73072ec134585c3ee0c922",
+      "bytes": 286137,
+      "width_px": 1080,
+      "height_px": 2392,
+      "theme": "classicBlue",
+      "language": "hu"
+    }
+  ]
+}

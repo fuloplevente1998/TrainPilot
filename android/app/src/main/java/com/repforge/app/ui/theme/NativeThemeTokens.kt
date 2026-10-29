@@ -42,7 +42,26 @@ internal object NativeThemeTokens {
     fun readableControlAccent(paint: Color, selectedSurface: Color): Color =
         readableOnSurfaces(paint, listOf(CardColor, Card2Color, selectedSurface), 3f)
 
+    private fun studioGraphiteGold(settings: TrainPilotUserSettings): TrainPilotExtendedColors {
+        val bg = Color(0xFF0E1015)
+        val card = Color(0xFF171A21)
+        val card2 = Color(0xFF1F242D)
+        val gold = parseHex(settings.themeAccent, Color(0xFFE5B842))
+        val teal = parseHex(settings.themeAccent2, Color(0xFF4CA6A8))
+        return TrainPilotExtendedColors(
+            bg = bg, card = card, card2 = card2, line = Color(0xFF2B313D),
+            text = Color(0xFFF3F4F6), muted = Color(0xFFB6BFCF),
+            accent = gold, accent2 = teal,
+            onAccent = onFill(gold), onAccent2 = onFill(teal),
+            accentText = readableOnSurfaces(gold, listOf(card, card2), 4.5f),
+            selectedSurface = card2,
+            selectedBorder = readableOnSurfaces(gold, listOf(card, card2), 3f),
+            emphasisBorder = gold.copy(alpha = .55f)
+        )
+    }
+
     fun resolve(settings: TrainPilotUserSettings): TrainPilotExtendedColors {
+        if (settings.themeKey == "graphite_gold") return studioGraphiteGold(settings)
         val accent = parseHex(settings.themeAccent, Color(0xFF4D8FBE))
         val secondary = parseHex(settings.themeAccent2, Color(0xFF7CB4D6))
         val vivid = settings.themeFamily == "vivid"

@@ -19,6 +19,8 @@ import com.repforge.app.HealthBackgroundService
 import com.repforge.app.HealthConnectRepository
 import com.repforge.app.HealthJournalStore
 import com.repforge.app.SamsungHealthRepository
+import com.repforge.app.data.db.TrainPilotDatabase
+import com.repforge.app.ui.home.NativeHomeRecoveryPresentation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,7 +29,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.json.JSONObject
+import java.text.NumberFormat
+import java.time.Duration
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.util.Locale
 import kotlin.math.roundToInt
 
 data class HealthMetricItemUiModel(
@@ -37,6 +46,18 @@ data class HealthMetricItemUiModel(
     val unit: String,
     val sourceText: String,
     val isAvailable: Boolean
+)
+
+data class HealthPulseTrendPointUiModel(
+    val day: String,
+    val bpm: Double?
+)
+
+data class HealthDaySummaryUiModel(
+    val day: String,
+    val dateText: String,
+    val summaryText: String,
+    val partial: Boolean
 )
 
 data class HealthDashboardUiState(
@@ -66,6 +87,10 @@ data class HealthDashboardUiState(
     val backgroundSaving: Boolean = false,
     val backgroundWriteFailed: Boolean = false,
     val metrics: List<HealthMetricItemUiModel> = emptyList(),
+    val overviewMetrics: List<HealthMetricItemUiModel> = emptyList(),
+    val additionalMetrics: List<HealthMetricItemUiModel> = emptyList(),
+    val pulseTrend: List<HealthPulseTrendPointUiModel> = emptyList(),
+    val recentDaySummaries: List<HealthDaySummaryUiModel> = emptyList(),
     val sleepSessionsSummaryText: String = "—",
     val lastSyncAt: String = "—",
     val bleState: BleDiscoveryUiState = BleDiscoveryUiState(),
@@ -86,8 +111,16 @@ data class HealthDashboardUiState(
     val sourceSaveFailed: Boolean = false
 )
 
+private data class HealthStudioOverviewAux(
+    val workoutCount: Int,
+    val recovery: NativeHomeRecoveryPresentation.Model?,
+    val selectedIsToday: Boolean,
+    val pulseTrend: List<HealthPulseTrendPointUiModel>
+)
+
 class HealthDashboardViewModel(application: Application) : AndroidViewModel(application) {
     private val context = application.applicationContext
+    private val database = TrainPilotDatabase.getInstance(context)
     private val healthStore = HealthJournalStore.get(context)
     val bleRepo = BleDiscoveryRepository(context)
 
@@ -201,7 +234,14 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
         // init also calls this method; query initialization must precede init.
         val query = historyQuery
         historyJob?.cancel()
-        _uiState.value = _uiState.value.copy(historyLoading = true, historyError = false, metrics = emptyList(),
+        _uiState.value = _uiState.value.copy(
+            historyLoading = true,
+            historyError = false,
+            metrics = emptyList(),
+            overviewMetrics = emptyList(),
+            additionalMetrics = emptyList(),
+            pulseTrend = emptyList(),
+            recentDaySummaries = emptyList(),
             selectedDay = query.day.toString(), historyMonth = query.month.toString(), historyChannel = query.channel,
             availableDays = emptyList(), sleepSessionsSummaryText = "—", historyPartial = false)
         historyJob = viewModelScope.launch {
@@ -214,19 +254,86 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
                         val language = com.repforge.app.data.store.TrainPilotSettingsStore(context).current().language
                         val prefs = healthStore.preferences()
                         val page = NativeHealthHistory(healthStore).load(query)
+                        val zone = ZoneId.systemDefault()
+                        val now = Instant.now()
+                        val selected = query.day
+                        val from = selected.atStartOfDay(zone).toInstant().toEpochMilli()
+                        val to = selected.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
+                        val workoutCount = database.workoutHistoryDao().getWorkoutCountBetween(from, to)
+                        val selectedIsToday = selected == now.atZone(zone).toLocalDate()
+                        val recovery = if (selectedIsToday) {
+                            try {
+                                val recoveryPage = healthStore.page(
+                                    selected.minusDays(14).toString(), selected.toString(),
+                                    "journal", "", 0L, 0L, 1
+                                )
+                                val summaries = recoveryPage.optJSONArray("days")
+                                val days = (0 until (summaries?.length() ?: 0))
+                                    .mapNotNull { summaries?.optJSONObject(it) }
+                                val history = database.workoutHistoryDao()
+                                    .getCoachRecentHistory(
+                                        now.minus(Duration.ofDays(14)).toEpochMilli(),
+                                        now.toEpochMilli()
+                                    )
+                                    .map { JSONObject(it) }
+                                NativeHomeRecoveryPresentation.select(days, history, now, zone)
+                            } catch (cancelled: CancellationException) {
+                                throw cancelled
+                            } catch (_: Exception) {
+                                null
+                            }
+                        } else null
+                        val pulseTrend = try {
+                            val trendPage = healthStore.page(
+                                selected.minusDays(6).toString(), selected.toString(),
+                                query.channel, "", 0L, 0L, 1
+                            )
+                            val summaries = trendPage.optJSONArray("days")
+                            val byDay = mutableMapOf<String, Double>()
+                            for (index in 0 until (summaries?.length() ?: 0)) {
+                                val summary = summaries?.optJSONObject(index) ?: continue
+                                val average = summary.optDouble("averageHeartRate", Double.NaN)
+                                if (average.isFinite() && average > 0.0) {
+                                    byDay[summary.optString("day")] = average
+                                }
+                            }
+                            (6 downTo 0).map { offset ->
+                                val date = selected.minusDays(offset.toLong()).toString()
+                                HealthPulseTrendPointUiModel(date, byDay[date])
+                            }
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (_: Exception) {
+                            emptyList()
+                        }
                         Triple(
                             Triple(language, prefs, page),
                             access,
-                            background to healthStore.nativeSyncLastSuccess()
+                            Triple(
+                                background,
+                                healthStore.nativeSyncLastSuccess(),
+                                HealthStudioOverviewAux(
+                                    workoutCount, recovery, selectedIsToday, pulseTrend
+                                )
+                            )
                         )
                     }
                 }
                 val (language, prefs, page) = loaded.first
                 val access = loaded.second
                 val background = loaded.third.first
+                val overviewAux = loaded.third.third
                 val text = com.repforge.app.ui.text.nativeResources(context, language)
+                val metrics = NativeHealthMetrics.parse(context, page.selected, language)
+                val overviewMetrics = buildStudioOverviewMetrics(
+                    language, page.selected, metrics, overviewAux
+                )
+                val additionalMetrics = buildStudioAdditionalMetrics(language, page.selected, metrics)
+                val recentDaySummaries = buildHealthDaySummaries(language, page.summaries)
                 _uiState.value = _uiState.value.copy(language = language, historyLoading = false, historyError = false,
-                    availableDays = page.days, metrics = NativeHealthMetrics.parse(context, page.selected, language),
+                    availableDays = page.days, metrics = metrics, overviewMetrics = overviewMetrics,
+                    additionalMetrics = additionalMetrics, pulseTrend = overviewAux.pulseTrend,
+                    recentDaySummaries = recentDaySummaries,
                     historyPartial = page.selected.optBoolean("partial"),
                     provider = prefs.optString("provider", HealthJournalStore.HC),
                     dailySourcePreference = prefs.optString("hcDailySource", "auto"),
@@ -247,10 +354,189 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
                 }
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Exception) { _uiState.value = _uiState.value.copy(historyLoading = false, historyError = true,
-                metrics = emptyList(), dailySourceOptions = emptyList())
+                metrics = emptyList(), overviewMetrics = emptyList(), additionalMetrics = emptyList(),
+                pulseTrend = emptyList(), recentDaySummaries = emptyList(),
+                dailySourceOptions = emptyList())
                 refreshBackgroundStatus()
             }
         }
+    }
+
+    private fun buildStudioOverviewMetrics(
+        language: String,
+        day: JSONObject,
+        full: List<HealthMetricItemUiModel>,
+        aux: HealthStudioOverviewAux
+    ): List<HealthMetricItemUiModel> {
+        val text = com.repforge.app.ui.text.nativeResources(context, language)
+        val noData = text.getString(com.repforge.app.R.string.health_history_no_data)
+        val providers = day.optJSONObject("metricProviders")
+        val sleepMinutes = day.optDouble("sleepMinutes", Double.NaN)
+        val sleepAvailable = sleepMinutes.isFinite() && sleepMinutes > 0.0
+        val sleepValue = if (sleepAvailable) {
+            val hours = sleepMinutes / 60.0
+            NumberFormat.getNumberInstance(Locale.forLanguageTag(language)).apply {
+                minimumFractionDigits = 0
+                maximumFractionDigits = 1
+            }.format(hours) + " h"
+        } else "—"
+        val sleep = HealthMetricItemUiModel(
+            key = "sleepMinutes",
+            label = text.getString(com.repforge.app.R.string.native_home_sleep),
+            valueText = sleepValue,
+            unit = "",
+            sourceText = if (sleepAvailable) {
+                providers?.optString("sleepMinutes")?.takeIf { it.isNotBlank() }
+                    ?: day.optString("channel").takeIf { it.isNotBlank() } ?: "Health"
+            } else noData,
+            isAvailable = sleepAvailable
+        )
+        val workoutLabel = if (aux.selectedIsToday) {
+            text.getString(com.repforge.app.R.string.native_home_today_workout)
+        } else when (language) {
+            "en" -> "Workouts"
+            "de" -> "Trainings"
+            "ro" -> "Antrenamente"
+            else -> "Edzések"
+        }
+        val workouts = HealthMetricItemUiModel(
+            key = "workouts",
+            label = workoutLabel,
+            valueText = aux.workoutCount.toString(),
+            unit = "",
+            sourceText = "TrainPilot",
+            isAvailable = true
+        )
+        val recoveryAvailable = aux.recovery?.value != null
+        // Health must retain the same provenance and freshness qualifications
+        // as the canonical Home recovery projection. A TrainPilot estimate must
+        // never look like a Samsung Health measurement.
+        val recoverySource = when (aux.recovery?.source) {
+            NativeHomeRecoveryPresentation.Source.SAMSUNG ->
+                text.getString(com.repforge.app.R.string.native_home_recovery_samsung)
+            NativeHomeRecoveryPresentation.Source.TRAINPILOT_ESTIMATE ->
+                text.getString(com.repforge.app.R.string.native_home_recovery_estimate)
+            else -> text.getString(com.repforge.app.R.string.native_home_recovery_no_data)
+        }
+        val recoveryNotices = listOfNotNull(
+            text.getString(com.repforge.app.R.string.native_home_recovery_partial)
+                .takeIf { aux.recovery?.partial == true },
+            text.getString(com.repforge.app.R.string.native_home_recovery_stale)
+                .takeIf { aux.recovery?.stale == true },
+            text.getString(com.repforge.app.R.string.native_home_recovery_read_error)
+                .takeIf { aux.recovery?.refreshFailed == true }
+        )
+        val recovery = HealthMetricItemUiModel(
+            key = "recovery",
+            label = text.getString(com.repforge.app.R.string.native_home_recovery),
+            valueText = aux.recovery?.displayValue ?: "—",
+            unit = "",
+            sourceText = (listOf(recoverySource) + recoveryNotices).joinToString(" · "),
+            isAvailable = recoveryAvailable
+        )
+        return NativeHealthMetrics.studioOverview(full, sleep, workouts, recovery)
+    }
+
+    private fun buildHealthDaySummaries(
+        language: String,
+        summaries: List<JSONObject>
+    ): List<HealthDaySummaryUiModel> {
+        val text = com.repforge.app.ui.text.nativeResources(context, language)
+        val locale = Locale.forLanguageTag(language)
+        val number0 = NumberFormat.getNumberInstance(locale).apply {
+            maximumFractionDigits = 0
+        }
+        val number1 = NumberFormat.getNumberInstance(locale).apply {
+            minimumFractionDigits = 0
+            maximumFractionDigits = 1
+        }
+        val dateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+            .withLocale(locale)
+        fun value(day: JSONObject, key: String): Double? =
+            day.optDouble(key, Double.NaN).takeIf { it.isFinite() }
+        return summaries
+            .sortedByDescending { it.optString("day") }
+            .take(3)
+            .mapNotNull { day ->
+                val date = runCatching { LocalDate.parse(day.optString("day")) }.getOrNull()
+                    ?: return@mapNotNull null
+                val sleep = value(day, "sleepMinutes")?.takeIf { it > 0.0 }?.let {
+                    number1.format(it / 60.0) + " h"
+                } ?: "—"
+                val pulse = value(day, "averageHeartRate")?.takeIf { it > 0.0 }?.let {
+                    number0.format(it) + " bpm"
+                } ?: "—"
+                val steps = value(day, "steps")?.takeIf { it >= 0.0 }?.let {
+                    number0.format(it)
+                } ?: "—"
+                val calories = value(day, "activeCalories")?.takeIf { it >= 0.0 }?.let {
+                    number0.format(it) + " kcal"
+                } ?: "—"
+                HealthDaySummaryUiModel(
+                    day = date.toString(),
+                    dateText = date.format(dateFormatter),
+                    summaryText = buildString {
+                        append(text.getString(com.repforge.app.R.string.native_home_sleep))
+                        append(": "); append(sleep)
+                        append(" • ")
+                        append(text.getString(com.repforge.app.R.string.native_home_pulse))
+                        append(": "); append(pulse)
+                        append(" • ")
+                        append(text.getString(com.repforge.app.R.string.native_home_steps))
+                        append(": "); append(steps)
+                        append(" • "); append(calories)
+                    },
+                    partial = day.optBoolean("partial", false)
+                )
+            }
+    }
+
+    private fun buildStudioAdditionalMetrics(
+        language: String,
+        day: JSONObject,
+        full: List<HealthMetricItemUiModel>
+    ): List<HealthMetricItemUiModel> {
+        val text = com.repforge.app.ui.text.nativeResources(context, language)
+        val noData = text.getString(com.repforge.app.R.string.health_history_no_data)
+        val byKey = full.associateBy { it.key }
+        val systolic = byKey["bloodPressureSystolic"]
+        val diastolic = byKey["bloodPressureDiastolic"]
+        val pressureAvailable = systolic?.isAvailable == true && diastolic?.isAvailable == true
+        val pressure = HealthMetricItemUiModel(
+            key = "bloodPressure",
+            label = text.getString(com.repforge.app.R.string.health_record_blood_pressure),
+            valueText = if (pressureAvailable) "${systolic!!.valueText}/${diastolic!!.valueText}" else "—",
+            unit = "mmHg",
+            sourceText = if (pressureAvailable) {
+                if (systolic!!.sourceText == diastolic!!.sourceText) systolic.sourceText
+                else "${systolic.sourceText} / ${diastolic.sourceText}"
+            } else noData,
+            isAvailable = pressureAvailable
+        )
+
+        val rawDistance = day.optDouble("distanceMeters", Double.NaN)
+        val distanceBase = byKey["distanceMeters"]
+        val distanceAvailable = distanceBase?.isAvailable == true &&
+            rawDistance.isFinite() && rawDistance >= 0.0
+        val distance = distanceBase?.copy(
+            valueText = if (distanceAvailable) {
+                NumberFormat.getNumberInstance(Locale.forLanguageTag(language)).apply {
+                    minimumFractionDigits = 0
+                    maximumFractionDigits = 2
+                }.format(rawDistance / 1000.0)
+            } else "—",
+            unit = "km",
+            isAvailable = distanceAvailable,
+            sourceText = if (distanceAvailable) distanceBase.sourceText else noData
+        )
+
+        return listOfNotNull(
+            pressure,
+            byKey["bloodGlucoseMmolL"],
+            byKey["respiratoryRate"],
+            distance,
+            byKey["oxygenSaturationPercent"]
+        )
     }
 
     fun setDailySourcePreference(value: String) {

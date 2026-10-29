@@ -19,6 +19,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import java.time.YearMonth
+import java.time.LocalDate
 import java.time.ZoneId
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executor
@@ -100,6 +101,30 @@ class NativeJournalPagingTest {
         }
         assertEquals(listOf("w-0002", "w-0001"), page(source(filter)).data.map { it.id })
     }
+    @Test fun dayUsesLocalMidnightsAcrossDstAndExclusiveNextDayBoundary() = runBlocking {
+        val filter = JournalFilter(
+            day = LocalDate.of(2026, 3, 29),
+            zone = ZoneId.of("Europe/Budapest")
+        )
+        assertEquals(23L * 3600000, filter.toEpoch - filter.fromEpoch)
+        db.withTransaction {
+            listOf(
+                filter.fromEpoch - 1,
+                filter.fromEpoch,
+                filter.toEpoch - 1,
+                filter.toEpoch
+            ).forEachIndexed { i, epoch ->
+                db.workoutHistoryDao().insertWorkout(
+                    JournalTestFixtures.row(i).copy(startedEpochMs = epoch)
+                )
+            }
+        }
+        assertEquals(
+            listOf("w-0002", "w-0001"),
+            page(source(filter)).data.map { it.id }
+        )
+    }
+
     @Test fun editingWithoutChangingCountInvalidatesTheVisibleSource() = runBlocking {
         seed(40)
         val source = source()

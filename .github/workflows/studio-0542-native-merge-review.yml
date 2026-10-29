@@ -1,0 +1,165 @@
+name: AI Studio 0542 Native Merge Review
+# Source-only audit: never builds, executes or imports code from the linked ZIP.
+on:
+  push:
+    branches: [feat/studio-ui-topnav-trial-20261027]
+    paths:
+      - .github/workflows/studio-0542-native-merge-review.yml
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: fuloplevente1998/Native-AI-Studio
+          ref: 2db71628c604fb361e7197a7c41b2a0ed9299cea
+          path: native_ai_studio
+          persist-credentials: false
+      - name: Review ZIP contents, P0 migration and real native bindings (read-only)
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib, re, xml.etree.ElementTree as ET
+          from pathlib import Path
+          from zipfile import ZipFile
+          report=[]
+          def say(*x):
+              line=' '.join(map(str,x))
+              report.append(line)
+              print(line)
+          root=Path('.')
+          sources=[
+              root/'native_ai_studio/trainpilot-oct-28-2026-5-42-24-am.zip',
+              root/'docs/ai-studio/trainpilot-oct-27-2026-9-02-00-pm.zip',
+              root/'docs/ai-studio/trainpilot-oct-27-2026-6-49-09-pm.zip']
+          def digest(p):
+              return hashlib.sha256(p.read_bytes()).hexdigest()
+          def files(z):
+              ans={}
+              for item in z.infolist():
+                  if item.is_dir(): continue
+                  name=item.filename
+                  if '/app/src/' in name and not name.startswith('app/'):
+                      name='app/src/'+name.split('/app/src/',1)[1]
+                  if '/app/build.gradle.kts' in name and not name.startswith('app/'):
+                      name='app/build.gradle.kts'
+                  ans[name]=z.read(item)
+              return ans
+          for source in sources:
+              say('ARCHIVE',source.name,'size',source.stat().st_size,'sha256',digest(source))
+          with ZipFile(sources[0]) as a,ZipFile(sources[1]) as b,ZipFile(sources[2]) as c:
+              for label,z in [('05:42',a),('21:02',b),('18:49',c)]:
+                  say('ZIP_CRC',label,'PASS' if z.testzip() is None else 'FAIL',
+                      'total_entries',len(z.infolist()))
+              new,old,design=files(a),files(b),files(c)
+          common=set(new)&set(old)
+          changed=sorted(p for p in common if new[p]!=old[p])
+          say('FILE_COUNTS','0542',len(new),'2102',len(old),'1849',len(design),
+              'NEW',len(set(new)-set(old)),'REMOVED',len(set(old)-set(new)),
+              'MODIFIED',len(changed))
+          say('NEW_FILES',sorted(set(new)-set(old))[:70])
+          say('REMOVED_FILES',sorted(set(old)-set(new))[:70])
+          say('MODIFIED_KOTLIN', [p for p in changed if p.endswith(('.kt','.java'))][:100])
+          say('MODIFIED_OTHER', [p for p in changed if not p.endswith(('.kt','.java'))][:100])
+          for package in ['com/example/','com/repforge/app/']:
+              prefix='app/src/main/java/'+package
+              n={p for p in new if p.startswith(prefix) and p.endswith(('.kt','.java'))}
+              o={p for p in old if p.startswith(prefix) and p.endswith(('.kt','.java'))}
+              say('PACKAGE',package,'0542',len(n),'2102',len(o),
+                  'UNCHANGED',sum(new[p]==old[p] for p in n&o),
+                  'MODIFIED',sum(new[p]!=old[p] for p in n&o),
+                  'ADDED',len(n-o))
+              say('PACKAGE_DIFF',package,sorted(p for p in n&o if new[p]!=old[p])[:55])
+          studio={p for p in design if p.startswith('app/src/main/java/com/example/') and p.endswith('.kt')}
+          say('STUDIO_1849_FIDELITY','files',len(studio),'retained',len(studio&set(new)),
+              'unchanged',sum(new[p]==design[p] for p in studio&set(new)))
+          say('STUDIO_MODIFIED',sorted(p for p in studio&set(new) if new[p]!=design[p]))
+          native={p for p in new if p.startswith('app/src/main/java/com/repforge/app/') and p.endswith(('.kt','.java'))}
+          matches=[p for p in native if (root/'android'/p).is_file()]
+          diff=sorted(p for p in matches if new[p]!=(root/'android'/p).read_bytes())
+          say('NATIVE_vs_PR270','matched_paths',len(matches),'byte_identical',len(matches)-len(diff),
+              'different',len(diff),'zip_only',len(native)-len(matches))
+          say('NATIVE_DIFFERENCES',diff[:105])
+          say('NATIVE_ZIP_ONLY',sorted(native-set(matches))[:45])
+          manifest=new.get('app/src/main/AndroidManifest.xml',b'').decode('utf8','replace')
+          try:
+              rootxml=ET.fromstring(manifest)
+              ns='{http://schemas.android.com/apk/res/android}'
+              for act in rootxml.iter('activity'):
+                  for intent in act.findall('intent-filter'):
+                      actions={x.get(ns+'name') for x in intent.findall('action')}
+                      categories={x.get(ns+'name') for x in intent.findall('category')}
+                      if 'android.intent.action.MAIN' in actions and 'android.intent.category.LAUNCHER' in categories:
+                          say('APK_LAUNCHER',act.get(ns+'name'))
+          except Exception as e: say('MANIFEST_PARSE_ERROR',e)
+          gradle=new.get('app/build.gradle.kts',b'').decode('utf8','replace')
+          for key in ['namespace','applicationId','versionCode','versionName']:
+              say('GRADLE',key,re.findall(r'\b'+key+r'\s*=\s*[^\n]+',gradle)[:3])
+          for name in [
+              'app/src/main/java/com/repforge/app/MainActivity.kt',
+              'app/src/main/java/com/repforge/app/data/migration/LegacyLocalStorageReader.kt',
+              'app/src/main/java/com/example/MainActivity.kt',
+              'app/src/main/java/com/example/ui/viewmodel/TrainPilotViewModel.kt']:
+              data=new.get(name)
+              if data is None:
+                  say('CRITICAL_FILE_MISSING',name)
+                  continue
+              source=data.decode('utf8','replace')
+              say('CRITICAL_FILE',name,'SHA16',hashlib.sha256(data).hexdigest()[:16],
+                  'CHANGED_SINCE_2102',new[name]!=old.get(name,b''),'LINES',len(source.splitlines()))
+              if 'LegacyLocalStorageReader' in name:
+                  say('MIGRATION_P0','60s',bool(re.search(r'withTimeout\(\s*60_000',source)),
+                      '8s',bool(re.search(r'withTimeout\(\s*8_000',source)),
+                      'catchThrowable',bool(re.search(r'catch\s*\([^)]*Throwable',source)),
+                      'emptyMap', 'emptyMap()' in source)
+              if 'MainActivity' in name:
+                  say('ACTIVITY_GATES','readyGate',bool(re.search(r'else\s+if\s*\(migrationReady\)',source)),
+                      'migrationFailure','migrationFailure' in source,
+                      'StudioRoot','TrainPilotAppRoot' in source,
+                      'RealNativeShell','TrainPilotAppScaffold' in source)
+              for fun in ['finishAndSaveWorkout','saveNewBodyWeight','triggerHealthSyncNow',
+                          'toggleWatchControlMode','syncNativeSettings','startMigration']:
+                  match=re.search(r'(?:fun|suspend fun)\s+'+fun+r'\s*\(',source)
+                  if match:
+                      segment=source[match.start():match.start()+2600]
+                      say('METHOD',name,fun,'\n',segment[:1500].replace('\r',''))
+          # Export only selected public Kotlin files, no ZIP bytecode execution.
+          import difflib
+          extracts=Path('studio_0542_selected_sources')
+          extracts.mkdir(exist_ok=True)
+          selected=[
+              'app/src/main/java/com/repforge/app/MainActivity.kt',
+              'app/src/main/java/com/repforge/app/data/migration/LegacyLocalStorageReader.kt',
+              'app/src/main/java/com/example/ui/viewmodel/TrainPilotViewModel.kt'
+          ]
+          for source_path in selected:
+              if source_path in new:
+                  short=source_path.rsplit('/',1)[-1]
+                  if 'com/example/' in source_path: short='Studio_'+short
+                  elif 'migration/' in source_path: short='Migration_'+short
+                  else: short='Native_'+short
+                  (extracts/short).write_bytes(new[source_path])
+                  if source_path in old:
+                      previous=old[source_path].decode('utf8','replace').splitlines(keepends=True)
+                      latest=new[source_path].decode('utf8','replace').splitlines(keepends=True)
+                      diff=''.join(difflib.unified_diff(previous,latest,
+                          fromfile='21:02/'+short,tofile='05:42/'+short,n=5))
+                      (extracts/('delta_'+short+'.diff')).write_text(diff,encoding='utf8')
+          say('LIMITATION: static read-only comparison, no ZIP code executed, no independent native build or APK/screen visual parity implied.')
+          Path('studio_0542_native_audit.txt').write_text('\n'.join(report)+'\n',encoding='utf8')
+          PY
+      - name: Upload exact-source read-only audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: studio-0542-native-integration-review
+          path: |
+            studio_0542_native_audit.txt
+            studio_0542_selected_sources/
+          if-no-files-found: warn

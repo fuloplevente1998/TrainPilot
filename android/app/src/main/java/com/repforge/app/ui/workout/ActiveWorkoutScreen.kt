@@ -827,7 +827,13 @@ fun ExerciseCardItem(
 }
 
 @Composable
-private fun DistanceMeasurementPanel(state: ActiveWorkoutUiState, exercise: ActiveExerciseUiModel, onToggle: (String?) -> Unit, onOpenRoute: (String) -> Unit, language: String = "hu") {
+private fun DistanceMeasurementPanel(
+    state: ActiveWorkoutUiState,
+    exercise: ActiveExerciseUiModel,
+    onToggle: (String?) -> Unit,
+    onOpenRoute: (String) -> Unit,
+    language: String = "hu"
+) {
     val colors = LocalTrainPilotColors.current
     val context = LocalContext.current
     val strings = remember(context, language) { nativeResources(context, language) }
@@ -835,20 +841,175 @@ private fun DistanceMeasurementPanel(state: ActiveWorkoutUiState, exercise: Acti
     val bound = state.gpsBoundSetId == set.setId
     val live = bound && state.gpsBindingState in setOf("prepared", "running", "explicitStopped")
     val meters = if (live) state.gpsBaseMeters + state.gpsDistanceMeters else set.distanceMeters
-    val seconds = if (live) state.gpsBaseSeconds + state.gpsElapsedSeconds else set.reps.toLongOrNull() ?: 0L
-    Column(Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
-        Text("${"%.2f".format(meters / 1000.0)} km · ${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}",
-            color = colors.accentText, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-        Text(strings.getString(if (set.isCompleted) R.string.native_workout_component_gps_saved else if (live && !state.gpsHasFix) R.string.native_workout_component_gps_wait else if (live) R.string.native_workout_component_gps_running else R.string.native_workout_component_gps_ready),
-            color = colors.muted, fontSize = 12.sp)
-        Button(onClick = { onToggle(if (live) state.gpsMeasurementId else null) }, enabled = !set.isCompleted && state.timerOwner == "phone" && !state.isPaused && !state.isFinishing,
-            modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = colors.accent)) {
-            Text(strings.getString(if (live && state.gpsBindingState == "explicitStopped") R.string.native_workout_component_gps_retry else if (live) R.string.native_workout_component_gps_finish else R.string.native_workout_component_gps_start),
-                color = colors.onAccent)
+    val seconds = if (live) state.gpsBaseSeconds + state.gpsElapsedSeconds
+        else set.reps.toLongOrNull() ?: 0L
+    val km = meters / 1000.0
+    val paceSeconds = if (meters >= 10.0 && seconds > 0L) {
+        (seconds / km).roundToInt().coerceAtMost(35999)
+    } else null
+    val paceText = paceSeconds?.let {
+        "${it / 60}:${(it % 60).toString().padStart(2, '0')} /km"
+    } ?: "—"
+    val statusText = strings.getString(
+        if (set.isCompleted) R.string.native_workout_component_gps_saved
+        else if (live && !state.gpsHasFix) R.string.native_workout_component_gps_wait
+        else if (live) R.string.native_workout_component_gps_running
+        else R.string.native_workout_component_gps_ready
+    )
+
+    Card(
+        modifier = Modifier.fillMaxWidth().testTag("workout_gps_panel"),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = colors.card),
+        border = androidx.compose.foundation.BorderStroke(
+            if (live) 1.5.dp else 1.dp,
+            if (live) colors.accent else colors.line
+        )
+    ) {
+        Column(
+            Modifier.fillMaxWidth().padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    Modifier.size(44.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(colors.accent.copy(alpha = .14f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.DirectionsRun,
+                        contentDescription = null,
+                        tint = colors.accentText,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        strings.getString(R.string.studio_workout_gps_route),
+                        color = colors.text,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(statusText, color = colors.muted, fontSize = 12.sp)
+                }
+                Text(
+                    if (live && state.gpsHasFix)
+                        strings.getString(
+                            R.string.studio_workout_gps_accuracy,
+                            state.gpsAccuracyMeters.roundToInt()
+                        )
+                    else "GPS",
+                    color = if (live && state.gpsHasFix) colors.success else colors.accentText,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Card(
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = colors.card2),
+                border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
+            ) {
+                Column(
+                    Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        strings.getString(R.string.studio_workout_elapsed),
+                        color = colors.muted,
+                        fontSize = 11.sp
+                    )
+                    Text(
+                        measuredTime(seconds),
+                        color = colors.text,
+                        fontSize = 38.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.testTag("workout_gps_elapsed")
+                    )
+                }
+            }
+
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                StudioGpsMetricCard(
+                    strings.getString(R.string.native_workout_component_distance),
+                    "${"%.2f".format(km)} km",
+                    Modifier.weight(1f).testTag("workout_gps_distance")
+                )
+                StudioGpsMetricCard(
+                    strings.getString(R.string.studio_workout_average_pace),
+                    paceText,
+                    Modifier.weight(1f).testTag("workout_gps_pace")
+                )
+                StudioGpsMetricCard(
+                    strings.getString(R.string.studio_workout_heart_rate),
+                    state.liveHeartRateBpm?.let { "$it bpm" } ?: "—",
+                    Modifier.weight(1f).testTag("workout_gps_heart_rate")
+                )
+            }
+
+            Button(
+                onClick = { onToggle(if (live) state.gpsMeasurementId else null) },
+                enabled = !set.isCompleted && state.timerOwner == "phone" &&
+                    !state.isPaused && !state.isFinishing,
+                modifier = Modifier.fillMaxWidth().height(48.dp).testTag("workout_gps_toggle"),
+                colors = ButtonDefaults.buttonColors(containerColor = colors.accent),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(
+                    strings.getString(
+                        if (live && state.gpsBindingState == "explicitStopped")
+                            R.string.native_workout_component_gps_retry
+                        else if (live) R.string.native_workout_component_gps_finish
+                        else R.string.native_workout_component_gps_start
+                    ),
+                    color = colors.onAccent
+                )
+            }
+
+            if (bound && state.gpsError.isNotEmpty()) {
+                Text(state.gpsError, color = colors.dangerText, fontSize = 12.sp)
+            }
+            val route = exercise.sets.lastOrNull { it.gpsRouteKey.isNotBlank() }?.gpsRouteKey
+            if (route != null) {
+                TextButton(onClick = { onOpenRoute(route) }) {
+                    Text(strings.getString(R.string.native_workout_component_map), color = colors.accent)
+                }
+            }
         }
-        if (bound && state.gpsError.isNotEmpty()) Text(state.gpsError, color = colors.dangerText, fontSize = 12.sp)
-        val route = exercise.sets.lastOrNull { it.gpsRouteKey.isNotBlank() }?.gpsRouteKey
-        if (route != null) TextButton(onClick = { onOpenRoute(route) }) { Text(strings.getString(R.string.native_workout_component_map), color = colors.accent) }
+    }
+}
+
+@Composable
+private fun StudioGpsMetricCard(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    val colors = LocalTrainPilotColors.current
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = colors.card2),
+        border = androidx.compose.foundation.BorderStroke(1.dp, colors.line)
+    ) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 10.dp)) {
+            Text(label, color = colors.muted, fontSize = 9.sp, maxLines = 2)
+            Text(
+                value,
+                color = colors.text,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1
+            )
+        }
     }
 }
 

@@ -38,3 +38,11 @@ Manifest csak a már meglévő launcherresource-hivatkozást változtatja;
 package/verzió/DB/edzésmotor/Health/GPS/Wear szerződés a4fájlban nem módosul.
 Main merge vagy PR270 integráció nem történt. A UI-t a másik felhasználói chat írja;
 Root az auditot és a stabilitást viszi. Nem végleges elfogadás.
+
+
+## Root átvette és javította
+
+User explicitátvétel után9c9ccdee: selected/Role.Tab/selectableGroup visszaadva.
+Eredeti NativePhoneNavigationTest.tab() már a Selected=true állapotot várja;
+assertion nem változott. Runtime mégUNRUN;320dp/font2.0 továbbra ellenőrizendő.
+Teljes folytatási pont: docs/STUDIO_UI_RESUME.md.

@@ -85,11 +85,15 @@ internal fun NativeTrainingModePicker(
         comparisonFor = null
         comparisonFailed = false
         if (proposal != null) {
+            if (com.repforge.app.BuildConfig.DEBUG) android.util.Log.d("NativeModeApproval",
+                "Comparison started scope=$scope program=${proposal.programId}")
             try {
                 comparison = withContext(Dispatchers.IO) {
                     NativeTrainingModeComparison.read(ctx, proposal)
                 }
                 comparisonFor = proposal
+                if (com.repforge.app.BuildConfig.DEBUG) android.util.Log.d("NativeModeApproval",
+                    "Comparison ready rows=${comparison?.rows?.size}")
             } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
             catch (failure: Exception) {
                 android.util.Log.w("NativeModeApproval", "Read-only comparison failed", failure)
@@ -190,7 +194,10 @@ internal fun NativeTrainingModePicker(
             onDismissRequest = { pending = null },
             title = { Text(strings.getString(R.string.native_modes_confirm_title), color = colors.text) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                // One scroll owner for the full comparison. Long names/large text
+                // must not consume the viewport and collapse the exercise rows.
+                Column(Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(strings.getString(R.string.native_modes_before,
                         styleLabel(preview.before.trainingStyle),
                         progressionLabel(preview.before.progressionMode)), color = colors.text)
@@ -216,8 +223,7 @@ internal fun NativeTrainingModePicker(
                                 Text(strings.getString(R.string.native_modes_comparison_program, available.programName),
                                     color = colors.text)
                                 Column(
-                                    modifier = Modifier.fillMaxWidth().heightIn(max = 300.dp)
-                                        .verticalScroll(rememberScrollState()),
+                                    modifier = Modifier.fillMaxWidth(),
                                     verticalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
                                     for ((index, row) in available.rows.withIndex()) {

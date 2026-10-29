@@ -46,7 +46,9 @@ data class RouteCoordinatesUiModel(
 )
 
 data class JournalUiState(
-    val query: String = "", val month: java.time.YearMonth? = null,
+    val query: String = "",
+    val month: java.time.YearMonth? = null,
+    val day: java.time.LocalDate? = null,
     val selectedWorkoutId: String? = null,
     val detail: WorkoutHistoryWithDetails? = null,
     val detailLoading: Boolean = false, val detailError: Boolean = false,
@@ -103,8 +105,22 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
         filters.value = filters.value.copy(query = value, zone = java.time.ZoneId.systemDefault())
     }
     fun setMonth(value: java.time.YearMonth?) {
-        _uiState.update { it.copy(month = value) }
-        filters.value = filters.value.copy(month = value, zone = java.time.ZoneId.systemDefault())
+        _uiState.update { it.copy(month = value, day = null) }
+        filters.value = filters.value.copy(
+            month = value,
+            day = null,
+            zone = java.time.ZoneId.systemDefault()
+        )
+    }
+
+    fun setDay(value: java.time.LocalDate) {
+        val month = java.time.YearMonth.from(value)
+        _uiState.update { it.copy(month = month, day = value) }
+        filters.value = filters.value.copy(
+            month = month,
+            day = value,
+            zone = java.time.ZoneId.systemDefault()
+        )
     }
     fun openDetails(id: String) {
         if (_editor.value?.saving == true) return

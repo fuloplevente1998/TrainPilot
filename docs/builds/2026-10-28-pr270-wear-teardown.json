@@ -1,0 +1,242 @@
+{
+  "run_id": 40736984933,
+  "pr_head": "d1839cfa1f0fb277efb5a57318fac4039e44933c",
+  "ci_checkout": "f35fe944c25cdb2f93138048f3bf8a8cb5e90980",
+  "both_tree": "b56b2c63c0f791570f28a88767a7513e2fcc51d6",
+  "trees_equal": true,
+  "full_workflow_success": false,
+  "jobs": [
+    {
+      "id": 122988077780,
+      "name": "Build phone and Wear OS debug APKs",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 122994685713,
+      "name": "Native phone Compose UI and unmodified screenshots",
+      "status": "completed",
+      "conclusion": "failure"
+    },
+    {
+      "id": 122994685727,
+      "name": "Preserved native Wear round UI (1)",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "id": 122994685746,
+      "name": "Preserved native Wear round UI (0)",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "id": 122994685804,
+      "name": "Signed v1.3.71 to native data upgrade",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 122994685906,
+      "name": "Signed v1.3.71-perf-20261022 to native data upgrade",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 122994686035,
+      "name": "Preserved native Wear round UI (2)",
+      "status": "completed",
+      "conclusion": "cancelled"
+    }
+  ],
+  "signed_apks": [
+    {
+      "role": "phone",
+      "artifact_id": 12838012688,
+      "bytes": 5042969,
+      "sha256": "75bc7d1e07234e6d9cc2dd559c39ced201a561eddafd03f559ab634550f17e30",
+      "hash_matches_metadata": true,
+      "certificate_sha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+      "package": "com.repforge.app",
+      "versionCode": 2736,
+      "versionName": "1.3.71-native-test",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/40736984933/artifacts/12838012688"
+    },
+    {
+      "role": "wear",
+      "artifact_id": 12838691095,
+      "bytes": 5109898,
+      "sha256": "ea10949dbfb1033fd446e04db7683b873bce0e95bba33c5af94ba44c2f1eb0c4",
+      "hash_matches_metadata": true,
+      "certificate_sha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+      "package": "com.repforge.app",
+      "versionCode": 2736,
+      "versionName": "1.3.71-native-test",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/40736984933/artifacts/12838691095"
+    }
+  ],
+  "signature_evidence": "Actual APK cert independently extracted; matching bytehash to CI metadata; successful CI apksigner v2 and pinned original release signer continuity in retained raw job log. No local apksigner installed.",
+  "jvm": {
+    "artifact_id": 12838711205,
+    "xml_files": 168,
+    "tests": 1345,
+    "failure": 0,
+    "error": 0,
+    "skipped": 0,
+    "duplicates": 0
+  },
+  "wear": [
+    {
+      "artifact_id": 12840870287,
+      "shard": 0,
+      "job_conclusion": "cancelled",
+      "format": "raw instrumentation; no XML",
+      "declared": [
+        68
+      ],
+      "started": 68,
+      "terminal": 68,
+      "passed": 68,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "missing": 0,
+      "duplicates": 0,
+      "summary_ok": true,
+      "instrumentation_final_code": [
+        "-1"
+      ],
+      "crash_marker": false
+    },
+    {
+      "artifact_id": 12839573517,
+      "shard": 1,
+      "job_conclusion": "cancelled",
+      "format": "raw instrumentation; no XML",
+      "declared": [
+        59
+      ],
+      "started": 59,
+      "terminal": 59,
+      "passed": 59,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "missing": 0,
+      "duplicates": 0,
+      "summary_ok": true,
+      "instrumentation_final_code": [
+        "-1"
+      ],
+      "crash_marker": false
+    },
+    {
+      "artifact_id": 12840830573,
+      "shard": 2,
+      "job_conclusion": "cancelled",
+      "format": "raw instrumentation; no XML",
+      "declared": [
+        56
+      ],
+      "started": 56,
+      "terminal": 56,
+      "passed": 56,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "missing": 0,
+      "duplicates": 0,
+      "summary_ok": true,
+      "instrumentation_final_code": [
+        "-1"
+      ],
+      "crash_marker": false
+    }
+  ],
+  "signed_upgrades": [
+    {
+      "artifact_id": 12839031956,
+      "baseline": "v1.3.71",
+      "checks": {
+        "seed.txt": true,
+        "verify.txt": true,
+        "verify-second-start.txt": true
+      },
+      "passed": true,
+      "installed_version": "versionCode=2736 minSdk=26 targetSdk=36\n    versionName=1.3.71-native-test",
+      "limit": "seeded CI fixture NativeMigrationProbe pass/fail, no device acceptance"
+    },
+    {
+      "artifact_id": 12839201084,
+      "baseline": "v1.3.71-perf-20261022",
+      "checks": {
+        "seed.txt": true,
+        "verify.txt": true,
+        "verify-second-start.txt": true
+      },
+      "passed": true,
+      "installed_version": "versionCode=2736 minSdk=26 targetSdk=36\n    versionName=1.3.71-native-test",
+      "limit": "seeded CI fixture NativeMigrationProbe pass/fail, no device acceptance"
+    }
+  ],
+  "debug_apks": {
+    "phone-debug.apk": {
+      "path": "/workspace/pr270-verification-d183/phone-debug.apk",
+      "sha256": "ef1f3d9bd019b76ea9839fd93651f5c05b747438f5fe879893b68b9ea5e62f10"
+    },
+    "phone-test.apk": {
+      "path": "/workspace/pr270-verification-d183/phone-test.apk",
+      "sha256": "6e8eeaed5217f8849632adda56c384097ab832fe346dbe1585ebd02c2a9c01b7"
+    }
+  },
+  "wear_totals": {
+    "started": 183,
+    "terminal": 183,
+    "passed": 183,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "missing": 0,
+    "cross_shard_duplicate_cases": 0
+  },
+  "wear_limit": "All3jobs CANCELLED after timeout during Terminate Emulator; complete raw183PASS does not establish successful jobs/fullgate.",
+  "wear_teardown_evidence": {
+    "shard0": {
+      "tests_ok_at": "17:52:10Z",
+      "terminate_emu_kill_at": "17:52:14Z",
+      "cancelled_at": "18:11:27Z"
+    },
+    "shard1": {
+      "tests_ok_at": "17:51:23Z",
+      "terminate_emu_kill_at": "17:51:29Z",
+      "cancelled_at": "18:11:23Z"
+    },
+    "shard2": {
+      "tests_ok_at": "17:51:08Z",
+      "terminate_emu_kill_at": "17:51:12Z",
+      "cancelled_at": "18:11:25Z"
+    },
+    "date": "2026-10-28",
+    "timezone": "UTC",
+    "conclusion": "All raw test passes precede a 19–20 minute adb emu kill teardown hang; job cancellation follows configured25minutejobtimeout."
+  },
+  "phone": {
+    "artifact_id": 12838652805,
+    "passed": 121,
+    "tests": 123,
+    "failures": 2,
+    "screenshots": 68,
+    "launcher_isolation": "disabled-user",
+    "failed_cases": [
+      "weightOverviewCoversFifteenHundredMeasurementsAcrossRangeChanges",
+      "fullNativeLibraryShows106EntriesAndOpensItsOriginalVideoCard"
+    ]
+  },
+  "next_candidate": {
+    "commit": "7d2f4ab65077d7017fb94b8682317764fa665912",
+    "full_run": 40743423923,
+    "status": "in_progress_at_checkpoint",
+    "quick_run": 40743424067,
+    "host_checks": 55
+  }
+}

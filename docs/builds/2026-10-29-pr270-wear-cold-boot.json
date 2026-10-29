@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "expected_commit": "23b3ae0c0d89ae08f1e91b6d2b5e730bf38f68ae",
+  "status": "PASS",
+  "complete": true,
+  "gates": {
+    "phone": {
+      "status": "PASS",
+      "declared": 123,
+      "executed": 123,
+      "passed": 123,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "missing": 0,
+      "crashed": false,
+      "complete": true,
+      "failure_excerpts": [],
+      "issues": [],
+      "raw": "input-1/instrumentation.txt",
+      "commit": "23b3ae0c0d89ae08f1e91b6d2b5e730bf38f68ae",
+      "screenshots": 71
+    },
+    "jvm": {
+      "status": "PASS",
+      "modules": {
+        "app": {
+          "tests": 1179,
+          "failures": 0,
+          "errors": 0,
+          "skips": 0
+        },
+        "wear": {
+          "tests": 167,
+          "failures": 0,
+          "errors": 0,
+          "skips": 0
+        },
+        "shared": {
+          "tests": 0,
+          "failures": 0,
+          "errors": 0,
+          "skips": 0
+        }
+      },
+      "tests": 1346,
+      "failures": 0,
+      "skips": 0,
+      "xml_files": 168,
+      "issues": []
+    },
+    "wear": {
+      "status": "PASS",
+      "expected_shards": 3,
+      "shards": [
+        {
+          "index": 0,
+          "commit": "23b3ae0c0d89ae08f1e91b6d2b5e730bf38f68ae",
+          "screenshots": 136,
+          "status": "PASS",
+          "declared": 68,
+          "executed": 68,
+          "passed": 68,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "missing": 0,
+          "crashed": false,
+          "complete": true,
+          "failure_excerpts": [],
+          "issues": [],
+          "raw": "input-4/instrumentation.txt"
+        },
+        {
+          "index": 1,
+          "commit": "23b3ae0c0d89ae08f1e91b6d2b5e730bf38f68ae",
+          "screenshots": 138,
+          "status": "PASS",
+          "declared": 59,
+          "executed": 59,
+          "passed": 59,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "missing": 0,
+          "crashed": false,
+          "complete": true,
+          "failure_excerpts": [],
+          "issues": [],
+          "raw": "input-5/instrumentation.txt"
+        },
+        {
+          "index": 2,
+          "commit": "23b3ae0c0d89ae08f1e91b6d2b5e730bf38f68ae",
+          "screenshots": 106,
+          "status": "PASS",
+          "declared": 56,
+          "executed": 56,
+          "passed": 56,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "missing": 0,
+          "crashed": false,
+          "complete": true,
+          "failure_excerpts": [],
+          "issues": [],
+          "raw": "input-6/instrumentation.txt"
+        }
+      ],
+      "declared": 183,
+      "executed": 183,
+      "passed": 183,
+      "unique_cases": 183,
+      "issues": []
+    },
+    "apk": {
+      "status": "PASS",
+      "records": 2,
+      "verified": 2,
+      "issues": [],
+      "raw": "input-3/native-apk-sha256.txt"
+    }
+  },
+  "limitations": [
+    "No network or runner execution; result covers only supplied extracted artifacts.",
+    "Wear/JVM commit attribution comes from artifact directory names, not in-file cryptographic proof.",
+    "Missing independent APK bytes leave hash attestations incomplete.",
+    "Screenshots are integrity-checked PNG bytes; origin cannot be proven cryptographically."
+  ],
+  "pr_source_commit": "79ccd5c39575c8654dc4fc56655627e801a46def",
+  "android_tree": "53ac9dde7ea810e65edbf7e781d84e21b9026433",
+  "full_run_url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/40815986152",
+  "quick_run_url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/40815986144",
+  "jobs": "7/7 SUCCESS; both signed upgrades SUCCESS",
+  "versionName": "1.3.71-native-test",
+  "versionCode": 2736,
+  "applicationId": "com.repforge.app",
+  "signed_apks": [
+    {
+      "device": "phone",
+      "artifact_id": 12872686654,
+      "sha256": "074bd17e358cbf76cf717dd8b816bfca0a110089b13d1e7693a703be3a6be5e3"
+    },
+    {
+      "device": "wear",
+      "artifact_id": 12872592157,
+      "sha256": "c99ca9f2ff8743cf862760eca1b4f72dc87886e81aba622bb6c779b1eda4f6c8"
+    }
+  ],
+  "wear_boot": {
+    "mode": "fresh-avd-no-snapshot",
+    "shard0_boot_ms": 24257,
+    "tests_per_shard": [
+      68,
+      59,
+      56
+    ],
+    "all_cleanup_stopped": true,
+    "remaining_pids": []
+  }
+}

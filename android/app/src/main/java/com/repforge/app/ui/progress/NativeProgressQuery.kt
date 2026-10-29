@@ -12,10 +12,23 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import java.time.ZoneId
+import java.time.Instant
+import java.time.LocalDate
 import kotlin.math.max
 
 /** Progress-only projections: one exercise at a time; no full journal graphs, photos or GPS. */
 internal object NativeProgressQuery {
+    /** Inclusive start of the previous 29 local dates, exclusive upper bound at NOW.
+     * Use calendar boundaries rather than a fixed milliseconds/day subtraction across DST.
+     */
+    fun thirtyDayWindow(nowEpochMs: Long, zone: ZoneId): Pair<Long, Long> {
+        val date = Instant.ofEpochMilli(nowEpochMs).atZone(zone).toLocalDate()
+        val start = date.minusDays(29).atStartOfDay(zone).toInstant().toEpochMilli()
+        return start to nowEpochMs.coerceAtMost(
+            date.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli() - 1
+        ).plus(1)
+    }
+
     private const val PAGE = 256
     private val groups = listOf("chest", "back", "shoulders", "arms", "core", "legs")
 

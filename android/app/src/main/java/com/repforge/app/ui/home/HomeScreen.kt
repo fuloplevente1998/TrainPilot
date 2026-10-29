@@ -34,6 +34,15 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.Surface
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Psychology
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.ViewAgenda
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Bedtime
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -41,7 +50,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import com.repforge.app.ui.theme.TrainPilotNumericFont
+import com.repforge.app.ui.components.TrainPilotSectionSurface
+import com.repforge.app.ui.components.TrainPilotPrimaryButton
+import com.repforge.app.ui.navigation.NativeMainMenu
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -89,7 +106,11 @@ fun HomeScreen(
     language: String,
     busy: Boolean = false,
     offerOnboarding: Boolean = false,
-    onOnboarding: () -> Unit = {}
+    onOnboarding: () -> Unit = {},
+    onProfile: () -> Unit = {},
+    onWatch: () -> Unit = onProfile,
+    onHealth: () -> Unit = {},
+    onPersonalPlan: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val activeSession by ActiveWorkoutStore.snapshotFlow.collectAsStateWithLifecycle()
@@ -105,8 +126,9 @@ fun HomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(horizontal = 16.dp)
+            .padding(top = 8.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         if (state.hasImportedDraft) Button(onClick = onResumeDraft, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
             Text(strings.getString(R.string.native_home_resume_draft))
@@ -124,122 +146,423 @@ fun HomeScreen(
                 Text(strings.getString(R.string.home_state_retry))
             }
         }
-        // 1. Következő edzés ajánló kártya (Next Workout Hero Card)
-        TrainPilotHeroSurface(Modifier.fillMaxWidth().testTag("home_today_hero")) {
-            Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = strings.getString(if (hasActiveSession) R.string.native_workout_component_resume else R.string.native_home_next_workout),
-                        color = colors.accentText,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
-                    )
-                    Text(
-                        text = if (hasActiveSession) activeSession?.optString("programName").orEmpty().ifBlank { strings.getString(R.string.native_home_quick_workout) } else state.recommendedProgram?.program?.let {
-                            nativeLocalizedName(language, it.nameHu, it.nameEn, it.nameDe, it.nameRo)
-                        } ?: strings.getString(R.string.home_state_no_program),
-                        modifier = Modifier.testTag("home_program_name"),
-                        color = colors.muted,
-                        fontSize = 13.sp
-                    )
-                }
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = if (hasActiveSession) activeSession?.optString("dayName").orEmpty().ifBlank { strings.getString(R.string.native_workout_component_resume) } else state.recommendedProgram?.days?.firstOrNull { it.dayId == target?.dayId }?.let {
-                        nativeLocalizedName(language, it.nameHu, it.nameEn, it.nameDe, it.nameRo)
-                    } ?: strings.getString(if (state.loading) R.string.home_state_loading else R.string.home_state_no_target),
-                    modifier = Modifier.testTag("home_day_name"),
-                    color = colors.text,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                if (!hasActiveSession && target != null) Text(
-                    text = strings.getString(R.string.native_home_planned_exercises, state.nextDayExercisesCount),
-                    color = colors.muted,
-                    fontSize = 13.sp
-                )
-                Spacer(Modifier.height(16.dp))
-                Button(
-                    onClick = { if (hasActiveSession) onQuickWorkout(false) else target?.let { onStartWorkout(it.programId, it.dayId, it.scheduleId) } },
-                    enabled = !busy && (hasActiveSession || (!state.loading && target != null)),
-                    modifier = Modifier.fillMaxWidth().heightIn(min = TrainPilotDimensions.PrimaryAction).testTag("home_start_workout"),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = colors.accent)
-                ) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = null, tint = colors.onAccent)
-                    Spacer(Modifier.width(8.dp))
-                    Text(strings.getString(if (hasActiveSession) R.string.native_workout_component_resume else R.string.native_home_start_workout), color = colors.onAccent, fontWeight = FontWeight.Bold)
-                }
-            }
-        }
-
-        // Navigation stays available during local data loading; no duplicate section title.
-        BoxWithConstraints(Modifier.fillMaxWidth()) {
-            val stacked = maxWidth < 280.dp || LocalDensity.current.fontScale > 1.3f
-            val gym: @Composable (Modifier) -> Unit = { modifier ->
-                QuickActionButton(strings.getString(R.string.native_home_gym),
-                    strings.getString(R.string.native_home_select_exercise), Icons.Default.FitnessCenter,
-                    modifier.testTag("home_quick_workout"), enabled = !busy, onClick = { onQuickWorkout(false) })
-            }
-            val outdoor: @Composable (Modifier) -> Unit = { modifier ->
-                QuickActionButton(strings.getString(R.string.native_home_outdoor_gps),
-                    strings.getString(R.string.native_home_run_walk), Icons.Default.DirectionsRun,
-                    modifier.testTag("home_outdoor_workout"), enabled = !busy, onClick = { onQuickWorkout(true) })
-            }
-            if (stacked) Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                gym(Modifier.fillMaxWidth()); outdoor(Modifier.fillMaxWidth())
-            } else Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                gym(Modifier.weight(1f).fillMaxHeight()); outdoor(Modifier.weight(1f).fillMaxHeight())
-            }
-        }
-
-        // 4. Wear OS kapcsolat és diagnosztika státusz sáv
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = colors.card2)
+        Text(strings.getString(R.string.studio_home_greeting),
+            style = MaterialTheme.typography.headlineMedium, color = colors.text,
+            modifier = Modifier.testTag("home_studio_greeting"))
+        Text(strings.getString(if (hasActiveSession) R.string.studio_home_active_intro else R.string.studio_home_overview),
+            style = MaterialTheme.typography.bodyMedium, color = colors.muted)
+        Surface(
+            shape = RoundedCornerShape(18.dp),
+            color = colors.card,
+            modifier = Modifier.fillMaxWidth()
+                .border(1.dp, colors.line, RoundedCornerShape(18.dp))
+                .testTag("home_personal_planner")
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+            Column(
+                Modifier.fillMaxWidth().padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Watch, contentDescription = null, tint = colors.accent2)
-                    Spacer(Modifier.width(10.dp))
-                    Column {
-                        Text(strings.getString(R.string.native_home_wear_watch), color = colors.text, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                        Text(state.watchState.ifBlank { strings.getString(R.string.home_state_watch_unknown) }, color = colors.muted, fontSize = 13.sp)
+                Text(strings.getString(R.string.studio_home_planner_title),
+                    style = MaterialTheme.typography.titleMedium, color = colors.text)
+                Text(strings.getString(R.string.studio_home_planner_info),
+                    style = MaterialTheme.typography.bodySmall, color = colors.muted)
+                Button(
+                    onClick = onPersonalPlan,
+                    enabled = !busy,
+                    modifier = Modifier.fillMaxWidth().height(44.dp).testTag("home_personal_plan"),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = colors.accent, contentColor = colors.onAccent
+                    )
+                ) {
+                    Text(strings.getString(R.string.studio_home_new_plan),
+                        style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+
+        // Accepted 18:49 Studio hero structure: 56dp warm-gold icon, real status,
+        // primary action, and a details affordance, not a generic native card.
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = colors.card,
+            modifier = Modifier.fillMaxWidth()
+                .border(
+                    width = 1.dp,
+                    brush = Brush.linearGradient(
+                        listOf(colors.accent.copy(alpha = .55f), colors.line)
+                    ),
+                    shape = RoundedCornerShape(20.dp)
+                )
+                .testTag("home_today_hero")
+        ) {
+            Column(
+                Modifier.fillMaxWidth()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(colors.card2.copy(alpha = .65f), colors.card)
+                        )
+                    )
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+            Row(Modifier.fillMaxWidth().testTag("home_hero_workout_card")
+                .clickable(enabled = !busy, role = Role.Button) { onPrograms() },
+                verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    modifier = Modifier.size(56.dp)
+                        .border(1.dp, colors.accent.copy(alpha = .3f), RoundedCornerShape(14.dp)),
+                    shape = RoundedCornerShape(14.dp), color = colors.accent.copy(alpha = .14f)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.FitnessCenter, contentDescription = null,
+                            modifier = Modifier.size(28.dp), tint = colors.accentText)
                     }
                 }
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .clip(CircleShape)
-                        .background(if (state.watchConnected == true) colors.success else colors.muted)
-                )
+                Spacer(Modifier.width(14.dp))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    val programName = if (hasActiveSession) {
+                        activeSession?.optString("programName").orEmpty().ifBlank {
+                            strings.getString(R.string.native_home_quick_workout)
+                        }
+                    } else state.recommendedProgram?.program?.let {
+                        nativeLocalizedName(language, it.nameHu, it.nameEn, it.nameDe, it.nameRo)
+                    } ?: strings.getString(R.string.home_state_no_program)
+                    Text(strings.getString(if (hasActiveSession)
+                        R.string.native_workout_component_resume else R.string.native_home_next_workout),
+                        color = colors.accentText, style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold)
+                    Text(if (hasActiveSession) activeSession?.optString("dayName").orEmpty()
+                        .ifBlank { strings.getString(R.string.native_workout_component_resume) }
+                    else state.recommendedProgram?.days?.firstOrNull { it.dayId == target?.dayId }?.let {
+                        nativeLocalizedName(language, it.nameHu, it.nameEn, it.nameDe, it.nameRo)
+                    } ?: strings.getString(if (state.loading)
+                        R.string.home_state_loading else R.string.home_state_no_target),
+                        Modifier.testTag("home_day_name"), color = colors.text,
+                        style = MaterialTheme.typography.titleLarge.copy(fontSize = 21.sp))
+                    Text(programName, Modifier.testTag("home_program_name"),
+                        color = colors.muted, style = MaterialTheme.typography.bodyMedium)
+                    if (!hasActiveSession && target != null)
+                        Text(strings.getString(R.string.native_home_planned_exercises,
+                            state.nextDayExercisesCount), color = colors.muted,
+                            style = MaterialTheme.typography.bodyMedium)
+                }
+                Icon(Icons.Default.ChevronRight, contentDescription = null, tint = colors.muted)
+            }
+            Button(
+                onClick = {
+                    if (hasActiveSession) onQuickWorkout(false)
+                    else target?.let { onStartWorkout(it.programId, it.dayId, it.scheduleId) }
+                },
+                enabled = !busy && (hasActiveSession || (!state.loading && target != null)),
+                modifier = Modifier.fillMaxWidth().height(50.dp)
+                    .testTag("home_start_workout"),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = colors.accent,
+                    contentColor = colors.onAccent)
+            ) {
+                Icon(Icons.Default.PlayArrow, null, Modifier.size(20.dp).testTag("home_continue_workout_button"))
+                Spacer(Modifier.width(8.dp))
+                Text(strings.getString(if (hasActiveSession)
+                    R.string.native_workout_component_resume else R.string.native_home_start_workout),
+                    style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            }
             }
         }
-        // 2. Phase 5 #44: Mai állapot rács (Today Status 6-Metric Grid)
-        Text(
-            text = strings.getString(R.string.native_home_today_status),
-            color = colors.text,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.SemiBold
+
+        // Studio 18:49 quick-workout strip, separate from the 3 navigation tiles.
+        // Outdoor/GPS workout remains reachable on the real Training tab.
+        StudioHomeNavigationRow(
+            title = strings.getString(R.string.native_home_quick_workout),
+            subtitle = strings.getString(R.string.native_home_select_exercise),
+            icon = Icons.Default.DirectionsRun,
+            modifier = Modifier.fillMaxWidth().testTag("home_quick_workout_card"), enabled = !busy,
+            onClick = { onQuickWorkout(false) }
         )
-        TodayMetricsGrid(metrics = state.todayMetrics, language = language)
 
+        // Studio 18:49 separate Wear card: no hard-coded model/battery/online indicator.
+        StudioHomeNavigationRow(
+            title = strings.getString(R.string.native_home_wear_watch),
+            subtitle = state.watchState.ifBlank {
+                strings.getString(R.string.home_state_watch_unknown)
+            },
+            icon = Icons.Default.Watch,
+            modifier = Modifier.fillMaxWidth().testTag("home_watch_status_card"),
+            connected = state.watchConnected,
+            enabled = !busy,
+            onClick = onWatch
+        )
 
-        NativePlanningShortcuts(language, !busy, onPrograms, onCalendar, onCoach)
+        // Exactly the source's 2 × 2 health/readiness bento composition.
+        // Real unavailable native provider measurements are displayed as missing.
+        StudioHomeVitals(state.todayMetrics, language, onHealth, onCoach, !busy)
 
+        // Studio's three compact program/calendar/Coach shortcuts, not
+        // the former native AssistChip row. These keep the real callbacks.
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val stacked = maxWidth < 320.dp || LocalDensity.current.fontScale > 1.3f
+            val options = listOf(
+                StudioHomeShortcutItem(
+                    title = NativeMainMenu.title("programs", language),
+                    subtitle = strings.getString(R.string.studio_home_programs_subtitle),
+                    icon = Icons.Default.ViewAgenda,
+                    route = "programs",
+                    action = onPrograms
+                ),
+                StudioHomeShortcutItem(
+                    title = NativeMainMenu.title("calendar", language),
+                    subtitle = strings.getString(R.string.studio_home_calendar_subtitle),
+                    icon = Icons.Default.CalendarMonth,
+                    route = "calendar",
+                    action = onCalendar
+                ),
+                StudioHomeShortcutItem(
+                    title = NativeMainMenu.title("coach", language),
+                    subtitle = state.todayMetrics.recoveryText,
+                    icon = Icons.Default.Psychology,
+                    route = "coach",
+                    action = onCoach
+                )
+            )
+            if (stacked) Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                options.forEach { item ->
+                    StudioHomeShortcut(item.title, item.subtitle, item.icon, item.route,
+                        Modifier.fillMaxWidth(), !busy, item.action)
+                }
+            } else Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                options.forEach { item ->
+                    StudioHomeShortcut(item.title, item.subtitle, item.icon, item.route,
+                        Modifier.weight(1f), !busy, item.action)
+                }
+            }
+        }
+
+        // Original Studio lower cards: the existing real active-calories/workout
+        // count and Coach readiness are surfaced with *no invented advice*.
+        StudioHomeGoalsRow(state.todayMetrics, language, strings.getString(R.string.native_home_today_status),
+            !busy, onPersonalPlan)
+        StudioHomeCoachCard(state, language, !busy, onCoach)
+
+    }
+}
+
+@Composable
+private fun StudioHomeNavigationRow(
+    title: String, subtitle: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    modifier: Modifier, connected: Boolean? = null,
+    enabled: Boolean, onClick: () -> Unit
+) {
+    val colors = LocalTrainPilotColors.current
+    Surface(modifier.heightIn(min = 48.dp)
+        .border(1.dp, colors.line, RoundedCornerShape(18.dp))
+        .clickable(enabled = enabled, role = Role.Button) { onClick() },
+        shape = RoundedCornerShape(18.dp), color = colors.card) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically) {
+            Surface(Modifier.size(44.dp), shape = RoundedCornerShape(12.dp),
+                color = colors.card2) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(icon, contentDescription = null, tint = colors.accentText,
+                        modifier = Modifier.size(24.dp))
+                }
+            }
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleMedium, color = colors.text)
+                Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = colors.muted)
+            }
+            if (connected != null) Box(Modifier.size(14.dp).clip(CircleShape)
+                .background(if (connected) colors.success else colors.muted))
+            else Icon(Icons.Default.ChevronRight, contentDescription = null, tint = colors.muted, modifier = Modifier.size(20.dp))
+        }
+    }
+}
+
+@Composable
+internal fun StudioHomeVitals(
+    metrics: TodayMetricsUiModel,
+    language: String,
+    onHealth: () -> Unit, onCoach: () -> Unit,
+    enabled: Boolean
+) {
+    val strings = nativeResources(LocalContext.current, language)
+    val colors = LocalTrainPilotColors.current
+    val recoverySource = when (metrics.recovery.source) {
+        NativeHomeRecoveryPresentation.Source.SAMSUNG ->
+            strings.getString(R.string.native_home_recovery_samsung)
+        NativeHomeRecoveryPresentation.Source.TRAINPILOT_ESTIMATE ->
+            strings.getString(R.string.native_home_recovery_estimate)
+        NativeHomeRecoveryPresentation.Source.NONE ->
+            strings.getString(R.string.native_home_recovery_no_data)
+    }
+    val tiles = listOf(
+        StudioHomeVital("sleep", strings.getString(R.string.native_home_sleep),
+            metrics.sleepText, null, Icons.Default.Bedtime, onHealth),
+        StudioHomeVital("pulse", strings.getString(R.string.native_home_pulse),
+            metrics.pulseText, null, Icons.Default.Favorite, onHealth),
+        StudioHomeVital("steps", strings.getString(R.string.native_home_steps),
+            metrics.stepsText, strings.getString(R.string.native_home_unit_steps),
+            Icons.Default.DirectionsRun, onHealth),
+        StudioHomeVital("recovery", strings.getString(R.string.native_home_recovery),
+            metrics.recoveryText, recoverySource, Icons.Default.Eco, onCoach)
+    )
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val count = if (maxWidth < 280.dp || LocalDensity.current.fontScale > 1.3f) 1 else 2
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            tiles.chunked(count).forEach { row ->
+                Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    row.forEach { tile ->
+                        // Exact 18:49 Studio HomeVitalCard composable layout, with
+                        // real native measurements and no fabricated status/progress.
+                        NativeStudioHomeVitalCard(
+                            key = tile.key,
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
+                            icon = tile.icon,
+                            iconTint = colors.accentText,
+                            title = tile.title,
+                            mainValue = tile.value,
+                            statusText = tile.detail,
+                            statusColor = colors.muted,
+                            enabled = enabled,
+                            onClick = tile.onClick
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+private data class StudioHomeVital(
+    val key: String, val title: String, val value: String, val detail: String?,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector, val onClick: () -> Unit
+)
+
+private data class StudioHomeShortcutItem(
+    val title: String,
+    val subtitle: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val route: String,
+    val action: () -> Unit
+)
+
+@Composable
+private fun StudioHomeShortcut(
+    title: String,
+    subtitle: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    route: String,
+    modifier: Modifier,
+    enabled: Boolean,
+    onClick: () -> Unit
+) {
+    val colors = LocalTrainPilotColors.current
+    Surface(modifier.heightIn(min = 48.dp)
+        .testTag("shortcut_$route")
+        .border(1.dp, colors.line, RoundedCornerShape(16.dp))
+        .clickable(enabled = enabled, role = Role.Button) { onClick() },
+        shape = RoundedCornerShape(16.dp), color = colors.card) {
+        Column(Modifier.fillMaxWidth()
+            .testTag("home_shortcut_$route")
+            .padding(horizontal = 12.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Icon(icon, contentDescription = null, tint = colors.accentText,
+                modifier = Modifier.size(22.dp))
+            Spacer(Modifier.height(2.dp))
+            Text(title, color = colors.text, style = MaterialTheme.typography.titleSmall,
+                maxLines = 2)
+            Text(subtitle, color = colors.muted, style = MaterialTheme.typography.bodySmall,
+                maxLines = 2)
+        }
+    }
+}
+
+@Composable
+private fun StudioHomeGoalsRow(metrics: TodayMetricsUiModel, language: String,
+    title: String, enabled: Boolean, onOpen: () -> Unit) {
+    val colors = LocalTrainPilotColors.current
+    Surface(Modifier.fillMaxWidth().heightIn(min = 48.dp)
+        .testTag("home_goals_row_card")
+        .border(1.dp, colors.line, RoundedCornerShape(16.dp))
+        .clickable(enabled = enabled, role = Role.Button) { onOpen() },
+        shape = RoundedCornerShape(16.dp), color = colors.card) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(title, color = colors.text, style = MaterialTheme.typography.titleMedium)
+                Text(metrics.caloriesText, color = colors.muted,
+                    style = MaterialTheme.typography.bodySmall)
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(metrics.workoutCountText, color = colors.accentText,
+                    modifier = Modifier.testTag("home_metric_workouts_value"),
+                    style = MaterialTheme.typography.labelLarge)
+                Text(nativeResources(LocalContext.current, language).getString(R.string.native_home_unit_workouts),
+                    modifier = Modifier.testTag("home_metric_workouts_unit"),
+                    color = colors.muted, style = MaterialTheme.typography.labelSmall)
+            }
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = colors.accentText)
+        }
+    }
+}
+
+@Composable
+private fun StudioHomeCoachCard(state: HomeUiState,
+    language: String, enabled: Boolean, onOpen: () -> Unit) {
+    val colors = LocalTrainPilotColors.current
+    val strings = nativeResources(LocalContext.current, language)
+    Surface(Modifier.fillMaxWidth().testTag("home_coach_preview")
+        .border(1.dp, colors.accent.copy(alpha = .45f), RoundedCornerShape(18.dp))
+        .clickable(enabled = enabled, role = Role.Button) { onOpen() },
+        shape = RoundedCornerShape(18.dp), color = colors.card) {
+        Column(Modifier.fillMaxWidth().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth().testTag("home_coach_advice_card"),
+                verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.AutoAwesome, contentDescription = null,
+                    tint = colors.accentText, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(NativeMainMenu.title("coach", language),
+                    modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelLarge,
+                    color = colors.accentText)
+                Icon(Icons.Default.ChevronRight, contentDescription = null, tint = colors.accentText)
+            }
+            Text(strings.getString(R.string.native_home_recovery),
+                style = MaterialTheme.typography.titleLarge, color = colors.text)
+            val source = when (state.todayMetrics.recovery.source) {
+                NativeHomeRecoveryPresentation.Source.SAMSUNG ->
+                    R.string.native_home_recovery_samsung
+                NativeHomeRecoveryPresentation.Source.TRAINPILOT_ESTIMATE ->
+                    R.string.native_home_recovery_estimate
+                NativeHomeRecoveryPresentation.Source.NONE ->
+                    R.string.native_home_recovery_no_data
+            }
+            Text(strings.getString(source), color = colors.muted,
+                style = MaterialTheme.typography.bodyMedium)
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Surface(Modifier.border(1.dp, colors.line, RoundedCornerShape(12.dp)),
+                    color = colors.card2, shape = RoundedCornerShape(12.dp)) {
+                    Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+                        Text(strings.getString(R.string.native_home_recovery),
+                            color = colors.muted, style = MaterialTheme.typography.bodySmall)
+                        Text(state.todayMetrics.recoveryText,
+                            color = colors.text, style = MaterialTheme.typography.titleLarge)
+                    }
+                }
+                Surface(Modifier.weight(1f).border(1.dp, colors.line, RoundedCornerShape(12.dp)),
+                    color = colors.card2, shape = RoundedCornerShape(12.dp)) {
+                    Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+                        Text(strings.getString(R.string.native_home_next_workout),
+                            color = colors.muted, style = MaterialTheme.typography.bodySmall)
+                        Text(state.recommendedProgram?.program?.let {
+                            nativeLocalizedName(language, it.nameHu, it.nameEn, it.nameDe, it.nameRo)
+                        } ?: strings.getString(R.string.home_state_no_program),
+                            color = colors.text, style = MaterialTheme.typography.titleSmall)
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -268,7 +591,7 @@ private fun HomeLocalRefresh(model: HomeViewModel) {
 }
 
 @Composable
-fun TodayMetricsGrid(metrics: TodayMetricsUiModel, language: String = "hu") {
+fun TodayMetricsGrid(metrics: TodayMetricsUiModel, language: String = "hu", onMetricClick: ((String) -> Unit)? = null) {
     val colors = LocalTrainPilotColors.current
     val context = LocalContext.current
     val strings = remember(context, language) { nativeResources(context, language) }
@@ -313,12 +636,15 @@ fun TodayMetricsGrid(metrics: TodayMetricsUiModel, language: String = "hu") {
                 Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(TrainPilotDimensions.Gap)) {
                     for ((key, label, value, unit, detail, notice) in row) {
                         TrainPilotMetricSurface(Modifier.weight(1f).fillMaxHeight().testTag("home_metric_$key")) {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(Modifier.fillMaxWidth().then(if (onMetricClick != null)
+                                Modifier.heightIn(min = TrainPilotDimensions.Control).clickable(role = Role.Button) { onMetricClick(key) }
+                                else Modifier), verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Icon(trainPilotMetricIcon(key), null, Modifier.size(18.dp), tint = colors.accentText)
                                 Text(label, color = colors.muted, modifier = Modifier.weight(1f),
                                     style = MaterialTheme.typography.labelSmall)
                             }
-                            Text(value, color = colors.text, style = MaterialTheme.typography.headlineMedium.copy(fontSize = 20.sp, fontFeatureSettings = "tnum"),
+                            Text(value, color = colors.text, style = MaterialTheme.typography.headlineMedium.copy(fontSize = 20.sp, fontFamily = TrainPilotNumericFont, fontFeatureSettings = "tnum"),
                                 modifier = Modifier.testTag("home_metric_${key}_value"))
                             if (unit != null) Text(unit, color = colors.muted, style = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier.testTag("home_metric_${key}_unit"))

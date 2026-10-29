@@ -16,15 +16,28 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import java.text.Normalizer
 import java.time.YearMonth
+import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.coroutineContext
 
-internal data class JournalFilter(val query: String = "", val month: YearMonth? = null,
-    val zone: ZoneId = ZoneId.systemDefault()) {
-    val fromEpoch: Long get() = month?.atDay(1)?.atStartOfDay(zone)?.toInstant()?.toEpochMilli() ?: Long.MIN_VALUE
-    val toEpoch: Long get() = month?.plusMonths(1)?.atDay(1)?.atStartOfDay(zone)?.toInstant()?.toEpochMilli() ?: Long.MAX_VALUE
+internal data class JournalFilter(
+    val query: String = "",
+    val month: YearMonth? = null,
+    val day: LocalDate? = null,
+    val zone: ZoneId = ZoneId.systemDefault()
+) {
+    val fromEpoch: Long get() = when {
+        day != null -> day.atStartOfDay(zone).toInstant().toEpochMilli()
+        month != null -> month.atDay(1).atStartOfDay(zone).toInstant().toEpochMilli()
+        else -> Long.MIN_VALUE
+    }
+    val toEpoch: Long get() = when {
+        day != null -> day.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
+        month != null -> month.plusMonths(1).atDay(1).atStartOfDay(zone).toInstant().toEpochMilli()
+        else -> Long.MAX_VALUE
+    }
     val terms: List<String> get() = searchKey(query).split(Regex("\\s+")).filter { it.isNotEmpty() }
     companion object {
         fun searchKey(text: String): String = Normalizer.normalize(text, Normalizer.Form.NFD)

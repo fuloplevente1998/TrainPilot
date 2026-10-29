@@ -29,32 +29,66 @@ import com.repforge.app.ui.theme.LocalTrainPilotColors
 /** Autonyms stay recognizable even after an accidental language change; selection uses DataStore. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun NativeLanguagePicker(language: String, enabled: Boolean, onSelect: (String) -> Unit) {
+internal fun NativeLanguagePicker(
+    language: String,
+    enabled: Boolean,
+    onSelect: (String) -> Unit
+) {
     val colors = LocalTrainPilotColors.current
     val strings = nativeResources(LocalContext.current, language)
-    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
+    val options = listOf(
+        Triple("hu", "🇭🇺", "HU"),
+        Triple("en", "🇬🇧", "EN"),
+        Triple("de", "🇩🇪", "DE"),
+        Triple("ro", "🇷🇴", "RO")
+    )
+    Card(
+        Modifier.fillMaxWidth().testTag("settings_language_picker"),
+        shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = colors.card),
-        border = BorderStroke(1.dp, colors.line)) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(strings.getString(R.string.native_language_title), color = colors.text,
-                style = MaterialTheme.typography.titleLarge)
-            Text(strings.getString(R.string.native_language_hint), color = colors.muted,
-                style = MaterialTheme.typography.bodyMedium)
-            FlowRow(Modifier.fillMaxWidth().selectableGroup(),
+        border = BorderStroke(1.dp, colors.line)
+    ) {
+        Column(
+            Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                strings.getString(R.string.native_language_title),
+                color = colors.text,
+                style = MaterialTheme.typography.titleMedium
+            )
+            FlowRow(
+                Modifier.fillMaxWidth().selectableGroup(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                for ((code, label) in listOf("hu" to "Magyar", "en" to "English", "de" to "Deutsch", "ro" to "Română")) {
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                for ((code, flag, short) in options) {
                     val selected = language == code
-                    Surface(shape = RoundedCornerShape(12.dp),
-                        color = if (selected) colors.selectedSurface else colors.card,
-                        border = BorderStroke(if (selected) 2.dp else 1.dp,
-                            if (selected) colors.selectedBorder else colors.line)) {
-                        Column(Modifier.heightIn(min = 48.dp).testTag("settings_language_$code")
-                            .selectable(selected = selected, enabled = enabled, role = Role.RadioButton,
-                                onClick = { if (!selected) onSelect(code) })
-                            .padding(horizontal = 16.dp, vertical = 12.dp)) {
-                            Text(label, color = if (selected) colors.accentText else colors.text,
-                                style = MaterialTheme.typography.labelLarge)
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (selected) colors.accent else colors.card2,
+                        border = BorderStroke(
+                            1.dp,
+                            if (selected) colors.accent else colors.line
+                        )
+                    ) {
+                        Column(
+                            Modifier
+                                .heightIn(min = 48.dp)
+                                .testTag("settings_language_$code")
+                                .selectable(
+                                    selected = selected,
+                                    enabled = enabled,
+                                    role = Role.RadioButton,
+                                    onClick = { if (!selected) onSelect(code) }
+                                )
+                                .padding(horizontal = 14.dp, vertical = 12.dp)
+                        ) {
+                            Text(
+                                "$flag $short",
+                                color = if (selected) colors.onAccent else colors.text,
+                                style = MaterialTheme.typography.labelLarge
+                            )
                         }
                     }
                 }

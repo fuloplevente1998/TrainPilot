@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import re
 import subprocess
+import struct
 import time
 import xml.etree.ElementTree as ET
 
@@ -13,6 +14,57 @@ import xml.etree.ElementTree as ET
 def adb(*args, check=True, timeout=15):
     return subprocess.run(["adb", *args], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                           timeout=timeout, check=check).stdout
+
+
+def configure_display(size="", density="", font_scale=""):
+    """Configure the emulator before installing/launching the app; never resize PNGs.
+
+    An explicit size needs density too: 1080 physical px at emulator-default 160dpi
+    would test a 1080dp tablet layout, not the owner's phone.
+    """
+    if bool(size) != bool(density):
+        raise ValueError("Display size and density must be supplied together")
+    if size and not re.fullmatch(r"[1-9]\d{2,3}x[1-9]\d{2,3}", size):
+        raise ValueError("Display size must be portrait WIDTHxHEIGHT in pixels")
+    if density and (not density.isdigit() or not 120 <= int(density) <= 1000):
+        raise ValueError("Display density must be a DPI value between 120 and 1000")
+    if font_scale and (not re.fullmatch(r"\d+(?:\.\d+)?", font_scale) or
+                       not .5 <= float(font_scale) <= 3):
+        raise ValueError("Font scale must be a finite Android scale between 0.5 and 3")
+    if adb("shell", "getprop", "ro.kernel.qemu").decode().strip() != "1":
+        raise RuntimeError("Native UI setup is restricted to the disposable emulator")
+    # This unrelated launcher raised ANRs over the app in both owner-profile and
+    # default compact CI. Isolate it independently of optional display overrides.
+    # App ANRs, focus checks and instrumentation failures remain fail-closed.
+    launcher_state = adb("shell", "pm", "disable-user", "--user", "0",
+                         "com.google.android.apps.nexuslauncher", check=False).decode().strip()
+    if size:
+        adb("shell", "wm", "size", size)
+        adb("shell", "wm", "density", density)
+    if font_scale:
+        adb("shell", "settings", "put", "system", "font_scale", font_scale)
+    actual_size = adb("shell", "wm", "size").decode().strip()
+    actual_density = adb("shell", "wm", "density").decode().strip()
+    actual_font = adb("shell", "settings", "get", "system", "font_scale").decode().strip()
+    if size:
+        sizes = re.findall(r"\d+x\d+", actual_size)
+        densities = re.findall(r"\d+", actual_density)
+        if not sizes or sizes[-1] != size or not densities or int(densities[-1]) != int(density):
+            raise RuntimeError(f"Emulator did not apply {size}@{density}dpi: {actual_size!r}; {actual_density!r}")
+    if font_scale and float(actual_font) != float(font_scale):
+        raise RuntimeError("Emulator did not apply the requested font scale")
+    return {"requestedSizePx": size or None, "requestedDensityDpi": int(density) if density else None,
+            "wmSize": actual_size, "wmDensity": actual_density, "fontScale": actual_font,
+            "ciLauncherIsolation": launcher_state}
+
+
+def screenshot_dimensions(png, expected_size=""):
+    if not png.startswith(b"\x89PNG\r\n\x1a\n") or len(png) < 24 or png[12:16] != b"IHDR":
+        raise ValueError("Screenshot has no valid PNG dimensions")
+    width, height = struct.unpack(">II", png[16:24])
+    if not width or not height or expected_size and f"{width}x{height}" != expected_size:
+        raise ValueError("Screenshot dimensions differ from the requested emulator profile")
+    return width, height
 
 
 def digest(path):
@@ -92,16 +144,22 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--commit", required=True)
     parser.add_argument("--timeout", type=int, default=1200)
+    parser.add_argument("--display-size", default="")
+    parser.add_argument("--display-density", default="")
+    parser.add_argument("--font-scale", default="")
     args = parser.parse_args()
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     (output / "screenshots").mkdir(exist_ok=True)
-    manifest = {"commit": args.commit, "appSha256": digest(args.app), "testSha256": digest(args.tests),
+    manifest = {"display": {"requestedSizePx": args.display_size or None,
+                            "requestedDensityDpi": args.display_density or None,
+                            "requestedFontScale": args.font_scale or None}, "commit": args.commit, "appSha256": digest(args.app), "testSha256": digest(args.tests),
                 "imageOrigin": "unmodified-adb-exec-out-screencap-p", "data": "isolated-emulator-test-fixtures",
                 "device": adb("shell", "getprop", "ro.product.model").decode().strip(),
                 "result": "running", "api": adb("shell", "getprop", "ro.build.version.sdk").decode().strip(), "screenshots": []}
     process = None
     try:
+        manifest["display"] = configure_display(args.display_size, args.display_density, args.font_scale)
         adb("install", "-r", "-t", str(args.app))
         adb("install", "-r", "-t", str(args.tests))
         for permission in ["POST_NOTIFICATIONS", "ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]:
@@ -120,12 +178,17 @@ def main():
         for filename, selector, mode in invocations:
             if mode:
                 prepare_gps_permissions(mode)
+            print(f"Phone UI: starting {filename}", flush=True)
+            heartbeat = time.monotonic()
             with (output / filename).open("wb") as log:
                 process = subprocess.Popen(["adb", "shell", "am", "instrument", "-w", "-r", *selector,
                                             "com.repforge.app.test/androidx.test.runner.AndroidJUnitRunner"],
                                            stdout=log, stderr=subprocess.STDOUT)
                 deadline = time.monotonic() + args.timeout
                 while process.poll() is None:
+                    if time.monotonic() - heartbeat >= 30:
+                        print(f"Phone UI: {filename} running; {len(manifest['screenshots'])} screenshots captured", flush=True)
+                        heartbeat = time.monotonic()
                     if time.monotonic() > deadline:
                         raise TimeoutError("Native phone instrumentation exceeded deadline")
                     raw = adb("shell", "cat", "/data/local/tmp/trainpilot-shot-request", check=False).decode().strip()
@@ -147,10 +210,12 @@ def main():
                             png = adb("exec-out", "screencap", "-p", timeout=8)
                             if not png.startswith(b"\x89PNG\r\n\x1a\n") or len(png) < 100:
                                 raise ValueError("Screenshot was not a complete PNG")
+                            width, height = screenshot_dimensions(png, args.display_size)
                             file = output / "screenshots" / (name + ".png")
                             file.write_bytes(png)
                             manifest["screenshots"].append({**request, "file": "screenshots/" + file.name,
-                                                            "sha256": digest(file), "bytes": len(png), "focus": focus})
+                                                            "sha256": digest(file), "bytes": len(png), "focus": focus,
+                                                            "widthPx": width, "heightPx": height})
                             seen.add(name)
                             adb("shell", "printf '%s' '" + name + "' > /data/local/tmp/trainpilot-shot-ack")
                     time.sleep(.15)
@@ -164,6 +229,7 @@ def main():
                     adb("logcat", "-d", "-v", "brief", "-s", "NativeModeApproval:*", "NativeLibraryEdit:*",
                         "NativeNavigation:*", "NativeIntervalPanel:*", check=False, timeout=30))
             results.append(process.returncode == 0 and valid)
+            print(f"Phone UI: {filename} {'PASS' if results[-1] else 'FAIL'}", flush=True)
         if not all(results) or not seen:
             raise RuntimeError("Native phone UI failed or produced no screenshots; inspect raw artifacts")
         manifest["result"] = "success"

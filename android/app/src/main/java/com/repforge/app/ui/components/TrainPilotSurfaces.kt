@@ -8,9 +8,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
+import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.Alignment
@@ -106,7 +105,7 @@ fun TrainPilotActionSurface(title: String, icon: ImageVector, onClick: () -> Uni
 fun TrainPilotHeroSurface(modifier: Modifier = Modifier,
     focus: Boolean = true, content: @Composable ColumnScope.() -> Unit) {
     val colors = LocalTrainPilotColors.current
-    TrainPilotPanel(modifier, colors.card2, colors.selectedBorder, 22,
+    TrainPilotPanel(modifier, colors.card, colors.line, 20,
         if (focus) colors.accent else null, content)
 }
 
@@ -128,13 +127,16 @@ fun TrainPilotSubtleSurface(modifier: Modifier = Modifier,
 private fun TrainPilotPanel(modifier: Modifier, fill: Color, outline: Color,
     radius: Int, focus: Color?, content: @Composable ColumnScope.() -> Unit) {
     val colors = LocalTrainPilotColors.current
+    val outlineStroke = if (focus != null)
+        BorderStroke(1.dp, Brush.linearGradient(
+            listOf(focus.copy(alpha = .55f), outline)
+        ))
+    else BorderStroke(1.dp, outline)
     Surface(modifier, shape = RoundedCornerShape(radius.dp), color = fill,
-        contentColor = colors.text, border = BorderStroke(1.dp, outline)) {
-        Column(Modifier.drawWithContent {
-            drawContent()
-            if (focus != null) drawRect(focus, Offset(0f, 16.dp.toPx()),
-                Size(3.dp.toPx(), (size.height - 32.dp.toPx()).coerceAtLeast(0f)))
-        }.padding(TrainPilotDimensions.Page),
+        contentColor = colors.text, border = outlineStroke) {
+        Column(Modifier.background(Brush.verticalGradient(
+            if (focus != null) listOf(colors.card2.copy(alpha = .65f), fill) else listOf(fill, fill)
+        )).padding(TrainPilotDimensions.Page),
             verticalArrangement = Arrangement.spacedBy(TrainPilotDimensions.Small), content = content)
     }
 }

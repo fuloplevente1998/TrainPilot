@@ -37,6 +37,26 @@ internal object NativeHealthMetrics {
         Definition("basalMetabolicRateKcal", R.string.health_metric_basalmetabolicratekcal, "kcal", 0),
         Definition("bodyMassIndex", R.string.health_metric_bodymassindex, "", 1)
     )
+    /** Studio's six compact meanings. Special values are supplied only by the
+     * selected-day native projections; the full 26-reading list remains untouched.
+     */
+    fun studioOverview(
+        metrics: List<HealthMetricItemUiModel>,
+        sleep: HealthMetricItemUiModel,
+        workouts: HealthMetricItemUiModel,
+        recovery: HealthMetricItemUiModel
+    ): List<HealthMetricItemUiModel> {
+        val byKey = metrics.associateBy { it.key }
+        return listOfNotNull(
+            sleep,
+            byKey["activeCalories"],
+            byKey["averageHeartRate"],
+            byKey["steps"],
+            workouts,
+            recovery
+        )
+    }
+
     fun parse(context: Context, day: JSONObject, language: String): List<HealthMetricItemUiModel> {
         val text = nativeResources(context, language)
         val providers = day.optJSONObject("metricProviders")

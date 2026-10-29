@@ -200,6 +200,19 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setLanguage(lang: String) = writeSetting { settingsStore.setLanguage(lang) }
     fun setTimerDefaults(workSec: Int, restSec: Int, rounds: Int, sound: Boolean, vibration: Boolean) =
         writeSetting { settingsStore.setTimerDefaults(workSec, restSec, rounds, sound, vibration) }
+
+    /** Direct Studio switch for the existing timer sound preference; no new setting key. */
+    fun setSoundEnabled(enabled: Boolean) = writeSetting {
+        val current = settingsStore.current()
+        settingsStore.setTimerDefaults(
+            current.workSeconds,
+            current.restSeconds,
+            current.rounds,
+            enabled,
+            current.vibrationEnabled,
+            current.intervalAutoAdvance
+        )
+    }
     internal fun beginTimerDefaults(): String? {
         if (_uiState.value.replacementBusy || _uiState.value.timerSaving) return null
         return try {

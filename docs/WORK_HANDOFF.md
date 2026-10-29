@@ -1,5 +1,76 @@
 # TrainPilot – aktuális átadás
 
+**Current PR270 entry: [active checkpoint](PR270_ACTIVE_CHECKPOINT.md).**
+The CI snapshots below are historical.
+
+## Aktuális CI-izolációs javítás – 2026-10-28
+
+PR #270 **DRAFT**, ág `feat/studio-ui-topnav-trial-20261027`.
+Javított kapuforrás: **`d1839cfa1f0fb277efb5a57318fac4039e44933c`**;
+az Android alkalmazás-/tesztforrás változatlan a **`350d7f54`** állapothoz képest.
+[Quick40736984836](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40736984836) SUCCESS.
+[Teljes40736984933](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40736984933)
+**FOLYAMATBAN** a checkpoint készítésekor; runtime PASS még nincs.
+
+Az előző40724759390 /350d7f54 telefonos futást az idegen NexusLauncher ANR
+fókuszvesztése állította meg:119 főtesztből44 lezárt=43PASS/1FAIL,75missing,
+0screenshot; a4GPSpróba nem indult. Az apphiba további kizárásához újrafutás kell.
+A meglévő launcher-izoláció most a default kompakt emulátorra is kiterjed;
+fizikai eszközön setup előtt megáll, az app fókusz/ANR/hiba guardjai megmaradnak.
+14runner+34evidence hostteszt és workflow YAML/trigger ellenőrzés PASS.
+A canonical workflow most runner/parser módosításra is indul, hosttesztjei Gradle előtt futnak.
+
+Az előző build/aláírás és2signedupgrade SUCCESS, JVM1345PASS.
+Wear nyers183PASS, **de mind3job CANCELLED**; teljes kapu nem sikeres.
+[CI-diagnózis és folytatás](reviews/PR270_CI_LAUNCHER_REPAIR_2026-10-28.md) ·
+[Gépi bizonylat/APK-hashek](builds/2026-10-28-pr270-launcher-repair.json) ·
+[Friss350 UI-audit](reviews/PR270_UI_AUDIT_350_2026-10-28.md).
+A korábbi szerkezeti UI-hiányok nagyrészt megvalósultak;3P2 maradt a recovery
+forrás/minősítésénél, súlymérés közvetlen megnyitásánál és pulzusgörbe forrásánál.
+Teljes vizuális egyezés és készülékes elfogadás továbbra nyitott.
+Első folytatási lépés a40736984933 végállapota és friss nyers artifactjai.
+Main/release/verzió/appid/aláírás változatlan; docs-only HEAD nem új alkalmazásbuild.
+
+## Korábbi zöld Studio-baseline – 2026-10-28
+
+PR270: [STUDIO_UI_RESUME.md](STUDIO_UI_RESUME.md). Exact a27cc2fe,
+Actions40660277579 teljes kapu zöld: 1344 unit + 123 phone + 183 Wear PASS,
+mindkét signed upgrade SUCCESS. 71 változatlan 1080×2392 PNG ellenőrizve,
+450 logikai dpi / 384dp / 90% betűméret. [Új galéria](design/previews/studio-a27cc2fe-owner/README.md).
+Felhasználói elsődleges vizuál: [18 Drive-kép és eltéréslista](design/STUDIO_DRIVE_VISUAL_REFERENCE_2026-10-28.md).
+Teljes Studio-vizuál még nincs kész; régi UI-hierarchiák további portja szükséges.
+Az alábbi korábbi eredményeket a friss Studio-folytatási pont felülírja.
+
+## Studio increment01 QA-javítások – 2026-10-27
+
+40539957380 exact0fb350a4 lezártFAIL. Root JVM12750582974:1333PASS;
+phone12750939854:114main112PASS/2FAIL+4GPSPASS=116/118,0missing/crash.
+Mind3Wear és2signedupgradeSUCCESS. Home/profile/header-entry goldUI PASS.
+65PNG manifestSHA256/PIL validált,2köztes natívHomekép:
+docs/design/previews/studio-increment-0fb350a4/README.md.
+457dc1e6 javítja a font2fülek naturalwidth mérését és a nestedLazy öröklésgomb
+közvetlen scroll/visible assertjét +teljesdiag; b80ebc62 explicit sötét
+systembarstyle és valódiUIassert (feketefelületen fehérikonok). Új runtime UNRUN.
+AIStudio prompt APP BUILDERRE javítva6c9bdfa3: sajátprojektben módosít,
+TELJES újZIP letöltve, nempatch/részarchívum; Rootdiffeli. Felső5fül/demokontrollmarad.
+P1teljesUI/paritás továbbra nincs kész; részletek STUDIO_UI_RESUME-ben.
+
+
+## Studio ZIP beolvasva, első valódi increment – 2026-10-27
+
+User ZIP megérkezett f685d540 docs/ai-studio/trainpilot-oct-27-2026-3-58-04-pm.zip;
+CRC/SHA574f17f6…bcefcc egyezik, nincs hiányzó bemenet.16változatlanKotlin referencia
+és rawindex docs/ai-studio/export-20261027. A demó nem Android source-set.
+Root PR270 8ba6a388+34c629b8+d7e64697: Studiofontok/OFL/tnum/commonfelületek,
+brandheader valódiSettingssection entrykkel, Homevalósadat/callbackcompozíció,
+320dp/font2DE teljesfülfelirat/selected/disabled újUIpróba (118phone várható).
+Régi topnavgate40535425696/5bbc:116/117phone,0missing/crash;1Approvalcomparison
+awaitReadyFAIL diagkétroot általelfedve. d7e teljesdialog1scrollowner+láthatórows assert,
+multi-rootdiagfix; guardok/write/callbacks maradnak. Többi6jobSUCCESS.
+Új increment runtime MÉG UNRUN, ne nevezd teljesStudioUI-nak. Teljes aktuális
+folytatási pont: docs/STUDIO_UI_RESUME.md +reviews/NATIVE_STUDIO_INCREMENT_01.md.
+
+
 ## Ellenőrzött zöld alap és Studio-átvétel – 2026-10-27
 
 Actions40529220611 exactf0c474f17072aaf6f5c23506e0ad5b1c0092e2ae mind7jobSUCCESS.

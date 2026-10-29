@@ -77,3 +77,96 @@ class GpsPermissionSetupTest(unittest.TestCase):
         self.assertFalse(any('grant' in c.args for c in adb.call_args_list))
         self.assertEqual(4, len(gate.GPS_CASES))
         self.assertEqual(4, len({name for name, _ in gate.GPS_CASES}))
+
+
+class EmulatorDisplayProfileTest(unittest.TestCase):
+    @staticmethod
+    def response(*args, **kwargs):
+        if args == ('shell', 'getprop', 'ro.kernel.qemu'):
+            return b'1\n'
+        if args == ('shell', 'wm', 'size'):
+            return b'Physical size: 320x640\nOverride size: 1080x2392\n'
+        if args == ('shell', 'wm', 'density'):
+            return b'Physical density: 160\nOverride density: 440\n'
+        if args == ('shell', 'settings', 'get', 'system', 'font_scale'):
+            return b'1.0\n'
+        return b''
+
+    def test_requested_phone_geometry_and_density_are_applied_and_recorded(self):
+        from unittest.mock import patch
+        with patch.object(gate, 'adb', side_effect=self.response) as calls:
+            d = gate.configure_display('1080x2392', '440', '1.0')
+        calls.assert_any_call('shell', 'wm', 'size', '1080x2392')
+        disabled = [c.args for c in calls.call_args_list if 'disable-user' in c.args]
+        self.assertEqual([('shell', 'pm', 'disable-user', '--user', '0',
+                           'com.google.android.apps.nexuslauncher')], disabled)
+        self.assertFalse(any('com.repforge.app' in c for c in disabled))
+        self.assertEqual('1080x2392', d['requestedSizePx'])
+        self.assertEqual(440, d['requestedDensityDpi'])
+        self.assertIn('Override density: 440', d['wmDensity'])
+
+    def test_default_compact_profile_isolates_launcher_without_display_overrides(self):
+        from unittest.mock import patch
+        with patch.object(gate, 'adb', side_effect=self.response) as calls:
+            profile = gate.configure_display()
+        calls.assert_any_call('shell', 'pm', 'disable-user', '--user', '0',
+                              'com.google.android.apps.nexuslauncher', check=False)
+        self.assertIsNotNone(profile['ciLauncherIsolation'])
+        self.assertIsNone(profile['requestedSizePx'])
+        self.assertIsNone(profile['requestedDensityDpi'])
+        self.assertFalse(any(c.args[:3] in (('shell', 'wm', 'size'),
+                                          ('shell', 'wm', 'density')) and len(c.args) > 3
+                             for c in calls.call_args_list))
+        self.assertFalse(any('com.repforge.app' in c.args for c in calls.call_args_list))
+
+    def test_default_setup_on_non_emulator_refuses_launcher_mutation(self):
+        from unittest.mock import patch
+        with patch.object(gate, 'adb', return_value=b'0\n') as calls:
+            with self.assertRaises(RuntimeError):
+                gate.configure_display()
+        self.assertEqual([(('shell', 'getprop', 'ro.kernel.qemu'), {})],
+                         [(c.args, c.kwargs) for c in calls.call_args_list])
+
+    def test_pixels_without_density_cannot_accidentally_test_a_tablet_layout(self):
+        from unittest.mock import patch
+        with patch.object(gate, 'adb') as calls:
+            with self.assertRaises(ValueError):
+                gate.configure_display('1080x2392')
+        calls.assert_not_called()
+
+    def test_profile_readback_mismatch_is_not_accepted(self):
+        from unittest.mock import patch
+        def response(*args, **kwargs):
+            return b'Physical size: 320x640\n' if args == ('shell', 'wm', 'size') else self.response(*args, **kwargs)
+        with patch.object(gate, 'adb', side_effect=response), self.assertRaises(RuntimeError):
+            gate.configure_display('1080x2392', '440', '1.0')
+
+    def test_screenshots_are_measured_not_rescaled_and_wrong_size_fails(self):
+        import struct
+        png = b'\x89PNG\r\n\x1a\n' + struct.pack('>I', 13) + b'IHDR' + struct.pack('>II', 1080, 2392)
+        self.assertEqual((1080, 2392), gate.screenshot_dimensions(png, '1080x2392'))
+        with self.assertRaises(ValueError):
+            gate.screenshot_dimensions(png, '320x640')
+
+
+class DisplayFailureEvidenceTest(unittest.TestCase):
+    def test_preflight_failure_still_preserves_failed_manifest_before_install(self):
+        from unittest.mock import patch
+        import json
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            apk = root / 'fixture.apk'
+            apk.write_bytes(b'host-only placeholder; never installed')
+            output = root / 'results'
+            argv = ['gate', '--app', str(apk), '--tests', str(apk), '--output', str(output),
+                    '--commit', 'source', '--display-size', '1080x2392',
+                    '--display-density', '450', '--font-scale', '0.90']
+            with patch('sys.argv', argv), patch.object(gate, 'adb', return_value=b'') as calls, \
+                 patch.object(gate, 'configure_display', side_effect=RuntimeError('profile rejected')):
+                with self.assertRaises(RuntimeError):
+                    gate.main()
+            manifest = json.loads((output / 'manifest.json').read_text())
+            self.assertEqual('failed', manifest['result'])
+            self.assertEqual('1080x2392', manifest['display']['requestedSizePx'])
+            self.assertEqual([], manifest['screenshots'])
+            self.assertFalse(any(c.args[0] == 'install' for c in calls.call_args_list))

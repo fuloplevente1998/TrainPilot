@@ -1,0 +1,221 @@
+{
+  "run_id": 40724759390,
+  "pr_head": "350d7f54d6f77449c1aabec91691de83128ede7d",
+  "ci_checkout": "54ede727e917d2b22194b164beddc0e097c22101",
+  "both_tree": "4740bd963d0eda3d4d4b77e1d5337df15c1262c8",
+  "trees_equal": true,
+  "full_workflow_success": false,
+  "jobs": [
+    {
+      "id": 122945708455,
+      "name": "Build phone and Wear OS debug APKs",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 122953213598,
+      "name": "Native phone Compose UI and unmodified screenshots",
+      "status": "completed",
+      "conclusion": "failure"
+    },
+    {
+      "id": 122953213770,
+      "name": "Preserved native Wear round UI (1)",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "id": 122953213782,
+      "name": "Signed v1.3.71-perf-20261022 to native data upgrade",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 122953213793,
+      "name": "Preserved native Wear round UI (0)",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "id": 122953213809,
+      "name": "Preserved native Wear round UI (2)",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "id": 122953213961,
+      "name": "Signed v1.3.71 to native data upgrade",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "signed_apks": [
+    {
+      "role": "phone",
+      "artifact_id": 12831709586,
+      "bytes": 5042969,
+      "sha256": "54be8ebad259e31005a643fd87f44552ab1f00a09d2ab76ba81c9531f9df7876",
+      "hash_matches_metadata": true,
+      "certificate_sha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+      "package": "com.repforge.app",
+      "versionCode": 2736,
+      "versionName": "1.3.71-native-test",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/40724759390/artifacts/12831709586"
+    },
+    {
+      "role": "wear",
+      "artifact_id": 12833560888,
+      "bytes": 5109898,
+      "sha256": "ffbddb4659a6eb1ed473fa00ab4baf41eddb0a944125320e877a473c5fe44012",
+      "hash_matches_metadata": true,
+      "certificate_sha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+      "package": "com.repforge.app",
+      "versionCode": 2736,
+      "versionName": "1.3.71-native-test",
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/40724759390/artifacts/12833560888"
+    }
+  ],
+  "signature_evidence": "Actual APK cert independently extracted; matching bytehash to CI metadata; successful CI apksigner v2 and pinned original release signer continuity in retained raw job log. No local apksigner installed.",
+  "jvm": {
+    "artifact_id": 12833980568,
+    "xml_files": 168,
+    "tests": 1345,
+    "failure": 0,
+    "error": 0,
+    "skipped": 0,
+    "duplicates": 0
+  },
+  "wear": [
+    {
+      "artifact_id": 12834134533,
+      "shard": 0,
+      "job_conclusion": "cancelled",
+      "raw_instrumentation_success": true,
+      "declared": [
+        68
+      ],
+      "started": 68,
+      "terminal": 68,
+      "passed": 68,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "missing": 0,
+      "duplicates": 0,
+      "summary_ok": true,
+      "instrumentation_final_code": [
+        "-1"
+      ],
+      "crash_marker": false
+    },
+    {
+      "artifact_id": 12834634364,
+      "shard": 1,
+      "job_conclusion": "cancelled",
+      "raw_instrumentation_success": true,
+      "declared": [
+        59
+      ],
+      "started": 59,
+      "terminal": 59,
+      "passed": 59,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "missing": 0,
+      "duplicates": 0,
+      "summary_ok": true,
+      "instrumentation_final_code": [
+        "-1"
+      ],
+      "crash_marker": false
+    },
+    {
+      "artifact_id": 12834318389,
+      "shard": 2,
+      "job_conclusion": "cancelled",
+      "raw_instrumentation_success": true,
+      "declared": [
+        56
+      ],
+      "started": 56,
+      "terminal": 56,
+      "passed": 56,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "missing": 0,
+      "duplicates": 0,
+      "summary_ok": true,
+      "instrumentation_final_code": [
+        "-1"
+      ],
+      "crash_marker": false
+    }
+  ],
+  "wear_totals": {
+    "started": 183,
+    "terminal": 183,
+    "passed": 183,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "missing": 0,
+    "cross_shard_duplicates": 0
+  },
+  "wear_limit": "All jobs cancelled; complete raw instrumentation results do not establish successful job or full gate.",
+  "signed_upgrades": [
+    {
+      "artifact_id": 12833881904,
+      "baseline": "v1.3.71",
+      "checks": {
+        "seed.txt": true,
+        "verify.txt": true,
+        "verify-second-start.txt": true
+      },
+      "passed": true,
+      "installed_version": "versionCode=2736 minSdk=26 targetSdk=36\n    versionName=1.3.71-native-test",
+      "limit": "seeded CI fixture NativeMigrationProbe pass/fail, no device acceptance"
+    },
+    {
+      "artifact_id": 12832648691,
+      "baseline": "v1.3.71-perf-20261022",
+      "checks": {
+        "seed.txt": true,
+        "verify.txt": true,
+        "verify-second-start.txt": true
+      },
+      "passed": true,
+      "installed_version": "versionCode=2736 minSdk=26 targetSdk=36\n    versionName=1.3.71-native-test",
+      "limit": "seeded CI fixture NativeMigrationProbe pass/fail, no device acceptance"
+    }
+  ],
+  "phone": {
+    "artifact_id": 12832569853,
+    "declared_main": 119,
+    "terminal": 44,
+    "passed": 43,
+    "failed": 1,
+    "missing": 75,
+    "isolated_gps_executed": false,
+    "screenshots": 0,
+    "result": "failed",
+    "recorded_failure": "RootViewWithoutFocusException",
+    "fatal_foreign_window": "Application Not Responding: com.google.android.apps.nexuslauncher",
+    "manifest_sha256": "08f69af36ba76061be5eafc2d0f2efda37ac5354881a7fc71004a5abdad5b25f",
+    "limit": "No successful phone gate; missing cases remain unverified. Foreign launcher ANR is the fatal host focus condition."
+  },
+  "recovery_candidate": {
+    "head": "d1839cfa1f0fb277efb5a57318fac4039e44933c",
+    "tree": "b56b2c63c0f791570f28a88767a7513e2fcc51d6",
+    "android_source_unchanged_from": "350d7f54d6f77449c1aabec91691de83128ede7d",
+    "quick_run": 40736984836,
+    "quick_conclusion": "success",
+    "native_run": 40736984933,
+    "native_status": "in_progress_at_checkpoint",
+    "host_report_tests": 14,
+    "host_evidence_tests": 34,
+    "host_failures": 0,
+    "workflow_yaml_and_trigger_checks": "pass"
+  }
+}

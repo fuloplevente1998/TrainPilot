@@ -43,8 +43,13 @@ internal object NativeHealthDailyOrigins {
 }
 
 internal class NativeHealthHistory(private val store: HealthJournalStore) {
-    data class Page(val query: NativeHealthQuery, val days: List<String>, val selected: JSONObject,
-        val dailyOrigins: List<String>)
+    data class Page(
+        val query: NativeHealthQuery,
+        val days: List<String>,
+        val selected: JSONObject,
+        val summaries: List<JSONObject>,
+        val dailyOrigins: List<String>
+    )
     fun load(query: NativeHealthQuery): Page {
         val response = store.page(query.month.atDay(1).toString(), query.month.atEndOfMonth().toString(), query.channel, "", 0, 0, 1)
         val array = response.optJSONArray("days")
@@ -52,7 +57,12 @@ internal class NativeHealthHistory(private val store: HealthJournalStore) {
         // No fallback from a missing selected day to an earlier reading presented as today's value.
         val selected = days.firstOrNull { it.optString("day") == query.day.toString() }
             ?: JSONObject().put("day", query.day.toString())
-        return Page(query, days.map { it.getString("day") }.distinct(), JSONObject(selected.toString()),
-            NativeHealthDailyOrigins.choices(response, selected))
+        return Page(
+            query = query,
+            days = days.map { it.getString("day") }.distinct(),
+            selected = JSONObject(selected.toString()),
+            summaries = days.map { JSONObject(it.toString()) },
+            dailyOrigins = NativeHealthDailyOrigins.choices(response, selected)
+        )
     }
 }

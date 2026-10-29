@@ -1,9 +1,14 @@
 package com.repforge.app
 
+import androidx.compose.ui.test.assertIsDisplayed
+
+import androidx.compose.ui.test.performScrollTo
+
 import android.content.Context
 import com.repforge.app.ui.health.NativeHealthForegroundAdmission
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -51,19 +56,28 @@ class NativeHealthAutoRefreshUiTest {
         }
     }
 
+    private fun openConnectionsIfNeeded() {
+        compose.onNodeWithTag("health_journal_list")
+            .performScrollToNode(hasTestTag("health_connect_section"))
+        if (compose.onAllNodesWithTag("health_auto_refresh_switch").fetchSemanticsNodes().isEmpty()) {
+            compose.onNodeWithTag("health_connect_section").performClick()
+        }
+        compose.onNodeWithTag("health_journal_list")
+            .performScrollToNode(hasTestTag("health_auto_refresh_switch"))
+    }
+
     private fun openHealth() {
         scenario = ActivityScenario.launch(MainActivity::class.java)
         compose.waitUntil(20_000) {
             compose.onAllNodesWithTag("navigation_health").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithTag("navigation_health").performClick()
+        compose.openStudioTab("health")
         // LazyColumn creates off-screen children only when scrolled into view.
         // Waiting for the switch before scrolling deadlocks this instrumentation test.
         compose.waitUntil(20_000) {
             compose.onAllNodesWithTag("health_journal_list").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithTag("health_journal_list")
-            .performScrollToNode(hasTestTag("health_auto_refresh_switch"))
+        openConnectionsIfNeeded()
         compose.onNodeWithTag("health_auto_refresh_switch").assertExists()
     }
 
@@ -179,19 +193,26 @@ class NativeHealthAutoRefreshUiTest {
         openHealth()
         compose.onNodeWithTag("health_auto_refresh_switch").assertExists().assertIsOff()
         assertFalse(HealthJournalStore.get(context).preferences().optBoolean("autoOnOpen"))
-        compose.onNodeWithTag("health_auto_refresh_switch").performClick()
+        compose.waitUntil(15_000) {
+            compose.onAllNodes(hasTestTag("health_auto_refresh_switch") and isEnabled())
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("health_auto_refresh_switch").performScrollTo().assertIsDisplayed().performClick()
         compose.waitUntil(15_000) {
             HealthJournalStore.get(context).preferences().optBoolean("autoOnOpen")
         }
         compose.onNodeWithTag("health_auto_refresh_switch").assertIsOn()
 
         compose.onNodeWithTag("navigation_home").performClick()
-        compose.onNodeWithTag("navigation_health").performClick()
-        compose.onNodeWithTag("health_journal_list")
-            .performScrollToNode(hasTestTag("health_auto_refresh_switch"))
+        compose.openStudioTab("health")
+        openConnectionsIfNeeded()
         compose.onNodeWithTag("health_auto_refresh_switch").assertIsOn()
 
-        compose.onNodeWithTag("health_auto_refresh_switch").performClick()
+        compose.waitUntil(15_000) {
+            compose.onAllNodes(hasTestTag("health_auto_refresh_switch") and isEnabled())
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("health_auto_refresh_switch").performScrollTo().assertIsDisplayed().performClick()
         compose.waitUntil(15_000) {
             !HealthJournalStore.get(context).preferences().optBoolean("autoOnOpen")
         }

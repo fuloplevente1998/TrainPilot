@@ -1,5 +1,61 @@
 # TrainPilot – agent munkarend
 
+## Studio: zöld kapu és új képreferencia – 2026-10-28
+
+PR270 exact a27cc2fe / Actions40660277579: 7/7 SUCCESS, nyersen ellenőrzött
+1344 unit + 123 phone + 183 Wear PASS, 0 failure/error/skip/missing/crash;
+mindkét signed upgrade SUCCESS. 71 eredeti PNG validált, 1080×2392/450dpi/0.90,
+384dp szélesség. Galéria: docs/design/previews/studio-a27cc2fe-owner/README.md.
+A felhasználó 18 valódi Studio-appképe az elsődleges vizuális cél:
+docs/design/STUDIO_DRIVE_VISUAL_REFERENCE_2026-10-28.md + JSON hash/Drive-index.
+Teljes vizuális egyezés még nincs kész: Home sűrűség, Progress/Health hierarchia
+eltér; részletes portlista ott. A Drive-eredetik nem kerültek GitHubra.
+Önálló BLE-próbafül nem kívánt végleges termékoldal; Wear/HC/Samsung az irány.
+Aktuális belépési pont docs/STUDIO_UI_RESUME.md; az alábbi régi CI-státuszok
+történetiek. A checkpoint csak docs/képbizonyíték; ne indíts duplikált CI-t.
+
+## Studio increment01 QA-javítások – 2026-10-27
+
+40539957380 exact0fb350a4 lezártFAIL. Root JVM12750582974:1333PASS;
+phone12750939854:114main112PASS/2FAIL+4GPSPASS=116/118,0missing/crash.
+Mind3Wear és2signedupgradeSUCCESS. Home/profile/header-entry goldUI PASS.
+65PNG manifestSHA256/PIL validált,2köztes natívHomekép:
+docs/design/previews/studio-increment-0fb350a4/README.md.
+457dc1e6 javítja a font2fülek naturalwidth mérését és a nestedLazy öröklésgomb
+közvetlen scroll/visible assertjét +teljesdiag; b80ebc62 explicit sötét
+systembarstyle és valódiUIassert (feketefelületen fehérikonok). Új runtime UNRUN.
+AIStudio prompt APP BUILDERRE javítva6c9bdfa3: sajátprojektben módosít,
+TELJES újZIP letöltve, nempatch/részarchívum; Rootdiffeli. Felső5fül/demokontrollmarad.
+P1teljesUI/paritás továbbra nincs kész; részletek STUDIO_UI_RESUME-ben.
+
+
+## Studio ZIP beolvasva, első valódi increment – 2026-10-27
+
+User ZIP megérkezett f685d540 docs/ai-studio/trainpilot-oct-27-2026-3-58-04-pm.zip;
+CRC/SHA574f17f6…bcefcc egyezik, nincs hiányzó bemenet.16változatlanKotlin referencia
+és rawindex docs/ai-studio/export-20261027. A demó nem Android source-set.
+Root PR270 8ba6a388+34c629b8+d7e64697: Studiofontok/OFL/tnum/commonfelületek,
+brandheader valódiSettingssection entrykkel, Homevalósadat/callbackcompozíció,
+320dp/font2DE teljesfülfelirat/selected/disabled újUIpróba (118phone várható).
+Régi topnavgate40535425696/5bbc:116/117phone,0missing/crash;1Approvalcomparison
+awaitReadyFAIL diagkétroot általelfedve. d7e teljesdialog1scrollowner+láthatórows assert,
+multi-rootdiagfix; guardok/write/callbacks maradnak. Többi6jobSUCCESS.
+Új increment runtime MÉG UNRUN, ne nevezd teljesStudioUI-nak. Teljes aktuális
+folytatási pont: docs/STUDIO_UI_RESUME.md +reviews/NATIVE_STUDIO_INCREMENT_01.md.
+
+
+## PR270 Studio-beépítés Rootnál – 2026-10-27
+
+User kifejezetten Rootnak átadta a teljesdizájn beépítést, GitHub checkpointokkal.
+A PR270 meglévő feat/studio-ui-topnav-trial-20261027 ágán folytasd;
+migrationf0c474f1 közös7/7gate zöld:1333JVM+117phone+183Wear,2upgradePASS.
+A Studio-topnav candidate9c9ccdee selected/Role.Tab/selectableGroup javítva,
+eredeti UI-assertionök megtartva, új felsőUI runtime mégUNRUN.
+Önálló folytatási pont és pinnedrawforrások: docs/STUDIO_UI_RESUME.md.
+Teljes friss StudioZIP URL/path még szükséges, felhasználótól bekérve;
+csak a topnav/iconpróba elérhető, új komplettUI-t ne találj ki a hiányzóexport helyett.
+
+
 ## Ellenőrzött zöld alap és Studio-átvétel – 2026-10-27
 
 Actions40529220611 exactf0c474f17072aaf6f5c23506e0ad5b1c0092e2ae mind7jobSUCCESS.

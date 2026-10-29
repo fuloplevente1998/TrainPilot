@@ -34,9 +34,21 @@ class NativeLocalizationWorkoutUiTest {
         compose.waitUntil(15_000) { compose.onAllNodesWithText(value, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText(value, useUnmergedTree = true).assertExists()
     }
+    // The active exercise is a lazy item after the spacer. On compact phones
+    // the timed-set button does not exist in semantics until this item is composed.
+    private fun startVisibleTimedSet() {
+        compose.onNodeWithTag("active_workout_exercises").performScrollToIndex(1)
+        compose.waitUntil(15_000) {
+            compose.onAllNodesWithText("Indítás", useUnmergedTree = true)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("Indítás", useUnmergedTree = true)
+            .performScrollTo().assertIsDisplayed().performClick()
+    }
     private fun switchWhileInSettings(language: String, expectedLabel: String) {
         fixture.selectLanguageThroughUi(compose, language)
-        compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("training_profile_open"))
+        compose.revealSettingsControl("training_profile_open", "settings_profile_summary")
+        compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("settings_profile_summary"))
         compose.waitUntil(15_000) {
             fixture.selectedLanguage() == language &&
                 compose.onAllNodesWithText(expectedLabel).fetchSemanticsNodes().isNotEmpty()
@@ -58,7 +70,7 @@ class NativeLocalizationWorkoutUiTest {
         launchActive()
         assertTrue("Fixture needs two real timed sets", exerciseSets(snapshot()).length() >= 2)
         // Complete a genuine positive-time set via the real UI, not a fabricated DB row.
-        compose.onNodeWithText("Indítás", useUnmergedTree = true).performScrollTo().performClick()
+        startVisibleTimedSet()
         compose.waitUntil(15_000) {
             val clock = fixture.currentWorkout()?.optJSONObject(NativeSetStopwatch.FIELD)
             clock != null && NativeSetStopwatch.running(clock) && NativeSetStopwatch.elapsed(clock) >= 1_100L
@@ -86,7 +98,7 @@ class NativeLocalizationWorkoutUiTest {
         assertFalse(snapshot().optBoolean("workoutPaused"))
         compose.onNodeWithTag("workout_rest_skip").performClick()
         // Second set stopwatch is active during Settings; its elapsed time must never reset.
-        compose.onNodeWithText("Indítás", useUnmergedTree = true).performScrollTo().performClick()
+        startVisibleTimedSet()
         compose.waitUntil(15_000) {
             fixture.currentWorkout()?.optJSONObject(NativeSetStopwatch.FIELD)
                 ?.let(NativeSetStopwatch::running) == true
@@ -96,9 +108,9 @@ class NativeLocalizationWorkoutUiTest {
         val beforeElapsed = NativeSetStopwatch.elapsed(beforeClock)
         val beforeSets = exerciseSets(before).toString()
         compose.onNodeWithTag("navigation_settings").performClick()
-        switchWhileInSettings("en", "Training profile")
+        switchWhileInSettings("en", "Training profile and progression")
         identity(before, snapshot())
-        switchWhileInSettings("ro", "Profil de antrenament")
+        switchWhileInSettings("ro", "Profil de antrenament și progresie")
         compose.onNodeWithTag("navigation_back").performClick()
         waitForText("Cronometru · seria 2")
         val after = snapshot()
@@ -120,7 +132,7 @@ class NativeLocalizationWorkoutUiTest {
         waitForText("Stopper · 1. sorozat")
         assertFalse(before.optJSONObject(NativeSetStopwatch.FIELD)?.let(NativeSetStopwatch::running) == true)
         compose.onNodeWithTag("navigation_settings").performClick()
-        switchWhileInSettings("de", "Trainingsprofil")
+        switchWhileInSettings("de", "Trainingsprofil und Progression")
         compose.onNodeWithTag("navigation_back").performClick()
         waitForText("Stoppuhr · Satz 1")
         compose.onNodeWithTag("active_workout_exercises")
@@ -154,12 +166,12 @@ class NativeLocalizationWorkoutUiTest {
         waitForText("Mérésre kész")
         waitForText("GPS-mérés indítása")
         compose.onNodeWithTag("navigation_settings").performClick()
-        switchWhileInSettings("en", "Training profile")
+        switchWhileInSettings("en", "Training profile and progression")
         compose.onNodeWithTag("navigation_back").performClick()
         waitForText("Ready to measure")
         waitForText("Start GPS measurement")
         compose.onNodeWithTag("navigation_settings").performClick()
-        switchWhileInSettings("ro", "Profil de antrenament")
+        switchWhileInSettings("ro", "Profil de antrenament și progresie")
         compose.onNodeWithTag("navigation_back").performClick()
         waitForText("Pregătit de măsurare")
         waitForText("Pornește măsurarea GPS")

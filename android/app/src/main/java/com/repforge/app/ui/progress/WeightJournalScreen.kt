@@ -1,12 +1,17 @@
 package com.repforge.app.ui.progress
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -16,6 +21,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -25,6 +31,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -45,12 +52,17 @@ import java.time.LocalDate
 import java.util.Locale
 
 @Composable
-fun WeightJournalScreen(viewModel: WeightJournalViewModel = viewModel()) {
+fun WeightJournalScreen(
+    viewModel: WeightJournalViewModel = viewModel(),
+    initiallyAdding: Boolean = false
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val entries = viewModel.entries.collectAsLazyPagingItems()
     val resources = nativeResources(LocalContext.current, state.language)
     val colors = LocalTrainPilotColors.current
-    var adding by rememberSaveable { mutableStateOf(false) }
+    // Only the explicit new-measurement route opens the canonical editor
+    // immediately. The ordinary journal route still opens the list.
+    var adding by rememberSaveable { mutableStateOf(initiallyAdding) }
     // Keep the exact version the user opened, so a concurrent update cannot be silently overwritten.
     var editing by remember { mutableStateOf<BodyWeightEntryEntity?>(null) }
     var deleting by remember { mutableStateOf<BodyWeightEntryEntity?>(null) }
@@ -132,55 +144,197 @@ fun WeightJournalScreen(viewModel: WeightJournalViewModel = viewModel()) {
 }
 
 @Composable
-internal fun WeightJournalOverview(state: WeightJournalUiState, onRange: (String) -> Unit,
-    onAction: () -> Unit, actionLabel: Int, onRetry: () -> Unit) {
+internal fun WeightJournalOverview(
+    state: WeightJournalUiState,
+    onRange: (String) -> Unit,
+    onAction: () -> Unit,
+    actionLabel: Int,
+    onRetry: () -> Unit
+) {
     val resources = nativeResources(LocalContext.current, state.language)
     val colors = LocalTrainPilotColors.current
     val overview = state.overview
     val chart = overview?.chart.orEmpty()
-    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = colors.card)) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(resources.getString(R.string.weight_title), color = colors.text, fontWeight = FontWeight.Bold)
-            Text(resources.getString(R.string.weight_current, state.currentKg?.let { "${weightNumber(it, state.language)} kg" } ?: "—"),
-                color = colors.accentText)
-            val start = state.startKg
-            val current = state.currentKg
-            if (start != null && current != null) {
-                Text(resources.getString(R.string.weight_start_change, weightNumber(start, state.language),
-                    weightNumber(current - start, state.language)), color = colors.muted)
+    val start = state.startKg
+    val current = state.currentKg
+    val change = if (start != null && current != null) current - start else null
+    val min = overview?.summary?.minimumKg
+    val max = overview?.summary?.maximumKg
+    val rangeLabels = mapOf(
+        "7" to R.string.studio_weight_range_7d,
+        "30" to R.string.studio_weight_range_30d,
+        "90" to R.string.studio_weight_range_3m,
+        "365" to R.string.studio_weight_range_1y,
+        "all" to R.string.weight_all
+    )
+
+    Card(
+        Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = colors.card),
+        border = BorderStroke(1.dp, colors.accent.copy(alpha = .5f))
+    ) {
+        Column(
+            Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        resources.getString(R.string.weight_title),
+                        color = colors.accentText,
+                        fontWeight = FontWeight.Bold
+                    )
+                    overview?.summary?.let { summary ->
+                        Text(
+                            resources.getString(
+                                R.string.weight_measurements_total,
+                                summary.measurementCount
+                            ),
+                            color = colors.muted,
+                            modifier = Modifier.testTag("weight_measurement_count")
+                        )
+                    }
+                }
             }
-            val min = state.overview?.summary?.minimumKg
-            val max = state.overview?.summary?.maximumKg
-            if (min != null && max != null) Text(resources.getString(R.string.weight_min_max,
-                weightNumber(min, state.language), weightNumber(max, state.language)), color = colors.muted,
-                modifier = Modifier.testTag("weight_global_extrema"))
-            state.overview?.summary?.let { summary ->
-                Text(resources.getString(R.string.weight_measurements_total, summary.measurementCount),
-                    color = colors.muted, modifier = Modifier.testTag("weight_measurement_count"))
+
+            Card(
+                Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = colors.card2),
+                border = BorderStroke(1.dp, colors.line)
+            ) {
+                Column(Modifier.padding(14.dp)) {
+                    Text(
+                        resources.getString(R.string.studio_weight_current_label),
+                        color = colors.muted,
+                        style = androidx.compose.material3.MaterialTheme.typography.labelMedium
+                    )
+                    Text(
+                        current?.let { "${weightNumber(it, state.language)} kg" } ?: "—",
+                        modifier = Modifier.testTag("weight_current_value"),
+                        color = if (current != null) colors.text else colors.muted,
+                        style = androidx.compose.material3.MaterialTheme.typography.headlineMedium.copy(
+                            fontFeatureSettings = "tnum"
+                        )
+                    )
+                }
             }
-            Button(onClick = onAction, enabled = !state.loading && !state.writing,
-                modifier = Modifier.testTag("weight_journal_action")) { Text(resources.getString(actionLabel)) }
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.testTag("weight_range_choices")) {
+
+            Row(
+                Modifier.fillMaxWidth().height(IntrinsicSize.Max),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Card(
+                    Modifier.weight(1f).fillMaxHeight(),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = colors.card2),
+                    border = BorderStroke(1.dp, colors.line)
+                ) {
+                    Column(Modifier.padding(12.dp)) {
+                        Text(
+                            resources.getString(R.string.studio_weight_change),
+                            color = colors.muted,
+                            style = androidx.compose.material3.MaterialTheme.typography.labelSmall
+                        )
+                        Text(
+                            change?.let {
+                                (if (it > 0.0) "+" else "") +
+                                    weightNumber(it, state.language) + " kg"
+                            } ?: "—",
+                            color = colors.text,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.testTag("weight_change")
+                        )
+                    }
+                }
+                Card(
+                    Modifier.weight(1f).fillMaxHeight(),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = colors.card2),
+                    border = BorderStroke(1.dp, colors.line)
+                ) {
+                    Column(Modifier.padding(12.dp)) {
+                        Text(
+                            resources.getString(R.string.studio_weight_min_max_label),
+                            color = colors.muted,
+                            style = androidx.compose.material3.MaterialTheme.typography.labelSmall
+                        )
+                        Text(
+                            if (min != null && max != null)
+                                "${weightNumber(min, state.language)} / ${weightNumber(max, state.language)} kg"
+                            else "—",
+                            modifier = Modifier.testTag("weight_global_extrema"),
+                            color = colors.text,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            }
+
+            Button(
+                onClick = onAction,
+                enabled = !state.loading && !state.writing,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                    .testTag("weight_journal_action"),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("+ " + resources.getString(actionLabel))
+            }
+
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.testTag("weight_range_choices")
+            ) {
                 items(listOf("7", "30", "90", "365", "all")) { range ->
-                    FilterChip(selected = state.range == range, enabled = !state.writing, onClick = { onRange(range) },
+                    FilterChip(
+                        selected = state.range == range,
+                        enabled = !state.writing,
+                        onClick = { onRange(range) },
                         modifier = Modifier.testTag("weight_range_$range"),
-                        label = { Text(if (range == "all") resources.getString(R.string.weight_all)
-                            else resources.getString(R.string.weight_days, range.toInt())) })
+                        label = { Text(resources.getString(rangeLabels.getValue(range))) }
+                    )
                 }
             }
-            if (state.loading) Text(resources.getString(R.string.weight_loading), color = colors.muted)
-            else if (state.readFailed) Column {
-                Text(resources.getString(R.string.weight_read_failed), color = colors.danger)
-                TextButton(onClick = onRetry, modifier = Modifier.testTag("weight_read_retry")) {
-                    Text(resources.getString(R.string.weight_retry))
+
+            when {
+                state.loading -> Text(
+                    resources.getString(R.string.weight_loading),
+                    color = colors.muted
+                )
+                state.readFailed -> Column {
+                    Text(resources.getString(R.string.weight_read_failed), color = colors.danger)
+                    TextButton(
+                        onClick = onRetry,
+                        modifier = Modifier.testTag("weight_read_retry")
+                    ) {
+                        Text(resources.getString(R.string.weight_retry))
+                    }
                 }
-            }
-            else if (chart.size < 2) Text(resources.getString(R.string.weight_chart_empty), color = colors.muted)
-            else {
-                Column(Modifier.fillMaxWidth().height(110.dp).testTag("weight_chart")) { TrendCanvas(chart.map { it.averageKg }) }
-                overview?.let {
-                    Text(resources.getString(R.string.weight_chart_averages, it.chartMeasurementCount,
-                        it.daysPerBucket), color = colors.muted, modifier = Modifier.testTag("weight_chart_coverage"))
+                chart.size < 2 -> Text(
+                    resources.getString(R.string.weight_chart_empty),
+                    color = colors.muted
+                )
+                else -> {
+                    Column(
+                        Modifier.fillMaxWidth().height(110.dp).testTag("weight_chart")
+                    ) {
+                        TrendCanvas(chart.map { it.averageKg })
+                    }
+                    overview?.let {
+                        Text(
+                            resources.getString(
+                                R.string.weight_chart_averages,
+                                it.chartMeasurementCount,
+                                it.daysPerBucket
+                            ),
+                            color = colors.muted,
+                            modifier = Modifier.testTag("weight_chart_coverage")
+                        )
+                    }
                 }
             }
         }

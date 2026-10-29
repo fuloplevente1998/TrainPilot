@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="studio_home_greeting">Bine ai revenit!</string>
+    <string name="studio_home_overview">Antrenamentul și sănătatea ta astăzi.</string>
+    <string name="studio_home_active_intro">Continuă antrenamentul început.</string>
+    <string name="studio_home_planner_title">Planificator personal</string>
+    <string name="studio_home_planner_info">Configurează profilul de antrenament, apoi alege un program.</string>
+    <string name="studio_header_theme">Aspect</string>
+    <string name="studio_home_new_plan">Previzualizează un plan nou</string>
+</resources>

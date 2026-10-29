@@ -65,6 +65,7 @@ import com.repforge.app.ui.workout.ActiveWorkoutViewModel
 import com.repforge.app.ui.programs.TrainingLandingScreen
 import com.repforge.app.ui.calendar.CalendarScreen
 import com.repforge.app.ui.home.QuickWorkoutScreen
+import com.repforge.app.ui.home.QuickWorkoutFilter
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.map
@@ -169,6 +170,9 @@ fun TrainPilotAppScaffold(
     var starting by remember { mutableStateOf(false) }
     // Memory-only user start intent. Process recreation/navigation cannot silently start GPS.
     var launchGps by remember { mutableStateOf<NativeWorkoutTarget?>(null) }
+    var quickWorkoutFilter by remember { mutableStateOf(QuickWorkoutFilter.ALL) }
+    var healthEntrySection by remember { mutableStateOf<String?>(null) }
+    var progressEntrySection by remember { mutableStateOf<String?>(null) }
     data class PendingProgram(val option: NativeProgramGpsChoice.Option, val dayId: String, val scheduleId: String?)
     var pendingProgram by remember { mutableStateOf<PendingProgram?>(null) }
     fun launchProgram(programId: String?, dayId: String, scheduleId: String?, option: NativeProgramGpsChoice.Option?, record: Boolean) {
@@ -233,6 +237,8 @@ fun TrainPilotAppScaffold(
     val editorFinishing = finishingFlow?.collectAsStateWithLifecycle(initialValue = false)?.value == true
     val settingsOrigin = if (currentRoute == "settings")
         navController.previousBackStackEntry?.destination?.route ?: "home" else "home"
+    var personalPlannerRequested by remember { mutableStateOf(false) }
+    var settingsSection by remember { mutableStateOf("general") }
     val navigationBlocked = starting || editorFinishing ||
         activeSnapshot?.optBoolean("finalizationPending") == true
 
@@ -313,23 +319,50 @@ fun TrainPilotAppScaffold(
         containerColor = colors.bg,
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
-            NativeMainHeader(currentRoute, settings.language, enabled = !navigationBlocked,
-                onBack = if (currentRoute in NativeMainMenu.secondaryRoutes) ({ goBack() }) else null,
-                onSettings = { selectDestination("settings") },
-                backEnabled = !starting && !editorFinishing &&
-                    (activeSnapshot?.optBoolean("finalizationPending") != true || settingsOrigin == "active_workout"))
+            Column {
+                // The approved Studio brand/language/theme/settings shell and five
+                // primary tabs remain visible on main and secondary destinations.
+                // NativeMainMenu.selected() maps every editor/detail route to its
+                // real primary parent; no new navigation state is invented here.
+                NativeStudioShellHeader(
+                    route = currentRoute,
+                    settingsOrigin = settingsOrigin,
+                    language = settings.language,
+                    themeKey = settings.themeKey,
+                    enabled = !navigationBlocked,
+                    onHome = { selectDestination("home") },
+                    onSelect = destinationSelector,
+                    onSelectLanguage = { code ->
+                        scope.launch(Dispatchers.Main.immediate) {
+                            try { onboardingStore.setLanguage(code) }
+                            catch (cancelled: CancellationException) { throw cancelled }
+                            catch (_: Exception) {
+                                snackbar.showSnackbar("Language change could not be saved.")
+                            }
+                        }
+                    },
+                    onTheme = { settingsSection = "theme"; selectDestination("settings") },
+                    onSettings = { settingsSection = "general"; selectDestination("settings") }
+                )
+                if (currentRoute in NativeMainMenu.secondaryRoutes) {
+                    NativeStudioSecondaryRouteBar(
+                        route = currentRoute,
+                        language = settings.language,
+                        backEnabled = !starting && !editorFinishing &&
+                            (activeSnapshot?.optBoolean("finalizationPending") != true ||
+                                settingsOrigin == "active_workout"),
+                        onBack = { goBack() }
+                    )
+                }
+            }
         },
         bottomBar = {
-            Column {
-                // Part of measured scaffold chrome, so the banner cannot cover list actions.
-                if (hasActiveWorkout && currentRoute != "active_workout") FloatingActiveWorkoutBanner(
-                    title = activeSnapshot?.optString("dayName", "Folyamatban lévő edzés") ?: "Edzés",
-                    isPaused = isWorkoutPaused, timerOwner = timerOwner, language = settings.language,
-                    enabled = !starting && !editorFinishing,
-                    onClick = { selectDestination("training") })
-                NativeBottomNavigation(currentRoute, settingsOrigin, settings.language,
-                    enabled = !navigationBlocked, onSelect = destinationSelector)
-            }
+            // The active workout remains reachable without blocking content.
+            if (hasActiveWorkout && currentRoute != "active_workout") FloatingActiveWorkoutBanner(
+                title = activeSnapshot?.optString("dayName", "Folyamatban lévő edzés") ?: "Edzés",
+                isPaused = isWorkoutPaused, timerOwner = timerOwner, language = settings.language,
+                enabled = !starting && !editorFinishing,
+                onClick = { selectDestination("training") })
         }
 
     ) { innerPadding ->
@@ -351,6 +384,16 @@ fun TrainPilotAppScaffold(
                         },
                         onCalendar = { selectDestination("calendar") }, onCoach = { selectDestination("coach") },
                         onPrograms = { selectDestination("programs") }, language = settings.language, busy = navigationBlocked,
+                        onProfile = { settingsSection = "profile"; selectDestination("settings") },
+                        onWatch = {
+                            healthEntrySection = "devices"
+                            selectDestination("health")
+                        },
+                        onPersonalPlan = {
+                            selectDestination("programs")
+                            if (navController.currentDestination?.route == "programs") personalPlannerRequested = true
+                        },
+                        onHealth = { selectDestination("health") },
                         offerOnboarding = settings.onboarding128 == NativeOnboardingPolicy.SKIPPED,
                         onOnboarding = { if (!navigationBlocked && !hasActiveWorkout) reopenedOnboarding = true },
                         onResumeDraft = {
@@ -367,6 +410,7 @@ fun TrainPilotAppScaffold(
                             }
                         },
                         onQuickWorkout = { outdoor ->
+                            quickWorkoutFilter = QuickWorkoutFilter.ALL
                             selectDestination(if (hasActiveWorkout) "training" else if (outdoor) "quick_outdoor" else "quick_workout")
                         }
                     )
@@ -374,7 +418,10 @@ fun TrainPilotAppScaffold(
                 composable(Screen.Training.route) {
                     TrainingLandingScreen(language = settings.language, activeProgramId = settings.activeProgramId,
                         busy = navigationBlocked, onStart = { programId, dayId -> startWorkout(programId, dayId) },
-                        onQuick = { outdoor -> selectDestination(if (hasActiveWorkout) "training" else if (outdoor) "quick_outdoor" else "quick_workout") },
+                        onQuick = { filter, outdoor ->
+                            quickWorkoutFilter = filter
+                            selectDestination(if (hasActiveWorkout) "training" else if (outdoor) "quick_outdoor" else "quick_workout")
+                        },
                         onPrograms = { selectDestination("programs") },
                         onCalendar = { selectDestination("calendar") }, onCoach = { selectDestination("coach") },
                         onLibrary = { selectDestination("exercise_library") })
@@ -384,6 +431,8 @@ fun TrainPilotAppScaffold(
                 }
                 composable("programs") {
                     TrainingProgramsScreen(navController = navController, language = settings.language,
+                        requestPersonalPlanner = personalPlannerRequested,
+                        onPersonalPlannerConsumed = { personalPlannerRequested = false },
                         onStartProgramDay = { programId, dayId -> startWorkout(programId, dayId) })
                 }
                 composable("coach") {
@@ -401,14 +450,29 @@ fun TrainPilotAppScaffold(
                     JournalScreen(navController = navController, language = settings.language)
                 }
                 composable(Screen.Progress.route) {
-                    ProgressScreen(onWeightJournal = { selectDestination("weight_journal") })
+                    ProgressScreen(
+                        onWeightJournal = { selectDestination("weight_journal") },
+                        initialSection = progressEntrySection,
+                        onInitialSectionConsumed = { progressEntrySection = null }
+                    )
                 }
                 composable(Screen.Health.route) {
-                    HealthDashboardScreen(navController = navController,
-                        onWeightJournal = { selectDestination("weight_journal") })
+                    HealthDashboardScreen(
+                        navController = navController,
+                        onWeightJournal = { selectDestination("weight_journal") },
+                        onWeightAdd = { selectDestination("weight_journal_add") },
+                        onActiveWorkout = { selectDestination("training") },
+                        initialSection = healthEntrySection,
+                        onInitialSectionConsumed = { healthEntrySection = null }
+                    )
                 }
                 composable("weight_journal") {
                     com.repforge.app.ui.progress.WeightJournalScreen()
+                }
+                // The Health card's "+ New measurement" goes directly to the
+                // existing native editor, preserving its Room/write guards.
+                composable("weight_journal_add") {
+                    com.repforge.app.ui.progress.WeightJournalScreen(initiallyAdding = true)
                 }
                 composable("active_workout") {
                     ActiveWorkoutScreen(navController = navController, language = settings.language, launchGps = launchGps,
@@ -416,7 +480,10 @@ fun TrainPilotAppScaffold(
                 }
                 for (outdoor in listOf(false, true)) {
                     composable(if (outdoor) "quick_outdoor" else "quick_workout") {
-                        QuickWorkoutScreen(outdoorOnly = outdoor, starting = starting,
+                        QuickWorkoutScreen(
+                            outdoorOnly = outdoor,
+                            filter = if (outdoor) QuickWorkoutFilter.ALL else quickWorkoutFilter,
+                            starting = starting,
                             onCancel = { navController.popBackStack() }, onStart = { exerciseId, gps ->
                                 if (!starting) {
                                     starting = true
@@ -439,7 +506,19 @@ fun TrainPilotAppScaffold(
                     }
                 }
                 composable("settings") {
-                    SettingsScreen(navController = navController, allowDataReplacement = !hasActiveWorkout)
+                    SettingsScreen(
+                        navController = navController,
+                        allowDataReplacement = !hasActiveWorkout,
+                        initialSection = settingsSection,
+                        onConnectedDevices = {
+                            healthEntrySection = "devices"
+                            selectDestination("health")
+                        },
+                        onPrivatePhotos = {
+                            progressEntrySection = "photos"
+                            selectDestination("progress")
+                        }
+                    )
                 }
             }
         }

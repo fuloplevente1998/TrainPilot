@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.*
@@ -38,6 +40,31 @@ class NativeHomeMetricLayoutUiTest {
                 }
             }
         }
+    }
+
+    @Test fun acceptedStudioBentoHasFourRealMetricCardsNotSixDemoTiles() {
+        compose.setContent {
+            TrainPilotTheme(TrainPilotUserSettings()) {
+                Column(Modifier.width(320.dp).fillMaxHeight().verticalScroll(rememberScrollState())) {
+                    com.repforge.app.ui.home.StudioHomeVitals(
+                        TodayMetricsUiModel(sleepText = "7 h", pulseText = "—",
+                            stepsText = "412", recoveryText = "—"),
+                        "hu", onHealth = {}, onCoach = {}, enabled = true
+                    )
+                }
+            }
+        }
+        for (key in listOf("sleep", "pulse", "steps", "recovery")) {
+            compose.onNodeWithTag("home_metric_$key").performScrollTo().assertIsDisplayed()
+        }
+        compose.onNodeWithTag("home_metric_pulse_value").assertTextEquals("—")
+        compose.onNodeWithTag("home_metric_steps_value").assertTextEquals("412")
+        compose.onNodeWithTag("home_metric_recovery_source").performScrollTo()
+            .assertIsDisplayed()
+        // Secondary calorie/workout counts belong in the lower Studio goals row,
+        // not in the accepted 2×2 bento layout.
+        compose.onAllNodesWithTag("home_metric_calories").assertCountEquals(0)
+        compose.onAllNodesWithTag("home_metric_workouts").assertCountEquals(0)
     }
 
     @Test fun narrowPhoneUsesTwoReadableColumnsWithAllSixMetricsReachable() {
@@ -80,6 +107,51 @@ class NativeHomeMetricLayoutUiTest {
         compose.onNodeWithText("12345").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("m").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText(source).performScrollTo().assertIsDisplayed().assertTextEquals(source)
+    }
+
+    @Test fun studioTabsWithLargeGermanTextKeepEveryLabelAndSelectionAccessible() = largeGermanTabs(false)
+
+    @Test fun actualStudioShellKeepsLargeGermanTabsAndSelectionAccessible() = largeGermanTabs(true)
+
+    private fun largeGermanTabs(studioShell: Boolean) {
+        compose.setContent {
+            val density = LocalDensity.current.density
+            var route by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("home") }
+            CompositionLocalProvider(LocalDensity provides Density(density, 2f)) {
+                TrainPilotTheme(TrainPilotUserSettings()) {
+                    androidx.compose.foundation.layout.Box(Modifier.width(320.dp)) {
+                        if (studioShell) com.repforge.app.ui.navigation.NativeStudioShellHeader(
+                            route, "home", "de", "graphite_gold", route != "health",
+                            onHome = { route = "home" }, onSelect = { route = it },
+                            onSelectLanguage = {}, onTheme = {}, onSettings = {})
+                        else com.repforge.app.ui.navigation.NativeTopNavigation(route, "home", "de",
+                            enabled = route != "health", onSelect = { route = it })
+                    }
+                }
+            }
+        }
+        if (studioShell) {
+            val brandLayouts = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+            compose.onNodeWithTag("header_brand_text", useUnmergedTree = true).assertIsDisplayed()
+                .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { it(brandLayouts) }
+            assertTrue("Brand must remain complete at 320dp/font2: " + brandLayouts.joinToString { "size=${it.size}, paragraph=${it.multiParagraph.width}, constraints=${it.layoutInput.constraints}" }, brandLayouts.isNotEmpty() &&
+                brandLayouts.none { it.hasVisualOverflow })
+        }
+        for ((route, label) in listOf("home" to "Startseite", "training" to "Training",
+            "journal" to "Protokoll", "progress" to "Fortschritt", "health" to "Gesundheit")) {
+            compose.onNodeWithTag("navigation_$route").performScrollTo().assertIsDisplayed().performClick()
+                .assertIsSelected()
+            val layouts = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+            compose.onNodeWithText(label, useUnmergedTree = true)
+                .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { it(layouts) }
+            assertTrue("A tab must expose its actual text layout", layouts.isNotEmpty())
+            assertTrue("Full German tab label '$label' must remain visible at font2.0: " +
+                layouts.joinToString { "size=${it.size},widthOverflow=${it.didOverflowWidth},heightOverflow=${it.didOverflowHeight},paragraphWidth=${it.multiParagraph.width},constraints=${it.layoutInput.constraints}" },
+                layouts.none { it.hasVisualOverflow })
+        }
+        for (route in listOf("home", "training", "journal", "progress", "health")) {
+            compose.onNodeWithTag("navigation_$route").assertIsNotEnabled()
+        }
     }
 
 }
