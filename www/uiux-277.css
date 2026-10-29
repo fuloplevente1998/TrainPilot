@@ -226,10 +226,10 @@ html body #app main.tp150-journal-compact details.rf263-history:has(.tp226-pr-ba
 }
 html body #app main.tp150-journal-compact details.rf263-history[open]{border-color:color-mix(in srgb,var(--accent) 43%,var(--line))!important;}
 html body #app main.tp150-journal-compact details.rf263-history>summary{
- min-height:62px;padding:6px 9px!important;background:transparent!important;
+ min-height:62px;padding:5px 9px!important;background:transparent!important;
 }
 html body #app main.tp150-journal-compact details.rf263-history>summary .history-head{
- padding:4px 5px!important;min-width:0;border:0!important;
+ padding:8px 5px!important;min-width:0;border:0!important;
  border-radius:0!important;background:transparent!important;box-shadow:none!important;
 }
 html body #app main.tp150-journal-compact details.rf263-history>summary .history-title-row{gap:8px!important;align-items:center!important;}
@@ -254,7 +254,7 @@ html body #app main.tp150-journal-compact details.rf263-history:not([open])>summ
 /* The closed PR button MUST NOT inherit the unstyled native browser button. */
 html body #app main.tp150-journal-compact details.rf263-history:not([open])>summary .history-badges>.tp226-pr-badge{
  box-sizing:border-box;display:inline-flex!important;flex:0 1 auto;align-items:center;justify-content:center;
- width:auto!important;min-height:44px;max-width:100%;margin:0!important;padding:8px 13px!important;
+ width:fit-content!important;min-height:44px;max-width:100%;margin:0!important;padding:8px 13px!important;
  border:1px solid color-mix(in srgb,var(--accent) 48%,var(--line))!important;
  border-radius:999px!important;background:color-mix(in srgb,var(--accent) 10%,var(--card2))!important;
  box-shadow:none!important;color:var(--accent2)!important;
@@ -296,8 +296,8 @@ html body #app main.tp150-journal-compact .tp226-pr-details{
  background:color-mix(in srgb,var(--accent) 6%,var(--card2));
 }
 @media(max-width:360px){
- html body #app main.tp150-journal-compact details.rf263-history>summary{padding:6px 7px!important;}
- html body #app main.tp150-journal-compact details.rf263-history>summary .history-head{padding:4px 5px!important;}
+ html body #app main.tp150-journal-compact details.rf263-history>summary{padding:5px 7px!important;}
+ html body #app main.tp150-journal-compact details.rf263-history>summary .history-head{padding:8px 5px!important;}
  html body #app main.tp150-journal-compact details.rf263-history>summary .rf103-history-side{max-width:43%;}
  html body #app main.tp150-journal-compact details.rf263-history>summary .rf103-history-side>.badge{font-size:9px!important;}
  html body #app main.tp150-journal-compact .tp3-summary-metrics strong{font-size:14px!important;}
