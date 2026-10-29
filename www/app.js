@@ -12768,7 +12768,12 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  tp151ScheduleCard=function(item){
   let html=String(calendarCardBase(item)),done=typeof rf209ScheduleDone==='function'&&rf209ScheduleDone(item);
   html=html.replace('onclick="rf260OpenScheduleMove(\''+item.id+'\',this)"','data-tp-move-id="'+esc(item.id)+'" onclick="rf260OpenScheduleMove(\''+esc(item.id)+'\',this)"');
-  if(!done){
+  if(done){
+   // This is the actual card renderer used by the calendar-day dialog.
+   // Earlier picker/list renderers do not supply actions in that dialog.
+   const action='<button type="button" class="btn secondary tp279-undo-schedule" data-schedule-id="'+esc(item.id)+'" onclick="tp279UndoScheduleComplete(this.dataset.scheduleId)">'+esc(tp279CalendarUndoText('undo'))+'</button>';
+   html=html.replace('<div class="tp151-action-row">','<div class="tp151-action-row">'+action);
+  }else{
    const action='<button class="btn secondary tp155-complete-schedule" onclick="tp155MarkScheduleCompleted(\''+esc(item.id)+'\')">'+esc(t('done'))+'</button>';
    html=html.replace(/(<button class="btn secondary" onclick="skipSchedule)/,action+'$1');
   }
