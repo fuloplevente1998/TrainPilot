@@ -42,7 +42,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
  await page.waitForFunction(()=>tp105SyncProbe.started);
  assert.ok((await page.locator('#cloudStatus').textContent()).includes('Drive-szinkron kész.'));
  assert.ok((await page.locator('#cloudStatus').textContent()).includes('A helyi mentés már használható.'));
- await page.locator('.tp105-data>summary').click();await page.locator('[onclick="tp105Archive(false)"]').click();
+ if(!await page.locator('[data-settings-group="privacy"]').evaluate(x=>x.open))await page.locator('[data-settings-group="privacy"] > summary').click();await page.locator('.tp105-data>summary').click();await page.locator('[onclick="tp105Archive(false)"]').click();
  await page.waitForFunction(()=>tp105SyncProbe.saved===1&&!window.TrainPilotBackupBusy);
  assert.equal(await page.evaluate(()=>tp105SyncProbe.alerts.some(x=>x.includes('Előbb fejezd be'))),false);
  await page.evaluate(()=>tp105FinishPrune());await page.waitForFunction(()=>tp105SyncProbe.finished&&!cloudBusy);
@@ -53,11 +53,11 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
   Capacitor.Plugins.GoogleSync.driveList=()=>new Promise((resolve,reject)=>{window.tp105FailNetwork=()=>reject(Object.assign(Error('A Google nem érhető el hálózati hiba miatt.'),{code:'GOOGLE_NETWORK'}));});
   window.tp105PendingSync=syncCloud(true);
  });
- await page.locator('.tp105-data>summary').click();
+ if(!await page.locator('[data-settings-group="privacy"]').evaluate(x=>x.open))await page.locator('[data-settings-group="privacy"] > summary').click();await page.locator('.tp105-data>summary').click();
  await page.locator('[onclick="tp105Archive(false)"]').click();await page.waitForFunction(()=>tp105SyncProbe.saved===2&&!window.TrainPilotBackupBusy);
  assert.equal(await page.evaluate(()=>cloudBusy),true);assert.equal(await page.evaluate(()=>tp105SyncProbe.alerts.some(x=>x.includes('Előbb fejezd be'))),false);
  await page.evaluate(async()=>{tp105FailNetwork();await tp105PendingSync;});assert.equal(await page.evaluate(()=>cloudBusy),false);
- await page.locator('.tp105-data>summary').click();
+ if(!await page.locator('[data-settings-group="privacy"]').evaluate(x=>x.open))await page.locator('[data-settings-group="privacy"] > summary').click();await page.locator('.tp105-data>summary').click();
  await page.locator('[onclick="tp105Archive(false)"]').click();await page.waitForFunction(()=>tp105SyncProbe.saved===3&&!window.TrainPilotBackupBusy);
 
  assert.equal(await page.evaluate(()=>cloudDriveStage),'');assert.deepEqual(probeErrors,[]);await page.close();

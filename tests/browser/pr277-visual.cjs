@@ -39,13 +39,25 @@ async function outdoor(page){await page.evaluate(()=>{
  if(config.font>1)await page.addStyleTag({content:`#app main,#tp155R4PanelHost main{font-size:${16*config.font}px} #app main .small{font-size:${12*config.font}px} #app input{font-size:${16*config.font}px}`});
  const prefix='277-'+version+'-'+config.width+'-'+config.theme+'-'+config.lang;
  async function snap(name){await page.waitForTimeout(100);const file=prefix+'-'+name+'.png';await page.screenshot({path:path.join(out,file)});report.screens.push({version,...config,name,file});const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);if(overflow>1)report.errors.push({version,config,name,overflow});}
- await page.evaluate(()=>go('programs'));await snap('08-programs');await page.locator('.tp152-program-card').first().evaluate(x=>x.open=true);await snap('08-programs-open');
+ await page.evaluate(()=>go('programs'));await snap('08-programs');
+ const visiblePrograms=await page.locator('.tp152-program-card').evaluateAll(nodes=>nodes.filter(el=>{const r=el.getBoundingClientRect();return r.top<innerHeight&&r.bottom>0}).length);
+ report.checks.push({version,config,visiblePrograms});
+await page.locator('.tp152-program-card').first().evaluate(x=>x.open=true);await snap('08-programs-open');
  await page.evaluate(()=>go('plan'));await snap('02-workout-start');await page.locator('.tp152-day').first().evaluate(x=>x.open=true);await snap('02-workout-start-open');
  await page.evaluate(()=>go('settings'));await snap('01-settings');
  if(version==='after'){assert.equal(await page.locator('[data-settings-group]').count(),6);await page.locator('[data-settings-group="appearance"]').evaluate(x=>x.open=true);}await snap('01-settings-open');
  await page.evaluate(()=>{tp155R4ClosePanel(false);go('history');});await snap('07-journal');
  await page.locator('details.history').first().locator(':scope>summary').click();await snap('07-journal-open');
  if(version==='after'){
+ if(config.width===393&&config.theme==='yellow'){
+  const cost=await page.evaluate(()=>{
+   const saved=history(),rows=Array.from({length:1500},(_,i)=>({...saved[i%saved.length],id:'277-volume-'+i,started:new Date(Date.UTC(2026,9,28)-i*86400000).toISOString(),finished:new Date(Date.UTC(2026,9,28,1)-i*86400000).toISOString()}));
+   db.set('history',rows);state.tp277JournalKind='pr';let reads=0;const original=Storage.prototype.getItem;
+   Storage.prototype.getItem=function(key){if(key==='repforge:history')reads++;return original.call(this,key);};
+   let count;try{count=rf263FilteredHistory().length;}finally{Storage.prototype.getItem=original;db.set('history',saved);state.tp277JournalKind='all';}
+   return {reads,count};
+  });assert.ok(cost.reads<=4,'PR filtering reuses one canonical index for all 1500 rows');report.checks.push({pr1500:cost});
+ }
  const mark=page.locator('.tp226-pr-badge').first(),arrow=mark.locator('..').locator('.rf103-history-chevron');
  const mr=await mark.boundingBox(),ar=await arrow.boundingBox();assert.ok(mr&&ar&&mr.y<ar.y,'PR sits above disclosure');
  await page.evaluate(()=>tp277JournalFilter('pr'));assert.ok(await page.locator('details.history').count()>0);

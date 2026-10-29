@@ -5321,10 +5321,11 @@ var tp277JournalFiltersHtml=function(){
 };
 var rf263FilteredHistory = function rf263FilteredHistory(){
  const all=history(),from=rf263HistoryFilter.from,to=rf263HistoryFilter.to,kind=state.tp277JournalKind||'all';
+ const records=window.TrainPilotRecords226,recordIndex=kind==='pr'&&records?records.snapshot():null;
  return all.map((x,index)=>({x,index})).filter(({x})=>{
   const day=rf263HistoryDay(x.started);
   if((from&&day<from)||(to&&day>to))return false;
-  if(kind==='pr')return !!window.TrainPilotRecords226?.recordsFor(x)?.length;
+  if(kind==='pr')return !!records?.recordsFor(x,recordIndex)?.length;
   if(kind==='gps')return !!window.TrainPilotGpsMap163?.references?.(x)?.length;
   return true;
  });
@@ -20574,7 +20575,7 @@ window.TrainPilotSetRir229={valid:tp229RirValid,observation:tp229RirObservation}
   if(typeof ensure==='function')window.tp3EnsureHistoryBody=function(){const value=ensure.apply(this,arguments);paint();return value;};
   paint();
  }
- const api=window.TrainPilotRecords226={index,aliases,recordsFor,paint,installed:false};
+ const api=window.TrainPilotRecords226={index,aliases,recordsFor,snapshot:data,paint,installed:false};
  if(typeof document!=='undefined'){
   if(document.readyState==='complete')install();
   else window.addEventListener?.('DOMContentLoaded',install,{once:true});
