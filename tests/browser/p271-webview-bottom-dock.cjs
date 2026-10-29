@@ -134,6 +134,16 @@ const server=http.createServer((req,res)=>{
         assert.equal(await page.evaluate(()=>state.tab),target,width+'/'+key+': canonical source route');
         if(key==='progress')assert.equal(await page.evaluate(()=>state.tp177JournalView),'progress',width+': real Journal Progress');
         assert.equal(await page.locator('#tp271Dock [aria-current="page"]').count(),1,width+'/'+key+': exactly one active');
+        const fade=await page.evaluate(()=>{
+          const main=document.querySelector('#app main'),style=getComputedStyle(main);
+          return {name:style.animationName,duration:style.animationDuration,transform:style.transform,
+            dock:getComputedStyle(document.getElementById('tp271Dock')).animationName};
+        });
+        assert.equal(fade.name,'tp271PageFade',width+'/'+key+': whole incoming page fades together');
+        assert.equal(fade.duration,'0.18s',width+'/'+key+': brief page reveal');
+        assert.equal(fade.transform,'none',width+'/'+key+': opacity only, no page translation');
+        assert.equal(fade.dock,'none',width+'/'+key+': persistent navigation stays stable');
+
       }
 
       // All original secondary functions remain reachable through the
@@ -211,6 +221,20 @@ const server=http.createServer((req,res)=>{
         fs.mkdirSync('ui-evidence',{recursive:true});
         await page.screenshot({path:'ui-evidence/pr271-opt-in-bottom-dock-home-393.png'});
       }
+
+      await page.emulateMedia({reducedMotion:'reduce'});
+      await page.evaluate(()=>go('home'));
+      assert.equal(await page.locator('#app main').evaluate(el=>getComputedStyle(el).animationName),'none',width+': respects system reduced motion');
+      await page.emulateMedia({reducedMotion:'no-preference'});
+      const frames=await page.evaluate(()=>{
+        go('plan');
+        const animation=document.querySelector('#app main').getAnimations().find(a=>a.animationName==='tp271PageFade');
+        return animation?.effect.getKeyframes().map(f=>({opacity:f.opacity,transform:f.transform}));
+      });
+      assert.ok(frames?.length>=2,width+': actual page animation is running');
+      assert.equal(Number(frames[0].opacity),0,width+': incoming page starts transparent');
+      assert.equal(Number(frames.at(-1).opacity),1,width+': incoming page becomes fully opaque');
+      assert.ok(frames.every(f=>!f.transform||f.transform==='none'),width+': animation does not move content');
       assert.deepEqual(errors,[],width+': no JS runtime errors');
       await page.close();
     }

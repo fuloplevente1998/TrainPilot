@@ -1766,3 +1766,20 @@ html[data-tp-theme-family="basic"].tp271-mockup-dock {
   --tp271-surface: linear-gradient(var(--tp-ui-card), var(--tp-ui-card));
   --tp271-metal-edge: linear-gradient(var(--tp-ui-border), var(--tp-ui-border));
 }
+
+/* P1i – one gentle opacity reveal for the entire incoming page.
+   Reuse the canonical go() marker; never animate saves, individual cards,
+   the persistent navigation, or introduce a delayed/second route handler. */
+@keyframes tp271PageFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+html.tp271-mockup-dock body #app main.tp160-page-reveal {
+  animation: tp271PageFade 180ms cubic-bezier(.2, 0, 0, 1) both !important;
+  transform: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  html.tp271-mockup-dock body #app main.tp160-page-reveal {
+    animation: none !important;
+  }
+}

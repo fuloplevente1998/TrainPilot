@@ -1,5 +1,16 @@
 # TrainPilot – aktuális átadás
 
+## PR #271 – P1i oldaláttűnés, 2026-10-29
+
+Felhasználói kérés: a mockup-dizájnhoz az egész oldaltartalom fade-szerű oldalváltása is tartozzon, a natív app mintájára. Meglévő kanonikus `go()` / `tp160-page-reveal` jelölőre épülő, csak `?tp271=1` scoped CSS: 180ms opacity 0→1, nincs translate, nincs új router/késleltetett navigáció, a fejléc/dock stabil. `prefers-reduced-motion: reduce` mellett nincs animáció. A mentési/aktív edzés logikához nem nyúlunk.
+
+A meglévő bottom-dock próba mind az öt főfülön, 320/360/393/412px-en ellenőrzi a fade nevét/idejét, a mozdulatlan tartalmat és dockot, a tényleges opacity keyframe-eket és a reduced-motion kikapcsolást. Helyi szintaxis/diff PASS; **az új fade forrás CI-kapui még ellenőrzendők**.
+
+P1h lezárt alap: `e4a830a18159183f5ad94abf268bc66dbe1ea8d0` Quick `40825471503`, Performance `40825471517`, Phone `40825466337` SUCCESS, Chromium 6/6 és release-gate SUCCESS. A kezdeti summary középre kattintás a belső Sorrend művelettel ütközött; külön célzott próba és megszakítás/adatmegőrzés ellenőrzés került be. Az eredeti `overflow:hidden` határ és a véges oldalanimáció megvárása után az új `pr271-workout-entry-393.png` teljesen kirajzolt: Quick/katalógus/kültéri belépők, önálló Settings-kártya, keret nélküli programfejléc és széles napkártyák. Megnyitott shard-2 artifact: `12875999957`.
+
+Nincs merge/release/verzióemelés/telepítés, main és PR #270 érintetlen. `www/app.js` és a natív források változatlanok. Következő: új fade-forrás kapui és screenshotok, később fizikai telefonos mozgás- és dizájnelfogadás.
+
+
 ## PR #271 – P1h programnézet, 2026-10-29
 
 Indulás: `d3ad5fc7` dokumentációs HEAD, az `a81a32c1` alkalmazás-/tesztforrás Quick/Performance/6 Chromium/Phone gate sikeres. A P1g 393px CI-képén a beállítások és programfejléc még egy nagy, egymásba ágyazott kártyán voltak.
