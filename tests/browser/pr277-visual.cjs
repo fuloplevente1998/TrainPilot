@@ -76,6 +76,9 @@ await page.locator('.tp152-program-card').first().evaluate(x=>x.open=true);await
   assert.equal(await input.getAttribute('aria-invalid'),'false');
   assert.equal(await page.evaluate(()=>db.get('draft').session.exercises[0].sets[0].actualRir),0,'RIR is persisted before OK');
   assert.equal(await page.evaluate(()=>state.session.exercises[0].sets[0].done),false,'RIR does not complete a set');
+  await page.evaluate(()=>renderWorkout());
+  assert.equal(await page.locator('.tp277-set-row [data-inline-rir]').first().inputValue(),'0','RIR survives an active-workout repaint');
+  assert.equal(await page.evaluate(()=>db.get('draft').session.exercises[0].sets[0].actualRir),0,'RIR draft survives repaint without set completion');
   await page.locator('.tp277-owner-compact summary').click();assert.equal(await page.locator('.tp277-owner-compact details').getAttribute('open'),'');await page.locator('.tp277-owner-compact summary').click();
   const dimensions=await page.evaluate(()=>({row:document.querySelector('.tp277-set-row').getBoundingClientRect().height,owner:document.querySelector('.tp277-owner-compact').getBoundingClientRect().height}));
   report.checks.push({config,compactWorkout:dimensions});assert.ok(dimensions.owner<60,'Normal owner state is a compact disclosure');
