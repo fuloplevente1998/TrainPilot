@@ -11334,7 +11334,7 @@ renderWorkout=function(){
   const rir=eligible?'<label class="small tp277-set-rir">RIR<input id="'+(si===lastDone?'tp197ActualRir':'tp229ActualRir-'+si)+'" class="field" data-set-id="'+esc(s.setId||'')+'" type="number" inputmode="numeric" min="0" max="10" step="1" value="'+(tp229RirValid(s.actualRir)?Number(s.actualRir):'')+'" placeholder="—" aria-describedby="tp197RirNote tp229RirSummary" oninput="tp197RirInput(this)"></label>':'<span class="tp277-set-rir small muted">RIR<br>—</span>';
   return '<div class="row tp153-set-row tp277-set-row"><div class="num">'+(si+1)+'</div><span class="tp277-set-previous"><small>'+esc(tp277Text('previous'))+'</small>'+esc(previous)+'</span>'+load+'<label class="small">'+esc(unit)+'<input class="field" inputmode="numeric" aria-label="'+esc(unit)+'" placeholder="'+esc(target)+'" value="'+esc(s.reps==null?'':s.reps)+'" oninput="upd('+i+','+si+',\'reps\',this.value)"></label>'+rir+'<button class="check '+(s.done?'done':'')+'" onclick="toggleSet('+i+','+si+')">'+(s.done?'✓':'OK')+'</button></div>';
  }).join('');
- const feedback=typeof rf152FeedbackHtml==='function'?rf152FeedbackHtml(se):'';
+ const feedback=typeof rf152FeedbackHtml==='function'?rf152FeedbackHtml(se,true):'';
  const quickAdd=quick&&typeof tp150qwT==='function'?'<section class="card tp150-quick-add" id="tp150QuickAdd"><div class="tp150-quick-add-head"><strong>'+esc(tp150qwT('title'))+'</strong><span class="badge">'+esc(tp150qwT('exerciseCount',{count:state.session.exercises.length}))+'</span></div><button class="btn secondary block" onclick="tp150QuickPicker()">'+esc(tp150qwT('addAnother'))+'</button></section>':'';
  const demo=tp153WorkoutVideo(e.id),guide=(note||demo)?'<details class="tp153-workout-guide tp154-workout-guide"><summary><span class="tp154-workout-guide-title">▶ '+esc(tp149T('video.demoTitle'))+'</span><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp154-workout-guide-body">'+(note?'<p class="note tp153-workout-note">'+esc(note)+'</p>':'')+demo+'</div></details>':'';
  const body='<main class="tp149-workout tp153-workout tp277-workout"><section class="card tp153-workout-head"><div class="tp153-workout-topline"><span class="small muted">'+esc(title)+'</span><strong>'+(i+1)+'/'+total+'</strong></div><h1>'+esc(name)+'</h1><div class="tp153-workout-prescription"><span>'+esc(tp149T('workout.target'))+': <b>'+sets.length+' × '+esc(target)+'</b></span></div>'+guide+'<div class="progress"><div style="width:'+pct+'%"></div></div></section><div class="section tp153-sets-title">'+esc(tp149T('workout.sets'))+'</div>'+rows+upcoming+feedback+quickAdd+'<div class="tp153-workout-actions"><button class="btn block" data-tp-workout-next onclick="nextExercise()">'+esc(tp149T(i===total-1?'workout.finish':'workout.next'))+'</button><button class="btn secondary block" onclick="prevExercise()" '+(i===0?'disabled':'')+'>'+esc(tp149T('workout.previous'))+'</button></div></main>';
@@ -20317,7 +20317,7 @@ var tp197RirInput=function(input){
  const saved=tp197RirSave(valid?value:'',false,input.dataset?.setId||null);
  input.setAttribute?.('aria-invalid',valid&&saved?'false':'true');return valid&&saved;
 };
-var tp197RirField=function(session,exercise){
+var tp197RirField=function(session,exercise,inputs=true){
  if(!tp197RirEligible(session,exercise))return '';
  const t=tp197RirWords(),rows=exercise.sets.map((set,index)=>({set,index})).filter(row=>row.set.done===true);
  const last=rows.at(-1)?.set;
@@ -20329,16 +20329,21 @@ var tp197RirField=function(session,exercise){
  };
  const l=labels[typeof rf212Lang==='function'?rf212Lang():'hu']||labels.en;
  return '<div class="tp197-rir-field tp229-rir"><strong>'+esc(t.title)+'</strong>'+
+ (inputs?rows.map(({set,index})=>{
+  const id=set===last?'tp197ActualRir':'tp229ActualRir-'+index;
+  return '<label for="'+id+'">'+(index+1)+'. '+esc(l.set)+'</label>'+
+   '<input id="'+id+'" class="field" data-set-id="'+esc(set.setId||'')+'" type="number" inputmode="numeric" min="0" max="10" step="1" value="'+(tp229RirValid(set.actualRir)?Number(set.actualRir):'')+'" placeholder="'+esc(t.missing)+'" aria-describedby="tp197RirNote tp229RirSummary" oninput="tp197RirInput(this)">';
+ }).join(''):'')+
  '<p id="tp197RirNote" class="small muted">'+esc(t.note)+'</p><p id="tp229RirSummary" class="small muted">'+esc(l.summary)+'</p>'+
  (tp229RirValid(exercise.actualRir)?'<p class="small muted">'+esc(l.legacy)+': '+Number(exercise.actualRir)+'</p>':'')+'</div>';
 };
 window.TrainPilotSetRir229={valid:tp229RirValid,observation:tp229RirObservation};
 (function(){
  const previous=rf152FeedbackHtml;
- rf152FeedbackHtml=function(exercise){
+ rf152FeedbackHtml=function(exercise,inlineRir){
   const html=String(previous.apply(this,arguments)),session=state.session,active=session?.exercises?.[state.current];
   if(active!==exercise)return html;
-  const additional=tp197RirField(session,exercise);
+  const additional=tp197RirField(session,exercise,!inlineRir);
   return additional?html.replace(/<\/div>\s*$/,additional+'</div>'):html;
  };
  const css=document.createElement('style');css.id='tp197RirStyle';

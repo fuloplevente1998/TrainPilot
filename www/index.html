@@ -1982,7 +1982,7 @@
    return list.map(function(p){
     const active=p.id===activeId,accent=tp152ProgramAccent(p),name=tp149ProgramMeta(p,'name'),location=tp149ProgramMeta(p,'location'),level=tp149ProgramMeta(p,'level');
     const stats=tp149T('program.cardStats',{days:p.days.length,counts:p.days.map(function(d){return d.exercises.length}).join('/')});
-    return '<details class="program-card rf103-program-card tp152-program-card tp277-program-card '+(active?'active-program':'')+'" style="--tp-program-accent:'+esc(accent)+'" data-tp7-program-id="'+esc(p.id)+'" ontoggle="if(this.open)tp7EnsureProgramBody(this,\''+esc(p.id)+'\')"><summary onclick="if(!this.parentElement.open)tp7EnsureProgramBody(this.parentElement,\''+esc(p.id)+'\')"><div class="rf103-program-main">'+tp277ProgramIcon(p)+'<div class="rf103-program-info"><h3>'+esc(name)+'</h3><div class="tp277-program-meta"><span class="badge">'+esc(location)+'</span><span class="badge">'+esc(level)+'</span></div><p class="small muted">'+esc(stats)+'</p></div><button class="btn rf103-program-activate '+(active?'secondary':'')+'" '+(active?'disabled':'')+' onclick="event.preventDefault();event.stopPropagation();activateProgram(\''+esc(p.id)+'\')">'+esc(tp149T(active?'program.active':'program.activate'))+'</button></div><span class="tp152-chevron tp152-program-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-program-card-body" data-tp7-hydrated="false"></div></details>';
+    return '<details class="program-card rf103-program-card tp152-program-card tp277-program-card '+(active?'active-program':'')+'" style="--tp-program-accent:'+esc(accent)+'" data-tp7-program-id="'+esc(p.id)+'" ontoggle="if(this.open)tp7EnsureProgramBody(this,\''+esc(p.id)+'\')"><summary onclick="if(!this.parentElement.open)tp7EnsureProgramBody(this.parentElement,\''+esc(p.id)+'\')"><div class="rf103-program-main">'+tp277ProgramIcon(p)+'<div class="rf103-program-info"><h3>'+esc(name)+'</h3><div class="tp277-program-meta"><span class="badge">'+esc(location)+'</span><span class="badge">'+esc(level)+'</span>'+((p.goal||p.profile?.goal)?'<span class="badge">'+esc(tp149PlannerRow('goal',p.goal||p.profile.goal))+'</span>':'')+'</div><p class="small muted">'+esc(stats)+'</p></div><button class="btn rf103-program-activate '+(active?'secondary':'')+'" '+(active?'disabled':'')+' onclick="event.preventDefault();event.stopPropagation();activateProgram(\''+esc(p.id)+'\')">'+esc(tp149T(active?'program.active':'program.activate'))+'</button></div><span class="tp152-chevron tp152-program-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-program-card-body" data-tp7-hydrated="false"></div></details>';
    }).join('');
   };
   window.programCards=programCards;
@@ -2185,6 +2185,7 @@
       var preview=panel.querySelector('.tp277-route-preview');
       if(!preview){preview=append('button',panel,'tp277-route-preview');preview.type='button';preview.setAttribute('aria-label',t('viewLive'));preview.addEventListener('click',openLiveRoute);}
       preview.replaceChildren();drawOffline(preview,parsed.sections);
+      preview.querySelectorAll('[class^="tp163-route-"]').forEach(function(el){el.setAttribute('class',el.getAttribute('class').replace('tp163-route-','tp277-preview-'));});
       var button=document.getElementById('tp163LiveMapButton');if(button)button.before(preview);
     }catch(_){}finally{delete panel.dataset.tp277PreviewBusy;}
   }
@@ -2238,7 +2239,7 @@
       else stateNow.hint.textContent=parsed.partial?t('partial'):t('offline')+' · '+parsed.count+' '+t('points');
       if(activeMap&&parsed.count)stateNow.hint.textContent=t('onlineReady')+' · '+parsed.count+' '+t('points');
       stateNow.sections=parsed.sections;
-      var preview=document.querySelector('.tp277-route-preview');if(preview){preview.replaceChildren();drawOffline(preview,parsed.sections);}
+      var preview=document.querySelector('.tp277-route-preview');if(preview){preview.replaceChildren();drawOffline(preview,parsed.sections);preview.querySelectorAll('[class^="tp163-route-"]').forEach(function(el){el.setAttribute('class',el.getAttribute('class').replace('tp163-route-','tp277-preview-'));});}
       // The route has no background tile/Leaflet requests until explicit online consent.
       if(parsed.count&&navigator.onLine&&!stateNow.consent){
         stateNow.consent=true;
