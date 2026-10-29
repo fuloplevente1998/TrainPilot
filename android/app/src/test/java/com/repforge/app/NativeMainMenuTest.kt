@@ -94,6 +94,24 @@ class NativeMainMenuTest {
         assertTrue(NativeMainMenu.navigationAllowed("settings", false, false, false, false, false))
         assertFalse(NativeMainMenu.navigationAllowed("settings", false, false, false, false, true))
     }
+    @Test fun staleWatchCommandSuspensionNeverTrapsInactivePhoneNavigation() {
+        // Reproduce a persisted suspension after the watch closes its session.
+        for (target in NativeMainMenu.routes + NativeMainMenu.secondaryRoutes) {
+            assertTrue("Browsing $target should work after inactive watch sync",
+                NativeMainMenu.navigationAllowed(target, false, false, false, false, true,
+                    hasActiveWorkout = false))
+        }
+        // No weakening of the actual active-session, restore or finish fences.
+        assertFalse(NativeMainMenu.navigationAllowed("settings", false, false, false, false, true,
+            hasActiveWorkout = true))
+        assertFalse(NativeMainMenu.navigationAllowed("settings", false, false, true, false, true,
+            hasActiveWorkout = false))
+        assertFalse(NativeMainMenu.navigationAllowed("settings", false, false, false, true, true,
+            hasActiveWorkout = false))
+        assertFalse(NativeMainMenu.navigationAllowed("settings", true, false, false, false, true,
+            hasActiveWorkout = false))
+    }
+
     @Test fun unknownDestinationsCannotEnterTheBackStack() {
         assertThrows(IllegalArgumentException::class.java) { NativeMainMenu.destination("unknown", false) }
     }
