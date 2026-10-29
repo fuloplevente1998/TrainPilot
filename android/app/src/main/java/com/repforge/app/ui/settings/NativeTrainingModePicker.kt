@@ -85,11 +85,15 @@ internal fun NativeTrainingModePicker(
         comparisonFor = null
         comparisonFailed = false
         if (proposal != null) {
+            if (com.repforge.app.BuildConfig.DEBUG) android.util.Log.d("NativeModeApproval",
+                "Comparison started scope=$scope program=${proposal.programId}")
             try {
                 comparison = withContext(Dispatchers.IO) {
                     NativeTrainingModeComparison.read(ctx, proposal)
                 }
                 comparisonFor = proposal
+                if (com.repforge.app.BuildConfig.DEBUG) android.util.Log.d("NativeModeApproval",
+                    "Comparison ready rows=${comparison?.rows?.size}")
             } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
             catch (failure: Exception) {
                 android.util.Log.w("NativeModeApproval", "Read-only comparison failed", failure)

@@ -61,6 +61,22 @@ class NativeTrainingModeApprovalUiTest {
                         .fetchSemanticsNodes().isNotEmpty()
             }
         } catch (failure: Throwable) {
+            val instrumentation = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+            val device = androidx.test.uiautomator.UiDevice.getInstance(instrumentation)
+            android.util.Log.e("NativeModeApproval", "Comparison timeout windows: " +
+                device.executeShellCommand("dumpsys window"))
+            val name = "mode_comparison_timeout_" + System.nanoTime().toString()
+            val request = JSONObject().put("name", name).put("language", current().language)
+                .put("theme", current().themeKey).put("screen", "mode_comparison_timeout")
+                .put("data", "isolated-emulator-test-fixture").toString()
+            val pipes = instrumentation.uiAutomation.executeShellCommandRw("tee /data/local/tmp/trainpilot-shot-request")
+            android.os.ParcelFileDescriptor.AutoCloseOutputStream(pipes[1]).use { it.write(request.toByteArray()) }
+            android.os.ParcelFileDescriptor.AutoCloseInputStream(pipes[0]).use { it.readBytes() }
+            val deadline = System.nanoTime() + 15_000_000_000L
+            while (System.nanoTime() < deadline) {
+                if (device.executeShellCommand("cat /data/local/tmp/trainpilot-shot-ack").trim() == name) break
+                Thread.sleep(100)
+            }
             throw AssertionError("Program picker after preview: " +
                 compose.onAllNodes(isRoot(), useUnmergedTree = true).printToString().take(8500), failure)
         }

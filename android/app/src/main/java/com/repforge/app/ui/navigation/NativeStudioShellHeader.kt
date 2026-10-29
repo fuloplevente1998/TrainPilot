@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import kotlin.math.roundToInt
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
@@ -128,7 +130,7 @@ internal fun NativeStudioShellHeader(
                     // Brand exception explicitly approved by the owner:
                     // exact original gold dumbbell used by the launcher icon.
                     TrainPilotBrandLogo()
-                    Text("TrainPilot", modifier = Modifier.testTag("header_brand_text"), style = MaterialTheme.typography.titleMedium.copy(
+                    Text("TrainPilot", modifier = Modifier.width(IntrinsicSize.Max).testTag("header_brand_text"), style = MaterialTheme.typography.titleMedium.copy(
                         letterSpacing = (-.2).sp), fontWeight = FontWeight.Bold,
                         color = colors.accentText, maxLines = 1,
                         overflow = TextOverflow.Ellipsis)
@@ -211,7 +213,7 @@ internal fun NativeStudioShellHeader(
             // 18:49 source five-tab row, with the real native navigation fences.
             BoxWithConstraints(Modifier.fillMaxWidth()) {
                 val scrollable = NativeMainMenu.topTabsScrollable(
-                    availableWidthDp = maxWidth.value,
+                    availableWidthDp = maxWidth.value.roundToInt().toFloat(),
                     fontScale = LocalDensity.current.fontScale)
                 val scroll = rememberScrollState()
                 LaunchedEffect(selected, scrollable, scroll.maxValue) {

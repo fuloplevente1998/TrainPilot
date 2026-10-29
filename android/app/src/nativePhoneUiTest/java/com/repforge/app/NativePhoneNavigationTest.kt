@@ -216,8 +216,9 @@ class NativePhoneNavigationTest {
         val brandLayouts = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
         compose.onNodeWithTag("header_brand_text", useUnmergedTree = true).assertIsDisplayed()
             .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { it(brandLayouts) }
-        assertTrue(brandLayouts.isNotEmpty() && brandLayouts.none { it.hasVisualOverflow })
         screenshot("studio_original_gold_dumbbell", theme = "graphite_gold")
+        assertTrue("Brand layout: " + brandLayouts.joinToString { "size=${it.size}, paragraph=${it.multiParagraph.width}, constraints=${it.layoutInput.constraints}" },
+            brandLayouts.isNotEmpty() && brandLayouts.none { it.hasVisualOverflow })
         tab("progress")
         compose.onNodeWithTag("trainpilot_brand_dumbbell", useUnmergedTree = true)
             .assertExists()
@@ -228,6 +229,9 @@ class NativePhoneNavigationTest {
         compose.onNodeWithTag("navigation_settings").performClick()
         compose.onNodeWithTag("settings_google_summary").assertIsDisplayed()
         screenshot("studio_settings_initial", theme = "graphite_gold")
+        compose.onNodeWithTag("settings_theme_summary").performScrollTo().performClick()
+        compose.onNodeWithTag("settings_theme_picker").performScrollTo().assertIsDisplayed()
+        screenshot("studio_settings_compact_themes", theme = "graphite_gold")
     }
 
     @Test fun studioJournalMonthSelectorFiltersRealPagedHistoryAndReturnsToAllMonths() {
