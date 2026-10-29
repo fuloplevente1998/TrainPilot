@@ -4,8 +4,11 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
 const html=fs.readFileSync('www/index.html','utf8'),
       css=fs.readFileSync('www/uiux-277.css','utf8'),
       settings=html.slice(html.lastIndexOf('// PR277 Settings presentation:'));
-assert.ok((html.match(/<script defer src=/g)||[]).length===1,
-  'Settings enhancement must preserve single canonical deferred runtime');
+const deferred=[...html.matchAll(/<script defer src="([^"]+)"/g)].map(m=>m[1]);
+assert.ok(deferred.length>0,'Runtime source must be loaded');
+assert.ok(!deferred.includes('uiux-277-settings.js'),'Settings must not add another deferred runtime');
+if(fs.existsSync('www/app.js'))assert.deepEqual(deferred,['app.js'],'Production keeps a single canonical deferred runtime');
+else assert.ok(deferred.includes('ready.js'),'Test harness expands canonical sections in a temporary directory');
 assert.ok(html.includes('tp277ProgramIcon(tp277ProgramKind(p,name))'),'Program icon derived from program metadata');
 assert.ok(html.includes('tp277DayOverview(p,d)'),'Workout preview derived from existing day renderer');
 for(const token of ['tp277-settings-heading','tp152-settings-backup','tp152-settings-profile','rf212-language',
