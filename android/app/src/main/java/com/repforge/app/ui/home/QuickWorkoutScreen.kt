@@ -122,7 +122,8 @@ internal fun QuickWorkoutScreen(
             error != null -> Text(error!!, color = colors.text)
             loaded == null -> CircularProgressIndicator()
             list.isEmpty() -> Text(text[4], color = colors.text)
-            else -> LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            else -> LazyColumn(Modifier.weight(1f).testTag("quick_exercise_list"),
+                verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(list, key = { it.id }) { ex ->
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         OutlinedButton(onClick = { selected = ex }, enabled = !starting,
