@@ -1,3 +1,15 @@
+# Current update — 2026-10-29
+
+App source bb0abb61e3da8bced494d3abc929825d54080761, CI merge 0179fb645d30887d34021d54abb4edee3329f5ee.
+Full run40817997229 FAILED phone UI; other6jobs SUCCESS, Quick40817997213 SUCCESS.
+Raw JVM1346 PASS; raw phone123 terminal=120PASS/3FAIL,70 screenshots.
+Failures: both new brand text layout assertions (including320dp/font2), and training-mode approval program picker timeout. Do not weaken assertions or claim full green.
+Owner display readback1080x2392/450dpi/font0.90 confirmed. Health localized date visible; brand visually complete on Home but text-layout overflow still reported. Five top tabs scroll; Health labels break awkwardly. New overview/initial-settings captures were skipped after the new logo-test assertion failed.
+User requests actual latest screenshots before deciding further visual direction. Four original PNGs delivered: Home, Health, scrolled Progress anatomy and expanded Settings palette. Last two are not initial overview captures. No further design change pending user's image review.
+Version/signing/engine/Room/Health/Wear/GPS unchanged. PR remains DRAFT; no merge.
+
+## Previous verified CI repair (historical)
+
 # PR270 active checkpoint
 
 Updated 2026-10-29. PR270 stays DRAFT on `feat/studio-ui-topnav-trial-20261027`,
