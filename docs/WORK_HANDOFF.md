@@ -2,6 +2,12 @@
 
 ## PR #271 – P1i oldaláttűnés, 2026-10-29
 
+**Zöld végállapot:** tesztelt alkalmazás-/tesztforrás `1b123f48926dd96966d6b84cdc979a5f26fd0428`. Quick `40851361966`, Performance `40851361954`, Phone `40851354558` SUCCESS: 6/6 Chromium és release-gate, APK source/package/signer ellenőrzés SUCCESS. Letöltött natív XML: 251 teszt, 0 failure/error/skipped. Publish GitHub Release SKIPPED. Ez a dokumentációs checkpoint nem új alkalmazáskód.
+
+A bottom-dock fade-próba shard-1-ben PASS (8.52s), a program/settings/Sorrend/indítás próba shard-2-ben PASS. Az azonos-forrású `pr271-workout-entry-393.png` képet megnyitottuk: Quick/katalógus/kültéri, Settings, programfejléc és napkártyák kirajzolódnak. Kép: shard-2 artifact `12887028721`. Az animáció tényleges keyframe-jeit és reduced-motion viselkedését a Chromium-próba igazolja; a fizikai készülékes mozgásérzet és a teljes 24 nézet elfogadása továbbra is hátravan. Következő: az aktív edzés sorozat/pihenő felületének képi auditja és célzott stílusfinomítása a meglévő motor megőrzésével.
+
+Az alábbi szakasz az implementáció terjedelmét és a korábbi állapotot rögzíti:
+
 Felhasználói kérés: a mockup-dizájnhoz az egész oldaltartalom fade-szerű oldalváltása is tartozzon, a natív app mintájára. Meglévő kanonikus `go()` / `tp160-page-reveal` jelölőre épülő, csak `?tp271=1` scoped CSS: 180ms opacity 0→1, nincs translate, nincs új router/késleltetett navigáció, a fejléc/dock stabil. `prefers-reduced-motion: reduce` mellett nincs animáció. A mentési/aktív edzés logikához nem nyúlunk.
 
 A meglévő bottom-dock próba mind az öt főfülön, 320/360/393/412px-en ellenőrzi a fade nevét/idejét, a mozdulatlan tartalmat és dockot, a tényleges opacity keyframe-eket és a reduced-motion kikapcsolást. Helyi szintaxis/diff PASS; **az új fade forrás CI-kapui még ellenőrzendők**.
