@@ -85,3 +85,55 @@ html body #app main.tp150-programs-compact .rf103-program-extra .btn{
 @media(prefers-reduced-motion:reduce){
   html body #app main.tp150-programs-compact .tp277-program-icon{transition:none!important;}
 }
+
+/* PR #277 phase 2: Workout / Start day.  Only the plan disclosure,
+   not an active session, Wear screen, video launcher or the main nav. */
+html body #app main.tp152-plan .tp152-day{
+  margin:6px 0!important;
+  border-radius:14px!important;
+}
+html body #app main.tp152-plan .tp152-day>summary{
+  padding:9px 11px!important;
+  min-height:74px;
+}
+html body #app main.tp152-plan .tp152-day .tp146-day-copy{
+  min-width:0;
+  flex:1 1 auto;
+}
+html body #app main.tp152-plan .tp152-day .tp146-day-copy>.badge{
+  margin:0 0 3px!important;
+  padding:3px 7px!important;
+}
+html body #app main.tp152-plan .tp152-day .tp146-day-title{
+  margin:2px 0 3px!important;
+}
+html body #app main.tp152-plan .tp277-day-overview{
+  margin-top:3px;
+  font-weight:600;
+  color:var(--text);
+  line-height:1.35;
+  overflow-wrap:anywhere;
+}
+html body #app main.tp152-plan .tp277-day-preview{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:baseline;
+  gap:0 4px;
+  margin-top:2px;
+  line-height:1.35;
+  overflow-wrap:anywhere;
+}
+html body #app main.tp152-plan .tp152-day-body{
+  padding:0 9px 10px!important;
+}
+html body #app main.tp152-plan .tp152-day-body>.tp152-exercise{
+  margin:5px 0!important;
+}
+html body #app main.tp152-plan .tp152-start-day{
+  margin-top:7px!important;
+  min-height:44px;
+}
+@media(max-width:360px){
+  html body #app main.tp152-plan .tp152-day>summary{padding:8px 9px!important;}
+  html body #app main.tp152-plan .tp277-day-preview{font-size:var(--tp-type-caption,12px);}
+}
