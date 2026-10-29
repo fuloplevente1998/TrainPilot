@@ -39,10 +39,19 @@ internal object NativeMainMenu {
             (current == "active_workout" || (current == "settings" && settingsOrigin == "active_workout"))
 
     /** A failed finalization may need an editor retry; returning there never starts a session. */
+    /**
+     * A watch handoff can leave a durable execution-command suspension after its
+     * workout was already removed. An inactive phone must still be able to
+     * navigate; this check NEVER clears the suspension or authorizes writes.
+     * NativeWorkoutSession/NativeWorkoutEditing keep their independent guards.
+     * Active sessions, recovery and finalization retain the strict fences.
+     */
     fun navigationAllowed(target: String, starting: Boolean, finishing: Boolean, finalizing: Boolean,
-        restoreBlocked: Boolean, commandsSuspended: Boolean): Boolean =
+        restoreBlocked: Boolean, commandsSuspended: Boolean,
+        hasActiveWorkout: Boolean = true): Boolean =
         !starting && !finishing && !restoreBlocked &&
-            (target == "active_workout" || (!finalizing && !commandsSuspended))
+            (target == "active_workout" || (!finalizing &&
+                (!commandsSuspended || !hasActiveWorkout)))
 
     fun labels(language: String) = when (language) {
         "en" -> listOf("Home", "Training", "Journal", "Progress", "Health")
