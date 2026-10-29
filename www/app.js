@@ -5307,7 +5307,7 @@ var rf263SetHistoryFilter = function rf263SetHistoryFilter(key,value){
 var rf263ClearHistoryFilter = function rf263ClearHistoryFilter(){rf263HistoryFilter={from:'',to:''};render(historyScreen())};
 var tp277HistorySummary=function(x){
  const completed=(x.exercises||[]).flatMap(e=>(e.sets||[]).filter(s=>s.done===true).map(s=>({e,s})));
- const volume=completed.reduce((sum,{e,s})=>sum+(e.repUnit==='ism.'&&e.loadType!=='bodyweight'&&Number(s.weight)>0&&Number(s.reps)>0?Number(s.weight)*Number(s.reps):0),0);
+ const volume=completed.reduce((sum,{e,s})=>sum+(['ism','ism.','reps'].includes(e.repUnit)&&e.loadType!=='bodyweight'&&Number(s.weight)>0&&Number(s.reps)>0?Number(s.weight)*Number(s.reps):0),0);
  const rir=completed.filter(({s})=>s.actualRir!==null&&s.actualRir!==undefined&&s.actualRir!==''&&Number.isFinite(Number(s.actualRir))).map(({s})=>Number(s.actualRir));
  return (volume>0?'<span class="history-badge">'+esc(tp149FormatNumber(volume))+' kg</span>':'')+(rir.length?'<span class="history-badge">RIR '+esc(tp149FormatNumber(rir.reduce((a,b)=>a+b,0)/rir.length))+'</span>':'');
 };
@@ -10497,7 +10497,7 @@ var tp150CompactQuickCard=function tp150CompactQuickCard(){
 
 programsScreen=function(){
  const custom=exercises().filter(function(e){return e.custom;});
- const tools='<div class="tp150-program-tools"><button class="btn" onclick="createCustomProgram()">'+esc(tp149T('programs.create'))+'</button><button class="btn secondary" onclick="customExerciseScreen()">'+esc(tp149T('programs.createExercise'))+'</button><button class="btn secondary" onclick="muscleLibrary()">'+esc(tp149T('programs.library'))+'</button></div>';
+ const tools='<div class="tp150-program-tools tp277-program-tools"><button class="btn" onclick="createCustomProgram()">'+esc(tp149T('programs.create'))+'</button><button class="btn secondary" onclick="customExerciseScreen()">'+esc(tp149T('programs.createExercise'))+'</button><button class="btn secondary" onclick="muscleLibrary()">'+esc(tp149T('programs.library'))+'</button></div>';
  const list='<section class="tp150-programs-frame"><div class="section tp150-programs-frame-title">'+esc(tp149T('programs.title'))+'</div>'+programCards()+'</section>';
  const customRows=custom.length?'<div class="section">'+esc(tp149T('programs.customExercises'))+'</div>'+custom.map(function(e){return '<div class="custom-ex-row"><span>'+esc(tp149ExerciseName(e))+'</span><button class="btn danger" onclick="deleteCustomExercise14(\''+esc(e.id)+'\')">'+esc(tp149T('common.delete'))+'</button></div>';}).join(''):'';
  return shell('<main class="tp150-programs-compact">'+tools+list+customRows+'</main>');
@@ -11587,9 +11587,9 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   if(!head||head.querySelector('.tp155-workout-coach')||!state.session)return;
   var i=Math.max(0,Math.min(Number(state.current)||0,(state.session.exercises||[]).length-1)),se=(state.session.exercises||[])[i];if(!se)return;
   var decision=null,advice=null;try{decision=rf233Decision(rf220Readiness());advice=rf233ExerciseAdvice(se.id,decision)}catch(_){}
-  var a=window.tp155CoachShortAdvice(se.id,decision,advice),c=copy(),box=document.createElement('div');
-  box.className='tp155-workout-coach';
-  box.innerHTML='<span class="tp155-workout-coach-kicker">'+esc(c.coach)+'</span>'+(a.label?'<strong>'+esc(a.label)+'</strong>':'')+'<p>'+esc(a.text)+'</p>';
+  var a=window.tp155CoachShortAdvice(se.id,decision,advice),c=copy(),box=document.createElement('details');
+  box.className='tp155-workout-coach tp277-workout-coach';box.open=a.action==='pain'||a.action==='easy';
+  box.innerHTML='<summary><span class="tp155-workout-coach-kicker">'+esc(c.coach)+'</span>'+(a.label?'<strong>'+esc(a.label)+'</strong>':'')+'<span aria-hidden="true">›</span></summary><p>'+esc(a.text)+'</p>';
   var anchor=head.querySelector('.tp153-workout-prescription');if(anchor)anchor.insertAdjacentElement('afterend',box);else head.appendChild(box);
  };
  if(typeof renderWorkout==='function'){

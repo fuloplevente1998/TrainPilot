@@ -2004,7 +2004,7 @@
   if(state.tab==='programs'&&programList&&!main.querySelector('.tp128-update')){
    const p=activeProgram();
    if(['home-basic','home-level2'].includes(p?.id)&&!p.templateVersion){
-    const entry=document.createElement('div');entry.className='card tp128-update';entry.innerHTML='<strong>'+esc(tp128T('update'))+'</strong><button class="btn secondary block" onclick="tp128OpenTemplate()">'+esc(tp128T('preview'))+'</button>';programList.before(entry);
+    const entry=document.createElement('details');entry.className='card tp128-update tp277-template-update';entry.innerHTML='<summary>'+esc(tp128T('update'))+'</summary><button class="btn secondary block" onclick="tp128OpenTemplate()">'+esc(tp128T('preview'))+'</button>';programList.before(entry);
    }
    for(const card of main.querySelectorAll('[data-tp7-program-id]')){
     const p=programById(card.dataset.tp7ProgramId),info=card.querySelector('.rf103-program-info');if(info&&!info.querySelector('.tp128-source')){const b=document.createElement('span');b.className='badge tp128-source';b.textContent=tp128T(p.sourceType==='profile-template'||p.sourceType==='coach'?'adapted':p.builtin?'template':p.generated?'custom':'own');info.prepend(b);}
@@ -2176,8 +2176,8 @@
   var previewRequest=0;
   async function previewLiveRoute(panel,trip){
     // Read the native private route; no invented coordinates or tile requests.
-    if(!trip||panel.dataset.tp277PreviewBusy==='true')return;
-    panel.dataset.tp277PreviewBusy='true';var request=++previewRequest;
+    if(!trip||panel.dataset.tp277PreviewBusy==='true'||performance.now()-Number(panel.dataset.tp277PreviewAt||-5000)<5000)return;
+    panel.dataset.tp277PreviewBusy='true';panel.dataset.tp277PreviewAt=String(performance.now());var request=++previewRequest;
     try{
       var reply=await bridge()?.route?.({key:trip.key});
       if(!panel.isConnected||currentLiveTrip()?.key!==trip.key||request!==previewRequest)return;
