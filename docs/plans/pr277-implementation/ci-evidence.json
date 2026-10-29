@@ -1,0 +1,548 @@
+{
+  "baseline": "8a36502da5832a42f1cb91708ecfed5cf4f9ed62",
+  "applicationSource": "65eea4473224614d74895b3ff8f841365a6c0ca0",
+  "tree": "07f783c3c31544825f729a1e32c7b55e9619c17b",
+  "quick": {
+    "run": 40900070656,
+    "passed": 163,
+    "failed": 0
+  },
+  "performance": {
+    "run": 40900070503,
+    "mergeSource": "7b0c7115d282bb4643d8604aadc3c1902afa5ebe",
+    "treeMatchesApplication": true
+  },
+  "runs": {
+    "phone": 40900058363,
+    "wear": 40900058671,
+    "webview": 40900058931,
+    "wearRound": 40900058641
+  },
+  "roundUniqueTests": 183,
+  "artifacts": [
+    {
+      "archive": "pr277-12909460959.zip",
+      "xml": {
+        "tests": 0,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "files": 0
+      },
+      "reports": [
+        {
+          "file": "ui-results/shard-4-of-6.json",
+          "source": "65eea4473224614d74895b3ff8f841365a6c0ca0",
+          "status": "passed",
+          "results": 19,
+          "failed": [],
+          "screens": 0,
+          "errors": [],
+          "checks": []
+        }
+      ],
+      "apks": []
+    },
+    {
+      "archive": "pr277-12909117716.zip",
+      "xml": {
+        "tests": 0,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "files": 0
+      },
+      "reports": [
+        {
+          "file": "ui-results/shard-5-of-6.json",
+          "source": "65eea4473224614d74895b3ff8f841365a6c0ca0",
+          "status": "passed",
+          "results": 19,
+          "failed": [],
+          "screens": 0,
+          "errors": [],
+          "checks": []
+        }
+      ],
+      "apks": []
+    },
+    {
+      "archive": "pr277-12909102290.zip",
+      "xml": {
+        "tests": 0,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "files": 0
+      },
+      "reports": [
+        {
+          "file": "ui-results/pr277-visual.json",
+          "source": "65eea4473224614d74895b3ff8f841365a6c0ca0",
+          "status": null,
+          "results": 0,
+          "failed": [],
+          "screens": 200,
+          "errors": [],
+          "checks": [
+            {
+              "version": "before",
+              "config": {
+                "width": 320,
+                "theme": "classicBlue",
+                "lang": "hu",
+                "font": 1
+              },
+              "visiblePrograms": 3
+            },
+            {
+              "version": "before",
+              "config": {
+                "width": 320,
+                "theme": "yellow",
+                "lang": "hu",
+                "font": 1
+              },
+              "visiblePrograms": 3
+            },
+            {
+              "version": "before",
+              "config": {
+                "width": 360,
+                "theme": "classicBlue",
+                "lang": "hu",
+                "font": 1
+              },
+              "visiblePrograms": 3
+            },
+            {
+              "version": "before",
+              "config": {
+                "width": 360,
+                "theme": "yellow",
+                "lang": "hu",
+                "font": 1
+              },
+              "visiblePrograms": 3
+            },
+            {
+              "version": "before",
+              "config": {
+                "width": 393,
+                "theme": "classicBlue",
+                "lang": "hu",
+                "font": 1
+              },
+              "visiblePrograms": 3
+            },
+            {
+              "version": "before",
+              "config": {
+                "width": 393,
+                "theme": "yellow",
+                "lang": "hu",
+                "font": 1
+              },
+              "visiblePrograms": 3
+            },
+            {
+              "version": "before",
+              "config": {
+                "width": 320,
+                "theme": "classicPurple",
+                "lang": "de",
+                "font": 1.3
+              },
+              "visiblePrograms": 2
+            },
+            {
+              "version": "before",
+              "config": {
+                "width": 393,
+                "theme": "green",
+                "lang": "ro",
+                "font": 1.3
+              },
+              "visiblePrograms": 3
+            },
+            {
+              "version": "after",
+              "config": {
+                "width": 320,
+                "theme": "classicBlue",
+                "lang": "hu",
+                "font": 1
+              },
+              "visiblePrograms": 3
+            },
+            {
+              "config": {
+                "width": 320,
+                "theme": "classicBlue",
+                "lang": "hu",
+                "font": 1
+              },
+              "sticky": {
+                "position": "sticky",
+                "y": 126
+              }
+            },
+            {
+              "version": "after",
+              "config": {
+                "width": 320,
+                "theme": "yellow",
+                "lang": "hu",
+                "font": 1
+              },
+              "visiblePrograms": 3
+            },
+            {
+              "config": {
+                "width": 320,
+                "theme": "yellow",
+                "lang": "hu",
+                "font": 1
+              },
+              "sticky": {
+                "position": "sticky",
+                "y": 126
+              }
+            },
+            {
+              "version": "after",
+              "config": {
+                "width": 360,
+                "theme": "classicBlue",
+                "lang": "hu",
+                "font": 1
+              },
+              "visiblePrograms": 4
+            },
+            {
+              "config": {
+                "width": 360,
+                "theme": "classicBlue",
+                "lang": "hu",
+                "font": 1
+              },
+              "sticky": {
+                "position": "sticky",
+                "y": 126
+              }
+            },
+            {
+              "version": "after",
+              "config": {
+                "width": 360,
+                "theme": "yellow",
+                "lang": "hu",
+                "font": 1
+              },
+              "visiblePrograms": 4
+            },
+            {
+              "config": {
+                "width": 360,
+                "theme": "yellow",
+                "lang": "hu",
+                "font": 1
+              },
+              "sticky": {
+                "position": "sticky",
+                "y": 126
+              }
+            },
+            {
+              "version": "after",
+              "config": {
+                "width": 393,
+                "theme": "classicBlue",
+                "lang": "hu",
+                "font": 1
+              },
+              "visiblePrograms": 4
+            },
+            {
+              "config": {
+                "width": 393,
+                "theme": "classicBlue",
+                "lang": "hu",
+                "font": 1
+              },
+              "sticky": {
+                "position": "sticky",
+                "y": 131
+              }
+            },
+            {
+              "version": "after",
+              "config": {
+                "width": 393,
+                "theme": "yellow",
+                "lang": "hu",
+                "font": 1
+              },
+              "visiblePrograms": 4
+            },
+            {
+              "pr1500": {
+                "reads": 3,
+                "count": 19
+              }
+            },
+            {
+              "config": {
+                "width": 393,
+                "theme": "yellow",
+                "lang": "hu",
+                "font": 1
+              },
+              "sticky": {
+                "position": "sticky",
+                "y": 131
+              }
+            },
+            {
+              "version": "after",
+              "config": {
+                "width": 320,
+                "theme": "classicPurple",
+                "lang": "de",
+                "font": 1.3
+              },
+              "visiblePrograms": 3
+            },
+            {
+              "config": {
+                "width": 320,
+                "theme": "classicPurple",
+                "lang": "de",
+                "font": 1.3
+              },
+              "sticky": {
+                "position": "sticky",
+                "y": 126
+              }
+            },
+            {
+              "version": "after",
+              "config": {
+                "width": 393,
+                "theme": "green",
+                "lang": "ro",
+                "font": 1.3
+              },
+              "visiblePrograms": 4
+            },
+            {
+              "config": {
+                "width": 393,
+                "theme": "green",
+                "lang": "ro",
+                "font": 1.3
+              },
+              "sticky": {
+                "position": "sticky",
+                "y": 131
+              }
+            }
+          ]
+        },
+        {
+          "file": "ui-results/shard-1-of-6.json",
+          "source": "65eea4473224614d74895b3ff8f841365a6c0ca0",
+          "status": "passed",
+          "results": 18,
+          "failed": [],
+          "screens": 0,
+          "errors": [],
+          "checks": []
+        }
+      ],
+      "apks": []
+    },
+    {
+      "archive": "pr277-12908527836.zip",
+      "xml": {
+        "tests": 0,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "files": 0
+      },
+      "reports": [
+        {
+          "file": "ui-results/shard-6-of-6.json",
+          "source": "65eea4473224614d74895b3ff8f841365a6c0ca0",
+          "status": "passed",
+          "results": 19,
+          "failed": [],
+          "screens": 0,
+          "errors": [],
+          "checks": []
+        }
+      ],
+      "apks": []
+    },
+    {
+      "archive": "pr277-12908383113.zip",
+      "xml": {
+        "tests": 0,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "files": 0
+      },
+      "reports": [
+        {
+          "file": "ui-results/shard-3-of-6.json",
+          "source": "65eea4473224614d74895b3ff8f841365a6c0ca0",
+          "status": "passed",
+          "results": 19,
+          "failed": [],
+          "screens": 0,
+          "errors": [],
+          "checks": []
+        }
+      ],
+      "apks": []
+    },
+    {
+      "archive": "pr277-12908348920.zip",
+      "xml": {
+        "tests": 0,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "files": 0
+      },
+      "reports": [
+        {
+          "file": "ui-results/shard-2-of-6.json",
+          "source": "65eea4473224614d74895b3ff8f841365a6c0ca0",
+          "status": "passed",
+          "results": 18,
+          "failed": [],
+          "screens": 0,
+          "errors": [],
+          "checks": []
+        }
+      ],
+      "apks": []
+    },
+    {
+      "archive": "pr277-12908009635.zip",
+      "xml": {
+        "tests": 0,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "files": 0
+      },
+      "reports": [],
+      "apks": [
+        {
+          "name": "TrainPilot-1.3.71.apk",
+          "bytes": 3301225,
+          "sha256": "e387885ca457e73f207695d4af2833640bc6625fed37d2acf53abfebe70f906c",
+          "certificateSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688",
+          "appJsMatches": true,
+          "indexMatches": true
+        }
+      ]
+    },
+    {
+      "archive": "pr277-12908922232.zip",
+      "xml": {
+        "tests": 251,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "files": 36
+      },
+      "reports": [],
+      "apks": []
+    },
+    {
+      "archive": "pr277-12910045097.zip",
+      "xml": {
+        "tests": 0,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "files": 0
+      },
+      "reports": [],
+      "apks": [
+        {
+          "name": "TrainPilot-1.3.71-wear.apk",
+          "bytes": 4226963,
+          "sha256": "374ccf48d7bf9ac50fb3b774109df3cb9af0e1c53203bd478c5f933fc00f6e59",
+          "certificateSha256": "4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688"
+        }
+      ]
+    },
+    {
+      "archive": "pr277-12909905361.zip",
+      "xml": {
+        "tests": 167,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "files": 28
+      },
+      "reports": [],
+      "apks": []
+    },
+    {
+      "archive": "pr277-12909751023.zip",
+      "xml": {
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "files": 1
+      },
+      "reports": [],
+      "apks": []
+    },
+    {
+      "archive": "pr277-12910220606.zip",
+      "xml": {
+        "tests": 68,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "files": 1
+      },
+      "reports": [],
+      "apks": []
+    },
+    {
+      "archive": "pr277-12909682134.zip",
+      "xml": {
+        "tests": 59,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "files": 1
+      },
+      "reports": [],
+      "apks": []
+    },
+    {
+      "archive": "pr277-12910075499.zip",
+      "xml": {
+        "tests": 56,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "files": 1
+      },
+      "reports": [],
+      "apks": []
+    }
+  ],
+  "physicalDeviceAccepted": false
+}

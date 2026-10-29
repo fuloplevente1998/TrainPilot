@@ -1,5 +1,14 @@
 # TrainPilot – aktuális átadás
 
+## PR277 UI/UX — tesztelhető Draft #279, 2026-10-29
+
+- Tiszta main `8a36502da5832a42f1cb91708ecfed5cf4f9ed62`; külön ág `feat/pr277-uiux-implementation-20261029`. [Draft #279](https://github.com/fuloplevente1998/TrainPilot/pull/279). Nincs PR271/278 kódátvétel, main-módosítás, merge, verzióemelés vagy release.
+- Alkalmazás és aláírt teszt-APK forrása **`65eea4473224614d74895b3ff8f841365a6c0ca0`**, 1.3.71/2735. A Programok, indítás, Settings, Napló/PR, Health, aktív edzés és GPS/térkép tényleges forrásban átrendezve; eredeti 2×4 navigáció, motorok és adatforrások megőrizve.
+- Quick 163 PASS; Performance sikeres; teljes UI112; telefon natív251; Wear167; WebView3; round183; 0 hiba/kihagyás a letöltött eredményekben. 200 vizuális kép, 320/360/393 px, több akcentus, nagyobb betű, HU/DE/RO. Nyolc referencia–main–utána kép megtekintve.
+- [Részletes jelentés, SHA-k, CI, előtte/utána, APK](plans/pr277-implementation/IMPLEMENTATION_REPORT.md), [gépi bizonylat](plans/pr277-implementation/ci-evidence.json). Telefon SHA256 `e387885ca457e73f207695d4af2833640bc6625fed37d2acf53abfebe70f906c`; Wear `374ccf48d7bf9ac50fb3b774109df3cb9af0e1c53203bd478c5f933fc00f6e59`. Eredeti v2 signer ellenőrizve.
+- **Készülékes elfogadás nincs.** A világos mód nincs a mainben; OS light/dark emuláció nem jelent új világos témát. Nincs main oldali telefon→Wear programnapindító API, új időbecslő vagy óramotor. Telefon/Wear/GPS/Health fizikai próba a következő kapu. A régi elfogadások lent kizárólag korábbi kiadásokra vonatkoznak.
+
+
 Frissítve: **2026-10-22**. **#235/#237 mainen, készüléken elfogadva, változatlan 1.3.71 /2735.** Új teljesítménykiadás közzétéve: `v1.3.71-perf-20261022` (Latest) / `wear-v1.3.71-perf-20261022`, az eredeti 1.3.71 kiadás megőrzésével. #214 karbantartási issue marad. [Takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
