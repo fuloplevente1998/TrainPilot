@@ -71,9 +71,9 @@ const server=http.createServer((req,res)=>{
       const bounds=await page.evaluate(()=>{
         const nav=document.getElementById('tp271Dock').getBoundingClientRect();
         const main=document.querySelector('#app main').getBoundingClientRect();
-        return {navTop:nav.top,navBottom:nav.bottom,mainBottom:main.bottom,navWidth:nav.width,viewport:innerWidth,overflows:document.documentElement.scrollWidth>innerWidth+1};
+        return {navTop:nav.top,navBottom:nav.bottom,mainBottom:main.bottom,navWidth:nav.width,viewport:innerWidth,viewportHeight:innerHeight,overflows:document.documentElement.scrollWidth>innerWidth+1};
       });
-      assert.ok(bounds.navTop>0&&bounds.navBottom<=740+(width===393?133:0),width+': dock stays inside viewport '+JSON.stringify(bounds));
+      assert.ok(bounds.navTop>0&&bounds.navBottom<=bounds.viewportHeight,width+': dock stays inside viewport '+JSON.stringify(bounds));
       assert.ok(bounds.mainBottom<=bounds.navTop+5,width+': main does not overlap dock '+JSON.stringify(bounds));
       assert.equal(bounds.overflows,false,width+': no horizontal overflow');
       // P1g: the page is a canvas rather than a large enclosing card.
