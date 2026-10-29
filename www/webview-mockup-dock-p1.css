@@ -1678,3 +1678,74 @@ html.tp271-mockup-dock body #app main.rf221-home > #rf223Today {
     gap: 8px;
   }
 }
+
+/* P1g – board 01 surface pass, after reviewing the f3215d58 CI viewports.
+   Keep the saved accent palette and the existing scroll/session contracts.
+   Page containers are canvas; only real content cards receive a frame. */
+html.tp271-mockup-dock {
+  --tp-ui-bg: #05090d;
+  --tp-ui-card: #111b23;
+  --tp-ui-card-raised: #19252f;
+  --tp-ui-border: #33444f;
+  --tp271-metal-edge: linear-gradient(135deg,
+    color-mix(in srgb, var(--accent) 28%, var(--tp-ui-border)),
+    var(--tp-ui-border) 42%, #24313b 74%,
+    color-mix(in srgb, var(--accent) 12%, var(--tp-ui-border)));
+  --tp271-surface: linear-gradient(145deg, var(--tp-ui-card-raised), var(--tp-ui-card) 65%);
+}
+html.tp271-mockup-dock body #app main:is(.rf221-home,.tp146-plan) {
+  border-color: transparent !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+html.tp271-mockup-dock body #app main.rf221-home > :is(
+  .hero.tp155-home-active-card,#tp271HomeQuick,.onboarding
+),
+html.tp271-mockup-dock body #app main.tp146-plan :is(
+  .tp150-quick-entry-compact,.tp271-workout-shortcut,.tp152-day
+) {
+  border: 1px solid transparent !important;
+  border-radius: 12px !important;
+  background: var(--tp271-surface) padding-box,
+    var(--tp271-metal-edge) border-box !important;
+  box-shadow: none !important;
+}
+html.tp271-mockup-dock body #app main.rf221-home > .hero.tp155-home-active-card::after {
+  display: none;
+}
+/* Remove the redundant frame around the grid, retaining all six readings,
+   source labels and their canonical actions. The tiles carry the hierarchy. */
+html.tp271-mockup-dock body #app main.rf221-home > #rf223Today {
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+html.tp271-mockup-dock body #app main.rf221-home #rf223Today .tp5-today-metric.stat {
+  border: 1px solid transparent !important;
+  border-radius: 12px !important;
+  background: var(--tp271-surface) padding-box,
+    var(--tp271-metal-edge) border-box !important;
+}
+/* Reference navigation is an edge-to-edge dark rail, with the active label
+   and icon carrying the accent instead of a second large filled card. */
+html.tp271-mockup-dock body #tp271Dock {
+  width: 100%;
+  bottom: env(safe-area-inset-bottom, 0px);
+  border-radius: 0;
+  border-width: 1px 0 0;
+  border-color: var(--tp-ui-border);
+  background: var(--tp-ui-bg);
+  box-shadow: none;
+}
+html.tp271-mockup-dock body #tp271Dock .tp271-dock-button.tp271-selected {
+  color: var(--accent);
+  border-color: transparent;
+  background: transparent;
+}
+/* A solid, matte treatment remains available in every basic palette. */
+html[data-tp-theme-family="basic"].tp271-mockup-dock {
+  --tp271-surface: linear-gradient(var(--tp-ui-card), var(--tp-ui-card));
+  --tp271-metal-edge: linear-gradient(var(--tp-ui-border), var(--tp-ui-border));
+}

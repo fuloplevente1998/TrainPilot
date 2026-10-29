@@ -1,5 +1,16 @@
 # TrainPilot – aktuális átadás
 
+## PR #271 – WebView mockup folytatás, 2026-10-29
+
+- Élő GitHub-audit: PR #271 OPEN/DRAFT, `feat/webview-mockup-redesign`, HEAD `f3215d58dcc3cf55676fe779cfbe57e3bbe37e1c`; a PR és a branch ref egyezett. A korábbi beszélgetésben említett későbbi commitokat a most lekért ref nem igazolta, ezért nem ezekből indulunk.
+- Ugyanezen HEAD-en Quick `40767575070` és Performance `40767574914` SUCCESS. Phone `40767565488`: Chromium 6/6 SUCCESS és `release-gate` job `123098145306` SUCCESS, benne regresszió, aláírt APK-build, source/package és signer continuity ellenőrzés. `Publish GitHub Release` SKIPPED. A külön push Quick megszakítása nem írja felül a sikeres PR Quick-futást.
+- Ez nem a külön PR #270 Compose-gate elfogadása, és nem fizikai készülékes vagy teljes képi elfogadás. Nincs igazolt új Wear/platform/upgrade teszt erre a WebView-dizájnra; a natív forrás változatlan.
+- Következő legkisebb lépés: a meglévő CI-képeket összevetni az eredeti 01-es mockuppal, és csak a látható felületi eltéréseket javítani. A teljes, már zöld gate újraindítása önmagában nem szükséges.
+- P1g kód: csak `?tp271=1` alatt sötétebb grafitfelületek, különálló Home/Edzés kártyák, finom fémes keret, a külső oldalkártya vizuális eltávolítása és teljes szélességű alsó navigáció. Az eredeti hat metrika, CTA-k, onboarding, mentett színválasztás megmarad. Basic témák mattak.
+- A meglévő bottom-dock browser regresszió 320/360/393/412 px szélességet és az új canvas/rail megjelenést ellenőrzi. A CI továbbra is a meglévő hat shardot használja, új workflow nélkül. Helyi ellenőrzés: Node szintaxis + diff. Az új kód képi/CI eredménye még ellenőrzendő, a korábbi PASS nem vonatkozik rá.
+- Kanonikus `www/app.js`, natív motor, main és PR #270 érintetlen; nincs merge, release, verzióemelés vagy telepítés. A végleges UI-elfogadás és az alapértelmezett bekapcsolás továbbra is nyitott.
+
+
 Frissítve: **2026-10-22**. **#235/#237 mainen, készüléken elfogadva, változatlan 1.3.71 /2735.** Új teljesítménykiadás közzétéve: `v1.3.71-perf-20261022` (Latest) / `wear-v1.3.71-perf-20261022`, az eredeti 1.3.71 kiadás megőrzésével. #214 karbantartási issue marad. [Takarítási szabályzat](REPOSITORY_CLEANUP_POLICY.md).
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.

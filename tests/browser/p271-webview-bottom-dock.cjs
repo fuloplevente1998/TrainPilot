@@ -15,7 +15,7 @@ const server=http.createServer((req,res)=>{
   let browser;
   try{
     browser=await chromium.launch({headless:true,executablePath:process.env.TRAINPILOT_CHROMIUM||undefined,args:['--no-sandbox']});
-    for(const width of [320,393]){
+    for(const width of [320,360,393,412]){
       const page=await browser.newPage({viewport:{width,height:width===320?740:873},locale:'hu-HU',timezoneId:'Europe/Budapest'});
       const errors=[];page.on('pageerror',error=>errors.push(String(error?.message||error)));
       page.on('dialog',dialog=>dialog.accept());
@@ -76,6 +76,24 @@ const server=http.createServer((req,res)=>{
       assert.ok(bounds.navTop>0&&bounds.navBottom<=740+(width===393?133:0),width+': dock stays inside viewport '+JSON.stringify(bounds));
       assert.ok(bounds.mainBottom<=bounds.navTop+5,width+': main does not overlap dock '+JSON.stringify(bounds));
       assert.equal(bounds.overflows,false,width+': no horizontal overflow');
+      // P1g: the page is a canvas rather than a large enclosing card.
+      // Keep the existing real card/actions; verify rail and canvas at all
+      // four target widths without using screenshot pixel tolerances.
+      const surfaces=await page.evaluate(()=>{
+        const main=document.querySelector('#app main.rf221-home');
+        const dock=document.getElementById('tp271Dock');
+        const selected=dock.querySelector('[aria-current="page"]');
+        return {canvas:getComputedStyle(main).backgroundColor,
+          railWidth:dock.getBoundingClientRect().width,
+          selectedFill:getComputedStyle(selected).backgroundColor,
+          quick:!!main.querySelector('#tp271HomeQuick'),
+          metrics:main.querySelectorAll('#rf223Today .tp5-today-metric').length};
+      });
+      assert.equal(surfaces.canvas,'rgba(0, 0, 0, 0)',width+': transparent mockup canvas');
+      assert.equal(surfaces.railWidth,width,width+': full-width navigation rail');
+      assert.equal(surfaces.selectedFill,'rgba(0, 0, 0, 0)',width+': accent selection without filled tile');
+      assert.ok(surfaces.quick&&surfaces.metrics===6,width+': original content survives surface pass');
+
 
       // P1d: visually restructured but still *real* Home state. The
       // scrolling viewport must reveal the final Coach action above the dock.
