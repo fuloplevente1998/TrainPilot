@@ -12,6 +12,7 @@ const server=http.createServer((q,r)=>{const name=new URL(q.url,'http://local').
  for(const width of [320,360,393,412])for(const lang of ['hu','en','de','ro'])for(const theme of ['classicBlue','yellow']){
   const label=width+'/'+lang+'/'+theme;await p.setViewportSize({width,height:width===320?740:873});
   await p.evaluate(({lang,theme})=>{db.set('language',lang);rf200SetTheme(theme);go('home');tp155R4OpenPanel('calendar',document.activeElement);tp155R4OpenPanel('settings',document.activeElement);},{lang,theme});
+  await p.locator('[data-settings-group="appearance"] > summary').click();
   await open();
   const lastKeys=await p.evaluate(()=>[TP1511_BASIC.at(-1),TP1511_VIVID.at(-1)]);
   assert.ok(await menu.evaluate(e=>e.scrollHeight>e.clientHeight),label+' palette needs scrolling');

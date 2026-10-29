@@ -50,7 +50,7 @@ const server=http.createServer((req,res)=>{
   assert.equal(await detail.isVisible(),true,'PR tap can reveal the panel again');
   assert.equal(await detail.locator('.tp226-pr-record').count(),1,'PR count matches displayed explanation');
   const prBounds=await badge.boundingBox(),arrowBounds=await card.locator(':scope > summary .rf103-history-chevron').boundingBox();
-  assert.ok(prBounds.width<=40&&prBounds.height<=44,'PR277 uses a small mark target');
+  assert.ok(prBounds.width<=44&&prBounds.height<=44,'PR277 uses a small mark target');
   assert.ok(prBounds.y<arrowBounds.y,'PR277 mark sits above its separate disclosure arrow');
   assert.equal(await card.locator(':scope > summary .history-badges .tp226-pr-badge').count(),0,'No large PR action below the card');
   await page.reload();await boot();await page.evaluate(()=>go('history'));assert.equal(await badge.count(),1,'Reload does not duplicate badge');

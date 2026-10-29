@@ -4832,7 +4832,7 @@ var rf260EnhanceSelect = function rf260EnhanceSelect(select,index=0){
  const menu=document.createElement('div');menu.className='tp-select-menu';menu.setAttribute('role','listbox');menu.id=`tp-select-menu-${index}-${Math.random().toString(36).slice(2,7)}`;trigger.setAttribute('aria-controls',menu.id);
  rf260BuildSelectOptions(select,menu);
  wrap.appendChild(trigger);wrap.appendChild(menu);select.addEventListener?.('change',()=>rf260SyncCustomSelect(select));
- trigger.addEventListener?.('click',ev=>{ev.stopPropagation();const opening=!wrap.classList.contains('open');rf260CloseSelects(wrap);wrap.classList.toggle('open',opening);trigger.setAttribute('aria-expanded',opening?'true':'false');if(opening){rf260PositionSelect(wrap);const selected=menu.querySelector?.('[aria-selected="true"]');selected?.scrollIntoView?.({block:'nearest'});selected?.focus?.()}});
+ trigger.addEventListener?.('click',ev=>{ev.stopPropagation();const opening=!wrap.classList.contains('open');rf260CloseSelects(wrap);wrap.classList.toggle('open',opening);trigger.setAttribute('aria-expanded',opening?'true':'false');if(opening){rf260PositionSelect(wrap);const selected=menu.querySelector?.('[aria-selected="true"]');if(selected){menu.scrollTop=Math.max(0,selected.offsetTop-menu.clientHeight/2+selected.offsetHeight/2);selected.focus?.({preventScroll:true})}}});
  trigger.addEventListener?.('keydown',ev=>{if(ev.key==='ArrowDown'||ev.key==='Enter'||ev.key===' '){ev.preventDefault();if(!wrap.classList.contains('open'))trigger.click()}else if(ev.key==='Escape'){rf260CloseSelects();trigger.focus?.()}});
  menu.addEventListener?.('keydown',ev=>{const items=Array.from(menu.querySelectorAll?.('.tp-select-option:not(:disabled)')||[]),i=items.indexOf(document.activeElement);if(ev.key==='Escape'){ev.preventDefault();rf260CloseSelects();trigger.focus?.()}else if(ev.key==='ArrowDown'&&items.length){ev.preventDefault();items[(i+1+items.length)%items.length].focus?.()}else if(ev.key==='ArrowUp'&&items.length){ev.preventDefault();items[(i-1+items.length)%items.length].focus?.()}});
 };
@@ -11209,13 +11209,17 @@ rf212LanguagePanel=function(){
  return '<details class="setting rf212-language tp1511-card tp152-accordion tp152-language"><summary><div class="tp1511-head"><b>'+(TP1511_FLAGS[cur]||'🌐')+'</b><div><strong>'+esc(tp1511T('lang'))+'</strong><p class="small muted">'+esc(current.trim())+'</p></div></div><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-accordion-body"><p class="small muted">'+esc(tp1511T('langHelp'))+'</p><select class="field tp1511-lang" onchange="rf212SetLang(this.value)">'+Object.keys(TP1511_FLAGS).map(function(k){return '<option value="'+k+'" '+(cur===k?'selected':'')+'>'+TP1511_FLAGS[k]+' '+esc(labels[k])+'</option>'}).join('')+'</select></div></details>';
 };
 
+var tp277OpenTraining=function(){
+ tp155R4ClosePanel(false);go('plan');const panel=document.querySelector('#app .tp1511-training');
+ if(panel){panel.open=true;panel.scrollIntoView({block:'start'});}
+};
 settingsScreen=function(){
- const group=(id,title,icon,body)=>'<details class="tp277-settings-group" data-settings-group="'+id+'"><summary><span class="tp277-setting-icon" aria-hidden="true">'+icon+'</span><strong>'+esc(title)+'</strong><span aria-hidden="true">›</span></summary><div class="tp277-settings-body">'+body+'</div></details>';
+ const group=(id,title,icon,body)=>'<details class="tp277-settings-group '+(id==='backup'?'tp152-settings-backup':id==='privacy'?'tp152-settings-profile':'')+'" data-settings-group="'+id+'" '+(state.tp277SettingsOpen?.[id]?'open':'')+' ontoggle="state.tp277SettingsOpen=Object.assign({},state.tp277SettingsOpen,{'+id+':this.open})"><summary><span class="tp277-setting-icon" aria-hidden="true">'+icon+'</span><strong>'+esc(title)+'</strong><span aria-hidden="true">›</span></summary><div class="tp277-settings-body">'+body+'</div></details>';
  const backup='<p class="small muted">'+esc(backupStatus())+'</p><div class="grid2"><button class="btn secondary" onclick="exportData()">'+esc(tp149T('backup.saveFile'))+'</button><button class="btn secondary" onclick="chooseImport()">'+esc(tp149T('backup.restore'))+'</button></div><input id="importFile" type="file" accept=".json,application/json" hidden onchange="importData(this.files[0])">'+cloudPanel();
  const profile='<p class="small muted">'+esc(tp149T('settings.trainingProfileHelp'))+'</p><button class="btn secondary block" onclick="tp155R4ClosePanel(false);profileScreen()">'+esc(tp149T('settings.trainingProfile'))+'</button>';
  const devices='<p class="small muted">'+esc(tp277Text('wear'))+'</p><button class="btn secondary block" onclick="TrainPilotWearSync.syncHomeNow()">Wear OS · '+esc(tp149T('health.sync'))+'</button><button class="btn secondary block" onclick="tp155R4ClosePanel(false);go(\'health\')">'+esc(tp149T('journal.healthData'))+'</button>';
  const privacy=tp105DataPanel()+'<div class="tp277-reset-actions"><button class="btn secondary block" onclick="resetStarter()">'+esc(tp149T('settings.gentleProfile'))+'</button><button class="btn danger block" onclick="resetPlan()">'+esc(tp149T('settings.restoreDefaults'))+'</button></div>';
- return shell('<main class="tp1511-settings tp152-settings tp277-settings"><div class="hero"><h1>'+esc(tp149T('settings.title'))+'</h1></div>'+group('profile',tp277Text('profile'),'◎',profile)+group('appearance',tp277Text('appearance'),'◐',rf200ThemePanel()+rf212LanguagePanel())+group('training',tp277Text('training'),'◷',tp1511TrainingPanel())+group('devices',tp277Text('devices'),'⌚',devices)+group('backup',tp149T('backup.title'),'⇩',backup)+group('privacy',tp277Text('privacy'),'◇',privacy)+'</main>');
+ return shell('<main class="tp1511-settings tp152-settings tp277-settings"><div class="hero"><h1>'+esc(tp149T('settings.title'))+'</h1></div>'+group('profile',tp277Text('profile'),'◎',profile)+group('appearance',tp277Text('appearance'),'◐',rf200ThemePanel()+rf212LanguagePanel())+group('training',tp277Text('training'),'◷','<label>'+esc(tp149T('settings.rest'))+'<input id="rest" class="field" type="number" min="30" max="300" value="'+esc(settings().rest)+'"></label><button class="btn secondary block" onclick="saveSettings()">'+esc(tp149T('common.save'))+'</button><button class="btn secondary block" onclick="tp277OpenTraining()">'+esc(tp1511T('training'))+'</button>')+group('devices',tp277Text('devices'),'⌚',devices)+group('backup',tp149T('backup.title'),'⇩',backup)+group('privacy',tp277Text('privacy'),'◇',privacy)+'</main>');
 };
 
 rf233CoachScreen=function(){
@@ -11331,13 +11335,13 @@ renderWorkout=function(){
   const prior=previousSets[si],previous=prior?.done?formatSet(e,prior):'—';
   const eligible=typeof tp197RirEligible==='function'&&tp197RirEligible(state.session,se)&&s.done===true;
   const lastDone=sets.map((set,index)=>set.done?index:-1).filter(index=>index>=0).at(-1);
-  const rir=eligible?'<label class="small tp277-set-rir">RIR<input id="'+(si===lastDone?'tp197ActualRir':'tp229ActualRir-'+si)+'" class="field" data-set-id="'+esc(s.setId||'')+'" type="number" inputmode="numeric" min="0" max="10" step="1" value="'+(tp229RirValid(s.actualRir)?Number(s.actualRir):'')+'" placeholder="—" aria-describedby="tp197RirNote tp229RirSummary" oninput="tp197RirInput(this)"></label>':'<span class="tp277-set-rir small muted">RIR<br>—</span>';
+  const rir=eligible?'<label class="small tp277-set-rir tp229-rir">RIR<input id="'+(si===lastDone?'tp197ActualRir':'tp229ActualRir-'+si)+'" class="field" data-set-id="'+esc(s.setId||'')+'" type="number" inputmode="numeric" min="0" max="10" step="1" value="'+(tp229RirValid(s.actualRir)?Number(s.actualRir):'')+'" placeholder="—" aria-describedby="tp197RirNote tp229RirSummary" oninput="tp197RirInput(this)"></label>':'<span class="tp277-set-rir small muted">RIR<br>—</span>';
   return '<div class="row tp153-set-row tp277-set-row"><div class="num">'+(si+1)+'</div><span class="tp277-set-previous"><small>'+esc(tp277Text('previous'))+'</small>'+esc(previous)+'</span>'+load+'<label class="small">'+esc(unit)+'<input class="field" inputmode="numeric" aria-label="'+esc(unit)+'" placeholder="'+esc(target)+'" value="'+esc(s.reps==null?'':s.reps)+'" oninput="upd('+i+','+si+',\'reps\',this.value)"></label>'+rir+'<button class="check '+(s.done?'done':'')+'" onclick="toggleSet('+i+','+si+')">'+(s.done?'✓':'OK')+'</button></div>';
  }).join('');
  const feedback=typeof rf152FeedbackHtml==='function'?rf152FeedbackHtml(se,true):'';
  const quickAdd=quick&&typeof tp150qwT==='function'?'<section class="card tp150-quick-add" id="tp150QuickAdd"><div class="tp150-quick-add-head"><strong>'+esc(tp150qwT('title'))+'</strong><span class="badge">'+esc(tp150qwT('exerciseCount',{count:state.session.exercises.length}))+'</span></div><button class="btn secondary block" onclick="tp150QuickPicker()">'+esc(tp150qwT('addAnother'))+'</button></section>':'';
  const demo=tp153WorkoutVideo(e.id),guide=(note||demo)?'<details class="tp153-workout-guide tp154-workout-guide"><summary><span class="tp154-workout-guide-title">▶ '+esc(tp149T('video.demoTitle'))+'</span><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp154-workout-guide-body">'+(note?'<p class="note tp153-workout-note">'+esc(note)+'</p>':'')+demo+'</div></details>':'';
- const body='<main class="tp149-workout tp153-workout tp277-workout"><section class="card tp153-workout-head"><div class="tp153-workout-topline"><span class="small muted">'+esc(title)+'</span><strong>'+(i+1)+'/'+total+'</strong></div><h1>'+esc(name)+'</h1><div class="tp153-workout-prescription"><span>'+esc(tp149T('workout.target'))+': <b>'+sets.length+' × '+esc(target)+'</b></span></div>'+guide+'<div class="progress"><div style="width:'+pct+'%"></div></div></section><div class="section tp153-sets-title">'+esc(tp149T('workout.sets'))+'</div>'+rows+upcoming+feedback+quickAdd+'<div class="tp153-workout-actions"><button class="btn block" data-tp-workout-next onclick="nextExercise()">'+esc(tp149T(i===total-1?'workout.finish':'workout.next'))+'</button><button class="btn secondary block" onclick="prevExercise()" '+(i===0?'disabled':'')+'>'+esc(tp149T('workout.previous'))+'</button></div></main>';
+ const body='<main class="tp149-workout tp153-workout tp277-workout"><section class="card tp153-workout-head"><div class="tp153-workout-topline"><span class="small muted">'+esc(title)+'</span><strong>'+(i+1)+'/'+total+'</strong><span class="tp277-elapsed">⏱ '+esc(sessionDuration(Object.assign({},state.session,{finished:new Date().toISOString()})))+'</span></div><h1>'+esc(name)+'</h1><div class="tp153-workout-prescription"><span>'+esc(tp149T('workout.target'))+': <b>'+sets.length+' × '+esc(target)+'</b></span></div>'+guide+'<div class="progress"><div style="width:'+pct+'%"></div></div></section><div class="section tp153-sets-title">'+esc(tp149T('workout.sets'))+'</div>'+rows+upcoming+feedback+quickAdd+'<div class="tp153-workout-actions"><button class="btn block" data-tp-workout-next onclick="nextExercise()">'+esc(tp149T(i===total-1?'workout.finish':'workout.next'))+'</button><button class="btn secondary block" onclick="prevExercise()" '+(i===0?'disabled':'')+'>'+esc(tp149T('workout.previous'))+'</button></div></main>';
  render(shell(body));
  if(typeof rf110DecorateTimedWorkout==='function')rf110DecorateTimedWorkout();
  if(typeof tp120AfterRender==='function')tp120AfterRender();
@@ -17076,11 +17080,11 @@ window.addEventListener?.('DOMContentLoaded',function(){
  function content(groupKey){
   contentAnimation?.cancel();
   contentAnimation=null;
-  // Root-page opacity promotes the entire WebView page and competes with the
-  // legacy CSS reveal. Keep that surface opaque during route/Journal changes.
-  if(groupKey==='navigation'||groupKey==='journal')return;
+  if(reduced.matches)return;
+  if((groupKey==='navigation'||groupKey==='journal')&&document.getElementById('tp155R4PanelHost'))return;
   const main=document.querySelector('#app main');
-  const surface=groupKey==='period'?main?.querySelector('.tp177-trend'):
+  const surface=(groupKey==='navigation'||groupKey==='journal')?main?.querySelector('.tp150-programs-frame,.tp152-active-program,#tp236HistoryRows,.tp168-today-card'):
+   groupKey==='period'?main?.querySelector('.tp177-trend'):
    groupKey==='statistics'?main?.querySelector('.tp107-personal-records,.tp107-cardio'):main;
   // Opacity preserves the tab bar and disclosure geometry; a single surface
   // avoids hundreds of card promotions for a long workout history.
@@ -17125,6 +17129,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     row.animation=marker.animate([{transform:'translate('+(row.from.x-target.x)+'px,'+(row.from.y-target.y)+'px) scale('+(row.from.width/target.width)+','+(row.from.height/target.height)+')'},{transform:'translate(0,0) scale(1,1)'}],{duration:changed?duration:previous.remaining,easing});
     if(changed)changedGroup=name;
    }
+   if(changed&&name==='navigation'&&!reduced.matches)changedGroup=name;
    observersChanged=observersChanged||oldRow?.group!==group||oldRow?.active!==active;
    next.set(name,row);
   }

@@ -129,7 +129,7 @@ async function audit(page,label){
    await page.evaluate(()=>{db.set('language','hu');document.documentElement.lang=rf212Lang();go('settings');});
    await page.waitForTimeout(60);
    assert.equal(await page.locator('.rf212-language').count(),1,'Hungarian Settings must retain the language selector');
-   assert.equal(await page.locator('.tp1511-settings > .rf212-language').count(),1,'Hungarian language selector must use the compact 1.5.1 Settings placement');
+   assert.equal(await page.locator('[data-settings-group="appearance"] .rf212-language').count(),1,'Hungarian language selector belongs to the PR277 appearance group');
    const exerciseFields=await page.evaluate(()=>{
     const e=exercises().find(x=>x.id==='pullup');
     const custom={id:'custom-audit',custom:true,hu:'Piros kézisúlyzós gyakorlat',equipment:'Saját különleges eszköz',notes:'Saját jegyzet'};

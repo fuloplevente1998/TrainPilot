@@ -18,6 +18,7 @@ const server=http.createServer((req,res)=>{
   await page.goto('http://127.0.0.1:'+server.address().port+'/');
   await page.waitForFunction(()=>window.TrainPilotBoot?.finished&&typeof tp197UiSet==='function');
   await page.evaluate(()=>{state.tab='settings';render();});
+  await page.locator('[data-settings-group="training"] > summary').click();
   const saved=await page.evaluate(()=>JSON.stringify([settings(),programs(),history(),db.get('draft',null)]));
   assert.equal(await page.locator('#tp197-mode-global').count(),1,'Global mode should be available in Settings');
   await page.locator('#tp197-mode-global').evaluate(el=>el.open=true);
