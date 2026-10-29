@@ -1,5 +1,11 @@
 # TrainPilot – aktuális átadás
 
+## PR #271 – natív dizájnpróba előkészítése, 2026-10-29
+
+Felhasználói kérés: az új dizájnnal kipróbálni a PR271 alkalmazást. A Capacitor `server.appStartPath` ezen a fejlesztési ágon `/?tp271=1`: a natív teszt-APK az eddig query-kapcsolós mockup felülettel indul. A böngészős alapút továbbra is opt-in; nincs új router, storage-kulcs vagy natív motorváltozás. A Capacitor 7.4.3 Bridge/CapConfig forrása igazolja a támogatott indulási útvonalat. Verzió 1.3.71/2735 és appid com.repforge.app változatlan. Ez a meglévő appot frissítő csomag, nem külön települő sandbox.
+
+A korábbi 1b123f48 APK nem kapcsolta be automatikusan a dizájnt. Az új konfiguráció pontos forrású Quick/Performance/Phone kapui és az APK csomagolt indulási konfigurációja még ellenőrzendők. Fizikai próba továbbra is nyitott; nincs telepítés, merge vagy release. Wear nem változik.
+
 ## PR #271 – P1i oldaláttűnés, 2026-10-29
 
 **Zöld végállapot:** tesztelt alkalmazás-/tesztforrás `1b123f48926dd96966d6b84cdc979a5f26fd0428`. Quick `40851361966`, Performance `40851361954`, Phone `40851354558` SUCCESS: 6/6 Chromium és release-gate, APK source/package/signer ellenőrzés SUCCESS. Letöltött natív XML: 251 teszt, 0 failure/error/skipped. Publish GitHub Release SKIPPED. Ez a dokumentációs checkpoint nem új alkalmazáskód.
