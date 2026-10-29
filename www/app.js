@@ -10827,10 +10827,28 @@ rf200ThemePanel=function(){
  return '<details class="setting tp1511-card tp152-accordion tp152-theme"><summary><div class="tp1511-head"><b>◐</b><div><strong>'+esc(tp152T('theme'))+'</strong><p class="small muted">'+esc(name)+'</p></div></div><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-accordion-body"><small class="muted">'+esc(tp1511T('basic'))+'</small>'+tp1511ThemeGrid(TP1511_BASIC)+'<small class="muted tp1511-group-title">'+esc(tp1511T('vivid'))+'</small>'+tp1511ThemeGrid(TP1511_VIVID)+'</div></details>';
 };
 
-var tp152ProgramAccent=function(p){
- const palette=['#58B8F7','#63C48D','#C77A72','#B38CDB','#E3A45F','#67C7C1'];
- const key=String(p?.id||p?.name||'trainpilot');let h=0;for(let i=0;i<key.length;i++)h=(h*31+key.charCodeAt(i))>>>0;
- return palette[h%palette.length];
+var tp152ProgramAccent=function(){return 'var(--accent)';};
+// PR277: presentation helpers read existing program/session data only.
+var tp277Text=function(key){
+ const words={
+ hu:{profile:'Profil és személyes adatok',appearance:'Megjelenés és nyelv',training:'Edzés és időzítő',devices:'Wear OS és szinkronizáció',privacy:'Adatvédelem és alaphelyzet',all:'Összes',pr:'PR-edzések',gps:'GPS-kardió',sets:'munkasorozat',recent:'Legutóbbi edzés',next:'Következő gyakorlat',phone:'Telefonon',wear:'Az órán válassz programnapot',estimate:'Legutóbbi idő',previous:'Előző',sources:'Adatforrások',unknown:'Nincs igazolt kapcsolatállapot'},
+ en:{profile:'Profile and personal data',appearance:'Appearance and language',training:'Workout and timer',devices:'Wear OS and synchronization',privacy:'Privacy and reset',all:'All',pr:'PR workouts',gps:'GPS cardio',sets:'working sets',recent:'Last workout',next:'Next exercise',phone:'On phone',wear:'Choose the program day on your watch',estimate:'Last duration',previous:'Previous',sources:'Data sources',unknown:'No verified connection status'},
+ de:{profile:'Profil und persönliche Daten',appearance:'Darstellung und Sprache',training:'Training und Zeitsteuerung',devices:'Wear OS und Synchronisierung',privacy:'Datenschutz und Zurücksetzen',all:'Alle',pr:'PR-Trainings',gps:'GPS-Ausdauer',sets:'Arbeitssätze',recent:'Letztes Training',next:'Nächste Übung',phone:'Auf dem Telefon',wear:'Trainingstag auf der Uhr auswählen',estimate:'Letzte Dauer',previous:'Vorher',sources:'Datenquellen',unknown:'Kein bestätigter Verbindungsstatus'},
+ ro:{profile:'Profil și date personale',appearance:'Aspect și limbă',training:'Antrenament și cronometru',devices:'Wear OS și sincronizare',privacy:'Confidențialitate și resetare',all:'Toate',pr:'Antrenamente PR',gps:'Cardio GPS',sets:'serii de lucru',recent:'Ultimul antrenament',next:'Exercițiul următor',phone:'Pe telefon',wear:'Alege ziua programului pe ceas',estimate:'Ultima durată',previous:'Anterior',sources:'Surse de date',unknown:'Nu există o stare de conexiune verificată'}
+ };return (words[rf212Lang()]||words.en)[key]||key;
+};
+var tp277ProgramIcon=function(p){
+ const type=String(p.goal||p.profile?.goal||p.sourceProfile?.goal||'');
+ const paths={strength:'<path d="M3 8v8m4-10v12m10-12v12m4-10v8M7 12h10"/>',muscle:'<path d="M8 4h8l2 5-2 11H8L6 9zM8 9h8"/>',fitness:'<path d="m4 18 5-8 4 4 7-9M4 5h5M7 3v4"/>',fatloss:'<path d="M13 3c2 5-3 5-1 9 2-1 3-2 3-4 6 5 4 13-3 13S3 13 8 8c0 4 2 4 2 4-1-4 1-6 3-9z"/>'};
+ const home=/^home/.test(p.id)||p.location==='home'||p.location==='Otthon';
+ const shape=paths[type]||(home?'<path d="m3 10 9-7 9 7v11H3zM9 21v-8h6v8"/>':'<rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h8M8 12h8M8 16h5"/>');
+ return '<span class="tp277-program-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+shape+'</svg></span>';
+};
+var tp277DayOverview=function(p,d){
+ const ids=d.exercises||[],count=ids.reduce((sum,id)=>sum+Number(tp152Rx(p,id,byId(id)).sets||0),0);
+ const last=history().find(h=>h.programId===p.id&&(h.dayId||h.workout)===d.id&&Date.parse(h.finished)>Date.parse(h.started));
+ const duration=last?'<span class="tp277-duration" title="'+esc(tp277Text('recent'))+'">'+esc(tp277Text('estimate'))+': '+esc(sessionDuration(last))+'</span>':'';
+ return '<div class="tp277-day-metrics">'+esc(tp149Plural('exercise.count',ids.length))+' · '+count+' '+esc(tp277Text('sets'))+duration+'</div><div class="tp277-day-preview">'+ids.slice(0,3).map(id=>{const e=byId(id);if(!e)return '';const rx=tp152Rx(p,id,e);return '<span>'+esc(tp149ExerciseName(e))+' <b>'+esc(rx.sets+'×'+rx.reps)+'</b></span>';}).join('')+(ids.length>3?'<span>+'+(ids.length-3)+'</span>':'')+'</div>';
 };
 var tp152Rx=function(p,id,e){
  const s=settings(),fallbackRest=Number(s.programRest?.[p?.id])||Number(s.rest)||90;
@@ -11131,8 +11149,8 @@ tp152ExerciseRow=function(p,day,id,i){
 
 tp152DayBlock=function(p,d,di){
  const available=exercises().filter(function(e){return !(d.exercises||[]).includes(e.id)});
- const add='<details class="tp152-inline-add"><summary><strong>＋ '+esc(tp152T('add'))+'</strong><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-inline-add-body"><select class="field" data-tp152-add="'+esc(d.id)+'">'+available.map(function(e){return '<option value="'+esc(e.id)+'">'+esc(tp149ExerciseName(e))+'</option>'}).join('')+'</select><button class="btn secondary block" '+(available.length?'':'disabled')+' onclick="event.stopPropagation();tp152AddExercise(\''+esc(d.id)+'\')">＋ '+esc(tp152T('add'))+'</button></div></details>';
- return '<details class="card tp146-day-head tp152-day"><summary class="tp152-day-summary"><div class="tp146-day-copy"><span class="badge">'+esc(tp149T('program.workoutDayBadge'))+'</span><div class="tp152-day-title-row"><div class="tp152-day-title-copy">'+rf148PlanDayHeading(p,d)+'</div><span class="tp152-chevron" aria-hidden="true">⌄</span></div><div class="small muted">'+esc(tp149T('program.tapDetails',{count:d.exercises?.length||0}))+'</div></div></summary><div class="tp152-day-body">'+(d.exercises||[]).map(function(id,i){return tp152ExerciseRow(p,d,id,i)}).join('')+add+'<button class="btn block tp152-start-day" onclick="event.stopPropagation();startWorkout(\''+esc(d.id)+'\')">'+esc(tp149T('workout.start'))+'</button></div></details>';
+ const add='<details class="tp152-inline-add"><summary><strong>＋ '+esc(tp152T('add'))+'</strong><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-inline-add-body"><select class="field" data-tp152-add="'+esc(d.id)+'">'+available.map(function(e){return '<option value="'+esc(e.id)+'">'+esc(tp149ExerciseName(e))+'</option>'}).join('')+'</select><button class="btn secondary block" '+(available.length?'':'disabled')+' onclick="event.stopPropagation();tp152AddExercise(\''+esc(d.id)+'\')">＋ '+esc(tp152T('add'))+'</button><p class="small muted tp277-wear-note">⌚ Wear OS · '+esc(tp277Text('wear'))+'</p></div></details>';
+ return '<details class="card tp146-day-head tp152-day tp277-day"><summary class="tp152-day-summary"><div class="tp146-day-copy"><span class="badge">'+esc(tp149T('program.workoutDayBadge'))+'</span><div class="tp152-day-title-row"><div class="tp152-day-title-copy">'+rf148PlanDayHeading(p,d)+'</div><span class="tp152-chevron" aria-hidden="true">⌄</span></div>'+tp277DayOverview(p,d)+'</div></summary><div class="tp152-day-body">'+(d.exercises||[]).map(function(id,i){return tp152ExerciseRow(p,d,id,i)}).join('')+add+'<button class="btn block tp152-start-day" onclick="event.stopPropagation();startWorkout(\''+esc(d.id)+'\')">'+esc(tp149T('workout.start'))+'</button><p class="small muted tp277-wear-note">⌚ Wear OS · '+esc(tp277Text('wear'))+'</p></div></details>';
 };
 
 var tp152ProgramPreviewRow=function(p,d,id,i){
@@ -11172,9 +11190,12 @@ rf212LanguagePanel=function(){
 };
 
 settingsScreen=function(){
- const backup='<div class="setting tp1511-card tp152-settings-backup"><div class="tp1511-head"><b>⇩</b><div><strong>'+esc(tp149T('backup.title'))+'</strong><p class="small muted">'+esc(tp149T('backup.help'))+'</p></div></div><p class="small muted">'+esc(backupStatus())+'</p><div class="grid2"><button class="btn secondary" onclick="exportData()">'+esc(tp149T('backup.saveFile'))+'</button><button class="btn secondary" onclick="chooseImport()">'+esc(tp149T('backup.restore'))+'</button></div><input id="importFile" type="file" accept=".json,application/json" hidden onchange="importData(this.files[0])"></div>';
- const profile='<div class="setting tp1511-card tp152-settings-profile"><div class="tp1511-head"><b>◎</b><div><strong>'+esc(tp149T('settings.trainingProfile'))+'</strong><p class="small muted">'+esc(tp149T('settings.trainingProfileHelp'))+'</p></div></div><button class="btn secondary block" onclick="resetStarter()">'+esc(tp149T('settings.gentleProfile'))+'</button><button class="btn danger block" onclick="resetPlan()">'+esc(tp149T('settings.restoreDefaults'))+'</button></div>';
- return shell('<main class="tp1511-settings tp152-settings"><div class="hero"><h1>'+esc(tp149T('settings.title'))+'</h1><div class="muted">'+esc(tp149T('settings.subtitle'))+'</div></div>'+rf212LanguagePanel()+rf200ThemePanel()+backup+tp105DataPanel()+cloudPanel()+profile+'</main>');
+ const group=(id,title,icon,body)=>'<details class="tp277-settings-group" data-settings-group="'+id+'"><summary><span class="tp277-setting-icon" aria-hidden="true">'+icon+'</span><strong>'+esc(title)+'</strong><span aria-hidden="true">›</span></summary><div class="tp277-settings-body">'+body+'</div></details>';
+ const backup='<p class="small muted">'+esc(backupStatus())+'</p><div class="grid2"><button class="btn secondary" onclick="exportData()">'+esc(tp149T('backup.saveFile'))+'</button><button class="btn secondary" onclick="chooseImport()">'+esc(tp149T('backup.restore'))+'</button></div><input id="importFile" type="file" accept=".json,application/json" hidden onchange="importData(this.files[0])">'+cloudPanel();
+ const profile='<p class="small muted">'+esc(tp149T('settings.trainingProfileHelp'))+'</p><button class="btn secondary block" onclick="tp155R4ClosePanel(false);profileScreen()">'+esc(tp149T('settings.trainingProfile'))+'</button>';
+ const devices='<p class="small muted">'+esc(tp277Text('wear'))+'</p><button class="btn secondary block" onclick="TrainPilotWearSync.syncHomeNow()">Wear OS · '+esc(tp149T('health.sync'))+'</button><button class="btn secondary block" onclick="tp155R4ClosePanel(false);go(\'health\')">'+esc(tp149T('journal.healthData'))+'</button>';
+ const privacy=tp105DataPanel()+'<div class="tp277-reset-actions"><button class="btn secondary block" onclick="resetStarter()">'+esc(tp149T('settings.gentleProfile'))+'</button><button class="btn danger block" onclick="resetPlan()">'+esc(tp149T('settings.restoreDefaults'))+'</button></div>';
+ return shell('<main class="tp1511-settings tp152-settings tp277-settings"><div class="hero"><h1>'+esc(tp149T('settings.title'))+'</h1></div>'+group('profile',tp277Text('profile'),'◎',profile)+group('appearance',tp277Text('appearance'),'◐',rf200ThemePanel()+rf212LanguagePanel())+group('training',tp277Text('training'),'◷',tp1511TrainingPanel())+group('devices',tp277Text('devices'),'⌚',devices)+group('backup',tp149T('backup.title'),'⇩',backup)+group('privacy',tp277Text('privacy'),'◇',privacy)+'</main>');
 };
 
 rf233CoachScreen=function(){
@@ -19967,7 +19988,7 @@ const tp197BaseSettings=settingsScreen;
 settingsScreen=function(){
  const html=String(tp197BaseSettings.apply(this,arguments)),anchor='<div class="setting tp1511-card">';
  // Default selection stays in Settings, but is discoverable near the top instead of below the backup/profile cards.
- return html.includes(anchor)?html.replace(anchor,tp197UiPanel("global",null)+anchor):html.replace('</main>',tp197UiPanel("global",null)+'</main>');
+ return html.includes('data-settings-group="training"')?html.replace(/(data-settings-group="training"[\s\S]*?<div class="tp277-settings-body">)/,'$1'+tp197UiPanel("global",null)):html.includes(anchor)?html.replace(anchor,tp197UiPanel("global",null)+anchor):html.replace('</main>',tp197UiPanel("global",null)+'</main>');
 };
 const tp197BaseTrainingPanel=tp1511TrainingPanel;
 tp1511TrainingPanel=function(){
