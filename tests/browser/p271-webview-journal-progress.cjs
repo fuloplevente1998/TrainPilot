@@ -27,55 +27,9 @@ const server=http.createServer((req,res)=>{
    await page.evaluate(()=>go('history'));
    assert.equal(await page.locator('#tp271Dock').count(),0,width+': default main unchanged');
    await page.goto(url+'?tp271=1');
-   await page.waitForFunction(()=>window.TrainPilotBoot?.finished&&window.TrainPilotMockup271?.enabled&&document.querySelector('#tp271Header'));
-   const header=page.locator('#tp271Header');
-   assert.equal(await header.count(),1,width+': one compact mockup header');
-   assert.equal(await header.locator('.tp271-header-brand strong').textContent(),'TrainPilot',width+': original brand');
-   assert.equal(await header.locator('.tp271-header-mark path').count(),1,width+': real launcher dumbbell silhouette');
-   assert.equal(await header.locator('button[data-tp271-header]').count(),3,width+': Settings, Language, Theme only');
-   assert.equal(await page.locator('#tp271Dock button[data-tp271-target]').count(),5,width+': exactly five permanent bottom tabs');
-   assert.equal(await page.locator('.top.tp154-nav-grid .tp151-nav-item').first().isVisible(),false,width+': no surviving 2x4 top navigation');
-   assert.equal(await page.locator('.top.tp154-nav-grid .tp154-settings-action').isVisible(),false,width+': original settings handler is accessible but not duplicated visually');
-   const headerSize=await header.evaluate(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height,overflow:document.documentElement.scrollWidth-innerWidth}));
-   assert.ok(headerSize.height>=44&&headerSize.height<=70,width+': compact header geometry '+JSON.stringify(headerSize));
-   assert.ok(headerSize.overflow<=1,width+': new header has no overflow');
-   if(width===393){
-     await header.locator('button[data-tp271-header="language"]').click();
-     assert.equal(await header.locator('.tp271-header-picker[data-kind="language"]').count(),1,'language picker lives in the header');
-     await header.locator('.tp271-header-picker button').filter({hasText:'English'}).click();
-     assert.equal(await page.evaluate(()=>rf212LangSetting()),'en','main language store updated through header');
-     await page.waitForFunction(()=>document.querySelector('#tp271Header button[data-tp271-header="settings"]')?.getAttribute('aria-label')==='Settings');
-     await page.locator('#tp271Header button[data-tp271-header="theme"]').click();
-     assert.equal(await page.locator('#tp271Header .tp271-header-picker[data-kind="theme"] .tp271-picker-option').count()>10,true,'all main theme choices preserved');
-     await page.locator('#tp271Header .tp271-header-picker[data-kind="theme"] .tp271-picker-option[data-tp271-choice="classicBlue"]').click();
-     assert.equal(await page.evaluate(()=>rf200ThemeKey()),'classicBlue','main theme store updated through header');
-     await page.evaluate(()=>{rf212SetLang('hu');rf200SetTheme('yellow')});
-   }
-   if(width===393){
-     fs.mkdirSync('ui-evidence',{recursive:true});
-     await page.evaluate(()=>{state.session=null;go('home');document.scrollingElement.scrollTop=0});
-     // Boot.finished precedes the removal of the animated splash element.
-     await page.waitForFunction(()=>!document.getElementById('tpBoot')&&document.querySelector('#tp271HomeGreeting .tp271-home-hello')?.textContent==='Szia!');
-     await page.waitForFunction(()=>document.querySelector('#app main.rf221-home #rf223Today')!==null);
-     await page.evaluate(()=>{document.scrollingElement.scrollTop=0;const m=document.querySelector('#app main.rf221-home');if(m)m.scrollTop=0;document.activeElement?.blur?.()});
-     await page.screenshot({path:'ui-evidence/pr271-new-header-home-393.png',animations:'disabled'});
-   }
-   await page.evaluate(()=>{state.session=null;state.workout=null;db.set('draft',null);go('plan')});
-   await page.waitForSelector('main.tp146-plan #tp271WorkoutQuickLinks');
-   const shortcuts=page.locator('main.tp146-plan #tp271WorkoutQuickLinks');
-   assert.equal(await shortcuts.locator('button[data-tp271-shortcut]').count(),3,width+': Programs Calendar Coach remain below in Workout');
-   if(width===393){
-     await page.evaluate(()=>{document.scrollingElement.scrollTop=0;const m=document.querySelector('#app main.tp146-plan');if(m)m.scrollTop=0;document.activeElement?.blur?.()});
-     await page.screenshot({path:'ui-evidence/pr271-workout-top-393.png',animations:'disabled'});
-     await shortcuts.scrollIntoViewIfNeeded();
-     await page.screenshot({path:'ui-evidence/pr271-workout-shortcuts-393.png',animations:'disabled'});
-   }
-   for(const key of ['programs','calendar','coach']){
-     assert.equal(await shortcuts.locator('button[data-tp271-shortcut="'+key+'"]').isVisible(),true,width+': '+key+' reachable below');
-   }
-   await shortcuts.locator('button[data-tp271-shortcut="programs"]').click();
-   await page.waitForFunction(()=>state.tab==='programs');
-   assert.equal(await page.evaluate(()=>state.tab),'programs',width+': canonical Programs route not lost');
+   await page.waitForFunction(()=>window.TrainPilotBoot?.finished&&window.TrainPilotMockup271?.enabled);
+   assert.equal(await page.locator('.top.tp154-nav-grid .tp154-nav-cell:visible').count(),8,width+': original eight navigation buttons visible');
+   assert.equal(await page.locator('#tp271Dock,#tp271Header').count(),0,width+': no parallel navigation');
    await page.evaluate(()=>go('history'));
    await page.evaluate(()=>{
      state.session=null;state.workout=null;db.set('draft',null);
@@ -87,7 +41,7 @@ const server=http.createServer((req,res)=>{
      const row=(id,offset,weight)=>({id,workout:'A',dayId:'A',programId:'home-basic',
        programName:'Valódi tesztprogram',started:at(offset,17),finished:at(offset,18),
        exercises:[lift(weight,10)],photos:[]});
-     db.set('history',[row('p271-journal-1',-1,12),row('p271-journal-2',-2,11),row('p271-journal-3',-5,10)]);
+     db.set('history',Array.from({length:20},(_,i)=>row('p271-journal-'+(i+1),-1-i,Math.max(8,12-i))));
    });
    for(const theme of ['classicBlue','yellow']){
      await page.evaluate(t=>{state.tp155JournalFilterOpen=false;rf200SetTheme(t);state.tp177JournalView='log';go('history')},theme);
@@ -95,12 +49,11 @@ const server=http.createServer((req,res)=>{
      const journal=page.locator('main.tp150-journal-compact');
      if(width===393&&theme==='yellow'){
        fs.mkdirSync('ui-evidence',{recursive:true});
-       await page.waitForFunction(()=>document.querySelector('#tp271Dock button[data-tp271-target="log"]')?.getAttribute('aria-current')==='page');
        await page.evaluate(()=>{document.scrollingElement.scrollTop=0;document.activeElement?.blur?.()});
        await page.screenshot({path:'ui-evidence/pr271-journal-393.png'});
      }
      assert.equal(await journal.locator('.tp177-journal-tabs button').count(),3,width+'/'+theme+': three real Journal destinations');
-     assert.equal(await journal.locator('details.rf263-history').count(),3,width+'/'+theme+': actual saved workouts remain');
+     assert.equal(await journal.locator('details.rf263-history').count(),20,width+'/'+theme+': actual saved workouts remain');
      const filtered=journal.locator('.tp155-journal-filter');
      assert.equal(await filtered.count(),1,width+'/'+theme+': canonical calendar survives');
      const first=journal.locator('details.rf263-history').first();
@@ -126,15 +79,15 @@ const server=http.createServer((req,res)=>{
      await page.evaluate(()=>{if(typeof window.rf263ClearHistoryFilter==='function')window.rf263ClearHistoryFilter();go('history')});
      await page.waitForSelector('main.tp150-journal-compact');
      const previewMetrics=await page.evaluate(()=>{
-       const main=document.querySelector('#app main.tp150-journal-compact'),dock=document.getElementById('tp271Dock');
+       const main=document.querySelector('#app main.tp150-journal-compact');
        document.scrollingElement.scrollTop=document.scrollingElement.scrollHeight;
        const last=main.querySelector('details.rf263-history:last-of-type');
        return {clearance:parseFloat(getComputedStyle(main).paddingBottom),
          lastBottom:last?.getBoundingClientRect().bottom,
-         dockTop:dock.getBoundingClientRect().top,
+         viewportBottom:innerHeight,
          overflows:document.documentElement.scrollWidth>innerWidth+1};
      });
-     assert.ok(previewMetrics.clearance>=80,width+'/'+theme+': Journal leaves bottom-dock scroll clearance');
+     assert.ok(previewMetrics.clearance>=80,width+'/'+theme+': Journal leaves footer scroll clearance');
      assert.equal(previewMetrics.overflows,false,width+'/'+theme+': no horizontal Journal overflow');
 
      await page.locator('.tp177-journal-tabs button[onclick="tp177OpenProgress()"]:visible').click();
@@ -142,7 +95,6 @@ const server=http.createServer((req,res)=>{
      assert.equal(await page.evaluate(()=>state.tp177JournalView),'progress',width+'/'+theme+': canonical Journal Progress state');
      const progress=page.locator('main.tp177-progress');
      if(width===393&&theme==='yellow'){
-       await page.waitForFunction(()=>document.querySelector('#tp271Dock button[data-tp271-target="log"]')?.getAttribute('aria-current')==='page');
        await page.evaluate(()=>{document.scrollingElement.scrollTop=0;document.activeElement?.blur?.()});
        await page.screenshot({path:'ui-evidence/pr271-progress-393.png'});
      }
@@ -168,12 +120,12 @@ const server=http.createServer((req,res)=>{
      await seven.click();
      assert.equal(await seven.getAttribute('aria-pressed'),'true',width+'/'+theme+': original seven-day period state');
      const boxes=await progress.evaluate(el=>{
-       const dock=document.getElementById('tp271Dock'),metric=el.querySelector('.tp177-metric'),anatomy=el.querySelector('.tp177-anatomy');
+       const metric=el.querySelector('.tp177-metric'),anatomy=el.querySelector('.tp177-anatomy');
        document.scrollingElement.scrollTop=document.scrollingElement.scrollHeight;
        return {columns:getComputedStyle(el.querySelector('.tp177-metric-grid')).gridTemplateColumns.split(' ').length,
          cardHeight:metric.getBoundingClientRect().height,
          lastPadding:parseFloat(getComputedStyle(el).paddingBottom),
-         dockTop:dock.getBoundingClientRect().top,
+         viewportBottom:innerHeight,
          coachBottom:el.querySelector('.tp177-coach')?.getBoundingClientRect().bottom,
          anatomyWidth:anatomy.getBoundingClientRect().width,
          axisPosition:getComputedStyle(el.querySelector('.tp177-chart-axis')).position,
@@ -181,7 +133,7 @@ const server=http.createServer((req,res)=>{
      });
      assert.equal(boxes.columns,2,width+'/'+theme+': Studio-like two-column real metric grid');
      assert.ok(boxes.cardHeight>=80,width+'/'+theme+': reachable cards '+JSON.stringify(boxes));
-     assert.ok(boxes.coachBottom<=boxes.dockTop+5,width+'/'+theme+': final Coach action accessible above dock '+JSON.stringify(boxes));
+     assert.ok(boxes.coachBottom<=boxes.viewportBottom+5,width+'/'+theme+': final Coach action accessible in viewport '+JSON.stringify(boxes));
      assert.ok(boxes.lastPadding>=80,width+'/'+theme+': scroll-safe footer clearance');
      assert.ok(boxes.anatomyWidth>0&&boxes.axisPosition==='sticky',width+'/'+theme+': original anatomy and sticky chart axis');
      assert.ok(boxes.overflow<=1,width+'/'+theme+': no horizontal Progress overflow '+JSON.stringify(boxes));
@@ -190,9 +142,30 @@ const server=http.createServer((req,res)=>{
        await page.evaluate(()=>{document.scrollingElement.scrollTop=0;const m=document.querySelector('#app main.tp177-progress');if(m)m.scrollTop=0;document.activeElement?.blur?.()});
        await page.screenshot({path:'ui-evidence/pr271-progress-volume-expanded-393.png'});
        await page.evaluate(()=>{state.tp177JournalView='log';go('history');document.scrollingElement.scrollTop=0;document.activeElement?.blur?.()});
-       await page.waitForFunction(()=>document.querySelector('#tp271Dock button[data-tp271-target="log"]')?.getAttribute('aria-current')==='page');
-       assert.equal(await page.locator('#tp271Dock button[aria-current="page"]').count(),1,'only Journal selected when returning from Progress');
        await page.screenshot({path:'ui-evidence/pr271-journal-filter-expanded-393.png'});
+     }
+     for(const view of ['log','progress','stats']){
+       await page.evaluate(view=>{
+         if(view==='log')go('history');
+         else if(view==='progress')tp177OpenProgress();
+         else tp177OpenStatistics();
+       },view);
+       await page.locator('#app main > .tp177-journal-tabs').waitFor();
+       await page.evaluate(async()=>{
+         await Promise.all(document.querySelector('#app main').getAnimations().filter(a=>a.effect.getTiming().iterations!==Infinity).map(a=>a.finished));
+         window.scrollTo(0,300);
+         await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+       });
+       const sticky=await page.evaluate(()=>{
+         const tabs=document.querySelector('#app main > .tp177-journal-tabs'),header=document.querySelector('.top');
+         return {position:getComputedStyle(tabs).position,top:tabs.getBoundingClientRect().top,
+           headerBottom:header.getBoundingClientRect().bottom,scroll:window.scrollY};
+       });
+       assert.equal(sticky.position,'sticky',width+'/'+theme+'/'+view+': shared tabs remain sticky');
+       assert.ok(sticky.top>=sticky.headerBottom-2&&sticky.top<=sticky.headerBottom+14,width+'/'+theme+'/'+view+': tabs stay below header on scroll '+JSON.stringify(sticky));
+       if(view==='log')assert.ok(sticky.scroll>100,width+'/'+theme+': verified with a genuinely scrolled history');
+       if(width===393&&theme==='yellow'&&view==='log')await page.screenshot({path:'ui-evidence/pr271-journal-sticky-scrolled-393.png',animations:'disabled'});
+       await page.evaluate(()=>window.scrollTo(0,0));
      }
      // P4a: the six live Health tiles and the original Round-4 Settings
      // controls are still reachable in the trial shell at both phone widths.
@@ -207,7 +180,7 @@ const server=http.createServer((req,res)=>{
      });
      assert.equal(health.tiles,6,width+'/'+theme+': six actual Health metrics');
      assert.equal(health.columns,3,width+'/'+theme+': three-column Health layout');
-     assert.ok(health.footer>=80,width+'/'+theme+': Health scroll clears dock');
+     assert.ok(health.footer>=80,width+'/'+theme+': Health scroll has footer clearance');
      assert.ok(health.overflow<=1,width+'/'+theme+': no Health horizontal overflow');
      const healthDetails=page.locator('main.tp168-health details.tp168-more-panel');
      assert.equal(await healthDetails.count(),1,width+'/'+theme+': complete canonical Health detail disclosure');
@@ -219,7 +192,7 @@ const server=http.createServer((req,res)=>{
        await page.evaluate(()=>{document.scrollingElement.scrollTop=0;const m=document.querySelector('#app main.tp168-health');if(m)m.scrollTop=0;document.activeElement?.blur?.()});
        await page.screenshot({path:'ui-evidence/pr271-health-393.png'});
      }
-     await page.locator('#tp271Header button[data-tp271-header="settings"]').click();
+     await page.locator('.top.tp154-nav-grid .tp154-settings-action').click();
      await page.waitForFunction(()=>document.querySelector('#tp155R4PanelHost')?.dataset.panel==='settings');
      const settings=await page.evaluate(()=>{
        const host=document.querySelector('#tp155R4PanelHost');
@@ -254,8 +227,8 @@ const server=http.createServer((req,res)=>{
      const localized={hu:'Egészség',en:'Health',de:'Gesundheit',ro:'Sănătate'};
      for(const [lang,label] of Object.entries(localized)){
        await page.evaluate(x=>rf212SetLang(x),lang);
-       await page.waitForFunction(x=>document.documentElement.lang===x&&document.querySelector('#tp271Dock button[data-tp271-target="health"] .tp271-dock-label')?.textContent===({hu:'Egészség',en:'Health',de:'Gesundheit',ro:'Sănătate'}[x]),lang);
-       assert.equal(await page.locator('#tp271Dock button[data-tp271-target="health"] .tp271-dock-label').textContent(),label,lang+': canonical saved language drives dock');
+       await page.waitForFunction(x=>document.documentElement.lang===x,lang);
+       assert.equal(await page.locator('.top.tp154-nav-grid .tp154-nav-cell:visible').count(),8,lang+': all canonical destinations stay visible');
        assert.equal(await page.evaluate(()=>rf212LangSetting()),lang,lang+': main language persisted');
        assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),lang+': no language overflow');
      }
@@ -264,6 +237,6 @@ const server=http.createServer((req,res)=>{
    assert.deepEqual(errors,[],width+': no runtime errors');
    await page.close();
   }
-  console.log('PASS PR271 P1e/P4b: real compact gold header, three Settings shortcuts, five bottom tabs, localized data and screenshots');
+  console.log('PASS PR271: canonical navigation, Journal/Progress/Statistics sticky tabs, live data and screenshots');
  }finally{await browser?.close();await new Promise(ok=>server.close(ok))}
 })().catch(e=>{console.error(e);process.exitCode=1});

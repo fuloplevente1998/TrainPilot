@@ -1,5 +1,15 @@
 # TrainPilot – aktuális átadás
 
+## PR #271 – felhasználói navigációs döntés: vissza a 2×4 menühöz
+
+A telefonos próba során a Programok/Naptár/Coach az oldal aljára került és nehezen volt megtalálható. A felhasználó kifejezetten az „Eredeti 2×4 menü” opciót választotta. Az alsó dock és az azt helyettesítő külön fejléc megszűnik; az eredeti nyolc felső gomb és kanonikus eseménykezelő látható. A mockup felület/kártyák, valódi adatok, témák, fade, katalógustömörítés és sticky Napló-fülek megmaradnak. A korábbi ötfüles navigáció tesztelvárása elavult; a próbák az eredeti nyolc gomb tényleges elérhetőségét ellenőrzik. A tp271-mockup-dock CSS-osztály neve kompatibilitási scope, nem létrehozott dock.
+
+## PR #271 – további készülékes visszajelzések, 2026-10-29
+
+A felhasználó újabb képei alapján: kompaktabb Gyakorlatok/Izomcsoportok fejléc és szűrőblokk (16–18px cím, 12px leírás, kisebb térközök, 44px kereső/chip érintési célok, 58px minimum listakártyák), több hely a görgethető találatoknak. A meglévő kereső, felszerelés-/izomszűrő és részletek változatlanok. A felső mockup fejléc újra sticky; az Edzésnapló/Fejlődés/Statisztikák közös tabja sticky a mért fejléc alatt mindhárom nézeten. Meglévő Chromium-próbák bővítve valódi görgetéssel, 20 mentett edzéses fixture-rel és kompakt katalógusgeometriával. Új képek: pr271-catalogue-compact-393.png, pr271-journal-sticky-scrolled-393.png.
+
+Ez az előző f0c008f5 (üres edzésfejléc + Naptár alsó gomb) javításra épül; annak 6/6 Chromium/Quick/Performance kapuja sikeres, natív kapuja induláskor még futott. Az új finomítások pontos forrású kapui és képei még ellenőrzendők. Nincs verzióemelés/merge/release; teljes készülékes elfogadás nincs.
+
 ## PR #271 – aktív edzés üres fejlécsáv, 2026-10-29
 
 A felhasználó a 2914331e APK próbáján képen jelezte: aktív gyors/futó edzés fölött nagy üres sáv. Ok: a mockup fejléc általános flex/min-height szabálya aktív sessionnél is helyet foglalt, miközben a previewHeader ilyenkor szándékosan nem épít gombokat. Csak tp271-has-workout alatt a teljes .top.tp154-nav-grid konténer display:none. Edzés után az eredeti mockup fejléc visszatér. Motor, adatkezelés, natív kód és verzió változatlan.

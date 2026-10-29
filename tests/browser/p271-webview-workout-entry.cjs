@@ -34,8 +34,8 @@ const server=http.createServer((req,res)=>{
       const main=document.querySelector('#app main.tp152-plan'),quick=main.querySelector('.tp150-quick-entry-minimal'),
         frame=main.querySelector('.tp124-active-program-frame'),training=frame.querySelector('.tp1511-training'),
         program=frame.querySelector('.tp152-active-program'),day=program.querySelector('.tp152-day'),
-        button=quick.querySelector('button'),dock=document.getElementById('tp271Dock');
-      const q=quick.getBoundingClientRect(),fr=frame.getBoundingClientRect(),nav=dock.getBoundingClientRect(),tap=button.getBoundingClientRect();
+        button=quick.querySelector('button');
+      const q=quick.getBoundingClientRect(),fr=frame.getBoundingClientRect(),tap=button.getBoundingClientRect();
       return {
        quick:!!quick,training:!!training,program:!!program,days:program.querySelectorAll('.tp152-day').length,
        frameBorder:getComputedStyle(frame).borderTopWidth,
@@ -46,7 +46,7 @@ const server=http.createServer((req,res)=>{
        startText:button.textContent.trim(),startAction:button.getAttribute('onclick'),
        choice:program.querySelector('.tp150-change-program')?.getAttribute('onclick'),
        dayStart:day.querySelector('.tp152-start-day')?.getAttribute('onclick'),
-       quickTop:q.top,frameTop:fr.top,buttonHeight:tap.height,navTop:nav.top,
+       quickTop:q.top,frameTop:fr.top,buttonHeight:tap.height,viewportBottom:innerHeight,
        overflow:document.documentElement.scrollWidth-innerWidth,
        background:getComputedStyle(quick).backgroundColor,
        quickColumns:getComputedStyle(quick).gridTemplateColumns
@@ -103,6 +103,19 @@ const server=http.createServer((req,res)=>{
     const muscleChips=page.locator('#tp155R4PanelHost[data-panel="exercises"] .tp271-muscle-chip');
     assert.ok(await muscleChips.count()>=6,width+'/'+theme+': real muscle options exposed as chips');
     assert.equal(await page.locator('#tp155R4PanelHost[data-panel="exercises"] #libraryMuscle').count(),1,width+'/'+theme+': native muscle select preserved');
+    const compact=await page.locator('#tp155R4PanelHost[data-panel="exercises"]').evaluate(el=>{
+      const title=el.querySelector('.hero h1'),results=el.querySelector('#libraryResults'),panel=el.querySelector('main');
+      return {font:parseFloat(getComputedStyle(title).fontSize),
+        stack:results.getBoundingClientRect().top-panel.getBoundingClientRect().top,
+        resultHeight:results.getBoundingClientRect().height,
+        viewport:innerHeight,
+        chips:[...el.querySelectorAll('.tp271-muscle-chip')].every(c=>c.getBoundingClientRect().height>=44)};
+    });
+    assert.ok(compact.font<=18,width+'/'+theme+': compact catalogue title');
+    assert.ok(compact.stack<=300&&compact.resultHeight>=compact.viewport*.4,width+'/'+theme+': catalogue reserves space for results '+JSON.stringify(compact));
+    assert.ok(compact.chips,width+'/'+theme+': compact chips retain 44px tap height');
+    if(width===393&&theme==='yellow')await page.screenshot({path:'ui-evidence/pr271-catalogue-compact-393.png',animations:'disabled'});
+
     await page.locator('#tp155R4PanelHost[data-panel="exercises"] button[data-tp271-muscle="legs"]').click();
     await page.waitForFunction(()=>document.querySelector('#tp155R4PanelHost[data-panel="exercises"] #libraryMuscle')?.value==='legs');
     assert.equal(await page.evaluate(()=>state.libraryFilter.group),'legs',width+'/'+theme+': original catalogue filter executes');
@@ -159,7 +172,7 @@ const server=http.createServer((req,res)=>{
     assert.ok(await quick.locator('.tp150-quick-start').count()===1,width+'/'+theme+': real quick-start button retained');
     await page.evaluate(()=>window.tp155R4ClosePanel(false));
     await page.waitForFunction(()=>!document.getElementById('tp155R4PanelHost'));
-    assert.equal(await page.locator('#tp271Dock:visible').count(),1,width+'/'+theme+': dock restores after closing Quick panel');
+    assert.equal(await page.locator('.top.tp154-nav-grid .tp154-nav-cell:visible').count(),8,width+'/'+theme+': original navigation restores after closing Quick panel');
     await page.evaluate(()=>go('plan'));
 
     // P2b: Studio exercise library styling is applied to the real filterable
@@ -199,7 +212,7 @@ const server=http.createServer((req,res)=>{
     }
     await page.evaluate(()=>window.tp155R4ClosePanel(false));
     await page.waitForFunction(()=>!document.querySelector('#tp155R4PanelHost'));
-    assert.equal(await page.locator('#tp271Dock:visible').count(),1,width+'/'+theme+': bottom navigation returns from catalogue');
+    assert.equal(await page.locator('.top.tp154-nav-grid .tp154-nav-cell:visible').count(),8,width+'/'+theme+': bottom navigation returns from catalogue');
     await page.evaluate(()=>go('plan'));
 
     // Start a real program day (without finalizing it) to prove engine
@@ -207,10 +220,10 @@ const server=http.createServer((req,res)=>{
     await page.evaluate(()=>startWorkout(activeProgram().days[0].id));
     await page.waitForSelector('main.tp153-workout .tp16-workout-actions');
     const live=await page.evaluate(()=>({session:!!state.session,count:state.session?.exercises?.length||0,
-      dock:getComputedStyle(document.getElementById('tp271Dock')).display,
+      headerHeight:document.querySelector('.top.tp154-nav-grid').getBoundingClientRect().height,
       actions:!!document.querySelector('main.tp153-workout .tp16-workout-actions')}));
     assert.ok(live.session&&live.count>0&&live.actions,width+'/'+theme+': real workout engine/session still runs');
-    assert.equal(live.dock,'none',width+'/'+theme+': fixed mockup dock hidden during workout');
+    assert.equal(live.headerHeight,0,width+'/'+theme+': empty header collapsed during workout');
     await page.evaluate(()=>{state.session=null;state.workout=null;db.set('draft',null);go('home')});
     if(width===393&&theme==='yellow'){
       await page.evaluate(()=>go('plan'));

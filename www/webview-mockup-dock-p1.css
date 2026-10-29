@@ -1,132 +1,13 @@
-/* PR #271 / P1b – opt-in mockup bottom navigation.
- * Enabled only with ?tp271=1. The legacy main experience and all 8 original
- * canonical commands remain unchanged without this flag. */
-html.tp271-mockup-dock {
-  --tp271-dock-height: 82px;
-}
-html.tp271-mockup-dock body .top.tp154-nav-grid {
-  /* 4 surviving quick entries: Calendar, Programs, Coach, Settings.
-     Main destinations are now in the bottom dock, not duplicated up here. */
-  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-}
-html.tp271-mockup-dock body .top.tp154-nav-grid .tp151-nav-item:is(
-  [onclick*="go('home')"],
-  [onclick*="go('plan')"],
-  [onclick*="go('history')"],
-  [onclick*="go('health')"]
-) {
+/* PR271 mockup presentation. The original 2x4 navigation is canonical. */
+html.tp271-mockup-dock { --tp271-dock-height: 0px; }
+html.tp271-mockup-dock.tp271-has-workout body .top.tp154-nav-grid {
   display: none !important;
 }
-html.tp271-mockup-dock body .top.tp154-nav-grid > .tp137-selection {
-  display: none !important;
-}
-html.tp271-mockup-dock body .top.tp154-nav-grid .tp154-nav-cell {
-  min-height: 46px !important;
-  padding-block: 4px !important;
-}
-
-/* One persistent, single-click dock. We do not clone event handlers or
-   duplicate navigation state; JS delegates to existing go/progress commands. */
-html.tp271-mockup-dock body #tp271Dock {
-  position: fixed;
-  z-index: 60;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 5px);
-  box-sizing: border-box;
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 3px;
-  align-items: stretch;
-  width: min(760px, calc(100vw - 12px));
-  height: 69px;
-  padding: 5px;
-  border-radius: 17px;
-  background: var(--tp-ui-bg, var(--bg));
-  border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--line));
-  box-shadow: 0 4px 18px rgba(0, 0, 0, .25);
-}
-html.tp271-mockup-dock body #tp271Dock .tp271-dock-button {
-  min-width: 0;
-  min-height: 56px;
-  padding: 4px 1px;
-  border: 1px solid transparent;
-  border-radius: 12px;
-  background: transparent;
-  color: var(--muted);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 2px;
-  font-family: var(--tp-ui-font, system-ui);
-  font-weight: 700;
-  line-height: 1.1;
-  cursor: pointer;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-html.tp271-mockup-dock body #tp271Dock .tp271-dock-icon {
-  display: block;
-  flex: 0 0 22px;
-  width: 22px;
-  height: 22px;
-}
-html.tp271-mockup-dock body #tp271Dock .tp271-dock-label {
-  font-size: clamp(9px, 2.8vw, 12px);
-  line-height: 1.15;
-  max-width: 100%;
-  overflow-wrap: normal;
-  white-space: nowrap;
-}
-html.tp271-mockup-dock body #tp271Dock .tp271-dock-button.tp271-selected {
-  border-color: color-mix(in srgb, var(--accent) 65%, var(--line));
-  color: var(--text);
-  background: color-mix(in srgb, var(--accent) 15%, var(--card));
-}
-html.tp271-mockup-dock body #tp271Dock .tp271-dock-button.tp271-selected .tp271-dock-icon {
-  color: var(--accent);
-}
-html.tp271-mockup-dock body #tp271Dock .tp271-dock-button:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
-html.tp271-mockup-dock body #app main:not(.tp153-workout) {
-  /* Reserve space below scrolling pages for the new fixed safe-area dock. */
-  padding-bottom: calc(var(--tp271-dock-height) + env(safe-area-inset-bottom, 0px)) !important;
-}
-html.tp271-mockup-dock body #app main.tp107-fit-home {
-  height: max(0px, calc(100dvh - var(--tp107-nav-height, 132px) - var(--tp271-dock-height) - 2px)) !important;
-  max-height: max(0px, calc(100dvh - var(--tp107-nav-height, 132px) - var(--tp271-dock-height) - 2px)) !important;
-}
-/* The Studio reference uses a scrollable Home. With the dock occupying
-   screen space, never clip a saved-draft hero or a lower Health disclosure. */
+/* The original measured header and fit-view scroll behavior are preserved. */
 html.tp271-mockup-dock body #app main.tp107-fit-home,
 html.tp271-mockup-dock body #app main.tp107-fit-health {
   overflow-y: auto !important;
-  overscroll-behavior-y: contain;
-  scrollbar-width: thin;
 }
-html.tp271-mockup-dock body #app main.tp107-fit-health {
-  max-height: max(0px, calc(100dvh - var(--tp107-nav-height, 132px) - var(--tp271-dock-height) - 2px)) !important;
-}
-/* Never overlap native/web workout controls, a confirmation or an editor.
-   The host modal's own active focus and Back contract remain authoritative. */
-html.tp271-mockup-dock.tp271-has-workout body #tp271Dock,
-html.tp271-mockup-dock.tp3-planner-open body #tp271Dock,
-html.tp271-mockup-dock.tp155-r4-panel-open body #tp271Dock,
-html.tp271-mockup-dock:has(#tp155R4PanelHost) body #tp271Dock,
-html.tp271-mockup-dock:has(#tp3PlannerPanelHost) body #tp271Dock {
-  display: none !important;
-}
-@media (prefers-reduced-motion: reduce) {
-  html.tp271-mockup-dock body #tp271Dock,
-  html.tp271-mockup-dock body #tp271Dock .tp271-dock-button {
-    animation: none !important;
-    transition: none !important;
-  }
-}
-
 /* P1c visual parity: Studio's compact two-column Home overview.
    All six main measurements remain present and actionable; 2x2 primary
    readings are followed by the two original workout/recovery readings. */
@@ -255,22 +136,6 @@ html.tp271-mockup-dock body #app main.rf221-home #rf220CoachCard.tp166-home-coac
   line-height: 1.36 !important;
 }
 
-/* The original four quick actions remain real interactive controls in a
-   compact top strip, not a second router or a duplicated bottom dock. */
-html.tp271-mockup-dock body .top.tp154-nav-grid {
-  gap: 6px !important;
-  padding-bottom: 7px !important;
-}
-html.tp271-mockup-dock body .top.tp154-nav-grid .tp154-nav-cell {
-  border-radius: 12px !important;
-  min-height: 48px !important;
-}
-html.tp271-mockup-dock body .top.tp154-nav-grid .tp151-nav-label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: clamp(10px, 2.9vw, 12px) !important;
-}
 @media (max-width: 359px) {
   html.tp271-mockup-dock body #app main.rf221-home {
     gap: 8px !important;
@@ -550,19 +415,19 @@ html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="quick"] #tp150QuickRes
    search, gear/muscle selects and add-to-program behavior unchanged. */
 html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="exercises"] .tp155-exercise-panel {
   min-width: 0;
-  padding: 9px 10px calc(20px + env(safe-area-inset-bottom, 0px)) !important;
+  padding: 4px 8px calc(12px + env(safe-area-inset-bottom, 0px)) !important;
 }
 html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="exercises"] .tp155-exercise-panel > .hero {
   border: 0 !important;
   border-bottom: 1px solid var(--line) !important;
   border-radius: 0 !important;
-  padding: 9px 45px 12px 6px !important;
-  margin: 0 0 11px !important;
+  padding: 4px 44px 6px 2px !important;
+  margin: 0 0 6px !important;
   background: transparent !important;
   box-shadow: none !important;
 }
 html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="exercises"] .tp155-exercise-panel > .hero h1 {
-  font-size: clamp(19px, 5.6vw, 26px) !important;
+  font-size: clamp(16px, 4.5vw, 18px) !important;
   line-height: 1.17 !important;
   letter-spacing: -.02em;
   overflow-wrap: anywhere;
@@ -572,8 +437,8 @@ html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="exercises"] .tp155-lib
   border-radius: 16px !important;
   background: var(--tp-ui-card, var(--card)) !important;
   box-shadow: none !important;
-  padding: 11px !important;
-  margin: 0 0 10px !important;
+  padding: 8px !important;
+  margin: 0 0 6px !important;
   min-width: 0;
 }
 html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="exercises"] .tp155-library-filters label {
@@ -584,8 +449,8 @@ html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="exercises"] #libraryQu
   display: block;
   width: 100% !important;
   min-width: 0;
-  min-height: 48px !important;
-  margin-top: 7px !important;
+  min-height: 44px !important;
+  margin-top: 3px !important;
   border: 1px solid var(--line) !important;
   border-radius: 12px !important;
   background: var(--card2) !important;
@@ -600,7 +465,7 @@ html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="exercises"] .tp155-fil
   display: grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   gap: 8px !important;
-  margin-top: 9px !important;
+  margin-top: 4px !important;
   min-width: 0;
 }
 html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="exercises"] .tp155-filter-row > label {
@@ -619,12 +484,12 @@ html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="exercises"] .tp155-lib
   padding: 0 0 14px !important;
 }
 html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="exercises"] .tp155-library-results > p.muted {
-  margin: 9px 4px 11px !important;
+  margin: 4px 2px 6px !important;
   font-variant-numeric: tabular-nums;
   font-size: 12px !important;
 }
 html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="exercises"] .tp-library-card {
-  margin: 9px 0 !important;
+  margin: 5px 0 !important;
   border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--line)) !important;
   border-radius: 15px !important;
   background: var(--tp-ui-card, var(--card)) !important;
@@ -636,8 +501,8 @@ html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="exercises"] .tp-librar
   display: flex !important;
   align-items: center !important;
   gap: 10px !important;
-  min-height: 66px !important;
-  padding: 11px !important;
+  min-height: 58px !important;
+  padding: 8px !important;
   border-radius: 14px !important;
 }
 html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="exercises"] .tp-library-summary-main {
@@ -646,8 +511,8 @@ html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="exercises"] .tp-librar
   overflow-wrap: anywhere;
 }
 html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="exercises"] .tp-library-summary-main h3 {
-  margin: 0 0 5px !important;
-  font-size: clamp(14px, 4vw, 17px) !important;
+  margin: 0 0 2px !important;
+  font-size: clamp(13px, 3.6vw, 15px) !important;
   line-height: 1.25 !important;
   color: var(--text) !important;
 }
@@ -670,7 +535,7 @@ html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="exercises"] .tp-librar
 }
 html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="exercises"] .tp-library-body .btn {
   min-height: 44px !important;
-  margin-top: 7px !important;
+  margin-top: 3px !important;
   border-radius: 11px !important;
 }
 html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="exercises"] .tp-library-card > summary:focus-visible,
@@ -706,7 +571,7 @@ html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="quick"] #tp150QuickRes
   overflow-wrap: anywhere;
 }
 html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="quick"] #tp150QuickResults .tp152-quick-row .ex-name {
-  font-size: clamp(14px, 4vw, 17px) !important;
+  font-size: clamp(13px, 3.6vw, 15px) !important;
   line-height: 1.23 !important;
 }
 html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="quick"] #tp150QuickResults .tp152-quick-row .meta {
@@ -715,14 +580,13 @@ html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="quick"] #tp150QuickRes
 }
 html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="quick"] #tp150QuickResults .tp152-quick-body {
   border-top: 1px solid var(--line);
-  padding: 11px !important;
+  padding: 8px !important;
 }
 html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="quick"] #tp150QuickResults .tp152-edit-grid .field {
   min-width: 0;
   max-width: 100%;
 }
 @media (max-width: 350px) {
-  html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="exercises"] .tp155-filter-row,
   html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="quick"] .tp155-quick-filter-row {
     grid-template-columns: minmax(0, 1fr) !important;
   }
@@ -732,6 +596,34 @@ html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="quick"] #tp150QuickRes
 }
 
 
+/* Compact catalogue header/filter stack; preserve the real fields and 44px taps. */
+html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="exercises"] .hero :is(h1,p) {
+  margin: 0 !important;
+}
+html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="exercises"] .hero p {
+  font-size: 12px !important;
+  line-height: 1.3 !important;
+  margin-top: 3px !important;
+}
+html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="exercises"] .tp155-library-filters :is(label,.tp-select-trigger) {
+  font-size: 12px !important;
+}
+html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="exercises"] #libraryQuery {
+  font-size: 14px !important;
+  height: 44px !important;
+  padding-block: 8px !important;
+}
+html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="exercises"] .tp271-muscle-chips {
+  gap: 5px;
+  padding: 0 0 2px;
+  margin: 4px 0;
+}
+html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="exercises"] .tp271-muscle-chip {
+  min-height: 44px;
+  padding: 6px 10px;
+  font-size: 11px;
+  border-radius: 10px;
+}
 /* P2c – Studio-inspired existing exercise and outdoor entry points.
    Strictly scoped to the opt-in WebView preview, never the standard app. */
 html.tp271-mockup-dock body #app main.tp152-plan #tp271WorkoutLaunchers {
@@ -867,7 +759,7 @@ html.tp271-mockup-dock body #app main.tp177-progress {
   min-width: 0;
   padding-inline: clamp(10px, 3.3vw, 18px) !important;
   padding-top: 10px !important;
-  padding-bottom: calc(var(--tp271-dock-height) + env(safe-area-inset-bottom, 0px) + 24px) !important;
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
 }
 html.tp271-mockup-dock body #app main.tp150-journal-compact .tp177-journal-tabs,
 html.tp271-mockup-dock body #app main.tp177-progress .tp177-journal-tabs {
@@ -1126,7 +1018,7 @@ html.tp271-mockup-dock body #app main.rf263-health.tp168-health {
   box-sizing: border-box;
   min-width: 0;
   gap: 9px !important;
-  padding: 10px clamp(10px, 3.3vw, 18px) calc(var(--tp271-dock-height) + env(safe-area-inset-bottom, 0px) + 24px) !important;
+  padding: 10px clamp(10px, 3.3vw, 18px) calc(80px + env(safe-area-inset-bottom, 0px)) !important;
 }
 html.tp271-mockup-dock body #app main.tp168-health > .tp168-today-card {
   padding: 12px !important;
@@ -1344,214 +1236,6 @@ html.tp271-mockup-dock body #tp155R4PanelHost[data-panel="settings"] :is(
 }
 
 
-/* P1e – replace the last visible pieces of the old 2×4 navigation.
-   Original nav buttons stay in DOM for existing Round-4 handlers/back logic.
-   Only this opt-in branch renders a single logo/action header + five-tab dock. */
-html.tp271-mockup-dock body .top.tp154-nav-grid,
-html.tp271-mockup-dock.tp-nav-compact body .top.tp154-nav-grid {
-  box-sizing: border-box !important;
-  display: flex !important;
-  flex-direction: column !important;
-  grid-auto-rows: auto !important;
-  align-items: stretch !important;
-  justify-content: center !important;
-  position: relative !important;
-  top: 0 !important;
-  width: 100% !important;
-  min-height: 60px !important;
-  height: auto !important;
-  padding: calc(5px + env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-right, 0px)) 5px max(10px, env(safe-area-inset-left, 0px)) !important;
-  margin: 0 !important;
-  gap: 0 !important;
-  border-bottom: 1px solid color-mix(in srgb, var(--accent) 18%, var(--line)) !important;
-  background: var(--tp-ui-bg, var(--bg)) !important;
-}
-/* Active workouts deliberately omit navigation. Collapse its container too:
-   the general preview header min-height must not leave a blank 60px strip. */
-html.tp271-mockup-dock.tp271-has-workout body .top.tp154-nav-grid {
-  display: none !important;
-}
-html.tp271-mockup-dock body .top.tp154-nav-grid > :not(#tp271Header) {
-  display: none !important;
-}
-html.tp271-mockup-dock body .top.tp154-nav-grid > #tp271Header {
-  box-sizing: border-box;
-  display: flex !important;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  width: 100%;
-  max-width: 760px;
-  min-width: 0;
-  height: 48px;
-  margin-inline: auto;
-  position: relative;
-  z-index: 4;
-}
-html.tp271-mockup-dock body #tp271Header .tp271-header-brand {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex: 1 1 auto;
-  min-width: 0;
-}
-html.tp271-mockup-dock body #tp271Header .tp271-header-mark {
-  width: 32px;
-  height: 30px;
-  min-width: 32px;
-  flex: 0 0 32px;
-  display: block;
-  overflow: visible;
-}
-html.tp271-mockup-dock body #tp271Header .tp271-header-brand strong {
-  color: var(--accent);
-  font-size: clamp(14px, 4vw, 17px);
-  font-weight: 850;
-  letter-spacing: -.025em;
-  white-space: nowrap;
-}
-html.tp271-mockup-dock body #tp271Header .tp271-header-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: clamp(3px, 1.4vw, 8px);
-  flex: 0 0 auto;
-}
-html.tp271-mockup-dock body #tp271Header .tp271-header-action {
-  box-sizing: border-box;
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  width: clamp(42px, 12vw, 46px);
-  height: 44px;
-  min-width: 42px;
-  min-height: 44px;
-  padding: 8px;
-  border: 1px solid transparent;
-  border-radius: 13px;
-  color: var(--text);
-  background: transparent;
-  box-shadow: none;
-  cursor: pointer;
-  touch-action: manipulation;
-}
-html.tp271-mockup-dock body #tp271Header .tp271-header-action svg {
-  display: block;
-  width: 23px;
-  height: 23px;
-}
-html.tp271-mockup-dock body #tp271Header .tp271-header-lang span {
-  font-weight: 850;
-  font-size: 15px;
-  line-height: 1;
-}
-html.tp271-mockup-dock body #tp271Header .tp271-header-action:hover,
-html.tp271-mockup-dock body #tp271Header .tp271-header-action:active {
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 10%, var(--card));
-}
-html.tp271-mockup-dock body #tp271Header :is(.tp271-header-action,.tp271-picker-option):focus-visible {
-  outline: 2px solid var(--accent) !important;
-  outline-offset: 1px;
-}
-html.tp271-mockup-dock body #tp271Header .tp271-header-picker {
-  box-sizing: border-box;
-  position: absolute;
-  z-index: 100;
-  top: calc(100% + 6px);
-  right: 0;
-  width: min(290px, calc(100vw - 20px));
-  max-height: min(370px, 60dvh);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 4px;
-  padding: 9px;
-  border-radius: 15px;
-  border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--line));
-  background: var(--tp-ui-card, var(--card));
-  box-shadow: 0 15px 35px rgba(0,0,0,.34);
-}
-html.tp271-mockup-dock body #tp271Header .tp271-picker-option {
-  display: flex;
-  min-height: 44px;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 8px 12px;
-  font-size: 13px;
-  text-align: left;
-  color: var(--text);
-  background: var(--card2);
-  border: 1px solid transparent;
-  border-radius: 10px;
-  cursor: pointer;
-}
-html.tp271-mockup-dock body #tp271Header .tp271-picker-option[aria-pressed="true"] {
-  color: var(--text);
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 16%, var(--card));
-}
-html.tp271-mockup-dock body #tp271Header .tp271-theme-swatch {
-  display: inline-block;
-  width: 17px;
-  height: 17px;
-  border-radius: 50%;
-  flex: 0 0 17px;
-  border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-}
-/* The dock is the only permanent main-route menu. Program/Calendar/Coach
-   retain their original existing entry points inside the Workout content. */
-
-
-/* P1e: secondary routes live in Workout content, not a second top menu. */
-html.tp271-mockup-dock body #app main.tp146-plan #tp271WorkoutQuickLinks {
-  display: grid !important;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  gap: clamp(5px, 1.5vw, 9px) !important;
-  min-width: 0;
-  margin: 12px 0 3px !important;
-  padding: 0;
-  border: 0;
-}
-html.tp271-mockup-dock body #app main.tp146-plan #tp271WorkoutQuickLinks .tp271-workout-shortcut {
-  box-sizing: border-box;
-  display: flex;
-  min-width: 0;
-  min-height: 86px;
-  padding: 10px 5px;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--line));
-  border-radius: 14px;
-  color: var(--text);
-  background: var(--tp-ui-card, var(--card));
-  font: inherit;
-  cursor: pointer;
-  touch-action: manipulation;
-  box-shadow: none;
-}
-html.tp271-mockup-dock body #app main.tp146-plan #tp271WorkoutQuickLinks .tp271-shortcut-icon {
-  font-size: 24px;
-  line-height: 1;
-  color: var(--accent);
-}
-html.tp271-mockup-dock body #app main.tp146-plan #tp271WorkoutQuickLinks .tp271-shortcut-label {
-  font-size: clamp(10px, 3vw, 13px);
-  font-weight: 750;
-  line-height: 1.18;
-  text-align: center;
-  overflow-wrap: anywhere;
-}
-html.tp271-mockup-dock body #app main.tp146-plan #tp271WorkoutQuickLinks .tp271-workout-shortcut:focus-visible {
-  outline: 2px solid var(--accent) !important;
-  outline-offset: 2px;
-}
-
-
 /* P1f Home visual hierarchy: match mockup 1/4, without demo names, watch
    model/battery guesses, or a second session/startup implementation. */
 html.tp271-mockup-dock body #app main.rf221-home > #tp271HomeGreeting {
@@ -1750,22 +1434,6 @@ html.tp271-mockup-dock body #app main.rf221-home #rf223Today .tp5-today-metric.s
   background: var(--tp271-surface) padding-box,
     var(--tp271-metal-edge) border-box !important;
 }
-/* Reference navigation is an edge-to-edge dark rail, with the active label
-   and icon carrying the accent instead of a second large filled card. */
-html.tp271-mockup-dock body #tp271Dock {
-  width: 100%;
-  bottom: env(safe-area-inset-bottom, 0px);
-  border-radius: 0;
-  border-width: 1px 0 0;
-  border-color: var(--tp-ui-border);
-  background: var(--tp-ui-bg);
-  box-shadow: none;
-}
-html.tp271-mockup-dock body #tp271Dock .tp271-dock-button.tp271-selected {
-  color: var(--accent);
-  border-color: transparent;
-  background: transparent;
-}
 /* A solid, matte treatment remains available in every basic palette. */
 html[data-tp-theme-family="basic"].tp271-mockup-dock {
   --tp271-surface: linear-gradient(var(--tp-ui-card), var(--tp-ui-card));
@@ -1787,4 +1455,12 @@ html.tp271-mockup-dock body #app main.tp160-page-reveal {
   html.tp271-mockup-dock body #app main.tp160-page-reveal {
     animation: none !important;
   }
+}
+
+/* The Journal, Progress and Statistics share one sticky subnavigation. */
+html.tp271-mockup-dock body #app main:has(> .tp177-journal-tabs) > .tp177-journal-tabs {
+  position: sticky !important;
+  top: var(--tp107-nav-height, 60px) !important;
+  z-index: 9;
+  background: var(--tp-ui-card, var(--card)) !important;
 }

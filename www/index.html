@@ -2501,7 +2501,7 @@
 
 </script>
 <script>
-/* PR271 experimental 5-tab visual navigation. Inline by design:
+/* PR271 visual presentation with the canonical eight-button navigation. Inline by design:
    TrainPilot's shipped runtime permits only app.js and sw.js in www. */
 /* TrainPilot PR #271, P1b: opt-in five-tab bottom dock for WebView mockup review.
  * Uses only canonical TrainPilot navigation and does not change workout engines,
@@ -2511,138 +2511,13 @@
   const enabled = typeof window !== 'undefined' && typeof location !== 'undefined' && /(?:^|[?&])tp271=1(?:&|$)/.test(String(location.search || ''));
   if (!enabled) return;
 
-  const labels = {
-    hu: {home:'Kezdőlap',workout:'Edzés',log:'Napló',calendar:'Naptár',health:'Egészség',nav:'Fő navigáció'},
-    en: {home:'Home',workout:'Workout',log:'Journal',calendar:'Calendar',health:'Health',nav:'Main navigation'},
-    de: {home:'Start',workout:'Training',log:'Tagebuch',calendar:'Kalender',health:'Gesundheit',nav:'Hauptnavigation'},
-    ro: {home:'Acasă',workout:'Antrenament',log:'Jurnal',calendar:'Calendar',health:'Sănătate',nav:'Navigare principală'}
-  };
-  const icons = {
-    home:'<path d="m3 10 9-7 9 7v10H3Z"/><path d="M9 20v-7h6v7"/>',
-    workout:'<path d="M6 8v8M3 10v4M18 8v8M21 10v4M6 12h12"/>',
-    log:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
-    calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/>',
-    health:'<path d="M20.8 4.8a5.5 5.5 0 0 0-7.8 0L12 5.9l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.4a5.5 5.5 0 0 0 0-7.8Z"/>'
-  };
-  const keys=['home','workout','log','calendar','health'];
   const getLang=()=>{
-    try {
-      const s=typeof window.rf212Lang==='function'?window.rf212Lang():document.documentElement.lang;
-      return Object.prototype.hasOwnProperty.call(labels,s)?s:'hu';
-    } catch (_) { return 'hu'; }
+    try { const lang=window.rf212Lang?.()||document.documentElement.lang; return ['hu','en','de','ro'].includes(lang)?lang:'hu'; }
+    catch(_){return 'hu';}
   };
-  let dock=null,queued=false;
-
-  function selectedKey(){
-    if (typeof state==='undefined' || !state) return 'home';
-    const tab=state.tab;
-    if (tab==='health'||tab==='weight') return 'health';
-    if (tab==='history') return 'log';
-    if (tab==='calendar') return 'calendar';
-    if (tab==='plan'||tab==='workout'||tab==='programs') return 'workout';
-    if (tab==='stats') return 'log';
-    return 'home';
-  }
+  let installed=false,queued=false;
   function activeWorkout(){
-    try { return typeof state!=='undefined' && !!state.session; } catch (_) { return false; }
-  }
-  /* P1e: a true one-line mobile header, not the old 2x4 command grid.
-     The original navigation elements remain in the DOM as canonical
-     action owners; the compact menu forwards user clicks to them. */
-  /* P1e: mockup header = original golden TrainPilot dumbbell + three
-     canonical Settings actions. Programs, Calendar and Coach are reachable
-     through the existing Home/Workout/Health paths, never a second top nav. */
-  /* P1e mockup parity: five tabs below, one brand and three native-state
-     shortcuts above. No second router, training engine or settings store. */
-  const headerWords={
-    hu:{settings:'Beállítások',language:'Nyelv',theme:'Téma',system:'Rendszer'},
-    en:{settings:'Settings',language:'Language',theme:'Theme',system:'System'},
-    de:{settings:'Einstellungen',language:'Sprache',theme:'Farben',system:'System'},
-    ro:{settings:'Setări',language:'Limbă',theme:'Temă',system:'Sistem'}
-  };
-  const languageNames={hu:'Magyar',en:'English',de:'Deutsch',ro:'Română',sk:'Slovenčina',pl:'Polski'};
-  function previewHeaderPicker(header,kind){
-    const previous=header.querySelector('.tp271-header-picker');
-    const same=previous?.dataset.kind===kind;
-    previous?.remove();
-    if(same)return;
-    const w=headerWords[getLang()];
-    const picker=document.createElement('div');
-    picker.className='tp271-header-picker';
-    picker.dataset.kind=kind;
-    picker.setAttribute('role','group');
-    picker.setAttribute('aria-label',w[kind]);
-    const options=kind==='language'
-      ?(typeof TP1511_FLAGS==='object'?Object.keys(TP1511_FLAGS):['system','hu','en','de','ro','sk','pl']).map(k=>[k,k==='system'?w.system:(languageNames[k]||k)])
-      :(typeof RF200_THEMES==='object'?Object.entries(RF200_THEMES).map(([k,v])=>[k,v.name||k]):[]);
-    const current=kind==='language'&&typeof rf212LangSetting==='function'?rf212LangSetting():
-      kind==='theme'&&typeof rf200ThemeKey==='function'?rf200ThemeKey():'';
-    for(const [key,name] of options){
-      const button=document.createElement('button');
-      button.type='button';
-      button.className='tp271-picker-option';
-      button.dataset.tp271Choice=key;
-      button.textContent=name;
-      button.setAttribute('aria-pressed',String(key===current));
-      if(kind==='theme'&&typeof RF200_THEMES==='object'){
-        const swatch=document.createElement('span');
-        swatch.className='tp271-theme-swatch';
-        swatch.style.background=RF200_THEMES[key]?.accent||'var(--accent)';
-        swatch.setAttribute('aria-hidden','true');
-        button.prepend(swatch);
-      }
-      button.addEventListener('click',()=>{
-        picker.remove();
-        if(kind==='language'&&typeof rf212SetLang==='function')rf212SetLang(key);
-        if(kind==='theme'&&typeof rf200SetTheme==='function')rf200SetTheme(key);
-        scheduleSync();
-      });
-      picker.appendChild(button);
-    }
-    header.appendChild(picker);
-    picker.querySelector('[aria-pressed="true"]')?.focus?.({preventScroll:true});
-  }
-  function previewHeader(){
-    if(activeWorkout())return;
-    const top=document.querySelector('.top.tp154-nav-grid');
-    if(!top)return;
-    let header=top.querySelector(':scope > #tp271Header');
-    if(!header){
-      header=document.createElement('div');
-      header.id='tp271Header';
-      header.className='tp271-header';
-      // Silhouette and gold fill copied from the real original Android launcher:
-      // android/app/src/main/res/drawable/trainpilot_launcher_foreground.xml.
-      const logo='<svg class="tp271-header-mark" viewBox="19 27 70 55" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'+
-        '<defs><linearGradient id="tp271Gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF1A0"/><stop offset=".48" stop-color="#F3C545"/><stop offset="1" stop-color="#DEA12A"/></linearGradient></defs>'+
-        '<path fill="url(#tp271Gold)" stroke="#E8BF58" stroke-width=".5" d="M27,41 H29 Q32,41 32,44 V64 Q32,67 29,67 H27 Q24,67 24,64 V44 Q24,41 27,41 Z M39,33 H42 Q46,33 46,37 V71 Q46,75 42,75 H39 Q35,75 35,71 V37 Q35,33 39,33 Z M47,50 H61 Q62,50 62,51 V57 Q62,58 61,58 H47 Q46,58 46,57 V51 Q46,50 47,50 Z M66,33 H69 Q73,33 73,37 V71 Q73,75 69,75 H66 Q62,75 62,71 V37 Q62,33 66,33 Z M79,41 H81 Q84,41 84,44 V64 Q84,67 81,67 H79 Q76,67 76,64 V44 Q76,41 79,41 Z"/></svg>';
-      header.innerHTML='<div class="tp271-header-brand">'+logo+'<strong>TrainPilot</strong></div>'+
-        '<div class="tp271-header-actions">'+
-        '<button type="button" data-tp271-header="settings" class="tp271-header-action" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l-1.8 1.8a1.7 1.7 0 0 0-1.88-.34l-.67.28a1.7 1.7 0 0 0-1.03 1.56v.82h-2.6v-.82a1.7 1.7 0 0 0-1.03-1.56l-.67-.28a1.7 1.7 0 0 0-1.88.34l-1.8-1.8A1.7 1.7 0 0 0 6.72 15l-.28-.67A1.7 1.7 0 0 0 4.88 13.3H4v-2.6h.88a1.7 1.7 0 0 0 1.56-1.03L6.72 9a1.7 1.7 0 0 0-.34-1.88l1.8-1.8a1.7 1.7 0 0 0 1.88.34l.67-.28a1.7 1.7 0 0 0 1.03-1.56V3h2.6v.82a1.7 1.7 0 0 0 1.03 1.56l.67.28a1.7 1.7 0 0 0 1.88-.34l1.8 1.8A1.7 1.7 0 0 0 19.4 9l.28.67a1.7 1.7 0 0 0 1.56 1.03h.76v2.6h-.76a1.7 1.7 0 0 0-1.56 1.03Z"/></svg></button>'+
-        '<button type="button" data-tp271-header="language" class="tp271-header-action tp271-header-lang" aria-label="Language" title="Language"><span aria-hidden="true">文A</span></button>'+
-        '<button type="button" data-tp271-header="theme" class="tp271-header-action" aria-label="Theme" title="Theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9c0-1.1-.9-2-2-2h-2a2 2 0 0 1-2-2V6a3 3 0 0 0-3-3Z"/><circle cx="7.5" cy="11" r="1"/><circle cx="12" cy="7.5" r="1"/><circle cx="16.5" cy="14" r="1"/></svg></button>'+
-        '</div>';
-      for(const button of header.querySelectorAll('button[data-tp271-header]')){
-        button.addEventListener('click',()=>{
-          if(button.dataset.tp271Header==='settings'){
-            top.querySelector('.tp154-settings-action')?.click();
-            scheduleSync();
-          }else previewHeaderPicker(header,button.dataset.tp271Header);
-        });
-      }
-      header.addEventListener('keydown',event=>{
-        if(event.key==='Escape'&&header.querySelector('.tp271-header-picker')){
-          event.preventDefault();header.querySelector('.tp271-header-picker').remove();
-          header.querySelector('.tp271-header-action')?.focus?.();
-        }
-      });
-      top.appendChild(header);
-    }
-    const words=headerWords[getLang()];
-    for(const button of header.querySelectorAll('button[data-tp271-header]')){
-      button.setAttribute('aria-label',words[button.dataset.tp271Header]);
-      button.title=words[button.dataset.tp271Header];
-    }
+    try{return typeof state!=='undefined'&&!!state.session;}catch(_){return false;}
   }
   /* P1f: real Home hierarchy based on the 1/4 design reference.
      Move DOM nodes, not data: the canonical hero/onboarding/Health/Coach
@@ -2713,32 +2588,14 @@
   }
   function sync(){
     queued=false;
-    if (!dock || !dock.isConnected) return;
-    previewHeader();
-    previewHome();
-    const language=getLang(),t=labels[language],active=selectedKey();
-    dock.setAttribute('aria-label',t.nav);
-    for(const button of dock.querySelectorAll('button[data-tp271-target]')){
-      const key=button.dataset.tp271Target,on=key===active;
-      button.querySelector('.tp271-dock-label').textContent=t[key];
-      button.setAttribute('aria-label',t[key]);
-      button.setAttribute('aria-current',on?'page':'false');
-      button.classList.toggle('tp271-selected',on);
-    }
     document.documentElement.classList.toggle('tp271-has-workout',activeWorkout());
+    previewHome();
     previewActions();
     muscleShortcuts();
   }
   function scheduleSync(){
-    if (queued) return;
+    if(queued)return;
     queued=true;requestAnimationFrame(sync);
-  }
-  function navigate(key){
-    if (activeWorkout()) return; // dock is hidden; never override a live session
-    if(typeof window.go==='function'){
-      window.go({workout:'plan',log:'history'}[key]||key);
-    }
-    scheduleSync();
   }
 
   /* P2c: present two real Workout actions and filter shortcuts only in the
@@ -2809,41 +2666,6 @@
         button.setAttribute('aria-label',t[key]+': '+t[key+'Hint']);
       }
     }
-    // These three destinations previously lived in the now-hidden 2x4 top
-    // grid. Their canonical handlers remain; surface them below in Workout.
-    let shortcuts=main.querySelector('#tp271WorkoutQuickLinks');
-    if(!shortcuts){
-      shortcuts=document.createElement('nav');
-      shortcuts.id='tp271WorkoutQuickLinks';
-      shortcuts.className='tp271-workout-shortcuts';
-      const glyphs={programs:'☷',calendar:'▦',coach:'✦'};
-      for(const key of ['programs','calendar','coach']){
-        const button=document.createElement('button');
-        button.type='button';
-        button.dataset.tp271Shortcut=key;
-        button.className='tp271-workout-shortcut';
-        const glyph=document.createElement('span');
-        glyph.className='tp271-shortcut-icon';glyph.textContent=glyphs[key];
-        glyph.setAttribute('aria-hidden','true');
-        const label=document.createElement('span');label.className='tp271-shortcut-label';
-        button.append(glyph,label);
-        button.addEventListener('click',()=>{
-          if(activeWorkout())return;
-          if(key==='coach')document.querySelector('.top.tp154-nav-grid .tp154-coach-action')?.click();
-          else if(typeof window.go==='function')window.go(key);
-          scheduleSync();
-        });
-        shortcuts.appendChild(button);
-      }
-      main.appendChild(shortcuts);
-    }
-    const t=workoutShortcutLabels[getLang()];
-    shortcuts.setAttribute('aria-label',t.nav);
-    for(const button of shortcuts.querySelectorAll('button[data-tp271-shortcut]')){
-      const title=t[button.dataset.tp271Shortcut];
-      button.querySelector('.tp271-shortcut-label').textContent=title;
-      button.setAttribute('aria-label',title);
-    }
   }
   function muscleShortcuts(){
     const host=document.getElementById('tp155R4PanelHost');
@@ -2899,24 +2721,8 @@
     }
   }
   function install(){
-    if(dock) return;
-    dock=document.createElement('nav');
-    dock.id='tp271Dock';
-    dock.className='tp271-dock';
-    dock.setAttribute('aria-label',labels[getLang()].nav);
-    // A single five-tab presentation bar; the old navigation nodes stay in
-    // their original DOM so their canonical commands remain reachable in the
-    // upper quick-action row and existing panel/selection handlers still work.
-    for(const key of keys){
-      const button=document.createElement('button');
-      button.type='button';button.className='tp271-dock-button';
-      button.dataset.tp271Target=key;
-      const svg='<svg class="tp271-dock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+icons[key]+'</svg>';
-      button.innerHTML=svg+'<span class="tp271-dock-label"></span>';
-      button.addEventListener('click',()=>navigate(key));
-      dock.appendChild(button);
-    }
-    document.body.appendChild(dock);
+    if(installed)return;
+    installed=true;
     document.documentElement.classList.add('tp271-mockup-dock');
     // Round-4 panels are direct body children and are not observed by #app.
     if(typeof MutationObserver==='function'){
@@ -2937,7 +2743,7 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
   else install();
 
-  window.TrainPilotMockup271={version:'P1b-preview',enabled:true,refresh:scheduleSync};
+  window.TrainPilotMockup271={version:'P1j-original-navigation',enabled:true,refresh:scheduleSync};
 })();
 
 </script>

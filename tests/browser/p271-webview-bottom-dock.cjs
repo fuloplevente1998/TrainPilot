@@ -21,245 +21,53 @@ const server=http.createServer((req,res)=>{
       page.on('dialog',dialog=>dialog.accept());
       await page.addInitScript(()=>{try{localStorage.setItem('repforge:onboarding128',JSON.stringify('skipped'))}catch(_){}});
       const url='http://127.0.0.1:'+server.address().port+'/';
-      // With no flag the stable 8-button main navigation must remain unchanged.
       await page.goto(url);await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
-      assert.equal(await page.locator('#tp271Dock').count(),0,width+': default has no experimental dock');
-      assert.equal(await page.locator('.top.tp154-nav-grid .tp154-nav-cell:visible').count(),8,width+': all eight existing controls remain visible by default');
-
-      // Opt-in preview: the same app and storage, just an alternate shell.
+      assert.equal(await page.locator('.top.tp154-nav-grid .tp154-nav-cell:visible').count(),8,width+': default eight-button navigation');
       await page.goto(url+'?tp271=1');
-      await page.waitForFunction(()=>window.TrainPilotBoot?.finished && window.TrainPilotMockup271?.enabled);
-      await page.locator('#tp271Dock .tp271-dock-button').first().waitFor();
-      assert.equal(await page.locator('#tp271Dock .tp271-dock-button:visible').count(),5,width+': five lower buttons');
-      assert.equal(await page.locator('.top.tp154-nav-grid .tp154-nav-cell:visible').count(),0,width+': old 2x4 navigation hidden');
-      assert.equal(await page.locator('#tp271Header .tp271-header-brand strong').textContent(),'TrainPilot',width+': real original header');
-      assert.equal(await page.locator('#tp271Header button[data-tp271-header]').count(),3,width+': Settings Language Theme in header');
-      assert.equal(await page.locator('#tp271Dock button[aria-current="page"]').count(),1,width+': single active route');
-      // P1f: real Home cards follow the 1/4 mockup's visual reading order.
-      // This does not replace any saved program/Health state or CTA handler.
-      await page.waitForFunction(()=>{
-        const m=document.querySelector('#app main.rf221-home'),today=m?.querySelector('#rf223Today');
-        if(!m||!today)return false;
-        const nodes=[...m.children];
-        const ids=[m.querySelector('#tp271HomeGreeting'),m.querySelector(':scope > .hero.tp155-home-active-card'),
-          m.querySelector('#tp271HomeQuick'),today];
-        return ids.every(Boolean)&&ids.slice(0,-1).every((node,i)=>nodes.indexOf(node)<nodes.indexOf(ids[i+1]));
-      });
-      const homeOrder=await page.evaluate(()=>{
-        const m=document.querySelector('#app main.rf221-home');
-        return {
-          greeting:m.querySelector('#tp271HomeGreeting .tp271-home-hello')?.textContent,
-          hero:!!m.querySelector(':scope > .hero.tp155-home-active-card'),
-          quick:!!m.querySelector('#tp271HomeQuick'),
-          metrics:m.querySelectorAll('#rf223Today .tp5-today-metric').length,
-          order:[...m.children].map(x=>x.id||x.className.split?.(' ')[0]||x.tagName)
-        };
-      });
-      assert.ok(homeOrder.greeting?.length>0&&homeOrder.hero&&homeOrder.quick,width+': mockup greeting, real workout hero and real quick action '+JSON.stringify(homeOrder));
-      assert.equal(homeOrder.metrics,6,width+': all canonical Today readings survive reordered Home');
-      await page.locator('#tp271HomeQuick').click();
-      await page.waitForFunction(()=>document.querySelector('#tp155R4PanelHost')?.dataset.panel==='quick');
-      assert.equal(await page.evaluate(()=>!!state.session),false,width+': quick launch does not start training before selection');
-      await page.evaluate(()=>{tp155R4ClosePanel(false);go('home')});
-      await page.waitForSelector('main.rf221-home #tp271HomeGreeting');
-      const grid=await page.evaluate(()=>{
-        const e=document.querySelector('#app main.rf221-home #rf223Today .tp5-today-grid');
-        return {columns:getComputedStyle(e).gridTemplateColumns.split(' ').length,tiles:e.querySelectorAll('.tp5-today-metric').length};
-      });
-      assert.equal(grid.columns,2,width+': Studio-inspired two-column Home summary');
-      assert.equal(grid.tiles,6,width+': all six real Home metrics preserved');
-      const bounds=await page.evaluate(()=>{
-        const nav=document.getElementById('tp271Dock').getBoundingClientRect();
-        const main=document.querySelector('#app main').getBoundingClientRect();
-        return {navTop:nav.top,navBottom:nav.bottom,mainBottom:main.bottom,navWidth:nav.width,viewport:innerWidth,viewportHeight:innerHeight,overflows:document.documentElement.scrollWidth>innerWidth+1};
-      });
-      assert.ok(bounds.navTop>0&&bounds.navBottom<=bounds.viewportHeight,width+': dock stays inside viewport '+JSON.stringify(bounds));
-      assert.ok(bounds.mainBottom<=bounds.navTop+5,width+': main does not overlap dock '+JSON.stringify(bounds));
-      assert.equal(bounds.overflows,false,width+': no horizontal overflow');
-      // P1g: the page is a canvas rather than a large enclosing card.
-      // Keep the existing real card/actions; verify rail and canvas at all
-      // four target widths without using screenshot pixel tolerances.
-      const surfaces=await page.evaluate(()=>{
-        const main=document.querySelector('#app main.rf221-home');
-        const dock=document.getElementById('tp271Dock');
-        const selected=dock.querySelector('[aria-current="page"]');
-        return {canvas:getComputedStyle(main).backgroundColor,
-          railWidth:dock.getBoundingClientRect().width,
-          selectedFill:getComputedStyle(selected).backgroundColor,
-          quick:!!main.querySelector('#tp271HomeQuick'),
-          metrics:main.querySelectorAll('#rf223Today .tp5-today-metric').length};
-      });
-      assert.equal(surfaces.canvas,'rgba(0, 0, 0, 0)',width+': transparent mockup canvas');
-      assert.equal(surfaces.railWidth,width,width+': full-width navigation rail');
-      assert.equal(surfaces.selectedFill,'rgba(0, 0, 0, 0)',width+': accent selection without filled tile');
-      assert.ok(surfaces.quick&&surfaces.metrics===6,width+': original content survives surface pass');
-
-
-      // P1d: visually restructured but still *real* Home state. The
-      // scrolling viewport must reveal the final Coach action above the dock.
-      const homeLayout=await page.evaluate(()=>{
-        const main=document.querySelector('#app main.rf221-home');
-        const hero=main?.querySelector(':scope > .hero.tp155-home-active-card');
-        const today=main?.querySelector('#rf223Today');
-        const coach=main?.querySelector('#rf220CoachCard');
-        const lowerDock=document.querySelector('#tp271Dock');
-        const before=main?.scrollTop||0;
-        if(main)main.scrollTop=main.scrollHeight;
-        const visibleBottom=main?.getBoundingClientRect().bottom||0;
-        const lastCardBottom=coach?.getBoundingClientRect().bottom||0;
-        const result={
-          hero:!!hero, heroTitle:hero?.querySelector('h1')?.textContent?.trim()||'',
-          hasExistingHeroActions:!!hero?.querySelector('button'),
-          todayTiles:today?.querySelectorAll('.tp5-today-metric').length||0,
-          coach:!!coach,coachBottom:lastCardBottom,
-          viewportBottom:visibleBottom,dockTop:lowerDock.getBoundingClientRect().top,
-          overflow:getComputedStyle(main).overflowY,
-          scrollTop:main?.scrollTop||0,wasScrolled:before
-        };
-        if(main)main.scrollTop=before;
-        return result;
-      });
-      assert.equal(homeLayout.hero,true,width+': original dynamic program hero remains');
-      assert.ok(homeLayout.heroTitle.length>0,width+': real current workout/program title');
-      assert.equal(homeLayout.hasExistingHeroActions,true,width+': original workout action is still present');
-      assert.equal(homeLayout.todayTiles,6,width+': all six live Today values visible in new layout');
-      assert.equal(homeLayout.coach,true,width+': canonical Coach CTA preserved');
-      assert.ok(homeLayout.coachBottom<=homeLayout.dockTop+3,width+': Coach can be scrolled above dock '+JSON.stringify(homeLayout));
-      assert.ok(['auto','scroll'].includes(homeLayout.overflow),width+': preview Home can scroll');
-      assert.ok(homeLayout.viewportBottom<=homeLayout.dockTop+5,width+': Home viewport ends before dock');
-
-      for(const [key,target] of [['workout','plan'],['log','history'],['health','health'],['home','home']]){
-        await page.locator('#tp271Dock button[data-tp271-target="'+key+'"]').click();
-        await page.waitForFunction(key=>document.querySelector('#tp271Dock .tp271-dock-button.tp271-selected')?.dataset.tp271Target===key,key);
-        assert.equal(await page.evaluate(()=>state.tab),target,width+'/'+key+': canonical source route');
-        assert.equal(await page.locator('#tp271Dock [aria-current="page"]').count(),1,width+'/'+key+': exactly one active');
-        const fade=await page.evaluate(()=>{
-          const main=document.querySelector('#app main'),style=getComputedStyle(main);
-          return {name:style.animationName,duration:style.animationDuration,transform:style.transform,
-            dock:getComputedStyle(document.getElementById('tp271Dock')).animationName};
-        });
-        assert.equal(fade.name,'tp271PageFade',width+'/'+key+': whole incoming page fades together');
-        assert.equal(fade.duration,'0.18s',width+'/'+key+': brief page reveal');
-        assert.equal(fade.transform,'none',width+'/'+key+': opacity only, no page translation');
-        assert.equal(fade.dock,'none',width+'/'+key+': persistent navigation stays stable');
-
+      await page.waitForFunction(()=>window.TrainPilotBoot?.finished&&window.TrainPilotMockup271?.enabled);
+      const nav=page.locator('.top.tp154-nav-grid');
+      assert.equal(await nav.locator('.tp154-nav-cell:visible').count(),8,width+': mockup retains all eight original destinations');
+      assert.equal(await page.locator('#tp271Dock,#tp271Header,#tp271WorkoutQuickLinks').count(),0,width+': no parallel or buried replacement navigation');
+      const grid=await nav.evaluate(el=>({columns:getComputedStyle(el).gridTemplateColumns.split(' ').length,overflow:document.documentElement.scrollWidth-innerWidth}));
+      assert.equal(grid.columns,4,width+': original 2x4 layout');
+      assert.ok(grid.overflow<=1,width+': navigation fits viewport');
+      for(const key of ['plan','programs','history','health','home']){
+        await nav.locator('.tp151-nav-item[onclick="go(\''+key+'\')"]').click();
+        assert.equal(await page.evaluate(()=>state.tab),key,width+'/'+key+': original route executes');
       }
-
-      await page.locator('#tp271Dock button[data-tp271-target="calendar"]').click();
-      await page.waitForSelector('#tp155R4PanelHost[data-panel="calendar"]');
-      assert.equal(await page.locator('#tp271Dock:visible').count(),0,width+': real Calendar owns its modal surface');
-      await page.evaluate(()=>tp155R4ClosePanel(false));
-      await page.locator('#tp271Dock button[data-tp271-target="log"]').click();
+      for(const [selector,panel] of [['.tp151-nav-item[onclick="go(\'calendar\')"]','calendar'],['.tp154-coach-action','coach'],['.tp154-settings-action','settings']]){
+        await nav.locator(selector).click();
+        await page.locator('#tp155R4PanelHost[data-panel="'+panel+'"]').waitFor();
+        await page.evaluate(()=>tp155R4ClosePanel(false));
+      }
+      await nav.locator('.tp151-nav-item[onclick="go(\'history\')"]').click();
       await page.locator('.tp177-journal-tabs button[onclick="tp177OpenProgress()"]:visible').click();
       await page.waitForSelector('main.tp177-progress');
-      await page.waitForFunction(()=>document.querySelector('#tp271Dock button[data-tp271-target="log"]')?.getAttribute('aria-current')==='page');
-      assert.equal(await page.evaluate(()=>state.tp177JournalView),'progress',width+': Progress remains reachable inside Journal');
-
-      // All original secondary functions remain reachable through the
-      // mockup Workout quick links rather than resurrecting a top 2x4 grid.
-      await page.locator('#tp271Dock button[data-tp271-target="workout"]').click();
-      const shortcuts=page.locator('#tp271WorkoutQuickLinks');
-      await shortcuts.waitFor();
-      assert.equal(await shortcuts.locator('button').count(),3,width+': three secondary Workout routes');
-      await shortcuts.locator('[data-tp271-shortcut="programs"]').click();
-      assert.equal(await page.evaluate(()=>state.tab),'programs',width+': Programs reachable');
-      await page.waitForFunction(()=>document.querySelector('#tp271Dock .tp271-dock-button.tp271-selected')?.dataset.tp271Target==='workout');
-      assert.equal(await page.locator('#tp271Dock [aria-current="page"]').count(),1,width+': Programs belongs to Workout main tab');
-      await page.evaluate(()=>go('plan'));
-      await shortcuts.locator('[data-tp271-shortcut="calendar"]').click();
-      assert.equal(await page.locator('#tp155R4PanelHost').getAttribute('data-panel'),'calendar',width+': Calendar opens');
-      await page.evaluate(()=>tp155R4ClosePanel(false));
-      await shortcuts.locator('[data-tp271-shortcut="coach"]').click();
-      assert.equal(await page.locator('#tp155R4PanelHost').getAttribute('data-panel'),'coach',width+': Coach opens');
-      await page.evaluate(()=>tp155R4ClosePanel(false));
-      await page.locator('#tp271Header [data-tp271-header="settings"]').click();
-      assert.equal(await page.locator('#tp155R4PanelHost').getAttribute('data-panel'),'settings',width+': Settings opens');
-      await page.evaluate(()=>tp155R4ClosePanel(false));
-
-      // The dock never covers ongoing workout controls; the existing engine
-      // remains the only author of the live session.
+      assert.equal(await page.evaluate(()=>state.tp177JournalView),'progress',width+': Progress remains in Journal');
       await page.evaluate(()=>{go('plan');startWorkout(activeProgram().days[0].id)});
       await page.waitForFunction(()=>document.documentElement.classList.contains('tp271-has-workout'));
-      assert.equal(await page.locator('#tp271Dock:visible').count(),0,width+': dock hidden during live workout');
-      assert.ok(await page.evaluate(()=>!!state.session),width+': real workout session survives');
-      const workoutLayout=await page.evaluate(()=>({
-        headerHeight:document.querySelector('.top.tp154-nav-grid').getBoundingClientRect().height,
-        mainTop:document.querySelector('main.tp153-workout').getBoundingClientRect().top
-      }));
-      assert.equal(workoutLayout.headerHeight,0,width+': active workout leaves no empty header space');
-      assert.ok(workoutLayout.mainTop<=24,width+': workout begins near viewport top');
-      if(width===393){
-        fs.mkdirSync('ui-evidence',{recursive:true});
-        await page.screenshot({path:'ui-evidence/pr271-active-workout-no-header-gap-393.png',animations:'disabled'});
-      }
-
+      const workout=await page.evaluate(()=>({height:document.querySelector('.top').getBoundingClientRect().height,top:document.querySelector('main.tp153-workout').getBoundingClientRect().top,session:!!state.session}));
+      assert.equal(workout.height,0,width+': no empty workout header');
+      assert.ok(workout.top<=24&&workout.session,width+': real workout starts near top');
+      if(width===393){fs.mkdirSync('ui-evidence',{recursive:true});await page.screenshot({path:'ui-evidence/pr271-active-workout-no-header-gap-393.png',animations:'disabled'});}
       await page.evaluate(()=>{state.session=null;state.workout=null;db.set('draft',null);go('home')});
       await page.waitForFunction(()=>!document.documentElement.classList.contains('tp271-has-workout'));
-      assert.equal(await page.locator('#tp271Dock:visible').count(),1,width+': dock returns after workout');
-      await page.locator('#tp271Header .tp271-header-brand').waitFor({state:'visible'});
-      assert.ok(await page.locator('.top.tp154-nav-grid').evaluate(el=>el.getBoundingClientRect().height)>=60,width+': normal header restores after workout');
-
-      // P1d draft regression: a resumed-workout choice and its safe discard
-      // action must not become clipped behind the fixed five-tab bar.
-      await page.evaluate(()=>{
-        startWorkout(activeProgram().days[0].id);persistDraft();
-        state.session=null;state.workout=null;go('home');
-      });
-      await page.waitForSelector('main.rf221-home.tp-home-draft-compact');
-      const draft=await page.evaluate(()=>{
-        const main=document.querySelector('#app main.rf221-home');
-        const resume=main.querySelector('button[onclick*="resumeDraft"]');
-        const nav=document.getElementById('tp271Dock');
-        main.scrollTop=main.scrollHeight;
-        return {
-          resume:!!resume,
-          visible:getComputedStyle(resume).display!=='none',
-          bottom:resume.getBoundingClientRect().bottom,
-          dockTop:nav.getBoundingClientRect().top,
-          active:!!state.session,
-          total:main.querySelectorAll('#rf223Today .tp5-today-metric').length
-        };
-      });
-      assert.equal(draft.resume,true,width+': actual saved-draft Resume CTA survives');
-      assert.equal(draft.visible,true,width+': Resume CTA remains rendered');
-      assert.equal(draft.active,false,width+': draft exists without starting another workout');
-      assert.equal(draft.total,6,width+': all six real metrics persist with draft');
-      await page.evaluate(()=>{db.set('draft',null);go('home')});
-
-      // The menu is localized from the app language; four language options
-      // must never trigger a second route manager or remove a destination.
-      for(const [lang,label] of [['hu','Naptár'],['en','Calendar'],['de','Kalender'],['ro','Calendar']]){
-        await page.evaluate(x=>{db.set('language',x);go('home')},lang);
-        await page.waitForFunction(expected=>
-          document.querySelector('#tp271Dock button[data-tp271-target="calendar"] .tp271-dock-label')?.textContent===expected,
-          label
-        );
-        assert.equal(await page.locator('#tp271Dock button:visible').count(),5,width+'/'+lang+': all destinations remain localized');
+      assert.equal(await nav.locator('.tp154-nav-cell:visible').count(),8,width+': navigation returns after workout');
+      assert.equal(await page.locator('#rf223Today .tp5-today-metric').count(),6,width+': six real Home values remain');
+      for(const lang of ['hu','en','de','ro']){
+        await page.evaluate(l=>{rf212SetLang(l);go('home')},lang);
+        assert.equal(await nav.locator('.tp154-nav-cell:visible').count(),8,width+'/'+lang+': all destinations localized and reachable');
       }
-      await page.evaluate(()=>{db.set('language','en');go('home')});
-      await page.waitForFunction(()=>document.querySelector('#tp271Dock .tp271-dock-button[data-tp271-target="calendar"] .tp271-dock-label')?.textContent==='Calendar');
-      assert.equal(await page.locator('#tp271Dock .tp271-dock-button:visible').count(),5,width+': translated five buttons');
-      if(width===393){
-        fs.mkdirSync('ui-evidence',{recursive:true});
-        await page.screenshot({path:'ui-evidence/pr271-opt-in-bottom-dock-home-393.png'});
-      }
-
-      await page.emulateMedia({reducedMotion:'reduce'});
-      await page.evaluate(()=>go('home'));
-      assert.equal(await page.locator('#app main').evaluate(el=>getComputedStyle(el).animationName),'none',width+': respects system reduced motion');
-      await page.emulateMedia({reducedMotion:'no-preference'});
-      const frames=await page.evaluate(()=>{
-        go('plan');
-        const animation=document.querySelector('#app main').getAnimations().find(a=>a.animationName==='tp271PageFade');
-        return animation?.effect.getKeyframes().map(f=>({opacity:f.opacity,transform:f.transform}));
-      });
-      assert.ok(frames?.length>=2,width+': actual page animation is running');
-      assert.equal(Number(frames[0].opacity),0,width+': incoming page starts transparent');
-      assert.equal(Number(frames.at(-1).opacity),1,width+': incoming page becomes fully opaque');
-      assert.ok(frames.every(f=>!f.transform||f.transform==='none'),width+': animation does not move content');
-      assert.deepEqual(errors,[],width+': no JS runtime errors');
+      await page.evaluate(()=>{rf212SetLang('hu');go('plan')});
+      await page.evaluate(async()=>{await Promise.all(document.querySelector('#app main').getAnimations().filter(a=>a.effect.getTiming().iterations!==Infinity).map(a=>a.finished));});
+      if(width===393)await page.screenshot({path:'ui-evidence/pr271-original-navigation-mockup-393.png',animations:'disabled'});
+      const frames=await page.evaluate(()=>{go('home');return document.querySelector('#app main').getAnimations().find(a=>a.animationName==='tp271PageFade')?.effect.getKeyframes()});
+      assert.ok(frames?.length>=2&&Number(frames[0].opacity)===0&&Number(frames.at(-1).opacity)===1,width+': opacity fade retained');
+      await page.emulateMedia({reducedMotion:'reduce'});await page.evaluate(()=>go('plan'));
+      assert.equal(await page.locator('#app main').evaluate(el=>getComputedStyle(el).animationName),'none',width+': reduced motion preserved');
+      assert.deepEqual(errors,[],width+': no runtime errors');
       await page.close();
     }
-    console.log('PASS PR271 P1f: mockup Home hierarchy, real Quick action, five tabs, compact header, secondary routes, workout guard and main fallback.');
+    console.log('PASS PR271: original 2x4 navigation, eight real routes, no workout gap, localized Home and fade.');
   }finally{await browser?.close();await new Promise(resolve=>server.close(resolve))}
 })().catch(e=>{console.error(e);process.exitCode=1});
