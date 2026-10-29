@@ -5305,9 +5305,29 @@ var rf263SetHistoryFilter = function rf263SetHistoryFilter(key,value){
  rf263HistoryFilter=next;render(historyScreen());
 };
 var rf263ClearHistoryFilter = function rf263ClearHistoryFilter(){rf263HistoryFilter={from:'',to:''};render(historyScreen())};
+var tp277HistorySummary=function(x){
+ const completed=(x.exercises||[]).flatMap(e=>(e.sets||[]).filter(s=>s.done===true).map(s=>({e,s})));
+ const volume=completed.reduce((sum,{e,s})=>sum+(e.repUnit==='ism.'&&e.loadType!=='bodyweight'&&Number(s.weight)>0&&Number(s.reps)>0?Number(s.weight)*Number(s.reps):0),0);
+ const rir=completed.filter(({s})=>s.actualRir!==null&&s.actualRir!==undefined&&s.actualRir!==''&&Number.isFinite(Number(s.actualRir))).map(({s})=>Number(s.actualRir));
+ return (volume>0?'<span class="history-badge">'+esc(tp149FormatNumber(volume))+' kg</span>':'')+(rir.length?'<span class="history-badge">RIR '+esc(tp149FormatNumber(rir.reduce((a,b)=>a+b,0)/rir.length))+'</span>':'');
+};
+var tp277JournalFilter=function(value){
+ if(!['all','pr','gps'].includes(value))return;
+ state.tp277JournalKind=value;state.tp3HistoryOpenKey=null;render(historyScreen());
+};
+var tp277JournalFiltersHtml=function(){
+ const selected=state.tp277JournalKind||'all';
+ return '<div class="tp277-journal-filters" role="group" aria-label="'+esc(tp149T('journal.title'))+'">'+['all','pr','gps'].map(kind=>'<button type="button" class="'+(selected===kind?'active':'')+'" aria-pressed="'+(selected===kind)+'" onclick="tp277JournalFilter(\''+kind+'\')">'+esc(tp277Text(kind))+'</button>').join('')+'</div>';
+};
 var rf263FilteredHistory = function rf263FilteredHistory(){
- const all=history(),from=rf263HistoryFilter.from,to=rf263HistoryFilter.to;
- return all.map((x,index)=>({x,index})).filter(({x})=>{const day=rf263HistoryDay(x.started);return (!from||day>=from)&&(!to||day<=to)});
+ const all=history(),from=rf263HistoryFilter.from,to=rf263HistoryFilter.to,kind=state.tp277JournalKind||'all';
+ return all.map((x,index)=>({x,index})).filter(({x})=>{
+  const day=rf263HistoryDay(x.started);
+  if((from&&day<from)||(to&&day>to))return false;
+  if(kind==='pr')return !!window.TrainPilotRecords226?.recordsFor(x)?.length;
+  if(kind==='gps')return !!window.TrainPilotGpsMap163?.references?.(x)?.length;
+  return true;
+ });
 };
 var rf263HistoryItem = function rf263HistoryItem(x,originalIndex,visibleIndex){
  const c=completedSets(x),title=x.programName?`${x.programName} • ${x.dayId||x.workout}`:`Full Body ${x.workout}`,key=rf142WorkoutKey(x);
@@ -10500,7 +10520,7 @@ historyScreen=function(){
  const all=history(),filtered=rf263FilteredHistory(),from=rf263HistoryFilter.from,to=rf263HistoryFilter.to,active=!!(from||to);
  const filter='<div class="card tp150-journal-filter"><div class="rf263-history-filter">'+rf263DateField('from',tp149T('journal.from'),from)+rf263DateField('to',tp149T('journal.to'),to)+'<button class="btn secondary rf263-clear-filter" onclick="rf263ClearHistoryFilter()" '+(active?'':'disabled')+'>'+esc(tp149T('journal.clearFilter'))+'</button></div><p class="small muted rf263-history-count">'+esc(tp149T('journal.count',{shown:filtered.length,total:all.length}))+'</p></div>';
  const rows=filtered.length?filtered.map(function(row,i){return rf263HistoryItem(row.x,row.index,i);}).join(''):(window.TrainPilot110?window.TrainPilot110.empty('log',!!all.length):(all.length?'<div class="card muted">'+esc(tp149T('journal.noneRange'))+'</div>':'<div class="muted">'+esc(tp149T('journal.none'))+'</div>'));
- return shell('<main class="tp150-journal-compact">'+filter+rows+'</main>');
+ return shell('<main class="tp150-journal-compact tp277-journal">'+tp277JournalFiltersHtml()+filter+rows+'</main>');
 };
 
 /* The old bridge rebuilt user-protection lists and sorted the full phrase map for every
@@ -11810,7 +11830,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   const all=history(),filtered=rf263FilteredHistory(),selected=tp155JournalSelected(),c=tp155R3Copy(),locale=tp155JournalLocale(),selectedLabel=selected?rf263ParseDate(selected).toLocaleDateString(locale):'';
   const filter='<details class="card tp155-journal-filter" '+(state.tp155JournalFilterOpen?'open':'')+' ontoggle="tp155JournalFilterToggle(this)"><summary><div><strong>'+esc(c.filter)+'</strong>'+(selectedLabel?'<span class="small muted">'+esc(selectedLabel)+'</span>':'')+'</div><span class="tp152-chevron" aria-hidden="true">⌄</span></summary>'+tp155JournalCalendarHtml()+'</details><p class="small muted rf263-history-count">'+esc(tp149T('journal.count',{shown:filtered.length,total:all.length}))+'</p>';
   const rows=filtered.length?filtered.map(function(row,i){return rf263HistoryItem(row.x,row.index,i)}).join(''):(all.length?'<div class="card muted">'+esc(tp149T('journal.noneRange'))+'</div>':'<div class="muted">'+esc(tp149T('journal.none'))+'</div>');
-  return shell('<main class="tp150-journal-compact">'+filter+rows+'</main>');
+  return shell('<main class="tp150-journal-compact tp277-journal">'+tp277JournalFiltersHtml()+filter+rows+'</main>');
  };
 
  // Time selector: scrollable lists, always opens upward from the trigger, blurred content behind it.
@@ -11984,13 +12004,13 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  };
  historyScreen=function(){
   const all=history(),filtered=rf263FilteredHistory(),a=committed(),start=pending(),c=copy(),from=start||a.from||'',to=start?'':a.to||'';
-  const range=JSON.stringify([a.from,a.to,start]);
+  const range=JSON.stringify([a.from,a.to,start,state.tp277JournalKind||'all']);
   if(range!==tp236Range||all.length!==tp236LastCount||!document.getElementById('tp236HistoryRows')){tp236Range=range;tp236Shown=TP236_PAGE_SIZE;}
   tp236LastCount=all.length;
   const status=(from||to)?'<span class="small muted tp155-journal-range-summary">'+esc(c.from)+': '+esc(fmt(from))+' • '+esc(c.to)+': '+esc(fmt(to))+'</span>':'';
   const filter='<details class="card tp155-journal-filter '+((a.from&&a.to)?'tp155-range-active':'')+'" '+(state.tp155JournalFilterOpen?'open':'')+' ontoggle="state.tp155JournalFilterOpen=!!this.open"><summary><div><strong>'+esc(c.filter)+'</strong>'+status+'</div><span class="tp160-journal-disclosure" aria-hidden="true"></span></summary>'+calendarHtml()+'</details><p class="small muted rf263-history-count">'+esc(tp149T('journal.count',{shown:filtered.length,total:all.length}))+'</p>';
   const rows=filtered.length?'<div id="tp236HistoryRows">'+filtered.slice(0,tp236Shown).map(function(row,i){return rf263HistoryItem(row.x,row.index,i)}).join('')+'</div>'+tp236MoreButton(filtered.length):(window.TrainPilot110?window.TrainPilot110.empty('log',!!all.length):(all.length?'<div class="card muted">'+esc(tp149T('journal.noneRange'))+'</div>':'<div class="muted">'+esc(tp149T('journal.none'))+'</div>'));
-  return shell('<main class="tp150-journal-compact">'+filter+rows+'</main>');
+  return shell('<main class="tp150-journal-compact tp277-journal">'+tp277JournalFiltersHtml()+filter+rows+'</main>');
  };
 
  const style=document.createElement('style');style.id='tp155Round3JournalRangeCss';style.textContent=[
@@ -20490,7 +20510,7 @@ window.TrainPilotSetRir229={valid:tp229RirValid,observation:tp229RirObservation}
  function paintCard(card,map){
   const key=String(card.dataset.tp152HistoryKey||''),entry=cachedRowByAlias.get(key),row=entry?.row,records=row?recordsFor(row,map):[];
   if(!records.length){card.querySelectorAll('.tp226-pr-badge,.tp226-pr-details').forEach(x=>x.remove());return;}
-  const host=card.querySelector(':scope > summary .history-badges');if(!host)return;
+  const host=card.querySelector(':scope > summary .rf103-history-side');if(!host)return;
   let badge=host.querySelector('.tp226-pr-badge');
   if(!badge){
    badge=document.createElement('button');badge.type='button';badge.className='tp226-pr-badge';badge.dataset.workoutKey=key;
@@ -20508,9 +20528,9 @@ window.TrainPilotSetRir229={valid:tp229RirValid,observation:tp229RirObservation}
      (expand?panel.querySelector('summary'):badge)?.focus({preventScroll:true});
     }
    });
-   host.appendChild(badge);
+   host.prepend(badge);
   }
-  badge.textContent='★ '+copy().badge+' · '+records.length;badge.setAttribute('aria-label',copy().badge+' · '+records.length+' · '+copy().details);
+  badge.textContent='PR*';badge.setAttribute('aria-label',copy().badge+' · '+records.length+' · '+copy().details);
   const body=card.querySelector(':scope > .tp3-combined-history-body');
   if(body?.dataset.tp3Hydrated==='true'){
    const old=body.querySelector(':scope > .tp226-pr-details'),panel=details(records,old);

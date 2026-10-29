@@ -495,3 +495,20 @@ html body #app .tp277-day .tp146-day-copy{width:100%}
 .tp277-settings-body>.setting{margin:8px 0}
 .tp277-reset-actions{display:grid;gap:8px;margin-top:12px}
 .tp277-settings-group:focus-within{border-color:var(--accent)}
+
+/* PR277 — separate disclosure control column from workout facts. */
+.tp277-journal-filters{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 10px}
+.tp277-journal-filters button{font:inherit;font-size:12px;font-weight:700;min-height:44px;border:1px solid var(--line);border-radius:22px;background:var(--card);color:var(--muted);padding:7px 12px}
+.tp277-journal-filters button.active{color:var(--text);border-color:var(--accent);background:color-mix(in srgb,var(--accent) 18%,var(--card))}
+html body #app details.tp277-history{border:1px solid var(--line);border-radius:15px;padding:0;margin:8px 0;background:var(--card)}
+html body #app details.tp277-history>summary{padding:12px;position:relative;min-height:104px}
+html body #app .tp277-history .history-head{padding-right:47px}
+html body #app .tp277-history .history-title-row{display:block}
+html body #app .tp277-history .history-title{font-size:15px;line-height:1.4;overflow-wrap:anywhere}
+html body #app .tp277-history .history-date{font-size:11px;margin-top:4px}
+html body #app .tp277-history .rf103-history-side{position:absolute;inset:6px 7px 6px auto;display:grid;grid-template-rows:38px 1fr;justify-items:center;align-items:center;width:38px;gap:0}
+html body #app .tp277-history .rf103-history-chevron{grid-row:2;align-self:center;margin:0}
+.tp277-history-count{color:var(--muted);font-size:11px;margin:6px 0}
+html body #app details.tp277-history .history-badges{display:flex!important;flex-wrap:wrap;gap:5px!important;margin:7px 0 0!important}
+html body #app details.tp277-history .history-badges>.history-badge{width:auto;min-height:24px;padding:3px 6px!important;border:0;border-radius:5px!important;font-size:11px!important;background:var(--card2);font-weight:500}
+html body #app .tp277-history .tp3-combined-history-body{padding:0 10px 10px}

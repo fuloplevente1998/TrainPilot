@@ -2,6 +2,8 @@
    Scoped to tp177 classes except the shared Journal's three-column tab layout.
    Preserves global navigation, typography and existing Health-derived 1px borders. */
 html body #app .tp155-journal-tabs.tp177-journal-tabs{
+ position:sticky;top:var(--tp107-nav-height,0px);z-index:100;
+ background:var(--card);
  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:4px!important;
  border:1px solid var(--tp-ui-border,var(--line))!important;min-width:0;
 }
