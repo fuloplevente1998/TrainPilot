@@ -31,7 +31,7 @@ async function outdoor(page){await page.evaluate(()=>{
  browser=await chromium.launch({args:['--no-sandbox']});
  const configs=[...[320,360,393].flatMap(width=>[{width,theme:'classicBlue',lang:'hu',font:1},{width,theme:'yellow',lang:'hu',font:1}]),{width:320,theme:'classicPurple',lang:'de',font:1.3},{width:393,theme:'green',lang:'ro',font:1.3}];
  for(const version of ['before','after'])for(const config of configs){
- const page=await browser.newPage({viewport:{width:config.width,height:873},isMobile:true,hasTouch:true,locale:'hu-HU',reducedMotion:'reduce'});
+ const page=await browser.newPage({viewport:{width:config.width,height:873},isMobile:true,hasTouch:true,locale:'hu-HU',colorScheme:config.theme==='classicBlue'?'light':'dark',reducedMotion:'reduce'});
  const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());
  await page.addInitScript(()=>{localStorage.setItem('repforge:onboarding128',JSON.stringify('skipped'));Object.defineProperty(navigator,'onLine',{get:()=>false});});
  await page.goto('http://127.0.0.1:'+server.address().port+'/'+version+'/');await page.waitForFunction(()=>TrainPilotBoot.finished);
@@ -42,6 +42,9 @@ async function outdoor(page){await page.evaluate(()=>{
  await page.evaluate(()=>go('programs'));await snap('08-programs');
  const visiblePrograms=await page.locator('.tp152-program-card').evaluateAll(nodes=>nodes.filter(el=>{const r=el.getBoundingClientRect();return r.top<innerHeight&&r.bottom>0}).length);
  report.checks.push({version,config,visiblePrograms});
+ if(version==='after'){
+ const target=await page.locator('.rf103-program-activate:not(:disabled)').first().boundingBox();assert.ok(target.height>=44,'Program activation keeps a 44px target');
+ }
 await page.locator('.tp152-program-card').first().evaluate(x=>x.open=true);await snap('08-programs-open');
  await page.evaluate(()=>go('plan'));await snap('02-workout-start');await page.locator('.tp152-day').first().evaluate(x=>x.open=true);await snap('02-workout-start-open');
  await page.evaluate(()=>go('settings'));await snap('01-settings');
