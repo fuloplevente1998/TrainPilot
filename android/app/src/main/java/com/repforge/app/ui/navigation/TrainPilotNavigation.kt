@@ -249,7 +249,8 @@ fun TrainPilotAppScaffold(
         return NativeMainMenu.navigationAllowed(target, starting,
             finishing = editor?.uiState?.value?.isFinishing == true,
             finalizing = current?.optBoolean("finalizationPending") == true,
-            restoreBlocked = execution.restoreBlocked(), commandsSuspended = execution.commandsSuspended())
+            restoreBlocked = execution.restoreBlocked(), commandsSuspended = execution.commandsSuspended(),
+            hasActiveWorkout = current?.optBoolean("active") == true)
     }
     fun selectDestination(requested: String) {
         val current = ActiveWorkoutStore.current(context)
