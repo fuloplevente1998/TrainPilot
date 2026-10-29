@@ -241,8 +241,9 @@ html body #app main.tp150-journal-compact details.rf263-history>summary{
 }
 html body #app main.tp150-journal-compact details.rf263-history>summary .history-head{
   padding:8px 10px!important;
-  border-radius:12px!important;
-  background:var(--card2);
+  /* The enclosing workout card owns the only rounded frame (#124). */
+  border-radius:0!important;
+  background:transparent!important;
 }
 html body #app main.tp150-journal-compact details.rf263-history>summary .history-title{
   font-size:14px!important;
