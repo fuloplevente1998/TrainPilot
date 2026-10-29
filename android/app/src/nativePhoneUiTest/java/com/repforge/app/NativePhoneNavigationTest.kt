@@ -213,11 +213,21 @@ class NativePhoneNavigationTest {
         compose.onNodeWithTag("trainpilot_brand_dumbbell", useUnmergedTree = true)
             .assertExists()
         compose.onNodeWithTag("navigation_home").assertIsSelected()
+        val brandLayouts = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+        compose.onNodeWithTag("header_brand_text", useUnmergedTree = true).assertIsDisplayed()
+            .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { it(brandLayouts) }
+        assertTrue(brandLayouts.isNotEmpty() && brandLayouts.none { it.hasVisualOverflow })
         screenshot("studio_original_gold_dumbbell", theme = "graphite_gold")
         tab("progress")
         compose.onNodeWithTag("trainpilot_brand_dumbbell", useUnmergedTree = true)
             .assertExists()
         compose.onNodeWithTag("navigation_progress").assertIsSelected()
+        compose.onNodeWithTag("progress_list").performScrollToNode(hasTestTag("progress_total_volume_card"))
+        compose.onNodeWithTag("progress_total_volume_card").assertIsDisplayed()
+        screenshot("studio_progress_overview", theme = "graphite_gold")
+        compose.onNodeWithTag("navigation_settings").performClick()
+        compose.onNodeWithTag("settings_google_summary").assertIsDisplayed()
+        screenshot("studio_settings_initial", theme = "graphite_gold")
     }
 
     @Test fun studioJournalMonthSelectorFiltersRealPagedHistoryAndReturnsToAllMonths() {

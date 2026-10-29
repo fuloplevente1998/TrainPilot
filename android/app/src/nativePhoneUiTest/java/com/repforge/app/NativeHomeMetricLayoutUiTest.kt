@@ -130,6 +130,13 @@ class NativeHomeMetricLayoutUiTest {
                 }
             }
         }
+        if (studioShell) {
+            val brandLayouts = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+            compose.onNodeWithTag("header_brand_text", useUnmergedTree = true).assertIsDisplayed()
+                .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { it(brandLayouts) }
+            assertTrue("Brand must remain complete at 320dp/font2", brandLayouts.isNotEmpty() &&
+                brandLayouts.none { it.hasVisualOverflow })
+        }
         for ((route, label) in listOf("home" to "Startseite", "training" to "Training",
             "journal" to "Protokoll", "progress" to "Fortschritt", "health" to "Gesundheit")) {
             compose.onNodeWithTag("navigation_$route").performScrollTo().assertIsDisplayed().performClick()

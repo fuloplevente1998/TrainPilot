@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -78,6 +80,7 @@ import com.repforge.app.ui.theme.LocalTrainPilotColors
  * NavHost owns navigation, and native execution fences own click permissions.
  * No Studio demo ViewModel, secondary route, fabricated value or new launcher.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun NativeStudioShellHeader(
     route: String,
@@ -110,10 +113,12 @@ internal fun NativeStudioShellHeader(
             .padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)) {
             // 18:49 source: 48dp logo/title + language/choice/settings controls.
-            Row(Modifier.fillMaxWidth(),
+            // Keep the brand's natural width. Large fonts wrap controls to a
+            // second row instead of squeezing the name or shrinking touch targets.
+            FlowRow(Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically) {
-                Row(Modifier.weight(1f).heightIn(min = 48.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(Modifier.heightIn(min = 48.dp)
                     .clip(RoundedCornerShape(10.dp))
                     .clickable(enabled = enabled, role = Role.Button, onClick = onHome)
                     .testTag("header_home")
@@ -123,7 +128,7 @@ internal fun NativeStudioShellHeader(
                     // Brand exception explicitly approved by the owner:
                     // exact original gold dumbbell used by the launcher icon.
                     TrainPilotBrandLogo()
-                    Text("TrainPilot", style = MaterialTheme.typography.titleMedium.copy(
+                    Text("TrainPilot", modifier = Modifier.testTag("header_brand_text"), style = MaterialTheme.typography.titleMedium.copy(
                         letterSpacing = (-.2).sp), fontWeight = FontWeight.Bold,
                         color = colors.accentText, maxLines = 1,
                         overflow = TextOverflow.Ellipsis)
@@ -135,14 +140,12 @@ internal fun NativeStudioShellHeader(
                             .border(1.dp, colors.line, RoundedCornerShape(10.dp))
                             .clip(RoundedCornerShape(10.dp))
                             .clickable(enabled = enabled) { languageExpanded = true }
-                            .testTag("header_language"),
+                            .testTag("header_language")
+                            .semantics { contentDescription = strings.getString(R.string.native_language_title) },
                             shape = RoundedCornerShape(10.dp), color = colors.card2) {
-                            Row(Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                            Row(Modifier.padding(horizontal = 6.dp, vertical = 6.dp),
                                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                                 verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Language,
-                                    contentDescription = strings.getString(R.string.native_language_title),
-                                    tint = colors.accentText, modifier = Modifier.size(16.dp))
                                 Text("${flags[language] ?: "🌐"} ${language.uppercase()}",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = colors.text, fontWeight = FontWeight.Bold,
@@ -179,7 +182,7 @@ internal fun NativeStudioShellHeader(
                         .clickable(enabled = enabled, onClick = onTheme)
                         .testTag("header_theme"),
                         shape = RoundedCornerShape(10.dp), color = colors.card2) {
-                        Row(Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                        Row(Modifier.padding(horizontal = 6.dp, vertical = 6.dp),
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                             verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Palette,

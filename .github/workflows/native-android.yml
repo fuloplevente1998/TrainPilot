@@ -420,14 +420,14 @@ jobs:
           sudo udevadm trigger --name-match=kvm
       - uses: reactivecircus/android-emulator-runner@v2
         env:
-          PHONE_UI_DISPLAY_SIZE: ${{ inputs.phone_display_size || '' }}
-          PHONE_UI_DISPLAY_DENSITY: ${{ inputs.phone_display_density || '' }}
-          PHONE_UI_FONT_SCALE: ${{ inputs.phone_font_scale || '' }}
+          PHONE_UI_DISPLAY_SIZE: ${{ inputs.phone_display_size || (github.event.pull_request.number == 270 && '1080x2392' || '') }}
+          PHONE_UI_DISPLAY_DENSITY: ${{ inputs.phone_display_density || (github.event.pull_request.number == 270 && '450' || '') }}
+          PHONE_UI_FONT_SCALE: ${{ inputs.phone_font_scale || (github.event.pull_request.number == 270 && '0.90' || '') }}
         with:
           pre-emulator-launch-script: python3 scripts/native/install-ci-adb-guard.py
           # wm size cannot exceed the small default AVD's hardware scaling limit.
           # A real-size hardware profile is required before applying owner geometry.
-          profile: ${{ inputs.phone_display_size != '' && 'pixel_7' || '' }}
+          profile: ${{ (inputs.phone_display_size != '' || github.event.pull_request.number == 270) && 'pixel_7' || '' }}
           api-level: 35
           target: google_apis
           arch: x86_64

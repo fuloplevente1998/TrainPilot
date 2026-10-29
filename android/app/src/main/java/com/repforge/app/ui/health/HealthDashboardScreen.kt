@@ -885,7 +885,11 @@ internal fun HealthSelectedDayOverview(
             strings.getString(
                 if (selectedIsToday) R.string.studio_health_today_status
                 else R.string.studio_health_day_status,
-                state.selectedDay
+                runCatching {
+                    java.time.LocalDate.parse(state.selectedDay).format(
+                        java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM)
+                            .withLocale(strings.configuration.locales[0]))
+                }.getOrDefault(state.selectedDay)
             ),
             icon = Icons.Default.FavoriteBorder
         )
