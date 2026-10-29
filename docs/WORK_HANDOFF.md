@@ -4,7 +4,9 @@
 
 Felhasználói kérés: az új dizájnnal kipróbálni a PR271 alkalmazást. A Capacitor `server.appStartPath` ezen a fejlesztési ágon `/?tp271=1`: a natív teszt-APK az eddig query-kapcsolós mockup felülettel indul. A böngészős alapút továbbra is opt-in; nincs új router, storage-kulcs vagy natív motorváltozás. A Capacitor 7.4.3 Bridge/CapConfig forrása igazolja a támogatott indulási útvonalat. Verzió 1.3.71/2735 és appid com.repforge.app változatlan. Ez a meglévő appot frissítő csomag, nem külön települő sandbox.
 
-A korábbi 1b123f48 APK nem kapcsolta be automatikusan a dizájnt. Az új konfiguráció pontos forrású Quick/Performance/Phone kapui és az APK csomagolt indulási konfigurációja még ellenőrzendők. Fizikai próba továbbra is nyitott; nincs telepítés, merge vagy release. Wear nem változik.
+**Átadható teszt-APK forrása: `2914331e3da9c0b4ad1d0e9782406900c8961278`.** Quick `40853713033`, Performance `40853713043`, Phone `40853705187` SUCCESS; 6/6 Chromium, natív XML 251 teszt / 0 failure/error/skipped. APK source/package és signer continuity PASS, Publish Release SKIPPED. A letöltött APK `assets/capacitor.config.json` fájljában igazolt `server.appStartPath=/?tp271=1`; index.html, app.js és mockup CSS byteazonos a forrással. Eredeti v2 signer: `4abcf50041e99aef2c100e989103ef426002db464c7963ab02d3230c67356688`.
+
+[Telefonos APK + forrás ZIP](https://github.com/fuloplevente1998/TrainPilot/actions/runs/40853705187/artifacts/12888990629), benne `TrainPilot-1.3.71.apk`; SHA256 `d9a98c80156b8f2de0f42014e9ce50ff800f5580d0fde12555d68e2d31a36e65`. Wear változatlan, új óracsomag nincs. A korábbi 1b123f48 APK nem kapcsolta be automatikusan a dizájnt. A felhasználó fájlmentés után, az app törlése nélkül frissíthet; a következő bizonyíték a fizikai indulás, öt főfül, fade, program és adatok ellenőrzése. Készülékes elfogadás még nincs. Nincs agent által végzett telepítés, merge, release vagy verzióemelés.
 
 ## PR #271 – P1i oldaláttűnés, 2026-10-29
 
