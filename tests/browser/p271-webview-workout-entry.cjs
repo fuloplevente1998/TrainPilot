@@ -15,7 +15,7 @@ const server=http.createServer((req,res)=>{
  let browser;
  try{
   browser=await chromium.launch({headless:true,executablePath:process.env.TRAINPILOT_CHROMIUM||undefined,args:['--no-sandbox']});
-  for(const width of [320,393]){
+  for(const width of [320,360,393,412]){
    const page=await browser.newPage({viewport:{width,height:width===320?740:873},locale:'hu-HU',timezoneId:'Europe/Budapest'});
    const errors=[];page.on('pageerror',err=>errors.push(err.message||String(err)));page.on('dialog',dialog=>dialog.accept());
    await page.addInitScript(()=>{try{localStorage.setItem('repforge:onboarding128',JSON.stringify('skipped'))}catch(_){}});
@@ -38,6 +38,11 @@ const server=http.createServer((req,res)=>{
       const q=quick.getBoundingClientRect(),fr=frame.getBoundingClientRect(),nav=dock.getBoundingClientRect(),tap=button.getBoundingClientRect();
       return {
        quick:!!quick,training:!!training,program:!!program,days:program.querySelectorAll('.tp152-day').length,
+       frameBorder:getComputedStyle(frame).borderTopWidth,
+       frameFill:getComputedStyle(frame).backgroundColor,
+       programBorder:getComputedStyle(program).borderTopWidth,
+       headingFill:getComputedStyle(program.querySelector(':scope > summary')).backgroundColor,
+       dayWidth:day.getBoundingClientRect().width,frameWidth:fr.width,
        startText:button.textContent.trim(),startAction:button.getAttribute('onclick'),
        choice:program.querySelector('.tp150-change-program')?.getAttribute('onclick'),
        dayStart:day.querySelector('.tp152-start-day')?.getAttribute('onclick'),
@@ -55,6 +60,34 @@ const server=http.createServer((req,res)=>{
     assert.ok(plan.buttonHeight>=44,width+'/'+theme+': main quick CTA >=44 px');
     assert.ok(plan.frameTop>plan.quickTop,width+'/'+theme+': mockup quick card precedes active program');
     assert.ok(plan.overflow<=1,width+'/'+theme+': no horizontal overflow '+JSON.stringify(plan));
+    assert.equal(plan.frameBorder,'0px',width+'/'+theme+': redundant outer program frame removed');
+    assert.equal(plan.frameFill,'rgba(0, 0, 0, 0)',width+'/'+theme+': program section uses page canvas');
+    assert.equal(plan.programBorder,'0px',width+'/'+theme+': no second nested program border');
+    assert.equal(plan.headingFill,'rgba(0, 0, 0, 0)',width+'/'+theme+': program heading stays on canvas');
+    assert.ok(Math.abs(plan.dayWidth-plan.frameWidth)<=1,width+'/'+theme+': day cards use full section width');
+
+    // Presentation must preserve both original details controls, including
+    // hidden content when collapsed and all five original settings inputs.
+    const training=page.locator('main.tp152-plan .tp1511-training');
+    await training.locator(':scope > summary').click();
+    await training.locator('#tp1511Rest').waitFor({state:'visible'});
+    assert.equal(await training.locator('input:is(#tp1511Rest,#tp1511Iso,#tp1511Per,#tp1511Single,#tp1511Total):visible').count(),5,width+'/'+theme+': rest and four progression fields remain reachable');
+    assert.equal(await training.locator('button[onclick="tp1511SaveTraining()"]:visible').count(),1,width+'/'+theme+': original settings save action');
+    if(width===393&&theme==='yellow'){
+      fs.mkdirSync('ui-evidence',{recursive:true});
+      await page.screenshot({path:'ui-evidence/pr271-workout-settings-expanded-393.png'});
+    }
+    await training.locator(':scope > summary').click();
+    await training.locator('#tp1511Rest').waitFor({state:'hidden'});
+    const programDetails=page.locator('main.tp152-plan .tp152-active-program');
+    await programDetails.locator(':scope > summary').click();
+    await programDetails.locator('.tp152-day').first().waitFor({state:'hidden'});
+    await programDetails.locator(':scope > summary').click();
+    await programDetails.locator('.tp152-day').first().waitFor({state:'visible'});
+    await programDetails.locator('.tp150-change-program').click();
+    assert.equal(await page.evaluate(()=>state.tab),'programs',width+'/'+theme+': actual chooser route still works');
+    await page.evaluate(()=>go('plan'));
+
 
 
     // P2c: both Studio entry cards call the real panel APIs. No fake GPS
@@ -174,6 +207,6 @@ const server=http.createServer((req,res)=>{
    assert.deepEqual(errors,[],width+': no JavaScript errors');
    await page.close();
   }
-  console.log('PASS PR271 P2c: preview Workout, outdoor entry and real muscle-filter chips, genuine quick-search panel, nested program days/editor, original engine, 320/393px & basic/neon themes');
+  console.log('PASS PR271 P2c: preview Workout, outdoor entry and real muscle-filter chips, genuine quick-search panel, nested program days/editor, original engine, 320/360/393/412px & basic/neon themes');
  }finally{await browser?.close();await new Promise(ok=>server.close(ok))}
 })().catch(err=>{console.error(err);process.exitCode=1});

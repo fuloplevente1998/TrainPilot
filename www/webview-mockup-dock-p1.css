@@ -340,44 +340,58 @@ html.tp271-mockup-dock body #app main.tp150-plan-compact .tp150-quick-entry-comp
   border-radius: 12px !important;
   font-weight: 850 !important;
 }
-/* A single active-program surface still contains the original training
-   preferences, the complete nested program and every day editor. */
+/* P1h – board 01: the program is a section, not a stack of frames.
+   The original details/summary nodes still own settings and day expansion. */
 html.tp271-mockup-dock body #app main.tp152-plan > .tp124-active-program-frame {
   display: block !important;
-  border-radius: 18px !important;
-  border: 1px solid color-mix(in srgb, var(--tp-program-accent, var(--accent)) 50%, var(--line)) !important;
-  padding: 11px !important;
+  border-radius: 0 !important;
+  border: 0 !important;
+  padding: 0 !important;
   margin: 0 !important;
   min-width: 0;
-  background: var(--tp-ui-card, var(--card)) !important;
+  overflow: visible;
+  background: transparent !important;
   box-shadow: none !important;
 }
 html.tp271-mockup-dock body #app main.tp152-plan .tp124-active-program-frame > .tp1511-training {
+  border: 1px solid transparent !important;
   border-radius: 12px !important;
-  margin: 0 0 9px !important;
-  background: var(--card2) !important;
+  margin: 0 0 12px !important;
+  background: var(--tp271-surface) padding-box,
+    var(--tp271-metal-edge) border-box !important;
 }
 html.tp271-mockup-dock body #app main.tp152-plan .tp1511-training > summary {
   min-height: 45px !important;
-  padding: 8px 9px !important;
+  padding: 8px 11px !important;
 }
 html.tp271-mockup-dock body #app main.tp152-plan .tp1511-training-body {
   padding: 10px !important;
   min-width: 0;
 }
 html.tp271-mockup-dock body #app main.tp152-plan .tp152-active-program {
-  border-radius: 14px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
   padding: 0 !important;
   background: transparent !important;
+  box-shadow: none !important;
 }
 html.tp271-mockup-dock body #app main.tp152-plan .tp152-active-program > summary {
   min-height: 76px !important;
-  padding: 9px !important;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--tp-program-accent, var(--accent)) 8%, var(--card)) !important;
+  padding: 8px 0 10px !important;
+  border-radius: 0;
+  background: transparent !important;
 }
 html.tp271-mockup-dock body #app main.tp152-plan .tp150-active-copy {
   min-width: 0;
+}
+html.tp271-mockup-dock body #app main.tp152-plan .tp150-active-copy > .badge {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .045em;
 }
 html.tp271-mockup-dock body #app main.tp152-plan .tp150-active-copy h2 {
   font-size: clamp(18px, 5vw, 24px) !important;
@@ -387,12 +401,14 @@ html.tp271-mockup-dock body #app main.tp152-plan .tp150-active-copy h2 {
 }
 html.tp271-mockup-dock body #app main.tp152-plan .tp152-program-body {
   display: block !important;
-  padding: 10px 2px 3px !important;
+  padding: 0 !important;
   min-width: 0;
 }
 html.tp271-mockup-dock body #app main.tp152-plan .tp150-change-program {
   min-height: 44px !important;
-  border-radius: 11px !important;
+  border: 1px solid var(--tp-ui-border) !important;
+  border-radius: 10px !important;
+  background: transparent !important;
   margin-bottom: 11px !important;
 }
 html.tp271-mockup-dock body #app main.tp152-plan .tp152-day {

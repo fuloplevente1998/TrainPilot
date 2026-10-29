@@ -1,5 +1,16 @@
 # TrainPilot – aktuális átadás
 
+## PR #271 – P1h programnézet, 2026-10-29
+
+Indulás: `d3ad5fc7` dokumentációs HEAD, az `a81a32c1` alkalmazás-/tesztforrás Quick/Performance/6 Chromium/Phone gate sikeres. A P1g 393px CI-képén a beállítások és programfejléc még egy nagy, egymásba ágyazott kártyán voltak.
+
+P1h: kizárólag `?tp271=1` scoped CSS. A külső programkeret és a második belső keret megszűnik; a programfejléc a canvasra kerül. Az eredeti edzésbeállítások önálló kártyán, a teljes szélességű napok külön kártyákon maradnak. Nem módosul `www/app.js`, HTML, storage, edzésmotor, natív forrás vagy verzió (1.3.71/2735).
+
+A meglévő `p271-webview-workout-entry.cjs` 320/360/393/412px × basic/vivid próbái a keret nélküli szekció mellett a beállítások és program összecsukását/nyitását, az eredeti öt pihenő/progressziómező elérhetőségét, a Mentés callbacket és a programválasztó valódi útvonalát is ellenőrzik. Minden korábbi gyakorlatválasztó/Quick/kültéri/edzésindítás ellenőrzés megmarad. Új kép: `pr271-workout-settings-expanded-393.png`.
+
+Helyi ellenőrzés: Node szintaxis és diff. **Az új P1h kód CI- és képi eredménye még ellenőrzendő**; a P1g PASS nem az új változat bizonyítéka. Következő: pontos forrású kapuk és CI-képek, majd a további képi eltérések. PR OPEN/DRAFT marad; nincs merge, release, telepítés vagy alapértelmezett UI-váltás.
+
+
 ## PR #271 – WebView mockup folytatás, 2026-10-29
 
 **Végső ellenőrzés:** a tesztelt alkalmazás-/tesztforrás `a81a32c14613f1698e3acede2a2587ed636748f1`. Quick `40820138769`, Performance `40820138806`, Phone `40820133396` SUCCESS. Mind a 6 Chromium-shard és az aláírt APK release-gate sikeres; a letöltött natív XML 251 teszt / 0 failure / 0 error / 0 skipped. APK source/package és signer continuity SUCCESS, release-publikálás SKIPPED. A jelen dokumentációs checkpoint nem új alkalmazáskód, kapuismétlés nem szükséges.
