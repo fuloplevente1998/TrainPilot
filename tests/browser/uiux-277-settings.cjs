@@ -5,8 +5,8 @@ const fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 const {chromium}=require('playwright');
 const root=path.resolve('www');
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
-const settingsJs=fs.readFileSync(path.join(root,'uiux-277-settings.js'),'utf8');
-assert.ok(html.includes('defer src="uiux-277-settings.js"'));
+const settingsJs=html.slice(html.lastIndexOf('// PR277 Settings presentation:'));
+assert.equal((html.match(/<script defer src=/g)||[]).length,1,'Keep single canonical deferred app.js');
 assert.ok(settingsJs.includes('settingsScreen=function'));
 assert.ok(!/(?:^|\n)\s*(?:render|go)\s*=/.test(settingsJs),'No render/go wrapper');
 const server=http.createServer((req,res)=>{
