@@ -11321,15 +11321,23 @@ renderWorkout=function(){
  persistDraft();
  const i=Math.max(0,Math.min(Number(state.current)||0,state.session.exercises.length-1)),se=state.session.exercises[i],e=byId(se.id)||se,total=state.session.exercises.length,pct=Math.round(((i+1)/Math.max(1,total))*100);
  const name=e&&e.custom?String(e.hu||e.en||e.id):tp149ExerciseName(e),note=e&&e.custom?String(e.notes||''):tp149ExerciseNote(e),target=(se.prescription&&se.prescription.reps)||(se.progressionPrescription&&se.progressionPrescription.reps)||e.reps||'',sets=se.sets||[],quick=typeof tp150IsQuick==='function'&&tp150IsQuick(),title=quick&&typeof tp150qwT==='function'?tp150qwT('title'):tp149WorkoutTitle();
+ const previousWorkout=history().find(h=>h.programId===state.session.programId&&(h.dayId||h.workout)===(state.session.dayId||state.session.workout)&&(h.exercises||[]).some(x=>x.id===se.id));
+ const previousSets=previousWorkout?.exercises?.find(x=>x.id===se.id)?.sets||[];
+ const next=state.session.exercises[i+1],nextDef=next&&(byId(next.id)||next);
+ const upcoming=nextDef?'<section class="tp277-next-exercise"><small>'+esc(tp277Text('next'))+' · '+(i+2)+'/'+total+'</small><strong>'+esc(tp149ExerciseName(nextDef))+'</strong></section>':'';
  const rows=sets.map(function(s,si){
   const load=e.loadType==='bodyweight'?'<span class="small muted tp153-bodyweight">'+esc(tp149T('workout.bodyweight'))+'</span>':'<label class="small">'+esc(tp149LoadLabel(e.loadType))+'<input class="field" aria-label="'+esc(tp149LoadLabel(e.loadType))+'" inputmode="decimal" value="'+esc(s.weight==null?'':s.weight)+'" oninput="upd('+i+','+si+',\'weight\',this.value)"></label>';
   const unit=tp149RepUnit(e.repUnit);
-  return '<div class="row tp153-set-row"><div class="num">'+(si+1)+'</div>'+load+'<label class="small">'+esc(unit)+'<input class="field" inputmode="numeric" aria-label="'+esc(unit)+'" placeholder="'+esc(target)+'" value="'+esc(s.reps==null?'':s.reps)+'" oninput="upd('+i+','+si+',\'reps\',this.value)"></label><button class="check '+(s.done?'done':'')+'" onclick="toggleSet('+i+','+si+')">'+(s.done?'✓':'OK')+'</button></div>';
+  const prior=previousSets[si],previous=prior?.done?formatSet(e,prior):'—';
+  const eligible=typeof tp197RirEligible==='function'&&tp197RirEligible(state.session,se)&&s.done===true;
+  const lastDone=sets.map((set,index)=>set.done?index:-1).filter(index=>index>=0).at(-1);
+  const rir=eligible?'<label class="small tp277-set-rir">RIR<input id="'+(si===lastDone?'tp197ActualRir':'tp229ActualRir-'+si)+'" class="field" data-set-id="'+esc(s.setId||'')+'" type="number" inputmode="numeric" min="0" max="10" step="1" value="'+(tp229RirValid(s.actualRir)?Number(s.actualRir):'')+'" placeholder="—" aria-describedby="tp197RirNote tp229RirSummary" oninput="tp197RirInput(this)"></label>':'<span class="tp277-set-rir small muted">RIR<br>—</span>';
+  return '<div class="row tp153-set-row tp277-set-row"><div class="num">'+(si+1)+'</div><span class="tp277-set-previous"><small>'+esc(tp277Text('previous'))+'</small>'+esc(previous)+'</span>'+load+'<label class="small">'+esc(unit)+'<input class="field" inputmode="numeric" aria-label="'+esc(unit)+'" placeholder="'+esc(target)+'" value="'+esc(s.reps==null?'':s.reps)+'" oninput="upd('+i+','+si+',\'reps\',this.value)"></label>'+rir+'<button class="check '+(s.done?'done':'')+'" onclick="toggleSet('+i+','+si+')">'+(s.done?'✓':'OK')+'</button></div>';
  }).join('');
  const feedback=typeof rf152FeedbackHtml==='function'?rf152FeedbackHtml(se):'';
  const quickAdd=quick&&typeof tp150qwT==='function'?'<section class="card tp150-quick-add" id="tp150QuickAdd"><div class="tp150-quick-add-head"><strong>'+esc(tp150qwT('title'))+'</strong><span class="badge">'+esc(tp150qwT('exerciseCount',{count:state.session.exercises.length}))+'</span></div><button class="btn secondary block" onclick="tp150QuickPicker()">'+esc(tp150qwT('addAnother'))+'</button></section>':'';
  const demo=tp153WorkoutVideo(e.id),guide=(note||demo)?'<details class="tp153-workout-guide tp154-workout-guide"><summary><span class="tp154-workout-guide-title">▶ '+esc(tp149T('video.demoTitle'))+'</span><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp154-workout-guide-body">'+(note?'<p class="note tp153-workout-note">'+esc(note)+'</p>':'')+demo+'</div></details>':'';
- const body='<main class="tp149-workout tp153-workout"><section class="card tp153-workout-head"><div class="tp153-workout-topline"><span class="small muted">'+esc(title)+'</span><strong>'+(i+1)+'/'+total+'</strong></div><h1>'+esc(name)+'</h1><div class="tp153-workout-prescription"><span>'+esc(tp149T('workout.target'))+': <b>'+sets.length+' × '+esc(target)+'</b></span></div>'+guide+'<div class="progress"><div style="width:'+pct+'%"></div></div></section><div class="section tp153-sets-title">'+esc(tp149T('workout.sets'))+'</div>'+rows+feedback+quickAdd+'<div class="tp153-workout-actions"><button class="btn block" data-tp-workout-next onclick="nextExercise()">'+esc(tp149T(i===total-1?'workout.finish':'workout.next'))+'</button><button class="btn secondary block" onclick="prevExercise()" '+(i===0?'disabled':'')+'>'+esc(tp149T('workout.previous'))+'</button></div></main>';
+ const body='<main class="tp149-workout tp153-workout tp277-workout"><section class="card tp153-workout-head"><div class="tp153-workout-topline"><span class="small muted">'+esc(title)+'</span><strong>'+(i+1)+'/'+total+'</strong></div><h1>'+esc(name)+'</h1><div class="tp153-workout-prescription"><span>'+esc(tp149T('workout.target'))+': <b>'+sets.length+' × '+esc(target)+'</b></span></div>'+guide+'<div class="progress"><div style="width:'+pct+'%"></div></div></section><div class="section tp153-sets-title">'+esc(tp149T('workout.sets'))+'</div>'+rows+upcoming+feedback+quickAdd+'<div class="tp153-workout-actions"><button class="btn block" data-tp-workout-next onclick="nextExercise()">'+esc(tp149T(i===total-1?'workout.finish':'workout.next'))+'</button><button class="btn secondary block" onclick="prevExercise()" '+(i===0?'disabled':'')+'>'+esc(tp149T('workout.previous'))+'</button></div></main>';
  render(shell(body));
  if(typeof rf110DecorateTimedWorkout==='function')rf110DecorateTimedWorkout();
  if(typeof tp120AfterRender==='function')tp120AfterRender();
@@ -20321,11 +20329,6 @@ var tp197RirField=function(session,exercise){
  };
  const l=labels[typeof rf212Lang==='function'?rf212Lang():'hu']||labels.en;
  return '<div class="tp197-rir-field tp229-rir"><strong>'+esc(t.title)+'</strong>'+
- rows.map(({set,index})=>{
-  const id=set===last?'tp197ActualRir':'tp229ActualRir-'+index;
-  return '<label for="'+id+'">'+(index+1)+'. '+esc(l.set)+'</label>'+
-   '<input id="'+id+'" class="field" data-set-id="'+esc(set.setId||'')+'" type="number" inputmode="numeric" min="0" max="10" step="1" value="'+(tp229RirValid(set.actualRir)?Number(set.actualRir):'')+'" placeholder="'+esc(t.missing)+'" aria-describedby="tp197RirNote tp229RirSummary" oninput="tp197RirInput(this)">';
- }).join('')+
  '<p id="tp197RirNote" class="small muted">'+esc(t.note)+'</p><p id="tp229RirSummary" class="small muted">'+esc(l.summary)+'</p>'+
  (tp229RirValid(exercise.actualRir)?'<p class="small muted">'+esc(l.legacy)+': '+Number(exercise.actualRir)+'</p>':'')+'</div>';
 };

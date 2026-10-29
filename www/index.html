@@ -332,7 +332,7 @@
   if(diag){diag.classList.add('tp168-connect-panel');disclosureSummary(diag,c().connect,c().connectSub,'link')}
   const sync=main.querySelector(':scope > .rf263-sync-card');if(sync){sync.classList.add('tp168-sync-tail')}
   [more,main.querySelector(':scope > .tp120-health-journal'),diag].filter(Boolean).forEach(x=>main.appendChild(x));
-  if(sync)main.appendChild(sync);
+  if(sync)main.prepend(sync);
   const note=document.createElement('div');note.className='tp168-health-note';note.innerHTML='<span aria-hidden="true">ⓘ</span><p>'+escText(c().note)+'</p>';main.appendChild(note);
   window.tp107FitViews?.();
  }
@@ -2166,11 +2166,27 @@
     if(!panel)return;
     var button=document.getElementById('tp163LiveMapButton'),trip=currentLiveTrip();
     var visible=!!trip&&tp106GpsOwner(trip)?.e===state.session?.exercises?.[state.current];
-    if(!visible){button?.remove();return;}
-    if(button){if(button.parentElement!==panel)panel.appendChild(button);return;}
+    if(!visible){button?.remove();panel.querySelector('.tp277-route-preview')?.remove();return;}
+    if(button){if(button.parentElement!==panel)panel.appendChild(button);void previewLiveRoute(panel,trip);return;}
     button=append('button',panel,'btn secondary block tp163-live-reopen',t('viewLive'));
     button.id='tp163LiveMapButton';button.type='button';
     button.addEventListener('click',function(){openLiveRoute();});
+    void previewLiveRoute(panel,trip);
+  }
+  var previewRequest=0;
+  async function previewLiveRoute(panel,trip){
+    // Read the native private route; no invented coordinates or tile requests.
+    if(!trip||panel.dataset.tp277PreviewBusy==='true')return;
+    panel.dataset.tp277PreviewBusy='true';var request=++previewRequest;
+    try{
+      var reply=await bridge()?.route?.({key:trip.key});
+      if(!panel.isConnected||currentLiveTrip()?.key!==trip.key||request!==previewRequest)return;
+      var parsed=coordinates(reply);if(!parsed.count)return;
+      var preview=panel.querySelector('.tp277-route-preview');
+      if(!preview){preview=append('button',panel,'tp277-route-preview');preview.type='button';preview.setAttribute('aria-label',t('viewLive'));preview.addEventListener('click',openLiveRoute);}
+      preview.replaceChildren();drawOffline(preview,parsed.sections);
+      var button=document.getElementById('tp163LiveMapButton');if(button)button.before(preview);
+    }catch(_){}finally{delete panel.dataset.tp277PreviewBusy;}
   }
   function liveMapUpdate(sections){
     if(!activeMap||!liveState||!window.L?.polyline)return;
@@ -2222,6 +2238,7 @@
       else stateNow.hint.textContent=parsed.partial?t('partial'):t('offline')+' · '+parsed.count+' '+t('points');
       if(activeMap&&parsed.count)stateNow.hint.textContent=t('onlineReady')+' · '+parsed.count+' '+t('points');
       stateNow.sections=parsed.sections;
+      var preview=document.querySelector('.tp277-route-preview');if(preview){preview.replaceChildren();drawOffline(preview,parsed.sections);}
       // The route has no background tile/Leaflet requests until explicit online consent.
       if(parsed.count&&navigator.onLine&&!stateNow.consent){
         stateNow.consent=true;

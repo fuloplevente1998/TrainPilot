@@ -512,3 +512,26 @@ html body #app .tp277-history .rf103-history-chevron{grid-row:2;align-self:cente
 html body #app details.tp277-history .history-badges{display:flex!important;flex-wrap:wrap;gap:5px!important;margin:7px 0 0!important}
 html body #app details.tp277-history .history-badges>.history-badge{width:auto;min-height:24px;padding:3px 6px!important;border:0;border-radius:5px!important;font-size:11px!important;background:var(--card2);font-weight:500}
 html body #app .tp277-history .tp3-combined-history-body{padding:0 10px 10px}
+
+/* PR277 — active sets keep their existing fields and save handlers in one row. */
+html body #app .tp277-workout .tp153-workout-head{padding:10px 12px!important}
+html body #app .tp277-workout .tp153-workout-head h1{font-size:20px;line-height:1.3;margin:5px 0}
+html body #app .tp277-workout .tp153-sets-title{font-size:14px!important;margin:9px 0!important}
+html body #app .tp277-set-row{display:grid;grid-template-columns:24px minmax(0,.8fr) minmax(0,1fr) minmax(0,.8fr) minmax(0,.65fr) 40px!important;gap:5px;padding-block:7px!important;align-items:center}
+html body #app .tp277-set-row .num{width:24px;min-width:24px;height:30px;font-size:12px}
+html body #app .tp277-set-row label{font-size:10px;min-width:0}
+html body #app .tp277-set-row input{box-sizing:border-box;width:100%;min-width:0;min-height:44px;padding:7px 3px;font-size:14px;text-align:center}
+html body #app .tp277-set-row .check{min-width:40px;width:40px;min-height:44px;padding:0}
+.tp277-set-previous{font-size:11px;line-height:1.4;color:var(--muted);overflow-wrap:anywhere}
+.tp277-set-previous small{display:block;font-size:10px}
+.tp277-set-rir{min-width:0;text-align:center}
+.tp277-next-exercise{display:grid;gap:4px;border:1px solid var(--line);border-radius:12px;background:var(--card2);padding:10px 12px;margin:9px 0}
+.tp277-next-exercise small{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.tp277-next-exercise strong{font-size:13px;overflow-wrap:anywhere}
+@media(max-width:359px){
+ html body #app .tp277-set-row{grid-template-columns:24px minmax(0,1fr) minmax(0,1fr) minmax(0,.8fr) 40px!important;row-gap:3px}
+ .tp277-set-previous{grid-column:2/-1;grid-row:2;font-size:10px}
+ .tp277-set-previous small{display:inline;margin-right:5px}
+}
+/* Health: existing sync / actual permission path becomes the first card. */
+html body #app main.tp168-health>.tp168-sync-tail{order:-1;margin-top:0}
