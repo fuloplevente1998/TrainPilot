@@ -779,6 +779,10 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
         }
     }
 
+    fun clearBackgroundError() {
+        _uiState.update { it.copy(backgroundWriteFailed = false) }
+    }
+
     fun toggleHcBackground(enable: Boolean) {
         if (_uiState.value.backgroundSaving) return
         _uiState.update { it.copy(backgroundSaving = true, backgroundWriteFailed = false) }

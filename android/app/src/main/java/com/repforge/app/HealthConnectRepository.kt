@@ -100,6 +100,12 @@ object HealthConnectRepository {
         return READ_PERMS.any { isAllowed(context, it) }
     }
 
+    /** Recheck on every explicit connection/read request, including partial grants. */
+    fun missingReadPermissions(context: Context): Array<String> =
+        ALL_RUNTIME_PERMISSIONS.filter {
+            context.checkSelfPermission(it) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        }.toTypedArray()
+
     fun allReadsAllowed(context: Context): Boolean {
         return READ_PERMS.all { isAllowed(context, it) }
     }

@@ -23,6 +23,7 @@ import com.repforge.app.ui.components.TrainPilotMetricSurface
 import com.repforge.app.ui.components.TrainPilotSectionHeader
 import com.repforge.app.ui.components.trainPilotMetricIcon
 import androidx.core.content.ContextCompat
+import com.repforge.app.HealthJournalStore
 import com.repforge.app.HealthConnectRepository
 import androidx.compose.material3.TextButton
 
@@ -165,27 +166,67 @@ fun HealthDashboardScreen(
         viewModel.healthRecordDetailChanged(detailType != null)
     }
     var pendingFullSync by rememberSaveable { mutableStateOf<Boolean?>(null) }
+    var pendingHcBackground by rememberSaveable { mutableStateOf(false) }
+    var pendingHcSelection by rememberSaveable { mutableStateOf(false) }
+    var hcPermissionPending by rememberSaveable { mutableStateOf(false) }
     val permissionScope = rememberCoroutineScope()
-    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-        val full = pendingFullSync
-        pendingFullSync = null
+    val backgroundPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         permissionScope.launch {
             screenLifecycle.lifecycle.withResumed {
-                viewModel.healthScreenVisible(activity)
-                if (full == null) viewModel.refresh(activity) else viewModel.syncHealth(activity, full)
+                if (granted) viewModel.toggleHcBackground(true) else viewModel.refreshBackgroundStatus()
             }
         }
     }
-    fun startSync(full: Boolean) {
-        val permissions = HealthConnectRepository.ALL_RUNTIME_PERMISSIONS
-        if (state.provider == "health_connect" && Build.VERSION.SDK_INT >= 34 &&
-            permissions.none { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED }) {
-            pendingFullSync = full
-            permissionLauncher.launch(permissions)
-        } else viewModel.syncHealth(activity, full)
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        val full = pendingFullSync
+        val background = pendingHcBackground
+        pendingFullSync = null
+        pendingHcBackground = false
+        hcPermissionPending = false
+        permissionScope.launch {
+            screenLifecycle.lifecycle.withResumed {
+                viewModel.healthScreenVisible(activity)
+                if (!HealthConnectRepository.anyReadAllowed(context)) {
+                    viewModel.loadHealthDashboard()
+                    viewModel.refreshBackgroundStatus()
+                } else if (background) {
+                    if (ContextCompat.checkSelfPermission(context, HealthConnectRepository.BACKGROUND_READ_PERMISSION) ==
+                        PackageManager.PERMISSION_GRANTED) viewModel.toggleHcBackground(true)
+                    else backgroundPermissionLauncher.launch(HealthConnectRepository.BACKGROUND_READ_PERMISSION)
+                } else if (full == null) viewModel.refresh(activity) else viewModel.syncHealth(activity, full)
+            }
+        }
     }
-    val backgroundPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) viewModel.toggleHcBackground(true) else viewModel.refreshBackgroundStatus()
+    fun requestHcAccess(full: Boolean? = null, background: Boolean = false) {
+        if (hcPermissionPending) return
+        viewModel.clearBackgroundError()
+        if (!HealthConnectRepository.isSupported(context)) {
+            viewModel.loadHealthDashboard()
+            viewModel.refreshBackgroundStatus()
+            return
+        }
+        val missing = HealthConnectRepository.missingReadPermissions(context)
+        if (missing.isNotEmpty()) {
+            pendingFullSync = full
+            pendingHcBackground = background
+            hcPermissionPending = true
+            permissionLauncher.launch(missing)
+        } else if (background) {
+            if (ContextCompat.checkSelfPermission(context, HealthConnectRepository.BACKGROUND_READ_PERMISSION) ==
+                PackageManager.PERMISSION_GRANTED) viewModel.toggleHcBackground(true)
+            else backgroundPermissionLauncher.launch(HealthConnectRepository.BACKGROUND_READ_PERMISSION)
+        } else if (full == null) viewModel.refresh(activity) else viewModel.syncHealth(activity, full)
+    }
+    LaunchedEffect(pendingHcSelection, state.provider) {
+        // Wait for the existing async provider write before dispatching its consent flow.
+        if (pendingHcSelection && state.provider == HealthJournalStore.HC) {
+            pendingHcSelection = false
+            requestHcAccess()
+        }
+    }
+    fun startSync(full: Boolean) {
+        if (state.provider == HealthJournalStore.HC) requestHcAccess(full)
+        else viewModel.syncHealth(activity, full)
     }
     val bleBackgroundPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
         if (granted.isNotEmpty() && granted.values.all { it }) viewModel.toggleBleBackground(true)
@@ -208,12 +249,19 @@ fun HealthDashboardScreen(
                 onWeightRange = weightViewModel::setRange,
                 onWeightRetry = weightViewModel::retryReads,
                 onOpenBle = { viewModel.setTab("ble") },
-                onSelectProvider = { viewModel.setProvider(it, activity) },
+                onSelectProvider = {
+                    viewModel.setProvider(it, activity)
+                    if (it == HealthJournalStore.HC) pendingHcSelection = true
+                },
                 onAutoOnOpen = viewModel::setAutoOnOpen,
                 onToggleHcBackground = { enable ->
-                    if (enable && state.hcBackgroundBlock == BackgroundBlock.BACKGROUND_PERMISSION)
-                        backgroundPermissionLauncher.launch(HealthConnectRepository.BACKGROUND_READ_PERMISSION)
-                    else viewModel.toggleHcBackground(enable)
+                    if (!enable) viewModel.toggleHcBackground(false)
+                    else when (state.hcBackgroundBlock) {
+                        BackgroundBlock.READY -> viewModel.toggleHcBackground(true)
+                        BackgroundBlock.READ_PERMISSION, BackgroundBlock.BACKGROUND_PERMISSION ->
+                            requestHcAccess(background = true)
+                        else -> viewModel.refreshBackgroundStatus()
+                    }
                 },
                 onPreviousMonth = { viewModel.shiftHistoryMonth(-1) },
                 onNextMonth = { viewModel.shiftHistoryMonth(1) },
@@ -227,11 +275,8 @@ fun HealthDashboardScreen(
                 onCancelSync = viewModel::cancelHealthSync,
                 onRetrySync = { startSync(state.syncRetryFull) },
                 onRefresh = {
-                    val permissions = HealthConnectRepository.READ_PERMS.map { "android.permission.health.$it" }.toTypedArray()
-                    if (state.provider == "health_connect" && Build.VERSION.SDK_INT >= 34 &&
-                        permissions.none { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED }) {
-                        permissionLauncher.launch(permissions)
-                    } else viewModel.refresh(activity)
+                    if (state.provider == HealthJournalStore.HC) requestHcAccess()
+                    else viewModel.refresh(activity)
                 }
             )
         } else {
