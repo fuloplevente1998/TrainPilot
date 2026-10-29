@@ -1,3 +1,10 @@
+## Compact theme picker — source update 2026-10-29
+
+User approved the visual direction and requested the WebView theme picker compactness.
+Verified WebView PR271 source a81a32c14613f1698e3acede2a2587ed636748f1, www/app.js:13386–13450: basic/vivid columns in a bounded dropdown (not literally two horizontal rows).
+NativeThemePicker now places Basic/Vivid side by side at available width>=300dp/fontScale<=1.3, in one320dp maximum-height scroll area. Narrow/large-text layouts stack the families. Theme options use compact two-swatch rows with48dp minimum touch height; original IDs, localized names, radio selection/focus colors and onSelect callback retained. No DataStore/palette/write changes.
+Source/diff/contract checks passed. Android build/UI execution and new native screenshot NOT RUN for this increment; grouped [skip ci] per repository workflow. The three phone failures from bb0abb61 remain open; do not treat this theme change as their repair. Next combined gate must also capture the actual compact picker before visual acceptance.
+
 # Current update — 2026-10-29
 
 App source bb0abb61e3da8bced494d3abc929825d54080761, CI merge 0179fb645d30887d34021d54abb4edee3329f5ee.
