@@ -24,6 +24,7 @@ const server=http.createServer((req,res)=>{
   const badge=page.locator('.tp226-pr-badge');assert.equal(await badge.count(),1);
   const card=page.locator('details[data-tp152-history-key]').filter({has:page.locator('.tp226-pr-badge')});
   assert.equal(await card.evaluate(x=>x.open),false,'Workout starts collapsed');
+  assert.equal(await badge.isVisible(),true,'Genuine PR badge must be visible on a collapsed journal card');
   await card.locator(':scope > summary .history-title').click();
   assert.equal(await card.evaluate(x=>x.open),true,'Workout opens independently of its PR badge');
   const detail=card.locator(':scope > .tp3-combined-history-body > .tp226-pr-details');
