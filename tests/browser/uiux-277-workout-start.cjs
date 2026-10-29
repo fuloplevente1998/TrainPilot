@@ -30,7 +30,7 @@ const server=http.createServer((req,res)=>{
     await p.waitForSelector('main.tp152-plan .tp152-day');
     const overview=await p.evaluate(()=>{
      const main=document.querySelector('main.tp152-plan'),p=activeProgram(),day=p?.days?.[0],card=main.querySelector('.tp152-day');
-     const expected=(day?.exercises||[]).reduce((n,id)=>n+Number(tp152Rx(p,id,byId(id)).sets||0),0);
+     const expected=(day?.exercises||[]).reduce((n,id)=>{const e=(typeof tp128ProgramExercise==='function'&&tp128ProgramExercise(p,id))||byId(id);return n+Number(tp152Rx(p,id,e).sets||0)},0);
      return {days:main.querySelectorAll('.tp152-day').length,cardCount:main.querySelectorAll('.tp277-day-overview').length,
       first:card.querySelector('.tp277-day-overview')?.textContent,expected,preview:card.querySelector('.tp277-day-preview')?.textContent,
       start:card.querySelector('.tp152-start-day')?.getAttribute('onclick'),active:!!state.session,
@@ -52,6 +52,14 @@ const server=http.createServer((req,res)=>{
     assert.ok(await first.locator('.tp152-start-day').isVisible(),'existing start button remains accessible');
     await first.locator(':scope > summary').click();
    }
+   // Actual phone start through the original control; no fake second action.
+   await p.evaluate(()=>{state.session=null;db.set('draft',null);go('plan')});
+   const firstDay=p.locator('main.tp152-plan .tp152-day').first();
+   await firstDay.locator(':scope > summary').click();
+   await firstDay.locator('.tp152-start-day').click();
+   await p.waitForFunction(()=>!!state.session);
+   assert.ok(await p.evaluate(()=>!!db.get('draft',null)?.session),width+': workout start must persist draft');
+   assert.ok(await p.locator('.tp153-set-row .check').count()>0,width+': existing set controls must remain');
    assert.deepEqual(errors,[],'no JS errors '+width);
    await p.close();
   }
