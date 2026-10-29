@@ -71,7 +71,7 @@ class NativeHealthAutoRefreshUiTest {
         compose.waitUntil(20_000) {
             compose.onAllNodesWithTag("navigation_health").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithTag("navigation_health").performScrollTo().assertIsDisplayed().performClick()
+        compose.openStudioTab("health")
         // LazyColumn creates off-screen children only when scrolled into view.
         // Waiting for the switch before scrolling deadlocks this instrumentation test.
         compose.waitUntil(20_000) {
@@ -204,7 +204,7 @@ class NativeHealthAutoRefreshUiTest {
         compose.onNodeWithTag("health_auto_refresh_switch").assertIsOn()
 
         compose.onNodeWithTag("navigation_home").performClick()
-        compose.onNodeWithTag("navigation_health").performScrollTo().assertIsDisplayed().performClick()
+        compose.openStudioTab("health")
         openConnectionsIfNeeded()
         compose.onNodeWithTag("health_auto_refresh_switch").assertIsOn()
 
