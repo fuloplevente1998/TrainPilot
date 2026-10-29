@@ -67,6 +67,28 @@ class NativeHomeMetricLayoutUiTest {
         compose.onAllNodesWithTag("home_metric_workouts").assertCountEquals(0)
     }
 
+    @Test fun acceptedStudioGreetingKeepsCompactTwoDpGapAtOwnerWidth() {
+        compose.setContent {
+            TrainPilotTheme(TrainPilotUserSettings()) {
+                Column(Modifier.width(384.dp)) {
+                    com.repforge.app.ui.home.StudioHomeGreeting(
+                        title = "Üdv újra!", subtitle = "Mai edzésed és állapotod áttekintése."
+                    )
+                }
+            }
+        }
+        val greeting = compose.onNodeWithTag("home_studio_greeting").assertIsDisplayed()
+            .fetchSemanticsNode().boundsInRoot
+        val intro = compose.onNodeWithTag("home_studio_intro").assertIsDisplayed()
+            .fetchSemanticsNode().boundsInRoot
+        val density = compose.density.density
+        val gapDp = (intro.top - greeting.bottom) / density
+        assertTrue("Greeting and supporting text must not overlap", gapDp >= -0.01f)
+        assertTrue("Source 18:49 Studio greeting should use a 2dp gap: $gapDp dp",
+            gapDp in 1.0f..3.5f)
+        compose.onNodeWithTag("home_studio_greeting_group").assertIsDisplayed()
+    }
+
     @Test fun narrowPhoneUsesTwoReadableColumnsWithAllSixMetricsReachable() {
         show(1f)
         val first = compose.onNodeWithTag("home_metric_sleep").fetchSemanticsNode().boundsInRoot
