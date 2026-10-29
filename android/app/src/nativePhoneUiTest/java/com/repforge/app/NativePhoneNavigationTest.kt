@@ -342,6 +342,22 @@ class NativePhoneNavigationTest {
         assertFalse(snapshot()?.optBoolean("active") == true)
     }
 
+    @Test fun phoneCanBrowseHomeTabsAfterWatchDeletedWorkoutWithSuspendedCommands() {
+        val execution = PhoneWorkoutExecution.store(context)
+        execution.suspendCommands(true)
+        assertFalse("Test fixture must have no active workout",
+            ActiveWorkoutStore.current(context)?.optBoolean("active") == true)
+        launch()
+        for (route in listOf("journal", "progress", "health", "training", "home")) {
+            tab(route)
+        }
+        compose.onNodeWithTag("navigation_settings").assertIsDisplayed().performClick()
+        compose.onNodeWithTag("settings_google_summary").assertIsDisplayed()
+        // Navigation must not silently clear the watch handoff's durable safety flag.
+        assertTrue(execution.commandsSuspended())
+        assertFalse(ActiveWorkoutStore.current(context)?.optBoolean("active") == true)
+    }
+
     @Test fun fiveTabsAndSecondaryPlanningEntriesUseActualNativeScreens() {
         launch(); screenshot("home")
         for (route in listOf("training", "journal", "progress", "health")) { tab(route); screenshot(route) }
