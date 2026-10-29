@@ -123,6 +123,13 @@ class NativePhoneNavigationTest {
         compose.waitUntil(15_000) {
             compose.onAllNodesWithTag("exercise_search").fetchSemanticsNodes().isNotEmpty()
         }
+        // The loaded exercise list, not the search field, proves async catalog
+        // initialization has finished before typing triggers another recomposition.
+        compose.waitUntil(20_000) {
+            compose.onAllNodesWithTag("quick_exercise_list").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("quick_exercise_list").assertIsDisplayed()
+        compose.waitForIdle()
     }
 
     private fun openTrainingPrograms() {
