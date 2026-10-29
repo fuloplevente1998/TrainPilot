@@ -137,3 +137,74 @@ html body #app main.tp152-plan .tp152-start-day{
   html body #app main.tp152-plan .tp152-day>summary{padding:8px 9px!important;}
   html body #app main.tp152-plan .tp277-day-preview{font-size:var(--tp-type-caption,12px);}
 }
+
+/* PR #277 phase 3 — Settings is still the original floating panel.
+   Section headings add structure without replacing/moving forms, backup,
+   cloud consent, or destructive confirmation handlers. */
+html body :is(#app,#tp155R4PanelHost) main.tp277-settings>.hero:first-child{
+  padding:10px 12px!important;
+  margin-bottom:7px!important;
+}
+html body :is(#app,#tp155R4PanelHost) main.tp277-settings .tp277-settings-heading{
+  font-size:14px;
+  line-height:1.35;
+  font-weight:750;
+  color:var(--text);
+  margin:12px 2px 5px;
+  padding-inline-start:8px;
+  border-inline-start:2px solid var(--accent);
+}
+html body :is(#app,#tp155R4PanelHost) main.tp277-settings :is(
+  .rf212-language,.tp162-theme-setting,.tp152-settings-backup,
+  .tp152-settings-profile,.tp105-data
+){
+  margin-block:5px!important;
+  padding:10px 11px!important;
+  border-radius:14px!important;
+}
+html body :is(#app,#tp155R4PanelHost) main.tp277-settings .tp1511-head{
+  gap:8px;
+  min-width:0;
+}
+html body :is(#app,#tp155R4PanelHost) main.tp277-settings .tp1511-head>div{
+  min-width:0;
+  overflow-wrap:anywhere;
+}
+html body :is(#app,#tp155R4PanelHost) main.tp277-settings :is(
+  .rf212-language select,.tp162-theme-setting .tp-select-trigger,
+  .tp152-settings-backup .btn,.tp152-settings-profile .btn,
+  .tp105-data button
+){
+  min-height:44px!important;
+}
+html body :is(#app,#tp155R4PanelHost) main.tp277-settings :is(
+  .tp152-settings-backup .grid2,.tp152-settings-profile
+){
+  gap:7px;
+}
+html body :is(#app,#tp155R4PanelHost) main.tp277-settings .tp277-wear-note{
+  padding:10px 11px;
+  margin:5px 0;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:var(--card);
+  min-width:0;
+}
+html body :is(#app,#tp155R4PanelHost) main.tp277-settings .tp277-wear-note strong{
+  font-size:14px;
+  font-weight:700;
+  color:var(--accent2);
+}
+html body :is(#app,#tp155R4PanelHost) main.tp277-settings .tp277-wear-note p{
+  margin:4px 0 0!important;
+  line-height:1.45;
+}
+@media(max-width:360px){
+  html body :is(#app,#tp155R4PanelHost) main.tp277-settings :is(
+    .rf212-language,.tp162-theme-setting,.tp152-settings-backup,
+    .tp152-settings-profile,.tp105-data
+  ){padding:9px!important;}
+  html body :is(#app,#tp155R4PanelHost) main.tp277-settings .tp277-settings-heading{
+    margin-top:10px;
+  }
+}
