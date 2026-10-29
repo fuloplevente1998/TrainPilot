@@ -46,7 +46,24 @@ async function outdoor(page){await page.evaluate(()=>{
  const target=await page.locator('.rf103-program-activate:not(:disabled)').first().boundingBox();assert.ok(target.height>=44,'Program activation keeps a 44px target');
  }
 await page.locator('.tp152-program-card').first().evaluate(x=>x.open=true);await snap('08-programs-open');
- await page.evaluate(()=>go('plan'));await snap('02-workout-start');await page.locator('.tp152-day').first().evaluate(x=>x.open=true);await snap('02-workout-start-open');
+ await page.evaluate(()=>go('plan'));await snap('02-workout-start');
+ if(version==='after'){
+  assert.equal(await page.locator('.tp150-quick-entry-help').count(),0,'Quick start no longer repeats the helper text (#280)');
+  const contract=await page.evaluate(()=>{
+   const available=programs().filter(p=>p.days?.length),dayHtml=available.flatMap(p=>p.days.map((d,i)=>tp152DayBlock(p,d,i)));
+   const example=available[0],own=example?tp152DayBlock({...example,id:'test-user-created',builtin:false},{...example.days[0],id:'Custom',name:'Saját nap'},0):'';
+   return {programs:available.length,days:dayHtml.length,all:dayHtml.every(x=>x.includes('tp277-day')),custom:own.includes('tp277-day')};
+  });
+  assert.ok(contract.programs>0&&contract.days>0&&contract.all&&contract.custom,'Every program and custom day uses the same compact template');
+  const metrics=await page.locator('.tp277-day').first().evaluate(el=>({
+   top:parseFloat(getComputedStyle(el.querySelector(':scope>summary')).paddingTop),
+   bottom:parseFloat(getComputedStyle(el.querySelector(':scope>summary')).paddingBottom),
+   gap:parseFloat(getComputedStyle(el.querySelector('.tp277-day-preview')).marginTop)
+  }));
+  assert.ok(metrics.top<=9&&metrics.bottom<=9&&metrics.gap<=5,'Day layout has compact, visible spacing');
+  report.checks.push({config,compactDay:metrics,contract});
+ }
+ await page.locator('.tp152-day').first().evaluate(x=>x.open=true);await snap('02-workout-start-open');
  if(version==='after'){assert.equal(await page.locator('.tp152-day').first().locator('.tp277-day-preview').isVisible(),false,'Open day hides the duplicate exercise preview');await page.locator('.tp152-day').first().evaluate(x=>x.open=false);assert.equal(await page.locator('.tp152-day').first().locator('.tp277-day-preview').isVisible(),true,'Closed day restores preview');}
  await page.evaluate(()=>go('settings'));await snap('01-settings');
  if(version==='after'){assert.equal(await page.locator('[data-settings-group]').count(),6);await page.locator('[data-settings-group="appearance"]').evaluate(x=>x.open=true);}await snap('01-settings-open');

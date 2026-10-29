@@ -10859,10 +10859,19 @@ var tp277Text=function(key){
  };return (words[rf212Lang()]||words.en)[key]||key;
 };
 var tp277ProgramIcon=function(p){
- const type=String(p.goal||p.profile?.goal||p.sourceProfile?.goal||'');
- const paths={strength:'<path d="M3 8v8m4-10v12m10-12v12m4-10v8M7 12h10"/>',muscle:'<path d="M8 4h8l2 5-2 11H8L6 9zM8 9h8"/>',fitness:'<path d="m4 18 5-8 4 4 7-9M4 5h5M7 3v4"/>',fatloss:'<path d="M13 3c2 5-3 5-1 9 2-1 3-2 3-4 6 5 4 13-3 13S3 13 8 8c0 4 2 4 2 4-1-4 1-6 3-9z"/>'};
- const home=/^home/.test(p.id)||p.location==='home'||p.location==='Otthon';
- const shape=paths[type]||(home?'<path d="m3 10 9-7 9 7v11H3zM9 21v-8h6v8"/>':'<rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h8M8 12h8M8 16h5"/>');
+ const type=String(p.goal||p.profile?.goal||p.sourceProfile?.goal||'').toLowerCase();
+ const description=[p.id,p.name,p.location,p.equipment,p.profile?.equipment].filter(Boolean).join(' ').toLowerCase();
+ const bodyweight=/testsúly|bodyweight|calisthenics|calisthen|saját testsúly/.test(description);
+ const paths={
+  bodyweight:'<circle cx="12" cy="4" r="2"/><path d="M12 7v8m-6-5 6-3 6 3M12 15l-5 6m5-6 5 6"/>',
+  strength:'<path d="M3 8v8m4-10v12m10-12v12m4-10v8M7 12h10"/>',
+  muscle:'<path d="M7 4h10l2 5-2 11H7L5 9zM7 10h10"/>',
+  fitness:'<path d="m4 18 5-8 4 4 7-9M4 5h5M7 3v4"/>',
+  fatloss:'<path d="M13 3c2 5-3 5-1 9 2-1 3-2 3-4 6 5 4 13-3 13S3 13 8 8c0 4 2 4 2 4-1-4 1-6 3-9z"/>',
+  cardio:'<path d="M3 12h4l3-7 4 14 3-7h4"/>'
+ };
+ const atHome=/^home/.test(String(p.id||''))||/otthon|home/.test(String(p.location||'').toLowerCase());
+ const shape=bodyweight?paths.bodyweight:paths[type]||(/fut|run|cardio|kerékpár|bike/.test(description)?paths.cardio:atHome?'<path d="m3 10 9-7 9 7v11H3zM9 21v-8h6v8"/>':'<rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h8M8 12h8M8 16h5"/>');
  return '<span class="tp277-program-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+shape+'</svg></span>';
 };
 var tp277DayOverview=function(p,d){
@@ -13404,10 +13413,10 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  }
 
  // Workout landing card: the start action is the single prominent label.
- // Keep the existing short help directly below it; do not duplicate the Quick Workout title.
+ // Remove the redundant helper line on the compact workout landing card (#280).
  if(typeof tp150CompactQuickCard==='function'){
   tp150CompactQuickCard=function(){
-   return '<div class="card tp150-quick-entry tp150-quick-entry-compact tp150-quick-entry-minimal"><button type="button" class="btn block" onclick="tp155R4TogglePanel(\'quick\',this)">'+esc(tp150qwT('start'))+'</button><p class="small muted tp150-quick-entry-help">'+esc(tp150qwT('cardHelp'))+'</p></div>';
+   return '<div class="card tp150-quick-entry tp150-quick-entry-compact tp150-quick-entry-minimal"><button type="button" class="btn block" onclick="tp155R4TogglePanel(\'quick\',this)">'+esc(tp150qwT('start'))+'</button></div>';
   };
  }
  const quickEntryMinimalCss=document.createElement('style');
