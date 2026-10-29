@@ -35,8 +35,11 @@ const server=http.createServer((req,res)=>{
   assert.equal(closedStyle.display,'inline-flex','Themed PR pill keeps its inline layout');
   assert.ok(closedStyle.height>=44,'PR remains a 44px touch target');
   assert.ok(closedStyle.cardHeight<160,'Closed short-title workout stays compact: '+JSON.stringify(closedStyle));
+  fs.mkdirSync('ui-evidence',{recursive:true});
+  await page.screenshot({path:'ui-evidence/pr278-journal-closed-360.png',fullPage:true});
   await card.locator(':scope > summary .history-title').click();
   assert.equal(await card.evaluate(x=>x.open),true,'Workout opens independently of its PR badge');
+  await page.screenshot({path:'ui-evidence/pr278-journal-open-360.png',fullPage:true});
   const detail=card.locator(':scope > .tp3-combined-history-body > .tp226-pr-details');
   assert.equal(await detail.count(),1,'Record data exists in the hydrated workout');
   assert.equal(await detail.evaluate(x=>x.open),false,'Record disclosure defaults to closed');
