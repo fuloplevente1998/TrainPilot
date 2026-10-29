@@ -43,6 +43,19 @@ public class StartupScreenIconTest {
         }
     }
 
+    @Test public void nativeReadyReleasesPlatformSplashWithoutOptionalLogoOverlay() {
+        // Regression: Compose called markNativeReady before the optional custom
+        // overlay was ever attached. The fallback timer had been cancelled, while
+        // the old condition kept the launcher logo permanently over the real app.
+        assertTrue(StartupScreen.keepSystemSplash(false, false, false, false, false));
+        assertFalse(StartupScreen.keepSystemSplash(false, true, false, false, false));
+        assertFalse(StartupScreen.keepSystemSplash(true, false, false, false, false));
+        assertFalse(StartupScreen.keepSystemSplash(false, false, true, false, false));
+        assertFalse(StartupScreen.keepSystemSplash(false, false, false, true, false));
+        assertFalse(StartupScreen.keepSystemSplash(false, false, false, false, true));
+        assertFalse(StartupScreen.keepSystemSplash(true, true, false, false, false));
+    }
+
     @Test public void missingOrUnmeasuredIconKeepsOurLogoCentredAfterLayout() {
         View overlay = new View(RuntimeEnvironment.getApplication());
         for (View icon : new View[]{null, new View(RuntimeEnvironment.getApplication())}) {
