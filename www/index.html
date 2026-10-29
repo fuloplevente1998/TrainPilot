@@ -2011,6 +2011,47 @@
   };
   window.programCards=programCards;
  }
+ // PR #277: A compact, read-only day summary on the existing Workout screen.
+ // Preserve the original details disclosure, video controls, editors and startWorkout().
+ const tp277WorkoutCopy={
+  hu:{exercise:'gyakorlat',sets:'munkasorozat',estimated:'kb.',more:'további'},
+  en:{exercise:'exercises',sets:'work sets',estimated:'approx.',more:'more'},
+  de:{exercise:'Übungen',sets:'Arbeitssätze',estimated:'ca.',more:'weitere'},
+  ro:{exercise:'exerciții',sets:'serii de lucru',estimated:'aprox.',more:'altele'},
+  sk:{exercise:'cvikov',sets:'pracovných sérií',estimated:'pribl.',more:'ďalšie'},
+  pl:{exercise:'ćwiczenia',sets:'serii roboczych',estimated:'ok.',more:'więcej'}
+ };
+ const tp277DayOverview=function(p,d){
+  const copy=tp277WorkoutCopy[rf212Lang()]||tp277WorkoutCopy.en;
+  const ids=Array.isArray(d?.exercises)?d.exercises:[];
+  const names=[],metrics=[];
+  let sets=0,minutes=4,complete=ids.length>0;
+  for(const id of ids){
+   const e=(typeof tp128ProgramExercise==='function'&&tp128ProgramExercise(p,id))||byId(id);
+   if(e)names.push(tp149ExerciseName(e));
+   const rx=e&&tp152Rx(p,id,e);
+   const n=Number(rx?.sets),rest=Number(rx?.rest);
+   if(!Number.isFinite(n)||n<1||n>30||!Number.isFinite(rest)||rest<0||rest>600){complete=false;continue}
+   sets+=n;minutes+=n*.65+(n-1)*rest/60+1;
+  }
+  metrics.push(ids.length+' '+copy.exercise);
+  if(complete){
+   metrics.push(sets+' '+copy.sets);
+   metrics.push(copy.estimated+' '+Math.round(minutes)+' min');
+  }
+  const namesHtml=names.slice(0,2).map(name=>'<span>'+esc(name)+'</span>').join('<span aria-hidden="true"> · </span>');
+  const remaining=ids.length-Math.min(names.length,2);
+  return '<div class="tp277-day-overview small muted">'+metrics.map(esc).join(' · ')+'</div>'+
+   (namesHtml?'<div class="tp277-day-preview small muted">'+namesHtml+(remaining>0?'<span> +'+remaining+' '+esc(copy.more)+'</span>':'')+'</div>':'');
+ };
+ if(typeof tp152DayBlock==='function'){
+  const tp277DayBlockBase=tp152DayBlock;
+  tp152DayBlock=function(p,d,di){
+   const markup=tp277DayBlockBase.apply(this,arguments);
+   const hint='<div class="small muted">'+esc(tp149T('program.tapDetails',{count:d.exercises?.length||0}))+'</div>';
+   return markup.includes(hint)?markup.replace(hint,tp277DayOverview(p,d)):markup;
+  };
+ }
  window.TrainPilotPhase7Performance={version:'phase7-performance-19-r4',historySnapshot:'operation-scoped',persistentCache:false,lazyPrograms:true,batchedProgressStats:true,deferredCoachProgress:true,scopedCalculations:true};
 })();
 
