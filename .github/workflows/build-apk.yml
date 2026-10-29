@@ -84,11 +84,16 @@ jobs:
         shell: bash
         run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
       - name: Restore Playwright Chromium cache
+        id: playwright-cache
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-chromium-${{ steps.playwright-version.outputs.version }}
-          fail-on-cache-miss: true
+      # The preparer may download Chromium successfully but lose the cache
+      # reservation to a concurrent run. A miss must not block all six shards.
+      - name: Install Chromium when cache is unavailable
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx --no-install playwright install chromium
       - name: Verify UI shard runner
         run: node --test scripts/ui-runner.test.cjs
       - name: Run full Chromium UI regression shard
