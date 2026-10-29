@@ -146,11 +146,14 @@ fun HomeScreen(
                 Text(strings.getString(R.string.home_state_retry))
             }
         }
-        Text(strings.getString(R.string.studio_home_greeting),
-            style = MaterialTheme.typography.headlineMedium, color = colors.text,
-            modifier = Modifier.testTag("home_studio_greeting"))
-        Text(strings.getString(if (hasActiveSession) R.string.studio_home_active_intro else R.string.studio_home_overview),
-            style = MaterialTheme.typography.bodyMedium, color = colors.muted)
+        // Accepted Studio 18:49 groups the greeting and its supporting line
+        // with a 2dp internal gap, not two top-level cards 12dp apart.
+        // Keep both strings localized and the current real workout state.
+        StudioHomeGreeting(
+            title = strings.getString(R.string.studio_home_greeting),
+            subtitle = strings.getString(if (hasActiveSession)
+                R.string.studio_home_active_intro else R.string.studio_home_overview)
+        )
         Surface(
             shape = RoundedCornerShape(18.dp),
             color = colors.card,
@@ -343,6 +346,22 @@ fun HomeScreen(
             !busy, onPersonalPlan)
         StudioHomeCoachCard(state, language, !busy, onCoach)
 
+    }
+}
+
+/** Source-faithful 18:49 Studio greeting, shared by home and geometry tests. */
+@Composable
+internal fun StudioHomeGreeting(title: String, subtitle: String) {
+    val colors = LocalTrainPilotColors.current
+    Column(
+        modifier = Modifier.fillMaxWidth().testTag("home_studio_greeting_group"),
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        Text(title,
+            style = MaterialTheme.typography.headlineMedium, color = colors.text,
+            modifier = Modifier.testTag("home_studio_greeting"))
+        Text(subtitle, style = MaterialTheme.typography.bodyMedium,
+            color = colors.muted, modifier = Modifier.testTag("home_studio_intro"))
     }
 }
 
