@@ -28,11 +28,12 @@ const server=http.createServer((req,res)=>{
   // PR278 visual regression: a closed PR is a themed pill, not a native gray button.
   const closedStyle=await badge.evaluate(e=>{
    const s=getComputedStyle(e),r=e.getBoundingClientRect(),card=e.closest('details').getBoundingClientRect();
-   return {radius:parseFloat(s.borderTopLeftRadius),background:s.backgroundColor,display:s.display,height:r.height,cardHeight:card.height};
+   return {radius:parseFloat(s.borderTopLeftRadius),background:s.backgroundColor,display:s.display,height:r.height,width:r.width,cardWidth:card.width,cardHeight:card.height};
   });
   assert.ok(closedStyle.radius>=20,'Closed PR must be visibly rounded: '+JSON.stringify(closedStyle));
   assert.notEqual(closedStyle.background,'rgb(239, 239, 239)','No browser-default gray PR button');
-  assert.equal(closedStyle.display,'inline-flex','Themed PR pill keeps its inline layout');
+  assert.ok(['inline-flex','flex'].includes(closedStyle.display),'PR badge uses flex alignment');
+  assert.ok(closedStyle.width<closedStyle.cardWidth*.8,'Closed PR pill must not stretch to full card width: '+JSON.stringify(closedStyle));
   assert.ok(closedStyle.height>=44,'PR remains a 44px touch target');
   assert.ok(closedStyle.cardHeight<160,'Closed short-title workout stays compact: '+JSON.stringify(closedStyle));
   fs.mkdirSync('ui-evidence',{recursive:true});
