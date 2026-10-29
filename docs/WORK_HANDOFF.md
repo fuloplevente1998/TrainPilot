@@ -2,6 +2,14 @@
 
 ## PR #271 – WebView mockup folytatás, 2026-10-29
 
+**Végső ellenőrzés:** a tesztelt alkalmazás-/tesztforrás `a81a32c14613f1698e3acede2a2587ed636748f1`. Quick `40820138769`, Performance `40820138806`, Phone `40820133396` SUCCESS. Mind a 6 Chromium-shard és az aláírt APK release-gate sikeres; a letöltött natív XML 251 teszt / 0 failure / 0 error / 0 skipped. APK source/package és signer continuity SUCCESS, release-publikálás SKIPPED. A jelen dokumentációs checkpoint nem új alkalmazáskód, kapuismétlés nem szükséges.
+
+P1g első Phone-futásán (`4aeb53e3`, `40819698307`) az új 360px próba a 873px magas viewporthoz tévesen 740px határt használt. A teszt-only `a81a32c1` javítás tényleges `innerHeight`-et ellenőriz; minden elhelyezési assertion megmaradt. A CSS byteazonos a `4aeb53e3` verzióval.
+
+Valóban megnyitott új CI-képek: shard-1 artifact `12874740849`, `pr271-new-header-home-393.png` és `pr271-workout-top-393.png`. A különálló grafitkártyák és teljes szélességű alsó navigáció igazoltan megjelent. Ez nem 1:1 képi elfogadás: az aktív program belső szerkesztője és a Home onboarding sűrűbb a referenciánál. **Következő legkisebb lépés:** az aktív program egymásba ágyazott vizuális kereteinek célzott egyszerűsítése az eredeti szerkesztési/indítási callbackekkel, majd azonos-forrású screenshot és regresszió. Fizikai telefonos elfogadás és alapértelmezett UI-váltás nincs.
+
+Az alábbi audit az induláskor ellenőrzött állapotot és a csomag terjedelmét rögzíti:
+
 - Élő GitHub-audit: PR #271 OPEN/DRAFT, `feat/webview-mockup-redesign`, HEAD `f3215d58dcc3cf55676fe779cfbe57e3bbe37e1c`; a PR és a branch ref egyezett. A korábbi beszélgetésben említett későbbi commitokat a most lekért ref nem igazolta, ezért nem ezekből indulunk.
 - Ugyanezen HEAD-en Quick `40767575070` és Performance `40767574914` SUCCESS. Phone `40767565488`: Chromium 6/6 SUCCESS és `release-gate` job `123098145306` SUCCESS, benne regresszió, aláírt APK-build, source/package és signer continuity ellenőrzés. `Publish GitHub Release` SKIPPED. A külön push Quick megszakítása nem írja felül a sikeres PR Quick-futást.
 - Ez nem a külön PR #270 Compose-gate elfogadása, és nem fizikai készülékes vagy teljes képi elfogadás. Nincs igazolt új Wear/platform/upgrade teszt erre a WebView-dizájnra; a natív forrás változatlan.
