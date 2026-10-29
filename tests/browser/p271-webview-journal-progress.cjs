@@ -137,12 +137,12 @@ const server=http.createServer((req,res)=>{
      assert.ok(previewMetrics.clearance>=80,width+'/'+theme+': Journal leaves bottom-dock scroll clearance');
      assert.equal(previewMetrics.overflows,false,width+'/'+theme+': no horizontal Journal overflow');
 
-     await page.locator('#tp271Dock button[data-tp271-target="progress"]').click();
+     await page.locator('.tp177-journal-tabs button[onclick="tp177OpenProgress()"]:visible').click();
      await page.waitForSelector('main.tp177-progress .tp177-volume-panel');
      assert.equal(await page.evaluate(()=>state.tp177JournalView),'progress',width+'/'+theme+': canonical Journal Progress state');
      const progress=page.locator('main.tp177-progress');
      if(width===393&&theme==='yellow'){
-       await page.waitForFunction(()=>document.querySelector('#tp271Dock button[data-tp271-target="progress"]')?.getAttribute('aria-current')==='page');
+       await page.waitForFunction(()=>document.querySelector('#tp271Dock button[data-tp271-target="log"]')?.getAttribute('aria-current')==='page');
        await page.evaluate(()=>{document.scrollingElement.scrollTop=0;document.activeElement?.blur?.()});
        await page.screenshot({path:'ui-evidence/pr271-progress-393.png'});
      }

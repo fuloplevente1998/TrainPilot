@@ -1,5 +1,13 @@
 # TrainPilot – aktuális átadás
 
+## PR #271 – aktív edzés üres fejlécsáv, 2026-10-29
+
+A felhasználó a 2914331e APK próbáján képen jelezte: aktív gyors/futó edzés fölött nagy üres sáv. Ok: a mockup fejléc általános flex/min-height szabálya aktív sessionnél is helyet foglalt, miközben a previewHeader ilyenkor szándékosan nem épít gombokat. Csak tp271-has-workout alatt a teljes .top.tp154-nav-grid konténer display:none. Edzés után az eredeti mockup fejléc visszatér. Motor, adatkezelés, natív kód és verzió változatlan.
+
+Új felhasználói navigációs döntés: az alsó Fejlődés helyére Naptár. Öt főfül: Kezdőlap / Edzés / Napló / Naptár / Egészség. A Fejlődés továbbra is a Napló eredeti tabjáról érhető el, az alsó Napló kijelölésével. A Naptár az eredeti go('calendar') Round-4 panelt nyitja; a meglévő modális viselkedést megtartjuk. HU/EN/DE/RO feliratok, új naptár SVG. A journal-progress próba a tényleges Napló → Fejlődés gombot kattintja.
+
+A meglévő bottom-dock Chromium-próba 320/360/393/412px-en ellenőrzi a fejléc nulla magasságát, a tartalom felső helyét és a fejléc visszatérését. Új screenshot: pr271-active-workout-no-header-gap-393.png. Pontos forrású CI és képi ellenőrzés még hátravan. A felhasználó közben a többi oldalt is átnézi; teljes dizájnelfogadás nincs.
+
 ## PR #271 – natív dizájnpróba előkészítése, 2026-10-29
 
 Felhasználói kérés: az új dizájnnal kipróbálni a PR271 alkalmazást. A Capacitor `server.appStartPath` ezen a fejlesztési ágon `/?tp271=1`: a natív teszt-APK az eddig query-kapcsolós mockup felülettel indul. A böngészős alapút továbbra is opt-in; nincs új router, storage-kulcs vagy natív motorváltozás. A Capacitor 7.4.3 Bridge/CapConfig forrása igazolja a támogatott indulási útvonalat. Verzió 1.3.71/2735 és appid com.repforge.app változatlan. Ez a meglévő appot frissítő csomag, nem külön települő sandbox.

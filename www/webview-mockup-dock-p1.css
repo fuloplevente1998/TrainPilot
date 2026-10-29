@@ -1366,6 +1366,11 @@ html.tp271-mockup-dock.tp-nav-compact body .top.tp154-nav-grid {
   border-bottom: 1px solid color-mix(in srgb, var(--accent) 18%, var(--line)) !important;
   background: var(--tp-ui-bg, var(--bg)) !important;
 }
+/* Active workouts deliberately omit navigation. Collapse its container too:
+   the general preview header min-height must not leave a blank 60px strip. */
+html.tp271-mockup-dock.tp271-has-workout body .top.tp154-nav-grid {
+  display: none !important;
+}
 html.tp271-mockup-dock body .top.tp154-nav-grid > :not(#tp271Header) {
   display: none !important;
 }

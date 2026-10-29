@@ -2512,19 +2512,19 @@
   if (!enabled) return;
 
   const labels = {
-    hu: {home:'Kezdőlap',workout:'Edzés',log:'Napló',progress:'Fejlődés',health:'Egészség',nav:'Fő navigáció'},
-    en: {home:'Home',workout:'Workout',log:'Journal',progress:'Progress',health:'Health',nav:'Main navigation'},
-    de: {home:'Start',workout:'Training',log:'Tagebuch',progress:'Fortschritt',health:'Gesundheit',nav:'Hauptnavigation'},
-    ro: {home:'Acasă',workout:'Antrenament',log:'Jurnal',progress:'Progres',health:'Sănătate',nav:'Navigare principală'}
+    hu: {home:'Kezdőlap',workout:'Edzés',log:'Napló',calendar:'Naptár',health:'Egészség',nav:'Fő navigáció'},
+    en: {home:'Home',workout:'Workout',log:'Journal',calendar:'Calendar',health:'Health',nav:'Main navigation'},
+    de: {home:'Start',workout:'Training',log:'Tagebuch',calendar:'Kalender',health:'Gesundheit',nav:'Hauptnavigation'},
+    ro: {home:'Acasă',workout:'Antrenament',log:'Jurnal',calendar:'Calendar',health:'Sănătate',nav:'Navigare principală'}
   };
   const icons = {
     home:'<path d="m3 10 9-7 9 7v10H3Z"/><path d="M9 20v-7h6v7"/>',
     workout:'<path d="M6 8v8M3 10v4M18 8v8M21 10v4M6 12h12"/>',
     log:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
-    progress:'<path d="m3 17 6-6 4 3 8-9"/><path d="M16 5h5v5"/>',
+    calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/>',
     health:'<path d="M20.8 4.8a5.5 5.5 0 0 0-7.8 0L12 5.9l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.4a5.5 5.5 0 0 0 0-7.8Z"/>'
   };
-  const keys=['home','workout','log','progress','health'];
+  const keys=['home','workout','log','calendar','health'];
   const getLang=()=>{
     try {
       const s=typeof window.rf212Lang==='function'?window.rf212Lang():document.documentElement.lang;
@@ -2537,7 +2537,8 @@
     if (typeof state==='undefined' || !state) return 'home';
     const tab=state.tab;
     if (tab==='health'||tab==='weight') return 'health';
-    if (tab==='history') return state.tp177JournalView==='progress'?'progress':'log';
+    if (tab==='history') return 'log';
+    if (tab==='calendar') return 'calendar';
     if (tab==='plan'||tab==='workout'||tab==='programs') return 'workout';
     if (tab==='stats') return 'log';
     return 'home';
@@ -2734,10 +2735,7 @@
   }
   function navigate(key){
     if (activeWorkout()) return; // dock is hidden; never override a live session
-    if(key==='progress'){
-      if(typeof window.tp177OpenProgress==='function')window.tp177OpenProgress();
-      else if(typeof window.go==='function')window.go('progress');
-    } else if(typeof window.go==='function'){
+    if(typeof window.go==='function'){
       window.go({workout:'plan',log:'history'}[key]||key);
     }
     scheduleSync();

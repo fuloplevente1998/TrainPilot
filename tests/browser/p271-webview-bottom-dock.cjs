@@ -128,11 +128,10 @@ const server=http.createServer((req,res)=>{
       assert.ok(['auto','scroll'].includes(homeLayout.overflow),width+': preview Home can scroll');
       assert.ok(homeLayout.viewportBottom<=homeLayout.dockTop+5,width+': Home viewport ends before dock');
 
-      for(const [key,target] of [['workout','plan'],['log','history'],['progress','history'],['health','health'],['home','home']]){
+      for(const [key,target] of [['workout','plan'],['log','history'],['health','health'],['home','home']]){
         await page.locator('#tp271Dock button[data-tp271-target="'+key+'"]').click();
         await page.waitForFunction(key=>document.querySelector('#tp271Dock .tp271-dock-button.tp271-selected')?.dataset.tp271Target===key,key);
         assert.equal(await page.evaluate(()=>state.tab),target,width+'/'+key+': canonical source route');
-        if(key==='progress')assert.equal(await page.evaluate(()=>state.tp177JournalView),'progress',width+': real Journal Progress');
         assert.equal(await page.locator('#tp271Dock [aria-current="page"]').count(),1,width+'/'+key+': exactly one active');
         const fade=await page.evaluate(()=>{
           const main=document.querySelector('#app main'),style=getComputedStyle(main);
@@ -145,6 +144,16 @@ const server=http.createServer((req,res)=>{
         assert.equal(fade.dock,'none',width+'/'+key+': persistent navigation stays stable');
 
       }
+
+      await page.locator('#tp271Dock button[data-tp271-target="calendar"]').click();
+      await page.waitForSelector('#tp155R4PanelHost[data-panel="calendar"]');
+      assert.equal(await page.locator('#tp271Dock:visible').count(),0,width+': real Calendar owns its modal surface');
+      await page.evaluate(()=>tp155R4ClosePanel(false));
+      await page.locator('#tp271Dock button[data-tp271-target="log"]').click();
+      await page.locator('.tp177-journal-tabs button[onclick="tp177OpenProgress()"]:visible').click();
+      await page.waitForSelector('main.tp177-progress');
+      await page.waitForFunction(()=>document.querySelector('#tp271Dock button[data-tp271-target="log"]')?.getAttribute('aria-current')==='page');
+      assert.equal(await page.evaluate(()=>state.tp177JournalView),'progress',width+': Progress remains reachable inside Journal');
 
       // All original secondary functions remain reachable through the
       // mockup Workout quick links rather than resurrecting a top 2x4 grid.
@@ -173,9 +182,22 @@ const server=http.createServer((req,res)=>{
       await page.waitForFunction(()=>document.documentElement.classList.contains('tp271-has-workout'));
       assert.equal(await page.locator('#tp271Dock:visible').count(),0,width+': dock hidden during live workout');
       assert.ok(await page.evaluate(()=>!!state.session),width+': real workout session survives');
+      const workoutLayout=await page.evaluate(()=>({
+        headerHeight:document.querySelector('.top.tp154-nav-grid').getBoundingClientRect().height,
+        mainTop:document.querySelector('main.tp153-workout').getBoundingClientRect().top
+      }));
+      assert.equal(workoutLayout.headerHeight,0,width+': active workout leaves no empty header space');
+      assert.ok(workoutLayout.mainTop<=24,width+': workout begins near viewport top');
+      if(width===393){
+        fs.mkdirSync('ui-evidence',{recursive:true});
+        await page.screenshot({path:'ui-evidence/pr271-active-workout-no-header-gap-393.png',animations:'disabled'});
+      }
+
       await page.evaluate(()=>{state.session=null;state.workout=null;db.set('draft',null);go('home')});
       await page.waitForFunction(()=>!document.documentElement.classList.contains('tp271-has-workout'));
       assert.equal(await page.locator('#tp271Dock:visible').count(),1,width+': dock returns after workout');
+      await page.locator('#tp271Header .tp271-header-brand').waitFor({state:'visible'});
+      assert.ok(await page.locator('.top.tp154-nav-grid').evaluate(el=>el.getBoundingClientRect().height)>=60,width+': normal header restores after workout');
 
       // P1d draft regression: a resumed-workout choice and its safe discard
       // action must not become clipped behind the fixed five-tab bar.
@@ -206,16 +228,16 @@ const server=http.createServer((req,res)=>{
 
       // The menu is localized from the app language; four language options
       // must never trigger a second route manager or remove a destination.
-      for(const [lang,label] of [['hu','Fejlődés'],['en','Progress'],['de','Fortschritt'],['ro','Progres']]){
+      for(const [lang,label] of [['hu','Naptár'],['en','Calendar'],['de','Kalender'],['ro','Calendar']]){
         await page.evaluate(x=>{db.set('language',x);go('home')},lang);
         await page.waitForFunction(expected=>
-          document.querySelector('#tp271Dock button[data-tp271-target="progress"] .tp271-dock-label')?.textContent===expected,
+          document.querySelector('#tp271Dock button[data-tp271-target="calendar"] .tp271-dock-label')?.textContent===expected,
           label
         );
         assert.equal(await page.locator('#tp271Dock button:visible').count(),5,width+'/'+lang+': all destinations remain localized');
       }
       await page.evaluate(()=>{db.set('language','en');go('home')});
-      await page.waitForFunction(()=>document.querySelector('#tp271Dock .tp271-dock-button[data-tp271-target="progress"] .tp271-dock-label')?.textContent==='Progress');
+      await page.waitForFunction(()=>document.querySelector('#tp271Dock .tp271-dock-button[data-tp271-target="calendar"] .tp271-dock-label')?.textContent==='Calendar');
       assert.equal(await page.locator('#tp271Dock .tp271-dock-button:visible').count(),5,width+': translated five buttons');
       if(width===393){
         fs.mkdirSync('ui-evidence',{recursive:true});
