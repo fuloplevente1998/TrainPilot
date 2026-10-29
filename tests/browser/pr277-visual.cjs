@@ -71,10 +71,15 @@ await page.locator('.tp152-program-card').first().evaluate(x=>x.open=true);await
    const logs=history(),row=logs[0],id='tp279-test-schedule';
    db.set('history',[{...row,scheduleId:id},...logs.slice(1)]);
    db.set('scheduled',[{id,programId:row.programId,dayId:row.dayId,workout:row.workout,start:row.started,end:row.finished,status:'completed',completedAt:row.finished,cancelled:false}]);
+   state.calendarMonth=row.started.slice(0,7);
    go('calendar');
+   const date=localDateKey(new Date(row.started));
+   window.__tp279DayOpened=window.TrainPilotCalendarDay?.open(date,document.querySelector('#tp155R4PanelHost .cal-cell'));
   });
-  assert.equal(await page.locator('.tp279-completed-schedule .tp279-undo-schedule').count(),1,'Completed calendar item exposes Undo');
-  await page.locator('.tp279-completed-schedule .tp279-undo-schedule').click();
+  assert.equal(await page.evaluate(()=>window.__tp279DayOpened),true,'Real calendar day dialog opens');
+  assert.equal(await page.locator('#tp108CalendarDay .tp151-calendar-item .tp279-undo-schedule').count(),1,'Completed day exposes Undo in the actual calendar component');
+  assert.equal(await page.locator('#tp108CalendarDay .tp151-calendar-item .tp279-undo-schedule').innerText(),'Visszavonás');
+  await page.locator('#tp108CalendarDay .tp151-calendar-item .tp279-undo-schedule').click();
   const undone=await page.evaluate(()=>{
    const current=scheduled()[0],match=history().find(h=>h.id==='277-log-0');
    return {status:current.status,completedAt:current.completedAt,historyRetained:!!match,historyUnlinked:!match.scheduleId,stillDone:rf209ScheduleDone(current)};
