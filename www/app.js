@@ -11334,9 +11334,9 @@ renderWorkout=function(){
   const load=e.loadType==='bodyweight'?'<span class="small muted tp153-bodyweight">'+esc(tp149T('workout.bodyweight'))+'</span>':'<label class="small"><span class="tp277-field-label">'+esc(tp149LoadLabel(e.loadType))+'</span><input class="field" aria-label="'+esc(tp149LoadLabel(e.loadType))+'" inputmode="decimal" value="'+esc(s.weight==null?'':s.weight)+'" oninput="upd('+i+','+si+',\'weight\',this.value)"></label>';
   const unit=tp149RepUnit(e.repUnit);
   const prior=previousSets[si],previous=prior?.done?((Number(prior.weight)>0?tp149FormatNumber(prior.weight)+'×':'')+String(prior.reps||'—')):'—';
-  const eligible=typeof tp197RirEligible==='function'&&tp197RirEligible(state.session,se)&&s.done===true;
+  const eligible=typeof tp197RirEligible==='function'&&tp197RirEligible(state.session,se,true);
   const lastDone=sets.map((set,index)=>set.done?index:-1).filter(index=>index>=0).at(-1);
-  const rir=eligible?'<label class="small tp277-set-rir tp229-rir"><span class="tp277-field-label">RIR</span><input id="'+(si===lastDone?'tp197ActualRir':'tp229ActualRir-'+si)+'" class="field" data-set-id="'+esc(s.setId||'')+'" type="number" inputmode="numeric" min="0" max="10" step="1" value="'+(tp229RirValid(s.actualRir)?Number(s.actualRir):'')+'" placeholder="—" aria-describedby="tp197RirNote tp229RirSummary" oninput="tp197RirInput(this)"></label>':'<span class="tp277-set-rir small muted" aria-label="RIR">—</span>';
+  const rir=eligible?'<label class="small tp277-set-rir tp229-rir"><span class="tp277-field-label">RIR</span><input id="'+(si===lastDone?'tp197ActualRir':'tp229ActualRir-'+si)+'" class="field" data-set-id="'+esc(s.setId||'')+'" data-inline-rir="true" aria-label="'+esc(tp197RirWords().title)+'" title="'+esc(tp197RirWords().note)+'" type="number" inputmode="numeric" min="0" max="10" step="1" value="'+(tp229RirValid(s.actualRir)?Number(s.actualRir):'')+'" placeholder="—" aria-describedby="tp197RirNote tp229RirSummary" oninput="tp197RirInput(this)"></label>':'<span class="tp277-set-rir small muted" aria-label="RIR">—</span>';
   return '<div class="row tp153-set-row tp277-set-row"><div class="num">'+(si+1)+'</div><span class="tp277-set-previous"><small>'+esc(tp277Text('previous'))+'</small>'+esc(previous)+'</span>'+load+'<label class="small"><span class="tp277-field-label">'+esc(unit)+'</span><input class="field" inputmode="numeric" aria-label="'+esc(unit)+'" placeholder="'+esc(target)+'" value="'+esc(s.reps==null?'':s.reps)+'" oninput="upd('+i+','+si+',\'reps\',this.value)"></label>'+rir+'<button class="check '+(s.done?'done':'')+'" onclick="toggleSet('+i+','+si+')">'+(s.done?'✓':'OK')+'</button></div>';
  }).join('');
  const sharedSets=!tp106IsDistance(se)&&!['mp','sec','second','s'].includes(String(e.repUnit||'').toLowerCase())&&!tp1481IsPerSideTimed(se);
@@ -19442,7 +19442,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(!panel){panel=document.createElement('section');panel.className='card tp193-ownership';panel.dataset.tp193Panel='';main.prepend(panel);}
   const stateText=pending(s)?text('pending'):requested?text('saved'):s.timerOwner==='watch'?text('mirror'):s.workoutPaused?text('paused'):text('hint');
   const action=pending(s)?'retry':s.timerOwner==='watch'?'take':s.workoutPaused?'resume':null;
-  panel.innerHTML='<strong>'+esc(text(s.timerOwner==='watch'?'watch':'phone'))+'</strong><div class="small muted" role="status" aria-live="polite">'+esc(error||stateText)+'</div>'+
+  const compact=!action&&!error&&!requested,hintOpen=panel.querySelector('details')?.open===true;
+  panel.classList.toggle('tp277-owner-compact',compact);
+  panel.innerHTML=(compact?'<details '+(hintOpen?'open':'')+'><summary>'+esc(text('phone'))+'</summary><p class="small muted">'+esc(stateText)+'</p></details>':'<strong>'+esc(text(s.timerOwner==='watch'?'watch':'phone'))+'</strong><div class="small muted" role="status" aria-live="polite">'+esc(error||stateText)+'</div>')+
    (action?'<button type="button" class="btn secondary" data-tp193-action="'+action+'" '+(acting?'disabled':'')+' onclick="TrainPilotOwnership193.'+(action==='take'?'takeBack':action==='resume'?'continueOnPhone':'retryTransfer')+'()">'+esc(acting?text('busy'):text(action))+'</button>':'');
   if(!main.dataset.tp193Guard){
    main.dataset.tp193Guard='1';
@@ -20280,14 +20282,14 @@ var tp229RirObservation=function(exercise){
  const legacy=exercise?.actualRir??exercise?.feedback?.rir;
  return tp229RirValid(legacy)?Number(legacy):null;
 };
-var tp197RirEligible=function(session,exercise){
- if(!session||!exercise||!Array.isArray(exercise.sets)||!exercise.sets.some(x=>x.done===true))return false;
+var tp197RirEligible=function(session,exercise,manual=false){
+ if(!session||!exercise||!Array.isArray(exercise.sets)||!manual&&!exercise.sets.some(x=>x.done===true))return false;
  if(session.timerOwner==='watch'||session.ownershipAwaitingResume193||
   session.ownershipProtocol193===1&&session.timerOwner!=='phone'||
   window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending||
   window.TrainPilotWearSync?.isApplyingCommand?.())return false;
  const modes=typeof tp197TrainingModes==='function'?tp197TrainingModes(session.programId):null;
- if(!modes?.explicitChoice||modes.progressionMode!=='rir')return false;
+ if(!manual&&(!modes?.explicitChoice||modes.progressionMode!=='rir'))return false;
  const lib=typeof byId==='function'?byId(exercise.id)||{}:{};
  if(typeof tp106IsDistance==='function'&&tp106IsDistance(exercise))return false;
  if(['mp','sec','second','s'].includes(String(exercise.repUnit||lib.repUnit||'').toLowerCase()))return false;
@@ -20295,11 +20297,11 @@ var tp197RirEligible=function(session,exercise){
  return true;
 };
 
-var tp197RirSave=function(value,repaint=true,setId=null){
+var tp197RirSave=function(value,repaint=true,setId=null,manual=false){
  const session=state.session,exercise=session?.exercises?.[state.current];
- if(!tp197RirEligible(session,exercise)||session.workoutPaused)return false;
+ if(!tp197RirEligible(session,exercise,manual)||session.workoutPaused)return false;
  const set=setId?exercise.sets.find(s=>s.setId===setId):exercise.sets.filter(s=>s.done===true).at(-1);
- if(!set||set.done!==true)return false;
+ if(!set||set.done!==true&&!(manual&&setId))return false;
  const raw=String(value);if(raw!==''&&!tp229RirValid(raw))return false;
  const before=set.actualRir,marker=exercise.setRir229;
  try{
@@ -20322,7 +20324,7 @@ var tp197RirHistory=function(exercise){
 };
 var tp197RirInput=function(input){
  const value=String(input.value),valid=value===''||tp229RirValid(value);
- const saved=tp197RirSave(valid?value:'',false,input.dataset?.setId||null);
+ const saved=tp197RirSave(valid?value:'',false,input.dataset?.setId||null,input.dataset?.inlineRir==='true');
  input.setAttribute?.('aria-invalid',valid&&saved?'false':'true');return valid&&saved;
 };
 var tp197RirField=function(session,exercise,inputs=true){

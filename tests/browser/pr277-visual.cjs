@@ -47,6 +47,7 @@ async function outdoor(page){await page.evaluate(()=>{
  }
 await page.locator('.tp152-program-card').first().evaluate(x=>x.open=true);await snap('08-programs-open');
  await page.evaluate(()=>go('plan'));await snap('02-workout-start');await page.locator('.tp152-day').first().evaluate(x=>x.open=true);await snap('02-workout-start-open');
+ if(version==='after'){assert.equal(await page.locator('.tp152-day').first().locator('.tp277-day-preview').isVisible(),false,'Open day hides the duplicate exercise preview');await page.locator('.tp152-day').first().locator(':scope > summary').click();assert.equal(await page.locator('.tp152-day').first().locator('.tp277-day-preview').isVisible(),true,'Closed day restores preview');}
  await page.evaluate(()=>go('settings'));await snap('01-settings');
  if(version==='after'){assert.equal(await page.locator('[data-settings-group]').count(),6);await page.locator('[data-settings-group="appearance"]').evaluate(x=>x.open=true);}await snap('01-settings-open');
  await page.evaluate(()=>{tp155R4ClosePanel(false);go('history');});await snap('07-journal');
@@ -69,7 +70,16 @@ await page.locator('.tp152-program-card').first().evaluate(x=>x.open=true);await
  const sticky=await page.locator('.tp177-journal-tabs').evaluate(x=>({position:getComputedStyle(x).position,y:x.getBoundingClientRect().y}));assert.equal(sticky.position,'sticky');report.checks.push({config,sticky});
  }
  await page.evaluate(()=>{window.scrollTo(0,0);go('health');});await snap('03-health');
- await page.evaluate(()=>{state.session=null;db.set('draft',null);startWorkout('A',null,'home-basic');});await snap('04-active');
+ await page.evaluate(()=>{state.session=null;db.set('draft',null);startWorkout('A',null,'home-basic');});if(version==='after'){
+  await page.evaluate(()=>{state.session.ownershipProtocol193=1;state.session.timerOwner='phone';TrainPilotWearSync.ensureSetIdentities();renderWorkout();});
+  const input=page.locator('.tp277-set-row [data-inline-rir]').first();await input.fill('0');
+  assert.equal(await input.getAttribute('aria-invalid'),'false');
+  assert.equal(await page.evaluate(()=>db.get('draft').session.exercises[0].sets[0].actualRir),0,'RIR is persisted before OK');
+  assert.equal(await page.evaluate(()=>state.session.exercises[0].sets[0].done),false,'RIR does not complete a set');
+  await page.locator('.tp277-owner-compact summary').click();assert.equal(await page.locator('.tp277-owner-compact details').getAttribute('open'),'');await page.locator('.tp277-owner-compact summary').click();
+  const dimensions=await page.evaluate(()=>({row:document.querySelector('.tp277-set-row').getBoundingClientRect().height,owner:document.querySelector('.tp277-owner-compact').getBoundingClientRect().height}));
+  report.checks.push({config,compactWorkout:dimensions});assert.ok(dimensions.owner<60,'Normal owner state is a compact disclosure');
+ }await snap('04-active');
  await outdoor(page);await snap('06-fullscreen-map');await page.locator('.tp163-close').click();await snap('05-outdoor');
  assert.deepEqual(await page.evaluate(()=>({active:window.__277gps.active,starts:window.__277gps.starts,stops:window.__277gps.stops})),{active:true,starts:1,stops:0},'Closing map preserves recording');
  report.errors.push(...errors.map(message=>({version,config,message})));await page.close();

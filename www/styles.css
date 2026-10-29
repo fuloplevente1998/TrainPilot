@@ -480,6 +480,7 @@ html body #app .tp277-program-card.active-program{border-color:var(--accent);bac
 .tp277-duration{display:block;font-size:11px;color:var(--muted)}
 .tp277-day-preview{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
 .tp277-day-preview>span{padding:5px 7px;border:1px solid var(--line);background:var(--card2);border-radius:7px;font-size:11px;line-height:1.4}
+.tp277-day[open]>summary .tp277-day-preview{display:none}
 .tp277-day-preview b{color:var(--muted);font-weight:500}
 html body #app .tp277-day .tp146-day-copy{width:100%}
 .tp277-wear-note{border-top:1px solid var(--line);padding-top:10px;line-height:1.4}
@@ -501,15 +502,15 @@ html body #app .tp277-day .tp146-day-copy{width:100%}
 .tp277-journal-filters button{font:inherit;font-size:12px;font-weight:700;min-height:44px;border:1px solid var(--line);border-radius:22px;background:var(--card);color:var(--muted);padding:7px 12px}
 .tp277-journal-filters button.active{color:var(--text);border-color:var(--accent);background:color-mix(in srgb,var(--accent) 18%,var(--card))}
 html body #app details.tp277-history{border:1px solid var(--line);border-radius:15px;padding:0;margin:8px 0;background:var(--card)}
-html body #app details.tp277-history>summary{padding:12px;position:relative;min-height:88px}
-html body #app .tp277-history .history-head{padding-right:50px}
+html body #app details.tp277-history>summary{padding:8px 10px;position:relative;min-height:76px;box-sizing:border-box}
+html body #app .tp277-history .history-head{padding:0 44px 0 0!important}
 html body #app .tp277-history .history-title-row{display:block}
 html body #app .tp277-history .history-title{font-size:15px;line-height:1.4;overflow-wrap:anywhere}
-html body #app .tp277-history .history-date{font-size:11px;margin-top:4px}
-html body #app .tp277-history .rf103-history-side{position:absolute;inset:6px 7px 6px auto;display:grid;grid-template-rows:44px 1fr;justify-items:center;align-items:center;width:44px;gap:0}
+html body #app .tp277-history .history-date{font-size:11px;margin-top:2px}
+html body #app .tp277-history .rf103-history-side{position:absolute;inset:2px 3px 2px auto;display:grid;grid-template-rows:44px minmax(20px,1fr);justify-items:center;align-items:center;width:44px;gap:0}
 html body #app .tp277-history .rf103-history-chevron{grid-row:2;align-self:center;margin:0}
 .tp277-history-count{color:var(--muted);font-size:11px;margin:6px 0}
-html body #app details.tp277-history .history-badges{display:flex!important;flex-wrap:wrap;gap:5px!important;margin:7px 0 0!important}
+html body #app details.tp277-history .history-badges{display:flex!important;flex-wrap:wrap;gap:5px!important;margin:4px 0 0!important}
 html body #app details.tp277-history .history-badges>.history-badge{width:auto;min-height:24px;padding:3px 6px!important;border:0;border-radius:5px!important;font-size:11px!important;background:var(--card2);font-weight:500}
 html body #app .tp277-history .tp3-combined-history-body{padding:0 10px 10px}
 
@@ -517,7 +518,7 @@ html body #app .tp277-history .tp3-combined-history-body{padding:0 10px 10px}
 html body #app .tp277-workout .tp153-workout-head{padding:10px 12px!important}
 html body #app .tp277-workout .tp153-workout-head h1{font-size:20px;line-height:1.3;margin:5px 0}
 html body #app .tp277-workout .tp153-sets-title{font-size:14px!important;margin:9px 0!important}
-html body #app .tp277-set-row{display:grid;grid-template-columns:24px minmax(0,.8fr) minmax(0,1fr) minmax(0,.8fr) minmax(0,.65fr) 40px!important;gap:5px;padding-block:7px!important;align-items:center}
+html body #app .tp277-set-row{display:grid;grid-template-columns:24px minmax(0,.8fr) minmax(0,1fr) minmax(0,.8fr) minmax(0,.65fr) 40px!important;gap:5px;padding-block:3px!important;align-items:center}
 html body #app .tp277-set-row .num{width:24px;min-width:24px;height:30px;font-size:12px}
 html body #app .tp277-set-row label{font-size:10px;min-width:0}
 html body #app .tp277-set-row input{box-sizing:border-box;width:100%;min-width:0;min-height:44px;padding:7px 3px;font-size:14px;text-align:center}
@@ -534,7 +535,18 @@ html body #app .tp277-set-row .check{min-width:40px;width:40px;min-height:44px;p
  .tp277-set-previous small{display:inline;margin-right:5px}
 }
 /* Health: existing sync / actual permission path becomes the first card. */
-html body #app main.tp168-health>.tp168-sync-tail{order:-1;margin-top:0}
+html body #app main.tp168-health>.tp168-sync-tail{order:-1;margin:0;padding:7px 9px!important;display:grid;gap:3px}
+html body #app main.tp168-health>.tp168-sync-tail .btn{min-height:44px;padding:6px 8px;font-size:12px}
+html body #app main.tp168-health>.tp168-sync-tail :is(p,span.small){margin:0;font-size:10px;line-height:1.3}
+html body #app .tp277-day .tp152-exercise>summary{padding:6px 8px!important;gap:7px;min-height:56px}
+html body #app .tp277-day .tp152-exercise .num{width:28px!important;min-width:28px!important;height:32px!important;min-height:32px!important;font-size:12px}
+html body #app .tp277-day .tp152-exercise .ex-name{font-size:14px!important;line-height:1.25}
+html body #app .tp277-day .tp152-exercise .meta{font-size:11px!important;line-height:1.3;margin-top:2px}
+html body #app .tp277-owner-compact{padding:3px 9px!important;margin:0 0 5px;display:block}
+.tp277-owner-compact summary{min-height:34px;display:flex;align-items:center;gap:7px;cursor:pointer;font-size:11px;color:var(--muted)}
+.tp277-owner-compact summary:before{content:'◉';color:var(--accent)}
+.tp277-owner-compact summary:after{content:'⌄';margin-left:auto}
+.tp277-owner-compact p{margin:0 0 5px}
 html body #app .tp277-program-tools{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:9px}
 .tp277-program-tools>.btn:first-child{grid-column:1/-1}
 html body #app .tp277-program-tools .btn{font-size:12px;line-height:1.3;white-space:normal;padding:8px}
@@ -548,7 +560,6 @@ html body #app .tp277-workout-coach{padding:7px 9px;margin:6px 0;display:block}
 .tp277-workout-coach[open]>summary>span:last-child{transform:rotate(90deg)}
 .tp277-workout-coach[open]>p{padding-top:6px}
 
-html body #app .tp277-history .history-head{padding:0!important}
 .tp277-elapsed{font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--accent);font-size:11px}
 html body #app .tp277-workout .tp153-workout-topline{flex-wrap:wrap;gap:4px 8px}
 html body #app .tp277-workout .tp153-workout-topline>span:first-child{flex:1;min-width:0}
@@ -559,7 +570,7 @@ html body #app .tp277-program-card .rf103-program-activate:disabled{min-height:3
 /* Shared table headings keep 44px inputs without repeating labels on every set. */
 .tp277-set-heading{display:grid;grid-template-columns:24px minmax(0,.8fr) minmax(0,1fr) minmax(0,.8fr) minmax(0,.65fr) 40px;gap:5px;align-items:end;padding:0 42px 5px 5px;color:var(--muted);font-size:10px;line-height:1.3;text-align:center}
 html body #app .tp277-set-row .tp277-set-previous small{display:none}
-html body #app .tp277-set-row:not(.tp164-per-side-row){padding-block:6px!important}
+html body #app .tp277-set-row:not(.tp164-per-side-row){padding-block:3px!important}
 @media(max-width:359px){
  .tp277-set-heading{grid-template-columns:24px minmax(0,1fr) minmax(0,1fr) minmax(0,.8fr) 40px;padding-right:38px}
  .tp277-previous-heading{display:none}
