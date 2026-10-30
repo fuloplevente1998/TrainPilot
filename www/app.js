@@ -8974,13 +8974,12 @@ rf152Recommendation=function(id,sessionExercise=null){
 var tp279ProgressDetails=function(e){
  const r=rf152Recommendation(e.id,e),count=Number(r.historyCount)||0,target=r.target;
  const meta=target?'<p class="small muted">'+esc(tp149T('workout.target'))+': '+esc(target.reps||target.kind)+' • '+esc(tp149T('progress.history',{count:count}))+'</p>':'';
- return '<div class="card" id="rf152Feedback"><strong>'+esc(tp149T('progress.title'))+'</strong><p class="small muted" style="margin:6px 0 0">'+esc(tp149T('progress.goalNote'))+'</p><p class="small muted">'+esc(r.text)+'</p>'+meta;
+ return '<strong>'+esc(tp149T('progress.title'))+'</strong><p class="small muted" style="margin:6px 0 0">'+esc(tp149T('progress.goalNote'))+'</p><p class="small muted">'+esc(r.text)+'</p>'+meta;
 };
 rf152FeedbackHtml=function(e){
  rf232Css();
- const r=rf152Recommendation(e.id,e),sel=e.effort||'',t=rf232L(),count=Number(r.historyCount)||0,target=r.target;
+ const sel=e.effort||'',t=rf232L();
  const scale=RF232_EFFORT_KEYS.map(function(k,i){return '<button class="btn '+(sel===k?'':'secondary')+'" onclick="rf152SetEffort(\''+k+'\')"><span class="n">'+(i+1)+'</span><span class="lbl">'+esc(t[k])+'</span></button>';}).join('');
- const meta=target?'<div class="small muted" style="margin-top:6px">'+esc(tp149T('workout.target'))+': '+esc(target.reps||target.kind)+' • '+esc(tp149T('progress.history',{count:count}))+'</div>':'';
  return '<div class="card tp279-exercise-feedback" id="rf152Feedback"><div class="small" style="margin-bottom:8px">'+esc(t.prompt)+'</div><div class="rf232-effort">'+scale+'</div><button class="btn '+(sel==='pain'?'':'secondary')+' block rf232-pain" onclick="rf152SetEffort(\'pain\')">'+esc(t.pain)+'</button></div>';
 };
 
