@@ -41,10 +41,10 @@ const server=http.createServer((req,res)=>{
   const card=page.locator('#tp279CoachFixture details.tp155-workout-coach');
   assert.equal(await card.count(),1);
   assert.equal(await card.evaluate(e=>e.open),false,'one Coach disclosure starts collapsed');
-  assert.match(await card.locator('summary').innerText(),/Progresszió \/ Coach/);
-  assert.match(await card.locator('summary').innerText(),/Kis súlyemelés/);
+  assert.match(await card.locator(':scope > summary').innerText(),/Progresszió \/ Coach/);
+  assert.match(await card.locator(':scope > summary').innerText(),/Kis súlyemelés/);
   assert.doesNotMatch(await card.innerText(),/Progresszív cél/,'no repeated generic progressive goal card');
-  await card.locator('summary').click();
+  await card.locator(':scope > summary').click();
   assert.match(await card.locator('.tp279-coach-unified').innerText(),/Tervezett munkasorozat\s*3/);
   assert.match(await card.locator('.tp279-coach-unified').innerText(),/Javasolt munkasorozat.*2/);
   assert.equal(await page.evaluate(()=>state.session.exercises[0].sets.length),3,'proposed 2 sets must not silently edit the 3-set plan');
@@ -65,7 +65,7 @@ const server=http.createServer((req,res)=>{
   await page.evaluate(()=>{
    const e=state.session.exercises[0];e.effort='pain';e.sets.forEach(s=>{s.weight=10});window.__tp279Paint();
   });
-  assert.match(await card.locator('summary').innerText(),/Fájdalomjelzés/);
+  assert.match(await card.locator(':scope > summary').innerText(),/Fájdalomjelzés/);
   assert.equal(await card.locator('button').count(),0,'pain cannot display a load-increase action');
   await page.evaluate(()=>{
    const e=state.session.exercises[0];delete e.effort;state.session.timerOwner='watch';window.__tp279Paint();
