@@ -634,7 +634,7 @@ html body #app .tp279-completed-schedule .tp279-undo-schedule{flex:1}
 /* PR279: Journal range picker reuses Calendar grid and day-dialog styling. */
 html body #app button.tp155-journal-filter{box-sizing:border-box;width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 13px!important;color:var(--text);font:inherit;text-align:left;cursor:pointer}
 .tp279-journal-filter-copy{display:grid;gap:3px;min-width:0}
-#tp279JournalDate{width:min(420px,calc(100vw - 24px));max-height:calc(100dvh - 24px);margin:auto;color:var(--text);background:var(--tp-ui-card,var(--card));overflow:hidden}
+#tp279JournalDate{position:fixed;inset:0;height:fit-content;width:min(420px,calc(100vw - 24px));max-height:calc(100dvh - 24px);margin:auto;color:var(--text);background:var(--tp-ui-card,var(--card));overflow:hidden}
 #tp279JournalDate:not([open]){display:none}
 #tp279JournalDate::backdrop{background:rgba(4,7,11,.78)}
 #tp279JournalDate .tp279-journal-date-head{flex:none;min-height:44px;padding-right:48px}

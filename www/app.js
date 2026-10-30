@@ -12019,6 +12019,12 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   dateDialog.setAttribute('role','dialog');dateDialog.setAttribute('aria-modal','true');dateDialog.setAttribute('aria-labelledby','tp279JournalDateTitle');
   dateDialog.innerHTML='<div class="tp279-journal-date-head"><h2 id="tp279JournalDateTitle">'+esc(copy().filter)+'</h2></div><button type="button" class="tp108-day-close tp-modal-close" aria-label="'+esc(tp149T('common.close'))+'" onclick="TrainPilotJournalDate.close()">×</button><div class="tp108-day-content tp279-journal-calendar-host"></div>';
   dateDialog.addEventListener('cancel',event=>{event.preventDefault();closeDate();});
+  dateDialog.addEventListener('keydown',event=>{
+   if(event.key!=='Tab')return;
+   const buttons=[...dateDialog.querySelectorAll('button:not(:disabled)')],first=buttons[0],last=buttons[buttons.length-1];
+   if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}
+   else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
+  });
   const dialog=dateDialog;
   dateDialog.addEventListener('close',()=>{if(dateDialog===dialog)closeDate();});
   document.body.appendChild(dateDialog);refreshDate();dateDialog.showModal();
@@ -12798,12 +12804,8 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  tp151ScheduleCard=function(item){
   let html=String(calendarCardBase(item)),done=typeof rf209ScheduleDone==='function'&&rf209ScheduleDone(item);
   html=html.replace('onclick="rf260OpenScheduleMove(\''+item.id+'\',this)"','data-tp-move-id="'+esc(item.id)+'" onclick="rf260OpenScheduleMove(\''+esc(item.id)+'\',this)"');
-  if(done){
-   // This is the actual card renderer used by the calendar-day dialog.
-   // Earlier picker/list renderers do not supply actions in that dialog.
-   const action='<button type="button" class="btn secondary tp279-undo-schedule" data-schedule-id="'+esc(item.id)+'" onclick="tp279UndoScheduleComplete(this.dataset.scheduleId)">'+esc(tp279CalendarUndoText('undo'))+'</button>';
-   html=html.replace('<div class="tp151-action-row">','<div class="tp151-action-row">'+action);
-  }else{
+  // The canonical calendarCardBase already includes Undo for a completed item.
+  if(!done){
    const action='<button class="btn secondary tp155-complete-schedule" onclick="tp155MarkScheduleCompleted(\''+esc(item.id)+'\')">'+esc(t('done'))+'</button>';
    html=html.replace(/(<button class="btn secondary" onclick="skipSchedule)/,action+'$1');
   }

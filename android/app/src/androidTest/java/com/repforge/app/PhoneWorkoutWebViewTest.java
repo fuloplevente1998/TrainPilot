@@ -16,6 +16,48 @@ import static org.junit.Assert.*;
 /** Exercises the packaged WebView, Capacitor dispatcher, SQLite and foreground service together. */
 @RunWith(AndroidJUnit4.class)
 public class PhoneWorkoutWebViewTest {
+    @Test public void journalDateRangeUsesModalAndPreservesRecords() throws Exception {
+        var instrumentation=InstrumentationRegistry.getInstrumentation();
+        MainActivity activity=(MainActivity)instrumentation.startActivitySync(
+            new Intent(instrumentation.getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        WebView view=activity.getBridge().getWebView();
+        try {
+            waitFor(view,"window.TrainPilotBoot?.finished");
+            evaluate(view,"""
+                window.__journal279Saved=history();
+                window.tp155R4ClosePanel?.(false);
+                db.set('history',['2026-09-01','2026-09-10','2026-09-15'].map((date,i)=>({
+                 id:'native-journal-279-'+i,workout:'A',started:date+'T12:00:00+02:00',
+                 finished:date+'T12:30:00+02:00',exercises:[]})));
+                rf263HistoryFilter={from:'',to:''};go('history');
+                document.querySelector('.tp155-journal-filter').click();true
+                """);
+            assertEquals("true",evaluate(view,"""
+                (()=>{const d=document.getElementById('tp279JournalDate'),r=d.getBoundingClientRect();
+                 return d.matches(':modal')&&d.contains(document.activeElement)&&r.top>=0&&r.bottom<=innerHeight+1;})()
+                """));
+            evaluate(view,"""
+                tp155JournalSetMonth('2026-09-01',true);
+                document.querySelector('#tp279JournalDate [data-date="2026-09-10"]').click();true
+                """);
+            assertEquals("true",evaluate(view,"!rf263HistoryFilter.from&&document.querySelectorAll('details.rf263-history').length===3"));
+            evaluate(view,"document.querySelector('#tp279JournalDate [data-date=\"2026-09-15\"]').click();true");
+            assertEquals("true",evaluate(view,"rf263HistoryFilter.from==='2026-09-10'&&rf263HistoryFilter.to==='2026-09-15'&&document.querySelectorAll('details.rf263-history').length===2"));
+            evaluate(view,"document.querySelector('#tp279JournalDate [data-date=\"2026-09-01\"]').click();true");
+            assertEquals("true",evaluate(view,"TrainPilotAndroidBack()"));
+            assertEquals("true",evaluate(view,"""
+                !document.getElementById('tp279JournalDate')&&state.tab==='history'&&
+                !state.tp155JournalRangeStart&&rf263HistoryFilter.from==='2026-09-10'&&
+                document.activeElement===document.querySelector('.tp155-journal-filter')
+                """));
+            evaluate(view,"document.querySelector('.tp155-journal-filter').click();document.querySelector('#tp279JournalDate .tp155-journal-actions .btn').click();true");
+            assertEquals("true",evaluate(view,"!document.getElementById('tp279JournalDate')&&document.querySelectorAll('details.rf263-history').length===3&&history().every(h=>!h.scheduleId&&h.exercises.length===0)"));
+        } finally {
+            evaluate(view,"window.TrainPilotJournalDate?.close(false);if(window.__journal279Saved){db.set('history',__journal279Saved);delete window.__journal279Saved;}rf263HistoryFilter={from:'',to:''};true");
+            instrumentation.runOnMainSync(activity::finish);
+        }
+    }
+
     @Test public void resumeKeepsInputThreadFreeWhileHealthJournalIsBusy() throws Exception {
         var instrumentation=InstrumentationRegistry.getInstrumentation();
         MainActivity activity=(MainActivity)instrumentation.startActivitySync(
