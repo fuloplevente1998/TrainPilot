@@ -46,7 +46,7 @@ const server=http.createServer((req,res)=>{
   assert.doesNotMatch(await card.innerText(),/Progresszív cél/,'no repeated generic progressive goal card');
   await card.locator(':scope > summary').click();
   assert.match(await card.locator('.tp279-coach-unified').innerText(),/Tervezett munkasorozat\s*3/);
-  assert.match(await card.locator('.tp279-coach-unified').innerText(),/Javasolt munkasorozat.*2/);
+  assert.match(await card.locator('.tp279-coach-unified').innerText(),/Javasolt munkasorozat[\s\S]*?2/);
   assert.equal(await page.evaluate(()=>state.session.exercises[0].sets.length),3,'proposed 2 sets must not silently edit the 3-set plan');
   assert.equal(await card.locator('.tp279-coach-basis').count(),1);
   await card.locator('.tp279-coach-basis > summary').click();
