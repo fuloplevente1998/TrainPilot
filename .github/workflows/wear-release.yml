@@ -11,6 +11,7 @@ on:
     tags:
       - 'wear-v*'
     paths:
+      - 'www/**'
       - 'android/wear/**'
       - 'android/shared/**'
       - 'android/build.gradle'

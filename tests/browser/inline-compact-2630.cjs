@@ -85,9 +85,9 @@ const {chromium}=require('playwright');
   });
   assert.equal(metrics.open,false);
   assert.ok(metrics.height<95,`collapsed journal row should be compact, got ${metrics.height}px`);
-  assert.equal(metrics.summaryPadding,'5px');
-  assert.equal(metrics.headPadding,'8px');
-  assert.equal(metrics.badgesDisplay,'none','secondary journal stats stay hidden while collapsed');
+  assert.equal(metrics.headPadding,'0px','PR277 removes nested header padding');
+  assert.equal(metrics.badgesDisplay,'flex','PR277 shows the actual summary while collapsed');
+  assert.ok((await h.locator('.history-badges').innerText()).trim().length>0,'Collapsed summary exposes workout facts');
 
   await h.locator(':scope > summary').click();
   await page.waitForTimeout(30);

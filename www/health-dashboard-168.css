@@ -643,6 +643,7 @@ html body:not(#tp5-chevron-guard) .tp-library-card>summary::after{
 
 
 /* Phase 5 #41 phone-audit: remaining legacy triangles reported 2026-09-24. */
+html body #app .tp155-journal-filter>.tp160-journal-disclosure::before,
 html body #app .tp155-journal-filter>summary>.tp160-journal-disclosure::before,
 html body #tp155R4PanelHost .tp-select-trigger::after,
 html body #tp155R4PanelHost[data-panel="quick"] .tp155-quick-filter>summary::after,
@@ -676,6 +677,7 @@ html body #tp155R4PanelHost[data-panel="quick"] .tp152-quick-row>summary .tp152-
  transform:none!important;
  transform-origin:50% 50%!important;
 }
+html body #app .tp155-journal-filter[aria-expanded="true"]>.tp160-journal-disclosure::before,
 html body #app .tp155-journal-filter[open]>summary>.tp160-journal-disclosure::before,
 html body #tp155R4PanelHost .tp-select.open>.tp-select-trigger::after,
 html body #tp155R4PanelHost[data-panel="quick"] .tp155-quick-filter[open]>summary::after,

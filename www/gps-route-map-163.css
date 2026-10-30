@@ -34,3 +34,21 @@
 .tp163-live-dialog .tp163-route-hint{min-height:18px}
 .tp163-live-dialog .tp163-map-area{height:min(63vh,540px)}
 .tp163-live-dialog .tp163-live-wait{display:grid;place-content:center;text-align:center;min-height:220px;margin:0;color:#bed5cb;font-size:14px}
+
+/* PR277 — edge-to-edge live route, existing explicit close keeps recording alive. */
+.tp163-route-veil:has(.tp163-live-dialog){padding:0;background:var(--bg)}
+.tp163-route-dialog.tp163-live-dialog{position:relative;width:100%;height:100%;max-height:100%;border:0;border-radius:0;padding:max(10px,env(safe-area-inset-top)) 10px max(10px,env(safe-area-inset-bottom));background:var(--card);color:var(--text);gap:8px}
+.tp163-live-dialog .tp163-route-head{z-index:2}
+.tp163-live-dialog .tp163-route-head h2{color:var(--text)}
+.tp163-live-dialog .tp163-map-area{order:1;flex:1;min-height:180px;height:auto;border-radius:12px}
+.tp163-live-dialog .tp163-route-metrics{order:2}
+.tp163-live-dialog .tp163-metric{background:var(--card2);border-color:var(--line)}
+.tp163-live-dialog .tp163-metric strong{color:var(--text)}
+.tp163-live-dialog .tp163-metric span{color:var(--muted)}
+.tp163-live-dialog .tp163-route-hint,.tp163-live-dialog .tp163-map-consent,.tp163-live-dialog .tp163-online-button{order:3;color:var(--muted)}
+.tp277-route-preview{box-sizing:border-box;display:block;min-height:90px;height:104px;width:100%;padding:0;overflow:hidden;border:1px solid var(--line);border-radius:12px;background:var(--card2);margin:8px 0;cursor:pointer}
+.tp277-route-preview .tp163-route-svg{height:100%;width:100%}
+.tp163-route-line{stroke:var(--accent);filter:none}
+.tp277-preview-svg{display:block;width:100%;height:100%}
+.tp277-preview-line{fill:none;stroke:var(--accent);stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+.tp277-preview-start,.tp277-preview-finish{fill:var(--accent2);stroke:var(--card);stroke-width:2}

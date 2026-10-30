@@ -332,7 +332,7 @@
   if(diag){diag.classList.add('tp168-connect-panel');disclosureSummary(diag,c().connect,c().connectSub,'link')}
   const sync=main.querySelector(':scope > .rf263-sync-card');if(sync){sync.classList.add('tp168-sync-tail')}
   [more,main.querySelector(':scope > .tp120-health-journal'),diag].filter(Boolean).forEach(x=>main.appendChild(x));
-  if(sync)main.appendChild(sync);
+  if(sync)main.prepend(sync);
   const note=document.createElement('div');note.className='tp168-health-note';note.innerHTML='<span aria-hidden="true">ⓘ</span><p>'+escText(c().note)+'</p>';main.appendChild(note);
   window.tp107FitViews?.();
  }
@@ -1086,8 +1086,9 @@
    const photoCount=typeof rf130VisiblePhotos==='function'?rf130VisiblePhotos(x).length:0;
    const exerciseCount=typeof tp149T==='function'?tp149T('journal.exerciseCount',{count:x.exercises.length}):x.exercises.length+' gyakorlat';
    const photoLabel=photoCount?(typeof tp149T==='function'?tp149T('journal.photoCount',{count:photoCount}):photoCount+' fotó'):'';
+   const summary=tp277HistorySummary(x);
    const body='<div class="history-body tp3-combined-history-body" data-tp3-hydrated="'+(open?'true':'false')+'">'+(open?tp3HistoryBodyHtml(x,key,originalIndex):'')+'</div>';
-   return '<details data-tp152-history-key="'+esc(key)+'" '+(open?'open ':'')+'class="history rf263-history rf103-history tp3-combined-history" ontoggle="if(this.open){tp3EnsureHistoryBody(this,'+originalIndex+',\''+esc(key)+'\');rf130LoadHistoryPhotos(this);rfHistoryHealthEnsure('+originalIndex+',\''+esc(x.started)+'\')}tp3HistoryToggle(this,\''+esc(key)+'\')"><summary onclick="if(!this.parentElement.open)tp3EnsureHistoryBody(this.parentElement,'+originalIndex+',\''+esc(key)+'\')"><div class="history-head"><div class="history-title-row"><div><div class="history-title">'+esc(title)+'</div><div class="history-date">'+esc(dateText)+'</div></div><div class="rf103-history-side"><span class="badge">'+esc(exerciseCount+(photoLabel?' • '+photoLabel:''))+'</span><span class="rf103-history-chevron" aria-hidden="true">›</span></div></div><div class="history-badges"><span class="history-badge">⏱ '+esc(sessionDuration(x))+'</span><span class="history-badge">✓ '+esc(typeof tp149T==='function'?tp149T('journal.setCount',{done:c.done,total:c.total}):c.done+'/'+c.total+' sorozat')+'</span></div></div></summary>'+body+'</details>';
+   return '<details data-tp152-history-key="'+esc(key)+'" '+(open?'open ':'')+'class="history rf263-history rf103-history tp3-combined-history tp277-history" ontoggle="if(this.open){tp3EnsureHistoryBody(this,'+originalIndex+',\''+esc(key)+'\');rf130LoadHistoryPhotos(this);rfHistoryHealthEnsure('+originalIndex+',\''+esc(x.started)+'\')}tp3HistoryToggle(this,\''+esc(key)+'\')"><summary onclick="if(!this.parentElement.open)tp3EnsureHistoryBody(this.parentElement,'+originalIndex+',\''+esc(key)+'\')"><div class="history-head"><div class="history-title-row"><div><div class="history-title">'+esc(title)+'</div><div class="history-date">'+esc(dateText)+' · '+esc(exerciseCount+(photoLabel?' • '+photoLabel:''))+'</div></div><div class="rf103-history-side"><span class="rf103-history-chevron" aria-hidden="true">›</span></div></div><div class="history-badges"><span class="history-badge">⏱ '+esc(sessionDuration(x))+'</span><span class="history-badge">✓ '+esc(typeof tp149T==='function'?tp149T('journal.setCount',{done:c.done,total:c.total}):c.done+'/'+c.total+' sorozat')+'</span>'+summary+'</div></div></summary>'+body+'</details>';
   }catch(error){
    try{console.error('[TrainPilot] Phase 3 Journal row recovery',originalIndex,error)}catch(_){}
    const date=typeof fmtDate==='function'?fmtDate(safe?.started):'';
@@ -1981,7 +1982,7 @@
    return list.map(function(p){
     const active=p.id===activeId,accent=tp152ProgramAccent(p),name=tp149ProgramMeta(p,'name'),location=tp149ProgramMeta(p,'location'),level=tp149ProgramMeta(p,'level');
     const stats=tp149T('program.cardStats',{days:p.days.length,counts:p.days.map(function(d){return d.exercises.length}).join('/')});
-    return '<details class="program-card rf103-program-card tp152-program-card '+(active?'active-program':'')+'" style="--tp-program-accent:'+esc(accent)+'" data-tp7-program-id="'+esc(p.id)+'" ontoggle="if(this.open)tp7EnsureProgramBody(this,\''+esc(p.id)+'\')"><summary onclick="if(!this.parentElement.open)tp7EnsureProgramBody(this.parentElement,\''+esc(p.id)+'\')"><div class="rf103-program-main"><div class="rf103-program-info"><span class="badge">'+esc(location)+'</span><span class="badge">'+esc(level)+'</span><h3>'+esc(name)+'</h3><p class="small muted">'+esc(stats)+'</p></div><button class="btn rf103-program-activate '+(active?'secondary':'')+'" '+(active?'disabled':'')+' onclick="event.preventDefault();event.stopPropagation();activateProgram(\''+esc(p.id)+'\')">'+esc(tp149T(active?'program.active':'program.activate'))+'</button></div><span class="tp152-chevron tp152-program-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-program-card-body" data-tp7-hydrated="false"></div></details>';
+    return '<details class="program-card rf103-program-card tp152-program-card tp277-program-card '+(active?'active-program':'')+'" style="--tp-program-accent:'+esc(accent)+'" data-tp7-program-id="'+esc(p.id)+'" ontoggle="if(this.open)tp7EnsureProgramBody(this,\''+esc(p.id)+'\')"><summary onclick="if(!this.parentElement.open)tp7EnsureProgramBody(this.parentElement,\''+esc(p.id)+'\')"><div class="rf103-program-main">'+tp277ProgramIcon(p)+'<div class="rf103-program-info"><h3>'+esc(name)+'</h3><div class="tp277-program-meta"><span class="badge">'+esc(location)+'</span><span class="badge">'+esc(level)+'</span>'+((p.goal||p.profile?.goal)?'<span class="badge">'+esc(tp149PlannerRow('goal',p.goal||p.profile.goal))+'</span>':'')+'</div><p class="small muted">'+esc(stats)+'</p></div><button class="btn rf103-program-activate '+(active?'secondary':'')+'" '+(active?'disabled':'')+' onclick="event.preventDefault();event.stopPropagation();activateProgram(\''+esc(p.id)+'\')">'+esc(tp149T(active?'program.active':'program.activate'))+'</button></div><span class="tp152-chevron tp152-program-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-program-card-body" data-tp7-hydrated="false"></div></details>';
    }).join('');
   };
   window.programCards=programCards;
@@ -2003,7 +2004,7 @@
   if(state.tab==='programs'&&programList&&!main.querySelector('.tp128-update')){
    const p=activeProgram();
    if(['home-basic','home-level2'].includes(p?.id)&&!p.templateVersion){
-    const entry=document.createElement('div');entry.className='card tp128-update';entry.innerHTML='<strong>'+esc(tp128T('update'))+'</strong><button class="btn secondary block" onclick="tp128OpenTemplate()">'+esc(tp128T('preview'))+'</button>';programList.before(entry);
+    const entry=document.createElement('details');entry.className='card tp128-update tp277-template-update';entry.innerHTML='<summary>'+esc(tp128T('update'))+'</summary><button class="btn secondary block" onclick="tp128OpenTemplate()">'+esc(tp128T('preview'))+'</button>';programList.before(entry);
    }
    for(const card of main.querySelectorAll('[data-tp7-program-id]')){
     const p=programById(card.dataset.tp7ProgramId),info=card.querySelector('.rf103-program-info');if(info&&!info.querySelector('.tp128-source')){const b=document.createElement('span');b.className='badge tp128-source';b.textContent=tp128T(p.sourceType==='profile-template'||p.sourceType==='coach'?'adapted':p.builtin?'template':p.generated?'custom':'own');info.prepend(b);}
@@ -2165,11 +2166,28 @@
     if(!panel)return;
     var button=document.getElementById('tp163LiveMapButton'),trip=currentLiveTrip();
     var visible=!!trip&&tp106GpsOwner(trip)?.e===state.session?.exercises?.[state.current];
-    if(!visible){button?.remove();return;}
-    if(button){if(button.parentElement!==panel)panel.appendChild(button);return;}
+    if(!visible){button?.remove();panel.querySelector('.tp277-route-preview')?.remove();return;}
+    if(button){if(button.parentElement!==panel)panel.appendChild(button);void previewLiveRoute(panel,trip);return;}
     button=append('button',panel,'btn secondary block tp163-live-reopen',t('viewLive'));
     button.id='tp163LiveMapButton';button.type='button';
     button.addEventListener('click',function(){openLiveRoute();});
+    void previewLiveRoute(panel,trip);
+  }
+  var previewRequest=0;
+  async function previewLiveRoute(panel,trip){
+    // Read the native private route; no invented coordinates or tile requests.
+    if(!trip||panel.dataset.tp277PreviewBusy==='true'||performance.now()-Number(panel.dataset.tp277PreviewAt||-5000)<5000)return;
+    panel.dataset.tp277PreviewBusy='true';panel.dataset.tp277PreviewAt=String(performance.now());var request=++previewRequest;
+    try{
+      var reply=await bridge()?.route?.({key:trip.key});
+      if(!panel.isConnected||currentLiveTrip()?.key!==trip.key||request!==previewRequest)return;
+      var parsed=coordinates(reply);if(!parsed.count)return;
+      var preview=panel.querySelector('.tp277-route-preview');
+      if(!preview){preview=append('button',panel,'tp277-route-preview');preview.type='button';preview.setAttribute('aria-label',t('viewLive'));preview.addEventListener('click',openLiveRoute);}
+      preview.replaceChildren();drawOffline(preview,parsed.sections);
+      preview.querySelectorAll('[class^="tp163-route-"]').forEach(function(el){el.setAttribute('class',el.getAttribute('class').replace('tp163-route-','tp277-preview-'));});
+      var button=document.getElementById('tp163LiveMapButton');if(button)button.before(preview);
+    }catch(_){}finally{delete panel.dataset.tp277PreviewBusy;}
   }
   function liveMapUpdate(sections){
     if(!activeMap||!liveState||!window.L?.polyline)return;
@@ -2221,6 +2239,7 @@
       else stateNow.hint.textContent=parsed.partial?t('partial'):t('offline')+' · '+parsed.count+' '+t('points');
       if(activeMap&&parsed.count)stateNow.hint.textContent=t('onlineReady')+' · '+parsed.count+' '+t('points');
       stateNow.sections=parsed.sections;
+      var preview=document.querySelector('.tp277-route-preview');if(preview){preview.replaceChildren();drawOffline(preview,parsed.sections);preview.querySelectorAll('[class^="tp163-route-"]').forEach(function(el){el.setAttribute('class',el.getAttribute('class').replace('tp163-route-','tp277-preview-'));});}
       // The route has no background tile/Leaflet requests until explicit online consent.
       if(parsed.count&&navigator.onLine&&!stateNow.consent){
         stateNow.consent=true;

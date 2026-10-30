@@ -4832,7 +4832,7 @@ var rf260EnhanceSelect = function rf260EnhanceSelect(select,index=0){
  const menu=document.createElement('div');menu.className='tp-select-menu';menu.setAttribute('role','listbox');menu.id=`tp-select-menu-${index}-${Math.random().toString(36).slice(2,7)}`;trigger.setAttribute('aria-controls',menu.id);
  rf260BuildSelectOptions(select,menu);
  wrap.appendChild(trigger);wrap.appendChild(menu);select.addEventListener?.('change',()=>rf260SyncCustomSelect(select));
- trigger.addEventListener?.('click',ev=>{ev.stopPropagation();const opening=!wrap.classList.contains('open');rf260CloseSelects(wrap);wrap.classList.toggle('open',opening);trigger.setAttribute('aria-expanded',opening?'true':'false');if(opening){rf260PositionSelect(wrap);const selected=menu.querySelector?.('[aria-selected="true"]');selected?.scrollIntoView?.({block:'nearest'});selected?.focus?.()}});
+ trigger.addEventListener?.('click',ev=>{ev.stopPropagation();const opening=!wrap.classList.contains('open');rf260CloseSelects(wrap);wrap.classList.toggle('open',opening);trigger.setAttribute('aria-expanded',opening?'true':'false');if(opening){rf260PositionSelect(wrap);const selected=menu.querySelector?.('[aria-selected="true"]');if(selected){menu.scrollTop=Math.max(0,selected.offsetTop-menu.clientHeight/2+selected.offsetHeight/2);selected.focus?.({preventScroll:true})}}});
  trigger.addEventListener?.('keydown',ev=>{if(ev.key==='ArrowDown'||ev.key==='Enter'||ev.key===' '){ev.preventDefault();if(!wrap.classList.contains('open'))trigger.click()}else if(ev.key==='Escape'){rf260CloseSelects();trigger.focus?.()}});
  menu.addEventListener?.('keydown',ev=>{const items=Array.from(menu.querySelectorAll?.('.tp-select-option:not(:disabled)')||[]),i=items.indexOf(document.activeElement);if(ev.key==='Escape'){ev.preventDefault();rf260CloseSelects();trigger.focus?.()}else if(ev.key==='ArrowDown'&&items.length){ev.preventDefault();items[(i+1+items.length)%items.length].focus?.()}else if(ev.key==='ArrowUp'&&items.length){ev.preventDefault();items[(i-1+items.length)%items.length].focus?.()}});
 };
@@ -5176,7 +5176,7 @@ render=function(custom){const r=rf260RenderBase(custom);rf260EnhanceSelects();rf
 let rf260NavCompact=false;
 const RF260_NAV_COMPACT_ENTER=56,RF260_NAV_COMPACT_EXIT=8;
 
-window.addEventListener?.('scroll',()=>{rf260ScrollState();rf260CloseSelects()},{passive:true});
+window.addEventListener?.('scroll',()=>{rf260ScrollState();const provider=document.querySelector('.tp-health-provider .tp-select.open');rf260CloseSelects(provider);if(provider)rf260PositionSelect(provider)},{passive:true});
 window.addEventListener?.('resize',()=>{rf260CloseSelects();rf260ScrollState()},{passive:true});
 window.visualViewport?.addEventListener?.('resize',()=>rf260RepositionOpenSelects(),{passive:true});
 window.visualViewport?.addEventListener?.('scroll',()=>rf260RepositionOpenSelects(),{passive:true});
@@ -5305,9 +5305,30 @@ var rf263SetHistoryFilter = function rf263SetHistoryFilter(key,value){
  rf263HistoryFilter=next;render(historyScreen());
 };
 var rf263ClearHistoryFilter = function rf263ClearHistoryFilter(){rf263HistoryFilter={from:'',to:''};render(historyScreen())};
+var tp277HistorySummary=function(x){
+ const completed=(x.exercises||[]).flatMap(e=>(e.sets||[]).filter(s=>s.done===true).map(s=>({e,s})));
+ const volume=completed.reduce((sum,{e,s})=>sum+(['ism','ism.','reps'].includes(e.repUnit)&&e.loadType!=='bodyweight'&&Number(s.weight)>0&&Number(s.reps)>0?Number(s.weight)*Number(s.reps):0),0);
+ const rir=completed.filter(({s})=>s.actualRir!==null&&s.actualRir!==undefined&&s.actualRir!==''&&Number.isFinite(Number(s.actualRir))).map(({s})=>Number(s.actualRir));
+ return (volume>0?'<span class="history-badge">'+esc(tp149FormatNumber(volume))+' kg</span>':'')+(rir.length?'<span class="history-badge">RIR '+esc(tp149FormatNumber(rir.reduce((a,b)=>a+b,0)/rir.length))+'</span>':'');
+};
+var tp277JournalFilter=function(value){
+ if(!['all','pr','gps'].includes(value))return;
+ state.tp277JournalKind=value;state.tp3HistoryOpenKey=null;render(historyScreen());
+};
+var tp277JournalFiltersHtml=function(){
+ const selected=state.tp277JournalKind||'all';
+ return '<div class="tp277-journal-filters" role="group" aria-label="'+esc(tp149T('journal.title'))+'">'+['all','pr','gps'].map(kind=>'<button type="button" class="'+(selected===kind?'active':'')+'" aria-pressed="'+(selected===kind)+'" onclick="tp277JournalFilter(\''+kind+'\')">'+esc(tp277Text(kind))+'</button>').join('')+'</div>';
+};
 var rf263FilteredHistory = function rf263FilteredHistory(){
- const all=history(),from=rf263HistoryFilter.from,to=rf263HistoryFilter.to;
- return all.map((x,index)=>({x,index})).filter(({x})=>{const day=rf263HistoryDay(x.started);return (!from||day>=from)&&(!to||day<=to)});
+ const all=history(),from=rf263HistoryFilter.from,to=rf263HistoryFilter.to,kind=state.tp277JournalKind||'all';
+ const records=window.TrainPilotRecords226,recordIndex=kind==='pr'&&records?records.snapshot():null;
+ return all.map((x,index)=>({x,index})).filter(({x})=>{
+  const day=rf263HistoryDay(x.started);
+  if((from&&day<from)||(to&&day>to))return false;
+  if(kind==='pr')return !!records?.recordsFor(x,recordIndex)?.length;
+  if(kind==='gps')return !!window.TrainPilotGpsMap163?.references?.(x)?.length;
+  return true;
+ });
 };
 var rf263HistoryItem = function rf263HistoryItem(x,originalIndex,visibleIndex){
  const c=completedSets(x),title=x.programName?`${x.programName} • ${x.dayId||x.workout}`:`Full Body ${x.workout}`,key=rf142WorkoutKey(x);
@@ -8475,24 +8496,64 @@ rf2211PlanWeeks=function(){
  db.set('plannerSettings',Object.assign({},plannerSettings(),{mode:mode,time:time,minutes:minutes,weekdays:weekdays}));addScheduleBatch(out);if(typeof cloudChanged==='function')cloudChanged();render();if(window.TrainPilot110)tp153Toast(window.TrainPilot110.t('replanned'),1800);
 };
 
+/* PR279: undo a completed calendar item without erasing its workout journal. */
+var tp279CalendarUndoText=function(key){
+ const words={
+  hu:{undo:'Visszavonás',done:'Teljesítve'},
+  en:{undo:'Undo completion',done:'Completed'},
+  de:{undo:'Rückgängig',done:'Abgeschlossen'},
+  ro:{undo:'Anulează finalizarea',done:'Finalizat'}
+ };
+ return (words[typeof rf212Lang==='function'?rf212Lang():'hu']||words.en)[key]||key;
+};
+var tp279UndoScheduleComplete=function(id){
+ const rows=scheduled(),i=rows.findIndex(x=>String(x.id)===String(id)&&!x.cancelled);
+ if(i<0||typeof rf209ScheduleDone!=='function'||!rf209ScheduleDone(rows[i]))return false;
+ const original=rows[i],logs=history();
+ const nextRow={...original,status:'planned',updatedAt:Date.now()};
+ delete nextRow.completedAt;
+ const nextRows=rows.map((x,index)=>index===i?nextRow:x);
+ // The journal remains intact. Remove only the schedule link that would
+ // otherwise make the calendar immediately mark the same item completed again.
+ const linked=logs.some(x=>String(x.scheduleId||'')===String(id));
+ const nextLogs=linked?logs.map(x=>{
+  if(String(x.scheduleId||'')!==String(id))return x;
+  const result={...x};delete result.scheduleId;return result;
+ }):logs;
+ try{
+  if(linked)db.set('history',nextLogs);
+  db.set('scheduled',nextRows);
+ }catch(error){
+  try{db.set('scheduled',rows)}catch(_){}
+  if(linked)try{db.set('history',logs)}catch(_){}
+  return false;
+ }
+ if(typeof cloudChanged==='function')cloudChanged();
+ render();return true;
+};
+
 rf2211DayPicker=function(){
  const date=rf2211Selected();if(!date)return '';
  const p=activeProgram(),days=rf2211Days(),item=scheduleOnDate(date).find(function(x){return !x.cancelled;});
  const title=tp149FormatDate(new Date(date+'T12:00'),{month:'long',day:'numeric',weekday:'long'});
  if(item){
   const d=programDay(p,item.dayId||item.workout),name=tp149ProgramDayName(p,d)||item.dayId||item.workout;
-  return '<div class="card rf2211-picker"><div><strong>'+esc(title)+'</strong><div class="small muted">'+esc(tp149T('calendar.scheduled',{day:name}))+'</div></div><button class="btn danger" onclick="rf2211DeleteDate()">'+esc(tp149T('common.delete'))+'</button></div>';
+  const done=typeof rf209ScheduleDone==='function'&&rf209ScheduleDone(item);
+  return '<div class="card rf2211-picker"><div><strong>'+esc(title)+'</strong><div class="small muted">'+esc(tp149T('calendar.scheduled',{day:name}))+(done?' · '+esc(tp279CalendarUndoText('done')):'')+'</div></div><div class="tp279-calendar-actions">'+(done?'<button type="button" class="btn secondary tp279-undo-schedule" data-schedule-id="'+esc(item.id)+'" onclick="tp279UndoScheduleComplete(this.dataset.scheduleId)">'+esc(tp279CalendarUndoText('undo'))+'</button>':'')+'<button type="button" class="btn danger" onclick="rf2211DeleteDate()">'+esc(tp149T('common.delete'))+'</button></div></div>';
  }
  return '<div class="card rf2211-picker"><strong>'+esc(title)+'</strong><div class="small muted">'+esc(tp149T('calendar.chooseDay'))+'</div><div class="rf2211-daybuttons">'+days.map(function(d){return '<button class="btn" onclick="rf2211AddDay(\''+esc(d.id)+'\')">'+esc(tp149ProgramDayName(p,d))+'</button>';}).join('')+'</div></div>';
 };
 
 scheduleListHtml=function(){
  const isDone=function(x){return typeof rf209ScheduleDone==='function'?rf209ScheduleDone(x):(x.status==='completed'||history().some(function(h){return h.scheduleId===x.id;}));};
- const items=scheduled().filter(function(x){return !x.cancelled&&!isDone(x);}).sort(function(a,b){return Date.parse(a.start)-Date.parse(b.start);}).slice(-120);
+ const items=scheduled().filter(function(x){return !x.cancelled;}).sort(function(a,b){return Date.parse(a.start)-Date.parse(b.start);}).slice(-120);
  if(!items.length)return '<div class="muted">'+esc(tp149T('calendar.noPlanned'))+'</div>';
  return items.map(function(x){
   const p=programById(x.programId||'home-basic'),d=programDay(p,x.dayId||x.workout),skipped=x.status==='skipped',moving=state?.rf260MovingScheduleId===x.id;
   const title=p&&d?tp146ProgramDayTitle(p,d):(x.dayId||x.workout||'');
+  if(isDone(x)){
+   return '<div class="card schedule-card tp146-schedule-card tp279-completed-schedule"><div class="tp146-schedule-head"><div class="tp146-schedule-copy"><strong class="tp146-schedule-title">'+esc(title)+'</strong><div class="small muted">'+esc(tp149FormatDateTime(x.start))+' • '+esc(tp279CalendarUndoText('done'))+'</div></div><button type="button" class="btn danger tp146-schedule-delete" data-schedule-id="'+esc(x.id)+'" onclick="rf209DeleteSchedule(this.dataset.scheduleId)">'+esc(tp149T('common.delete'))+'</button></div><div class="schedule-actions tp279-calendar-actions"><button type="button" class="btn secondary tp279-undo-schedule" data-schedule-id="'+esc(x.id)+'" onclick="tp279UndoScheduleComplete(this.dataset.scheduleId)">'+esc(tp279CalendarUndoText('undo'))+'</button></div></div>';
+  }
   return '<div class="card schedule-card tp146-schedule-card"><div class="tp146-schedule-head"><div class="tp146-schedule-copy"><strong class="tp146-schedule-title">'+esc(title)+'</strong><div class="small muted">'+esc(tp149FormatDateTime(x.start))+' • '+esc(tp149T(skipped?'calendar.status.skipped':'calendar.status.planned'))+'</div></div><button class="btn danger tp146-schedule-delete" onclick="rf209DeleteSchedule(\''+esc(x.id)+'\')">'+esc(tp149T('common.delete'))+'</button></div><div class="schedule-actions tp146-schedule-actions-row"><button class="btn" onclick="startScheduledById(\''+esc(x.id)+'\')">'+esc(tp149T('calendar.action.start'))+'</button><button class="btn secondary '+(moving?'tp-action-active':'')+'" data-tp-move-id="'+esc(x.id)+'" aria-pressed="'+(moving?'true':'false')+'" onclick="rf260OpenScheduleMove(\''+esc(x.id)+'\',this)">'+esc(tp149T('calendar.action.move'))+'</button><button class="btn secondary '+(skipped?'tp-selected':'')+'" aria-pressed="'+(skipped?'true':'false')+'" onclick="skipSchedule(\''+esc(x.id)+'\')">'+esc(tp149T(skipped?'calendar.action.restore':'calendar.action.skip'))+'</button></div></div>';
  }).join('');
 };
@@ -8910,12 +8971,16 @@ rf152Recommendation=function(id,sessionExercise=null){
  return {action:'hold',weight:base,autoApply:false,target:target,historyCount:recent.length,text:tp149T('progress.holdLoad',{weight:fw,unit:unit})};
 };
 
+var tp279ProgressDetails=function(e){
+ const r=rf152Recommendation(e.id,e),count=Number(r.historyCount)||0,target=r.target;
+ const meta=target?'<p class="small muted">'+esc(tp149T('workout.target'))+': '+esc(target.reps||target.kind)+' • '+esc(tp149T('progress.history',{count:count}))+'</p>':'';
+ return '<strong>'+esc(tp149T('progress.title'))+'</strong><p class="small muted" style="margin:6px 0 0">'+esc(tp149T('progress.goalNote'))+'</p><p class="small muted">'+esc(r.text)+'</p>'+meta;
+};
 rf152FeedbackHtml=function(e){
  rf232Css();
- const r=rf152Recommendation(e.id,e),sel=e.effort||'',t=rf232L(),count=Number(r.historyCount)||0,target=r.target;
+ const sel=e.effort||'',t=rf232L();
  const scale=RF232_EFFORT_KEYS.map(function(k,i){return '<button class="btn '+(sel===k?'':'secondary')+'" onclick="rf152SetEffort(\''+k+'\')"><span class="n">'+(i+1)+'</span><span class="lbl">'+esc(t[k])+'</span></button>';}).join('');
- const meta=target?'<div class="small muted" style="margin-top:6px">'+esc(tp149T('workout.target'))+': '+esc(target.reps||target.kind)+' • '+esc(tp149T('progress.history',{count:count}))+'</div>':'';
- return '<div class="card" id="rf152Feedback"><strong>'+esc(tp149T('progress.title'))+'</strong><p class="small muted" style="margin:6px 0 0">'+esc(tp149T('progress.goalNote'))+'</p><p class="small muted">'+esc(r.text)+'</p>'+meta+'<div class="small" style="margin:10px 0 8px">'+esc(t.prompt)+'</div><div class="rf232-effort">'+scale+'</div><button class="btn '+(sel==='pain'?'':'secondary')+' block rf232-pain" onclick="rf152SetEffort(\'pain\')">'+esc(t.pain)+'</button></div>';
+ return '<div class="card tp279-exercise-feedback" id="rf152Feedback"><div class="small" style="margin-bottom:8px">'+esc(t.prompt)+'</div><div class="rf232-effort">'+scale+'</div><button class="btn '+(sel==='pain'?'':'secondary')+' block rf232-pain" onclick="rf152SetEffort(\'pain\')">'+esc(t.pain)+'</button></div>';
 };
 
 timerHtml=function(){
@@ -10477,7 +10542,7 @@ var tp150CompactQuickCard=function tp150CompactQuickCard(){
 
 programsScreen=function(){
  const custom=exercises().filter(function(e){return e.custom;});
- const tools='<div class="tp150-program-tools"><button class="btn" onclick="createCustomProgram()">'+esc(tp149T('programs.create'))+'</button><button class="btn secondary" onclick="customExerciseScreen()">'+esc(tp149T('programs.createExercise'))+'</button><button class="btn secondary" onclick="muscleLibrary()">'+esc(tp149T('programs.library'))+'</button></div>';
+ const tools='<div class="tp150-program-tools tp277-program-tools"><button class="btn" onclick="createCustomProgram()">'+esc(tp149T('programs.create'))+'</button><button class="btn secondary" onclick="customExerciseScreen()">'+esc(tp149T('programs.createExercise'))+'</button><button class="btn secondary" onclick="muscleLibrary()">'+esc(tp149T('programs.library'))+'</button></div>';
  const list='<section class="tp150-programs-frame"><div class="section tp150-programs-frame-title">'+esc(tp149T('programs.title'))+'</div>'+programCards()+'</section>';
  const customRows=custom.length?'<div class="section">'+esc(tp149T('programs.customExercises'))+'</div>'+custom.map(function(e){return '<div class="custom-ex-row"><span>'+esc(tp149ExerciseName(e))+'</span><button class="btn danger" onclick="deleteCustomExercise14(\''+esc(e.id)+'\')">'+esc(tp149T('common.delete'))+'</button></div>';}).join(''):'';
  return shell('<main class="tp150-programs-compact">'+tools+list+customRows+'</main>');
@@ -10500,7 +10565,7 @@ historyScreen=function(){
  const all=history(),filtered=rf263FilteredHistory(),from=rf263HistoryFilter.from,to=rf263HistoryFilter.to,active=!!(from||to);
  const filter='<div class="card tp150-journal-filter"><div class="rf263-history-filter">'+rf263DateField('from',tp149T('journal.from'),from)+rf263DateField('to',tp149T('journal.to'),to)+'<button class="btn secondary rf263-clear-filter" onclick="rf263ClearHistoryFilter()" '+(active?'':'disabled')+'>'+esc(tp149T('journal.clearFilter'))+'</button></div><p class="small muted rf263-history-count">'+esc(tp149T('journal.count',{shown:filtered.length,total:all.length}))+'</p></div>';
  const rows=filtered.length?filtered.map(function(row,i){return rf263HistoryItem(row.x,row.index,i);}).join(''):(window.TrainPilot110?window.TrainPilot110.empty('log',!!all.length):(all.length?'<div class="card muted">'+esc(tp149T('journal.noneRange'))+'</div>':'<div class="muted">'+esc(tp149T('journal.none'))+'</div>'));
- return shell('<main class="tp150-journal-compact">'+filter+rows+'</main>');
+ return shell('<main class="tp150-journal-compact tp277-journal">'+tp277JournalFiltersHtml()+filter+rows+'</main>');
 };
 
 /* The old bridge rebuilt user-protection lists and sorted the full phrase map for every
@@ -10653,7 +10718,7 @@ var tp151ScheduleCard=function(x){
  const p=programById(x.programId||'home-basic'),d=programDay(p,x.dayId||x.workout),done=typeof rf209ScheduleDone==='function'?rf209ScheduleDone(x):false,skipped=x.status==='skipped';
  if(state.tp151EditingScheduleId===x.id){const st=new Date(x.start),mins=Math.max(10,Math.round((Date.parse(x.end)-Date.parse(x.start))/60000)||45);return '<div class="card tp151-calendar-item"><strong>'+esc(p?.name||'Program')+'</strong><div class="tp151-form-grid"><label>'+esc(tp151T('programDay'))+'<select id="tp151ScheduleDay" class="field">'+(p?.days||[]).map(day=>'<option value="'+esc(day.id)+'" '+(day.id===(x.dayId||x.workout)?'selected':'')+'>'+esc(typeof tp149ProgramDayName==='function'?tp149ProgramDayName(p,day):(day.name||day.id))+'</option>').join('')+'</select></label><label>'+esc(tp151T('time'))+'<input id="tp151ScheduleTime" class="field" type="time" value="'+esc(st.toTimeString().slice(0,5))+'"></label><label>'+esc(tp151T('duration'))+'<input id="tp151ScheduleMinutes" class="field" type="number" min="10" max="240" value="'+mins+'"></label></div><div class="tp151-action-row"><button class="btn" onclick="tp151SaveCalendarItem(\''+esc(x.id)+'\')">'+esc(tp151T('save'))+'</button><button class="btn secondary" onclick="tp151CancelCalendarEdit()">'+esc(tp151T('cancel'))+'</button></div></div>'}
  const name=(p?tp149ProgramMeta(p,'name'):(p?.name||'Program'))+' • '+(d?(typeof tp149ProgramDayName==='function'?tp149ProgramDayName(p,d):(d.name||d.id)):(x.dayId||x.workout||''));
- return '<div class="card tp151-calendar-item"><div class="tp151-calendar-copy"><span class="badge">'+esc(done?tp151T('completed'):skipped?tp151T('skipped'):tp151T('planned'))+'</span><strong>'+esc(name)+'</strong><span class="small muted">'+esc(tp149FormatDateTime(x.start))+'</span></div><div class="tp151-action-row">'+(!done?'<button class="btn" onclick="startScheduledById(\''+esc(x.id)+'\')">'+esc(tp151T('start'))+'</button>':'')+'<button class="btn secondary" onclick="tp151EditCalendarItem(\''+esc(x.id)+'\')">'+esc(tp151T('edit'))+'</button><button class="btn secondary" onclick="rf260OpenScheduleMove(\''+esc(x.id)+'\',this)">'+esc(tp151T('move'))+'</button>'+(!done?'<button class="btn secondary" onclick="skipSchedule(\''+esc(x.id)+'\')">'+esc(skipped?tp151T('restore'):tp151T('skip'))+'</button>':'')+'<button class="btn danger" onclick="rf209DeleteSchedule(\''+esc(x.id)+'\')">'+esc(tp151T('del'))+'</button></div></div>';
+ return '<div class="card tp151-calendar-item"><div class="tp151-calendar-copy"><span class="badge">'+esc(done?tp151T('completed'):skipped?tp151T('skipped'):tp151T('planned'))+'</span><strong>'+esc(name)+'</strong><span class="small muted">'+esc(tp149FormatDateTime(x.start))+'</span></div><div class="tp151-action-row">'+(!done?'<button class="btn" onclick="startScheduledById(\''+esc(x.id)+'\')">'+esc(tp151T('start'))+'</button>':'')+'<button class="btn secondary" onclick="tp151EditCalendarItem(\''+esc(x.id)+'\')">'+esc(tp151T('edit'))+'</button><button class="btn secondary" onclick="rf260OpenScheduleMove(\''+esc(x.id)+'\',this)">'+esc(tp151T('move'))+'</button>'+(!done?'<button class="btn secondary" onclick="skipSchedule(\''+esc(x.id)+'\')">'+esc(skipped?tp151T('restore'):tp151T('skip'))+'</button>':'')+(done?'<button type="button" class="btn secondary tp279-undo-schedule" data-schedule-id="'+esc(x.id)+'" onclick="tp279UndoScheduleComplete(this.dataset.scheduleId)">'+esc(tp279CalendarUndoText('undo'))+'</button>':'') + '<button class="btn danger" onclick="rf209DeleteSchedule(\''+esc(x.id)+'\')">'+esc(tp151T('del'))+'</button></div></div>';
 };
 var tp151CalendarDayPanel=function(){
  const date=typeof rf2211Selected==='function'?rf2211Selected():(state.rf2211CalendarDate||'');if(!date)return '<div class="card tp151-day-panel muted">'+esc(tp151T('calendarHint'))+'</div>';
@@ -10827,10 +10892,37 @@ rf200ThemePanel=function(){
  return '<details class="setting tp1511-card tp152-accordion tp152-theme"><summary><div class="tp1511-head"><b>◐</b><div><strong>'+esc(tp152T('theme'))+'</strong><p class="small muted">'+esc(name)+'</p></div></div><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-accordion-body"><small class="muted">'+esc(tp1511T('basic'))+'</small>'+tp1511ThemeGrid(TP1511_BASIC)+'<small class="muted tp1511-group-title">'+esc(tp1511T('vivid'))+'</small>'+tp1511ThemeGrid(TP1511_VIVID)+'</div></details>';
 };
 
-var tp152ProgramAccent=function(p){
- const palette=['#58B8F7','#63C48D','#C77A72','#B38CDB','#E3A45F','#67C7C1'];
- const key=String(p?.id||p?.name||'trainpilot');let h=0;for(let i=0;i<key.length;i++)h=(h*31+key.charCodeAt(i))>>>0;
- return palette[h%palette.length];
+var tp152ProgramAccent=function(){return 'var(--accent)';};
+// PR277: presentation helpers read existing program/session data only.
+var tp277Text=function(key){
+ const words={
+ hu:{profile:'Profil és személyes adatok',appearance:'Megjelenés és nyelv',training:'Edzés és időzítő',devices:'Wear OS és szinkronizáció',privacy:'Adatvédelem és alaphelyzet',all:'Összes',pr:'PR-edzések',gps:'GPS-kardió',sets:'munkasorozat',recent:'Legutóbbi edzés',next:'Következő gyakorlat',phone:'Telefonon',wear:'Az órán válassz programnapot',estimate:'Legutóbbi idő',previous:'Előző',sources:'Adatforrások',unknown:'Nincs igazolt kapcsolatállapot'},
+ en:{profile:'Profile and personal data',appearance:'Appearance and language',training:'Workout and timer',devices:'Wear OS and synchronization',privacy:'Privacy and reset',all:'All',pr:'PR workouts',gps:'GPS cardio',sets:'working sets',recent:'Last workout',next:'Next exercise',phone:'On phone',wear:'Choose the program day on your watch',estimate:'Last duration',previous:'Previous',sources:'Data sources',unknown:'No verified connection status'},
+ de:{profile:'Profil und persönliche Daten',appearance:'Darstellung und Sprache',training:'Training und Zeitsteuerung',devices:'Wear OS und Synchronisierung',privacy:'Datenschutz und Zurücksetzen',all:'Alle',pr:'PR-Trainings',gps:'GPS-Ausdauer',sets:'Arbeitssätze',recent:'Letztes Training',next:'Nächste Übung',phone:'Auf dem Telefon',wear:'Trainingstag auf der Uhr auswählen',estimate:'Letzte Dauer',previous:'Vorher',sources:'Datenquellen',unknown:'Kein bestätigter Verbindungsstatus'},
+ ro:{profile:'Profil și date personale',appearance:'Aspect și limbă',training:'Antrenament și cronometru',devices:'Wear OS și sincronizare',privacy:'Confidențialitate și resetare',all:'Toate',pr:'Antrenamente PR',gps:'Cardio GPS',sets:'serii de lucru',recent:'Ultimul antrenament',next:'Exercițiul următor',phone:'Pe telefon',wear:'Alege ziua programului pe ceas',estimate:'Ultima durată',previous:'Anterior',sources:'Surse de date',unknown:'Nu există o stare de conexiune verificată'}
+ };return (words[rf212Lang()]||words.en)[key]||key;
+};
+var tp277ProgramIcon=function(p){
+ const type=String(p.goal||p.profile?.goal||p.sourceProfile?.goal||'').toLowerCase();
+ const description=[p.id,p.name,p.location,p.equipment,p.profile?.equipment].filter(Boolean).join(' ').toLowerCase();
+ const bodyweight=/testsúly|bodyweight|calisthenics|calisthen|saját testsúly/.test(description);
+ const paths={
+  bodyweight:'<circle cx="12" cy="4" r="2"/><path d="M12 7v8m-6-5 6-3 6 3M12 15l-5 6m5-6 5 6"/>',
+  strength:'<path d="M3 8v8m4-10v12m10-12v12m4-10v8M7 12h10"/>',
+  muscle:'<path d="M7 4h10l2 5-2 11H7L5 9zM7 10h10"/>',
+  fitness:'<path d="m4 18 5-8 4 4 7-9M4 5h5M7 3v4"/>',
+  fatloss:'<path d="M13 3c2 5-3 5-1 9 2-1 3-2 3-4 6 5 4 13-3 13S3 13 8 8c0 4 2 4 2 4-1-4 1-6 3-9z"/>',
+  cardio:'<path d="M3 12h4l3-7 4 14 3-7h4"/>'
+ };
+ const atHome=/^home/.test(String(p.id||''))||/otthon|home/.test(String(p.location||'').toLowerCase());
+ const shape=bodyweight?paths.bodyweight:paths[type]||(/fut|run|cardio|kerékpár|bike/.test(description)?paths.cardio:atHome?'<path d="m3 10 9-7 9 7v11H3zM9 21v-8h6v8"/>':'<rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h8M8 12h8M8 16h5"/>');
+ return '<span class="tp277-program-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+shape+'</svg></span>';
+};
+var tp277DayOverview=function(p,d){
+ const ids=d.exercises||[],count=ids.reduce((sum,id)=>sum+Number(tp152Rx(p,id,byId(id)).sets||0),0);
+ const last=history().find(h=>h.programId===p.id&&(h.dayId||h.workout)===d.id&&Date.parse(h.finished)>Date.parse(h.started));
+ const duration=last?'<span class="tp277-duration" title="'+esc(tp277Text('recent'))+'">'+esc(tp277Text('estimate'))+': '+esc(sessionDuration(last))+'</span>':'';
+ return '<div class="tp277-day-metrics">'+esc(tp149Plural('exercise.count',ids.length))+' · '+count+' '+esc(tp277Text('sets'))+duration+'</div><div class="tp277-day-preview">'+ids.slice(0,3).map(id=>{const e=byId(id);if(!e)return '';const rx=tp152Rx(p,id,e);return '<span>'+esc(tp149ExerciseName(e))+' <b>'+esc(rx.sets+'×'+rx.reps)+'</b></span>';}).join('')+(ids.length>3?'<span class="tp279-preview-more">+'+(ids.length-3)+'</span>':'')+'</div>';
 };
 var tp152Rx=function(p,id,e){
  const s=settings(),fallbackRest=Number(s.programRest?.[p?.id])||Number(s.rest)||90;
@@ -11131,8 +11223,8 @@ tp152ExerciseRow=function(p,day,id,i){
 
 tp152DayBlock=function(p,d,di){
  const available=exercises().filter(function(e){return !(d.exercises||[]).includes(e.id)});
- const add='<details class="tp152-inline-add"><summary><strong>＋ '+esc(tp152T('add'))+'</strong><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-inline-add-body"><select class="field" data-tp152-add="'+esc(d.id)+'">'+available.map(function(e){return '<option value="'+esc(e.id)+'">'+esc(tp149ExerciseName(e))+'</option>'}).join('')+'</select><button class="btn secondary block" '+(available.length?'':'disabled')+' onclick="event.stopPropagation();tp152AddExercise(\''+esc(d.id)+'\')">＋ '+esc(tp152T('add'))+'</button></div></details>';
- return '<details class="card tp146-day-head tp152-day"><summary class="tp152-day-summary"><div class="tp146-day-copy"><span class="badge">'+esc(tp149T('program.workoutDayBadge'))+'</span><div class="tp152-day-title-row"><div class="tp152-day-title-copy">'+rf148PlanDayHeading(p,d)+'</div><span class="tp152-chevron" aria-hidden="true">⌄</span></div><div class="small muted">'+esc(tp149T('program.tapDetails',{count:d.exercises?.length||0}))+'</div></div></summary><div class="tp152-day-body">'+(d.exercises||[]).map(function(id,i){return tp152ExerciseRow(p,d,id,i)}).join('')+add+'<button class="btn block tp152-start-day" onclick="event.stopPropagation();startWorkout(\''+esc(d.id)+'\')">'+esc(tp149T('workout.start'))+'</button></div></details>';
+ const add='<details class="tp152-inline-add"><summary><strong>＋ '+esc(tp152T('add'))+'</strong><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-inline-add-body"><select class="field" data-tp152-add="'+esc(d.id)+'">'+available.map(function(e){return '<option value="'+esc(e.id)+'">'+esc(tp149ExerciseName(e))+'</option>'}).join('')+'</select><button class="btn secondary block" '+(available.length?'':'disabled')+' onclick="event.stopPropagation();tp152AddExercise(\''+esc(d.id)+'\')">＋ '+esc(tp152T('add'))+'</button><p class="small muted tp277-wear-note">⌚ Wear OS · '+esc(tp277Text('wear'))+'</p></div></details>';
+ return '<details class="card tp146-day-head tp152-day tp277-day"><summary class="tp152-day-summary"><div class="tp146-day-copy"><span class="badge">'+esc(tp149T('program.workoutDayBadge'))+'</span><div class="tp152-day-title-row"><div class="tp152-day-title-copy">'+rf148PlanDayHeading(p,d)+'</div><span class="tp152-chevron" aria-hidden="true">⌄</span></div>'+tp277DayOverview(p,d)+'</div></summary><div class="tp152-day-body">'+(d.exercises||[]).map(function(id,i){return tp152ExerciseRow(p,d,id,i)}).join('')+add+'<button class="btn block tp152-start-day" onclick="event.stopPropagation();startWorkout(\''+esc(d.id)+'\')">'+esc(tp149T('workout.start'))+'</button><p class="small muted tp277-wear-note">⌚ Wear OS · '+esc(tp277Text('wear'))+'</p></div></details>';
 };
 
 var tp152ProgramPreviewRow=function(p,d,id,i){
@@ -11148,7 +11240,7 @@ programCards=function(){
   const active=p.id===activeProgramId(),accent=tp152ProgramAccent(p),name=tp149ProgramMeta(p,'name'),location=tp149ProgramMeta(p,'location'),level=tp149ProgramMeta(p,'level');
   const stats=tp149T('program.cardStats',{days:p.days.length,counts:p.days.map(function(d){return d.exercises.length}).join('/')});
   const days=(p.days||[]).map(function(d){return '<details class="tp152-program-day"><summary><strong>'+esc(tp149ProgramDayName(p,d))+'</strong><span class="small muted">'+esc(tp149Plural('exercise.count',d.exercises?.length||0))+'</span><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-program-day-body">'+(d.exercises||[]).map(function(id,i){return tp152ProgramPreviewRow(p,d,id,i)}).join('')+'</div></details>'}).join('');
-  return '<details class="program-card rf103-program-card tp152-program-card '+(active?'active-program':'')+'" style="--tp-program-accent:'+esc(accent)+'"><summary><div class="rf103-program-main"><div class="rf103-program-info"><span class="badge">'+esc(location)+'</span><span class="badge">'+esc(level)+'</span><h3>'+esc(name)+'</h3><p class="small muted">'+esc(stats)+'</p></div><button class="btn rf103-program-activate '+(active?'secondary':'')+'" '+(active?'disabled':'')+' onclick="event.preventDefault();event.stopPropagation();activateProgram(\''+esc(p.id)+'\')">'+esc(tp149T(active?'program.active':'program.activate'))+'</button></div><span class="tp152-chevron tp152-program-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-program-card-body">'+days+(!p.builtin?'<div class="rf103-program-extra"><button class="btn secondary" onclick="editCustomProgram(\''+esc(p.id)+'\')">'+esc(tp149T('common.edit'))+'</button><button class="btn danger" onclick="deleteCustomProgram(\''+esc(p.id)+'\')">'+esc(tp149T('common.delete'))+'</button></div>':'')+'</div></details>';
+  return '<details class="program-card rf103-program-card tp152-program-card tp277-program-card '+(active?'active-program':'')+'" style="--tp-program-accent:'+esc(accent)+'"><summary><div class="rf103-program-main">'+tp277ProgramIcon(p)+'<div class="rf103-program-info"><span class="badge">'+esc(location)+'</span><span class="badge">'+esc(level)+'</span><h3>'+esc(name)+'</h3><p class="small muted">'+esc(stats)+'</p></div><button class="btn rf103-program-activate '+(active?'secondary':'')+'" '+(active?'disabled':'')+' onclick="event.preventDefault();event.stopPropagation();activateProgram(\''+esc(p.id)+'\')">'+esc(tp149T(active?'program.active':'program.activate'))+'</button></div><span class="tp152-chevron tp152-program-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-program-card-body">'+days+(!p.builtin?'<div class="rf103-program-extra"><button class="btn secondary" onclick="editCustomProgram(\''+esc(p.id)+'\')">'+esc(tp149T('common.edit'))+'</button><button class="btn danger" onclick="deleteCustomProgram(\''+esc(p.id)+'\')">'+esc(tp149T('common.delete'))+'</button></div>':'')+'</div></details>';
  }).join('');
 };
 
@@ -11171,10 +11263,17 @@ rf212LanguagePanel=function(){
  return '<details class="setting rf212-language tp1511-card tp152-accordion tp152-language"><summary><div class="tp1511-head"><b>'+(TP1511_FLAGS[cur]||'🌐')+'</b><div><strong>'+esc(tp1511T('lang'))+'</strong><p class="small muted">'+esc(current.trim())+'</p></div></div><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp152-accordion-body"><p class="small muted">'+esc(tp1511T('langHelp'))+'</p><select class="field tp1511-lang" onchange="rf212SetLang(this.value)">'+Object.keys(TP1511_FLAGS).map(function(k){return '<option value="'+k+'" '+(cur===k?'selected':'')+'>'+TP1511_FLAGS[k]+' '+esc(labels[k])+'</option>'}).join('')+'</select></div></details>';
 };
 
+var tp277OpenTraining=function(){
+ tp155R4ClosePanel(false);go('plan');const panel=document.querySelector('#app .tp1511-training');
+ if(panel){panel.open=true;panel.scrollIntoView({block:'start'});}
+};
 settingsScreen=function(){
- const backup='<div class="setting tp1511-card tp152-settings-backup"><div class="tp1511-head"><b>⇩</b><div><strong>'+esc(tp149T('backup.title'))+'</strong><p class="small muted">'+esc(tp149T('backup.help'))+'</p></div></div><p class="small muted">'+esc(backupStatus())+'</p><div class="grid2"><button class="btn secondary" onclick="exportData()">'+esc(tp149T('backup.saveFile'))+'</button><button class="btn secondary" onclick="chooseImport()">'+esc(tp149T('backup.restore'))+'</button></div><input id="importFile" type="file" accept=".json,application/json" hidden onchange="importData(this.files[0])"></div>';
- const profile='<div class="setting tp1511-card tp152-settings-profile"><div class="tp1511-head"><b>◎</b><div><strong>'+esc(tp149T('settings.trainingProfile'))+'</strong><p class="small muted">'+esc(tp149T('settings.trainingProfileHelp'))+'</p></div></div><button class="btn secondary block" onclick="resetStarter()">'+esc(tp149T('settings.gentleProfile'))+'</button><button class="btn danger block" onclick="resetPlan()">'+esc(tp149T('settings.restoreDefaults'))+'</button></div>';
- return shell('<main class="tp1511-settings tp152-settings"><div class="hero"><h1>'+esc(tp149T('settings.title'))+'</h1><div class="muted">'+esc(tp149T('settings.subtitle'))+'</div></div>'+rf212LanguagePanel()+rf200ThemePanel()+backup+tp105DataPanel()+cloudPanel()+profile+'</main>');
+ const group=(id,title,icon,body)=>'<details class="tp277-settings-group '+(id==='backup'?'tp152-settings-backup':id==='privacy'?'tp152-settings-profile':'')+'" data-settings-group="'+id+'" '+(state.tp277SettingsOpen?.[id]?'open':'')+' ontoggle="if(this.isConnected)state.tp277SettingsOpen=Object.assign({},state.tp277SettingsOpen,{'+id+':this.open})"><summary onclick="state.tp277SettingsOpen=Object.assign({},state.tp277SettingsOpen,{'+id+':!this.parentElement.open})"><span class="tp277-setting-icon" aria-hidden="true">'+icon+'</span><strong>'+esc(title)+'</strong><span aria-hidden="true">›</span></summary><div class="tp277-settings-body">'+body+'</div></details>';
+ const backup='<p class="small muted">'+esc(backupStatus())+'</p><div class="grid2"><button class="btn secondary" onclick="exportData()">'+esc(tp149T('backup.saveFile'))+'</button><button class="btn secondary" onclick="chooseImport()">'+esc(tp149T('backup.restore'))+'</button></div><input id="importFile" type="file" accept=".json,application/json" hidden onchange="importData(this.files[0])">'+cloudPanel();
+ const profile='<p class="small muted">'+esc(tp149T('settings.trainingProfileHelp'))+'</p><button class="btn secondary block" onclick="tp155R4ClosePanel(false);profileScreen()">'+esc(tp149T('settings.trainingProfile'))+'</button>';
+ const devices='<p class="small muted">'+esc(tp277Text('wear'))+'</p><button class="btn secondary block" onclick="TrainPilotWearSync.syncHomeNow()">Wear OS · '+esc(tp149T('health.sync'))+'</button><button class="btn secondary block" onclick="tp155R4ClosePanel(false);go(\'health\')">'+esc(tp149T('journal.healthData'))+'</button>';
+ const privacy=tp105DataPanel()+'<div class="tp277-reset-actions"><button class="btn secondary block" onclick="resetStarter()">'+esc(tp149T('settings.gentleProfile'))+'</button><button class="btn danger block" onclick="resetPlan()">'+esc(tp149T('settings.restoreDefaults'))+'</button></div>';
+ return shell('<main class="tp1511-settings tp152-settings tp277-settings"><div class="hero"><h1>'+esc(tp149T('settings.title'))+'</h1></div>'+group('profile',tp277Text('profile'),'◎',profile)+group('appearance',tp277Text('appearance'),'◐',rf200ThemePanel()+rf212LanguagePanel())+group('training',tp277Text('training'),'◷','<label>'+esc(tp149T('settings.rest'))+'<input id="rest" class="field" type="number" min="30" max="300" value="'+esc(settings().rest)+'"></label><button class="btn secondary block" onclick="saveSettings()">'+esc(tp149T('common.save'))+'</button><button class="btn secondary block" onclick="tp277OpenTraining()">'+esc(tp1511T('training'))+'</button>')+group('devices',tp277Text('devices'),'⌚',devices)+group('backup',tp149T('backup.title'),'⇩',backup)+group('privacy',tp277Text('privacy'),'◇',privacy)+'</main>');
 };
 
 rf233CoachScreen=function(){
@@ -11280,15 +11379,25 @@ renderWorkout=function(){
  persistDraft();
  const i=Math.max(0,Math.min(Number(state.current)||0,state.session.exercises.length-1)),se=state.session.exercises[i],e=byId(se.id)||se,total=state.session.exercises.length,pct=Math.round(((i+1)/Math.max(1,total))*100);
  const name=e&&e.custom?String(e.hu||e.en||e.id):tp149ExerciseName(e),note=e&&e.custom?String(e.notes||''):tp149ExerciseNote(e),target=(se.prescription&&se.prescription.reps)||(se.progressionPrescription&&se.progressionPrescription.reps)||e.reps||'',sets=se.sets||[],quick=typeof tp150IsQuick==='function'&&tp150IsQuick(),title=quick&&typeof tp150qwT==='function'?tp150qwT('title'):tp149WorkoutTitle();
+ const previousWorkout=history().find(h=>h.programId===state.session.programId&&(h.dayId||h.workout)===(state.session.dayId||state.session.workout)&&(h.exercises||[]).some(x=>x.id===se.id));
+ const previousSets=previousWorkout?.exercises?.find(x=>x.id===se.id)?.sets||[];
+ const next=state.session.exercises[i+1],nextDef=next&&(byId(next.id)||next);
+ const upcoming=nextDef?'<section class="tp277-next-exercise"><small>'+esc(tp277Text('next'))+' · '+(i+2)+'/'+total+'</small><strong>'+esc(tp149ExerciseName(nextDef))+'</strong></section>':'';
  const rows=sets.map(function(s,si){
-  const load=e.loadType==='bodyweight'?'<span class="small muted tp153-bodyweight">'+esc(tp149T('workout.bodyweight'))+'</span>':'<label class="small">'+esc(tp149LoadLabel(e.loadType))+'<input class="field" aria-label="'+esc(tp149LoadLabel(e.loadType))+'" inputmode="decimal" value="'+esc(s.weight==null?'':s.weight)+'" oninput="upd('+i+','+si+',\'weight\',this.value)"></label>';
+  const load=e.loadType==='bodyweight'?'<span class="small muted tp153-bodyweight">'+esc(tp149T('workout.bodyweight'))+'</span>':'<label class="small"><span class="tp277-field-label">'+esc(tp149LoadLabel(e.loadType))+'</span><input class="field" aria-label="'+esc(tp149LoadLabel(e.loadType))+'" inputmode="decimal" value="'+esc(s.weight==null?'':s.weight)+'" oninput="upd('+i+','+si+',\'weight\',this.value)"></label>';
   const unit=tp149RepUnit(e.repUnit);
-  return '<div class="row tp153-set-row"><div class="num">'+(si+1)+'</div>'+load+'<label class="small">'+esc(unit)+'<input class="field" inputmode="numeric" aria-label="'+esc(unit)+'" placeholder="'+esc(target)+'" value="'+esc(s.reps==null?'':s.reps)+'" oninput="upd('+i+','+si+',\'reps\',this.value)"></label><button class="check '+(s.done?'done':'')+'" onclick="toggleSet('+i+','+si+')">'+(s.done?'✓':'OK')+'</button></div>';
+  const prior=previousSets[si],previous=prior?.done?((Number(prior.weight)>0?tp149FormatNumber(prior.weight)+'×':'')+String(prior.reps||'—')):'—';
+  const eligible=typeof tp197RirEligible==='function'&&tp197RirEligible(state.session,se,true);
+  const lastDone=sets.map((set,index)=>set.done?index:-1).filter(index=>index>=0).at(-1);
+  const rir=eligible?'<label class="small tp277-set-rir tp229-rir"><span class="tp277-field-label">RIR</span><input id="'+(si===lastDone?'tp197ActualRir':'tp229ActualRir-'+si)+'" class="field" data-set-id="'+esc(s.setId||'')+'" data-set-index="'+si+'" data-exercise-id="'+esc(se.id)+'" data-workout-started="'+esc(state.session.started||'')+'" data-inline-rir="true" aria-label="'+esc(tp197RirWords().title)+'" title="'+esc(tp197RirWords().note)+'" type="number" inputmode="numeric" min="0" max="10" step="1" value="'+(tp229RirValid(s.actualRir)?Number(s.actualRir):'')+'" placeholder="—" aria-describedby="tp197RirNote tp229RirSummary" oninput="tp197RirInput(this)"></label>':'<span class="tp277-set-rir small muted" aria-label="RIR">—</span>';
+  return '<div class="row tp153-set-row tp277-set-row"><div class="num">'+(si+1)+'</div><span class="tp277-set-previous"><small>'+esc(tp277Text('previous'))+'</small>'+esc(previous)+'</span>'+load+'<label class="small"><span class="tp277-field-label">'+esc(unit)+'</span><input class="field" inputmode="numeric" aria-label="'+esc(unit)+'" placeholder="'+esc(target)+'" value="'+esc(s.reps==null?'':s.reps)+'" oninput="upd('+i+','+si+',\'reps\',this.value)"></label>'+rir+'<button class="check '+(s.done?'done':'')+'" onclick="toggleSet('+i+','+si+')">'+(s.done?'✓':'OK')+'</button></div>';
  }).join('');
- const feedback=typeof rf152FeedbackHtml==='function'?rf152FeedbackHtml(se):'';
+ const sharedSets=!tp106IsDistance(se)&&!['mp','sec','second','s'].includes(String(e.repUnit||'').toLowerCase())&&!tp1481IsPerSideTimed(se);
+ const setHeading=sharedSets?'<div class="tp277-set-heading" aria-hidden="true"><span>#</span><span class="tp277-previous-heading">'+esc(tp277Text('previous'))+'</span><span>'+esc(e.loadType==='bodyweight'?tp149T('workout.bodyweight'):tp149LoadLabel(e.loadType))+'</span><span>'+esc(tp149RepUnit(e.repUnit))+'</span><span>RIR</span><span>✓</span></div>':'';
+ const feedback=typeof rf152FeedbackHtml==='function'?rf152FeedbackHtml(se,true):'';
  const quickAdd=quick&&typeof tp150qwT==='function'?'<section class="card tp150-quick-add" id="tp150QuickAdd"><div class="tp150-quick-add-head"><strong>'+esc(tp150qwT('title'))+'</strong><span class="badge">'+esc(tp150qwT('exerciseCount',{count:state.session.exercises.length}))+'</span></div><button class="btn secondary block" onclick="tp150QuickPicker()">'+esc(tp150qwT('addAnother'))+'</button></section>':'';
  const demo=tp153WorkoutVideo(e.id),guide=(note||demo)?'<details class="tp153-workout-guide tp154-workout-guide"><summary><span class="tp154-workout-guide-title">▶ '+esc(tp149T('video.demoTitle'))+'</span><span class="tp152-chevron" aria-hidden="true">⌄</span></summary><div class="tp154-workout-guide-body">'+(note?'<p class="note tp153-workout-note">'+esc(note)+'</p>':'')+demo+'</div></details>':'';
- const body='<main class="tp149-workout tp153-workout"><section class="card tp153-workout-head"><div class="tp153-workout-topline"><span class="small muted">'+esc(title)+'</span><strong>'+(i+1)+'/'+total+'</strong></div><h1>'+esc(name)+'</h1><div class="tp153-workout-prescription"><span>'+esc(tp149T('workout.target'))+': <b>'+sets.length+' × '+esc(target)+'</b></span></div>'+guide+'<div class="progress"><div style="width:'+pct+'%"></div></div></section><div class="section tp153-sets-title">'+esc(tp149T('workout.sets'))+'</div>'+rows+feedback+quickAdd+'<div class="tp153-workout-actions"><button class="btn block" data-tp-workout-next onclick="nextExercise()">'+esc(tp149T(i===total-1?'workout.finish':'workout.next'))+'</button><button class="btn secondary block" onclick="prevExercise()" '+(i===0?'disabled':'')+'>'+esc(tp149T('workout.previous'))+'</button></div></main>';
+ const body='<main class="tp149-workout tp153-workout tp277-workout'+(sharedSets?' tp277-shared-sets':'')+'"><section class="card tp153-workout-head"><div class="tp153-workout-topline"><span class="small muted">'+esc(title)+'</span><strong>'+(i+1)+'/'+total+'</strong><output class="tp277-elapsed">⏱ '+esc(sessionDuration(Object.assign({},state.session,{finished:new Date().toISOString()})))+'</output></div><h1>'+esc(name)+'</h1><div class="tp153-workout-prescription"><span>'+esc(tp149T('workout.target'))+': <b>'+sets.length+' × '+esc(target)+'</b></span></div>'+guide+'<div class="progress"><div style="width:'+pct+'%"></div></div></section><div class="section tp153-sets-title">'+esc(tp149T('workout.sets'))+'</div>'+setHeading+rows+upcoming+feedback+quickAdd+'<div class="tp153-workout-actions"><button class="btn block" data-tp-workout-next onclick="nextExercise()">'+esc(tp149T(i===total-1?'workout.finish':'workout.next'))+'</button><button class="btn secondary block" onclick="prevExercise()" '+(i===0?'disabled':'')+'>'+esc(tp149T('workout.previous'))+'</button></div></main>';
  render(shell(body));
  if(typeof rf110DecorateTimedWorkout==='function')rf110DecorateTimedWorkout();
  if(typeof tp120AfterRender==='function')tp120AfterRender();
@@ -11538,9 +11647,10 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   if(!head||head.querySelector('.tp155-workout-coach')||!state.session)return;
   var i=Math.max(0,Math.min(Number(state.current)||0,(state.session.exercises||[]).length-1)),se=(state.session.exercises||[])[i];if(!se)return;
   var decision=null,advice=null;try{decision=rf233Decision(rf220Readiness());advice=rf233ExerciseAdvice(se.id,decision)}catch(_){}
-  var a=window.tp155CoachShortAdvice(se.id,decision,advice),c=copy(),box=document.createElement('div');
-  box.className='tp155-workout-coach';
-  box.innerHTML='<span class="tp155-workout-coach-kicker">'+esc(c.coach)+'</span>'+(a.label?'<strong>'+esc(a.label)+'</strong>':'')+'<p>'+esc(a.text)+'</p>';
+  var a=window.tp155CoachShortAdvice(se.id,decision,advice),c=copy(),box=document.createElement('details');
+  box.className='tp155-workout-coach tp277-workout-coach';box.open=!!window.TrainPilotWorkoutCoach?.isOpen(state.session,se);
+  box.innerHTML='<summary><span class="tp155-workout-coach-kicker">'+esc(c.coach)+'</span>'+(a.label?'<strong>'+esc(a.label)+'</strong>':'')+'<span aria-hidden="true">›</span></summary><p>'+esc(a.text)+'</p>';
+  if(window.TrainPilotWorkoutCoach){box.innerHTML=window.TrainPilotWorkoutCoach.html(se,a);box.addEventListener('toggle',()=>{if(box.isConnected)window.TrainPilotWorkoutCoach.remember(state.session,se,box.open)});box.querySelector('summary')?.addEventListener('click',()=>window.TrainPilotWorkoutCoach.remember(state.session,se,!box.open));}
   var anchor=head.querySelector('.tp153-workout-prescription');if(anchor)anchor.insertAdjacentElement('afterend',box);else head.appendChild(box);
  };
  if(typeof renderWorkout==='function'){
@@ -11766,7 +11876,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   const m=tp155JournalMonthStart(),next=new Date(m.getFullYear(),m.getMonth()+Number(delta||0),1,12);tp155JournalStoreMonth(next);state.tp155JournalFilterOpen=true;render(historyScreen());
  };
  window.tp155JournalSetMonth=function(value,open=true){
-  const d=rf263ParseDate(value);if(!d)return;tp155JournalStoreMonth(d);state.tp155JournalFilterOpen=!!open;render(historyScreen());
+  const d=rf263ParseDate(value);if(!d)return;tp155JournalStoreMonth(d);state.tp155JournalFilterOpen=!!open;if(window.TrainPilotJournalDate)window.TrainPilotJournalDate.refresh();else render(historyScreen());
  };
  window.tp155JournalPickDate=function(value){
   if(value&&!rf263ParseDate(value))return;
@@ -11789,7 +11899,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   const all=history(),filtered=rf263FilteredHistory(),selected=tp155JournalSelected(),c=tp155R3Copy(),locale=tp155JournalLocale(),selectedLabel=selected?rf263ParseDate(selected).toLocaleDateString(locale):'';
   const filter='<details class="card tp155-journal-filter" '+(state.tp155JournalFilterOpen?'open':'')+' ontoggle="tp155JournalFilterToggle(this)"><summary><div><strong>'+esc(c.filter)+'</strong>'+(selectedLabel?'<span class="small muted">'+esc(selectedLabel)+'</span>':'')+'</div><span class="tp152-chevron" aria-hidden="true">⌄</span></summary>'+tp155JournalCalendarHtml()+'</details><p class="small muted rf263-history-count">'+esc(tp149T('journal.count',{shown:filtered.length,total:all.length}))+'</p>';
   const rows=filtered.length?filtered.map(function(row,i){return rf263HistoryItem(row.x,row.index,i)}).join(''):(all.length?'<div class="card muted">'+esc(tp149T('journal.noneRange'))+'</div>':'<div class="muted">'+esc(tp149T('journal.none'))+'</div>');
-  return shell('<main class="tp150-journal-compact">'+filter+rows+'</main>');
+  return shell('<main class="tp150-journal-compact tp277-journal">'+tp277JournalFiltersHtml()+filter+rows+'</main>');
  };
 
  // Time selector: scrollable lists, always opens upward from the trigger, blurred content behind it.
@@ -11855,7 +11965,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
 
  // Re-apply current theme after the Basic palette changes.
  rf200ApplyTheme(rf200ThemeKey());
- window.TrainPilot155Round3={version:TP155_R3_VERSION,matteBasic:true,expandedBasicPalette:true,naturalHomeHeight:true,largerHuNav:true,inlineJournalDate:true,directLanguage:true,upwardTimePicker:true,pendingI18nNavAudit:true,pendingDropdownStyleAudit:true};
+ window.TrainPilot155Round3={version:TP155_R3_VERSION,matteBasic:true,expandedBasicPalette:true,naturalHomeHeight:true,largerHuNav:true,inlineJournalDate:false,directLanguage:true,upwardTimePicker:true,pendingI18nNavAudit:true,pendingDropdownStyleAudit:true};
 })();
 // @endsection trainpilot-155-round3-ui-polish.js
 
@@ -11885,41 +11995,76 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  const storeMonth=d=>{state.tp155JournalMonth=rf263DateKey(new Date(d.getFullYear(),d.getMonth(),1,12))};
  const fmt=value=>{const d=valid(value)?rf263ParseDate(value):null;return d?d.toLocaleDateString(locale(),{year:'numeric',month:'2-digit',day:'2-digit'}):'—'};
 
+ // #279: a native modal keeps focus/background isolation without another router wrapper.
+ let dateDialog=null,dateTrigger=null;
+ const refreshDate=function(){
+  if(!dateDialog)return;
+  const focused=document.activeElement,token=focused?.dataset?.date||focused?.dataset?.month;
+  const host=dateDialog.querySelector('.tp279-journal-calendar-host');
+  host.innerHTML=calendarHtml();
+  document.querySelector('.tp155-journal-filter')?.setAttribute('aria-expanded','true');
+  if(token)host.querySelector('[data-date="'+token+'"],[data-month="'+token+'"]')?.focus({preventScroll:true});
+ };
+ const closeDate=function(restore=true){
+  if(!dateDialog)return false;
+  const dialog=dateDialog;dateDialog=null;
+  delete state.tp155JournalRangeStart;state.tp155JournalFilterOpen=false;
+  dialog.close();dialog.remove();
+  const trigger=dateTrigger?.isConnected?dateTrigger:document.querySelector('.tp155-journal-filter');dateTrigger=null;
+  trigger?.setAttribute('aria-expanded','false');
+  if(restore)trigger?.focus({preventScroll:true});
+  return true;
+ };
+ const openDate=function(trigger){
+  if(dateDialog)return;
+  delete state.tp155JournalRangeStart;
+  dateTrigger=trigger||document.querySelector('.tp155-journal-filter');
+  dateDialog=document.createElement('dialog');dateDialog.id='tp279JournalDate';
+  dateDialog.className='tp108-day-dialog';
+  dateDialog.setAttribute('role','dialog');dateDialog.setAttribute('aria-modal','true');dateDialog.setAttribute('aria-labelledby','tp279JournalDateTitle');
+  dateDialog.innerHTML='<div class="tp279-journal-date-head"><h2 id="tp279JournalDateTitle">'+esc(copy().filter)+'</h2></div><button type="button" class="tp108-day-close tp-modal-close" aria-label="'+esc(tp149T('common.close'))+'" onclick="TrainPilotJournalDate.close()">×</button><div class="tp108-day-content tp279-journal-calendar-host"></div>';
+  dateDialog.addEventListener('cancel',event=>{event.preventDefault();closeDate();});
+  dateDialog.addEventListener('keydown',event=>{
+   if(event.key!=='Tab')return;
+   const buttons=[...dateDialog.querySelectorAll('button:not(:disabled)')],first=buttons[0],last=buttons[buttons.length-1];
+   if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}
+   else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
+  });
+  const dialog=dateDialog;
+  dateDialog.addEventListener('close',()=>{if(dateDialog===dialog)closeDate();});
+  document.body.appendChild(dateDialog);refreshDate();dateDialog.showModal();
+  state.tp155JournalFilterOpen=true;
+  dateDialog.querySelector('.tp-modal-close').focus({preventScroll:true});
+ };
+ window.TrainPilotJournalDate={open:openDate,close:closeDate,refresh:refreshDate};
  window.tp155R4JournalMoveMonth=function(delta){
   const m=monthStart(),next=new Date(m.getFullYear(),m.getMonth()+Number(delta||0),1,12);
-  storeMonth(next);state.tp155JournalFilterOpen=true;render(historyScreen());
+  storeMonth(next);refreshDate();
  };
  window.tp155R4JournalPickDate=function(value){
   if(!valid(value))return;
-  const start=pending(),active=committed();
+  const start=pending();
   storeMonth(rf263ParseDate(value));
-  if(!start||(active.from&&active.to)){
+  if(!start){
+   // An incomplete new selection must preserve the already committed filter.
    state.tp155JournalRangeStart=value;
-   rf263HistoryFilter={from:'',to:''};
-   state.tp155JournalFilterOpen=true;
   }else{
-   let from=start,to=value;
-   if(to<from){const tmp=from;from=to;to=tmp}
-   rf263HistoryFilter={from:from,to:to};
-   delete state.tp155JournalRangeStart;
-   state.tp155JournalFilterOpen=true;
+   const from=start<value?start:value,to=start<value?value:start;
+   rf263HistoryFilter={from:from,to:to};delete state.tp155JournalRangeStart;
+   render(historyScreen());
   }
-  render(historyScreen());
+  refreshDate();
  };
  window.tp155R4JournalToday=function(){
   const value=rf263DateKey(new Date()),start=pending();
   storeMonth(new Date());
-  if(start){
-   let from=start,to=value;if(to<from){const tmp=from;from=to;to=tmp}
-   rf263HistoryFilter={from:from,to:to};delete state.tp155JournalRangeStart;
-  }else{
-   rf263HistoryFilter={from:value,to:value};delete state.tp155JournalRangeStart;
-  }
-  state.tp155JournalFilterOpen=true;render(historyScreen());
+  rf263HistoryFilter=start?{from:start<value?start:value,to:start<value?value:start}:{from:value,to:value};
+  delete state.tp155JournalRangeStart;
+  render(historyScreen());refreshDate();
  };
  window.tp155R4JournalClear=function(){
   rf263HistoryFilter={from:'',to:''};delete state.tp155JournalRangeStart;delete state.tp155JournalMonth;
-  state.tp155JournalFilterOpen=false;render(historyScreen());
+  render(historyScreen());closeDate();
  };
  rf263ClearHistoryFilter=window.tp155R4JournalClear;
 
@@ -11930,15 +12075,15 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   let days='<span aria-hidden="true"></span>'.repeat(first);
   for(let d=1;d<=count;d++){
    const date=new Date(y,mo,d,12),value=rf263DateKey(date),isStart=value===from,isEnd=!!to&&value===to,inRange=!!(from&&to&&value>from&&value<to);
-   const cls='tp155-journal-day'+(isStart?' is-start':'')+(isEnd?' is-end':'')+(inRange?' is-range':'');
-   days+='<button type="button" class="'+cls+'" data-date="'+value+'" aria-label="'+esc(date.toLocaleDateString(locale(),{year:'numeric',month:'long',day:'numeric',weekday:'long'}))+'" aria-pressed="'+((isStart||isEnd)?'true':'false')+'" '+(value===today?'aria-current="date"':'')+' onclick="event.preventDefault();event.stopPropagation();tp155R4JournalPickDate(\''+value+'\')">'+d+'</button>';
+   const cls='cal-cell tp155-journal-day'+(isStart?' is-start':'')+(isEnd?' is-end':'')+(inRange?' is-range':'');
+   days+='<button type="button" class="'+cls+'" data-date="'+value+'" aria-label="'+esc(date.toLocaleDateString(locale(),{year:'numeric',month:'long',day:'numeric',weekday:'long'}))+'" aria-pressed="'+((isStart||isEnd)?'true':'false')+'" '+(value===today?'aria-current="date"':'')+' onclick="event.preventDefault();event.stopPropagation();tp155R4JournalPickDate(\''+value+'\')"><span>'+d+'</span></button>';
   }
   const active=!!(start||a.from||a.to);
-  return '<div class="tp155-journal-calendar tp155-r4-range-calendar">'+
+  return '<div class="tp151-calendar-frame tp155-r4-calendar-frame tp155-journal-calendar tp155-r4-range-calendar">'+
    '<div class="tp155-journal-range-head"><div><span>'+esc(c.from)+'</span><strong>'+esc(fmt(from))+'</strong></div><div><span>'+esc(c.to)+'</span><strong>'+esc(fmt(to))+'</strong></div></div>'+
    (start?'<p class="small muted tp155-journal-range-help">'+esc(c.pickEnd)+'</p>':'')+
-   '<div class="tp155-journal-month"><button type="button" class="btn secondary" onclick="event.preventDefault();event.stopPropagation();tp155R4JournalMoveMonth(-1)">‹</button><strong>'+esc(m.toLocaleDateString(locale(),{year:'numeric',month:'long'}))+'</strong><button type="button" class="btn secondary" onclick="event.preventDefault();event.stopPropagation();tp155R4JournalMoveMonth(1)">›</button></div>'+
-   '<div class="tp155-journal-week" aria-hidden="true">'+weekdays.map(x=>'<span>'+esc(x)+'</span>').join('')+'</div><div class="tp155-journal-days">'+days+'</div>'+
+   '<div class="calendar-head tp155-journal-month"><button type="button" class="btn secondary" data-month="-1" onclick="event.preventDefault();event.stopPropagation();tp155R4JournalMoveMonth(-1)">‹</button><strong>'+esc(m.toLocaleDateString(locale(),{year:'numeric',month:'long'}))+'</strong><button type="button" class="btn secondary" data-month="1" onclick="event.preventDefault();event.stopPropagation();tp155R4JournalMoveMonth(1)">›</button></div>'+
+   '<div class="cal-weekdays tp155-journal-week" aria-hidden="true">'+weekdays.map(x=>'<span>'+esc(x)+'</span>').join('')+'</div><div class="calendar-grid tp155-journal-days">'+days+'</div>'+
    '<div class="tp155-journal-actions"><button type="button" class="btn secondary" onclick="event.preventDefault();event.stopPropagation();tp155R4JournalClear()" '+(active?'':'disabled')+'>'+esc(c.clear)+'</button><button type="button" class="btn secondary" onclick="event.preventDefault();event.stopPropagation();tp155R4JournalToday()">'+esc(c.today)+'</button></div></div>';
  };
 
@@ -11962,14 +12107,14 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   return true;
  };
  historyScreen=function(){
-  const all=history(),filtered=rf263FilteredHistory(),a=committed(),start=pending(),c=copy(),from=start||a.from||'',to=start?'':a.to||'';
-  const range=JSON.stringify([a.from,a.to,start]);
+  const all=history(),filtered=rf263FilteredHistory(),a=committed(),c=copy(),from=a.from,to=a.to;
+  const range=JSON.stringify([a.from,a.to,state.tp277JournalKind||'all']);
   if(range!==tp236Range||all.length!==tp236LastCount||!document.getElementById('tp236HistoryRows')){tp236Range=range;tp236Shown=TP236_PAGE_SIZE;}
   tp236LastCount=all.length;
   const status=(from||to)?'<span class="small muted tp155-journal-range-summary">'+esc(c.from)+': '+esc(fmt(from))+' • '+esc(c.to)+': '+esc(fmt(to))+'</span>':'';
-  const filter='<details class="card tp155-journal-filter '+((a.from&&a.to)?'tp155-range-active':'')+'" '+(state.tp155JournalFilterOpen?'open':'')+' ontoggle="state.tp155JournalFilterOpen=!!this.open"><summary><div><strong>'+esc(c.filter)+'</strong>'+status+'</div><span class="tp160-journal-disclosure" aria-hidden="true"></span></summary>'+calendarHtml()+'</details><p class="small muted rf263-history-count">'+esc(tp149T('journal.count',{shown:filtered.length,total:all.length}))+'</p>';
+  const filter='<button type="button" class="card tp155-journal-filter '+((a.from&&a.to)?'tp155-range-active':'')+'" aria-haspopup="dialog" aria-expanded="'+(dateDialog?.open?'true':'false')+'" onclick="TrainPilotJournalDate.open(this)"><span class="tp279-journal-filter-copy"><strong>'+esc(c.filter)+'</strong>'+status+'</span><span class="tp160-journal-disclosure" aria-hidden="true"></span></button><p class="small muted rf263-history-count">'+esc(tp149T('journal.count',{shown:filtered.length,total:all.length}))+'</p>';
   const rows=filtered.length?'<div id="tp236HistoryRows">'+filtered.slice(0,tp236Shown).map(function(row,i){return rf263HistoryItem(row.x,row.index,i)}).join('')+'</div>'+tp236MoreButton(filtered.length):(window.TrainPilot110?window.TrainPilot110.empty('log',!!all.length):(all.length?'<div class="card muted">'+esc(tp149T('journal.noneRange'))+'</div>':'<div class="muted">'+esc(tp149T('journal.none'))+'</div>'));
-  return shell('<main class="tp150-journal-compact">'+filter+rows+'</main>');
+  return shell('<main class="tp150-journal-compact tp277-journal">'+tp277JournalFiltersHtml()+filter+rows+'</main>');
  };
 
  const style=document.createElement('style');style.id='tp155Round3JournalRangeCss';style.textContent=[
@@ -11978,7 +12123,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   'html[data-tp-theme-family="basic"] .tp155-journal-filter.tp155-range-active{box-shadow:none!important;border-color:color-mix(in srgb,var(--accent) 58%,var(--line))!important;background:color-mix(in srgb,var(--accent) 6%,var(--card))!important}'
  ].join('');
  document.head.appendChild(style);
- window.TrainPilot155JournalRange={version:'1.5.5-round3-range',inclusive:true,twoDateSelection:true};
+ window.TrainPilot155JournalRange={version:'1.5.5-round3-range',inclusive:true,twoDateSelection:true,modal:true};
 })();
 // @endsection trainpilot-155-round3-journal-range.js
 
@@ -12378,6 +12523,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  const renderBase=render;
  render=function(custom){
   const out=renderBase.apply(this,arguments);
+  if(state.tab!=='history')window.TrainPilotJournalDate?.close(false);
   window.tp155R4DecorateNavigation();
   // Pickers keep their editable controls across an ordinary page redraw.
   // Their filter handlers and explicit RefreshPanel calls update them directly.
@@ -12398,7 +12544,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
    if(document.querySelector?.('#tpTemporalPicker,#tp2628Dialog,.video-modal,.video-overlay'))return typeof backBase==='function'?backBase.apply(this,arguments):true;
    if(!dayHost&&state.rf260MovingScheduleId){window.tp155CancelCalendarMove();return true;}
    if(state?.rf151HistoryEdit||state?.tp151EditingScheduleId)return typeof backBase==='function'?backBase.apply(this,arguments):true;
-   const opened=panelHost?[...panelHost.querySelectorAll('details[open]')].reverse():[];
+   const opened=panelHost?[...panelHost.querySelectorAll('details[open]:not(.tp277-settings-group)')].reverse():[];
    if(opened.length){opened[0].open=false;return true}
    return window.tp155R4ClosePanel();
   }
@@ -12663,6 +12809,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  tp151ScheduleCard=function(item){
   let html=String(calendarCardBase(item)),done=typeof rf209ScheduleDone==='function'&&rf209ScheduleDone(item);
   html=html.replace('onclick="rf260OpenScheduleMove(\''+item.id+'\',this)"','data-tp-move-id="'+esc(item.id)+'" onclick="rf260OpenScheduleMove(\''+esc(item.id)+'\',this)"');
+  // The canonical calendarCardBase already includes Undo for a completed item.
   if(!done){
    const action='<button class="btn secondary tp155-complete-schedule" onclick="tp155MarkScheduleCompleted(\''+esc(item.id)+'\')">'+esc(t('done'))+'</button>';
    html=html.replace(/(<button class="btn secondary" onclick="skipSchedule)/,action+'$1');
@@ -13348,10 +13495,10 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  }
 
  // Workout landing card: the start action is the single prominent label.
- // Keep the existing short help directly below it; do not duplicate the Quick Workout title.
+ // Remove the redundant helper line on the compact workout landing card (#280).
  if(typeof tp150CompactQuickCard==='function'){
   tp150CompactQuickCard=function(){
-   return '<div class="card tp150-quick-entry tp150-quick-entry-compact tp150-quick-entry-minimal"><button type="button" class="btn block" onclick="tp155R4TogglePanel(\'quick\',this)">'+esc(tp150qwT('start'))+'</button><p class="small muted tp150-quick-entry-help">'+esc(tp150qwT('cardHelp'))+'</p></div>';
+   return '<div class="card tp150-quick-entry tp150-quick-entry-compact tp150-quick-entry-minimal"><button type="button" class="btn block" onclick="tp155R4TogglePanel(\'quick\',this)">'+esc(tp150qwT('start'))+'</button></div>';
   };
  }
  const quickEntryMinimalCss=document.createElement('style');
@@ -17027,11 +17174,11 @@ window.addEventListener?.('DOMContentLoaded',function(){
  function content(groupKey){
   contentAnimation?.cancel();
   contentAnimation=null;
-  // Root-page opacity promotes the entire WebView page and competes with the
-  // legacy CSS reveal. Keep that surface opaque during route/Journal changes.
-  if(groupKey==='navigation'||groupKey==='journal')return;
+  if(reduced.matches)return;
+  if((groupKey==='navigation'||groupKey==='journal')&&document.getElementById('tp155R4PanelHost'))return;
   const main=document.querySelector('#app main');
-  const surface=groupKey==='period'?main?.querySelector('.tp177-trend'):
+  const surface=(groupKey==='navigation'||groupKey==='journal')?main?.querySelector('.tp150-programs-frame,.tp152-active-program,#tp236HistoryRows,.tp168-today-card'):
+   groupKey==='period'?main?.querySelector('.tp177-trend'):
    groupKey==='statistics'?main?.querySelector('.tp107-personal-records,.tp107-cardio'):main;
   // Opacity preserves the tab bar and disclosure geometry; a single surface
   // avoids hundreds of card promotions for a long workout history.
@@ -17076,6 +17223,7 @@ window.addEventListener?.('DOMContentLoaded',function(){
     row.animation=marker.animate([{transform:'translate('+(row.from.x-target.x)+'px,'+(row.from.y-target.y)+'px) scale('+(row.from.width/target.width)+','+(row.from.height/target.height)+')'},{transform:'translate(0,0) scale(1,1)'}],{duration:changed?duration:previous.remaining,easing});
     if(changed)changedGroup=name;
    }
+   if(changed&&name==='navigation'&&!reduced.matches)changedGroup=name;
    observersChanged=observersChanged||oldRow?.group!==group||oldRow?.active!==active;
    next.set(name,row);
   }
@@ -19385,7 +19533,9 @@ window.addEventListener?.('DOMContentLoaded',function(){
   if(!panel){panel=document.createElement('section');panel.className='card tp193-ownership';panel.dataset.tp193Panel='';main.prepend(panel);}
   const stateText=pending(s)?text('pending'):requested?text('saved'):s.timerOwner==='watch'?text('mirror'):s.workoutPaused?text('paused'):text('hint');
   const action=pending(s)?'retry':s.timerOwner==='watch'?'take':s.workoutPaused?'resume':null;
-  panel.innerHTML='<strong>'+esc(text(s.timerOwner==='watch'?'watch':'phone'))+'</strong><div class="small muted" role="status" aria-live="polite">'+esc(error||stateText)+'</div>'+
+  const compact=!action&&!error&&!requested,hintOpen=panel.querySelector('details')?.open===true;
+  panel.classList.toggle('tp277-owner-compact',compact);
+  panel.innerHTML=(compact?'<details '+(hintOpen?'open':'')+'><summary>'+esc(text('phone'))+'</summary><p class="small muted">'+esc(stateText)+'</p></details>':'<strong>'+esc(text(s.timerOwner==='watch'?'watch':'phone'))+'</strong><div class="small muted" role="status" aria-live="polite">'+esc(error||stateText)+'</div>')+
    (action?'<button type="button" class="btn secondary" data-tp193-action="'+action+'" '+(acting?'disabled':'')+' onclick="TrainPilotOwnership193.'+(action==='take'?'takeBack':action==='resume'?'continueOnPhone':'retryTransfer')+'()">'+esc(acting?text('busy'):text(action))+'</button>':'');
   if(!main.dataset.tp193Guard){
    main.dataset.tp193Guard='1';
@@ -19967,7 +20117,7 @@ const tp197BaseSettings=settingsScreen;
 settingsScreen=function(){
  const html=String(tp197BaseSettings.apply(this,arguments)),anchor='<div class="setting tp1511-card">';
  // Default selection stays in Settings, but is discoverable near the top instead of below the backup/profile cards.
- return html.includes(anchor)?html.replace(anchor,tp197UiPanel("global",null)+anchor):html.replace('</main>',tp197UiPanel("global",null)+'</main>');
+ return html.includes('data-settings-group="training"')?html.replace(/(data-settings-group="training"[\s\S]*?<div class="tp277-settings-body">)/,'$1'+tp197UiPanel("global",null)):html.includes(anchor)?html.replace(anchor,tp197UiPanel("global",null)+anchor):html.replace('</main>',tp197UiPanel("global",null)+'</main>');
 };
 const tp197BaseTrainingPanel=tp1511TrainingPanel;
 tp1511TrainingPanel=function(){
@@ -20160,6 +20310,21 @@ var tp197CoachApply=function(){
  void window.TrainPilotWearSync?.syncNow?.();
  return true;
 };
+var tp279CoachWords=function(){
+ const l=typeof rf212Lang==='function'?rf212Lang():'hu';
+ return ({hu:{title:'Progresszió / Coach',why:'Mi alapján?',current:'Jelenlegi munkasorozat'},en:{title:'Progression / Coach',why:'Why?',current:'Current working sets'},de:{title:'Progression / Coach',why:'Warum?',current:'Aktuelle Arbeitssätze'},ro:{title:'Progresie / Coach',why:'Pe ce se bazează?',current:'Serii de lucru actuale'},sk:{title:'Progresia / Coach',why:'Prečo?',current:'Aktuálne pracovné série'},pl:{title:'Progresja / Coach',why:'Dlaczego?',current:'Aktualne serie robocze'}})[l]||{title:'Progression / Coach',why:'Why?',current:'Current working sets'};
+};
+(function(){
+ const opened=new WeakMap();
+ window.TrainPilotWorkoutCoach={
+  isOpen:(s,e)=>opened.get(s)?.has(e)||!!(tp197CoachPending?.session===s&&tp197CoachPending?.exercise===e),
+  remember(s,e,value){if(!s)return;let set=opened.get(s);if(!set){set=new WeakSet();opened.set(s,set)}if(value)set.add(e);else set.delete(e);},
+  html(e,a){
+   const s=state.session,quick=s?.quickWorkout||s?.type==='quick',info=!quick&&s?.programId&&a.action!=='pain'&&a.action!=='easy'?tp197CoachInfo(e.id,s.programId):null,c=tp279CoachWords();
+   return '<summary><span class="tp155-workout-coach-kicker">'+esc(c.title)+'</span><strong>'+esc(info?.title||a.label||a.text)+'</strong><span aria-hidden="true">›</span></summary>'+ (info?tp197CoachPanel():'<p>'+esc(a.text)+'</p><details class="tp279-coach-basis"><summary>'+esc(c.why)+'</summary>'+tp279ProgressDetails(e)+'</details>');
+  }
+ };
+})();
 var tp197CoachPanel=function(){
  const s=state.session,e=s?.exercises?.[state.current],info=e?tp197CoachInfo(e.id,s.programId):null;
  if(!info)return '';
@@ -20170,18 +20335,17 @@ var tp197CoachPanel=function(){
   '<div class="tp197-coach-buttons"><button type="button" class="btn" onclick="tp197CoachApply()">'+esc(t.approve)+'</button><button type="button" class="btn secondary" onclick="tp197CoachCancel()">'+esc(t.cancel)+'</button></div>':
   '<button type="button" class="btn secondary" onclick="tp197CoachRequest()">'+esc(t.action)+'</button>'):
   already?'<p class="small muted">'+esc(t.done)+'</p>':'';
- return '<section class="card tp197-coach-advice" id="tp197CoachAdvice"><strong>'+esc(t.title)+'</strong>'+
-  '<p class="small muted">'+esc(t.mode)+': '+esc(info.method)+'</p>'+
+ return '<section class="tp197-coach-advice" id="tp197CoachAdvice">'+
   '<p class="small"><b>'+esc(info.title)+'</b> · '+esc(info.reason)+'</p>'+
-  '<p class="small muted">'+esc(info.detail)+'</p>'+
-  '<p class="small muted">'+esc(t.history)+': '+String(info.historyCount)+'</p>'+controls+
-  '<p class="small muted">'+esc(t.notice)+'</p></section>';
+  '<p class="small muted tp279-current-plan">'+esc(tp279CoachWords().current)+': '+String(e.sets.length)+' · '+esc(t.sets)+': '+String(info.preview?.proposed?.sets??'—')+'</p>'+
+  '<p class="small muted">'+esc(t.preview)+'</p><p class="small muted">'+esc(info.detail)+'</p>'+controls+
+  '<details class="tp279-coach-basis"><summary>'+esc(tp279CoachWords().why)+'</summary><p class="small muted">'+esc(t.mode)+': '+esc(info.method)+'</p><p class="small muted">'+esc(t.history)+': '+String(info.historyCount)+'</p><p class="small muted">'+esc(t.notice)+'</p>'+tp279ProgressDetails(e)+'</details></section>';
 };
 (function(){
  const originalAdvice=rf233ExerciseAdvice;
  rf233ExerciseAdvice=function(id,decision){
   const result=originalAdvice.apply(this,arguments),s=state.session,pid=s?.programId||(typeof activeProgramId==='function'?activeProgramId():null);
-  const info=tp197CoachInfo(id,pid);
+  const info=s?.quickWorkout||s?.type==='quick'?null:tp197CoachInfo(id,pid);
   if(!info||result?.action==='pain'||decision?.pain)return result;
   return {...result,action:'hold',label:info.title,text:info.summary,proposal197:info.preview};
  };
@@ -20189,16 +20353,10 @@ var tp197CoachPanel=function(){
  if(typeof oldShort==='function'){
   window.tp155CoachShortAdvice=function(id,decision,existing){
    const pid=state.session?.programId||(typeof activeProgramId==='function'?activeProgramId():null),info=tp197CoachInfo(id,pid);
-   if(info)return {action:'hold',label:info.title,text:info.summary};
+   if(info&&!state.session?.quickWorkout&&state.session?.type!=='quick')return {action:'hold',label:info.title,text:info.summary};
    return oldShort.apply(this,arguments);
   };
  }
- const oldRender=renderWorkout;
- renderWorkout=function(){
-  const result=oldRender.apply(this,arguments),head=document.querySelector('main.tp153-workout .tp153-workout-head');
-  if(head&&!head.querySelector('#tp197CoachAdvice'))head.insertAdjacentHTML('beforeend',tp197CoachPanel());
-  return result;
- };
  const style=document.createElement('style');style.id='tp197CoachStyle';
  style.textContent='.tp197-coach-advice{margin:10px 0 4px;padding:12px}.tp197-coach-advice p{margin:6px 0;line-height:1.45;overflow-wrap:anywhere}.tp197-coach-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px}.tp197-coach-buttons button{min-height:44px;white-space:normal;overflow-wrap:anywhere}';
  document.head.appendChild(style);
@@ -20223,14 +20381,14 @@ var tp229RirObservation=function(exercise){
  const legacy=exercise?.actualRir??exercise?.feedback?.rir;
  return tp229RirValid(legacy)?Number(legacy):null;
 };
-var tp197RirEligible=function(session,exercise){
- if(!session||!exercise||!Array.isArray(exercise.sets)||!exercise.sets.some(x=>x.done===true))return false;
+var tp197RirEligible=function(session,exercise,manual=false){
+ if(!session||!exercise||!Array.isArray(exercise.sets)||!manual&&!exercise.sets.some(x=>x.done===true))return false;
  if(session.timerOwner==='watch'||session.ownershipAwaitingResume193||
   session.ownershipProtocol193===1&&session.timerOwner!=='phone'||
   window.TrainPilotBackupBusy||window.TrainPilotRestore105Pending||
   window.TrainPilotWearSync?.isApplyingCommand?.())return false;
  const modes=typeof tp197TrainingModes==='function'?tp197TrainingModes(session.programId):null;
- if(!modes?.explicitChoice||modes.progressionMode!=='rir')return false;
+ if(!manual&&(!modes?.explicitChoice||modes.progressionMode!=='rir'))return false;
  const lib=typeof byId==='function'?byId(exercise.id)||{}:{};
  if(typeof tp106IsDistance==='function'&&tp106IsDistance(exercise))return false;
  if(['mp','sec','second','s'].includes(String(exercise.repUnit||lib.repUnit||'').toLowerCase()))return false;
@@ -20238,11 +20396,18 @@ var tp197RirEligible=function(session,exercise){
  return true;
 };
 
-var tp197RirSave=function(value,repaint=true,setId=null){
+var tp197RirSave=function(value,repaint=true,setId=null,manual=false,setIndex=null,exerciseId=null,started=null){
  const session=state.session,exercise=session?.exercises?.[state.current];
- if(!tp197RirEligible(session,exercise)||session.workoutPaused)return false;
- const set=setId?exercise.sets.find(s=>s.setId===setId):exercise.sets.filter(s=>s.done===true).at(-1);
- if(!set||set.done!==true)return false;
+ if(!tp197RirEligible(session,exercise,manual)||session.workoutPaused)return false;
+ // Reject a stale DOM input after another exercise/workout has taken control.
+ if(exerciseId!==null&&String(exercise?.id)!==String(exerciseId))return false;
+ if(started!==null&&String(session?.started||'')!==String(started))return false;
+ const indexed=Number.isInteger(setIndex)&&setIndex>=0?exercise.sets[setIndex]:null;
+ if(indexed&&setId&&indexed.setId!==setId)return false;
+ if(setIndex!==null&&!indexed)return false;
+ const set=setId?exercise.sets.find(s=>s.setId===setId):indexed||(manual?null:exercise.sets.filter(s=>s.done===true).at(-1));
+ // Pending RIR is a draft-only user observation, never completed training.
+ if(!set||(!set.done&&!manual))return false;
  const raw=String(value);if(raw!==''&&!tp229RirValid(raw))return false;
  const before=set.actualRir,marker=exercise.setRir229;
  try{
@@ -20265,10 +20430,15 @@ var tp197RirHistory=function(exercise){
 };
 var tp197RirInput=function(input){
  const value=String(input.value),valid=value===''||tp229RirValid(value);
- const saved=tp197RirSave(valid?value:'',false,input.dataset?.setId||null);
+ // Invalid edits clear stale observations rather than silently keeping an old RIR.
+ // A value that cannot be saved is still marked invalid in the editor.
+ const rawIndex=input.dataset?.setIndex;
+ const index=rawIndex!==undefined&&/^\d+$/.test(rawIndex)?Number(rawIndex):null;
+ const saved=tp197RirSave(valid?value:'',false,input.dataset?.setId||null,input.dataset?.inlineRir==='true',
+  index,input.dataset?.exerciseId||null,input.dataset?.workoutStarted||null);
  input.setAttribute?.('aria-invalid',valid&&saved?'false':'true');return valid&&saved;
 };
-var tp197RirField=function(session,exercise){
+var tp197RirField=function(session,exercise,inputs=true){
  if(!tp197RirEligible(session,exercise))return '';
  const t=tp197RirWords(),rows=exercise.sets.map((set,index)=>({set,index})).filter(row=>row.set.done===true);
  const last=rows.at(-1)?.set;
@@ -20280,21 +20450,21 @@ var tp197RirField=function(session,exercise){
  };
  const l=labels[typeof rf212Lang==='function'?rf212Lang():'hu']||labels.en;
  return '<div class="tp197-rir-field tp229-rir"><strong>'+esc(t.title)+'</strong>'+
- rows.map(({set,index})=>{
+ (inputs?rows.map(({set,index})=>{
   const id=set===last?'tp197ActualRir':'tp229ActualRir-'+index;
   return '<label for="'+id+'">'+(index+1)+'. '+esc(l.set)+'</label>'+
    '<input id="'+id+'" class="field" data-set-id="'+esc(set.setId||'')+'" type="number" inputmode="numeric" min="0" max="10" step="1" value="'+(tp229RirValid(set.actualRir)?Number(set.actualRir):'')+'" placeholder="'+esc(t.missing)+'" aria-describedby="tp197RirNote tp229RirSummary" oninput="tp197RirInput(this)">';
- }).join('')+
+ }).join(''):'')+
  '<p id="tp197RirNote" class="small muted">'+esc(t.note)+'</p><p id="tp229RirSummary" class="small muted">'+esc(l.summary)+'</p>'+
  (tp229RirValid(exercise.actualRir)?'<p class="small muted">'+esc(l.legacy)+': '+Number(exercise.actualRir)+'</p>':'')+'</div>';
 };
 window.TrainPilotSetRir229={valid:tp229RirValid,observation:tp229RirObservation};
 (function(){
  const previous=rf152FeedbackHtml;
- rf152FeedbackHtml=function(exercise){
+ rf152FeedbackHtml=function(exercise,inlineRir){
   const html=String(previous.apply(this,arguments)),session=state.session,active=session?.exercises?.[state.current];
   if(active!==exercise)return html;
-  const additional=tp197RirField(session,exercise);
+  const additional=tp197RirField(session,exercise,!inlineRir);
   return additional?html.replace(/<\/div>\s*$/,additional+'</div>'):html;
  };
  const css=document.createElement('style');css.id='tp197RirStyle';
@@ -20469,7 +20639,7 @@ window.TrainPilotSetRir229={valid:tp229RirValid,observation:tp229RirObservation}
  function paintCard(card,map){
   const key=String(card.dataset.tp152HistoryKey||''),entry=cachedRowByAlias.get(key),row=entry?.row,records=row?recordsFor(row,map):[];
   if(!records.length){card.querySelectorAll('.tp226-pr-badge,.tp226-pr-details').forEach(x=>x.remove());return;}
-  const host=card.querySelector(':scope > summary .history-badges');if(!host)return;
+  const host=card.querySelector(':scope > summary .rf103-history-side');if(!host)return;
   let badge=host.querySelector('.tp226-pr-badge');
   if(!badge){
    badge=document.createElement('button');badge.type='button';badge.className='tp226-pr-badge';badge.dataset.workoutKey=key;
@@ -20487,9 +20657,9 @@ window.TrainPilotSetRir229={valid:tp229RirValid,observation:tp229RirObservation}
      (expand?panel.querySelector('summary'):badge)?.focus({preventScroll:true});
     }
    });
-   host.appendChild(badge);
+   host.prepend(badge);
   }
-  badge.textContent='★ '+copy().badge+' · '+records.length;badge.setAttribute('aria-label',copy().badge+' · '+records.length+' · '+copy().details);
+  badge.textContent='PR*';badge.setAttribute('aria-label',copy().badge+' · '+records.length+' · '+copy().details);
   const body=card.querySelector(':scope > .tp3-combined-history-body');
   if(body?.dataset.tp3Hydrated==='true'){
    const old=body.querySelector(':scope > .tp226-pr-details'),panel=details(records,old);
@@ -20520,7 +20690,7 @@ window.TrainPilotSetRir229={valid:tp229RirValid,observation:tp229RirObservation}
   if(typeof ensure==='function')window.tp3EnsureHistoryBody=function(){const value=ensure.apply(this,arguments);paint();return value;};
   paint();
  }
- const api=window.TrainPilotRecords226={index,aliases,recordsFor,paint,installed:false};
+ const api=window.TrainPilotRecords226={index,aliases,recordsFor,snapshot:data,paint,installed:false};
  if(typeof document!=='undefined'){
   if(document.readyState==='complete')install();
   else window.addEventListener?.('DOMContentLoaded',install,{once:true});
@@ -20584,6 +20754,93 @@ window.TrainPilotSetRir229={valid:tp229RirValid,observation:tp229RirObservation}
 })();
 // @endsection set-haptic-227.js
 
+
+// @section tp279-coach-unified.js
+/* PR #279: one compact, read-only Coach disclosure on active workout.
+ * Reuses the existing #197 approval buttons and business guards. No session
+ * mutation, suggestion auto-application or Wear ownership change. */
+(function(){
+ 'use strict';
+ const previous=window.TrainPilotWorkoutCoach;
+ if(!previous||typeof previous.html!=='function')return;
+ const strings={
+  hu:{title:'Progresszió / Coach',today:'Mai javaslat',change:'Változtatás',why:'Mi alapján?',method:'Módszer',history:'Megfelelő előzmény',sets:'Tervezett munkasorozat',suggested:'Javasolt munkasorozat (még nincs alkalmazva)',longTerm:'Hosszabb távú cél (nem a mai utasítás)',pain:'Fájdalomjelzés – nincs terhelésnövelés',light:'Ma kímélő terhelés javasolt',unknown:'Nincs elegendő adat személyre szabott változtatáshoz.',notApplied:'Az ajánlás nem változtatja meg a sorozatokat vagy a súlyokat jóváhagyás nélkül.'},
+  en:{title:'Progression / Coach',today:'Today’s advice',change:'Suggested change',why:'Why?',method:'Method',history:'Relevant history',sets:'Planned working sets',suggested:'Suggested working sets (not applied)',longTerm:'Long-term goal (not today’s instruction)',pain:'Pain reported – do not increase load',light:'Keep today’s training light',unknown:'Not enough data for a personalized change.',notApplied:'Suggestions never change your sets or loads without approval.'},
+  de:{title:'Progression / Coach',today:'Heutiger Hinweis',change:'Vorgeschlagene Änderung',why:'Warum?',method:'Methode',history:'Passende Einheiten',sets:'Geplante Arbeitssätze',suggested:'Empfohlene Arbeitssätze (nicht übernommen)',longTerm:'Langfristiges Ziel (kein heutiger Auftrag)',pain:'Schmerzen gemeldet – Belastung nicht erhöhen',light:'Heute schonend trainieren',unknown:'Zu wenig Daten für eine persönliche Änderung.',notApplied:'Vorschläge ändern Sätze und Gewichte nicht ohne Zustimmung.'},
+  ro:{title:'Progresie / Coach',today:'Recomandarea de azi',change:'Modificare propusă',why:'Pe ce se bazează?',method:'Metodă',history:'Istoric relevant',sets:'Serii de lucru planificate',suggested:'Serii propuse (neaplicate)',longTerm:'Obiectiv pe termen lung (nu instrucțiunea de azi)',pain:'Durere raportată – fără creșterea sarcinii',light:'Antrenament ușor astăzi',unknown:'Date insuficiente pentru o schimbare personalizată.',notApplied:'Recomandările nu modifică seriile sau greutățile fără aprobare.'}
+ };
+ const language=()=>typeof rf212Lang==='function'?rf212Lang():'hu';
+ const words=()=>strings[language()]||strings.en;
+ const safe=value=>String(value==null?'':value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+ const line=(label,value)=>'<p class="tp279-coach-line"><span>'+safe(label)+'</span><strong>'+safe(value)+'</strong></p>';
+ const item=(label,value)=>'<p class="tp279-coach-detail"><b>'+safe(label)+':</b> '+safe(value)+'</p>';
+ function approvalControls(){
+  // Take only the original, guard-protected buttons/status. Do not recreate
+  // #197 request/fingerprint/approval rules or bypass their session checks.
+  if(typeof tp197CoachPanel!=='function')return '';
+  const wrap=document.createElement('div');
+  wrap.innerHTML=tp197CoachPanel();
+  const panel=wrap.querySelector('#tp197CoachAdvice');
+  if(!panel)return '';
+  const buttons=panel.querySelector('.tp197-coach-buttons');
+  if(buttons)return buttons.outerHTML;
+  const button=panel.querySelector(':scope > button');
+  if(button)return button.outerHTML;
+  const done=typeof tp197CoachT==='function'?tp197CoachT().done:'';
+  if(done&&panel.textContent.includes(done))return '<p class="small muted">'+safe(done)+'</p>';
+  return '';
+ }
+ function currentPlan(exercise,advice){
+  const session=state.session,t=words();
+  let readiness=null,decision=null,recommendation=null;
+  try{readiness=rf220Readiness();decision=rf233Decision(readiness)}catch(_){}
+  try{recommendation=rf152Recommendation(exercise.id,exercise)}catch(_){}
+  const pain=exercise.effort==='pain'||advice?.action==='pain'||recommendation?.action==='pain'||decision?.pain===true;
+  const light=!pain&&(advice?.action==='easy'||decision?.mode==='light'||decision?.mode==='reduced');
+  const quick=!!(session?.quickWorkout||session?.type==='quick'||!session?.programId);
+  let info=null;
+  try{if(!quick&&!pain&&!light&&typeof tp197CoachInfo==='function')info=tp197CoachInfo(exercise.id,session.programId)}catch(_){}
+  const headline=pain?t.pain:light?t.light:info?.title||advice?.label||recommendation?.text||t.unknown;
+  const explanation=pain?(recommendation?.text||decision?.text||advice?.text||t.pain)
+   :light?(decision?.text||advice?.text||t.light)
+   :info?.reason||advice?.text||recommendation?.text||t.unknown;
+  return {session,info,recommendation,quick,pain,light,headline,explanation};
+ }
+ function html(exercise,advice){
+  if(!exercise||!state.session)return previous.html(exercise,advice);
+  const t=words(),p=currentPlan(exercise,advice),info=p.info;
+  let inside='<div class="tp279-coach-today"><span class="tp279-coach-caption">'+safe(t.today)+'</span><p>'+safe(p.explanation)+'</p></div>';
+  if(info){
+   const planSets=Array.isArray(exercise.sets)?exercise.sets.length:0;
+   const proposed=Number(info.preview?.proposed?.sets);
+   const hasProposal=Number.isInteger(proposed)&&proposed>0&&proposed!==planSets;
+   const delta=info.detail||'';
+   inside+='<div class="tp279-coach-change"><strong>'+safe(t.change)+'</strong>'+
+    line(t.sets,planSets)+
+    (hasProposal?line(t.suggested,proposed):'')+
+    (delta?'<p class="small muted">'+safe(delta)+'</p>':'')+
+    '<p class="small muted">'+safe(t.notApplied)+'</p>'+approvalControls()+'</div>';
+   const method=info.method||'—',count=Number(info.historyCount)||0;
+   inside+='<details class="tp279-coach-basis"><summary>'+safe(t.why)+'</summary>'+
+    item(t.method,method)+item(t.history,count)+
+    (p.recommendation?.text?item(t.longTerm,p.recommendation.text):'')+'</details>';
+  }else{
+   // Quick workouts have no invented program-day target. A safety warning
+   // remains the only actionable advice in low readiness/pain cases.
+   const reason=p.pain||p.light?'':p.recommendation?.text;
+   if(reason&&reason!==p.explanation)inside+='<details class="tp279-coach-basis"><summary>'+safe(t.why)+'</summary><p class="small muted">'+safe(reason)+'</p></details>';
+  }
+  return '<summary><span class="tp155-workout-coach-kicker">'+safe(t.title)+'</span>'+
+   '<strong>'+safe(p.headline)+'</strong><span aria-hidden="true">›</span></summary>'+
+   '<div class="tp279-coach-unified">'+inside+'</div>';
+ }
+ window.TrainPilotWorkoutCoach={...previous,html,plan:currentPlan};
+ const css=document.createElement('style');
+ css.id='tp279UnifiedCoachStyle';
+ css.textContent='.tp279-coach-unified{display:grid;gap:9px;padding:8px 0 3px;min-width:0}.tp279-coach-unified p{margin:3px 0;line-height:1.35;overflow-wrap:anywhere}.tp279-coach-caption{font-size:11px;font-weight:750;color:var(--accent)}.tp279-coach-today{padding:0 1px}.tp279-coach-change{display:grid;gap:5px;padding-top:8px;border-top:1px solid var(--line)}.tp279-coach-change>strong{font-size:13px}.tp279-coach-line{display:flex;gap:6px;justify-content:space-between;align-items:baseline;font-size:12px}.tp279-coach-line span{color:var(--muted)}.tp279-coach-line strong{text-align:right;font-size:12px}.tp279-coach-detail{font-size:12px;color:var(--muted)}.tp279-coach-basis>summary{min-height:44px}.tp279-coach-unified .tp197-coach-buttons{margin-top:4px}.tp279-coach-unified button{min-height:44px;white-space:normal;overflow-wrap:anywhere}@media(max-width:340px){.tp279-coach-line{flex-wrap:wrap}.tp279-coach-line strong{text-align:left}.tp279-coach-unified .tp197-coach-buttons{grid-template-columns:1fr}}';
+ document.head.appendChild(css);
+})();
+// @endsection tp279-coach-unified.js
 
 // @section ready.js
 (function(){

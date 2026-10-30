@@ -29,7 +29,7 @@ const server=http.createServer((req,res)=>{
    const fixture=document.createElement('div');fixture.id='tp197BrowserFixture';document.body.appendChild(fixture);
    renderWorkout=()=>{fixture.innerHTML=tp197CoachPanel()};
    renderWorkout();
-   return {source:tp197TrainingModes('home-basic').source,text:fixture.innerText};
+   return {source:tp197TrainingModes('home-basic').source,text:fixture.textContent};
   });
   assert.equal(result.source,'global');
   assert.match(result.text,/Lineáris|lineáris/i);

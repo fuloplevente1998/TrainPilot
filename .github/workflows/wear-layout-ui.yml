@@ -10,7 +10,7 @@ on:
         default: ''
   push:
     branches: [main, 'fix/**', 'feat/**', 'perf/**']
-    paths: ['android/wear/**', 'android/shared/**', '.github/workflows/wear-layout-ui.yml', 'tests/browser/phase7-journal-lazy-19.cjs']
+    paths: ['www/**', 'android/wear/**', 'android/shared/**', '.github/workflows/wear-layout-ui.yml', 'tests/browser/phase7-journal-lazy-19.cjs']
 
 permissions:
   contents: read

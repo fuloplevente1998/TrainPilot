@@ -41,6 +41,7 @@ const root=path.resolve('www');const server=http.createServer((q,r)=>{const file
    if(width===393&&height===823&&theme==='yellow'&&month==='2026-10')await p.screenshot({path:'ui-evidence/calendar-visible-frame-107.png'});
    for(const selector of ['.tp154-coach-action','.tp154-settings-action']){
     await p.locator(selector).click();await p.waitForTimeout(100);
+    if(selector==='.tp154-settings-action')for(const group of await p.locator('.tp277-settings-group > summary').all())if(!await group.locator('..').evaluate(x=>x.open))await group.click();
     const panel=p.locator('#tp155R4PanelHost .tp155-r4-panel');assert.equal(await p.locator('#tp155R4PanelHost').evaluate(e=>e.classList.contains('tp107-fit-calendar')),false,'calendar sizing is cleared on panel navigation');
     assert.equal(await panel.evaluate(e=>getComputedStyle(e).overflowY),'auto');
     await panel.evaluate(e=>Promise.all(e.getAnimations({subtree:true}).filter(a=>a.effect.getComputedTiming().iterations!==Infinity).map(a=>a.finished.catch(()=>{}))));

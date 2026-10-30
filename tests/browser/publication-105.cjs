@@ -7,7 +7,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
   const page=await browser.newPage({viewport:{width,height:800},locale:language});const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto(`http://127.0.0.1:${server.address().port}`);await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
   await page.evaluate(lang=>{db.set('language',lang);go('settings');},language);
-  await page.waitForSelector('.tp105-data');await page.locator('.tp105-data>summary').click();
+  if(!await page.locator('[data-settings-group="privacy"]').evaluate(x=>x.open))await page.locator('[data-settings-group="privacy"] > summary').click();await page.waitForSelector('.tp105-data');await page.locator('.tp105-data>summary').click();
   const result=await page.evaluate(()=>({text:document.querySelector('.tp105-data').textContent,checked:document.querySelector('.tp105-data input').checked,overflow:document.documentElement.scrollWidth>innerWidth+1,buttons:[...document.querySelectorAll('.tp105-data button')].map(x=>x.getAttribute('onclick'))}));
   await page.keyboard.press('Tab');
   const consentStyle=await page.evaluate(()=>{
@@ -20,7 +20,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
   assert.equal(consentStyle.off.appearance,'none');assert.equal(consentStyle.off.width,'26px');assert.equal(consentStyle.off.radius,'7px');
   assert.equal(consentStyle.checked.background,consentStyle.checked.accent);assert.equal(consentStyle.checked.markOpacity,'1');assert.equal(consentStyle.checked.outline,'solid');assert.ok(consentStyle.checked.labelHeight>=44);
   assert.equal(result.checked,false,'health export must require consent');assert.equal(result.overflow,false,`${width}/${language} settings overflow`);assert.ok(result.buttons.includes('tp105Archive(false)'));assert.ok(result.buttons.includes('tp105Archive(true)'));assert.ok(result.text.includes(tpLabel(language)));
-  await page.evaluate(()=>{window.tp155R4ClosePanel(false);go('history');go('home');rf200SetTheme('green');go('settings');});await page.waitForSelector('.tp105-data');assert.equal(await page.locator('.tp105-data input').isChecked(),false);assert.deepEqual(errors,[]);await page.close();
+  await page.evaluate(()=>{window.tp155R4ClosePanel(false);go('history');go('home');rf200SetTheme('green');go('settings');});if(!await page.locator('[data-settings-group="privacy"]').evaluate(x=>x.open))await page.locator('[data-settings-group="privacy"] > summary').click();await page.waitForSelector('.tp105-data');assert.equal(await page.locator('.tp105-data input').isChecked(),false);assert.deepEqual(errors,[]);await page.close();
  }
  // Exercise the actual DOMContentLoaded Drive override with an unfinished retention request.
  const page=await browser.newPage({viewport:{width:393,height:800},locale:'hu'});
@@ -42,7 +42,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
  await page.waitForFunction(()=>tp105SyncProbe.started);
  assert.ok((await page.locator('#cloudStatus').textContent()).includes('Drive-szinkron kész.'));
  assert.ok((await page.locator('#cloudStatus').textContent()).includes('A helyi mentés már használható.'));
- await page.locator('.tp105-data>summary').click();await page.locator('[onclick="tp105Archive(false)"]').click();
+ if(!await page.locator('[data-settings-group="privacy"]').evaluate(x=>x.open))await page.locator('[data-settings-group="privacy"] > summary').click();await page.locator('.tp105-data>summary').click();await page.locator('[onclick="tp105Archive(false)"]').click();
  await page.waitForFunction(()=>tp105SyncProbe.saved===1&&!window.TrainPilotBackupBusy);
  assert.equal(await page.evaluate(()=>tp105SyncProbe.alerts.some(x=>x.includes('Előbb fejezd be'))),false);
  await page.evaluate(()=>tp105FinishPrune());await page.waitForFunction(()=>tp105SyncProbe.finished&&!cloudBusy);
@@ -53,11 +53,11 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
   Capacitor.Plugins.GoogleSync.driveList=()=>new Promise((resolve,reject)=>{window.tp105FailNetwork=()=>reject(Object.assign(Error('A Google nem érhető el hálózati hiba miatt.'),{code:'GOOGLE_NETWORK'}));});
   window.tp105PendingSync=syncCloud(true);
  });
- await page.locator('.tp105-data>summary').click();
+ if(!await page.locator('[data-settings-group="privacy"]').evaluate(x=>x.open))await page.locator('[data-settings-group="privacy"] > summary').click();await page.locator('.tp105-data>summary').click();
  await page.locator('[onclick="tp105Archive(false)"]').click();await page.waitForFunction(()=>tp105SyncProbe.saved===2&&!window.TrainPilotBackupBusy);
  assert.equal(await page.evaluate(()=>cloudBusy),true);assert.equal(await page.evaluate(()=>tp105SyncProbe.alerts.some(x=>x.includes('Előbb fejezd be'))),false);
  await page.evaluate(async()=>{tp105FailNetwork();await tp105PendingSync;});assert.equal(await page.evaluate(()=>cloudBusy),false);
- await page.locator('.tp105-data>summary').click();
+ if(!await page.locator('[data-settings-group="privacy"]').evaluate(x=>x.open))await page.locator('[data-settings-group="privacy"] > summary').click();await page.locator('.tp105-data>summary').click();
  await page.locator('[onclick="tp105Archive(false)"]').click();await page.waitForFunction(()=>tp105SyncProbe.saved===3&&!window.TrainPilotBackupBusy);
 
  assert.equal(await page.evaluate(()=>cloudDriveStage),'');assert.deepEqual(probeErrors,[]);await page.close();

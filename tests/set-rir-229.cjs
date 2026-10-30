@@ -23,6 +23,16 @@ session.timerOwner='watch';assert.equal(save('3',false,'s1'),false);session.time
 session.workoutPaused=true;assert.equal(save('3',false,'s1'),false);session.workoutPaused=false;
 assert.equal(save('3',false,'s1'),true);assert.match(box.tp197RirHistory(exercise),/1\.: <strong>3<\/strong>/);
 assert.equal(Object.hasOwn(pending,'actualRir'),false);
+// Inline optional observations work before completion and outside RIR progression.
+box.tp197TrainingModes=()=>({explicitChoice:true,progressionMode:'double'});
+assert.equal(save('0',false,'s3',true),true);assert.equal(pending.done,false);
+assert.equal(saved.exercises[0].sets[2].actualRir,0,'inline draft persists zero without completing set');
+assert.equal(api.observation(exercise),3,'unfinished observation cannot lower completed Coach RIR');
+session.timerOwner='watch';assert.equal(save('2',false,'s3',true),false);session.timerOwner='phone';
+session.workoutPaused=true;assert.equal(save('2',false,'s3',true),false);session.workoutPaused=false;
+assert.equal(save('2',false,'removed',true),false);
+assert.equal(save('',false,'s3',true),true);assert.equal(Object.hasOwn(pending,'actualRir'),false);
+box.tp197TrainingModes=()=>({explicitChoice:true,progressionMode:'rir'});
 const undo=box.window.TrainPilotUndo188;const before=undo.values({...second,done:false});
 undo.capture(session,{commandId:'record',workoutId:'w',exerciseId:'press',setId:'s2'},before);
 save('0',false,'s2');assert.equal(undo.available(session),true,'optional RIR does not change the existing cross-platform completion guard');

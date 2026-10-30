@@ -40,10 +40,10 @@ const root=path.resolve('www'),server=http.createServer((q,r)=>{const url=new UR
   db.set('history',Array.from({length:240},(_,i)=>{const id='motion-large-'+i,t=Date.now()-i*86400000;return {id,healthStableId:'tpw_'+rf250Hash(id),programId:activeProgramId(),dayId:'A',programName:'Performance fixture',started:new Date(t-1800000).toISOString(),finished:new Date(t).toISOString(),exercises:[]}}));go('home');
  });await settled();await p.evaluate(()=>document.fonts.ready);
  const budget=await p.evaluate(()=>{
-  const base=Element.prototype.animate,result={markers:0,surfaces:0,layoutFrames:0};
+  const base=Element.prototype.animate,result={markers:0,surfaces:0,rootSurfaces:0,layoutFrames:0};
   Element.prototype.animate=function(frames,options){
    if(this.matches('.tp137-selection')){result.markers++;if(frames.some(f=>Object.keys(f).some(k=>!['transform','offset','easing','composite'].includes(k))))result.layoutFrames++;}
-   else result.surfaces++;
+   else {result.surfaces++;if(this.matches('#app main'))result.rootSurfaces++;}
    return base.call(this,frames,options);
   };
   try{go('history');return {...result,entries:document.querySelectorAll('details.rf263-history').length}}finally{Element.prototype.animate=base;}
@@ -51,7 +51,7 @@ const root=path.resolve('www'),server=http.createServer((q,r)=>{const url=new UR
  assert.equal(budget.entries,32,'large saved Journal must mount only the bounded first page');
  assert.equal(await p.locator('#tp236HistoryMore').count(),1,'240 saved workouts remain pageable');
  await p.evaluate(()=>tp236HistoryMore());
- assert.equal(await p.locator('details.rf263-history').count(),64,'the next batch remains accessible without extra route transitions');assert.equal(budget.markers,0,'main navigation must select immediately without sliding');assert.equal(budget.surfaces,0,'route changes keep the root page opaque');assert.equal(budget.layoutFrames,0,'selection changes only transform, never per-frame width/height');await settled();
+ assert.equal(await p.locator('details.rf263-history').count(),64,'the next batch remains accessible without extra route transitions');assert.equal(budget.markers,0,'main navigation must select immediately without sliding');assert.equal(budget.rootSurfaces,0,'route changes keep the root page opaque');assert.equal(budget.surfaces,1,'PR277 fades exactly one inner surface for the whole list');assert.equal(budget.layoutFrames,0,'selection changes only transform, never per-frame width/height');await settled();
  await p.evaluate(()=>{db.set('history',tp137SavedHistory);delete window.tp137SavedHistory;go('home')});
  assert.equal(await p.evaluate(()=>JSON.stringify({history:history(),programs:programs(),scheduled:scheduled()})),initial,'navigation never changes workout data');assert.deepEqual(errors,[]);
  console.log('PASS #137: real intermediate motion, continuous interruption, 24 rapid switches, stationary tabs, records/cardio/period content, portrait/landscape × four languages × three themes, main navigation and overlay toggles, reduced motion, resize, unchanged workout data, bounded surfaces with 240 Journal entries');

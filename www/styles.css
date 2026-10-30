@@ -435,17 +435,17 @@ html body :is(#app,#tp155R4PanelHost) .cal-cell>b{font-size:14px!important;line-
 /* #135 date actions reuse the existing red close/delete and green save colors. */
 html body #tpTemporalPicker :is(.tp-modal-close,.tp-temporal-actions>.btn[onclick="rf260TemporalCommit('')"]),
 html body #rf130PhotoModal .tp126-photo-close,
-html body #app .tp155-journal-actions>.btn[onclick*="Clear"],
+html body :is(#app,#tp279JournalDate) .tp155-journal-actions>.btn[onclick*="Clear"],
 html body .rf263-date-dialog :is(.rf263-date-heading>.btn[onclick="rf263CloseDate()"],.rf263-date-actions>.btn[onclick="rf263PickDate('')"]){background:#472529!important;border-color:#744048!important;color:#ffd9dc!important;box-shadow:none!important}
 html body #tpTemporalPicker .tp-temporal-actions>.btn.secondary[onclick^="rf260TemporalChooseDate("],
-html body #app .tp155-journal-actions>.btn:last-child,
+html body :is(#app,#tp279JournalDate) .tp155-journal-actions>.btn:last-child,
 html body .rf263-date-dialog .rf263-date-actions>.btn:last-child{background:#274b38!important;border-color:#3f7657!important;color:#dff7e8!important;box-shadow:none!important}
 html body #tpTemporalPicker :is(.tp-modal-close,.tp-temporal-actions>.btn[onclick="rf260TemporalCommit('')"]):active,
 html body #rf130PhotoModal .tp126-photo-close:active,
-html body #app .tp155-journal-actions>.btn[onclick*="Clear"]:active,
+html body :is(#app,#tp279JournalDate) .tp155-journal-actions>.btn[onclick*="Clear"]:active,
 html body .rf263-date-dialog :is(.rf263-date-heading>.btn[onclick="rf263CloseDate()"],.rf263-date-actions>.btn[onclick="rf263PickDate('')"]):active{background:#552b31!important}
 html body #tpTemporalPicker .tp-temporal-actions>.btn.secondary[onclick^="rf260TemporalChooseDate("]:active,
-html body #app .tp155-journal-actions>.btn:last-child:active,
+html body :is(#app,#tp279JournalDate) .tp155-journal-actions>.btn:last-child:active,
 html body .rf263-date-dialog .rf263-date-actions>.btn:last-child:active{background:#39a866!important;border-color:#66d58d!important;color:#fff!important}
 
 /* #125: retain the browser's search-clear behavior, using the app accent and a mobile tap target. */
@@ -464,3 +464,203 @@ html body #rf130PhotoModal .tp126-photo-close{flex:0 0 44px;width:44px;height:44
 /* Native dark form controls: preserve the accepted base stylesheet above. */
 :root{color-scheme:dark}
 select option{background:var(--card);color:var(--text)}
+
+/* PR277 — program list and start cards. Legacy identifiers retain their handlers. */
+html body #app .tp277-program-card > summary{padding:10px;grid-template-columns:minmax(0,1fr) 20px;gap:4px}
+html body #app .tp277-program-card .rf103-program-main{display:grid;grid-template-columns:34px minmax(0,1fr);gap:9px;align-items:start;position:relative;padding-bottom:38px}
+.tp277-program-icon{color:var(--accent);display:grid;place-items:center;width:34px;height:38px;border-radius:9px;background:color-mix(in srgb,var(--accent) 10%,var(--card2))}
+.tp277-program-icon svg{width:25px;height:25px}
+html body #app .tp277-program-card .rf103-program-info h3{font-size:14px;line-height:1.3;margin:0 0 4px;overflow-wrap:anywhere}
+.tp277-program-meta{display:flex;flex-wrap:wrap;gap:2px 6px;font-size:11px;color:var(--muted)}
+html body #app .tp277-program-meta .badge{padding:0;border:0;background:none;font-size:inherit;font-weight:500}
+html body #app .tp277-program-card .rf103-program-info p{font-size:11px;margin:3px 0 0;line-height:1.3}
+html body #app .tp277-program-card .rf103-program-activate{position:absolute;bottom:-7px;left:43px;min-height:44px;padding:4px 9px;font-size:11px;max-width:calc(100% - 43px);white-space:normal}
+html body #app .tp277-program-card.active-program{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,var(--card))}
+.tp277-day-metrics{font-size:12px;color:var(--accent);margin:6px 0;line-height:1.5}
+.tp277-duration{display:block;font-size:11px;color:var(--muted)}
+.tp277-day-preview{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.tp277-day-preview>span{padding:5px 7px;border:1px solid var(--line);background:var(--card2);border-radius:7px;font-size:11px;line-height:1.4}
+.tp277-day[open]>summary .tp277-day-preview{display:none}
+.tp277-day-preview b{color:var(--muted);font-weight:500}
+html body #app .tp277-day .tp146-day-copy{width:100%}
+.tp277-wear-note{border-top:1px solid var(--line);padding-top:10px;line-height:1.4}
+/* Settings becomes a compact disclosure list inside the established modal. */
+.tp277-settings-group{border:1px solid var(--line);border-radius:13px;background:var(--card);margin:0 0 7px;min-width:0}
+.tp277-settings-group>summary{display:grid;grid-template-columns:30px minmax(0,1fr) 18px;gap:8px;align-items:center;min-height:58px;padding:9px 11px;list-style:none;cursor:pointer}
+.tp277-settings-group>summary::-webkit-details-marker{display:none}
+.tp277-settings-group>summary strong{font-size:14px;line-height:1.4;overflow-wrap:anywhere}
+.tp277-settings-group>summary>span:last-child{font-size:22px;color:var(--muted)}
+.tp277-settings-group[open]>summary>span:last-child{transform:rotate(90deg)}
+.tp277-setting-icon{font-size:23px;color:var(--accent);text-align:center}
+.tp277-settings-body{padding:0 11px 12px;border-top:1px solid var(--line);min-width:0}
+.tp277-settings-body>.setting{margin:8px 0}
+.tp277-reset-actions{display:grid;gap:8px;margin-top:12px}
+.tp277-settings-group:focus-within{border-color:var(--accent)}
+
+/* PR277 — separate disclosure control column from workout facts. */
+.tp277-journal-filters{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 10px}
+.tp277-journal-filters button{font:inherit;font-size:12px;font-weight:700;min-height:44px;border:1px solid var(--line);border-radius:22px;background:var(--card);color:var(--muted);padding:7px 12px}
+.tp277-journal-filters button.active{color:var(--text);border-color:var(--accent);background:color-mix(in srgb,var(--accent) 18%,var(--card))}
+html body #app details.tp277-history{border:1px solid var(--line);border-radius:15px;padding:0;margin:8px 0;background:var(--card)}
+html body #app details.tp277-history>summary{padding:8px 10px;position:relative;min-height:76px;box-sizing:border-box}
+html body #app .tp277-history .history-head{padding:0 44px 0 0!important}
+html body #app .tp277-history .history-title-row{display:block}
+html body #app .tp277-history .history-title{font-size:15px;line-height:1.4;overflow-wrap:anywhere}
+html body #app .tp277-history .history-date{font-size:11px;margin-top:2px}
+html body #app .tp277-history .rf103-history-side{position:absolute;inset:2px 3px 2px auto;display:grid;grid-template-rows:44px minmax(20px,1fr);justify-items:center;align-items:center;width:44px;gap:0}
+html body #app .tp277-history .rf103-history-chevron{grid-row:2;align-self:center;margin:0}
+.tp277-history-count{color:var(--muted);font-size:11px;margin:6px 0}
+html body #app details.tp277-history .history-badges{display:flex!important;flex-wrap:wrap;gap:5px!important;margin:4px 0 0!important}
+html body #app details.tp277-history .history-badges>.history-badge{width:auto;min-height:24px;padding:3px 6px!important;border:0;border-radius:5px!important;font-size:11px!important;background:var(--card2);font-weight:500}
+html body #app .tp277-history .tp3-combined-history-body{padding:0 10px 10px}
+
+/* PR277 — active sets keep their existing fields and save handlers in one row. */
+html body #app .tp277-workout .tp153-workout-head{padding:10px 12px!important}
+html body #app .tp277-workout .tp153-workout-head h1{font-size:20px;line-height:1.3;margin:5px 0}
+html body #app .tp277-workout .tp153-sets-title{font-size:14px!important;margin:9px 0!important}
+html body #app .tp277-set-row{display:grid;grid-template-columns:24px minmax(0,.8fr) minmax(0,1fr) minmax(0,.8fr) minmax(0,.65fr) 40px!important;gap:5px;padding-block:3px!important;align-items:center}
+html body #app .tp277-set-row .num{width:24px;min-width:24px;height:30px;font-size:12px}
+html body #app .tp277-set-row label{font-size:10px;min-width:0}
+html body #app .tp277-set-row input{box-sizing:border-box;width:100%;min-width:0;min-height:44px;padding:7px 3px;font-size:14px;text-align:center}
+html body #app .tp277-set-row .check{min-width:40px;width:40px;min-height:44px;padding:0}
+.tp277-set-previous{font-size:11px;line-height:1.4;color:var(--muted);overflow-wrap:anywhere}
+.tp277-set-previous small{display:block;font-size:10px}
+.tp277-set-rir{min-width:0;text-align:center}
+.tp277-next-exercise{display:grid;gap:4px;border:1px solid var(--line);border-radius:12px;background:var(--card2);padding:10px 12px;margin:9px 0}
+.tp277-next-exercise small{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.tp277-next-exercise strong{font-size:13px;overflow-wrap:anywhere}
+@media(max-width:359px){
+ html body #app .tp277-set-row{grid-template-columns:24px minmax(0,1fr) minmax(0,1fr) minmax(0,.8fr) 40px!important;row-gap:3px}
+ .tp277-set-previous{grid-column:2/-1;grid-row:2;font-size:10px}
+ .tp277-set-previous small{display:inline;margin-right:5px}
+}
+/* Health: existing sync / actual permission path becomes the first card. */
+html body #app main.tp168-health>.tp168-sync-tail{order:-1;margin:0;padding:7px 9px!important;display:grid;gap:3px}
+html body #app main.tp168-health>.tp168-sync-tail .btn{min-height:44px;padding:6px 8px;font-size:12px}
+html body #app main.tp168-health>.tp168-sync-tail :is(p,span.small){margin:0;font-size:10px;line-height:1.3}
+html body #app .tp277-day .tp152-exercise>summary{padding:6px 8px!important;gap:7px;min-height:56px}
+html body #app .tp277-day .tp152-exercise .num{width:28px!important;min-width:28px!important;height:32px!important;min-height:32px!important;font-size:12px}
+html body #app .tp277-day .tp152-exercise .ex-name{font-size:14px!important;line-height:1.25}
+html body #app .tp277-day .tp152-exercise .meta{font-size:11px!important;line-height:1.3;margin-top:2px}
+html body #app .tp277-owner-compact{padding:3px 9px!important;margin:0 0 5px;display:block}
+.tp277-owner-compact summary{min-height:34px;display:flex;align-items:center;gap:7px;cursor:pointer;font-size:11px;color:var(--muted)}
+.tp277-owner-compact summary:before{content:'◉';color:var(--accent)}
+.tp277-owner-compact summary:after{content:'⌄';margin-left:auto}
+.tp277-owner-compact p{margin:0 0 5px}
+html body #app .tp277-program-tools{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:9px}
+.tp277-program-tools>.btn:first-child{grid-column:1/-1}
+html body #app .tp277-program-tools .btn{font-size:12px;line-height:1.3;white-space:normal;padding:8px}
+.tp277-template-update{padding:9px 10px;min-height:44px}
+.tp277-template-update>summary{cursor:pointer;font-size:12px;min-height:26px;line-height:1.5}
+.tp277-template-update .btn{margin-top:7px}
+html body #app .tp277-workout-coach{padding:7px 9px;margin:6px 0;display:block}
+.tp277-workout-coach>summary{display:flex;align-items:center;gap:6px;min-height:30px;list-style:none;cursor:pointer}
+.tp277-workout-coach>summary::-webkit-details-marker{display:none}
+.tp277-workout-coach>summary>span:last-child{margin-left:auto;color:var(--accent)}
+.tp277-workout-coach[open]>summary>span:last-child{transform:rotate(90deg)}
+.tp277-workout-coach[open]>p{padding-top:6px}
+
+.tp277-elapsed{font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--accent);font-size:11px}
+html body #app .tp277-workout .tp153-workout-topline{flex-wrap:wrap;gap:4px 8px}
+html body #app .tp277-workout .tp153-workout-topline>span:first-child{flex:1;min-width:0}
+
+html body #app .tp277-program-card.active-program .rf103-program-main{padding-bottom:24px}
+html body #app .tp277-program-card .rf103-program-activate:disabled{min-height:30px}
+
+/* Shared table headings keep 44px inputs without repeating labels on every set. */
+.tp277-set-heading{display:grid;grid-template-columns:24px minmax(0,.8fr) minmax(0,1fr) minmax(0,.8fr) minmax(0,.65fr) 40px;gap:5px;align-items:end;padding:0 42px 5px 5px;color:var(--muted);font-size:10px;line-height:1.3;text-align:center}
+html body #app .tp277-set-row .tp277-set-previous small{display:none}
+html body #app .tp277-set-row:not(.tp164-per-side-row){padding-block:3px!important}
+@media(max-width:359px){
+ .tp277-set-heading{grid-template-columns:24px minmax(0,1fr) minmax(0,1fr) minmax(0,.8fr) 40px;padding-right:38px}
+ .tp277-previous-heading{display:none}
+ html body #app .tp277-set-row .tp277-set-previous small{display:inline}
+}
+
+html body #app .tp277-shared-sets .tp277-set-row label{position:relative}
+.tp277-shared-sets .tp277-field-label{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap;border:0}
+
+/* PR279 / #280: the same dense day card applies to every built-in or user-created day. */
+html body #app details.tp277-day{display:block!important;padding:0!important;margin:6px 0!important;border-radius:13px!important}
+html body #app details.tp277-day>summary{padding:7px 9px!important;min-height:0!important;gap:5px!important}
+html body #app .tp277-day .tp146-day-copy>.badge{font-size:10px!important;padding:2px 6px!important;margin:0!important}
+html body #app .tp277-day .tp146-day-title{font-size:15px!important;line-height:1.25!important;margin:1px 0!important}
+html body #app .tp277-day .tp146-day-letter{flex:0 0 32px!important;width:32px!important;height:32px!important;border-radius:9px!important;font-size:17px!important}
+html body #app .tp277-day .tp152-day-title-row{gap:5px!important}
+html body #app .tp277-day .tp277-day-metrics{margin:2px 0!important;font-size:11px;line-height:1.35}
+html body #app .tp277-day .tp277-duration{font-size:10px;line-height:1.35}
+html body #app .tp277-day .tp277-day-preview{margin-top:4px;gap:4px}
+html body #app .tp277-day .tp277-day-preview>span{padding:3px 5px;font-size:10px;line-height:1.3;overflow-wrap:anywhere;min-width:0}
+html body #app .tp277-day .tp152-day-body{padding:0 8px 8px!important}
+html body #app .tp277-day .tp152-exercise{margin:5px 0!important}
+html body #app .tp277-day .tp152-inline-add{margin:5px 0!important}
+html body #app .tp277-day .tp152-start-day{margin:5px 0!important;min-height:44px}
+html body #app .tp277-program-card .tp152-program-day>summary{padding:7px 9px!important;gap:6px!important}
+html body #app .tp277-program-card .tp152-program-day{margin:5px 0!important}
+html body #app .tp150-quick-entry-minimal{padding:9px 11px!important;gap:0!important}
+
+/* Program header: activation is immediately left of the independent disclosure arrow. */
+html body #app .tp277-program-card{padding:0!important;margin:6px 0!important}
+html body #app .tp277-program-card>summary{padding:8px 9px!important;grid-template-columns:minmax(0,1fr) 32px!important;gap:4px!important;align-items:center!important}
+html body #app .tp277-program-card .rf103-program-main{grid-template-columns:32px minmax(0,1fr) auto!important;gap:7px!important;align-items:center!important;position:static!important;padding:0!important}
+html body #app .tp277-program-card .tp277-program-icon{width:32px;height:34px}
+html body #app .tp277-program-card .rf103-program-info{min-width:0;overflow-wrap:anywhere}
+html body #app .tp277-program-card .rf103-program-info h3{font-size:13px!important;margin:0 0 2px!important}
+html body #app .tp277-program-card .rf103-program-activate{position:static!important;grid-column:3;align-self:center!important;justify-self:end!important;max-width:98px!important;min-width:0!important;min-height:44px!important;padding:5px 7px!important;font-size:11px!important;line-height:1.25!important;margin:0!important;white-space:normal!important}
+html body #app .tp277-program-card .tp152-program-chevron{justify-self:center}
+html body #app .tp277-program-card.active-program .rf103-program-main{padding:0!important}
+html body #app details.tp277-history>summary{min-height:65px!important;padding:7px 10px!important}
+html body #app .tp277-history .rf103-history-side{grid-template-rows:25px 30px;align-content:center}
+html body #app .tp277-history .rf103-history-chevron{grid-row:2;align-self:start}
+html body #app main.tp168-health>.tp168-sync-tail{padding:6px 8px!important;gap:2px!important}
+@media(max-width:359px){
+ html body #app .tp277-program-card>summary{grid-template-columns:minmax(0,1fr) 28px!important}
+ html body #app .tp277-program-card .rf103-program-main{gap:5px!important;grid-template-columns:30px minmax(0,1fr) auto!important}
+ html body #app .tp277-program-card .rf103-program-activate{max-width:82px!important;padding:5px!important;font-size:10px!important}
+}
+
+/* PR279 calendar correction: the existing completed workout log remains intact. */
+html body #app .tp279-calendar-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0}
+html body #app .tp279-calendar-actions>.btn{min-height:44px;min-width:0;white-space:normal}
+html body #app .tp279-completed-schedule{margin-block:6px!important}
+html body #app .tp279-completed-schedule .tp146-schedule-head{gap:7px}
+html body #app .tp279-completed-schedule .tp146-schedule-copy{min-width:0;overflow-wrap:anywhere}
+html body #app .tp279-completed-schedule .tp279-undo-schedule{flex:1}
+@media(max-width:359px){
+ html body #app .rf2211-picker>.tp279-calendar-actions{width:100%}
+ html body #app .rf2211-picker>.tp279-calendar-actions>.btn{flex:1}
+}
+
+/* PR279: Journal range picker reuses Calendar grid and day-dialog styling. */
+html body #app button.tp155-journal-filter{box-sizing:border-box;width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 13px!important;color:var(--text);font:inherit;text-align:left;cursor:pointer}
+.tp279-journal-filter-copy{display:grid;gap:3px;min-width:0}
+#tp279JournalDate{position:fixed;inset:0;height:fit-content;width:min(420px,calc(100vw - 24px));max-height:calc(100dvh - 24px);margin:auto;color:var(--text);background:var(--tp-ui-card,var(--card));overflow:hidden}
+#tp279JournalDate:not([open]){display:none}
+#tp279JournalDate::backdrop{background:rgba(4,7,11,.78)}
+#tp279JournalDate .tp279-journal-date-head{flex:none;min-height:44px;padding-right:48px}
+#tp279JournalDate h2{margin:0 0 8px;font-size:18px;line-height:1.3;overflow-wrap:anywhere}
+#tp279JournalDate .tp279-journal-calendar-host{min-height:0;overflow:auto;overscroll-behavior:contain}
+#tp279JournalDate .tp151-calendar-frame{padding:7px;border:1px solid var(--tp-ui-border,var(--line));border-radius:16px;background:var(--tp-ui-card,var(--card))}
+#tp279JournalDate .calendar-head{grid-template-columns:46px minmax(0,1fr) 46px;gap:6px;min-height:40px;margin:8px 0 6px}
+#tp279JournalDate .calendar-head .btn{min-height:38px;padding:6px}
+#tp279JournalDate .calendar-grid,#tp279JournalDate .cal-weekdays{gap:2px}
+#tp279JournalDate .cal-weekdays span{padding:3px 0}
+#tp279JournalDate .cal-cell{box-sizing:border-box;min-width:0;min-height:42px;padding:3px;border-radius:10px;align-items:center;justify-content:center;font-size:14px}
+#tp279JournalDate .cal-cell>span{font-size:14px}
+#tp279JournalDate .tp155-journal-range-head strong{overflow-wrap:anywhere}
+#tp279JournalDate .tp155-journal-actions .btn{min-width:0;white-space:normal;overflow-wrap:anywhere}
+html[data-tp-theme-family="basic"] #tp279JournalDate :is(button,.tp151-calendar-frame){box-shadow:none!important;filter:none!important}
+@media(max-width:360px){#tp279JournalDate .cal-cell{min-height:40px}}
+
+/* PR279: one workout Coach disclosure, direct effort/pain feedback. */
+.tp155-workout-coach:not([open])>:not(summary){display:none!important}
+.tp155-workout-coach>summary{display:flex;align-items:center;gap:8px;cursor:pointer;list-style:none;min-height:44px}
+.tp155-workout-coach>summary::-webkit-details-marker{display:none}
+.tp155-workout-coach>summary strong{flex:1;min-width:0;overflow-wrap:anywhere}
+.tp155-workout-coach>summary>span:last-child{flex-shrink:0}
+.tp155-workout-coach .tp197-coach-advice{margin:6px 0 0;padding:0;border:0;background:transparent}
+.tp279-coach-basis{margin-top:8px;border-top:1px solid var(--line);padding-top:6px}
+.tp279-coach-basis>summary{cursor:pointer;min-height:36px;color:var(--accent);font-weight:700}
+
+/* PR279: expanded day lists already show every exercise. Keep compact preview on closed days. */
+details.tp277-day[open] > summary .tp279-preview-more{display:none!important}

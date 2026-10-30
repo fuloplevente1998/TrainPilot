@@ -18,6 +18,7 @@ const server=http.createServer((req,res)=>{
   await page.goto('http://127.0.0.1:'+server.address().port+'/');
   await page.waitForFunction(()=>window.TrainPilotBoot?.finished&&typeof tp197UiApprove==='function');
   await page.evaluate(()=>{state.tab='settings';render();});
+  if(!await page.locator('[data-settings-group="training"]').evaluate(x=>x.open))await page.locator('[data-settings-group="training"] > summary').click();
   const baseline=await page.evaluate(()=>({
    modes:settings().trainingModes197||null,
    program:JSON.stringify(programs()),history:JSON.stringify(history()),draft:JSON.stringify(db.get('draft',null))

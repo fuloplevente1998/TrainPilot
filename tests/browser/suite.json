@@ -446,5 +446,17 @@
   {
     "file": "tests/browser/startup-fit-once-236.cjs",
     "estimatedSeconds": 9
+  },
+  {
+    "file": "tests/browser/pr279-coach-unified.cjs",
+    "estimatedSeconds": 14
+  },
+  {
+    "file": "tests/browser/pr279-rir-before-ok.cjs",
+    "estimatedSeconds": 14
+  },
+  {
+    "file": "tests/browser/pr279-program-cards.cjs",
+    "estimatedSeconds": 9
   }
 ]

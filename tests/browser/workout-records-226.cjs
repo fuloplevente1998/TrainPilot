@@ -49,12 +49,10 @@ const server=http.createServer((req,res)=>{
   await badge.click();
   assert.equal(await detail.isVisible(),true,'PR tap can reveal the panel again');
   assert.equal(await detail.locator('.tp226-pr-record').count(),1,'PR count matches displayed explanation');
-  const chipBounds=await card.locator(':scope > summary .history-badges > *').evaluateAll(nodes=>nodes.map(node=>{
-   const {x,y,width,height}=node.getBoundingClientRect();return {x,y,width,height};
-  }));
-  assert.equal(chipBounds.length,3,'Time, completed sets and PR share one compact metric row');
-  assert.ok(chipBounds.every(b=>Math.abs(b.y-chipBounds[0].y)<1&&Math.abs(b.height-chipBounds[0].height)<1),'Chips align to the same height');
-  assert.ok(chipBounds.every(b=>Math.abs(b.width-chipBounds[0].width)<1),'Chips use equal widths');
+  const prBounds=await badge.boundingBox(),arrowBounds=await card.locator(':scope > summary .rf103-history-chevron').boundingBox();
+  assert.ok(prBounds.width<=44&&prBounds.height<=44,'PR277 uses a small mark target');
+  assert.ok(prBounds.y<arrowBounds.y,'PR277 mark sits above its separate disclosure arrow');
+  assert.equal(await card.locator(':scope > summary .history-badges .tp226-pr-badge').count(),0,'No large PR action below the card');
   await page.reload();await boot();await page.evaluate(()=>go('history'));assert.equal(await badge.count(),1,'Reload does not duplicate badge');
   await page.evaluate(()=>feedbackScreen(history().find(x=>x.id==='pr-new').started));
   assert.equal(await page.locator('main.tp122-feedback .tp226-pr-feedback').count(),1,'Saved result summary shows its own records');

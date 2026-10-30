@@ -43,6 +43,7 @@ const server=http.createServer((q,r)=>{const name=new URL(q.url,'http://local').
   if(width===393&&lang==='hu'&&theme==='yellow')await p.screenshot({path:'ui-evidence/statistics-cardio-2695.png'});
   await tab("go('history')").click();assert.equal(await p.locator('main.tp107-statistics').count(),0);
   await p.evaluate(()=>tp155R4OpenPanel('settings',document.activeElement));
+  if(!await p.locator('[data-settings-group="appearance"]').evaluate(x=>x.open))await p.locator('[data-settings-group="appearance"] > summary').click();
   const language=p.locator('.tp155-language-direct .tp-select-trigger'),themeButton=p.locator('.tp162-theme-dropdown .tp-select-trigger');
   const settle=async loc=>loc.evaluate(async e=>{await Promise.allSettled(e.getAnimations().map(a=>a.finished));});
   const arrow=async loc=>loc.evaluate(e=>{const c=getComputedStyle(e,'::after');return {clip:c.clipPath,width:c.width,height:c.height,transition:c.transitionDuration,transform:c.transform};});

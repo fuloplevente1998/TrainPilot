@@ -25,6 +25,7 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{
    cloudProfile={sub:'theme-owner'};db.set('cloudDevice',localDevice);db.set('cloudBase:theme-owner',base);db.set('cloudPrefs',{drive:true,calendar:false});rf130SyncWorkoutPhotos=async()=>{};
    go('home');tp155R4OpenPanel('settings',document.activeElement);
   });
+  if(!await page.locator('[data-settings-group="appearance"]').evaluate(x=>x.open))await page.locator('[data-settings-group="appearance"] > summary').click();
   await page.locator('.tp162-theme-dropdown .tp-select-trigger').click();
   await page.locator('.tp155-theme-option[data-theme="classicGreen"]').click();
   assert.equal(await page.evaluate(()=>cloudTimer!==null),true,'actual theme selection schedules automatic sync');

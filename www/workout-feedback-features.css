@@ -1,29 +1,6 @@
-/* #234: Unified compact Journal metrics; only the PR is interactive. */
-details.history[open] > summary .history-badges{
- box-sizing:border-box;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));
- align-items:stretch;gap:7px!important;width:100%;min-width:0;margin-top:10px!important;
-}
-details.history[open] > summary .history-badges:has(.tp226-pr-badge){
- grid-template-columns:repeat(3,minmax(0,1fr));
-}
-details.history[open] > summary .history-badges > :is(.history-badge,.tp226-pr-badge){
- box-sizing:border-box;display:flex!important;align-items:center;justify-content:center;gap:4px;
- min-width:0;max-width:100%;width:100%;min-height:44px;margin:0;
- padding:7px 5px!important;border:1px solid var(--line);border-radius:13px!important;
- background:var(--card2);color:var(--text);font:inherit;font-size:11px!important;font-weight:750;
- line-height:1.25;text-align:center;white-space:normal;overflow-wrap:anywhere;
-}
-details.history[open] > summary .history-badges > .tp226-pr-badge{
- border-color:color-mix(in srgb,var(--accent) 55%,var(--line));
- background:color-mix(in srgb,var(--accent) 11%,var(--card2));
- color:var(--accent2);cursor:pointer;
-}
-details.history[open] > summary .history-badges > .tp226-pr-badge::after{
- content:'⌄';font-size:14px;line-height:1;opacity:.85;flex:0 0 auto;
-}
-details.history[open] > summary .history-badges > .tp226-pr-badge[aria-expanded="true"]::after{
- content:'⌃';
-}
+/* PR277: a small PR mark above the disclosure arrow; accessible 38px target. */
+.tp226-pr-badge{display:grid;place-items:center;grid-row:1;width:44px;min-height:44px;padding:0;border:0;border-radius:7px;background:transparent;color:var(--accent);font:750 11px/1 system-ui;cursor:pointer}
+.tp226-pr-badge:hover{background:color-mix(in srgb,var(--accent) 12%,var(--card))}
 .tp226-pr-badge:focus-visible,.tp226-pr-details>summary:focus-visible{
  outline:2px solid var(--accent);outline-offset:2px;
 }
@@ -49,11 +26,6 @@ details.history .tp3-combined-history-body > .tp226-pr-details:not([open]){
 .tp226-pr-record strong{font-size:13px;color:var(--text)}
 .tp226-pr-record span{color:var(--muted)}
 .tp226-pr-feedback{font-size:13px}
-@media(max-width:350px){
- details.history[open] > summary .history-badges > :is(.history-badge,.tp226-pr-badge){
-  gap:3px;padding:7px 3px!important;font-size:10px!important;
- }
-}
 @media(prefers-reduced-motion:reduce){
  .tp226-pr-badge,.tp226-pr-details{animation:none!important;transition:none!important}
 }

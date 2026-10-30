@@ -29,7 +29,7 @@ jobs:
   chromium-cache:
     name: Prepare Playwright Chromium cache
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 14
     permissions:
       contents: read
     steps:
@@ -91,7 +91,11 @@ jobs:
           fail-on-cache-miss: true
       - name: Verify UI shard runner
         run: node --test scripts/ui-runner.test.cjs
+      - name: PR277 clean main and implemented UI screenshots
+        if: matrix.shard == 1
+        run: node tests/browser/pr277-visual.cjs
       - name: Run full Chromium UI regression shard
+        if: success() || failure()
         run: npm run test:ui -- --shard ${{ matrix.shard }}/6
       - name: Upload UI evidence and test timings
         if: always()
