@@ -1,5 +1,10 @@
 # TrainPilot – aktuális átadás
 
+## PR279 – Progresszió / Coach egyszerűsítése, 2026-10-30
+
+- A 4115/4116 képek alapján jóváhagyott folytatás: egyetlen felső, alapból összecsukott Progresszió / Coach blokk. A módszer/előzmény és a hosszabb távú progresszív cél a Mi alapján? részben; a nehézség- és fájdalomvisszajelzés közvetlenül a sorozatok után marad. Az aktuális sorozatszám és a még nem alkalmazott javaslat külön feliratozott. A meglévő súlyjóváhagyási és Wear-tulajdonosi védelmek változatlanok; gyors edzéshez nem veszünk át aktív programnap-módszert.
+- Helyi szintaxis/runtime/diff ellenőrzés sikeres. A teljes CI és új aláírt APK még nem igazolt; az utolsó bizonyított APK továbbra is bf60db0. Verzió 1.3.71 /2735, PR Draft, nincs merge/release.
+
 ## PR279 folytatás — 2026-10-30 (aktuális)
 
 - **Alkalmazás-/APK-forrás `bf60db0c18c7604f51eb00bd112962592ec718e5`**, ág `feat/pr277-uiux-implementation-20261029`; **1.3.71 /2735**, változatlan. A későbbi bizonylat/handoff commit kizárólag dokumentáció; nem új alkalmazásbuild. [Gépi bizonylat](builds/2026-10-30-pr279-journal-date.json).

@@ -651,3 +651,13 @@ html body #app button.tp155-journal-filter{box-sizing:border-box;width:100%;disp
 #tp279JournalDate .tp155-journal-actions .btn{min-width:0;white-space:normal;overflow-wrap:anywhere}
 html[data-tp-theme-family="basic"] #tp279JournalDate :is(button,.tp151-calendar-frame){box-shadow:none!important;filter:none!important}
 @media(max-width:360px){#tp279JournalDate .cal-cell{min-height:40px}}
+
+/* PR279: one workout Coach disclosure, direct effort/pain feedback. */
+.tp155-workout-coach:not([open])>:not(summary){display:none!important}
+.tp155-workout-coach>summary{display:flex;align-items:center;gap:8px;cursor:pointer;list-style:none;min-height:44px}
+.tp155-workout-coach>summary::-webkit-details-marker{display:none}
+.tp155-workout-coach>summary strong{flex:1;min-width:0;overflow-wrap:anywhere}
+.tp155-workout-coach>summary>span:last-child{flex-shrink:0}
+.tp155-workout-coach .tp197-coach-advice{margin:6px 0 0;padding:0;border:0;background:transparent}
+.tp279-coach-basis{margin-top:8px;border-top:1px solid var(--line);padding-top:6px}
+.tp279-coach-basis>summary{cursor:pointer;min-height:36px;color:var(--accent);font-weight:700}

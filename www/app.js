@@ -8971,12 +8971,17 @@ rf152Recommendation=function(id,sessionExercise=null){
  return {action:'hold',weight:base,autoApply:false,target:target,historyCount:recent.length,text:tp149T('progress.holdLoad',{weight:fw,unit:unit})};
 };
 
+var tp279ProgressDetails=function(e){
+ const r=rf152Recommendation(e.id,e),count=Number(r.historyCount)||0,target=r.target;
+ const meta=target?'<p class="small muted">'+esc(tp149T('workout.target'))+': '+esc(target.reps||target.kind)+' • '+esc(tp149T('progress.history',{count:count}))+'</p>':'';
+ return '<div class="card" id="rf152Feedback"><strong>'+esc(tp149T('progress.title'))+'</strong><p class="small muted" style="margin:6px 0 0">'+esc(tp149T('progress.goalNote'))+'</p><p class="small muted">'+esc(r.text)+'</p>'+meta;
+};
 rf152FeedbackHtml=function(e){
  rf232Css();
  const r=rf152Recommendation(e.id,e),sel=e.effort||'',t=rf232L(),count=Number(r.historyCount)||0,target=r.target;
  const scale=RF232_EFFORT_KEYS.map(function(k,i){return '<button class="btn '+(sel===k?'':'secondary')+'" onclick="rf152SetEffort(\''+k+'\')"><span class="n">'+(i+1)+'</span><span class="lbl">'+esc(t[k])+'</span></button>';}).join('');
  const meta=target?'<div class="small muted" style="margin-top:6px">'+esc(tp149T('workout.target'))+': '+esc(target.reps||target.kind)+' • '+esc(tp149T('progress.history',{count:count}))+'</div>':'';
- return '<div class="card" id="rf152Feedback"><strong>'+esc(tp149T('progress.title'))+'</strong><p class="small muted" style="margin:6px 0 0">'+esc(tp149T('progress.goalNote'))+'</p><p class="small muted">'+esc(r.text)+'</p>'+meta+'<div class="small" style="margin:10px 0 8px">'+esc(t.prompt)+'</div><div class="rf232-effort">'+scale+'</div><button class="btn '+(sel==='pain'?'':'secondary')+' block rf232-pain" onclick="rf152SetEffort(\'pain\')">'+esc(t.pain)+'</button></div>';
+ return '<div class="card tp279-exercise-feedback" id="rf152Feedback"><div class="small" style="margin-bottom:8px">'+esc(t.prompt)+'</div><div class="rf232-effort">'+scale+'</div><button class="btn '+(sel==='pain'?'':'secondary')+' block rf232-pain" onclick="rf152SetEffort(\'pain\')">'+esc(t.pain)+'</button></div>';
 };
 
 timerHtml=function(){
@@ -11644,8 +11649,9 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   var i=Math.max(0,Math.min(Number(state.current)||0,(state.session.exercises||[]).length-1)),se=(state.session.exercises||[])[i];if(!se)return;
   var decision=null,advice=null;try{decision=rf233Decision(rf220Readiness());advice=rf233ExerciseAdvice(se.id,decision)}catch(_){}
   var a=window.tp155CoachShortAdvice(se.id,decision,advice),c=copy(),box=document.createElement('details');
-  box.className='tp155-workout-coach tp277-workout-coach';box.open=a.action==='pain'||a.action==='easy';
+  box.className='tp155-workout-coach tp277-workout-coach';box.open=!!window.TrainPilotWorkoutCoach?.isOpen(state.session,se);
   box.innerHTML='<summary><span class="tp155-workout-coach-kicker">'+esc(c.coach)+'</span>'+(a.label?'<strong>'+esc(a.label)+'</strong>':'')+'<span aria-hidden="true">›</span></summary><p>'+esc(a.text)+'</p>';
+  if(window.TrainPilotWorkoutCoach){box.innerHTML=window.TrainPilotWorkoutCoach.html(se,a);box.addEventListener('toggle',()=>{if(box.isConnected)window.TrainPilotWorkoutCoach.remember(state.session,se,box.open)});box.querySelector('summary')?.addEventListener('click',()=>window.TrainPilotWorkoutCoach.remember(state.session,se,!box.open));}
   var anchor=head.querySelector('.tp153-workout-prescription');if(anchor)anchor.insertAdjacentElement('afterend',box);else head.appendChild(box);
  };
  if(typeof renderWorkout==='function'){
@@ -20305,6 +20311,21 @@ var tp197CoachApply=function(){
  void window.TrainPilotWearSync?.syncNow?.();
  return true;
 };
+var tp279CoachWords=function(){
+ const l=typeof rf212Lang==='function'?rf212Lang():'hu';
+ return ({hu:{title:'Progresszió / Coach',why:'Mi alapján?',current:'Jelenlegi munkasorozat'},en:{title:'Progression / Coach',why:'Why?',current:'Current working sets'},de:{title:'Progression / Coach',why:'Warum?',current:'Aktuelle Arbeitssätze'},ro:{title:'Progresie / Coach',why:'Pe ce se bazează?',current:'Serii de lucru actuale'},sk:{title:'Progresia / Coach',why:'Prečo?',current:'Aktuálne pracovné série'},pl:{title:'Progresja / Coach',why:'Dlaczego?',current:'Aktualne serie robocze'}})[l]||{title:'Progression / Coach',why:'Why?',current:'Current working sets'};
+};
+(function(){
+ const opened=new WeakMap();
+ window.TrainPilotWorkoutCoach={
+  isOpen:(s,e)=>opened.get(s)?.has(e)||!!(tp197CoachPending?.session===s&&tp197CoachPending?.exercise===e),
+  remember(s,e,value){if(!s)return;let set=opened.get(s);if(!set){set=new WeakSet();opened.set(s,set)}if(value)set.add(e);else set.delete(e);},
+  html(e,a){
+   const s=state.session,quick=s?.quickWorkout||s?.type==='quick',info=!quick&&s?.programId&&a.action!=='pain'&&a.action!=='easy'?tp197CoachInfo(e.id,s.programId):null,c=tp279CoachWords();
+   return '<summary><span class="tp155-workout-coach-kicker">'+esc(c.title)+'</span><strong>'+esc(info?.title||a.label||a.text)+'</strong><span aria-hidden="true">›</span></summary>'+ (info?tp197CoachPanel():'<p>'+esc(a.text)+'</p><details class="tp279-coach-basis"><summary>'+esc(c.why)+'</summary>'+tp279ProgressDetails(e)+'</details>');
+  }
+ };
+})();
 var tp197CoachPanel=function(){
  const s=state.session,e=s?.exercises?.[state.current],info=e?tp197CoachInfo(e.id,s.programId):null;
  if(!info)return '';
@@ -20315,18 +20336,17 @@ var tp197CoachPanel=function(){
   '<div class="tp197-coach-buttons"><button type="button" class="btn" onclick="tp197CoachApply()">'+esc(t.approve)+'</button><button type="button" class="btn secondary" onclick="tp197CoachCancel()">'+esc(t.cancel)+'</button></div>':
   '<button type="button" class="btn secondary" onclick="tp197CoachRequest()">'+esc(t.action)+'</button>'):
   already?'<p class="small muted">'+esc(t.done)+'</p>':'';
- return '<section class="card tp197-coach-advice" id="tp197CoachAdvice"><strong>'+esc(t.title)+'</strong>'+
-  '<p class="small muted">'+esc(t.mode)+': '+esc(info.method)+'</p>'+
+ return '<section class="tp197-coach-advice" id="tp197CoachAdvice">'+
   '<p class="small"><b>'+esc(info.title)+'</b> · '+esc(info.reason)+'</p>'+
-  '<p class="small muted">'+esc(info.detail)+'</p>'+
-  '<p class="small muted">'+esc(t.history)+': '+String(info.historyCount)+'</p>'+controls+
-  '<p class="small muted">'+esc(t.notice)+'</p></section>';
+  '<p class="small muted tp279-current-plan">'+esc(tp279CoachWords().current)+': '+String(e.sets.length)+' · '+esc(t.sets)+': '+String(info.preview?.proposed?.sets??'—')+'</p>'+
+  '<p class="small muted">'+esc(t.preview)+'</p><p class="small muted">'+esc(info.detail)+'</p>'+controls+
+  '<details class="tp279-coach-basis"><summary>'+esc(tp279CoachWords().why)+'</summary><p class="small muted">'+esc(t.mode)+': '+esc(info.method)+'</p><p class="small muted">'+esc(t.history)+': '+String(info.historyCount)+'</p><p class="small muted">'+esc(t.notice)+'</p>'+tp279ProgressDetails(e)+'</details></section>';
 };
 (function(){
  const originalAdvice=rf233ExerciseAdvice;
  rf233ExerciseAdvice=function(id,decision){
   const result=originalAdvice.apply(this,arguments),s=state.session,pid=s?.programId||(typeof activeProgramId==='function'?activeProgramId():null);
-  const info=tp197CoachInfo(id,pid);
+  const info=s?.quickWorkout||s?.type==='quick'?null:tp197CoachInfo(id,pid);
   if(!info||result?.action==='pain'||decision?.pain)return result;
   return {...result,action:'hold',label:info.title,text:info.summary,proposal197:info.preview};
  };
@@ -20334,16 +20354,10 @@ var tp197CoachPanel=function(){
  if(typeof oldShort==='function'){
   window.tp155CoachShortAdvice=function(id,decision,existing){
    const pid=state.session?.programId||(typeof activeProgramId==='function'?activeProgramId():null),info=tp197CoachInfo(id,pid);
-   if(info)return {action:'hold',label:info.title,text:info.summary};
+   if(info&&!state.session?.quickWorkout&&state.session?.type!=='quick')return {action:'hold',label:info.title,text:info.summary};
    return oldShort.apply(this,arguments);
   };
  }
- const oldRender=renderWorkout;
- renderWorkout=function(){
-  const result=oldRender.apply(this,arguments),head=document.querySelector('main.tp153-workout .tp153-workout-head');
-  if(head&&!head.querySelector('#tp197CoachAdvice'))head.insertAdjacentHTML('beforeend',tp197CoachPanel());
-  return result;
- };
  const style=document.createElement('style');style.id='tp197CoachStyle';
  style.textContent='.tp197-coach-advice{margin:10px 0 4px;padding:12px}.tp197-coach-advice p{margin:6px 0;line-height:1.45;overflow-wrap:anywhere}.tp197-coach-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px}.tp197-coach-buttons button{min-height:44px;white-space:normal;overflow-wrap:anywhere}';
  document.head.appendChild(style);

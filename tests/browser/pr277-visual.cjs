@@ -114,6 +114,20 @@ await page.locator('.tp152-program-card').first().evaluate(x=>x.open=true);await
  await page.evaluate(()=>{window.scrollTo(0,0);go('health');});await snap('03-health');
  await page.evaluate(()=>{state.session=null;db.set('draft',null);startWorkout('A',null,'home-basic');});if(version==='after'){
   await page.evaluate(()=>{state.session.ownershipProtocol193=1;state.session.timerOwner='phone';TrainPilotWearSync.ensureSetIdentities();renderWorkout();});
+  const coach=page.locator('.tp155-workout-coach');
+  assert.equal(await coach.count(),1,'One canonical Progression / Coach entry');
+  assert.equal(await coach.getAttribute('open'),null,'Coach explanations start collapsed');
+  assert.equal(await page.locator('.tp153-workout-head > #tp197CoachAdvice').count(),0,'No duplicate Coach card');
+  assert.equal(await page.locator('#rf152Feedback > strong').count(),0,'Feedback does not repeat the progressive goal');
+  assert.equal(await page.locator('#rf152Feedback .rf232-effort .btn').count(),5,'Effort remains directly accessible');
+  assert.equal(await page.locator('#rf152Feedback .rf232-pain').isVisible(),true,'Pain control is directly accessible');
+  const beforeCoach=await page.evaluate(()=>JSON.stringify(state.session));
+  await coach.locator(':scope > summary').click();
+  assert.equal(await coach.locator('.tp279-coach-basis').count(),1,'Methods and long-term goal have one secondary disclosure');
+  await page.evaluate(()=>renderWorkout());
+  assert.notEqual(await coach.getAttribute('open'),null,'Coach disclosure survives a repaint');
+  await coach.locator(':scope > summary').click();
+  assert.equal(await page.evaluate(()=>JSON.stringify(state.session)),beforeCoach,'Coach disclosure never mutates the session');
   const input=page.locator('.tp277-set-row [data-inline-rir]').first();await input.fill('0');
   assert.equal(await input.getAttribute('aria-invalid'),'false');
   assert.equal(await page.evaluate(()=>db.get('draft').session.exercises[0].sets[0].actualRir),0,'RIR is persisted before OK');
