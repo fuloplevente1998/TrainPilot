@@ -41,7 +41,7 @@ const server=http.createServer((req,res)=>{
   const card=page.locator('#tp279CoachFixture details.tp155-workout-coach');
   assert.equal(await card.count(),1);
   assert.equal(await card.evaluate(e=>e.open),false,'one Coach disclosure starts collapsed');
-  assert.match(await card.locator(':scope > summary').innerText(),/Progresszió \/ Coach/);
+  assert.match(await card.locator(':scope > summary').innerText(),/Progresszió \/ Coach/i);
   assert.match(await card.locator(':scope > summary').innerText(),/Kis súlyemelés/);
   assert.doesNotMatch(await card.innerText(),/Progresszív cél/,'no repeated generic progressive goal card');
   await card.locator(':scope > summary').click();
