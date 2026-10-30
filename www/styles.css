@@ -661,3 +661,6 @@ html[data-tp-theme-family="basic"] #tp279JournalDate :is(button,.tp151-calendar-
 .tp155-workout-coach .tp197-coach-advice{margin:6px 0 0;padding:0;border:0;background:transparent}
 .tp279-coach-basis{margin-top:8px;border-top:1px solid var(--line);padding-top:6px}
 .tp279-coach-basis>summary{cursor:pointer;min-height:36px;color:var(--accent);font-weight:700}
+
+/* PR279: expanded day lists already show every exercise. Keep compact preview on closed days. */
+details.tp277-day[open] > summary .tp279-preview-more{display:none!important}

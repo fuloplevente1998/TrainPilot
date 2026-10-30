@@ -10922,7 +10922,7 @@ var tp277DayOverview=function(p,d){
  const ids=d.exercises||[],count=ids.reduce((sum,id)=>sum+Number(tp152Rx(p,id,byId(id)).sets||0),0);
  const last=history().find(h=>h.programId===p.id&&(h.dayId||h.workout)===d.id&&Date.parse(h.finished)>Date.parse(h.started));
  const duration=last?'<span class="tp277-duration" title="'+esc(tp277Text('recent'))+'">'+esc(tp277Text('estimate'))+': '+esc(sessionDuration(last))+'</span>':'';
- return '<div class="tp277-day-metrics">'+esc(tp149Plural('exercise.count',ids.length))+' · '+count+' '+esc(tp277Text('sets'))+duration+'</div><div class="tp277-day-preview">'+ids.slice(0,3).map(id=>{const e=byId(id);if(!e)return '';const rx=tp152Rx(p,id,e);return '<span>'+esc(tp149ExerciseName(e))+' <b>'+esc(rx.sets+'×'+rx.reps)+'</b></span>';}).join('')+(ids.length>3?'<span>+'+(ids.length-3)+'</span>':'')+'</div>';
+ return '<div class="tp277-day-metrics">'+esc(tp149Plural('exercise.count',ids.length))+' · '+count+' '+esc(tp277Text('sets'))+duration+'</div><div class="tp277-day-preview">'+ids.slice(0,3).map(id=>{const e=byId(id);if(!e)return '';const rx=tp152Rx(p,id,e);return '<span>'+esc(tp149ExerciseName(e))+' <b>'+esc(rx.sets+'×'+rx.reps)+'</b></span>';}).join('')+(ids.length>3?'<span class="tp279-preview-more">+'+(ids.length-3)+'</span>':'')+'</div>';
 };
 var tp152Rx=function(p,id,e){
  const s=settings(),fallbackRest=Number(s.programRest?.[p?.id])||Number(s.rest)||90;
@@ -11389,7 +11389,7 @@ renderWorkout=function(){
   const prior=previousSets[si],previous=prior?.done?((Number(prior.weight)>0?tp149FormatNumber(prior.weight)+'×':'')+String(prior.reps||'—')):'—';
   const eligible=typeof tp197RirEligible==='function'&&tp197RirEligible(state.session,se,true);
   const lastDone=sets.map((set,index)=>set.done?index:-1).filter(index=>index>=0).at(-1);
-  const rir=eligible?'<label class="small tp277-set-rir tp229-rir"><span class="tp277-field-label">RIR</span><input id="'+(si===lastDone?'tp197ActualRir':'tp229ActualRir-'+si)+'" class="field" data-set-id="'+esc(s.setId||'')+'" data-inline-rir="true" aria-label="'+esc(tp197RirWords().title)+'" title="'+esc(tp197RirWords().note)+'" type="number" inputmode="numeric" min="0" max="10" step="1" value="'+(tp229RirValid(s.actualRir)?Number(s.actualRir):'')+'" placeholder="—" aria-describedby="tp197RirNote tp229RirSummary" oninput="tp197RirInput(this)"></label>':'<span class="tp277-set-rir small muted" aria-label="RIR">—</span>';
+  const rir=eligible?'<label class="small tp277-set-rir tp229-rir"><span class="tp277-field-label">RIR</span><input id="'+(si===lastDone?'tp197ActualRir':'tp229ActualRir-'+si)+'" class="field" data-set-id="'+esc(s.setId||'')+'" data-set-index="'+si+'" data-exercise-id="'+esc(se.id)+'" data-workout-started="'+esc(state.session.started||'')+'" data-inline-rir="true" aria-label="'+esc(tp197RirWords().title)+'" title="'+esc(tp197RirWords().note)+'" type="number" inputmode="numeric" min="0" max="10" step="1" value="'+(tp229RirValid(s.actualRir)?Number(s.actualRir):'')+'" placeholder="—" aria-describedby="tp197RirNote tp229RirSummary" oninput="tp197RirInput(this)"></label>':'<span class="tp277-set-rir small muted" aria-label="RIR">—</span>';
   return '<div class="row tp153-set-row tp277-set-row"><div class="num">'+(si+1)+'</div><span class="tp277-set-previous"><small>'+esc(tp277Text('previous'))+'</small>'+esc(previous)+'</span>'+load+'<label class="small"><span class="tp277-field-label">'+esc(unit)+'</span><input class="field" inputmode="numeric" aria-label="'+esc(unit)+'" placeholder="'+esc(target)+'" value="'+esc(s.reps==null?'':s.reps)+'" oninput="upd('+i+','+si+',\'reps\',this.value)"></label>'+rir+'<button class="check '+(s.done?'done':'')+'" onclick="toggleSet('+i+','+si+')">'+(s.done?'✓':'OK')+'</button></div>';
  }).join('');
  const sharedSets=!tp106IsDistance(se)&&!['mp','sec','second','s'].includes(String(e.repUnit||'').toLowerCase())&&!tp1481IsPerSideTimed(se);
@@ -20396,11 +20396,18 @@ var tp197RirEligible=function(session,exercise,manual=false){
  return true;
 };
 
-var tp197RirSave=function(value,repaint=true,setId=null,manual=false){
+var tp197RirSave=function(value,repaint=true,setId=null,manual=false,setIndex=null,exerciseId=null,started=null){
  const session=state.session,exercise=session?.exercises?.[state.current];
  if(!tp197RirEligible(session,exercise,manual)||session.workoutPaused)return false;
- const set=setId?exercise.sets.find(s=>s.setId===setId):exercise.sets.filter(s=>s.done===true).at(-1);
- if(!set||set.done!==true&&!(manual&&setId))return false;
+ // Reject a stale DOM input after another exercise/workout has taken control.
+ if(exerciseId!==null&&String(exercise?.id)!==String(exerciseId))return false;
+ if(started!==null&&String(session?.started||'')!==String(started))return false;
+ const indexed=Number.isInteger(setIndex)&&setIndex>=0?exercise.sets[setIndex]:null;
+ if(indexed&&setId&&indexed.setId!==setId)return false;
+ if(setIndex!==null&&!indexed)return false;
+ const set=setId?exercise.sets.find(s=>s.setId===setId):indexed||(manual?null:exercise.sets.filter(s=>s.done===true).at(-1));
+ // Pending RIR is a draft-only user observation, never completed training.
+ if(!set||(!set.done&&!manual))return false;
  const raw=String(value);if(raw!==''&&!tp229RirValid(raw))return false;
  const before=set.actualRir,marker=exercise.setRir229;
  try{
@@ -20423,8 +20430,12 @@ var tp197RirHistory=function(exercise){
 };
 var tp197RirInput=function(input){
  const value=String(input.value),valid=value===''||tp229RirValid(value);
- const saved=tp197RirSave(valid?value:'',false,input.dataset?.setId||null,input.dataset?.inlineRir==='true');
- input.setAttribute?.('aria-invalid',valid&&saved?'false':'true');return valid&&saved;
+ if(!valid){input.setAttribute?.('aria-invalid','true');return false;}
+ const rawIndex=input.dataset?.setIndex;
+ const index=rawIndex!==undefined&&/^\d+$/.test(rawIndex)?Number(rawIndex):null;
+ const saved=tp197RirSave(value,false,input.dataset?.setId||null,input.dataset?.inlineRir==='true',
+  index,input.dataset?.exerciseId||null,input.dataset?.workoutStarted||null);
+ input.setAttribute?.('aria-invalid',saved?'false':'true');return saved;
 };
 var tp197RirField=function(session,exercise,inputs=true){
  if(!tp197RirEligible(session,exercise))return '';
