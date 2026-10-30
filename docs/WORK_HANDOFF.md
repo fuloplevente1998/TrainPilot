@@ -1,5 +1,14 @@
 # TrainPilot – aktuális átadás
 
+## PR279 folytatás — 2026-10-30
+
+- A felhasználó a korábban átadott telefonos APK naptári **Visszavonás** működését elfogadta és lezárását kérte. A PR leírásának részfeladata kipipálva; nincs külön részletes újraindítási/naplómegőrzési tesztbeszámoló. Ez nem teljes PR/Wear/GPS/Health elfogadás.
+- Kiinduló távoli HEAD `9f417240c2f1080fbff068aa171bf492eb605caa`: a `9f80be0` után az `app.js` is változott (Visszavonás bekötése), tehát nem csak dokumentációs eltérés. A korábbi APK-/teljeskapu-bizonyíték továbbra is kizárólag `9f80be0`-ra érvényes.
+- Következő megvalósítás: **Napló dátumszűrő felugró ablakban**, a Naptár `calendar-head`, `cal-weekdays`, `calendar-grid`, `cal-cell` komponensosztályaival és a meglévő piros X-szel. Ettől–eddig inkluzív tartomány, Törlés és Ma megmarad. Félbehagyott új választás nem törli a korábbi szűrést; Escape/Android Vissza/fókusz-visszaadás kezelve. Nincs új router/render/finish wrapper.
+- A meglévő négy érintett Chromium-regresszió az új, kért modal szerződésre igazítva; hónaphatáron átívelő és fordított kijelölés, félbehagyás, újranyitás, Android Vissza, változatlan naplóadat, Ma/Törlés, nagy betű és képernyőméretek ellenőrzésével bővítve.
+- Helyben JS-szintaxis, diff, `tests/runtime-120.cjs`, verziópolitika és release-katalógus ellenőrzése sikeres. Teljes Chromium/natív/aláírt APK ellenőrzés a meglévő GitHub Actions kapukban következik; sikerüket és új APK-t még nem állítjuk.
+- **1.3.71 /2735 változatlan; PR Draft.** Nincs main merge vagy release. Nyitott: új dátumszűrő készülékes elfogadása, további PR-listapontok, közvetlen telefon→Wear kiválasztott programnapindítás valódi natív/protokollfelmérése, teljes fizikai Wear/GPS/Health elfogadás.
+
 ## PR279 telefonos utóteszt — 2026-10-29 (aktuális fejlesztés)
 
 - Repo: `fuloplevente1998/TrainPilot`; ág `feat/pr277-uiux-implementation-20261029`, [Draft PR #279](https://github.com/fuloplevente1998/TrainPilot/pull/279), main alap továbbra is `8a36502da5832a42f1cb91708ecfed5cf4f9ed62`. Új alkalmazásforrás: **`9f80be0e4e86e62b40debf3401e418d60c2a9c00`**, verzió marad **1.3.71 /2735**. A korábbi `65eea447` APK-fájlt ne add át az új módosítások buildjeként.

@@ -55,13 +55,13 @@ const root=path.resolve('www'),server=http.createServer((req,res)=>{
     await openDate();await page.locator('#tpTemporalPicker .tp-temporal-actions .btn:first-child').click();assert.equal(await page.locator('#color-test-date').inputValue(),'','Delete clears date');
     await page.evaluate(()=>document.querySelector('#color-test-date').min='2050-01-01');await openDate();
     await palette('#tpTemporalPicker .tp-temporal-actions .btn:last-child',green);assert.equal(await page.locator('#tpTemporalPicker .tp-temporal-actions .btn:last-child').isDisabled(),true,'Today respects minimum date');await page.locator('#tpTemporalPicker .tp-modal-close').click();
-    await page.evaluate(()=>{tp155R4ClosePanel(false);go('history')});await page.locator('.tp155-journal-filter summary').click();
+    await page.evaluate(()=>{tp155R4ClosePanel(false);go('history')});await page.locator('.tp155-journal-filter').click();
     await palette('.tp155-journal-actions .btn:first-child',red);await palette('.tp155-journal-actions .btn:last-child',green);
     assert.equal(await page.locator('.tp155-journal-actions .btn:first-child').isDisabled(),true,'empty filter cannot be cleared');
     await page.locator('.tp155-journal-actions .btn:last-child').click();assert.deepEqual(await page.evaluate(()=>rf263HistoryFilter),{from:today,to:today},'Journal Today selects inclusive local-day filter');
     await palette('.tp155-journal-actions .btn:first-child',red);await palette('.tp155-journal-actions .btn:last-child',green);
     if(width===393&&lang==='hu')await page.screenshot({path:'ui-evidence/journal-action-colors-135.png'});
-    await page.locator('.tp155-journal-actions .btn:first-child').click();assert.deepEqual(await page.evaluate(()=>rf263HistoryFilter),{from:'',to:''},'clear restores unfiltered Journal');assert.equal(await page.locator('.tp155-journal-filter').getAttribute('open'),null,'clear collapses calendar');
+    await page.locator('.tp155-journal-actions .btn:first-child').click();assert.deepEqual(await page.evaluate(()=>rf263HistoryFilter),{from:'',to:''},'clear restores unfiltered Journal');assert.equal(await page.locator('.tp155-journal-filter').getAttribute('aria-expanded'),'false','clear closes calendar');
    }
   }
   assert.deepEqual(await page.evaluate(()=>({rows:scheduled(),programs:programs()})),initial,'visual operations preserve schedules and programs');

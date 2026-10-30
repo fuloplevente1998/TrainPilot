@@ -193,21 +193,21 @@ const server=http.createServer((req,res)=>{
   await page.evaluate(()=>go('home'));
 
   await page.evaluate(()=>go('history'));await page.waitForSelector('main.tp150-journal-compact');
-  const journalFilter=page.locator('.tp155-journal-filter');assert.equal(await journalFilter.count(),1,'Journal must expose one inline date filter');
-  assert.match(await journalFilter.locator('summary').innerText(),/Szűrő dátum szerint/);
-  assert.equal(await journalFilter.getAttribute('open'),null,'Journal date calendar starts collapsed');
-  await journalFilter.locator('summary').click();assert.ok(await journalFilter.getAttribute('open')!==null,'Journal calendar must expand inline');
+  const journalFilter=page.locator('.tp155-journal-filter');assert.equal(await journalFilter.count(),1,'Journal exposes one date-dialog trigger');
+  assert.match(await journalFilter.innerText(),/Szűrő dátum szerint/);
+  assert.equal(await journalFilter.getAttribute('aria-expanded'),'false','Journal date dialog starts closed');
+  await journalFilter.click();assert.ok(await journalFilter.getAttribute('aria-expanded')==='true','Journal calendar opens as a modal');
   assert.equal(await page.locator('.rf263-date-dialog').count(),0,'Journal date filtering must not open the old modal calendar');
   await page.evaluate(()=>tp155JournalSetMonth('2026-09-01',true));
-  await page.locator('.tp155-journal-filter[open] [data-date="2026-09-10"]').click();
+  await page.locator('#tp279JournalDate[open] [data-date="2026-09-10"]').click();
   assert.deepEqual(await page.evaluate(()=>({filter:rf263HistoryFilter,start:state.tp155JournalRangeStart})),{filter:{from:'',to:''},start:'2026-09-10'},'first Journal tap must establish only the Ettől boundary');
-  assert.ok(await page.locator('.tp155-journal-filter').getAttribute('open')!==null,'Journal calendar stays open while waiting for Eddig');
-  await page.locator('.tp155-journal-filter[open] [data-date="2026-09-15"]').click();
+  assert.ok(await page.locator('#tp279JournalDate').getAttribute('open')!==null,'Journal calendar stays open while waiting for Eddig');
+  await page.locator('#tp279JournalDate[open] [data-date="2026-09-15"]').click();
   assert.deepEqual(await page.evaluate(()=>rf263HistoryFilter),{from:'2026-09-10',to:'2026-09-15'},'second Journal tap must commit the inclusive Ettől–Eddig range');
   assert.equal(await page.locator('.tp155-journal-filter.tp155-range-active.tp155-r4-accent-surface').count(),1,'active Journal range must use the shared highlighted surface');
-  assert.equal(await page.locator('.tp155-journal-filter [data-date="2026-09-12"].is-range').count(),1,'days between the endpoints must be visibly marked as the selected range');
+  assert.equal(await page.locator('#tp279JournalDate [data-date="2026-09-12"].is-range').count(),1,'days between the endpoints must be visibly marked as the selected range');
   const clearJournal=page.locator('.tp155-journal-actions .btn').first();assert.equal(await clearJournal.isEnabled(),true);await clearJournal.click();
-  assert.deepEqual(await page.evaluate(()=>rf263HistoryFilter),{from:'',to:''});assert.equal(await page.locator('.tp155-journal-filter').getAttribute('open'),null,'Clear filter must clear both boundaries and collapse the inline calendar');
+  assert.deepEqual(await page.evaluate(()=>rf263HistoryFilter),{from:'',to:''});assert.equal(await page.locator('.tp155-journal-filter').getAttribute('aria-expanded'),'false','Clear filter must clear both boundaries and close the modal calendar');
 
   await page.evaluate(()=>{state.rf2211CalendarDate='';go('calendar')});await page.waitForSelector('#tp155R4PanelHost[data-panel="calendar"] .tp155-r4-calendar-panel-main');
   const calendarHost=page.locator('#tp155R4PanelHost[data-panel="calendar"]');

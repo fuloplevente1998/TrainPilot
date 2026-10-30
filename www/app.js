@@ -11871,7 +11871,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   const m=tp155JournalMonthStart(),next=new Date(m.getFullYear(),m.getMonth()+Number(delta||0),1,12);tp155JournalStoreMonth(next);state.tp155JournalFilterOpen=true;render(historyScreen());
  };
  window.tp155JournalSetMonth=function(value,open=true){
-  const d=rf263ParseDate(value);if(!d)return;tp155JournalStoreMonth(d);state.tp155JournalFilterOpen=!!open;render(historyScreen());
+  const d=rf263ParseDate(value);if(!d)return;tp155JournalStoreMonth(d);state.tp155JournalFilterOpen=!!open;if(window.TrainPilotJournalDate)window.TrainPilotJournalDate.refresh();else render(historyScreen());
  };
  window.tp155JournalPickDate=function(value){
   if(value&&!rf263ParseDate(value))return;
@@ -11960,7 +11960,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
 
  // Re-apply current theme after the Basic palette changes.
  rf200ApplyTheme(rf200ThemeKey());
- window.TrainPilot155Round3={version:TP155_R3_VERSION,matteBasic:true,expandedBasicPalette:true,naturalHomeHeight:true,largerHuNav:true,inlineJournalDate:true,directLanguage:true,upwardTimePicker:true,pendingI18nNavAudit:true,pendingDropdownStyleAudit:true};
+ window.TrainPilot155Round3={version:TP155_R3_VERSION,matteBasic:true,expandedBasicPalette:true,naturalHomeHeight:true,largerHuNav:true,inlineJournalDate:false,directLanguage:true,upwardTimePicker:true,pendingI18nNavAudit:true,pendingDropdownStyleAudit:true};
 })();
 // @endsection trainpilot-155-round3-ui-polish.js
 
@@ -11990,41 +11990,70 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  const storeMonth=d=>{state.tp155JournalMonth=rf263DateKey(new Date(d.getFullYear(),d.getMonth(),1,12))};
  const fmt=value=>{const d=valid(value)?rf263ParseDate(value):null;return d?d.toLocaleDateString(locale(),{year:'numeric',month:'2-digit',day:'2-digit'}):'—'};
 
+ // #279: a native modal keeps focus/background isolation without another router wrapper.
+ let dateDialog=null,dateTrigger=null;
+ const refreshDate=function(){
+  if(!dateDialog)return;
+  const focused=document.activeElement,token=focused?.dataset?.date||focused?.dataset?.month;
+  const host=dateDialog.querySelector('.tp279-journal-calendar-host');
+  host.innerHTML=calendarHtml();
+  document.querySelector('.tp155-journal-filter')?.setAttribute('aria-expanded','true');
+  if(token)host.querySelector('[data-date="'+token+'"],[data-month="'+token+'"]')?.focus({preventScroll:true});
+ };
+ const closeDate=function(restore=true){
+  if(!dateDialog)return false;
+  const dialog=dateDialog;dateDialog=null;
+  delete state.tp155JournalRangeStart;state.tp155JournalFilterOpen=false;
+  dialog.close();dialog.remove();
+  const trigger=dateTrigger?.isConnected?dateTrigger:document.querySelector('.tp155-journal-filter');dateTrigger=null;
+  trigger?.setAttribute('aria-expanded','false');
+  if(restore)trigger?.focus({preventScroll:true});
+  return true;
+ };
+ const openDate=function(trigger){
+  if(dateDialog)return;
+  delete state.tp155JournalRangeStart;
+  dateTrigger=trigger||document.querySelector('.tp155-journal-filter');
+  dateDialog=document.createElement('dialog');dateDialog.id='tp279JournalDate';
+  dateDialog.className='tp108-day-dialog';
+  dateDialog.setAttribute('role','dialog');dateDialog.setAttribute('aria-modal','true');dateDialog.setAttribute('aria-labelledby','tp279JournalDateTitle');
+  dateDialog.innerHTML='<div class="tp279-journal-date-head"><h2 id="tp279JournalDateTitle">'+esc(copy().filter)+'</h2></div><button type="button" class="tp108-day-close tp-modal-close" aria-label="'+esc(tp149T('common.close'))+'" onclick="TrainPilotJournalDate.close()">×</button><div class="tp108-day-content tp279-journal-calendar-host"></div>';
+  dateDialog.addEventListener('cancel',event=>{event.preventDefault();closeDate();});
+  const dialog=dateDialog;
+  dateDialog.addEventListener('close',()=>{if(dateDialog===dialog)closeDate();});
+  document.body.appendChild(dateDialog);refreshDate();dateDialog.showModal();
+  state.tp155JournalFilterOpen=true;
+  dateDialog.querySelector('.tp-modal-close').focus({preventScroll:true});
+ };
+ window.TrainPilotJournalDate={open:openDate,close:closeDate,refresh:refreshDate};
  window.tp155R4JournalMoveMonth=function(delta){
   const m=monthStart(),next=new Date(m.getFullYear(),m.getMonth()+Number(delta||0),1,12);
-  storeMonth(next);state.tp155JournalFilterOpen=true;render(historyScreen());
+  storeMonth(next);refreshDate();
  };
  window.tp155R4JournalPickDate=function(value){
   if(!valid(value))return;
-  const start=pending(),active=committed();
+  const start=pending();
   storeMonth(rf263ParseDate(value));
-  if(!start||(active.from&&active.to)){
+  if(!start){
+   // An incomplete new selection must preserve the already committed filter.
    state.tp155JournalRangeStart=value;
-   rf263HistoryFilter={from:'',to:''};
-   state.tp155JournalFilterOpen=true;
   }else{
-   let from=start,to=value;
-   if(to<from){const tmp=from;from=to;to=tmp}
-   rf263HistoryFilter={from:from,to:to};
-   delete state.tp155JournalRangeStart;
-   state.tp155JournalFilterOpen=true;
+   const from=start<value?start:value,to=start<value?value:start;
+   rf263HistoryFilter={from:from,to:to};delete state.tp155JournalRangeStart;
+   render(historyScreen());
   }
-  render(historyScreen());
+  refreshDate();
  };
  window.tp155R4JournalToday=function(){
   const value=rf263DateKey(new Date()),start=pending();
   storeMonth(new Date());
-  if(start){
-   let from=start,to=value;if(to<from){const tmp=from;from=to;to=tmp}
-   rf263HistoryFilter={from:from,to:to};delete state.tp155JournalRangeStart;
-  }else{
-   rf263HistoryFilter={from:value,to:value};delete state.tp155JournalRangeStart;
-  }
-  state.tp155JournalFilterOpen=true;render(historyScreen());
+  rf263HistoryFilter=start?{from:start<value?start:value,to:start<value?value:start}:{from:value,to:value};
+  delete state.tp155JournalRangeStart;
+  render(historyScreen());refreshDate();
  };
  window.tp155R4JournalClear=function(){
   rf263HistoryFilter={from:'',to:''};delete state.tp155JournalRangeStart;delete state.tp155JournalMonth;
-  state.tp155JournalFilterOpen=false;render(historyScreen());
+  render(historyScreen());closeDate();
  };
  rf263ClearHistoryFilter=window.tp155R4JournalClear;
 
@@ -12035,15 +12064,15 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   let days='<span aria-hidden="true"></span>'.repeat(first);
   for(let d=1;d<=count;d++){
    const date=new Date(y,mo,d,12),value=rf263DateKey(date),isStart=value===from,isEnd=!!to&&value===to,inRange=!!(from&&to&&value>from&&value<to);
-   const cls='tp155-journal-day'+(isStart?' is-start':'')+(isEnd?' is-end':'')+(inRange?' is-range':'');
-   days+='<button type="button" class="'+cls+'" data-date="'+value+'" aria-label="'+esc(date.toLocaleDateString(locale(),{year:'numeric',month:'long',day:'numeric',weekday:'long'}))+'" aria-pressed="'+((isStart||isEnd)?'true':'false')+'" '+(value===today?'aria-current="date"':'')+' onclick="event.preventDefault();event.stopPropagation();tp155R4JournalPickDate(\''+value+'\')">'+d+'</button>';
+   const cls='cal-cell tp155-journal-day'+(isStart?' is-start':'')+(isEnd?' is-end':'')+(inRange?' is-range':'');
+   days+='<button type="button" class="'+cls+'" data-date="'+value+'" aria-label="'+esc(date.toLocaleDateString(locale(),{year:'numeric',month:'long',day:'numeric',weekday:'long'}))+'" aria-pressed="'+((isStart||isEnd)?'true':'false')+'" '+(value===today?'aria-current="date"':'')+' onclick="event.preventDefault();event.stopPropagation();tp155R4JournalPickDate(\''+value+'\')"><span>'+d+'</span></button>';
   }
   const active=!!(start||a.from||a.to);
-  return '<div class="tp155-journal-calendar tp155-r4-range-calendar">'+
+  return '<div class="tp151-calendar-frame tp155-r4-calendar-frame tp155-journal-calendar tp155-r4-range-calendar">'+
    '<div class="tp155-journal-range-head"><div><span>'+esc(c.from)+'</span><strong>'+esc(fmt(from))+'</strong></div><div><span>'+esc(c.to)+'</span><strong>'+esc(fmt(to))+'</strong></div></div>'+
    (start?'<p class="small muted tp155-journal-range-help">'+esc(c.pickEnd)+'</p>':'')+
-   '<div class="tp155-journal-month"><button type="button" class="btn secondary" onclick="event.preventDefault();event.stopPropagation();tp155R4JournalMoveMonth(-1)">‹</button><strong>'+esc(m.toLocaleDateString(locale(),{year:'numeric',month:'long'}))+'</strong><button type="button" class="btn secondary" onclick="event.preventDefault();event.stopPropagation();tp155R4JournalMoveMonth(1)">›</button></div>'+
-   '<div class="tp155-journal-week" aria-hidden="true">'+weekdays.map(x=>'<span>'+esc(x)+'</span>').join('')+'</div><div class="tp155-journal-days">'+days+'</div>'+
+   '<div class="calendar-head tp155-journal-month"><button type="button" class="btn secondary" data-month="-1" onclick="event.preventDefault();event.stopPropagation();tp155R4JournalMoveMonth(-1)">‹</button><strong>'+esc(m.toLocaleDateString(locale(),{year:'numeric',month:'long'}))+'</strong><button type="button" class="btn secondary" data-month="1" onclick="event.preventDefault();event.stopPropagation();tp155R4JournalMoveMonth(1)">›</button></div>'+
+   '<div class="cal-weekdays tp155-journal-week" aria-hidden="true">'+weekdays.map(x=>'<span>'+esc(x)+'</span>').join('')+'</div><div class="calendar-grid tp155-journal-days">'+days+'</div>'+
    '<div class="tp155-journal-actions"><button type="button" class="btn secondary" onclick="event.preventDefault();event.stopPropagation();tp155R4JournalClear()" '+(active?'':'disabled')+'>'+esc(c.clear)+'</button><button type="button" class="btn secondary" onclick="event.preventDefault();event.stopPropagation();tp155R4JournalToday()">'+esc(c.today)+'</button></div></div>';
  };
 
@@ -12067,12 +12096,12 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   return true;
  };
  historyScreen=function(){
-  const all=history(),filtered=rf263FilteredHistory(),a=committed(),start=pending(),c=copy(),from=start||a.from||'',to=start?'':a.to||'';
-  const range=JSON.stringify([a.from,a.to,start,state.tp277JournalKind||'all']);
+  const all=history(),filtered=rf263FilteredHistory(),a=committed(),c=copy(),from=a.from,to=a.to;
+  const range=JSON.stringify([a.from,a.to,state.tp277JournalKind||'all']);
   if(range!==tp236Range||all.length!==tp236LastCount||!document.getElementById('tp236HistoryRows')){tp236Range=range;tp236Shown=TP236_PAGE_SIZE;}
   tp236LastCount=all.length;
   const status=(from||to)?'<span class="small muted tp155-journal-range-summary">'+esc(c.from)+': '+esc(fmt(from))+' • '+esc(c.to)+': '+esc(fmt(to))+'</span>':'';
-  const filter='<details class="card tp155-journal-filter '+((a.from&&a.to)?'tp155-range-active':'')+'" '+(state.tp155JournalFilterOpen?'open':'')+' ontoggle="state.tp155JournalFilterOpen=!!this.open"><summary><div><strong>'+esc(c.filter)+'</strong>'+status+'</div><span class="tp160-journal-disclosure" aria-hidden="true"></span></summary>'+calendarHtml()+'</details><p class="small muted rf263-history-count">'+esc(tp149T('journal.count',{shown:filtered.length,total:all.length}))+'</p>';
+  const filter='<button type="button" class="card tp155-journal-filter '+((a.from&&a.to)?'tp155-range-active':'')+'" aria-haspopup="dialog" aria-expanded="'+(dateDialog?.open?'true':'false')+'" onclick="TrainPilotJournalDate.open(this)"><span class="tp279-journal-filter-copy"><strong>'+esc(c.filter)+'</strong>'+status+'</span><span class="tp160-journal-disclosure" aria-hidden="true"></span></button><p class="small muted rf263-history-count">'+esc(tp149T('journal.count',{shown:filtered.length,total:all.length}))+'</p>';
   const rows=filtered.length?'<div id="tp236HistoryRows">'+filtered.slice(0,tp236Shown).map(function(row,i){return rf263HistoryItem(row.x,row.index,i)}).join('')+'</div>'+tp236MoreButton(filtered.length):(window.TrainPilot110?window.TrainPilot110.empty('log',!!all.length):(all.length?'<div class="card muted">'+esc(tp149T('journal.noneRange'))+'</div>':'<div class="muted">'+esc(tp149T('journal.none'))+'</div>'));
   return shell('<main class="tp150-journal-compact tp277-journal">'+tp277JournalFiltersHtml()+filter+rows+'</main>');
  };
@@ -12083,7 +12112,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
   'html[data-tp-theme-family="basic"] .tp155-journal-filter.tp155-range-active{box-shadow:none!important;border-color:color-mix(in srgb,var(--accent) 58%,var(--line))!important;background:color-mix(in srgb,var(--accent) 6%,var(--card))!important}'
  ].join('');
  document.head.appendChild(style);
- window.TrainPilot155JournalRange={version:'1.5.5-round3-range',inclusive:true,twoDateSelection:true};
+ window.TrainPilot155JournalRange={version:'1.5.5-round3-range',inclusive:true,twoDateSelection:true,modal:true};
 })();
 // @endsection trainpilot-155-round3-journal-range.js
 
@@ -12483,6 +12512,7 @@ window.TrainPilot155UI={version:TP155_UI_VERSION,stableTwoByFourNav:true,largerN
  const renderBase=render;
  render=function(custom){
   const out=renderBase.apply(this,arguments);
+  if(state.tab!=='history')window.TrainPilotJournalDate?.close(false);
   window.tp155R4DecorateNavigation();
   // Pickers keep their editable controls across an ordinary page redraw.
   // Their filter handlers and explicit RefreshPanel calls update them directly.

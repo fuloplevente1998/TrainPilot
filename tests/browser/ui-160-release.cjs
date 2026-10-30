@@ -56,7 +56,7 @@ const {chromium}=require('playwright');
   const closed=await arrow.evaluate(e=>getComputedStyle(e,'::before').transform);
   assert.equal(await arrow.evaluate(e=>getComputedStyle(e,'::before').clipPath),'none','Journal must not use clipped triangle');
   assert.ok((await arrow.evaluate(e=>getComputedStyle(e,'::before').content)).includes('›'),'Journal uses shared theme chevron');
-  await filter.locator('summary').click();
+  await filter.click();
   await page.waitForTimeout(180);
   const opened=await arrow.evaluate(e=>getComputedStyle(e,'::before').transform);
   assert.notEqual(opened,closed,'Journal chevron rotates when opened');

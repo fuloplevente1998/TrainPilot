@@ -435,17 +435,17 @@ html body :is(#app,#tp155R4PanelHost) .cal-cell>b{font-size:14px!important;line-
 /* #135 date actions reuse the existing red close/delete and green save colors. */
 html body #tpTemporalPicker :is(.tp-modal-close,.tp-temporal-actions>.btn[onclick="rf260TemporalCommit('')"]),
 html body #rf130PhotoModal .tp126-photo-close,
-html body #app .tp155-journal-actions>.btn[onclick*="Clear"],
+html body :is(#app,#tp279JournalDate) .tp155-journal-actions>.btn[onclick*="Clear"],
 html body .rf263-date-dialog :is(.rf263-date-heading>.btn[onclick="rf263CloseDate()"],.rf263-date-actions>.btn[onclick="rf263PickDate('')"]){background:#472529!important;border-color:#744048!important;color:#ffd9dc!important;box-shadow:none!important}
 html body #tpTemporalPicker .tp-temporal-actions>.btn.secondary[onclick^="rf260TemporalChooseDate("],
-html body #app .tp155-journal-actions>.btn:last-child,
+html body :is(#app,#tp279JournalDate) .tp155-journal-actions>.btn:last-child,
 html body .rf263-date-dialog .rf263-date-actions>.btn:last-child{background:#274b38!important;border-color:#3f7657!important;color:#dff7e8!important;box-shadow:none!important}
 html body #tpTemporalPicker :is(.tp-modal-close,.tp-temporal-actions>.btn[onclick="rf260TemporalCommit('')"]):active,
 html body #rf130PhotoModal .tp126-photo-close:active,
-html body #app .tp155-journal-actions>.btn[onclick*="Clear"]:active,
+html body :is(#app,#tp279JournalDate) .tp155-journal-actions>.btn[onclick*="Clear"]:active,
 html body .rf263-date-dialog :is(.rf263-date-heading>.btn[onclick="rf263CloseDate()"],.rf263-date-actions>.btn[onclick="rf263PickDate('')"]):active{background:#552b31!important}
 html body #tpTemporalPicker .tp-temporal-actions>.btn.secondary[onclick^="rf260TemporalChooseDate("]:active,
-html body #app .tp155-journal-actions>.btn:last-child:active,
+html body :is(#app,#tp279JournalDate) .tp155-journal-actions>.btn:last-child:active,
 html body .rf263-date-dialog .rf263-date-actions>.btn:last-child:active{background:#39a866!important;border-color:#66d58d!important;color:#fff!important}
 
 /* #125: retain the browser's search-clear behavior, using the app accent and a mobile tap target. */
@@ -630,3 +630,24 @@ html body #app .tp279-completed-schedule .tp279-undo-schedule{flex:1}
  html body #app .rf2211-picker>.tp279-calendar-actions{width:100%}
  html body #app .rf2211-picker>.tp279-calendar-actions>.btn{flex:1}
 }
+
+/* PR279: Journal range picker reuses Calendar grid and day-dialog styling. */
+html body #app button.tp155-journal-filter{box-sizing:border-box;width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 13px!important;color:var(--text);font:inherit;text-align:left;cursor:pointer}
+.tp279-journal-filter-copy{display:grid;gap:3px;min-width:0}
+#tp279JournalDate{width:min(420px,calc(100vw - 24px));max-height:calc(100dvh - 24px);margin:auto;color:var(--text);background:var(--tp-ui-card,var(--card));overflow:hidden}
+#tp279JournalDate:not([open]){display:none}
+#tp279JournalDate::backdrop{background:rgba(4,7,11,.78)}
+#tp279JournalDate .tp279-journal-date-head{flex:none;min-height:44px;padding-right:48px}
+#tp279JournalDate h2{margin:0 0 8px;font-size:18px;line-height:1.3;overflow-wrap:anywhere}
+#tp279JournalDate .tp279-journal-calendar-host{min-height:0;overflow:auto;overscroll-behavior:contain}
+#tp279JournalDate .tp151-calendar-frame{padding:7px;border:1px solid var(--tp-ui-border,var(--line));border-radius:16px;background:var(--tp-ui-card,var(--card))}
+#tp279JournalDate .calendar-head{grid-template-columns:46px minmax(0,1fr) 46px;gap:6px;min-height:40px;margin:8px 0 6px}
+#tp279JournalDate .calendar-head .btn{min-height:38px;padding:6px}
+#tp279JournalDate .calendar-grid,#tp279JournalDate .cal-weekdays{gap:2px}
+#tp279JournalDate .cal-weekdays span{padding:3px 0}
+#tp279JournalDate .cal-cell{box-sizing:border-box;min-width:0;min-height:42px;padding:3px;border-radius:10px;align-items:center;justify-content:center;font-size:14px}
+#tp279JournalDate .cal-cell>span{font-size:14px}
+#tp279JournalDate .tp155-journal-range-head strong{overflow-wrap:anywhere}
+#tp279JournalDate .tp155-journal-actions .btn{min-width:0;white-space:normal;overflow-wrap:anywhere}
+html[data-tp-theme-family="basic"] #tp279JournalDate :is(button,.tp151-calendar-frame){box-shadow:none!important;filter:none!important}
+@media(max-width:360px){#tp279JournalDate .cal-cell{min-height:40px}}
