@@ -47,7 +47,7 @@ const server=http.createServer((req,res)=>{
   assert.equal(await restored.inputValue(),'5','pending actual RIR persists across reload');
   await restored.fill('11');
   assert.equal(await restored.getAttribute('aria-invalid'),'true','invalid RIR must be marked');
-  assert.equal(await page.evaluate(()=>db.get('draft',null).session.exercises[0].sets[0].actualRir),5,'invalid RIR must not delete a valid draft');
+  assert.equal(await page.evaluate(()=>Object.hasOwn(db.get('draft',null).session.exercises[0].sets[0],'actualRir')),false,'invalid RIR clears stale draft observation');
   await restored.fill('4');assert.equal(await restored.getAttribute('aria-invalid'),'false');
   const guard=await page.evaluate(()=>{
    const session=state.session,e=session.exercises[0],s=e.sets[0];

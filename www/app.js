@@ -20430,12 +20430,13 @@ var tp197RirHistory=function(exercise){
 };
 var tp197RirInput=function(input){
  const value=String(input.value),valid=value===''||tp229RirValid(value);
- if(!valid){input.setAttribute?.('aria-invalid','true');return false;}
+ // Invalid edits clear stale observations rather than silently keeping an old RIR.
+ // A value that cannot be saved is still marked invalid in the editor.
  const rawIndex=input.dataset?.setIndex;
  const index=rawIndex!==undefined&&/^\d+$/.test(rawIndex)?Number(rawIndex):null;
- const saved=tp197RirSave(value,false,input.dataset?.setId||null,input.dataset?.inlineRir==='true',
+ const saved=tp197RirSave(valid?value:'',false,input.dataset?.setId||null,input.dataset?.inlineRir==='true',
   index,input.dataset?.exerciseId||null,input.dataset?.workoutStarted||null);
- input.setAttribute?.('aria-invalid',saved?'false':'true');return saved;
+ input.setAttribute?.('aria-invalid',valid&&saved?'false':'true');return valid&&saved;
 };
 var tp197RirField=function(session,exercise,inputs=true){
  if(!tp197RirEligible(session,exercise))return '';
