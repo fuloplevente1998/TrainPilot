@@ -1,0 +1,14 @@
+const assert=require('node:assert/strict'),fs=require('node:fs');
+const app=fs.readFileSync('www/app.js','utf8');
+assert.ok(app.includes('var rfHistoryHealthCache=new Map()'));
+assert.ok(app.includes("readWorkout({start:h.started,end:h.finished,source:''})"));
+assert.ok(app.includes('data-rf-history-health="${originalIndex}"'));
+assert.ok(app.includes('Aktív kalória'));
+assert.ok(app.includes('Átlag / max. pulzus'));
+assert.ok(app.includes('Health edzésidő'));
+assert.ok(app.includes('Távolság'));
+const fn=app.slice(app.indexOf('var healthFromHistory = async function healthFromHistory'),app.indexOf('var feedbackFromHistory'));
+assert.ok(fn.length>0);
+assert.ok(!fn.includes("go('health')"),'history Health action must stay inline');
+assert.ok(app.includes('rf2625HistoryHealthCss'));
+console.log('PASS 2625 inline history Health Connect summary');

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="studio_home_greeting">Willkommen zurück!</string>
+    <string name="studio_home_overview">Dein Training und deine Gesundheit heute.</string>
+    <string name="studio_home_active_intro">Setze dein begonnenes Training fort.</string>
+    <string name="studio_home_planner_title">Persönlicher Trainingsplaner</string>
+    <string name="studio_home_planner_info">Richte dein Trainingsprofil ein und wähle dann ein Programm.</string>
+    <string name="studio_header_theme">Darstellung</string>
+    <string name="studio_home_new_plan">Neuen Plan ansehen</string>
+</resources>

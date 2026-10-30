@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cardio_progress_title">Cardio</string>
+    <string name="cardio_progress_description">Saved distance and time results</string>
+    <string name="cardio_progress_all">All activities</string>
+    <string name="cardio_progress_loading">Loading cardio data…</string>
+    <string name="cardio_progress_error">Could not load cardio data.</string>
+    <string name="cardio_progress_retry">Retry</string>
+    <string name="cardio_progress_empty">No saved cardio results for this activity yet.</string>
+    <string name="cardio_progress_all_time">All time</string>
+    <string name="cardio_progress_current_week">This week</string>
+    <string name="cardio_progress_previous_week">Previous week</string>
+    <string name="cardio_progress_eight_weeks">Distance – last 8 weeks</string>
+    <string name="cardio_progress_time_only">Time only: %1$s</string>
+    <string name="cardio_progress_records">Same-distance records</string>
+    <string name="cardio_progress_no_records">No timed distance records yet.</string>
+    <string name="cardio_progress_record_distance">%1$d m • %2$d attempts</string>
+    <string name="cardio_progress_record_best">Best: %1$s (%2$s)</string>
+    <string name="cardio_progress_record_second">Second: %1$s (%2$s)</string>
+    <string name="cardio_progress_more">Show %1$d more records</string>
+    <string name="cardio_progress_less">Show fewer records</string>
+</resources>

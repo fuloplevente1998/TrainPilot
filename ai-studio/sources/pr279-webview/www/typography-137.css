@@ -1,0 +1,120 @@
+/* #137 r5: ship the font instead of relying on the phone's system fallback.
+   Inter v4.1 (rsms/inter), unmodified variable WOFF2; SIL OFL in inter-license.txt.
+   One local upright font covers real weights and Hungarian/Romanian accents. */
+@font-face{
+  font-family:"TrainPilot Inter";
+  src:url("trainpilot-inter.woff2") format("woff2");
+  font-style:normal;
+  font-weight:100 900;
+  font-display:swap;
+}
+:root{
+  --tp-ui-font:"TrainPilot Inter",Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --tp-type-page:24px;
+  --tp-type-section:18px;
+  --tp-type-item:16px;
+  --tp-type-body:14px;
+  --tp-type-control:15px;
+  --tp-type-caption:12px;
+}
+html body{
+  font-family:var(--tp-ui-font);
+  font-size:var(--tp-type-body);
+  font-weight:400;
+  font-stretch:normal;
+}
+html body :is(#app,#tp155R4PanelHost,.tp-modal,.tp2628-dialog-backdrop,.tp3-planner-panel,.video-modal){
+  font-family:var(--tp-ui-font)!important;
+}
+html body :is(button,input,select,textarea){font-family:var(--tp-ui-font)!important;}
+html body :is(#app,#tp155R4PanelHost) main h1{
+  font-size:var(--tp-type-page)!important;
+  font-weight:800!important;
+  line-height:1.2!important;
+  letter-spacing:normal!important;
+}
+html body #app main .onboarding h2{
+  font-size:var(--tp-type-page)!important;
+  font-weight:800!important;
+  line-height:1.2!important;
+}
+html body :is(#app,#tp155R4PanelHost) main :is(h2,.section){
+  font-size:var(--tp-type-section)!important;
+  font-weight:700!important;
+  line-height:1.25!important;
+  letter-spacing:normal!important;
+}
+html body :is(#app,#tp155R4PanelHost) main :is(
+  h3,.ex-name,.history-title,.tp1511-head strong,.rf233-exhead strong
+){
+  font-size:var(--tp-type-item)!important;
+  font-weight:700!important;
+  line-height:1.25!important;
+}
+html body :is(#app,#tp155R4PanelHost) main:not(.tp-home-draft-compact):not(.tp107-health-layout) p:not(.small):not(.tp177-small){
+  font-size:var(--tp-type-body)!important;
+  font-weight:400;
+  line-height:1.45!important;
+}
+html body :is(#app,#tp155R4PanelHost) main :is(.small,.meta,.badge){
+  font-size:var(--tp-type-caption)!important;
+  line-height:1.3!important;
+}
+html body :is(#app,#tp155R4PanelHost) main .meta{font-weight:600!important;}
+html body :is(#app,#tp155R4PanelHost) main :is(.btn:not([class*="close"]):not([onclick^="changeCalendarMonth"]),.tp-select-trigger,.tp-temporal-trigger){
+  font-size:var(--tp-type-control)!important;
+  font-weight:700!important;
+}
+html body :is(#app,#tp155R4PanelHost) main :is(.field,input,select,textarea){
+  font-size:var(--tp-type-body)!important;
+}
+/* Longer localized picker values stay within their grid column. */
+html body :is(#app,#tp155R4PanelHost) .rf2211-planbody .tp-select{width:100%!important;max-width:100%!important;min-width:0!important;}
+html body :is(#app,#tp155R4PanelHost) .tp-select-trigger{max-width:100%!important;min-width:0!important;}
+html body :is(#app,#tp155R4PanelHost) .tp-select-value{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+@media(max-width:340px) and (max-height:800px){
+  /* Keep all six calendar rows and weekly controls reachable with Inter. */
+  html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .rf2211-planbody{gap:1px!important;}
+}
+/* The same advice on Home and in Coach uses the same title/body hierarchy. */
+html body :is(#app,#tp155R4PanelHost) :is(.tp151-advice,.tp166-home-coach) :is(.tp151-advice>strong,h2){
+  font-size:var(--tp-type-section)!important;
+  font-weight:700!important;
+  line-height:1.25!important;
+}
+html body :is(#app,#tp155R4PanelHost) .tp153-coach-metric strong{font-weight:700!important;}
+/* The fixed Home overview keeps its viewport height when goal metadata
+   changes the advice text, instead of growing with the font's new metrics. */
+html body #app main.tp107-fit-home{
+  height:max(0px,calc(100dvh - var(--tp107-nav-height,132px) - 2px))!important;
+}
+/* Narrow summaries are metadata, not additional page headings. */
+html body #app .tp146-next-title{font-size:var(--tp-type-body)!important;font-weight:600!important;}
+html[lang] body .top.tp154-nav-grid .tp151-nav-label{
+  font-size:13px!important;
+  font-weight:700!important;
+}
+@media(max-width:390px){
+  html[lang] body .top.tp154-nav-grid .tp151-nav-label{font-size:12.5px!important;}
+}
+
+/* Older compact rules changed icon sizes by 1px and moved centered labels.
+   Keep identical icon metrics on either side of the scroll threshold. */
+html[lang] body .top.tp154-nav-grid .tp154-nav-cell :is(.tp151-nav-icon,.tp154-nav-action-icon){font-size:21px!important;}
+html[lang] body .top.tp154-nav-grid .tp154-settings-action .tp154-nav-action-icon{font-size:24px!important;}
+
+/* Scroll must not shine/blur the page's yellow actions through the main menu.
+   Keep the same opaque surface in both compact states, without changing its
+   geometry or its existing theme-colored moving selection. */
+html body .top.tp154-nav-grid,
+html.tp-nav-compact body .top.tp154-nav-grid,
+html:not(.tp-nav-compact) body .top.tp154-nav-grid{
+  background:var(--tp-ui-bg,#0e1015)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+  border-bottom-color:var(--tp-ui-border,#2c3440)!important;
+  padding-top:3px!important;
+  transition:none!important;
+  will-change:auto!important;
+}

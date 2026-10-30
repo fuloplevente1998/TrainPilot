@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="program_rx_open">Célértékek</string>
+    <string name="program_rx_title">Célértékek · %1$s</string>
+    <string name="program_rx_scope">A változás a gyakorlat minden programnapjára érvényes, és a program mentésekor rögzül.</string>
+    <string name="program_rx_sets">Sorozatok (1–10)</string>
+    <string name="program_rx_target_reps">Ismétléscél</string>
+    <string name="program_rx_target_time">Időcél (mp)</string>
+    <string name="program_rx_target_side">Időcél oldalanként (mp)</string>
+    <string name="program_rx_weight">Terhelés (kg)</string>
+    <string name="program_rx_weight_total">Összes terhelés (kg)</string>
+    <string name="program_rx_weight_hand">Terhelés kézenként (kg)</string>
+    <string name="program_rx_weight_single">Egy kézisúlyzó súlya (kg)</string>
+    <string name="program_rx_weight_assisted">Rásegítés (kg)</string>
+    <string name="program_rx_trial">Hagyd üresen, ha próbasúllyal választanád ki a terhelést.</string>
+    <string name="program_rx_rest">Pihenő (30–300 mp)</string>
+    <string name="program_rx_invalid">Ellenőrizd a célértékeket: 1–10 sorozat, 1–40 karakteres cél (ismétlés/idő), 0–10000 kg és 30–300 mp pihenő.</string>
+    <string name="program_rx_apply">Célértékek alkalmazása</string>
+    <string name="program_rx_cancel">Mégse</string>
+</resources>

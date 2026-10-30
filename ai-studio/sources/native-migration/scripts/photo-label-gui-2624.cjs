@@ -1,0 +1,10 @@
+const assert=require('node:assert/strict'),fs=require('node:fs');
+const app=fs.readFileSync('www/app.js','utf8');
+assert.ok(app.includes('aria-pressed'));
+assert.ok(app.includes('data-rf130-label="before" aria-pressed="false"'));
+assert.ok(app.includes('data-rf130-label="after" aria-pressed="true"'));
+assert.ok(app.includes('data-rf130-label="other" aria-pressed="false"'));
+assert.ok(app.includes('rf130SetPhotoLabel(rf130PhotoLabel)'));
+assert.ok(app.includes('.rf130-labels .btn[aria-pressed="true"]'));
+assert.ok(app.includes('color-mix(in srgb,var(--accent) 28%,var(--card2))'));
+console.log('PASS 2624 workout photo label selected-state GUI');

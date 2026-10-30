@@ -1,0 +1,8 @@
+{
+  "chunk_index": 16,
+  "timestamp": "2026-10-22T00:34:21.103Z",
+  "language": "kotlin",
+  "reason": "no supported project filepath in the code block heading",
+  "closed": true,
+  "content": "@Serializable sealed interface PhoneRoute {\n    // 5 Fő Tab a BottomNavigationBar-ban\n    @Serializable data object HomeTab : PhoneRoute          // Kezdőlap, Mai terv, Aktív edzés sáv, Óra & Egészség gyorstükör\n    @Serializable data object TrainingTab : PhoneRoute      // Edzés: Aktív edzés, Programok, Naptár, Gyakorlat-katalógus (#107)\n    @Serializable data object JournalTab : PhoneRoute       // Napló: Edzéselőzmények, #226/#234 PR chip, #193 GPS térkép\n    @Serializable data object ProgressTab : PhoneRoute      // Fejlődés: #177 Izom-anatómia, 1RM/Volumen trendek, Testsúly & Fotók\n    @Serializable data object HealthTab : PhoneRoute        // Egészség: #120/#168 Egészségnapló (26 metrika), #111 BLE Discovery\n\n    // Másodlagos / Részletes Képernyők és Teljes Képernyős Nézetek\n    @Serializable data class ActiveWorkoutScreenRoute(val workoutId: String) : PhoneRoute\n    @Serializable data class ProgramEditorRoute(val programId: String? = null) : PhoneRoute\n    @Serializable data class WorkoutRouteMapScreenRoute(val workoutId: String, val routeKey: String) : PhoneRoute\n    @Serializable data object BleDiscoveryScreenRoute : PhoneRoute\n    @Serializable data object SettingsAndBackupRoute : PhoneRoute\n    @Serializable data object PrivacyPolicyRoute : PhoneRoute\n}\n"
+}

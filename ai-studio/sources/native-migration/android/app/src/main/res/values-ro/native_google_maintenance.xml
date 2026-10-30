@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="google_maintenance_revoke">Revocă accesul Google</string>
+    <string name="google_maintenance_drive">Șterge copiile TrainPilot din Drive</string>
+    <string name="google_maintenance_calendar">Șterge calendarele de antrenament gestionate</string>
+    <string name="google_maintenance_revoke_scope">Revocă permisiunile Google pentru TrainPilot și deconectează contul. Datele din cloud nu sunt șterse.</string>
+    <string name="google_maintenance_drive_scope">Șterge doar copiile și fotografiile de antrenament din spațiul app-data TrainPilot. Alte fișiere Drive nu sunt afectate. Ștergerea nu poate fi anulată.</string>
+    <string name="google_maintenance_calendar_scope">Șterge doar calendarele de antrenament deținute de acest cont și gestionate de TrainPilot. Alte calendare nu sunt afectate. Ștergerea nu poate fi anulată.</string>
+    <string name="google_maintenance_account">Cont afectat: %1$s</string>
+    <string name="google_maintenance_local">Istoricul și fotografiile locale sunt păstrate. Sincronizarea cloud se oprește până la o pornire explicită. Ștergerea parțială nu poate fi anulată.</string>
+    <string name="google_maintenance_confirm">Confirmă</string>
+    <string name="google_maintenance_cancel">Anulează</string>
+    <string name="google_maintenance_done">Finalizat: %1$d operațiuni. Datele locale sunt păstrate.</string>
+    <string name="google_maintenance_partial">Cel puțin %1$d operațiuni la distanță confirmate. Operațiune incompletă; rezultatul ultimei cereri poate fi incert. Verifică acest cont. Redeschide și confirmă pentru a reîncerca.</string>
+    <string name="google_maintenance_failed">Operațiunea a eșuat. Verifică acest cont, permisiunile și starea antrenamentului/sincronizării. Reîncercarea necesită confirmare separată.</string>
+</resources>

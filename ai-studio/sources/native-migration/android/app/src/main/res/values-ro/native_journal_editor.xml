@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="journal_edit_title">Editează antrenamentul</string>
+    <string name="journal_edit_started">Început</string>
+    <string name="journal_edit_finished">Sfârșit</string>
+    <string name="journal_edit_time_hint">Data și ora: 2026-10-25 18:30:00 +02:00. Ultima valoare este decalajul fusului orar.</string>
+    <string name="journal_edit_weight">Greutate (kg)</string>
+    <string name="journal_edit_reps">Repetări</string>
+    <string name="journal_edit_seconds">Timp (s)</string>
+    <string name="journal_edit_left">Partea stângă (s)</string>
+    <string name="journal_edit_right">Partea dreaptă (s)</string>
+    <string name="journal_edit_distance">Distanță (m)</string>
+    <string name="journal_edit_rir">Repetări în rezervă (RIR, opțional)</string>
+    <string name="journal_edit_done">Finalizat</string>
+    <string name="journal_edit_remove">Elimină</string>
+    <string name="journal_edit_add_set">Adaugă serie</string>
+    <string name="journal_edit_add_exercise">Adaugă exercițiu</string>
+    <string name="journal_edit_save">Salvează modificările</string>
+    <string name="journal_edit_saving">Se salvează…</string>
+    <string name="journal_edit_invalid">Verifică data, ora și decalajul de fus orar pentru ambele câmpuri.</string>
+    <string name="journal_edit_failed">Salvarea a eșuat. Verifică valorile: sfârșitul trebuie să fie după început, în maximum 24 de ore și nu în viitor; seriile finalizate necesită valori măsurate pozitive. Dacă antrenamentul s-a modificat între timp, închide și redeschide editorul.</string>
+    <string name="journal_edit_stale">Orele antrenamentului s-au modificat. Măsurătorile de sănătate păstrate se referă la intervalul inițial de înregistrare.</string>
+    <string name="journal_feedback_edit">Editează evaluarea antrenamentului</string>
+    <string name="journal_feedback_locked">Această evaluare a fost deja aplicată unui program și nu poate fi modificată.</string>
+</resources>

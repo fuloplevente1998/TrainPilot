@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_state_loading">Betöltés…</string>
+    <string name="home_state_no_program">Válassz programot az Edzés oldalon</string>
+    <string name="home_state_no_target">Nincs ajánlott edzés</string>
+    <string name="home_state_error">Nem sikerült frissíteni a Kezdőlap adatait.</string>
+    <string name="home_state_retry">Újrapróbálás</string>
+    <string name="home_state_watch_unknown">Nincs friss órás adat</string>
+</resources>

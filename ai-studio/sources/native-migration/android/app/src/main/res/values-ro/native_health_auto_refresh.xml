@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_health_auto_refresh_title">Actualizare automată a datelor de sănătate</string>
+    <string name="native_health_auto_refresh_help">Când este activată, actualizează datele de la furnizor la deschiderea ecranului Sănătate, cel mult o dată la 10 minute. Nu solicită automat permisiuni.</string>
+    <string name="native_health_auto_refresh_save_error">Setarea nu a putut fi salvată. Încearcă din nou.</string>
+    <string name="native_health_auto_refresh_running">Se actualizează datele de sănătate…</string>
+</resources>

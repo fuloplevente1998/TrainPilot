@@ -1,0 +1,34 @@
+/* PR277: a small PR mark above the disclosure arrow; accessible 38px target. */
+.tp226-pr-badge{display:grid;place-items:center;grid-row:1;width:44px;min-height:44px;padding:0;border:0;border-radius:7px;background:transparent;color:var(--accent);font:750 11px/1 system-ui;cursor:pointer}
+.tp226-pr-badge:hover{background:color-mix(in srgb,var(--accent) 12%,var(--card))}
+.tp226-pr-badge:focus-visible,.tp226-pr-details>summary:focus-visible{
+ outline:2px solid var(--accent);outline-offset:2px;
+}
+/* A closed record panel must not occupy space or expose a second disclosure.
+   The PR chip is the only way to reveal it in the Journal. */
+details.history .tp3-combined-history-body > .tp226-pr-details:not([open]){
+ display:none!important;
+}
+.tp226-pr-details{
+ box-sizing:border-box;margin:9px 0 12px;padding:8px 10px;
+ border:1px solid color-mix(in srgb,var(--accent) 25%,var(--line));
+ border-radius:13px;background:var(--card2);color:var(--text);min-width:0;
+}
+.tp226-pr-details>summary{
+ box-sizing:border-box;min-height:44px;display:flex;align-items:center;
+ gap:6px;cursor:pointer;font-weight:750;font-size:13px;line-height:1.35;
+}
+.tp226-pr-list{display:grid;gap:8px;margin:3px 0 5px;min-width:0}
+.tp226-pr-record{
+ display:grid;gap:5px;min-width:0;padding:9px 10px;border:1px solid var(--line);
+ border-radius:10px;background:var(--card);font-size:12px;line-height:1.4;overflow-wrap:anywhere;
+}
+.tp226-pr-record strong{font-size:13px;color:var(--text)}
+.tp226-pr-record span{color:var(--muted)}
+.tp226-pr-feedback{font-size:13px}
+@media(prefers-reduced-motion:reduce){
+ .tp226-pr-badge,.tp226-pr-details{animation:none!important;transition:none!important}
+}
+
+.tp1511-training-body>label.tp227-haptic-setting{display:flex;gap:12px;align-items:center;min-height:44px;padding:10px 0}.tp227-haptic-setting input{width:24px;height:24px;flex-shrink:0}.tp227-haptic-setting span{min-width:0}.tp227-haptic-setting strong,.tp227-haptic-setting small{display:block;line-height:1.4;overflow-wrap:anywhere}.tp227-haptic-setting small{color:var(--muted);margin-top:4px}
+

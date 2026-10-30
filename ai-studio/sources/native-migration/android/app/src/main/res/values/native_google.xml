@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_google_authorizing">Google-engedély ellenőrzése…</string>
+    <string name="native_google_waiting">Google-jóváhagyásra várunk…</string>
+    <string name="native_google_launch_failed">A Google engedélykérése nem nyitható meg. Próbáld újra.</string>
+    <string name="native_google_cancelled">A Google engedélykérése megszakítva. Nem indult szinkron.</string>
+    <string name="native_google_no_token">A Google nem adott hozzáférést. Próbáld újra az engedélykérést.</string>
+    <string name="native_google_connected">Google-fiók csatlakoztatva.</string>
+    <string name="native_google_drive_done">A Drive szinkronizálása sikerült.</string>
+    <string name="native_google_calendar_done">Naptár szinkronizálva: %1$d művelet.</string>
+    <string name="native_google_failed">A Google-művelet nem sikerült.</string>
+</resources>

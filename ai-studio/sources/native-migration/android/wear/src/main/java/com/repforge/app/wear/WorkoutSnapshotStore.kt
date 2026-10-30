@@ -1,0 +1,349 @@
+package com.repforge.app.wear
+
+import android.content.Context
+import org.json.JSONArray
+import org.json.JSONObject
+
+data class WearSet(
+    val number: Int,
+    val reps: String,
+    val weight: String,
+    val done: Boolean,
+    val leftSeconds: Int,
+    val rightSeconds: Int,
+    val distanceMeters: Double,
+    val setId: String = "",
+    val actualRir: Int? = null
+)
+
+data class WearExercise(
+    val id: String,
+    val name: String,
+    val loadType: String,
+    val repUnit: String,
+    val measurementType: String,
+    val sets: List<WearSet>,
+    val targetReps: String = "",
+    val actualRir: Int? = null,
+    val setRir229: Boolean = false
+)
+
+data class WearWorkout(
+    val revision: Long,
+    val programId: String,
+    val programName: String,
+    val dayId: String,
+    val scheduleId: String,
+    val started: String,
+    val workoutId: String,
+    val currentExercise: Int,
+    val restSeconds: Int,
+    val restEndAt: Long,
+    val exercises: List<WearExercise>,
+    val dayName: String = "",
+    val localSequence: Long = 0L,
+    val quickWorkout: Boolean = false,
+    val automation: WearAutomatic? = null,
+    val timerOwner: String = "phone",
+    val nativeExecutionProtocol: Int = 0,
+    val generation: Long = 0L,
+    val executionRevision: Long = 0L,
+    val workoutPaused: Boolean = false,
+    val pauseRevision: Long = 0L,
+    val activeIntervals: List<WearActiveInterval>? = null,
+    val resumeAutomaticOnContinue: Boolean = false,
+    val pausedRestMillis: Long = 0L,
+    val lastRecord188: String? = null,
+    val undo188: String? = null,
+    val ownershipProtocol193: Int = 0,
+    val ownerEpoch193: Long = 0L,
+    val handoff193: String? = null,
+    val timerCheckpoint193: String? = null,
+    val resumeIntent193: String? = null
+) {
+    fun elapsedSeconds(now: Long = System.currentTimeMillis()): Int = try {
+        val duration=activeIntervals?.sumOf { (if(it.end>0)it.end else now).minus(it.start).coerceAtLeast(0) }
+            ?: (now-java.time.Instant.parse(started).toEpochMilli()).coerceAtLeast(0L)
+        (duration/1000L).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+    } catch (_: Exception) { 0 }
+
+    val completedSets: Int get() = exercises.sumOf { ex -> ex.sets.count { it.done } }
+    val exerciseComplete: Boolean get() = exercise?.sets?.let { it.isNotEmpty() && it.all { set -> set.done } } ?: false
+    val exercise: WearExercise?
+        get() = exercises.getOrNull(currentExercise.coerceIn(0, (exercises.size - 1).coerceAtLeast(0)))
+
+    val currentSetIndex: Int
+        get() {
+            val sets = exercise?.sets.orEmpty()
+            val firstOpen = sets.indexOfFirst { !it.done }
+            return if (firstOpen >= 0) firstOpen else (sets.size - 1).coerceAtLeast(0)
+        }
+
+    val currentSet: WearSet?
+        get() = exercise?.sets?.getOrNull(currentSetIndex)
+
+    /** Rest never completes a set or changes the selected exercise. */
+    fun endRest(): WearWorkout = if (restEndAt == 0L) this else copy(restEndAt = 0L)
+
+    /** Explicit navigation preserves all measurements and completion flags. */
+    fun selectExercise(index: Int): WearWorkout = if (index !in exercises.indices || index == currentExercise) this
+        else copy(currentExercise = index)
+}
+
+/** Missing is distinct from zero; targets are never observations. */
+private fun actualRir229(data: JSONObject): Int? {
+    val value = data.opt("actualRir") as? Number ?: return null
+    val number = value.toDouble()
+    return if (number.isFinite() && number in 0.0..10.0 && number == number.toInt().toDouble()) number.toInt() else null
+}
+
+object WorkoutSnapshotStore {
+    private const val PREFS = "trainpilot_wear_snapshot"
+    private const val SNAPSHOT = "snapshot"
+
+    @Synchronized
+    fun save(context: Context, raw: String?): WearWorkout? {
+        val current = load(context)
+        if (raw.isNullOrBlank()) return current
+        val root = try { JSONObject(raw) } catch (_: Exception) { return current }
+        if(current==null&&root.optLong("ownerEpoch193")>0)return null // Recovery must use this watch's durable consent journal.
+        if(current!=null&&root.optLong("ownerEpoch193")>current.ownerEpoch193)return current // Only the acknowledged transfer installs a new epoch.
+        if(current!=null&&current.ownerEpoch193>0&&!root.optBoolean("active",true)&&
+            (root.optString("workoutId")!=current.workoutId||root.optLong("ownerEpoch193")<current.ownerEpoch193))return current
+        val fenced193=current?.let { it.ownershipProtocol193==1||it.ownerEpoch193>0||it.handoff193!=null }==true||root.optInt("ownershipProtocol193")==1
+        if(current!=null&&fenced193&&root.optBoolean("active",true)&&com.repforge.shared.WorkoutOwnership193.stale(encode(current),root))return current
+        val revision = root.optLong("revision", 0L)
+        if (revision < (current?.revision ?: 0L)) return current
+        if (!root.optBoolean("active", true)) {
+            // Do not let an old phone tombstone erase a newly started offline workout.
+            val localStarted = try { java.time.Instant.parse(current?.started).toEpochMilli() } catch (_: Exception) { 0L }
+            if (current?.revision == 0L && (current.localSequence > 0L || root.optLong("syncedAt") < localStarted)) return current
+            clear(context)
+            return null
+        }
+        var parsed = mergeWorkoutPause(current,parse(raw) ?: return current,android.os.SystemClock.elapsedRealtime(),System.currentTimeMillis())
+        if(current?.workoutId==parsed.workoutId)parsed=parsed.copy(lastRecord188=parsed.lastRecord188 ?: current.lastRecord188,undo188=current.undo188)
+        if (WearClosureStore.isClosed(context, parsed.workoutId)) return current
+        if (current?.revision == 0L && current.localSequence > 0L && parsed.workoutId != current.workoutId) return current
+        if (current?.workoutId == parsed.workoutId && parsed.localSequence < current.localSequence) {
+            // Receipt of a newer phone revision confirms the same workout's handoff,
+            // even while local edits wait for acknowledgement. Keep those edits; do
+            // not leave the measurement start waiting forever for this very revision.
+            return saveWorkout(context, preservePendingWearEdits(current, parsed))
+        }
+        if(current?.workoutId==parsed.workoutId && current.timerOwner=="watch" && current.automation!=null &&
+            (parsed.automation?.key!=current.automation.key || ((parsed.automation?.phaseNumber ?: -1)<current.automation.phaseNumber)))
+            return saveWorkout(context,preserveWorkoutPause(current.copy(revision=maxOf(current.revision,parsed.revision)),parsed))
+        if(current?.workoutId==parsed.workoutId && current.automation?.enabled==true && current.automation.owner=="watch")
+            return saveWorkout(context,preserveWorkoutPause(current.copy(revision=maxOf(current.revision,parsed.revision)),parsed))
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(SNAPSHOT, encode(parsed).toString()).commit()
+        return load(context)
+    }
+
+    @Synchronized
+    fun clear(context: Context) {
+        load(context)?.takeIf { it.ownershipProtocol193==1||it.ownerEpoch193>0||it.handoff193!=null }?.let {
+            WearClosureStore.rememberClosed193(context,it.workoutId)
+        }
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove(SNAPSHOT).apply()
+    }
+
+    @Synchronized
+    fun saveWorkout(context: Context, workout: WearWorkout): WearWorkout {
+        val current=load(context)
+        val fenced193=current?.let { it.ownershipProtocol193==1||it.ownerEpoch193>0||it.handoff193!=null }==true||workout.ownershipProtocol193==1
+        if(current!=null&&fenced193&&com.repforge.shared.WorkoutOwnership193.stale(encode(current),encode(workout)))return current
+        val safe=if(current?.workoutId==workout.workoutId&&(workout.pauseRevision<current.pauseRevision||workout.pauseRevision==current.pauseRevision&&current.workoutPaused))preserveWorkoutPause(workout,current)else workout
+        val saved=if(current?.workoutId==safe.workoutId)safe.copy(localSequence=maxOf(current.localSequence,safe.localSequence),revision=maxOf(current.revision,safe.revision))else safe
+        val committed=context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(SNAPSHOT, encode(saved).toString()).commit()
+        if(!committed)throw IllegalStateException("Workout snapshot could not be saved")
+        return saved
+    }
+
+    fun load(context: Context): WearWorkout? {
+        val raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(SNAPSHOT, null)
+        val parsed=raw?.let(::parse) ?: return null
+        // A crash between durable enqueue and the Activity's async sequence
+        // write must not allow an older phone snapshot to replace local edits.
+        val delivery=context.getSharedPreferences("trainpilot_wear_outbox",Context.MODE_PRIVATE)
+        var sequence=parsed.localSequence
+        for(key in listOf("pending","results191"))try {
+            val commands=JSONArray(delivery.getString(key,"[]"))
+            for(i in 0 until commands.length())commands.optJSONObject(i)?.let {
+                if(it.optString("workoutId")==parsed.workoutId && it.optString("action") !in setOf("healthSummary","saveWorkoutFeedback"))
+                    sequence=maxOf(sequence,it.optLong("sequence"))
+            }
+        }catch(_:Exception) { /* Keep the existing draft when delivery metadata is unreadable. */ }
+        return parsed.copy(localSequence=sequence)
+    }
+
+    /** Flush the existing draft at a recording boundary; timers keep async writes. */
+    @Synchronized fun persist(context: Context,workoutId: String): Boolean {
+        val prefs=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE)
+        val raw=prefs.getString(SNAPSHOT,null) ?: return false
+        if(parse(raw)?.workoutId!=workoutId)return false
+        return prefs.edit().putString(SNAPSHOT,raw).commit()
+    }
+
+    fun parse(raw: String): WearWorkout? {
+        return try {
+            val root = JSONObject(raw)
+            if (!root.optBoolean("active", true)) return null
+            val source = root.optJSONArray("exercises") ?: return null
+            val exercises = buildList {
+                for (i in 0 until source.length()) {
+                    val exercise = source.optJSONObject(i) ?: continue
+                    val setArray = exercise.optJSONArray("sets")
+                    val sets = buildList {
+                        if (setArray != null) for (j in 0 until setArray.length()) {
+                            val set = setArray.optJSONObject(j) ?: continue
+                            add(
+                                WearSet(
+                                    number = set.optInt("set", j + 1),
+                                    reps = set.opt("reps")?.toString().orEmpty(),
+                                    weight = set.opt("weight")?.toString().orEmpty(),
+                                    done = set.optBoolean("done", false),
+                                    leftSeconds = set.optInt("leftSeconds", 0),
+                                    rightSeconds = set.optInt("rightSeconds", 0),
+                                    distanceMeters = set.optDouble("distanceMeters", 0.0),
+                                    setId = set.optString("setId"),
+                                    actualRir = actualRir229(set)
+                                )
+                            )
+                        }
+                    }
+                    add(
+                        WearExercise(
+                            id = exercise.optString("id"),
+                            name = exercise.optString("name", exercise.optString("id")),
+                            loadType = exercise.optString("loadType"),
+                            repUnit = exercise.optString("repUnit"),
+                            measurementType = exercise.optString("measurementType"),
+                            sets = sets,
+                            targetReps = exercise.optString("targetReps"),
+                            actualRir = actualRir229(exercise),
+                            setRir229 = exercise.optBoolean("setRir229", false)
+                        )
+                    )
+                }
+            }
+            if (exercises.isEmpty()) return null
+            WearWorkout(
+                revision = root.optLong("revision", 0L),
+                programId = root.optString("programId"),
+                programName = root.optString("programName"),
+                dayId = root.optString("dayId"),
+                scheduleId = root.optString("scheduleId"),
+                started = root.optString("started"),
+                workoutId = root.optString("workoutId", root.optString("started")),
+                currentExercise = root.optInt("currentExercise", 0).coerceIn(0, exercises.lastIndex),
+                restSeconds = root.optInt("restSeconds", 90).coerceIn(0,3600),
+                restEndAt = root.optLong("restEndAt", 0L),
+                exercises = exercises,
+                dayName = root.optString("dayName", root.optString("dayId")),
+                localSequence = root.optLong("localSequence", root.optLong("watchSequence", 0L)),
+                quickWorkout = root.optBoolean("quickWorkout", root.optString("dayId") == "quick" && root.optString("programId").isBlank()),
+                automation = WearAutomatic.parse(root.optJSONObject("automation")),
+                timerOwner = root.optString("timerOwner",root.optJSONObject("automation")?.optString("owner") ?: "phone"),
+                nativeExecutionProtocol = root.optInt("nativeExecutionProtocol"),
+                generation = root.optLong("generation"),
+                executionRevision = root.optLong("executionRevision"),
+                workoutPaused = root.optBoolean("workoutPaused"),
+                pauseRevision = root.optLong("pauseRevision"),
+                activeIntervals = root.optJSONArray("activeIntervals")?.let { rows -> buildList {
+                    for(i in 0 until rows.length())rows.optJSONObject(i)?.let { row ->
+                        val start=runCatching { java.time.Instant.parse(row.optString("start")).toEpochMilli() }.getOrNull()
+                        val end=runCatching { java.time.Instant.parse(row.optString("end")).toEpochMilli() }.getOrDefault(0L)
+                        if(start!=null)add(WearActiveInterval(start,end))
+                    }
+                } },
+                resumeAutomaticOnContinue = root.optBoolean("resumeAutomaticOnContinue"),
+                pausedRestMillis = root.optLong("pausedRestMillis"),
+                lastRecord188 = root.optJSONObject("lastRecord188")?.toString(),
+                undo188 = root.optJSONObject("undo188")?.toString(),
+                ownershipProtocol193 = root.optInt("ownershipProtocol193"),
+                ownerEpoch193 = root.optLong("ownerEpoch193"),
+                handoff193 = root.optJSONObject("handoff193")?.toString(),
+                timerCheckpoint193 = root.optJSONObject("timerCheckpoint193")?.toString(),
+                resumeIntent193 = root.optJSONObject("resumeIntent193")?.toString()
+            )
+        } catch (_: Exception) { null }
+    }
+
+    fun encode(workout: WearWorkout): JSONObject {
+        val root = JSONObject()
+            .put("active", true)
+            .put("revision", workout.revision)
+            .put("programId", workout.programId)
+            .put("dayName", workout.dayName)
+            .put("localSequence", workout.localSequence)
+            .put("programName", workout.programName)
+            .put("quickWorkout", workout.quickWorkout)
+            .put("dayId", workout.dayId)
+            .put("scheduleId", workout.scheduleId)
+            .put("started", workout.started)
+            .put("workoutId", workout.workoutId)
+            .put("currentExercise", workout.currentExercise)
+            .put("restSeconds", workout.restSeconds)
+            .put("restEndAt", workout.restEndAt)
+            .put("timerOwner",workout.timerOwner)
+            .put("nativeExecutionProtocol",workout.nativeExecutionProtocol)
+            .put("generation",workout.generation)
+            .put("executionRevision",workout.executionRevision)
+            .put("ownershipProtocol193",workout.ownershipProtocol193).put("ownerEpoch193",workout.ownerEpoch193)
+            .put("workoutPaused",workout.workoutPaused).put("pauseRevision",workout.pauseRevision)
+            .put("resumeAutomaticOnContinue",workout.resumeAutomaticOnContinue).put("pausedRestMillis",workout.pausedRestMillis)
+        workout.activeIntervals?.let { rows -> root.put("activeIntervals",JSONArray().also { json -> rows.forEach {
+            json.put(JSONObject().put("start",java.time.Instant.ofEpochMilli(it.start).toString())
+                .put("end",if(it.end>0)java.time.Instant.ofEpochMilli(it.end).toString() else JSONObject.NULL))
+        } }) }
+        workout.automation?.let { root.put("automation",it.json()) }
+        workout.lastRecord188?.let { root.put("lastRecord188",JSONObject(it)) }
+        workout.undo188?.let { root.put("undo188",JSONObject(it)) }
+        workout.handoff193?.let { root.put("handoff193",JSONObject(it)) }
+        workout.timerCheckpoint193?.let { root.put("timerCheckpoint193",JSONObject(it)) }
+        workout.resumeIntent193?.let { root.put("resumeIntent193",JSONObject(it)) }
+        val exercises = JSONArray()
+        workout.exercises.forEach { exercise ->
+            val sets = JSONArray()
+            exercise.sets.forEach { set ->
+                sets.put(
+                    JSONObject()
+                        .put("set", set.number)
+                        .put("reps", set.reps)
+                        .put("weight", set.weight)
+                        .put("done", set.done)
+                        .put("leftSeconds", set.leftSeconds)
+                        .put("rightSeconds", set.rightSeconds)
+                        .put("distanceMeters", set.distanceMeters)
+                        .put("setId",set.setId)
+                        .apply { set.actualRir?.takeIf { it in 0..10 }?.let { put("actualRir",it) } }
+                )
+            }
+            exercises.put(
+                JSONObject()
+                    .put("id", exercise.id)
+                    .put("name", exercise.name)
+                    .put("loadType", exercise.loadType)
+                    .put("repUnit", exercise.repUnit)
+                    .put("measurementType", exercise.measurementType)
+                    .put("targetReps", exercise.targetReps)
+                    .put("sets", sets)
+                    .put("setRir229",exercise.setRir229)
+                    .apply { exercise.actualRir?.takeIf { it in 0..10 }?.let { put("actualRir",it) } }
+            )
+        }
+        return root.put("exercises", exercises)
+    }
+}
+
+internal fun preservePendingWearEdits(current: WearWorkout, incoming: WearWorkout): WearWorkout =
+    if(current.workoutId==incoming.workoutId && incoming.localSequence<current.localSequence)
+        preserveWorkoutPause(current.copy(revision=maxOf(current.revision,incoming.revision),nativeExecutionProtocol=incoming.nativeExecutionProtocol,generation=incoming.generation,executionRevision=incoming.executionRevision),incoming)
+    else incoming
+
+/** Unsupported measurements keep their existing recorder; no phone-owned clock is created by the watch. */
+internal fun nativePhoneExecution(workout: WearWorkout, action: String, exercise: WearExercise?, value: Any?): Boolean =
+    workout.nativeExecutionProtocol == 2 && workout.generation > 0 && workout.executionRevision > 0 && workout.timerOwner == "phone" &&
+        (action == "automaticControl" && (value == "start" || value == "resumeUndo") || action == "completeSet" && exercise != null &&
+            exercise.repUnit.replace("\\s+".toRegex(), "").lowercase() in listOf("", "ism.", "reps", "/kar", "/láb") && exercise.measurementType != "distance")

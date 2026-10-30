@@ -1,0 +1,14 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+rootProject.name = "TrainPilot"
+include ':shared'
+include ':app'
+include ':wear'
+// Test-only platform instrumentation; never installed on the user's devices.
+include ':migration-seed'

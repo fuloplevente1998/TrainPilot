@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="health_range_from">Kezdőnap</string>
+    <string name="health_range_to">Zárónap</string>
+    <string name="health_range_apply">Tartomány alkalmazása</string>
+    <string name="health_range_invalid">A kezdőnap nem lehet későbbi a zárónapnál.</string>
+</resources>

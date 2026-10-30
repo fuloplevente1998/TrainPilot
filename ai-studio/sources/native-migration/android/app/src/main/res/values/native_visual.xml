@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_visual_load_low">Kisebb</string>
+    <string name="native_visual_load_medium">Közepes</string>
+    <string name="native_visual_load_high">Nagyobb</string>
+    <string name="native_visual_load_note">Az arányok a legtöbb sorozatot kapott izomcsoporthoz viszonyítanak; nem fáradtságot mérnek.</string>
+    <string name="native_visual_anatomy_open">Izomtérkép nagyítása</string>
+    <string name="native_visual_anatomy_loading">Izomtérkép betöltése…</string>
+</resources>

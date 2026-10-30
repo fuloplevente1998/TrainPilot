@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="studio_home_greeting">Welcome back!</string>
+    <string name="studio_home_overview">Your training and health today.</string>
+    <string name="studio_home_active_intro">Continue your active workout.</string>
+    <string name="studio_home_planner_title">Personal training planner</string>
+    <string name="studio_home_planner_info">Set up your training profile, then choose a program.</string>
+    <string name="studio_header_theme">Appearance</string>
+    <string name="studio_home_new_plan">Preview a new plan</string>
+</resources>

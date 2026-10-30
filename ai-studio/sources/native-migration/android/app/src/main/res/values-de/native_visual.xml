@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_visual_load_low">Geringer</string>
+    <string name="native_visual_load_medium">Mittel</string>
+    <string name="native_visual_load_high">Höher</string>
+    <string name="native_visual_load_note">Die Anteile beziehen sich auf die Muskelgruppe mit den meisten Sätzen; sie messen keine Ermüdung.</string>
+    <string name="native_visual_anatomy_open">Muskelkarte vergrößern</string>
+    <string name="native_visual_anatomy_loading">Muskelkarte wird geladen…</string>
+</resources>

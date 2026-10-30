@@ -1,0 +1,1 @@
+const fs=require('fs');const s=fs.readFileSync('www/v215.js','utf8');for(const x of ["RF215_VERSION='2.1.5'","Body weight log","Körpergewichtsprotokoll","Jurnal greutate","rf215WeightScreen","rf215Chart","rf215Add","rf215Edit","rf215Del"])if(!s.includes(x))throw Error('Missing '+x);console.log('PASS: TrainPilot 2.1.5 body-weight journal and chart.');

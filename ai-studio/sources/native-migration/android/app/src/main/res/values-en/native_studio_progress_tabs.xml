@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="studio_progress_tab_progress">Progress</string>
+    <string name="studio_progress_tab_statistics">Statistics</string>
+    <string name="studio_progress_tab_strength">Strength (1RM)</string>
+    <string name="studio_progress_stats_records">Personal records</string>
+    <string name="studio_progress_stats_cardio">Cardio statistics</string>
+    <string name="studio_progress_pr_workouts">Workouts with a record (30 days)</string>
+</resources>

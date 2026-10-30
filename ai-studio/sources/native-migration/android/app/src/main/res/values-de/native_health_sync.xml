@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_health_sync_now">Jetzt synchronisieren</string>
+    <string name="native_health_sync_full">Alle 30 Tage erneut lesen</string>
+    <string name="native_health_sync_cancel">Synchronisierung abbrechen</string>
+    <string name="native_health_sync_retry">Erneut versuchen</string>
+    <string name="native_health_sync_preparing">Zugriff wird geprüft…</string>
+    <string name="native_health_sync_changes">Verarbeitete Änderungsseiten: %1$d</string>
+    <string name="native_health_sync_days">Verarbeitete Tage: %1$d / %2$d</string>
+    <string name="native_health_sync_partial">Teilweise synchronisiert. Empfangene Daten sind gespeichert; bisherige Werte bleiben für fehlende Felder erhalten. Berechtigungen prüfen und erneut versuchen.</string>
+    <string name="native_health_sync_failed">Synchronisierung fehlgeschlagen. Anbieterzugriff prüfen und erneut versuchen.</string>
+    <string name="native_health_sync_cancelled">Synchronisierung abgebrochen. Gespeicherte Daten bleiben erhalten; die nächste Synchronisierung setzt sicher fort.</string>
+    <string name="native_health_sync_last">Letzte erfolgreiche Synchronisierung: %1$s</string>
+</resources>

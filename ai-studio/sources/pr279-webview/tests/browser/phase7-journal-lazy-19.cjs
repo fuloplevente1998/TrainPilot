@@ -1,0 +1,75 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http'),{chromium}=require('playwright');
+const root=path.resolve('www');
+const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local').pathname;if(p==='/')p='/index.html';const file=path.resolve(root,'.'+p);if(!file.startsWith(root+path.sep)){res.writeHead(403);return res.end()}fs.readFile(file,(e,d)=>{if(e){res.writeHead(404);return res.end()}res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.html')?'text/html':'text/plain');res.end(d)})});
+(async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;try{
+ browser=await chromium.launch({headless:true,args:['--no-sandbox']});const page=await browser.newPage({viewport:{width:393,height:873},locale:'hu-HU'});
+ await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto('http://127.0.0.1:'+server.address().port+'/');await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
+ const calls=await page.evaluate(()=>{
+  const rows=[];for(let i=0;i<120;i++){const end=new Date(Date.now()-i*86400000),start=new Date(end.getTime()-3600000);rows.push({id:'p7-lazy-'+i,workout:'A',dayId:'A',programId:'home-basic',programName:'Phase 7 lazy',started:start.toISOString(),finished:end.toISOString(),exercises:[{id:'db-squat',loadType:'per_hand',repUnit:'ism.',sets:[{set:1,weight:10,reps:'10',done:true},{set:2,weight:10,reps:'9',done:true}]}],photos:[]})}
+  db.set('history',rows);state.session=null;let n=0;const base=window.history;window.history=function(){n++;return base.apply(this,arguments)};go('history');return n;
+ });
+ await page.waitForSelector('details.rf263-history');
+ assert.equal(await page.locator('details.rf263-history').count(),32,'#236 first Journal DOM must stay bounded with 120 saved rows');
+ assert.equal(await page.locator('#tp236HistoryMore').count(),1,'older workouts remain accessible through a visible action');
+ assert.equal(await page.locator('[data-tp152-history-key="p7-lazy-119"]').count(),0,'oldest workout must not be built initially');
+ const initialNodeCount=await page.evaluate(()=>document.querySelectorAll('*').length);
+ for(let i=0;i<3;i++)assert.equal(await page.evaluate(()=>window.tp236HistoryMore()),true,'each page must append more persisted rows');
+ assert.equal(await page.locator('details.rf263-history').count(),120,'all original rows remain available after paging');
+ assert.equal(await page.locator('[data-tp152-history-key="p7-lazy-119"]').count(),1,'oldest workout must be reachable');
+ assert.equal(await page.locator('#tp236HistoryMore').count(),0,'button must disappear at final page');
+ assert.ok(initialNodeCount<await page.evaluate(()=>document.querySelectorAll('*').length),'first DOM must be smaller than fully expanded listing');
+ assert.equal(await page.locator('.tp3-combined-history-body[data-tp3-hydrated="true"]').count(),0,'collapsed Journal rows must not eagerly hydrate detail bodies');
+ assert.equal(await page.locator('.tp3-workout-summary').count(),0,'collapsed Journal rows must not build workout summaries');
+ assert.ok(calls<20,'collapsed Journal render must not normalize full history once per row; calls='+calls);
+ const first=page.locator('details.rf263-history').first();await first.locator(':scope > summary').click();
+ await page.waitForSelector('details.rf263-history[open] .tp3-workout-summary');
+ assert.equal(await page.locator('.tp3-combined-history-body[data-tp3-hydrated="true"]').count(),1,'only opened workout should hydrate');
+ assert.equal(await first.locator('.rf-history-health-panel').count(),1,'Health panel must appear after hydration');
+ assert.equal(await first.locator('.tp3-photo-section').count(),1,'Workout photos must appear after hydration');
+ const marker=await first.evaluate(el=>{el.dataset.tp3NoRenderProbe='kept';return el.dataset.tp3NoRenderProbe});assert.equal(marker,'kept');
+ await first.locator('details.tp3-history-ex-item>summary').first().click();
+ await page.waitForSelector('details.tp3-history-ex-item[open] .tp3-exercise-inline-editor');
+ assert.equal(await first.getAttribute('data-tp3-no-render-probe'),'kept','exercise disclosure must remain local and avoid whole Journal re-render');
+ const oldest=page.locator('[data-tp152-history-key="p7-lazy-119"]');
+ await oldest.locator(':scope > summary').click();
+ await page.waitForSelector('[data-tp152-history-key="p7-lazy-119"][open] .tp3-workout-summary');
+ assert.equal(await oldest.locator('.tp3-photo-section').count(),1,'oldest paged workout retains photo controls');
+ await oldest.locator(':scope > summary').click();
+ await page.evaluate(()=>{const now=new Date(),h={id:'p7-empty',workout:'A',dayId:'A',programId:'home-basic',programName:'Phase 7 empty',started:now.toISOString(),finished:new Date(now.getTime()+1800000).toISOString(),exercises:[],photos:[]};db.set('history',[h]);state.tp3HistoryOpenKey=null;go('history')});
+ const empty=page.locator('[data-tp152-history-key="p7-empty"]');await empty.locator(':scope > summary').click();
+ assert.equal(await empty.locator('.tp155-history-delete').count(),1,'opening a lazy Journal row must synchronously expose the accepted delete-workout action');
+ assert.equal(await empty.locator('.tp3-combined-history-body').getAttribute('data-tp3-hydrated'),'true','empty legacy-compatible workout must hydrate on opening click');
+ // #236 large stored dataset: only the first page should exist in the DOM.
+ const seed=await page.evaluate(()=>{
+  const rows=Array.from({length:1500},(_,i)=>({
+   id:'tp236-'+i,workout:'A',dayId:'A',programId:'home-basic',programName:'DOM test '+i,
+   started:new Date(Date.UTC(2026,9,20)-i*86400000).toISOString(),
+   finished:new Date(Date.UTC(2026,9,20)-i*86400000+3600000).toISOString(),
+   exercises:[{id:'db-squat',loadType:'per_hand',repUnit:'ism.',sets:[{set:1,weight:10,reps:'10',done:true}]}],photos:[]
+  }));
+  db.set('history',rows);state.tp177JournalView='log';go('history');
+  return {count:rows.length,oldestDay:rf263HistoryDay(rows[1499].started)};
+ });
+ assert.equal(seed.count,1500);
+ assert.equal(await page.locator('details.rf263-history').count(),32,'initial 1500-workout DOM must remain bounded');
+ const initialNodes=await page.evaluate(()=>document.querySelectorAll('*').length);
+ assert.ok(initialNodes<5000,'initial DOM must avoid the legacy 21k-element list: '+initialNodes);
+ await page.locator('#tp236HistoryMore').click();
+ assert.equal(await page.locator('details.rf263-history').count(),64);
+ await page.evaluate(day=>{rf263HistoryFilter={from:day,to:day};delete state.tp155JournalRangeStart;go('history')},seed.oldestDay);
+ assert.equal(await page.locator('[data-tp152-history-key="tp236-1499"]').count(),1,'filter must search all saved workouts');
+ assert.equal(await page.locator('details.rf263-history').count(),1);
+ const far=page.locator('[data-tp152-history-key="tp236-1499"]');
+ await far.locator(':scope > summary').click();
+ await page.waitForSelector('[data-tp152-history-key="tp236-1499"][open] .tp3-workout-summary');
+ assert.equal(await far.locator('.tp3-photo-section').count(),1);
+ await page.evaluate(()=>{
+  const h=history();h[1499]={...h[1499],programId:'missing-236',programName:'Updated oldest 236'};db.set('history',h);go('history');
+ });
+ assert.match(await page.locator('[data-tp152-history-key="tp236-1499"] .history-title').textContent(),/Updated oldest 236/,'same-size edit must update the Journal');
+ await page.evaluate(()=>{rf263HistoryFilter={from:'',to:''};go('history')});
+ assert.equal(await page.locator('details.rf263-history').count(),32,'clearing filter must reset the DOM page');
+ assert.equal(await page.locator('[data-tp152-history-key="tp236-1499"]').count(),0);
+ console.log('JOURNAL_236 '+JSON.stringify({saved:seed.count,initialNodes,firstPage:32}));
+ console.log('PASS Phase 7 Journal lazy hydration and accepted local editor behavior');
+}finally{await browser?.close();await new Promise(r=>server.close(r))}})().catch(e=>{console.error(e);process.exit(1)});

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_language_title">Alkalmazás nyelve</string>
+    <string name="native_language_hint">A TrainPilot nyelve azonnal változik. A telefon nyelve változatlan marad.</string>
+    <string name="native_home_default_day">Alap A</string>
+</resources>

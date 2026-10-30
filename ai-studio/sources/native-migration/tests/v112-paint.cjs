@@ -1,0 +1,10 @@
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const v260=fs.readFileSync('www/v260.js','utf8');
+const startup=fs.readFileSync('www/startup.js','utf8');
+const paint=fs.readFileSync('www/trainpilot-112-paint.js','utf8');
+const v253=fs.readFileSync('www/v253.js','utf8');
+assert.ok(v260.includes('rf260EnhanceTemporalFields();rf260AfterRender();return r'),'2.6 DOM polish must run synchronously before paint');
+assert.ok(!v260.includes('setTimeout(rf260AfterRender,0)'),'old deferred 2.6 GUI pass must be gone');
+assert.ok(paint.includes('tp-route-switching #app{visibility:hidden!important}'),'route paint guard missing');
+assert.ok(startup.includes('setTimeout(()=>frame(()=>frame(reveal)),0)'),'startup must wait for stable decorators before reveal');
+assert.ok(v253.includes("if(!custom&&state.tab==='home'&&typeof rf251RepairHomeCoach==='function')rf251RepairHomeCoach();"),'home Coach repair must be synchronous');

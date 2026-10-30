@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-24",
+  "status": "redesigned-review-version",
+  "type": "generated-design-mockups",
+  "actualAppScreenshots": false,
+  "screenCount": 24,
+  "boards": [
+    {
+      "file": "01-main-pages-and-planning.png",
+      "sha256": "9cce817d7c158c0e81ee1117eed5f965d4afaa7eff02794620d396f9f4d4ee87",
+      "width": 1024,
+      "height": 1536
+    },
+    {
+      "file": "02-workouts-and-measurement.png",
+      "sha256": "89fc888fb731f1fade7577ab7d7b69c6380d13795f9bb00f98b00951111a1d98",
+      "width": 1024,
+      "height": 1536
+    },
+    {
+      "file": "03-journal-maps-and-health.png",
+      "sha256": "50de2e9abbdce370a968fc9228ad105e4a90684a7138c40cfba24119535c6fe7",
+      "width": 1024,
+      "height": 1536
+    },
+    {
+      "file": "04-editing-and-settings.png",
+      "sha256": "3b927da28ad69edad53264e60f9d1e74a0012de2c68205aef09bb6d9c2a2ad3b",
+      "width": 1024,
+      "height": 1536
+    }
+  ]
+}

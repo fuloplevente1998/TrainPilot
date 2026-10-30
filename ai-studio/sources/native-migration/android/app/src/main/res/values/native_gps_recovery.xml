@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_gps_recovery_title">GPS-helyreállítás</string>
+    <string name="native_gps_recovery_ready">A pontos helyengedély és a telefon GPS-e rendelkezésre áll. A mérés csak az újrapróbálásra indul.</string>
+    <string name="native_gps_recovery_denied">A GPS-távolságméréshez pontos helyengedély szükséges. Engedélyezd a következő rendszerkérésben.</string>
+    <string name="native_gps_recovery_approximate">Csak hozzávetőleges helyhozzáférés engedélyezett. A távolságméréshez a TrainPilot alkalmazásnál a Pontos hely használata szükséges.</string>
+    <string name="native_gps_recovery_permanent">A helyengedély nem kérhető újra itt. Nyisd meg az alkalmazás engedélyeit, és engedélyezd a pontos helyet.</string>
+    <string name="native_gps_recovery_location_off">A telefon GPS-helyszolgáltatása ki van kapcsolva. Kapcsold be a rendszer helybeállításaiban. Az alkalmazásengedély önmagában nem elegendő.</string>
+    <string name="native_gps_recovery_location_settings">Telefon helybeállításai</string>
+    <string name="native_gps_recovery_app_settings">Alkalmazásengedélyek megnyitása</string>
+    <string name="native_gps_recovery_retry">GPS-indítás újrapróbálása</string>
+    <string name="native_gps_recovery_request">Helyengedély kérése</string>
+    <string name="native_gps_recovery_cancel">Mégse</string>
+    <string name="native_gps_recovery_stale">A GPS eredeti edzése vagy sorozata időközben megváltozott. A mérés nem indult el.</string>
+    <string name="native_gps_recovery_settings_unavailable">A rendszer helybeállításai nem nyithatók meg. Nyisd meg őket kézzel a telefon beállításaiból.</string>
+    <string name="native_gps_recovery_request_unavailable">A rendszer engedélykérése most nem nyitható meg. Próbáld újra a telefonon.</string>
+</resources>

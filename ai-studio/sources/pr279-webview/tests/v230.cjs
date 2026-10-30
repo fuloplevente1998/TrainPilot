@@ -1,0 +1,10 @@
+const fs=require('fs'),assert=require('node:assert/strict');
+const js=fs.readFileSync('www/v228c.js','utf8');
+assert.ok(js.includes("value=\"alternate\""),'every-other-day option exists');
+assert.ok(js.includes("value=\"daily\""),'daily option exists');
+assert.ok(js.includes("value=\"weekly\""),'weekly-days option exists');
+assert.ok(js.includes("mode==='alternate'&&i%2===0"),'alternate cadence inserts rest days');
+assert.ok(js.includes("mode==='daily'"),'daily cadence exists');
+assert.ok(js.includes("mode==='weekly'&&weekdays.includes"),'selected weekday cadence exists');
+assert.ok(js.includes("cloudChanged"),'calendar changes trigger cloud sync');
+console.log('TrainPilot 2.3 planner cadence checks passed');

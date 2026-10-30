@@ -1,0 +1,120 @@
+{
+  "services": [
+    {
+      "uuid": "00001800-0000-1000-8000-00805f9b34fb",
+      "type": 0,
+      "characteristics": [
+        {
+          "uuid": "00002a00-0000-1000-8000-00805f9b34fb",
+          "properties": 10,
+          "descriptors": []
+        },
+        {
+          "uuid": "00002a01-0000-1000-8000-00805f9b34fb",
+          "properties": 10,
+          "descriptors": []
+        },
+        {
+          "uuid": "00002a04-0000-1000-8000-00805f9b34fb",
+          "properties": 10,
+          "descriptors": []
+        }
+      ]
+    },
+    {
+      "uuid": "00001801-0000-1000-8000-00805f9b34fb",
+      "type": 0,
+      "characteristics": [
+        {
+          "uuid": "00002a05-0000-1000-8000-00805f9b34fb",
+          "properties": 32,
+          "descriptors": [
+            "00002902-0000-1000-8000-00805f9b34fb"
+          ]
+        }
+      ]
+    },
+    {
+      "uuid": "0000ae00-0000-1000-8000-00805f9b34fb",
+      "type": 0,
+      "characteristics": [
+        {
+          "uuid": "0000ae01-0000-1000-8000-00805f9b34fb",
+          "properties": 4,
+          "descriptors": []
+        },
+        {
+          "uuid": "0000ae02-0000-1000-8000-00805f9b34fb",
+          "properties": 16,
+          "descriptors": [
+            "00002902-0000-1000-8000-00805f9b34fb"
+          ]
+        }
+      ]
+    },
+    {
+      "uuid": "6e40ab01-b5a3-f393-e0a9-e50e24dcca9e",
+      "type": 0,
+      "characteristics": [
+        {
+          "uuid": "6e40ab02-b5a3-f393-e0a9-e50e24dcca9e",
+          "properties": 12,
+          "descriptors": []
+        },
+        {
+          "uuid": "6e40ab03-b5a3-f393-e0a9-e50e24dcca9e",
+          "properties": 16,
+          "descriptors": [
+            "00002902-0000-1000-8000-00805f9b34fb"
+          ]
+        }
+      ]
+    },
+    {
+      "uuid": "0000fee7-0000-1000-8000-00805f9b34fb",
+      "type": 0,
+      "characteristics": [
+        {
+          "uuid": "0000fec9-0000-1000-8000-00805f9b34fb",
+          "properties": 2,
+          "descriptors": []
+        },
+        {
+          "uuid": "0000fea1-0000-1000-8000-00805f9b34fb",
+          "properties": 18,
+          "descriptors": [
+            "00002902-0000-1000-8000-00805f9b34fb"
+          ]
+        }
+      ]
+    },
+    {
+      "uuid": "00003802-0000-1000-8000-00805f9b34fb",
+      "type": 0,
+      "characteristics": [
+        {
+          "uuid": "00004a02-0000-1000-8000-00805f9b34fb",
+          "properties": 26,
+          "descriptors": [
+            "00002902-0000-1000-8000-00805f9b34fb",
+            "00004b02-0000-1000-8000-00805f9b34fb"
+          ]
+        }
+      ]
+    },
+    {
+      "uuid": "cc353442-be58-4ea2-876e-11d8d6976366",
+      "type": 0,
+      "characteristics": [
+        {
+          "uuid": "c551c36a-0377-4a29-9657-74ffb655a188",
+          "properties": 26,
+          "descriptors": [
+            "00002902-0000-1000-8000-00805f9b34fb"
+          ]
+        }
+      ]
+    }
+  ],
+  "standardHeartRateAvailable": false
+}

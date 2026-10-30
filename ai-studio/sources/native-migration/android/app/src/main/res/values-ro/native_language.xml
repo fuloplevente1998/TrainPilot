@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_language_title">Limba aplicației</string>
+    <string name="native_language_hint">Limba TrainPilot se schimbă imediat. Limba telefonului rămâne aceeași.</string>
+    <string name="native_home_default_day">Bază A</string>
+</resources>

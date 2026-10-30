@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="journal_edit_title">Training bearbeiten</string>
+    <string name="journal_edit_started">Beginn</string>
+    <string name="journal_edit_finished">Ende</string>
+    <string name="journal_edit_time_hint">Datum und Uhrzeit: 2026-10-25 18:30:00 +02:00. Der letzte Wert ist der Zeitzonenversatz.</string>
+    <string name="journal_edit_weight">Gewicht (kg)</string>
+    <string name="journal_edit_reps">Wiederholungen</string>
+    <string name="journal_edit_seconds">Zeit (s)</string>
+    <string name="journal_edit_left">Linke Seite (s)</string>
+    <string name="journal_edit_right">Rechte Seite (s)</string>
+    <string name="journal_edit_distance">Distanz (m)</string>
+    <string name="journal_edit_rir">Wiederholungen in Reserve (RIR, optional)</string>
+    <string name="journal_edit_done">Abgeschlossen</string>
+    <string name="journal_edit_remove">Entfernen</string>
+    <string name="journal_edit_add_set">Satz hinzufügen</string>
+    <string name="journal_edit_add_exercise">Übung hinzufügen</string>
+    <string name="journal_edit_save">Änderungen speichern</string>
+    <string name="journal_edit_saving">Speichern…</string>
+    <string name="journal_edit_invalid">Prüfe Datum und Zeitzonenversatz.</string>
+    <string name="journal_edit_failed">Speichern fehlgeschlagen. Prüfe die Werte: Das Ende muss nach dem Beginn, innerhalb von 24 Stunden und nicht in der Zukunft liegen; abgeschlossene Sätze benötigen positive Messwerte. Wurde das Training inzwischen geändert, schließe und öffne den Editor erneut.</string>
+    <string name="journal_edit_stale">Die Trainingszeiten wurden geändert. Beibehaltene Gesundheitsmessungen gehören zum ursprünglichen Messzeitraum.</string>
+    <string name="journal_feedback_edit">Trainingsfeedback bearbeiten</string>
+    <string name="journal_feedback_locked">Dieses Feedback wurde bereits auf ein Programm angewendet und kann nicht geändert werden.</string>
+</resources>

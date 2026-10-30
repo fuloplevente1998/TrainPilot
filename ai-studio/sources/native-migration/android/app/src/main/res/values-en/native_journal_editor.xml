@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="journal_edit_title">Edit workout</string>
+    <string name="journal_edit_started">Start</string>
+    <string name="journal_edit_finished">Finish</string>
+    <string name="journal_edit_time_hint">Date and time: 2026-10-25 18:30:00 +02:00. The last value is the time zone offset.</string>
+    <string name="journal_edit_weight">Weight (kg)</string>
+    <string name="journal_edit_reps">Repetitions</string>
+    <string name="journal_edit_seconds">Time (s)</string>
+    <string name="journal_edit_left">Left side (s)</string>
+    <string name="journal_edit_right">Right side (s)</string>
+    <string name="journal_edit_distance">Distance (m)</string>
+    <string name="journal_edit_rir">Reps in reserve (RIR, optional)</string>
+    <string name="journal_edit_done">Completed</string>
+    <string name="journal_edit_remove">Remove</string>
+    <string name="journal_edit_add_set">Add set</string>
+    <string name="journal_edit_add_exercise">Add exercise</string>
+    <string name="journal_edit_save">Save changes</string>
+    <string name="journal_edit_saving">Saving…</string>
+    <string name="journal_edit_invalid">Check both dates, times and time zone offsets.</string>
+    <string name="journal_edit_failed">Could not save. Check the values: finish must follow start, within 24 hours and not in the future; completed sets require positive measured values. If the workout changed since you opened the editor, close and reopen the editor.</string>
+    <string name="journal_edit_stale">The workout time window changed. Preserved health measurements refer to the original recording window.</string>
+    <string name="journal_feedback_edit">Edit workout feedback</string>
+    <string name="journal_feedback_locked">This feedback has already been applied to a program and cannot be changed.</string>
+</resources>

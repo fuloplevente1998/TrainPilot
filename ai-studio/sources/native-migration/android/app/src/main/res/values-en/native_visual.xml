@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_visual_load_low">Lower</string>
+    <string name="native_visual_load_medium">Medium</string>
+    <string name="native_visual_load_high">Higher</string>
+    <string name="native_visual_load_note">Ratios are relative to the muscle group with the most sets; they do not measure fatigue.</string>
+    <string name="native_visual_anatomy_open">Enlarge muscle map</string>
+    <string name="native_visual_anatomy_loading">Loading muscle map…</string>
+</resources>

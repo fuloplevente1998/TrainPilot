@@ -1,0 +1,11 @@
+const fs=require('fs'),assert=require('assert');
+const s=fs.readFileSync('www/v202.js','utf8');
+assert(s.includes("RF202_VERSION='2.0.2'"));
+assert(s.includes('Személyre szabás, mentés és szinkronizálás.'));
+assert(s.includes('Mentsd az alkalmazás adatait fájlba'));
+assert(s.includes('Tervezd meg az edzéseidet a vizuális naptárban.'));
+assert(!s.includes('Régi v1/v2 mentések'));
+assert(!s.includes('A v3 mentés'));
+assert(!s.includes('eredeti Excel-alapterv'));
+assert(!s.includes('Az 1.2-ben a tervezés'));
+console.log('PASS: v2.0.2 removes legacy developer/version wording from settings');

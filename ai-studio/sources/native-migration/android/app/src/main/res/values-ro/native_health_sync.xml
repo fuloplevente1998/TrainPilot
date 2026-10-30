@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_health_sync_now">Sincronizează acum</string>
+    <string name="native_health_sync_full">Recitește toate cele 30 de zile</string>
+    <string name="native_health_sync_cancel">Anulează sincronizarea</string>
+    <string name="native_health_sync_retry">Reîncearcă</string>
+    <string name="native_health_sync_preparing">Se verifică accesul…</string>
+    <string name="native_health_sync_changes">Pagini de modificări procesate: %1$d</string>
+    <string name="native_health_sync_days">Zile procesate: %1$d / %2$d</string>
+    <string name="native_health_sync_partial">Sincronizare parțială. Datele primite sunt salvate; valorile anterioare ale câmpurilor lipsă sunt păstrate. Verifică permisiunile și reîncearcă.</string>
+    <string name="native_health_sync_failed">Sincronizarea a eșuat. Verifică accesul la furnizor și reîncearcă.</string>
+    <string name="native_health_sync_cancelled">Sincronizare anulată. Datele salvate sunt păstrate; următoarea sincronizare continuă în siguranță.</string>
+    <string name="native_health_sync_last">Ultima sincronizare reușită: %1$s</string>
+</resources>

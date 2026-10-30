@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_gps_recovery_title">Restabilește accesul GPS</string>
+    <string name="native_gps_recovery_ready">Permisiunea pentru locație precisă și GPS-ul telefonului sunt disponibile. Măsurarea începe doar după reîncercare.</string>
+    <string name="native_gps_recovery_denied">Măsurarea distanței prin GPS necesită locația precisă. Acordă permisiunea la următoarea solicitare de sistem.</string>
+    <string name="native_gps_recovery_approximate">Este permisă doar locația aproximativă. Activează Folosește locația precisă pentru TrainPilot din setările aplicației.</string>
+    <string name="native_gps_recovery_permanent">Permisiunea de localizare nu mai poate fi solicitată aici. Deschide permisiunile aplicației și activează locația precisă.</string>
+    <string name="native_gps_recovery_location_off">Serviciul GPS al telefonului este oprit. Activează-l din setările de localizare ale sistemului. Permisiunea aplicației nu este suficientă.</string>
+    <string name="native_gps_recovery_location_settings">Setările de localizare ale telefonului</string>
+    <string name="native_gps_recovery_app_settings">Deschide permisiunile aplicației</string>
+    <string name="native_gps_recovery_retry">Reîncearcă pornirea GPS</string>
+    <string name="native_gps_recovery_request">Solicită permisiunea de localizare</string>
+    <string name="native_gps_recovery_cancel">Anulează</string>
+    <string name="native_gps_recovery_stale">Antrenamentul sau seria inițială s-a schimbat. Măsurarea GPS nu a pornit.</string>
+    <string name="native_gps_recovery_settings_unavailable">Setările de localizare nu s-au putut deschide. Deschide-le manual din setările telefonului.</string>
+    <string name="native_gps_recovery_request_unavailable">Solicitarea permisiunii de sistem nu poate fi deschisă acum. Încearcă din nou pe telefon.</string>
+</resources>

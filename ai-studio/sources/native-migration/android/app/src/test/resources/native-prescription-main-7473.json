@@ -1,0 +1,441 @@
+{
+  "ref": "7473b30:www/app.js",
+  "blob": "b5567576bed9a8f93608a6bf1ed8db1dee4723f4",
+  "cases": [
+    {
+      "name": "main-rx-0-pushup",
+      "library": {
+        "id": "pushup",
+        "compound": true,
+        "repUnit": "ism.",
+        "loadType": "bodyweight"
+      },
+      "profile": {
+        "experience": "intermediate",
+        "goal": "fitness",
+        "minutes": 60,
+        "activity": "office",
+        "gear": [
+          "dumbbells"
+        ]
+      },
+      "level2": false,
+      "expected": {
+        "sets": 2,
+        "reps": "8–15",
+        "weight": 0,
+        "rest": 120,
+        "trial": true,
+        "rir": 2,
+        "rirMin": 1,
+        "rirMax": 2,
+        "progressionLevel": 0,
+        "loadType": "bodyweight"
+      }
+    },
+    {
+      "name": "main-rx-1-pushup",
+      "library": {
+        "id": "pushup",
+        "compound": true,
+        "repUnit": "ism.",
+        "loadType": "bodyweight"
+      },
+      "profile": {
+        "experience": "intermediate",
+        "goal": "fitness",
+        "minutes": 60,
+        "activity": "office",
+        "gear": [
+          "dumbbells"
+        ]
+      },
+      "level2": true,
+      "expected": {
+        "sets": 2,
+        "reps": "6–12",
+        "weight": 0,
+        "rest": 120,
+        "trial": true,
+        "rir": 2,
+        "rirMin": 1,
+        "rirMax": 2,
+        "progressionLevel": 1,
+        "variation": "paused",
+        "loadType": "bodyweight"
+      }
+    },
+    {
+      "name": "main-rx-2-decline-pushup",
+      "library": {
+        "id": "decline-pushup",
+        "compound": true,
+        "repUnit": "ism.",
+        "loadType": "bodyweight"
+      },
+      "profile": {
+        "experience": "intermediate",
+        "goal": "fitness",
+        "minutes": 60,
+        "activity": "office",
+        "gear": [
+          "dumbbells"
+        ]
+      },
+      "level2": true,
+      "expected": {
+        "sets": 2,
+        "reps": "6–12",
+        "weight": 0,
+        "rest": 120,
+        "trial": true,
+        "rir": 2,
+        "rirMin": 1,
+        "rirMax": 2,
+        "progressionLevel": 0,
+        "loadType": "bodyweight"
+      }
+    },
+    {
+      "name": "main-rx-3-plank",
+      "library": {
+        "id": "plank",
+        "compound": false,
+        "repUnit": "mp",
+        "loadType": "bodyweight"
+      },
+      "profile": {
+        "experience": "intermediate",
+        "goal": "fitness",
+        "minutes": 60,
+        "activity": "office",
+        "gear": [
+          "dumbbells"
+        ]
+      },
+      "level2": false,
+      "expected": {
+        "sets": 2,
+        "reps": "20–40 mp",
+        "weight": 0,
+        "rest": 75,
+        "trial": true,
+        "rir": 2,
+        "rirMin": 1,
+        "rirMax": 2,
+        "progressionLevel": 0,
+        "loadType": "bodyweight"
+      }
+    },
+    {
+      "name": "main-rx-4-side-plank",
+      "library": {
+        "id": "side-plank",
+        "compound": false,
+        "repUnit": "mp",
+        "loadType": "bodyweight"
+      },
+      "profile": {
+        "experience": "intermediate",
+        "goal": "fitness",
+        "minutes": 60,
+        "activity": "office",
+        "gear": [
+          "dumbbells"
+        ]
+      },
+      "level2": true,
+      "expected": {
+        "sets": 2,
+        "reps": "20–40 mp",
+        "weight": 0,
+        "rest": 75,
+        "trial": true,
+        "rir": 2,
+        "rirMin": 1,
+        "rirMax": 2,
+        "progressionLevel": 2,
+        "variation": "weighted",
+        "loadType": "single_dumbbell"
+      }
+    },
+    {
+      "name": "main-rx-5-side-plank",
+      "library": {
+        "id": "side-plank",
+        "compound": false,
+        "repUnit": "mp",
+        "loadType": "bodyweight"
+      },
+      "profile": {
+        "experience": "intermediate",
+        "goal": "fitness",
+        "minutes": 60,
+        "activity": "office",
+        "gear": []
+      },
+      "level2": true,
+      "expected": {
+        "sets": 2,
+        "reps": "20–40 mp",
+        "weight": 0,
+        "rest": 75,
+        "trial": true,
+        "rir": 2,
+        "rirMin": 1,
+        "rirMax": 2,
+        "progressionLevel": 0,
+        "loadType": "bodyweight"
+      }
+    },
+    {
+      "name": "main-rx-6-crunch",
+      "library": {
+        "id": "crunch",
+        "compound": false,
+        "repUnit": "ism.",
+        "loadType": "bodyweight"
+      },
+      "profile": {
+        "experience": "intermediate",
+        "goal": "fitness",
+        "minutes": 60,
+        "activity": "office",
+        "gear": [
+          "dumbbells"
+        ]
+      },
+      "level2": true,
+      "expected": {
+        "sets": 2,
+        "reps": "10–20",
+        "weight": 0,
+        "rest": 75,
+        "trial": true,
+        "rir": 2,
+        "rirMin": 1,
+        "rirMax": 2,
+        "progressionLevel": 2,
+        "variation": "weighted",
+        "loadType": "single_dumbbell"
+      }
+    },
+    {
+      "name": "main-rx-7-lateral-raise",
+      "library": {
+        "id": "lateral-raise",
+        "compound": false,
+        "repUnit": "ism.",
+        "loadType": "per_hand"
+      },
+      "profile": {
+        "experience": "intermediate",
+        "goal": "fitness",
+        "minutes": 60,
+        "activity": "office",
+        "gear": [
+          "dumbbells"
+        ]
+      },
+      "level2": false,
+      "expected": {
+        "sets": 2,
+        "reps": "12–20",
+        "weight": 0,
+        "rest": 75,
+        "trial": true,
+        "rir": 2,
+        "rirMin": 1,
+        "rirMax": 2,
+        "progressionLevel": 0,
+        "loadType": "per_hand"
+      }
+    },
+    {
+      "name": "main-rx-8-db-ohp",
+      "library": {
+        "id": "db-ohp",
+        "compound": true,
+        "repUnit": "ism.",
+        "loadType": "per_hand"
+      },
+      "profile": {
+        "experience": "intermediate",
+        "goal": "fitness",
+        "minutes": 60,
+        "activity": "office",
+        "gear": [
+          "dumbbells"
+        ]
+      },
+      "level2": true,
+      "expected": {
+        "sets": 2,
+        "reps": "6–10",
+        "weight": 0,
+        "rest": 120,
+        "trial": true,
+        "rir": 2,
+        "rirMin": 1,
+        "rirMax": 2,
+        "progressionLevel": 0,
+        "loadType": "per_hand"
+      }
+    },
+    {
+      "name": "main-rx-9-barbell-row",
+      "library": {
+        "id": "barbell-row",
+        "compound": true,
+        "repUnit": "ism.",
+        "loadType": "per_hand"
+      },
+      "profile": {
+        "experience": "intermediate",
+        "goal": "strength",
+        "minutes": 60,
+        "activity": "office",
+        "gear": [
+          "dumbbells"
+        ]
+      },
+      "level2": true,
+      "expected": {
+        "sets": 2,
+        "reps": "6–10",
+        "weight": 0,
+        "rest": 150,
+        "trial": true,
+        "rir": 2,
+        "rirMin": 1,
+        "rirMax": 2,
+        "progressionLevel": 0,
+        "loadType": "per_hand"
+      }
+    },
+    {
+      "name": "main-rx-10-barbell-row",
+      "library": {
+        "id": "barbell-row",
+        "compound": true,
+        "repUnit": "ism.",
+        "loadType": "per_hand"
+      },
+      "profile": {
+        "experience": "intermediate",
+        "goal": "muscle",
+        "minutes": 60,
+        "activity": "office",
+        "gear": [
+          "dumbbells"
+        ]
+      },
+      "level2": false,
+      "expected": {
+        "sets": 3,
+        "reps": "8–12",
+        "weight": 0,
+        "rest": 120,
+        "trial": true,
+        "rir": 2,
+        "rirMin": 1,
+        "rirMax": 2,
+        "progressionLevel": 0,
+        "loadType": "per_hand"
+      }
+    },
+    {
+      "name": "main-rx-11-barbell-row",
+      "library": {
+        "id": "barbell-row",
+        "compound": true,
+        "repUnit": "ism.",
+        "loadType": "per_hand"
+      },
+      "profile": {
+        "experience": "intermediate",
+        "goal": "muscle",
+        "minutes": 60,
+        "activity": "physical",
+        "gear": [
+          "dumbbells"
+        ]
+      },
+      "level2": false,
+      "expected": {
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 0,
+        "rest": 120,
+        "trial": true,
+        "rir": 2,
+        "rirMin": 1,
+        "rirMax": 2,
+        "progressionLevel": 0,
+        "loadType": "per_hand"
+      }
+    },
+    {
+      "name": "main-rx-12-barbell-row",
+      "library": {
+        "id": "barbell-row",
+        "compound": true,
+        "repUnit": "ism.",
+        "loadType": "per_hand"
+      },
+      "profile": {
+        "experience": "advanced",
+        "goal": "muscle",
+        "minutes": 60,
+        "activity": "office",
+        "gear": [
+          "dumbbells"
+        ]
+      },
+      "level2": false,
+      "expected": {
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 0,
+        "rest": 120,
+        "trial": true,
+        "rir": 2,
+        "rirMin": 1,
+        "rirMax": 2,
+        "progressionLevel": 0,
+        "loadType": "per_hand"
+      }
+    },
+    {
+      "name": "main-rx-13-barbell-row",
+      "library": {
+        "id": "barbell-row",
+        "compound": true,
+        "repUnit": "ism.",
+        "loadType": "per_hand"
+      },
+      "profile": {
+        "experience": "intermediate",
+        "goal": "muscle",
+        "minutes": 59,
+        "activity": "office",
+        "gear": [
+          "dumbbells"
+        ]
+      },
+      "level2": false,
+      "expected": {
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 0,
+        "rest": 120,
+        "trial": true,
+        "rir": 2,
+        "rirMin": 1,
+        "rirMax": 2,
+        "progressionLevel": 0,
+        "loadType": "per_hand"
+      }
+    }
+  ]
+}

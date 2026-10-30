@@ -1,0 +1,105 @@
+/* Goals and interval training reuse the established page/panel surfaces. */
+.tp110-form{display:grid;gap:12px;margin:12px 0}
+.tp110-form label{display:grid;gap:5px;min-width:0}
+.tp110-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tp110-empty{display:grid;justify-items:start;gap:9px;margin:12px 0;overflow-wrap:anywhere}
+.tp110-empty h3,.tp110-empty p{margin:0}
+.tp110-feedback{min-height:1.3em;color:var(--ok);overflow-wrap:anywhere}
+.tp110-feedback[data-kind="error"]{color:var(--bad)}
+.tp110-feedback[data-kind="pending"]{color:var(--muted)}
+.tp110-goal{display:grid;gap:6px;margin:12px 0;overflow-wrap:anywhere}
+.tp110-goal-heading{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.tp110-goal progress{display:block;width:100%;height:10px;accent-color:var(--accent)}
+html body #app #rf223Today>.rf223-title{position:relative;display:flex;align-items:center;gap:6px;padding-right:0}
+html body #app #rf223Today .tp110-goal-mini{display:flex!important;position:relative;width:auto;max-width:45%;flex:0 1 auto;min-width:0;min-height:0!important;height:auto!important;flex-direction:column;justify-content:center;gap:2px;padding:0 5px;background:transparent;border:0;border-left:1px solid var(--line);color:var(--accent2);font-size:11px;line-height:1.1;text-align:right;text-transform:none;cursor:pointer}
+html body #app #rf223Today .tp110-goal-mini span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+html body #app #rf223Today .tp110-goal-mini::after{content:"";position:absolute;inset:-4px 0}
+html body #app #rf223Today .tp110-goal-mini:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tp110-replan-link{margin-left:auto;flex:none;min-height:44px!important;height:auto!important;line-height:1.2!important;font-size:13px!important;padding:8px 12px!important}
+.tp155-planner-title:has(.tp110-replan-link)>strong{min-width:0;overflow-wrap:anywhere}
+/* Reserve space for the visible action without clipping the fixed phone planner. */
+@media(min-height:641px) and (max-height:800px){
+ html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .cal-cell{min-height:28px!important;flex-direction:row;align-items:center;gap:2px}
+ html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .tp151-calendar-frame{padding-block:5px!important}
+}
+@media(min-height:801px) and (max-height:900px){
+ html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .cal-cell{min-height:36px!important;flex-direction:row;align-items:center;gap:2px}
+}
+@media(max-height:640px){
+ html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .tp155-r4-panel{overflow-y:auto!important}
+ html body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar :is(.tp155-r4-panel-content,main){flex:none!important;height:auto!important;overflow:visible!important}
+}
+.tp110-replan>p{font-size:13px;line-height:1.4;margin:4px 0 8px}
+.tp110-replan .tp110-form{gap:8px;margin:8px 0}
+@media(max-width:480px){.tp110-replan .tp110-fields{grid-template-columns:1fr}}
+.tp110-replan-row{display:grid;gap:4px;padding:10px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+.tp110-replan-row small{color:var(--muted)}
+html body #tp155R4PanelHost[data-panel="replan"] .tp155-r4-panel{display:flex!important;flex-direction:column;overflow:hidden!important;max-height:calc(100% - 2px)!important}
+html body #tp155R4PanelHost[data-panel="replan"] .tp106-builder-header{position:relative;flex:none;top:auto;margin:0 0 6px;padding-bottom:6px;gap:8px}
+html body #tp155R4PanelHost[data-panel="replan"] .tp106-builder-header>strong{font-size:18px;line-height:1.25;min-width:0;overflow-wrap:anywhere}
+html body #tp155R4PanelHost[data-panel="replan"] .tp155-r4-panel-content{min-height:0;overflow:auto;overscroll-behavior:contain}
+html body #tp155R4PanelHost[data-panel="replan"] .tp106-builder-header .tp155-r4-panel-close{flex:0 0 36px!important;width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important;max-width:36px!important;max-height:36px!important;padding:0!important;font-size:22px!important}
+.tp119-replan-actions{position:sticky;bottom:0;z-index:3;padding:10px 0 0;background:var(--card);border-top:1px solid var(--line)}
+.tp119-replan-actions .tp110-feedback{margin:6px 0;min-height:1.3em}
+.tp119-readiness-score{margin:0 0 12px;color:var(--accent2);font-size:24px}
+.tp119-readiness-content .rf233-signals{display:grid;gap:10px}
+.tp119-readiness-content .tp110-signal{padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--card2)}
+.tp119-readiness-content .tp110-score-note{grid-column:1/-1;margin:2px 0}
+.tp119-readiness-content>.btn{margin-top:12px;min-height:44px;white-space:normal}
+.tp110-interval>summary{display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;list-style:none;padding:9px 0}
+.tp110-interval>summary::-webkit-details-marker{display:none}
+.tp110-checks{display:flex;flex-wrap:wrap;gap:12px;margin:10px 0}
+.tp110-checks label{display:flex;align-items:center;gap:6px}
+.tp110-interval-phase{color:var(--accent2);font-variant-numeric:tabular-nums;font-weight:850}
+.tp110-signal{display:grid;gap:4px;overflow-wrap:anywhere}
+.tp110-signal small{color:var(--muted)}
+html body #tp155R4PanelHost:is([data-panel="goals"],[data-panel="replan"]) .tp155-r4-panel{border:1px solid color-mix(in srgb,var(--line) 82%,var(--accent) 18%)!important;border-radius:18px!important;box-shadow:0 16px 36px rgba(5,10,20,.14)!important}
+html[data-tp-theme-family="basic"] body #tp155R4PanelHost:is([data-panel="goals"],[data-panel="replan"]) .tp155-r4-panel{box-shadow:none!important}
+@media(max-width:340px){.tp110-fields{grid-template-columns:1fr}}
+/* Large system text keeps every control reachable; normal phone overviews stay fixed. */
+html.tp110-large-text,html.tp110-large-text body{overflow-y:auto!important;height:auto!important;max-height:none!important}
+html.tp110-large-text body #app main:is(.tp107-fit-home,.tp107-fit-health){height:auto!important;max-height:none!important;overflow:visible!important}
+html.tp110-large-text body #app main.rf221-home{min-height:0!important;display:flex!important}
+html.tp110-large-text body #app main :is(h1,h2,h3,p,small,label,strong,.btn){overflow-wrap:anywhere}
+html.tp110-large-text body #app main :is(.tp5-today-metric.stat,.rf223-stat,.tp155-home-program-left,.tp155-home-program-right){height:auto!important;min-height:0!important}
+html.tp110-large-text body #app main .tp5-today-metric.stat{display:flex!important;flex-direction:column;align-items:flex-start!important;padding:8px!important;gap:5px!important}
+html.tp110-large-text body #app main .tp5-today-label,html.tp110-large-text body #app main .tp5-today-value{line-height:1.35!important;white-space:normal!important;height:auto!important}
+html.tp110-large-text body #app #rf223Today .tp110-goal-mini{position:static;width:100%;max-width:100%;min-height:44px!important;font-size:14px;border-left:0;border-top:1px solid var(--line);margin-top:7px;padding:7px 0}
+html.tp110-large-text body #app #rf223Today>.rf223-title{flex-wrap:wrap;padding-right:0}
+html.tp110-large-text body #app #rf223Today .tp110-goal-mini span{white-space:normal}
+html.tp110-large-text body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar .tp155-r4-panel{overflow-y:auto!important}
+html.tp110-large-text body #tp155R4PanelHost[data-panel="calendar"].tp107-fit-calendar :is(.tp155-r4-panel-content,main,.tp151-calendar-frame,.tp151-day-panel){display:block!important;flex:none!important;height:auto!important;max-height:none!important;overflow:visible!important}
+html.tp110-large-text body .top .tp154-nav-cell{height:auto!important;min-height:54px!important}
+html.tp110-large-text body .top :is(.tp151-nav-label,.tp154-nav-action-label){white-space:normal!important;line-height:1.3!important;overflow:visible!important}
+html.tp110-large-text body .tp110-fields{grid-template-columns:1fr}
+html.tp110-large-text body :is(.field,.tp-select-trigger,.tp-temporal-trigger){height:auto!important;min-height:48px!important;white-space:normal!important}
+html.tp110-large-text body .tp-select-trigger :is(span,strong){white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
+
+/* #162: opt-in interval advancement follows the existing form and icon rhythm. */
+.tp110-form .tp162-auto{display:flex;flex-direction:row;align-items:flex-start;gap:10px;line-height:1.4;margin:10px 0}
+.tp162-auto input{flex:0 0 auto;margin-top:4px;accent-color:var(--accent)}
+.tp162-stop{margin-top:12px;white-space:normal}
+.tp107-indoor .tp110-interval-phase{overflow-wrap:anywhere}
+
+/* Automatic mode remains a small secondary control in the established bottom dock. */
+.tp162-automatic [hidden],.tp162-countdown [hidden]{display:none!important}
+.tp107-indoor [data-tp110-remaining][hidden]{display:none!important}
+.tp162-automatic{grid-area:auto;display:flex;flex-wrap:wrap;align-items:center;gap:4px 7px;min-width:0;width:100%;grid-column:1/-1}
+.tp162-automatic .tp162-auto{display:flex;align-items:center;gap:5px;min-height:32px;margin:0;font-size:12px;font-weight:500;color:var(--muted);white-space:nowrap}
+.tp162-automatic input{width:15px;height:15px;margin:0;accent-color:var(--accent)}
+.tp162-automatic [data-tp162-auto-status]{flex:1 1 auto;min-width:0;font-size:11px;line-height:1.35;overflow:visible;text-overflow:clip;white-space:normal;overflow-wrap:anywhere}
+.tp162-automatic .tp188-undo{flex:0 1 auto;color:var(--accent);max-width:100%}
+html body #app main.tp153-workout .tp16-workout-actions:has(>.tp162-automatic){grid-template-areas:"auto auto" "prev next"!important}
+html body #app main.tp153-workout .tp16-workout-actions:has(>.tp162-automatic):has(>.tp16-rest-timer){grid-template-columns:minmax(0,1fr) minmax(0,auto) minmax(0,1fr)!important;grid-template-areas:"auto auto auto" "prev rest next"!important}
+html body #app main.tp153-workout .tp16-workout-actions .tp162-small{min-height:32px!important;height:32px!important;min-width:28px!important;padding:3px 5px!important;font-size:12px!important;border-radius:9px!important}
+html body #app main.tp153-workout .tp16-workout-actions>.tp162-countdown{max-width:142px!important}
+@media(max-width:340px){html body #app main.tp153-workout .tp16-workout-actions:has(>.tp162-automatic):has(>.tp16-rest-timer){grid-template-columns:minmax(0,1fr) minmax(0,auto) minmax(0,1fr)!important;grid-template-areas:"auto auto auto" "prev rest next"!important}html body #app main.tp153-workout .tp16-workout-actions:has(>.tp162-automatic):not(:has(>.tp16-rest-timer)){grid-template-areas:"auto" "prev" "next"!important}}
+
+html body #app main.tp153-workout .tp16-workout-actions:has(>.timer):has(>.tp162-automatic)>.tp16-workout-prev,html body #app main.tp153-workout .tp16-workout-actions:has(>.timer):has(>.tp162-automatic)>.tp16-workout-next{font-size:13px!important;padding-inline:5px!important;line-height:1.15!important}
+
+/* Keep the phase name visible after the shared compact timer decorator runs. */
+html body #app main.tp153-workout .tp16-workout-actions>.tp162-countdown.tp16-rest-timer{display:grid!important;grid-template-columns:minmax(43px,1fr) auto auto!important;grid-template-rows:auto auto!important;align-items:center!important;column-gap:3px!important;row-gap:0!important}
+html body #app main.tp153-workout .tp16-workout-actions>.tp162-countdown [data-tp162-dock-label]{display:block!important;grid-column:1!important;grid-row:1!important;font-size:10px!important;line-height:12px!important;text-align:center!important;white-space:nowrap!important}
+html body #app main.tp153-workout .tp16-workout-actions>.tp162-countdown [data-tp162-auto-clock]{grid-column:1!important;grid-row:2!important;text-align:center!important}
+html body #app main.tp153-workout .tp16-workout-actions>.tp162-countdown [data-tp162-auto-pause]{grid-column:2!important;grid-row:1/3!important}
+html body #app main.tp153-workout .tp16-workout-actions>.tp162-countdown [data-tp162-auto-skip]{grid-column:3!important;grid-row:1/3!important}

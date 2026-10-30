@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:aapt="http://schemas.android.com/aapt" xmlns:android="http://schemas.android.com/apk/res/android" android:width="288dp" android:height="288dp" android:viewportWidth="144" android:viewportHeight="144">
+  <group android:translateX="18" android:translateY="18">
+    <group android:name="emblem" android:pivotX="54" android:pivotY="54">
+      <path android:strokeColor="#D6AF57" android:strokeWidth="0.8" android:pathData="M34,18 H74 Q90,18 90,34 V74 Q90,90 74,90 H34 Q18,90 18,74 V34 Q18,18 34,18 Z">
+        <aapt:attr name="android:fillColor">
+          <gradient android:type="linear" android:startX="18" android:startY="18" android:endX="90" android:endY="90" android:startColor="#24282C" android:endColor="#090B10" />
+        </aapt:attr>
+      </path>
+      <group android:name="left" android:pivotX="54" android:pivotY="54">
+        <path android:strokeColor="#E8BF58" android:strokeWidth="0.5" android:pathData="M27,41 H29 Q32,41 32,44 V64 Q32,67 29,67 H27 Q24,67 24,64 V44 Q24,41 27,41 Z M39,33 H42 Q46,33 46,37 V71 Q46,75 42,75 H39 Q35,75 35,71 V37 Q35,33 39,33 Z">
+          <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="54" android:startY="33" android:endX="54" android:endY="75">
+              <item android:offset="0" android:color="#FFF1A0" />
+              <item android:offset="0.48" android:color="#F3C545" />
+              <item android:offset="1" android:color="#DEA12A" />
+            </gradient>
+          </aapt:attr>
+        </path>
+      </group>
+      <group android:name="shaft" android:pivotX="54" android:pivotY="54">
+        <path android:strokeColor="#E8BF58" android:strokeWidth="0.5" android:pathData="M47,50 H61 Q62,50 62,51 V57 Q62,58 61,58 H47 Q46,58 46,57 V51 Q46,50 47,50 Z">
+          <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="54" android:startY="33" android:endX="54" android:endY="75">
+              <item android:offset="0" android:color="#FFF1A0" />
+              <item android:offset="0.48" android:color="#F3C545" />
+              <item android:offset="1" android:color="#DEA12A" />
+            </gradient>
+          </aapt:attr>
+        </path>
+      </group>
+      <group android:name="right" android:pivotX="54" android:pivotY="54">
+        <path android:strokeColor="#E8BF58" android:strokeWidth="0.5" android:pathData="M66,33 H69 Q73,33 73,37 V71 Q73,75 69,75 H66 Q62,75 62,71 V37 Q62,33 66,33 Z M79,41 H81 Q84,41 84,44 V64 Q84,67 81,67 H79 Q76,67 76,64 V44 Q76,41 79,41 Z">
+          <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="54" android:startY="33" android:endX="54" android:endY="75">
+              <item android:offset="0" android:color="#FFF1A0" />
+              <item android:offset="0.48" android:color="#F3C545" />
+              <item android:offset="1" android:color="#DEA12A" />
+            </gradient>
+          </aapt:attr>
+        </path>
+      </group>
+    </group>
+  </group>
+</vector>

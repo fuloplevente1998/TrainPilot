@@ -1,0 +1,35 @@
+'use strict';
+const assert=require('node:assert/strict');
+const {run,context}=require('./helpers/app-runtime.cjs')();
+const sync=context.window.TrainPilotWearSync,sent=[];
+let fail=false,historyReads=0;
+context.window.Capacitor={isNativePlatform:()=>true,Plugins:{WearSync:{publishHome:async({snapshot})=>{
+ if(fail)throw Error('transport unavailable');sent.push(JSON.parse(JSON.stringify(snapshot)));
+}}}};
+run("db.set('history',[{id:'saved',started:'2026-10-10T08:00:00Z',finished:'2026-10-10T09:00:00Z',exercises:[{id:'db-squat',loadType:'per_hand',repUnit:'ism.',sets:[{set:1,reps:'10',weight:12,done:true}]}]}]);state.session=null");
+const live=context.history;
+context.history=function(){historyReads++;return live.apply(this,arguments);};
+let readKeys=new Set();const get=context.localStorage.getItem;
+context.localStorage.getItem=key=>{readKeys.add(key);return get(key);};
+(async()=>{
+ await sync.syncHomeNow();assert.equal(sent.length,1);assert.ok(historyReads>0);
+ const dependencies=readKeys;readKeys=new Set();historyReads=0;
+ for(let i=0;i<5;i++)assert.equal(await sync.syncHomeNow(),true);
+ assert.equal(historyReads,0,'unchanged routine polls must skip the full history/catalog build');
+ assert.equal(sent.length,1);
+ for(const key of dependencies)assert.ok(readKeys.has(key),'input check omitted a real catalog dependency: '+key);
+ run("const rows=history();rows[0].exercises[0].sets[0].weight=32;localStorage.setItem('repforge:history',JSON.stringify(rows))");
+ await sync.syncHomeNow();assert.equal(sent.length,2,'direct storage writes invalidate, without a db.set hook');
+ assert.equal(sent.at(-1).quickExercises.find(e=>e.id==='db-squat').sets[0].weight,32);
+ run("db.set('language','en');db.set('settings',{rest:123})");
+ await sync.syncHomeNow();assert.equal(sent.at(-1).restSeconds,123);
+ run("db.set('draft',{session:{started:'draft'}})");await sync.syncHomeNow();assert.equal(sent.at(-1).hasDraft,true);
+ run("window.tp3HistoryIsDeleted=x=>db.get('phase3HistoryTombstones',[]).some(t=>t.ids.includes(x.id));db.set('phase3HistoryTombstones',[{ids:['saved']}])");
+ await sync.syncHomeNow();assert.equal(sent.at(-1).recentWorkouts.length,0,'new tombstones invalidate even with unchanged history');
+ historyReads=0;await sync.syncHomeNow({force:true});assert.ok(historyReads>0,'explicit refresh always rebuilds');
+ run("db.set('settings',{rest:124})");fail=true;assert.equal(await sync.syncHomeNow(),false);
+ fail=false;await sync.syncHomeNow();assert.equal(sent.at(-1).restSeconds,124,'failed delivery cannot mark changed inputs as synchronized');
+ const RealDate=Date;context.Date=class extends RealDate{constructor(...args){super(...(args.length?args:[RealDate.now()+86400000]));}static now(){return RealDate.now()+86400000;}};
+ const oldDay=sent.at(-1).calendar[0].date;await sync.syncHomeNow();assert.notEqual(sent.at(-1).calendar[0].date,oldDay,'local midnight invalidates calendar even without a write');
+ console.log('PASS Wear home input guard: unchanged polls skip history/catalog; full dependency coverage, same-length direct edits, preferences, draft, tombstones, force, retry and midnight freshness');
+})().catch(error=>{console.error(error);process.exitCode=1});

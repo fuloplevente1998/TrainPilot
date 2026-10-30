@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_google_authorizing">Checking Google access…</string>
+    <string name="native_google_waiting">Waiting for Google consent…</string>
+    <string name="native_google_launch_failed">Could not open Google consent. Please retry.</string>
+    <string name="native_google_cancelled">Google consent cancelled. No sync was started.</string>
+    <string name="native_google_no_token">Google did not grant access. Please request access again.</string>
+    <string name="native_google_connected">Google account connected.</string>
+    <string name="native_google_drive_done">Drive sync completed.</string>
+    <string name="native_google_calendar_done">Calendar synced: %1$d operations.</string>
+    <string name="native_google_failed">The Google operation failed.</string>
+</resources>

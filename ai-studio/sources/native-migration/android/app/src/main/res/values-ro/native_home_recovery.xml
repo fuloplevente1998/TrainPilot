@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_home_recovery_samsung">Samsung Energy Score</string>
+    <string name="native_home_recovery_estimate">Estimare TrainPilot</string>
+    <string name="native_home_recovery_no_data">Fără date</string>
+    <string name="native_home_recovery_partial">Date parțiale</string>
+    <string name="native_home_recovery_stale">Date vechi sau neverificate</string>
+    <string name="native_home_recovery_calculated">Calculat:</string>
+    <string name="native_home_recovery_read_error">Actualizarea datelor a eșuat</string>
+</resources>

@@ -1,0 +1,364 @@
+{
+  "schema": 1,
+  "commit": "c116a042229f61b86babbbeb23c5d2c360486e20",
+  "bindings": [
+    {
+      "view": "V01",
+      "proposedComponents": "SessionHero / NextWorkoutCard / MetricTile",
+      "state": "HomeUiState: nextTarget, loading, loadFailed, hasImportedDraft, todayMetrics, watchState; aktív snapshot a scaffoldban",
+      "callbacks": "onStartWorkout/onResumeDraft/onQuickWorkout; scaffold selectDestination; loadHomeData",
+      "durablePath": "NativeHomeRepository + HealthJournalStore + WearLiveHealthStore; activeSnapshot → kanonikus start/recovery",
+      "sourceRefs": [
+        "home",
+        "homestate",
+        "homeenergy",
+        "homequery",
+        "nav"
+      ],
+      "existingTestSource": "android/app/src/nativePhoneUiTest/java/com/repforge/app/NativePhoneNavigationTest.kt",
+      "runtime": "NOT_RUN_HERE"
+    },
+    {
+      "view": "V02",
+      "proposedComponents": "QuickActionCard / ProgramDayCard",
+      "state": "TrainingProgramsUiState.programs + activeProgramId/busy paraméter",
+      "callbacks": "onQuick/onStart/onPrograms/onLibrary/onCalendar/onCoach",
+      "durablePath": "ProgramWithDays → NativeWorkoutSession.startProgramWorkout; nem új programnap-számítás",
+      "sourceRefs": [
+        "training",
+        "programs",
+        "nav"
+      ],
+      "existingTestSource": "android/app/src/nativePhoneUiTest/java/com/repforge/app/NativePhoneNavigationTest.kt",
+      "runtime": "NOT_RUN_HERE"
+    },
+    {
+      "view": "V03",
+      "proposedComponents": "ProgramCard / ProgramActionMenu / ModePreview",
+      "state": "TrainingProgramsUiState.programs/activeProgramId + editor/mode preview",
+      "callbacks": "activateProgram/saveProgram/deleteProgram/previewRestoreDay/confirmRestoreDay; approveTrainingModeCompared",
+      "durablePath": "meglévő NativeProgramEditor és NativeTrainingModeChange; UI csak rendez",
+      "sourceRefs": [
+        "programs",
+        "programvm",
+        "programeditor",
+        "rx"
+      ],
+      "existingTestSource": "android/app/src/nativePhoneUiTest/java/com/repforge/app/NativeProgramActionsUiTest.kt",
+      "runtime": "NOT_RUN_HERE"
+    },
+    {
+      "view": "V04",
+      "proposedComponents": "MonthGrid / DayTimeline / PlannerForm",
+      "state": "CalendarUiState.month/day/plans/history/plannerLoaded/plannerPreview/programs; plannerOpen lokális",
+      "callbacks": "selectDay/changeMonth/save/status/previewPlanner/applyPlanner/cancelPlanner; onStart/onJournal",
+      "durablePath": "NativeCalendarRepository és NativeCalendarPlanner, meglévő metadata lease/CAS/epoch",
+      "sourceRefs": [
+        "calendar",
+        "calendarvm",
+        "calendarplanner"
+      ],
+      "existingTestSource": "android/app/src/nativePhoneUiTest/java/com/repforge/app/NativeCalendarPlannerUiTest.kt",
+      "runtime": "NOT_RUN_HERE"
+    },
+    {
+      "view": "V05",
+      "proposedComponents": "LibrarySearch / FilterChips / ExerciseRow",
+      "state": "ExerciseLibraryState.rows/favorites/loading/saving; query/favoritesOnly/muscle/selectedId lokális",
+      "callbacks": "toggleFavorite; saveCustom/deleteCustom; selectedId kiválasztás",
+      "durablePath": "NativeExerciseFavorites/NativeCustomExerciseEditor; meglévő exercise_library route",
+      "sourceRefs": [
+        "library",
+        "favorites",
+        "custom"
+      ],
+      "existingTestSource": "android/app/src/nativePhoneUiTest/java/com/repforge/app/NativePhoneNavigationTest.kt",
+      "runtime": "NOT_RUN_HERE"
+    },
+    {
+      "view": "V06",
+      "proposedComponents": "ExerciseDetail / DemoSource / FavoriteAction",
+      "state": "selected ExerciseLibraryEntity + NativeExerciseDemo.resolve; openingError lokális",
+      "callbacks": "open(link), toggleFavorite; editorOpen saját elemnél",
+      "durablePath": "ellenőrzött VIDEO vs UNVERIFIED_SEARCH; új onAddToWorkout nincs",
+      "sourceRefs": [
+        "librarydetail",
+        "favorites",
+        "custom"
+      ],
+      "existingTestSource": "android/app/src/nativePhoneUiTest/java/com/repforge/app/NativePhoneNavigationTest.kt",
+      "runtime": "NOT_RUN_HERE"
+    },
+    {
+      "view": "V07",
+      "proposedComponents": "ExerciseHeader / SetRow / RestPanel",
+      "state": "ActiveWorkoutUiState.exercises/currentExerciseIndex/timer*/undo*/timerOwner/isFinishing",
+      "callbacks": "editSet/toggleSetCompleted/setSetRir/addSetToExercise/removeSetFromExercise/selectExercise/undoLastSet/adjustRestTimer/skipRestTimer",
+      "durablePath": "NativeWorkoutTarget és NativeTimerTarget → meglévő PhoneWorkoutExecution/NativeWorkoutEditing",
+      "sourceRefs": [
+        "workout",
+        "workoutstate",
+        "setcard",
+        "rest",
+        "leave"
+      ],
+      "existingTestSource": "android/app/src/nativePhoneUiTest/java/com/repforge/app/NativePhoneNavigationTest.kt",
+      "runtime": "NOT_RUN_HERE"
+    },
+    {
+      "view": "V08",
+      "proposedComponents": "MeasurementCard / TimedSetRow",
+      "state": "ActiveWorkoutUiState.stopwatchSetId/stopwatchSide/stopwatchSeconds/stopwatchRunning; set.leftSeconds",
+      "callbacks": "toggleSetStopwatch/resetSetStopwatch; configureIntervals/startIntervals/stopIntervals",
+      "durablePath": "LowerSetStopwatch; meglévő natív stopwatch auto-complete policy",
+      "sourceRefs": [
+        "workout",
+        "timer",
+        "interval",
+        "workoutstate"
+      ],
+      "existingTestSource": "android/app/src/nativePhoneUiTest/java/com/repforge/app/NativePhoneNavigationTest.kt",
+      "runtime": "NOT_RUN_HERE"
+    },
+    {
+      "view": "V09",
+      "proposedComponents": "BilateralMeasurementPanels",
+      "state": "ActiveSetUiModel.leftSeconds/rightSeconds/isCompleted + egy kanonikus stopwatchSide",
+      "callbacks": "toggleSetStopwatch(target,side)/resetSetStopwatch; selectExercise",
+      "durablePath": "ugyanaz a natív mérő, nem két új timer; mindkét pozitív oldal szabálya marad",
+      "sourceRefs": [
+        "workout",
+        "timer",
+        "interval"
+      ],
+      "existingTestSource": "android/app/src/nativePhoneUiTest/java/com/repforge/app/NativePhoneNavigationTest.kt",
+      "runtime": "NOT_RUN_HERE"
+    },
+    {
+      "view": "V10",
+      "proposedComponents": "GpsStatus / DistanceMetricGrid / PermissionIssue",
+      "state": "isGpsActive/gpsBindingState/gpsHasFix/gpsError/gpsAccuracyMeters/liveHeartRateBpm és rendered target",
+      "callbacks": "requestGps → toggleGpsTracking(target,id); openRouteMap; existing editSet",
+      "durablePath": "NativeGpsPermissionRecovery → NativeWorkoutEditing/DistanceTrackingService; új GPS-writer nincs",
+      "sourceRefs": [
+        "workout",
+        "distance",
+        "gpspermission",
+        "workoutstate"
+      ],
+      "existingTestSource": "android/app/src/nativePhoneUiTest/java/com/repforge/app/NativeGpsPermissionRecoveryUiTest.kt",
+      "runtime": "NOT_RUN_HERE"
+    },
+    {
+      "view": "V11",
+      "proposedComponents": "IntervalForm / PresetScope",
+      "state": "intervalWork/Rest/Rounds/Sound/Vibration/AutoAdvance/Saving; lokális work/rest/rounds/global",
+      "callbacks": "configureIntervals/startIntervals/stopIntervals/skipRestTimer; globális beginTimerDefaults/saveTimerDefaults",
+      "durablePath": "IntervalOptions és NativeTimerDefaultsDialog → eredeti preset validátor és szolgáltatás",
+      "sourceRefs": [
+        "interval",
+        "timerdefaults",
+        "workoutstate"
+      ],
+      "existingTestSource": "android/app/src/nativePhoneUiTest/java/com/repforge/app/NativeTimerDefaultsUiTest.kt",
+      "runtime": "NOT_RUN_HERE"
+    },
+    {
+      "view": "V12",
+      "proposedComponents": "FinishSummary / EffortChoices / DestructiveActions",
+      "state": "showFinishModal/isFinishing + meglévő measuredWorkSeconds/measuredRestSeconds; effort jelenleg callbackérték",
+      "callbacks": "openFinishModal/closeFinishModal/finishWorkout(effort,onSaved); leaveWorkout/discardWorkout",
+      "durablePath": "TrainPilotWorkoutFinalization meglévő entry; note nem paraméter, Root-funkciókérdés",
+      "sourceRefs": [
+        "finish",
+        "finishwriter",
+        "leave",
+        "workout"
+      ],
+      "existingTestSource": "android/app/src/nativePhoneUiTest/java/com/repforge/app/NativePhoneNavigationTest.kt",
+      "runtime": "NOT_RUN_HERE"
+    },
+    {
+      "view": "V13",
+      "proposedComponents": "JournalSearch / SummaryCard / PagingIssue",
+      "state": "JournalUiState.search/month és workouts.collectAsLazyPagingItems",
+      "callbacks": "setSearch/setMonth/openDetails; Paging retry",
+      "durablePath": "NativeJournalRepository / Room summary, nincs route/photo részlet-hydrate listához",
+      "sourceRefs": [
+        "journal",
+        "journalvm"
+      ],
+      "existingTestSource": "android/app/src/nativePhoneUiTest/java/com/repforge/app/NativePhoneNavigationTest.kt",
+      "runtime": "NOT_RUN_HERE"
+    },
+    {
+      "view": "V14",
+      "proposedComponents": "WorkoutDetailTabs / SourcePanel / Editor",
+      "state": "JournalUiState.detail/detailLoading/detailError/selectedWorkoutId/deleting + editor StateFlow",
+      "callbacks": "openEditor/saveEditor/closeDetails/refreshWorkoutHealth/openRouteMap/requestDeleteWorkout/confirmDeleteWorkout",
+      "durablePath": "NativeJournalEditor, NativeWorkoutHealth, JournalHealthPanel; források elkülönülnek",
+      "sourceRefs": [
+        "detail",
+        "journalvm",
+        "journaledit",
+        "sources",
+        "photo"
+      ],
+      "existingTestSource": "android/app/src/nativePhoneUiTest/java/com/repforge/app/NativeJournalFeedbackUiTest.kt",
+      "runtime": "NOT_RUN_HERE"
+    },
+    {
+      "view": "V15",
+      "proposedComponents": "PrivateRouteSurface / CloseAction / Legend",
+      "state": "RouteCoordinatesUiModel.segments/pointCount/missingRouteParts",
+      "callbacks": "onDismiss; JournalViewModel.closeRouteMap vagy ActiveWorkoutViewModel.closeRouteMap",
+      "durablePath": "WorkoutRouteCoordinates → MercatorRouteCanvas; csak geometry, nem tile provider",
+      "sourceRefs": [
+        "map",
+        "mapcanvas",
+        "journalvm"
+      ],
+      "existingTestSource": "android/app/src/nativePhoneUiTest/java/com/repforge/app/NativePhoneNavigationTest.kt",
+      "runtime": "NOT_RUN_HERE"
+    },
+    {
+      "view": "V16",
+      "proposedComponents": "ProgressPanels / TrendFigure / WeightOverview",
+      "state": "ProgressUiState.exercise1RmTrend/muscleLoads/cardio/cardioActivities + WeightJournalUiState",
+      "callbacks": "selectExercise/selectCardioActivity/retryCardio/loadProgressData; weight setRange/retryReads/onWeightJournal",
+      "durablePath": "NativeProgressQuery/NativeCardioProgressAdapter; WeightJournalOverview ugyanaz a testsúly-adatút",
+      "sourceRefs": [
+        "progress",
+        "progressstate",
+        "cardio",
+        "weight",
+        "weightvm"
+      ],
+      "existingTestSource": "android/app/src/nativePhoneUiTest/java/com/repforge/app/NativeCardioProgressUiTest.kt",
+      "runtime": "NOT_RUN_HERE"
+    },
+    {
+      "view": "V17",
+      "proposedComponents": "ProviderStatus / MetricGroups / RecordBrowser",
+      "state": "HealthDashboardUiState.metrics/selectedDay/historyChannel/historyPartial/sync*/lastSyncAt/bleState",
+      "callbacks": "syncHealth/cancelHealthSync/refresh/setProvider/setDailySourcePreference/setAutoOnOpen; record browser applyRange/restart",
+      "durablePath": "HealthJournalStore + NativeHealthRefresh/Sync + NativeHealthRecords; provider és BLE motor érintetlen",
+      "sourceRefs": [
+        "health",
+        "healthvm",
+        "metrics",
+        "records",
+        "weight"
+      ],
+      "existingTestSource": "android/app/src/nativePhoneUiTest/java/com/repforge/app/NativeHealthSyncUiTest.kt",
+      "runtime": "NOT_RUN_HERE"
+    },
+    {
+      "view": "V18",
+      "proposedComponents": "ReadinessGauge / ScoreSources / AdviceCard",
+      "state": "CoachUiState.readiness/target/exercises/loading/error/variationPreview",
+      "callbacks": "reload/refreshHealth/previewVariation/saveVariation/closeVariation; onStart/onCalendar/onHealth/onProgress/onPrograms",
+      "durablePath": "NativeCoachReadiness/NativeCoachSignals és advice repository; nincs UI-képlet",
+      "sourceRefs": [
+        "coach",
+        "coachvm",
+        "readiness"
+      ],
+      "existingTestSource": "android/app/src/nativePhoneUiTest/java/com/repforge/app/NativePhoneNavigationTest.kt",
+      "runtime": "NOT_RUN_HERE"
+    },
+    {
+      "view": "V19",
+      "proposedComponents": "SettingsSection / FormRow / ThemePicker",
+      "state": "SettingsUiState.settings/replacementBusy/statusMessage/profile*/timer*; Google consent külön flow",
+      "callbacks": "setTheme/setLanguage/saveProfile/beginTimerDefaults/saveTimerDefaults; Google/SAF és maintenance existing callbackek",
+      "durablePath": "TrainPilotSettingsStore/BackupRestoreManager/GoogleSyncRepository; ugyanaz a globális settings route",
+      "sourceRefs": [
+        "settings",
+        "settingsvm",
+        "themepicker",
+        "lang",
+        "timerdefaults",
+        "google"
+      ],
+      "existingTestSource": "android/app/src/nativePhoneUiTest/java/com/repforge/app/NativeLocalizationLanguageUiTest.kt",
+      "runtime": "NOT_RUN_HERE"
+    },
+    {
+      "view": "V20",
+      "proposedComponents": "OwnershipStatus / TransferActions",
+      "state": "ActiveWorkoutUiState.timerOwner/ownerEpoch/isTransferPending/canTakeBack/canHandOver; Home watchState",
+      "callbacks": "requestOwnershipBackFromWatch/startWatchMeasurementRemotely; meglévő ownership dialog",
+      "durablePath": "PhoneOwnership193/WearSyncRepository; saját watch_sync route jelenleg nincs",
+      "sourceRefs": [
+        "workout",
+        "workoutstate",
+        "ownership",
+        "home",
+        "nav"
+      ],
+      "existingTestSource": "android/app/src/nativePhoneUiTest/java/com/repforge/app/NativePhoneNavigationTest.kt",
+      "runtime": "NOT_RUN_HERE"
+    },
+    {
+      "view": "V21",
+      "proposedComponents": "BackupFormat / ConsentRow / RecoveryIssue",
+      "state": "SettingsUiState.settings.healthBackupConsent/replacementBusy/needsRecovery/recoveryError/googleSyncState",
+      "callbacks": "onSafJsonExportCompleted/onSafJsonImportCompleted/onSafZipExportCompleted/onSafZipImportCompleted/resumeReplacement; syncDriveCloud",
+      "durablePath": "BackupRestoreManager és GoogleSyncRepository; nem új archívumlista vagy restore-motor",
+      "sourceRefs": [
+        "settings",
+        "settingsvm",
+        "recovery",
+        "google"
+      ],
+      "existingTestSource": "android/app/src/nativePhoneUiTest/java/com/repforge/app/NativeGoogleMaintenanceUiTest.kt",
+      "runtime": "NOT_RUN_HERE"
+    },
+    {
+      "view": "V22",
+      "proposedComponents": "PermissionStatus / BlockerAction",
+      "state": "NativeGpsPermissionRecovery state; Health hcSupported/hcGranted/backgroundBlock; BLE permission állapot",
+      "callbacks": "existing permissionLauncher/settingsIntent/retry/cancel; health background permission launcherek",
+      "durablePath": "platform státusz + meglévő kontextusos admission; nincs közös permissions route",
+      "sourceRefs": [
+        "gpspermission",
+        "health",
+        "healthvm",
+        "settings"
+      ],
+      "existingTestSource": "android/app/src/nativePhoneUiTest/java/com/repforge/app/NativeGpsPermissionRecoveryUiTest.kt",
+      "runtime": "NOT_RUN_HERE"
+    },
+    {
+      "view": "V23",
+      "proposedComponents": "PrivatePhotoThumb / PhotoViewer / PhotoActions",
+      "state": "ActiveWorkoutUiState.attachedPhotos + journal detail.photos és lokális photo kiválasztás",
+      "callbacks": "camera/gallery launcher → onPhotoCaptured; deletePhoto(id); privát modal onDismiss",
+      "durablePath": "WorkoutPhotoRepository és PrivateJournalPhoto; progressPhotos megjelenítési entry hiányzik",
+      "sourceRefs": [
+        "activephotos",
+        "photo",
+        "detail",
+        "workoutstate"
+      ],
+      "existingTestSource": "android/app/src/nativePhoneUiTest/java/com/repforge/app/NativePhoneNavigationTest.kt",
+      "runtime": "NOT_RUN_HERE"
+    },
+    {
+      "view": "V24",
+      "proposedComponents": "ProgramForm / DayPicker / PrescriptionRow",
+      "state": "NativeProgramEditor.Draft + openedProgram/editorToken; editor outcome a VM-ben",
+      "callbacks": "onSave → saveProgram; onCancel; meglévő onChange és prescription editor callbackek",
+      "durablePath": "NativeProgramEditor és NativeProgramDayRestore; a CAS/metadata/owner teszt nem gyengülhet",
+      "sourceRefs": [
+        "programeditor",
+        "programvm",
+        "rx",
+        "custom"
+      ],
+      "existingTestSource": "android/app/src/nativePhoneUiTest/java/com/repforge/app/NativeProgramActionsUiTest.kt",
+      "runtime": "NOT_RUN_HERE"
+    }
+  ]
+}

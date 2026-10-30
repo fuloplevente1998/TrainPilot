@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="program_rx_open">Valori țintă</string>
+    <string name="program_rx_title">Valori țintă · %1$s</string>
+    <string name="program_rx_scope">Modificările se aplică acestui exercițiu în toate zilele programului și se păstrează când salvezi programul.</string>
+    <string name="program_rx_sets">Serii (1–10)</string>
+    <string name="program_rx_target_reps">Repetări țintă</string>
+    <string name="program_rx_target_time">Timp țintă (s)</string>
+    <string name="program_rx_target_side">Timp țintă pe parte (s)</string>
+    <string name="program_rx_weight">Greutate (kg)</string>
+    <string name="program_rx_weight_total">Greutate totală (kg)</string>
+    <string name="program_rx_weight_hand">Greutate pe mână (kg)</string>
+    <string name="program_rx_weight_single">Greutatea unei gantere (kg)</string>
+    <string name="program_rx_weight_assisted">Asistență (kg)</string>
+    <string name="program_rx_trial">Lasă gol pentru a alege greutatea printr-o serie de probă.</string>
+    <string name="program_rx_rest">Pauză (30–300 s)</string>
+    <string name="program_rx_invalid">Verifică valorile țintă: 1–10 serii, țintă de 1–40 de caractere, 0–10000 kg și pauză de 30–300 s.</string>
+    <string name="program_rx_apply">Aplică valorile țintă</string>
+    <string name="program_rx_cancel">Anulează</string>
+</resources>

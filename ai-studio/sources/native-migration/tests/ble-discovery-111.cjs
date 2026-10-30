@@ -1,0 +1,38 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const src=fs.existsSync('www/ble-discovery-111.js')?fs.readFileSync('www/ble-discovery-111.js','utf8'):fs.readFileSync('www/app.js','utf8').match(/\/\/ @section ble-discovery-111.js\n([\s\S]*?)\/\/ @endsection ble-discovery-111.js/)[1];
+const context=vm.createContext({window:{addEventListener(){}},Date});vm.runInContext(src,context);
+const core=context.window.TrainPilotBleCore,plain=x=>JSON.parse(JSON.stringify(x));
+const service='0000180d-0000-1000-8000-00805f9b34fb',characteristic='00002a37-0000-1000-8000-00805f9b34fb',cccd='00002902-0000-1000-8000-00805f9b34fb';
+const data=plain(core.diagnostic({state:'connected',sdk:35,deviceName:'GT4Pro+',heartSupported:true,address:'AA:BB:CC:DD:EE:FF',bpm:72,rawBytes:[1,2],services:[{uuid:service,type:0,private:'secret',characteristics:[{uuid:characteristic,properties:16,value:[72],descriptors:[cccd]}]}]}, {id:'opaque-secret',address:'AA:BB:CC:DD:EE:FF',rawAdvertisement:[1,2],advertisedServices:[service,'bad'],manufacturers:[{companyId:4660,length:4,bytes:[1,2,3,4]}]},'1.2.0'));
+assert.equal(data.appVersion,'1.2.0');assert.equal(data.standardHeartRateAvailable,true);
+assert.deepEqual(data.services,[{uuid:service,type:0,characteristics:[{uuid:characteristic,properties:16,descriptors:[cccd]}]}]);
+assert.deepEqual(data.device.manufacturers,[{companyId:4660,length:4}]);assert.deepEqual(data.device.advertisedServices,[service]);
+const serialized=JSON.stringify(data);for(const secret of ['AA:BB:CC:DD:EE:FF','opaque-secret','rawBytes','rawAdvertisement','bpm','private','secret','"value"','"bytes"'])assert.ok(!serialized.includes(secret),'diagnostic must exclude '+secret);
+assert.equal(core.uuid('0000180D-0000-1000-8000-00805F9B34FB'),service);assert.equal(core.uuid('invalid'),null);
+assert.equal(core.diagnostic({services:[{uuid:'bad'}]},null).services.length,0);
+assert.equal(core.diagnostic({deviceName:'x'.repeat(200)},null).device.name.length,80);
+assert.equal(core.diagnostic({services:Array.from({length:200},()=>({uuid:service,characteristics:[]}))},null).services.length,128);
+const realtek='6e40ab01-b5a3-f393-e0a9-e50e24dcca9e';
+assert.equal(core.protocolHint({advertisedServices:[realtek.toUpperCase()]}),'realtek');
+assert.equal(core.protocolHint({advertisedServices:['0000ae00-0000-1000-8000-00805f9b34fb']}),'jieli');
+assert.equal(core.protocolHint({advertisedServices:[service]}),'heartRate');
+assert.equal(core.protocolHint({name:'GT4Pro+',advertisedServices:[]} ),null,'a name alone must not invent protocol support');
+assert.equal(core.deviceAddress('aa:bb:cc:dd:ee:ff'),'AA:BB:CC:DD:EE:FF');
+assert.equal(core.deviceAddress('AA:BB:CC'), '');
+const scanned=plain(core.diagnostic({state:'idle',services:[]},null,'1.2.0',Array.from({length:150},(_,i)=>({id:'private-'+i,number:i+1,name:'',rssi:-63,displayAddress:'AA:BB:CC:DD:EE:FF',rawAdvertisement:[1,2],advertisedServices:[realtek]}))));
+assert.equal(scanned.mode,'scan');assert.equal(scanned.scanDevices.length,120);
+assert.equal(scanned.scanDevices[0].number,1);assert.equal(scanned.scanDevices[0].protocolHint,'realtek');
+for(const secret of ['AA:BB:CC:DD:EE:FF','displayAddress','private-','rawAdvertisement'])assert.ok(!JSON.stringify(scanned).includes(secret));
+console.log('PASS #105 BLE diagnostic: service capabilities preserved, invalid UUIDs excluded, bounded report omits addresses, identifiers, packets and pulse samples');
+
+const probe=plain(core.diagnostic({services:[],probeSupported:true,rdfitProbe:{status:'complete',batteryReceived:true,stepsReceived:true,notifications:3,requests:2,rejectedFrames:0,raw:'secret'},probeReadings:{battery:77,steps:54321}},null));
+assert.equal(probe.rdfitProbe.status,'complete');assert.equal(probe.rdfitProbe.stepsReceived,true);
+for(const value of ['54321','probeReadings','"battery":','"steps":','secret'])assert.ok(!JSON.stringify(probe).includes(value),'probe export omits values and raw data');
+const fixture=JSON.parse(fs.readFileSync('tests/fixtures/gt4pro-gatt.json','utf8'));
+const physical=plain(core.diagnostic({state:'connected',services:fixture.services,heartSupported:fixture.standardHeartRateAvailable},null));
+assert.equal(physical.services.length,7);assert.equal(physical.standardHeartRateAvailable,false);
+assert.ok(physical.services.some(s=>s.uuid===realtek&&s.characteristics.some(c=>c.uuid==='6e40ab02-b5a3-f393-e0a9-e50e24dcca9e'&&(c.properties&8))));
+
+assert.equal(scanned.scanDevices[119].number,120);
+const privateSaved=plain(core.diagnostic({rememberedWatch:{present:true,name:"Local",address:"AA:BB:CC:DD:EE:FF",token:"private-saved"},scanRemainingSeconds:55},null));
+assert.ok(!JSON.stringify(privateSaved).includes("private-saved"));assert.ok(!JSON.stringify(privateSaved).includes("rememberedWatch"));

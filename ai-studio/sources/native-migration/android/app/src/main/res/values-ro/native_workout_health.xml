@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="journal_health_wear">Ceas TrainPilot</string>
+    <string name="journal_health_window">Interval</string>
+    <string name="journal_health_synced">Actualizat</string>
+    <string name="journal_health_sources">Surse de date</string>
+    <string name="journal_health_missing">Nu există încă o interogare Health Connect salvată pentru acest antrenament.</string>
+    <string name="journal_health_stale">Datele Health Connect salvate aparțin altui interval. Actualizează-le pentru antrenamentul curent.</string>
+    <string name="journal_health_empty">Nu există date de măsurare partajate pentru acest interval.</string>
+    <string name="journal_health_partial">Măsurătorile sau permisiunile disponibile pot duce la date incomplete.</string>
+    <string name="journal_health_prorated">Energia asociată antrenamentului este parțial calculată proporțional cu timpul.</string>
+    <string name="journal_health_refresh">Actualizează datele Health Connect</string>
+    <string name="journal_health_refreshing">Se actualizează…</string>
+    <string name="journal_health_refresh_error">Actualizarea a eșuat. Antrenamentul sau datele de sănătate s-ar fi putut modifica; încearcă din nou.</string>
+    <string name="journal_health_permission">Permite accesul la datele de antrenament din Health Connect în ecranul Sănătate.</string>
+    <string name="journal_health_unavailable">Actualizarea necesită Android 14 sau o versiune ulterioară și un serviciu Health Connect disponibil.</string>
+    <string name="journal_health_workout_energy">Energie asociată antrenamentului</string>
+    <string name="journal_health_distance">Distanță</string>
+    <string name="journal_health_active_duration">Timp activ de măsurare</string>
+    <string name="journal_health_exercise_minutes">Timp de exercițiu în Health Connect</string>
+    <string name="journal_health_exercise_count">Număr de înregistrări de exerciții</string>
+    <string name="journal_health_average_speed">Viteză medie</string>
+    <string name="journal_health_max_speed">Viteză maximă</string>
+    <string name="journal_health_separate_energy">Energia totală măsurată de ceas și energia activă din Health Connect sunt măsurători separate. Nu sunt adunate.</string>
+</resources>

@@ -1,0 +1,462 @@
+[
+  {
+    "file": "tests/browser/app-refresh-audit.cjs",
+    "estimatedSeconds": 40
+  },
+  {
+    "file": "tests/browser/ble-discovery-111.cjs",
+    "estimatedSeconds": 7
+  },
+  {
+    "file": "tests/browser/features-110.cjs",
+    "estimatedSeconds": 36
+  },
+  {
+    "file": "tests/browser/page-design-101.cjs",
+    "estimatedSeconds": 113
+  },
+  {
+    "file": "tests/browser/theme-dropdown-scroll-99.cjs",
+    "estimatedSeconds": 123
+  },
+  {
+    "file": "tests/browser/phone-ux-95-98.cjs",
+    "estimatedSeconds": 46
+  },
+  {
+    "file": "tests/browser/overview-layout-107.cjs",
+    "estimatedSeconds": 53
+  },
+  {
+    "file": "tests/browser/training-cardio-107.cjs",
+    "estimatedSeconds": 40
+  },
+  {
+    "file": "tests/browser/backup-gps-consolidation.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/custom-exercise-distance-106.cjs",
+    "estimatedSeconds": 20
+  },
+  {
+    "file": "tests/browser/home-draft-compact.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/progress-177-issue60.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/issue67-navigation-checkbox.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/global-uiux-177.cjs",
+    "estimatedSeconds": 45
+  },
+  {
+    "file": "tests/browser/nav-active-latency-176.cjs",
+    "estimatedSeconds": 17
+  },
+  {
+    "file": "tests/browser/journal-health-ui-followups-49-50.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/phase7-coach-deferred-progress-19.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/phase7-programs-lazy-19.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/phase7-history-snapshot-19.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/phase7-journal-lazy-19.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/phase7-performance-19.cjs",
+    "estimatedSeconds": 8
+  },
+  {
+    "file": "tests/browser/phase6-journal-media-health-42-43.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/phase5-shared-today-44.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/issue41-global-chevron.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/issue41-no-legacy-triangles.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/phase5-health-27.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/phase4-coach-17-21.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/phase3-journal-29-30.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/drive-sync-issue18.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/home-coach-startup-consistency.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/active-workout-issue16.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/demo-panel-issue15.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/health-dashboard-168.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/issues-22-24-167.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/home-coach-166-issue13.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/journal-open-164-regression.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/ui-161-minor.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/ui-160-release.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/ui-155-next-12.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/ui-155-nav-consistency.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/ui-154-mobile-nav.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/ui-152-ux.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/ui-150-quick-workout.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/journal-date.cjs",
+    "estimatedSeconds": 38
+  },
+  {
+    "file": "tests/browser/progression-140.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/coach-entry-141.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/health-coach-ui-2627.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/ui-health-dialogs-2628.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/dialog-audit-2629.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/inline-compact-2630.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/ui-unify-dialogs-2630.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/ui-148.cjs",
+    "estimatedSeconds": 11
+  },
+  {
+    "file": "tests/browser/ui-149-hotfix-parity.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/resume-draft-1481.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/side-stopwatch-1481.cjs",
+    "estimatedSeconds": 6
+  },
+  {
+    "file": "tests/browser/home-coach-overflow-1481.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/ui-149-i18n.cjs",
+    "estimatedSeconds": 21
+  },
+  {
+    "file": "tests/browser/side-stopwatch-149-i18n.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/publication-105.cjs",
+    "estimatedSeconds": 10
+  },
+  {
+    "file": "tests/browser/ble-reconnect-114.cjs",
+    "estimatedSeconds": 7
+  },
+  {
+    "file": "tests/browser/health-journal-120.cjs",
+    "estimatedSeconds": 35
+  },
+  {
+    "file": "tests/browser/calendar-day-dialog-108.cjs",
+    "estimatedSeconds": 15
+  },
+  {
+    "file": "tests/browser/calendar-coach-119.cjs",
+    "estimatedSeconds": 20
+  },
+  {
+    "file": "tests/browser/profile-training-128.cjs",
+    "estimatedSeconds": 20
+  },
+  {
+    "file": "tests/browser/profile-history-128.cjs",
+    "estimatedSeconds": 12
+  },
+  {
+    "file": "tests/browser/exercise-order-128.cjs",
+    "estimatedSeconds": 12
+  },
+  {
+    "file": "tests/browser/post-workout-feedback-122.cjs",
+    "estimatedSeconds": 12
+  },
+  {
+    "file": "tests/browser/calendar-replan-123.cjs",
+    "estimatedSeconds": 20
+  },
+  {
+    "file": "tests/browser/replan-all-states-123.cjs",
+    "estimatedSeconds": 20
+  },
+  {
+    "file": "tests/browser/collapsible-program-124.cjs",
+    "estimatedSeconds": 30
+  },
+  {
+    "file": "tests/browser/calendar-markers-135.cjs",
+    "estimatedSeconds": 30
+  },
+  {
+    "file": "tests/browser/navigation-motion-137.cjs",
+    "estimatedSeconds": 65
+  },
+  {
+    "file": "tests/browser/typography-scroll-137.cjs",
+    "estimatedSeconds": 45
+  },
+  {
+    "file": "tests/browser/startup-logo-140.cjs",
+    "estimatedSeconds": 4
+  },
+  {
+    "file": "tests/browser/wear-workout-lifecycle.cjs",
+    "estimatedSeconds": 5
+  },
+  {
+    "file": "tests/browser/workout-feedback.cjs",
+    "estimatedSeconds": 5
+  },
+  {
+    "file": "tests/browser/wear-sync-recovery.cjs",
+    "estimatedSeconds": 12
+  },
+  {
+    "file": "tests/browser/health-workout-energy.cjs",
+    "estimatedSeconds": 6
+  },
+  {
+    "file": "tests/browser/health-details-ui.cjs",
+    "estimatedSeconds": 14
+  },
+  {
+    "file": "tests/browser/samsung-health-provider.cjs",
+    "estimatedSeconds": 8
+  },
+  {
+    "file": "tests/browser/cardio-daily.cjs",
+    "estimatedSeconds": 14
+  },
+  {
+    "file": "tests/browser/json-restore-lifecycle.cjs",
+    "estimatedSeconds": 7
+  },
+  {
+    "file": "tests/browser/action-feedback.cjs",
+    "estimatedSeconds": 40
+  },
+  {
+    "file": "tests/browser/calendar-plan-replacement.cjs",
+    "estimatedSeconds": 50
+  },
+  {
+    "file": "tests/browser/health-first-frame.cjs",
+    "estimatedSeconds": 35
+  },
+  {
+    "file": "tests/browser/wear-measurement-165.cjs",
+    "estimatedSeconds": 9
+  },
+  {
+    "file": "tests/browser/disclosure-performance-171.cjs",
+    "estimatedSeconds": 12
+  },
+  {
+    "file": "tests/browser/theme-sync-persistence-173.cjs",
+    "estimatedSeconds": 10
+  },
+  {
+    "file": "tests/browser/intervals-162.cjs",
+    "estimatedSeconds": 10
+  },
+  {
+    "file": "tests/browser/automatic-workout-162.cjs",
+    "estimatedSeconds": 15
+  },
+  {
+    "file": "tests/browser/wear-automatic-162.cjs",
+    "estimatedSeconds": 15
+  },
+  {
+    "file": "tests/browser/phone-undo-188.cjs",
+    "estimatedSeconds": 10
+  },
+  {
+    "file": "tests/browser/automatic-distance-scope-162.cjs",
+    "estimatedSeconds": 8
+  },
+  {
+    "file": "tests/browser/health-source-provenance-158.cjs",
+    "estimatedSeconds": 8
+  },
+  {
+    "file": "tests/browser/gps-route-map-163.cjs",
+    "estimatedSeconds": 7
+  },
+  {
+    "file": "tests/browser/gps-live-map-163.cjs",
+    "estimatedSeconds": 8
+  },
+  {
+    "file": "tests/browser/distance-auto-complete-206.cjs",
+    "estimatedSeconds": 9
+  },
+  {
+    "file": "tests/browser/workout-ownership-193.cjs",
+    "estimatedSeconds": 10
+  },
+  {
+    "file": "tests/browser/wear-gps-route-193.cjs",
+    "estimatedSeconds": 5
+  },
+  {
+    "file": "tests/browser/ui-core-flows-automation.cjs",
+    "estimatedSeconds": 6
+  },
+  {
+    "file": "tests/browser/compact-intervals-212.cjs",
+    "estimatedSeconds": 5
+  },
+  {
+    "file": "tests/browser/training-modes-ui-197.cjs",
+    "estimatedSeconds": 12
+  },
+  {
+    "file": "tests/browser/training-mode-confirm-197.cjs",
+    "estimatedSeconds": 14
+  },
+  {
+    "file": "tests/browser/training-coach-integrated-197.cjs",
+    "estimatedSeconds": 14
+  },
+  {
+    "file": "tests/browser/training-actual-rir-197.cjs",
+    "estimatedSeconds": 12
+  },
+  {
+    "file": "tests/browser/workout-features-227-229.cjs",
+    "estimatedSeconds": 28
+  },
+  {
+    "file": "tests/browser/workout-records-226.cjs",
+    "estimatedSeconds": 12
+  },
+  {
+    "file": "tests/browser/workout-finalization-integrity.cjs",
+    "estimatedSeconds": 15
+  },
+  {
+    "file": "tests/browser/timed-stop-panel-performance.cjs",
+    "estimatedSeconds": 15
+  },
+  {
+    "file": "tests/browser/panel-reflow-236.cjs",
+    "estimatedSeconds": 16
+  },
+  {
+    "file": "tests/browser/settings-immediate-navigation-236.cjs",
+    "estimatedSeconds": 12
+  },
+  {
+    "file": "tests/browser/startup-fit-once-236.cjs",
+    "estimatedSeconds": 9
+  },
+  {
+    "file": "tests/browser/pr279-coach-unified.cjs",
+    "estimatedSeconds": 14
+  },
+  {
+    "file": "tests/browser/pr279-rir-before-ok.cjs",
+    "estimatedSeconds": 14
+  },
+  {
+    "file": "tests/browser/pr279-program-cards.cjs",
+    "estimatedSeconds": 9
+  }
+]

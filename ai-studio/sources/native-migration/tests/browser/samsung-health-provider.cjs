@@ -1,0 +1,113 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
+const {chromium}=require('playwright');
+function fixture(){
+ localStorage.setItem('repforge:onboarding128',JSON.stringify('skipped'));
+ const HC='health_connect',SH='samsung_health',key='test:samsung-journal';
+ let saved=JSON.parse(localStorage.getItem(key)||'null')||{preferences:{provider:HC,autoOnOpen:false,hcDailySource:'auto'},hc:{},samsung:{}};
+ const persist=()=>localStorage.setItem(key,JSON.stringify(saved));
+ const projection=()=>{const days={};for(const day of new Set([...Object.keys(saved.hc),...Object.keys(saved.samsung)])){
+  const hc=saved.hc[day],sh=saved.samsung[day],direct=saved.preferences.provider===SH&&sh;
+  days[day]={...(hc||{}),...(direct?sh:{}),channel:direct?SH:HC,source:'@aggregate',day,metricProviders:{steps:direct?SH:HC,hrvRmssdMs:HC}};
+ }return {version:1,days,preferences:{...saved.preferences},nativeJournal:true};};
+ window.samFixture={calls:[],denied:false,granted:saved.preferences.provider===SH,energyGranted:saved.energyGranted??saved.preferences.provider===SH,energyReads:0,energyRequests:0,energyMode:'ready'};
+ window.Capacitor={isNativePlatform:()=>true,getPlatform:()=>'android',Plugins:{
+  GoogleSync:{status:async()=>({profile:null})},AppFeedback:{appearance:async()=>({fontScale:1})},BackupArchive:{recover:async()=>({})},
+  HealthJournal:{initialize:async()=>projection(),getProjection:async()=>projection(),pendingRestore:async()=>({token:''}),
+   setPreferences:async args=>{saved.preferences={...saved.preferences,...args.preferences};persist();return projection();},getDirtyDays:async()=>({days:[]}),
+   saveSyncMeta:async()=>({}),readPage:async()=>({records:[],days:Object.values(projection().days).slice(-1),preferences:saved.preferences}),
+   exportSnapshot:async()=>({schemaVersion:1,records:[],days:Object.entries(saved.samsung).map(([day,data])=>({day,data,channel:SH,source:'@aggregate'}))})},
+  HealthBridge:{getStatus:async()=>({permissions:{READ_HEART_RATE:true,READ_HEART_RATE_VARIABILITY:true}}),
+   readHealthDay:async args=>{const day=args.day||window.rf240DayKey(args.start);saved.hc[day]={day,steps:314,activeCalories:26,totalCalories:2423,hrvRmssdMs:35,readAt:new Date().toISOString()};persist();return saved.hc[day];},
+   readTrainingWindow:async()=>({workoutCalories:26,workoutEnergyVersion:1,workoutEnergyProvider:HC,averageHeartRate:111,maxHeartRate:162,heartRateSamples:2945,totalCalories:373,steps:336,sources:['com.sec.android.app.shealth'],warnings:[]})},
+  SamsungHealth:{openSettings:async()=>{samFixture.calls.push('settings');return {};},getStatus:async()=>({permissions:{READ_WEIGHT:samFixture.granted,READ_BODY_FAT:samFixture.granted,READ_EXERCISE:samFixture.granted,READ_ENERGY_SCORE:samFixture.energyGranted,READ_HEART_RATE_VARIABILITY:false}}),
+   requestRead:async()=>{samFixture.calls.push('permission');samFixture.granted=!samFixture.denied;samFixture.energyGranted=!samFixture.denied;saved.energyGranted=samFixture.energyGranted;persist();return {permissions:{READ_WEIGHT:!samFixture.denied,READ_BODY_FAT:!samFixture.denied,READ_EXERCISE:!samFixture.denied}};},
+   requestEnergyScoreRead:async()=>{samFixture.energyRequests++;samFixture.energyGranted=!samFixture.denied;saved.energyGranted=samFixture.energyGranted;persist();return {};},
+   readEnergyScoreDay:async args=>{samFixture.energyReads++;if(samFixture.energyMode==='error')throw Error('SDK unavailable');return {day:args.day,energyScore:samFixture.energyMode==='empty'?null:(samFixture.energyValue??83),energyScoreTime:new Date().toISOString(),energyScoreSource:'com.sec.android.app.shealth'};},
+   readHealthDay:async args=>{const day=args.day||window.rf240DayKey(args.start);samFixture.calls.push('day');saved.samsung[day]={day,provider:SH,steps:6594,activeCalories:392,totalCalories:2423,bodyFatPercent:18.4,skeletalMuscleMassKg:28.2,totalBodyWaterLiters:37.5,readAt:new Date().toISOString(),warnings:[]};persist();return saved.samsung[day];},
+   readTrainingWindow:async()=>({provider:SH,workoutCalories:392,workoutEnergyVersion:1,workoutEnergyProvider:SH,workoutEnergySources:['com.sec.android.app.shealth'],workoutEnergySourceLabels:{'com.sec.android.app.shealth':'Samsung Health direct'},source:'com.sec.android.app.shealth',sourceLabels:{'com.sec.android.app.shealth':'Samsung Health direct'},sources:['com.sec.android.app.shealth'],warnings:[]})},
+  HealthBackground:{getStatus:async()=>({preferences:saved.preferences})}
+ }};
+ window.alert=()=>{};
+}
+(async()=>{
+ const root=path.resolve('www'),server=http.createServer((req,res)=>{const file=path.resolve(root,'.'+new URL(req.url,'http://local').pathname.replace(/\/$/,'/index.html'));if(!file.startsWith(root+path.sep)){res.writeHead(403);return res.end();}fs.readFile(file,(e,data)=>{if(e){res.writeHead(404);return res.end();}res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.html')?'text/html':'application/octet-stream');res.end(data);});});
+ await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;
+ try{
+  browser=await chromium.launch({headless:true,executablePath:process.env.TRAINPILOT_CHROMIUM||undefined,args:['--no-sandbox']});const page=await browser.newPage({viewport:{width:360,height:800},locale:'hu-HU',timezoneId:'Europe/Budapest'}),errors=[];
+  page.on('pageerror',e=>errors.push(e.message));await page.addInitScript(fixture);await page.goto('http://127.0.0.1:'+server.address().port);await page.waitForFunction(()=>TrainPilotBoot.finished);
+  await page.evaluate(async()=>{await TrainPilotHealthJournal.ready();go('health');});
+  assert.equal(await page.locator('[data-health-provider]').count(),1);
+  await page.locator('.tp168-connect-panel>summary').click();
+  await page.evaluate(()=>samFixture.denied=true);await page.locator('.tp-health-provider .tp-select-trigger').click();await page.locator('.tp-health-provider .tp-select-option[data-value="samsung_health"]').click();
+  await page.waitForFunction(()=>state.health.message?.includes('Nem kaptunk'));
+  assert.equal(await page.evaluate(()=>TrainPilotSamsungHealth.selected()),'health_connect');assert.equal(await page.evaluate(()=>samFixture.calls.includes('day')),false);
+  await page.evaluate(()=>samFixture.denied=false);if(!await page.locator('.tp168-connect-panel').evaluate(n=>n.open))await page.locator('.tp168-connect-panel>summary').click();await page.locator('.tp-health-provider .tp-select-trigger').click();await page.locator('.tp-health-provider .tp-select-option[data-value="samsung_health"]').click();
+  await page.waitForFunction(()=>TrainPilotSamsungHealth.selected()==='samsung_health'&&!state.health.busy&&samFixture.calls.filter(x=>x==='day').length===30).catch(async error=>{console.error(await page.evaluate(()=>({selected:TrainPilotSamsungHealth.selected(),health:state.health,calls:samFixture.calls,report:db.get('healthSyncReport250'),ledger:rf240Ledger()})));throw error;});
+  assert.equal(await page.evaluate(()=>samFixture.calls.filter(x=>x==='permission').length),2,'provider selection requests access once, sync reuses it');
+  await page.evaluate(()=>TrainPilotHealthJournal.sync());await page.evaluate(()=>rf250Sync({manual:true,full:true}));
+  assert.equal(await page.evaluate(()=>samFixture.calls.filter(x=>x==='permission').length),2,'journal refresh and full sync keep existing Samsung access');
+  await page.evaluate(()=>healthSettings());assert.equal(await page.evaluate(()=>samFixture.calls.filter(x=>x==='settings').length),1,'explicit permissions opens settings even when unsupported HRV is false');assert.equal(await page.evaluate(()=>samFixture.calls.filter(x=>x==='permission').length),2,'permission management does not re-request already granted reads');
+  const day=await page.evaluate(()=>rf240Ledger().days[rf240DayKey(new Date())]);assert.equal(day.activeCalories,392);assert.equal(day.hrvRmssdMs,35);assert.equal(day.bodyFatPercent,18.4);
+  assert.equal(await page.locator('.tp-samsung-composition').count(),1);await page.locator('.tp168-more-panel>summary').click();assert.match(await page.locator('.tp-samsung-composition').innerText(),/Vázizomtömeg/);
+  assert.equal(await page.locator('details.tp-samsung-composition').count(),0,'Composition must share the More Health disclosure');
+  assert.equal(await page.locator('.tp168-more-panel [data-health-group]').count(),2,'Both groups need their own heading inside the same frame');
+  await page.locator('.tp168-more-panel>summary').click();
+  await page.locator('.tp5-today-steps').click();assert.equal(await page.locator('.tp168-more-panel').evaluate(n=>n.open),true,'Steps must open their detail');
+  await page.locator('.tp168-more-panel>summary').click();
+  await page.locator('.tp168-more-panel>summary').click();assert.match(await page.locator('[data-health-detail="skeletalMuscleMassKg"]').innerText(),/28,2 kg/);assert.equal(await page.locator('.tp168-today-card .tp5-today-metric').count(),6,'Composition must stay in details');
+  const read=await page.evaluate(()=>healthPlugin().readTrainingWindow({start:'2026-10-07T22:00:00Z',end:'2026-10-07T23:00:00Z'}));
+  assert.equal(read.workoutCalories,392);assert.equal(read.maxHeartRate,162);assert.equal(read.totalCalories,373);assert.equal(read.metricProviders.workoutCalories,'samsung_health');assert.equal(read.metricProviders.averageHeartRate,'health_connect');
+  const fallback=await page.evaluate(async()=>{
+   Capacitor.Plugins.SamsungHealth.readTrainingWindow=async()=>({workoutCalories:null,sources:[],warnings:[]});
+   Capacitor.Plugins.HealthBridge.readTrainingWindow=async()=>({workoutCalories:26,workoutEnergyVersion:1,totalCalories:49,sources:['com.fitbit.FitbitMobile'],sourceLabels:{'com.fitbit.FitbitMobile':'Fitbit'}});
+   const data=await healthPlugin().readTrainingWindow({start:'2026-10-07T22:00:00Z',end:'2026-10-07T23:00:00Z'});
+   return {data,label:TrainPilotWearJournalSource.sourceText(data)};
+  });
+  assert.equal(fallback.data.workoutCalories,26);assert.equal(fallback.data.metricProviders.workoutCalories,'health_connect','HC workout-energy fallback retains its real channel even when native result has no energy-provider field');
+  assert.equal(fallback.label,'Health Connect · Fitbit','a selected Samsung preference cannot claim HC-only data');
+  await page.reload();await page.waitForFunction(()=>TrainPilotBoot.finished);await page.evaluate(()=>TrainPilotHealthJournal.ready());assert.equal(await page.evaluate(()=>TrainPilotSamsungHealth.selected()),'samsung_health');
+  await page.evaluate(()=>{go('health');tp155R4OpenPanel('health-journal');});await page.waitForSelector('.tp120-day');
+  assert.match(await page.locator('.tp120-day').innerText(),/Samsung Health/);assert.match(await page.locator('.tp120-day').innerText(),/Testzsír/);assert.match(await page.locator('.tp120-day').innerText(),/Health Connect/);
+  // Upgraded installation: other Samsung permissions already granted, but
+  // Energy Score has its own permission and must work with HC still primary.
+  await page.evaluate(async()=>{const bridge=await TrainPilotHealthJournal.ready();await bridge.setPreferences({preferences:{provider:'health_connect'}});await TrainPilotHealthJournal.refresh();samFixture.granted=true;samFixture.energyGranted=false;go('health');await TrainPilotEnergy184.refresh({force:true});});
+  assert.equal(await page.locator('main > .tp184-energy-card').count(),0,'No standalone Samsung card on Health');
+  assert.equal(await page.locator('.tp168-recovery-history .tp184-energy-card').count(),1,'Samsung score belongs inside Recovery');
+  await page.locator('.tp5-today-recovery').click();
+  await page.locator('.tp184-energy-card button').waitFor({state:'visible'});
+  assert.match(await page.locator('.tp184-energy-card').innerText(),/külön Samsung Health olvasási engedély/);
+  assert.equal(await page.evaluate(()=>samFixture.energyRequests),0,'Automatic read never requests new consent');
+  await page.locator('.tp184-energy-card button').click();
+  await page.waitForFunction(()=>rf220Readiness().energyScore===83);
+  assert.equal(await page.evaluate(()=>TrainPilotSamsungHealth.selected()),'health_connect');
+  assert.equal(await page.evaluate(()=>samFixture.energyRequests),1,'Only the Energy Score permission is requested');
+  assert.match(await page.locator('.tp184-energy-card').innerText(),/83\/100/);
+  await page.reload();await page.waitForFunction(()=>TrainPilotBoot.finished&&rf220Readiness().energyScore===83);
+  await page.evaluate(()=>{go('health');tp153OpenRecovery();});
+  assert.equal(await page.evaluate(()=>TrainPilotSamsungHealth.selected()),'health_connect','Automatic startup read preserves the primary provider');
+  assert.match(await page.locator('.tp184-energy-card').innerText(),/83\/100/);
+  // Today's SDK score remains primary even without a separate sleep/HRV record.
+  await page.evaluate(async()=>{samFixture.energyValue=54.75;state.health.recovery={};db.set('recoveryHistory',[]);await TrainPilotEnergy184.refresh({force:true});});
+  assert.equal(await page.evaluate(()=>rf220Readiness().energyScore),54.75,'Preserve original SDK precision');
+  assert.equal(await page.locator('.tp184-energy-value').innerText(),'55/100');
+  assert.equal(await page.locator('main.tp168-health .tp5-today-recovery .tp5-today-value').innerText(),'55/100');
+  assert.equal(await page.evaluate(()=>tp5UnifiedTodayModel().recoverySource),'samsung_health');
+  await page.evaluate(()=>go('home'));
+  assert.equal(await page.locator('#rf223Today .tp5-today-recovery .tp5-today-value').innerText(),'55/100','Home and Health share the external recovery score');
+  await page.evaluate(()=>{go('health');tp153OpenRecovery();});
+  await page.evaluate(async()=>{samFixture.energyMode='error';samFixture.originalEnergyRead=Capacitor.Plugins.SamsungHealth.readEnergyScoreDay;Capacitor.Plugins.SamsungHealth.readEnergyScoreDay=async()=>{throw {code:'SAMSUNG_HEALTH_2003',message:'private detail'};};await TrainPilotEnergy184.refresh({force:true});});
+  assert.match(await page.locator('.tp184-energy-card').innerText(),/alkalmazásszintű.*SAMSUNG_HEALTH_2003/s);
+  assert.doesNotMatch(await page.locator('.tp184-energy-card').innerText(),/private detail/);
+  assert.equal(await page.locator('.tp184-energy-card button').isVisible(),true,'Recovery stays open after refresh');
+  await page.evaluate(()=>{Capacitor.Plugins.SamsungHealth.readEnergyScoreDay=samFixture.originalEnergyRead;});
+  for(const mode of ['empty','error']){
+   await page.evaluate(async mode=>{samFixture.energyMode=mode;await TrainPilotEnergy184.refresh({force:true});},mode);
+   assert.equal(await page.evaluate(()=>rf220Readiness().energyScore),null,mode+': no invented external score');
+   assert.equal(await page.evaluate(()=>rf220Readiness().readinessSource),'trainpilot',mode+': independent fallback');
+   assert.notEqual(await page.evaluate(()=>tp5UnifiedTodayModel().recoverySource),'samsung_health',mode+': tile must not keep the old Samsung source');
+  }
+  for(const width of [320,360,393,412]){await page.setViewportSize({width,height:800});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)<=1);}
+  assert.deepEqual(errors,[]);console.log('PASS direct Samsung provider: denied permission rollback; 30-day sync; distinct calories and body units; HR fallback provenance; source survives restart; readable phone UI; independent automatic Energy Score with separate consent and fallback');
+ }finally{await browser?.close();await new Promise(r=>server.close(r));}
+})().catch(e=>{console.error(e);process.exitCode=1;});

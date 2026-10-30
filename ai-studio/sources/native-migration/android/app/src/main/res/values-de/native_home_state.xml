@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_state_loading">Laden…</string>
+    <string name="home_state_no_program">Wähle unter Training ein Programm</string>
+    <string name="home_state_no_target">Keine Trainingsempfehlung</string>
+    <string name="home_state_error">Die Startseitendaten konnten nicht aktualisiert werden.</string>
+    <string name="home_state_retry">Erneut versuchen</string>
+    <string name="home_state_watch_unknown">Keine aktuellen Uhrendaten</string>
+</resources>

@@ -1,0 +1,10 @@
+{
+  "name": "TrainPilot",
+  "short_name": "TrainPilot",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0e1015",
+  "theme_color": "#111319",
+  "lang": "hu",
+  "description": "Offline használható, reklámmentes edzésnapló és edzéstervező."
+}

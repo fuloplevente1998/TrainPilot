@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calendar_planner_title">Többhetes tervezés</string>
+    <string name="calendar_planner_alternate">Minden második nap</string>
+    <string name="calendar_planner_daily">Minden nap</string>
+    <string name="calendar_planner_weekly">Kijelölt hétköznapok</string>
+    <string name="calendar_planner_date">Kezdőnap (YYYY-MM-DD)</string>
+    <string name="calendar_planner_time">Idő (HH:mm)</string>
+    <string name="calendar_planner_minutes">Időtartam (10–240 perc)</string>
+    <string name="calendar_planner_weeks">Hetek (1–12)</string>
+    <string name="calendar_planner_first">Első programnap</string>
+    <string name="calendar_planner_invalid">Ellenőrizd a megadott adatokat.</string>
+    <string name="calendar_planner_preview">%1$d alkalom, %2$d törlendő terv</string>
+    <string name="calendar_planner_save">Terv jóváhagyása</string>
+    <string name="calendar_planner_generate">Előnézet</string>
+    <string name="calendar_planner_cancel">Mégse</string>
+</resources>

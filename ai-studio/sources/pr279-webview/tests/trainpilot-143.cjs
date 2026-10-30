@@ -1,0 +1,13 @@
+const assert=require('node:assert/strict'),fs=require('node:fs');
+const java=fs.readFileSync('android/app/src/main/java/com/repforge/app/WorkoutPhotosPlugin.java','utf8');
+const app=fs.existsSync('www/app.js')?fs.readFileSync('www/app.js','utf8'):fs.readdirSync('www').filter(x=>x.endsWith('.js')).map(x=>fs.readFileSync('www/'+x,'utf8')).join('\n'),pkg=require('../package.json'),src=require('../SOURCE_VERSION.json');
+const gradle=fs.readFileSync('android/app/build.gradle','utf8'),sw=fs.readFileSync('www/sw.js','utf8');
+assert.ok(java.includes('Intent.ACTION_GET_CONTENT'));
+assert.ok(java.includes('Intent.EXTRA_LOCAL_ONLY'));
+assert.ok(java.includes('setPackage("com.miui.gallery")'));
+assert.ok(java.includes('Intent.CATEGORY_OPENABLE'));
+assert.ok(java.includes('intent.setType("image/*")'));
+assert.ok(!java.includes('MediaStore.ACTION_PICK_IMAGES'));
+assert.equal(pkg.version,src.version);assert.equal(src.version,pkg.version);assert.ok(Number.isSafeInteger(src.versionCode)&&src.versionCode>0);
+assert.match(gradle,new RegExp('versionCode\\s+'+src.versionCode+'\\b'));assert.ok(gradle.includes('versionName "'+pkg.version+'"'));assert.ok(sw.includes('trainpilot-v1371'));
+console.log('PASS TrainPilot 2652 local-only gallery picker guards');

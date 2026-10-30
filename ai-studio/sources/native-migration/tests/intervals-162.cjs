@@ -1,0 +1,30 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const extracted=fs.existsSync('www/intervals-162.js'),source=fs.readFileSync(extracted?'www/intervals-162.js':'www/app.js','utf8'),section=extracted?[null,source]:source.match(/\/\/ @section intervals-162.js\n([\s\S]*?)\/\/ @endsection intervals-162.js/);
+const c=vm.createContext({window:{addEventListener(){}},console});vm.runInContext(section[1],c);const core=c.window.TrainPilotInterval162Core;
+const steps=[{exerciseId:'running',setId:'a',work:2,rest:1,rounds:2},{exerciseId:'plank',setId:'b',work:2,rest:1,rounds:2}];
+for(const [ms,step,round,phase,remaining,completed] of [[0,0,1,'work',2000,0],[1999,0,1,'work',1,0],[2000,0,1,'rest',1000,0],[3000,0,2,'work',2000,0],[5000,0,2,'rest',1000,0],[6000,1,1,'work',2000,1],[8000,1,1,'rest',1000,1],[9000,1,2,'work',2000,1],[11000,1,2,'complete',0,2],[999999,1,2,'complete',0,2]]){
+ const p=core.phase(steps,true,ms);assert.equal(p.stepIndex,step);assert.equal(p.round,round);assert.equal(p.phase,phase);assert.equal(p.remainingMs,remaining);assert.equal(p.completed,completed);assert.equal(p.totalMs,11000);
+}
+assert.equal(core.phase([steps[0]],false,5000).phase,'complete','manual intervals have no trailing rest');assert.equal(core.phase([{...steps[0],rest:0}],true,2000).round,2,'zero rest does not invent a phase');assert.equal(core.phase(steps,true,-100).elapsedMs,0);
+for(const s of [{...steps[0],work:0},{...steps[0],rounds:101},{...steps[0],rest:1.2}])assert.equal(core.config(s),null);
+assert.equal(core.phase(Array.from({length:100},()=>({...steps[0],work:3600,rest:3600,rounds:2})),true,0),null);assert.equal(core.phase(steps,true,NaN),null);assert.equal(core.phase([],true,0),null);
+const session={started:'one',exercises:[{id:'running',sets:[{setId:'wrong'}]},{id:'running',sets:[{setId:'a'}]},{id:'plank',sets:[{setId:'b'}]}]},run={started:'one',steps};assert.equal(core.locate(session,steps[0]).index,1,'duplicate exercise IDs still resolve the exact stable set');assert.equal(core.owned(session,run),true);assert.equal(core.owned({...session,started:'other'},run),false);session.exercises[2].sets=[];assert.equal(core.owned(session,run),false,'removing any queued owner invalidates the plan');
+console.log('PASS #162 timeline: exact boundaries, zero rest, inter-set rest, late callback clamping, validation and stable ownership');
+
+const leading=core.phase([steps[0]],true,29999,30);assert.equal(leading.phase,'rest');assert.equal(leading.stepElapsedMs,0);assert.equal(core.phase([steps[0]],true,30000,30).phase,'work');assert.equal(core.phase([steps[0]],true,35000,30).completed,1);
+const rest=[{exerciseId:'press',setId:'a',work:1,rest:30,rounds:1}];assert.equal(core.phase(rest,false,0,0,true).phase,'rest');assert.equal(core.phase(rest,false,30000,0,true).stepElapsedMs,0);assert.equal(core.phase(rest,true,0,0,true),null);
+const automaticSource=fs.existsSync('www/automatic-workout-162.js')?[null,fs.readFileSync('www/automatic-workout-162.js','utf8')]:source.match(/\/\/ @section automatic-workout-162.js\n([\s\S]*?)\/\/ @endsection automatic-workout-162.js/);vm.runInContext(automaticSource[1],c);const automatic=c.window.TrainPilotAutomatic162Core;
+const planned={exercises:[{id:'press',sets:[{setId:'p1',done:true},{setId:'p2',done:false,reps:'0'}]},{id:'squat',sets:[{setId:'s1',done:false}]}]};assert.equal(automatic.next(planned,0).set.setId,'p2');assert.equal(automatic.locate(planned,{exerciseId:'press',setId:'p2'}).index,0);planned.exercises[0].sets[1].done=true;assert.equal(automatic.next(planned,0).e.id,'squat');assert.equal(automatic.locate(planned,{exerciseId:'press',setId:'p2'}),null);planned.exercises[1].sets[0].done=true;assert.equal(automatic.next(planned,0),null);
+console.log('PASS automatic rest: leading rest, no invented work time, stable unfinished target and completed workout');
+
+const cueMemory={},cuePlan=[{...steps[0],rest:30,rounds:1}];
+const cueTimes=[0,26000,27000,27200,28000,29000,30000,31000];
+assert.deepEqual(cueTimes.map(ms=>core.hapticCue(cueMemory,core.phase(cuePlan,false,ms,0,true),true)),[100,0,80,0,80,80,1000,0]);
+const pauseMemory={};core.hapticCue(pauseMemory,core.phase(cuePlan,false,27000,0,true),true);
+assert.equal(core.hapticCue(pauseMemory,core.phase(cuePlan,false,28000,0,true),false),0);
+assert.equal(core.hapticCue(pauseMemory,core.phase(cuePlan,false,28000,0,true),true),80);
+assert.equal(core.hapticCue(pauseMemory,core.phase(cuePlan,false,28000,0,true),true),0);
+const lateMemory={};core.hapticCue(lateMemory,core.phase(cuePlan,false,0,0,true),true);
+assert.equal(core.hapticCue(lateMemory,core.phase(cuePlan,false,29500,0,true),true),80);
+assert.equal(core.hapticCue(lateMemory,core.phase(cuePlan,false,30000,0,true),true),1000);
+console.log('PASS countdown haptics: 3–2–1, one-second finish, duplicate/pause/late-callback suppression');

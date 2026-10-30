@@ -1,0 +1,239 @@
+package com.repforge.app.wear
+
+import android.content.Context
+import org.json.JSONObject
+
+data class WatchHomeSet(
+    val number: Int,
+    val weight: String,
+    val reps: String = ""
+)
+
+data class WatchHomeExercise(
+    val id: String,
+    val name: String,
+    val loadType: String,
+    val repUnit: String,
+    val measurementType: String,
+    val targetReps: String,
+    val sets: List<WatchHomeSet>
+)
+
+data class WatchHomeDay(
+    val id: String,
+    val name: String,
+    val programId: String,
+    val programName: String,
+    val exercises: List<WatchHomeExercise>
+)
+
+data class WatchHomeRecommendation(
+    val scheduleId: String,
+    val plannedStart: String,
+    val day: WatchHomeDay
+)
+
+data class WatchCalendarEntry(
+    val date: String,
+    val scheduleId: String,
+    val plannedStart: String,
+    val status: String,
+    val day: WatchHomeDay?
+)
+
+data class WatchHomeSnapshot(
+    val activeProgramId: String,
+    val activeProgramName: String,
+    val restSeconds: Int,
+    val hasDraft: Boolean,
+    val recommended: WatchHomeRecommendation?,
+    val days: List<WatchHomeDay>,
+    val calendar: List<WatchCalendarEntry> = emptyList(),
+    val quickExercises: List<WatchHomeExercise> = emptyList(),
+    val recentWorkouts: List<MiniJournalWorkout> = emptyList(),
+    val phoneVersion: String = "",
+    val journalAvailable: Boolean = false,
+    val publishedAt: Long = 0L,
+    val theme: WearHomeTheme = WearHomeTheme.DEFAULT,
+    val automaticProtocol: Int = 0,
+    val pendingFeedback: WatchWorkoutFeedback? = null,
+    val ownershipProtocol193: Int = 0
+) {
+    fun toWearExercise(exercise: WatchHomeExercise): WearExercise = WearExercise(
+        id = exercise.id,
+        name = exercise.name,
+        loadType = exercise.loadType,
+        repUnit = exercise.repUnit,
+        measurementType = exercise.measurementType,
+        targetReps = exercise.targetReps,
+        sets = exercise.sets.map { set ->
+            WearSet(number = set.number, reps = if (exercise.measurementType !in listOf("distance", "time", "gps") &&
+                exercise.repUnit in listOf("", "ism.", "reps", "/kar", "/láb")) set.reps else "", weight = set.weight, done = false,
+                leftSeconds = 0, rightSeconds = 0, distanceMeters = 0.0,setId=java.util.UUID.randomUUID().toString())
+        }
+    )
+
+    fun createQuickWorkout(exercise: WatchHomeExercise, started: String): WearWorkout = WearWorkout(
+        revision = 0L,
+        programId = "",
+        programName = "Gyors edzés",
+        dayId = "quick",
+        scheduleId = "",
+        started = started,
+        workoutId = started,
+        currentExercise = 0,
+        restSeconds = restSeconds,
+        restEndAt = 0L,
+        dayName = "Gyors edzés",
+        quickWorkout = true,
+        exercises = listOf(toWearExercise(exercise)),timerOwner="watch",
+        ownershipProtocol193=ownershipProtocol193,activeIntervals=initialIntervals193(started)
+    )
+
+    fun createWorkout(day: WatchHomeDay, scheduleId: String, started: String): WearWorkout =
+        WearWorkout(
+            revision = 0L,
+            programId = day.programId,
+            programName = day.programName,
+            dayId = day.id,
+            scheduleId = scheduleId,
+            started = started,
+            workoutId = started,
+            currentExercise = 0,
+            restSeconds = restSeconds,
+            restEndAt = 0L,
+            dayName = day.name,
+            exercises = day.exercises.map(::toWearExercise),timerOwner="watch",
+            ownershipProtocol193=ownershipProtocol193,activeIntervals=initialIntervals193(started)
+        )
+
+    private fun initialIntervals193(started: String): List<WearActiveInterval>? =
+        if(ownershipProtocol193==1)listOf(WearActiveInterval(java.time.Instant.parse(started).toEpochMilli()))else null
+}
+
+object WatchHomeStore {
+    private const val PREFS = "trainpilot_wear_home"
+    private const val SNAPSHOT = "snapshot"
+
+    fun save(context: Context, raw: String?, publishedAt: Long = 0L,origin: String? = null): WatchHomeSnapshot? {
+        if (raw.isNullOrBlank()) return null
+        val parsed = parse(raw)?.let { it.copy(publishedAt = maxOf(it.publishedAt, publishedAt)) } ?: return null
+        val cached = load(context)
+        if (newest(cached, parsed) === cached) return cached
+        WearClosureStore.acceptResult(context, try { JSONObject(raw).optJSONObject("workoutResult") } catch (_: Exception) { null })
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putString(SNAPSHOT, JSONObject(raw).put("publishedAt", parsed.publishedAt).toString())
+            .putInt("automaticProtocol",parsed.automaticProtocol)
+            .apply { if(com.repforge.shared.GpsRoutePacket193.id(origin))putString("phoneNode193",origin) }
+            .apply()
+        return parsed
+    }
+
+    fun newest(current: WatchHomeSnapshot?, incoming: WatchHomeSnapshot): WatchHomeSnapshot =
+        if (current != null && current.publishedAt > incoming.publishedAt) current else incoming
+    fun automaticProtocol(context: Context)=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE).getInt("automaticProtocol",0)
+    fun phoneNode193(context: Context)=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE).getString("phoneNode193","").orEmpty()
+
+    fun load(context: Context): WatchHomeSnapshot? {
+        val raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(SNAPSHOT, null)
+        return raw?.let(::parse)
+    }
+
+    fun parse(raw: String): WatchHomeSnapshot? {
+        return try {
+            val root = JSONObject(raw)
+            val daysArray = root.optJSONArray("days")
+            val days = buildList {
+                if (daysArray != null) for (i in 0 until daysArray.length()) {
+                    parseDay(daysArray.optJSONObject(i))?.let(::add)
+                }
+            }
+            val recommendationObject = root.optJSONObject("recommended")
+            val recommendationDay = parseDay(recommendationObject?.optJSONObject("day"))
+            val recommendation = if (recommendationObject != null && recommendationDay != null) {
+                WatchHomeRecommendation(
+                    scheduleId = recommendationObject.optString("scheduleId"),
+                    plannedStart = recommendationObject.optString("plannedStart"),
+                    day = recommendationDay
+                )
+            } else null
+            val calendarDays = root.optJSONArray("calendarDays")
+            val available = days + buildList {
+                if (calendarDays != null) for (i in 0 until calendarDays.length().coerceAtMost(28))
+                    parseDay(calendarDays.optJSONObject(i))?.let(::add)
+            }
+            val entries = root.optJSONArray("calendar")
+            val calendar = buildList {
+                if (entries != null) for (i in 0 until entries.length().coerceAtMost(28)) {
+                    val entry = entries.optJSONObject(i) ?: continue
+                    val date = entry.optString("date")
+                    try { java.time.LocalDate.parse(date) } catch (_: Exception) { continue }
+                    val status = entry.optString("status")
+                    if (status !in listOf("planned", "completed", "skipped", "rest")) continue
+                    add(WatchCalendarEntry(date, entry.optString("scheduleId"), entry.optString("plannedStart"), status,
+                        available.firstOrNull { it.programId == entry.optString("programId") && it.id == entry.optString("dayId") }))
+                }
+            }
+            WatchHomeSnapshot(
+                activeProgramId = root.optString("activeProgramId"),
+                activeProgramName = root.optString("activeProgramName", "TrainPilot"),
+                restSeconds = root.optInt("restSeconds", 90).coerceAtLeast(1),
+                hasDraft = root.optBoolean("hasDraft", false),
+                recommended = recommendation,
+                days = days,
+                calendar = calendar,
+                quickExercises = root.optJSONArray("quickExercises")?.let { library ->
+                    parseDay(JSONObject().put("id", "quick").put("exercises", library))?.exercises
+                }.orEmpty(),
+                recentWorkouts = WatchMiniJournal.parse(root.optJSONArray("recentWorkouts")),
+                phoneVersion = root.optString("phoneVersion").take(32),
+                journalAvailable = root.optInt("journalSchema", 0) == 1 && root.optJSONArray("recentWorkouts") != null,
+                publishedAt = root.optLong("publishedAt", 0L),
+                theme = WearHomeTheme.parse(root.optJSONObject("theme")),
+                automaticProtocol = root.optInt("automaticProtocol",0),
+                ownershipProtocol193 = if(root.optInt("ownershipProtocol193")==1)1 else 0,
+                pendingFeedback = WatchWorkoutFeedback.parse(root.optJSONObject("pendingFeedback"))
+            )
+        } catch (_: Exception) { null }
+    }
+
+    private fun parseDay(source: JSONObject?): WatchHomeDay? {
+        source ?: return null
+        val exerciseArray = source.optJSONArray("exercises") ?: return null
+        val exercises = buildList {
+            for (i in 0 until exerciseArray.length()) {
+                val exercise = exerciseArray.optJSONObject(i) ?: continue
+                val setArray = exercise.optJSONArray("sets")
+                val sets = buildList {
+                    if (setArray != null) for (j in 0 until setArray.length()) {
+                        val set = setArray.optJSONObject(j) ?: continue
+                        val reps = set.optString("reps").takeIf { value ->
+                            value.matches(Regex("[0-9]+")) && (value.toIntOrNull() ?: 0) in 1..10000
+                        }.orEmpty()
+                        add(WatchHomeSet(set.optInt("set", j + 1), set.opt("weight")?.toString().orEmpty(), reps))
+                    }
+                }
+                add(
+                    WatchHomeExercise(
+                        id = exercise.optString("id"),
+                        name = exercise.optString("name", exercise.optString("id")),
+                        loadType = exercise.optString("loadType"),
+                        repUnit = exercise.optString("repUnit"),
+                        measurementType = exercise.optString("measurementType"),
+                        targetReps = exercise.optString("targetReps"),
+                        sets = sets
+                    )
+                )
+            }
+        }
+        if (exercises.isEmpty()) return null
+        return WatchHomeDay(
+            id = source.optString("id"),
+            name = source.optString("name", source.optString("id")),
+            programId = source.optString("programId"),
+            programName = source.optString("programName", "TrainPilot"),
+            exercises = exercises
+        )
+    }
+}

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_language_title">App-Sprache</string>
+    <string name="native_language_hint">TrainPilot wechselt die Sprache sofort. Die Sprache des Telefons bleibt gleich.</string>
+    <string name="native_home_default_day">Basis A</string>
+</resources>

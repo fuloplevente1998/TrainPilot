@@ -1,0 +1,177 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http'),{chromium}=require('playwright');
+const root=path.resolve('www');
+const server=http.createServer((req,res)=>{let p=new URL(req.url,'http://local').pathname;if(p==='/')p='/index.html';const file=path.resolve(root,'.'+p);if(!file.startsWith(root+path.sep)){res.writeHead(403);return res.end()}fs.readFile(file,(e,d)=>{if(e){res.writeHead(404);return res.end()}res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.html')?'text/html':'text/plain');res.end(d)})});
+(async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;try{
+ browser=await chromium.launch({headless:true,executablePath:process.env.TRAINPILOT_CHROMIUM||undefined,args:['--no-sandbox']});
+ const page=await browser.newPage({viewport:{width:393,height:873},locale:'hu-HU',timezoneId:'Europe/Budapest'}),errors=[];
+ page.on('pageerror',e=>errors.push(String(e.message||e)));page.on('dialog',d=>d.accept());
+ await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto('http://127.0.0.1:'+server.address().port+'/');try{await page.waitForFunction(()=>window.TrainPilotBoot?.finished,{},{timeout:12000})}catch(err){const state=await page.evaluate(()=>({boot:{finished:window.TrainPilotBoot?.finished,failed:window.TrainPilotBoot?.failed,loading:window.TrainPilotBoot?.loading},screen:document.querySelector('#app')?.innerHTML?.slice(0,100)}));throw Error('TrainPilot boot diagnostic: '+JSON.stringify({state,errors})+'; '+err.message)}
+ await page.evaluate(()=>{
+  db.set('language','hu');state.session=null;state.workout=null;db.set('draft',null);
+  const at=(days,hour)=>{const d=new Date();d.setHours(hour,0,0,0);d.setDate(d.getDate()+days);return d.toISOString()};
+  const w=(id,days,exercises)=>({id,workout:'A',dayId:'A',programId:'home-basic',programName:'Progress teszt',started:at(days,17),finished:at(days,18),exercises,photos:[]});
+  const press=(kg,reps)=>({id:'db-floor-press',repUnit:'ism.',sets:[{set:1,weight:kg,reps:String(reps),done:true}]});
+  const side=(l,r)=>({id:'side-plank',repUnit:'mp/oldal',sets:[{set:1,leftSeconds:l,rightSeconds:r,reps:String(Math.min(l,r)),done:true}]});
+  db.set('history',[w('tp177-1',-1,[side(35,32)]),w('tp177-2',-2,[press(12,12)]),w('tp177-3',-5,[press(12,10)]),w('tp177-base',-10,[press(10,10)])]);
+  go('history');
+ });
+ await page.waitForSelector('.tp155-journal-tabs');
+ assert.equal(await page.locator('.tp155-journal-tabs button').count(),3,'Journal must have Log / Progress / Statistics tabs');
+ assert.match((await page.locator('.tp155-journal-tabs').innerText()).replace(/\s+/g,' '),/Edzésnapló.*Fejlődés/);
+ await page.getByRole('tab',{name:'Fejlődés'}).click();await page.waitForSelector('main.tp177-progress');
+ assert.equal(await page.locator('.tp177-volume-panel').count(),1,'total volume and trend share one panel');
+ assert.equal(await page.locator('.tp177-volume-toggle').getAttribute('aria-expanded'),'false');
+ // Keep the scale visible, and verify only the bars move, in both chart sizes.
+ const assertPinnedAxis=async (mode,compact)=>{
+  const m=await page.locator('.tp177-chart-scroll').evaluate(el=>{
+   const axis=el.querySelector('.tp177-chart-axis'),first=el.querySelector('.tp177-chart-column');
+   const max=el.scrollWidth-el.clientWidth,edge=el.getBoundingClientRect().left;
+   el.scrollLeft=0;
+   const before={axis:axis.getBoundingClientRect().left,bar:first.getBoundingClientRect().left};
+   el.scrollLeft=max;
+   const after={axis:axis.getBoundingClientRect().left,bar:first.getBoundingClientRect().left};
+   const style=getComputedStyle(axis);
+   return {max,edge,before,after,position:style.position,display:style.display,width:axis.getBoundingClientRect().width,font:parseFloat(style.fontSize),ticks:axis.querySelectorAll('span').length};
+  });
+  assert.equal(m.position,'sticky',mode+' scale remains anchored');
+  assert.equal(m.display,'flex',mode+' scale is visible');
+  assert.equal(m.ticks,5,mode+' has all five kg ticks');
+  assert.ok(m.max>10,mode+' has scrollable history: '+JSON.stringify(m));
+  assert.ok(Math.abs(m.before.axis-m.edge)<2&&Math.abs(m.after.axis-m.edge)<2,mode+' scale is stationary while scrolling: '+JSON.stringify(m));
+  assert.ok(m.before.bar-m.after.bar>m.max-3,mode+' columns move independently of the axis');
+  if(compact)assert.ok(m.width<=31&&m.font<=9.5,mode+' scale fits the compact preview');
+  else assert.ok(m.width>=34&&m.font>=9.5,mode+' scale remains legible in the expanded chart');
+ };
+ await assertPinnedAxis('Compact chart',true);
+ const compactHeight=(await page.locator('.tp177-bar-rail').first().boundingBox()).height;
+ assert.ok(compactHeight>=55&&compactHeight<100,'the chart remains visible in compact mode');
+ await page.locator('.tp177-volume-toggle').click();
+ const expandedHeight=(await page.locator('.tp177-bar-rail').first().boundingBox()).height;
+ assert.ok(expandedHeight>compactHeight&&expandedHeight<149,'expanded chart is larger but still smaller than the previous layout');
+ assert.equal(await page.locator('.tp177-volume-toggle').getAttribute('aria-expanded'),'true');
+ await assertPinnedAxis('Expanded chart',false);
+ assert.equal(await page.locator('.tp177-metric').count(),4,'reference layout keeps four summary cards');
+ assert.match(await page.locator('.tp177-metric[data-metric="duration"]').innerText(),/Átl\. edzésidő[\s\S]*60 min/);
+ assert.equal(await page.locator('.tp177-muscle-row').count(),6,'six main muscle group rows expected');
+ await page.locator('.tp177-anatomy-image').scrollIntoViewIfNeeded();
+ await page.waitForFunction(()=>{const img=document.querySelector('.tp177-anatomy-image');return img?.complete&&img.naturalWidth>0});
+ assert.equal(await page.locator('.tp177-heatmap [data-group="chest"]').count(),1,'logged chest load highlights anatomy');
+ assert.equal(await page.locator('.tp177-heatmap [data-group="legs"]').count(),0,'unlogged groups remain neutral');
+ const muscleAssets=await page.evaluate(async()=>Promise.all([...document.querySelectorAll('.tp177-heatmap mask image')].map(async img=>({url:img.getAttribute('href'),status:(await fetch(img.getAttribute('href'))).status}))));
+ assert.ok(muscleAssets.length>0&&muscleAssets.every(x=>x.status===200),'logged muscle tints must load their aligned mask images: '+JSON.stringify(muscleAssets));
+ assert.equal(await page.locator('.tp177-heatmap filter').count(),0,'muscle load stays on the tissue, without a blurred glow');
+ const smallAnatomy=await page.locator('.tp177-anatomy-art').first().boundingBox();
+ await page.getByRole('button',{name:'Izomterhelés nagyítása'}).click();
+ await page.waitForSelector('#tp177Dialog .tp177-anatomy-large');
+ const enlargedAnatomy=await page.locator('#tp177Dialog .tp177-anatomy-art').boundingBox();
+ assert.ok(enlargedAnatomy.width>smallAnatomy.width*1.5,'tapping anatomy opens a substantially larger illustration');
+ const fittedAnatomy=await page.evaluate(()=>{
+  const dialog=document.querySelector('#tp177Dialog'),art=dialog.querySelector('.tp177-anatomy-art'),img=dialog.querySelector('.tp177-anatomy-image'),overlay=dialog.querySelector('.tp177-heatmap');
+  const a=art.getBoundingClientRect(),i=img.getBoundingClientRect(),o=overlay.getBoundingClientRect();
+  return {a:{left:a.left,right:a.right,top:a.top,bottom:a.bottom},i:{left:i.left,right:i.right,top:i.top,bottom:i.bottom},o:{left:o.left,right:o.right,top:o.top,bottom:o.bottom},filter:getComputedStyle(img).filter,overflowX:document.documentElement.scrollWidth-document.documentElement.clientWidth};
+ });
+ assert.ok(fittedAnatomy.a.left>=0&&fittedAnatomy.a.right<=393&&fittedAnatomy.a.top>=0&&fittedAnatomy.a.bottom<=873,'entire anatomy fits the phone viewport without horizontal panning');
+ assert.ok(fittedAnatomy.overflowX<=0,'enlarged anatomy does not widen the page');
+ assert.match(fittedAnatomy.filter,/grayscale\(1\)/,'enlarged base uses the same neutral gray as the small view');
+ assert.ok(Math.abs(fittedAnatomy.i.left-fittedAnatomy.o.left)<1&&Math.abs(fittedAnatomy.i.right-fittedAnatomy.o.right)<1&&Math.abs(fittedAnatomy.i.bottom-fittedAnatomy.o.bottom)<1,'colored muscle overlay matches the full enlarged image');
+ await page.locator('.tp177-dialog-close').click();await page.waitForSelector('#tp177Dialog',{state:'detached'});
+ assert.equal(await page.locator('.tp177-load-legend [data-load]').count(),3,'fixed low/medium/high load legend');
+ assert.equal(await page.locator('.tp177-muscle-row[data-load="high"]').count()>0,true,'relative peak uses the high-load color in every theme');
+ assert.ok((await page.locator('.tp177-metric').first().boundingBox()).height<90,'summary cards should match compact mockup proportions');
+ const text=(await page.locator('main.tp177-progress').innerText()).replace(/\s+/g,' ');
+ assert.doesNotMatch(text,/Átlag.?intenzitás|8[,.]4\s*\/\s*10/i,'no invented workout intensity score');
+ assert.match(text,/Átlagos volumen/);
+ assert.equal(await page.locator('.tp177-chart-column').count(),13,'3 month view uses weekly vertical columns');
+ const latest=()=>page.locator('.tp177-chart-scroll').evaluate(el=>({left:el.scrollLeft,max:el.scrollWidth-el.clientWidth}));
+ await page.waitForFunction(()=>{const el=document.querySelector('.tp177-chart-scroll');return el&&Math.abs(el.scrollLeft-(el.scrollWidth-el.clientWidth))<2});
+ const vertical=await page.evaluate(()=>{
+  const cols=document.querySelector('.tp177-chart-columns'),positive=[...document.querySelectorAll('.tp177-chart-column')].find(x=>parseFloat(x.querySelector('.tp177-bar')?.style.height||'0')>0);
+  const rail=positive?.querySelector('.tp177-bar-rail'),bar=positive?.querySelector('.tp177-bar');
+  if(!cols||!positive||!rail||!bar)return null;
+  const r=rail.getBoundingClientRect(),b=bar.getBoundingClientRect();
+  const axisTop=Number(document.querySelector('.tp177-chart-axis span')?.textContent.replace(/[^\d]/g,'')||0);
+  const volume=Number(positive.getAttribute('aria-label')?.split(';')[1]?.replace(/[^\d]/g,'')||0);
+  return {display:getComputedStyle(cols).display,align:getComputedStyle(rail).alignItems,railH:r.height,barH:b.height,barW:b.width,axisTop,volume};
+ });
+ assert.ok(vertical,'at least one real volume bar expected');
+ assert.equal(vertical.display,'grid');assert.equal(vertical.align,'flex-end');
+ assert.ok(vertical.railH>100&&vertical.barH>0&&vertical.barW<=40,'volume must render as vertical columns: '+JSON.stringify(vertical));
+ assert.ok(vertical.axisTop>=vertical.volume&&Math.abs(vertical.barH/vertical.railH-vertical.volume/vertical.axisTop)<.02,'bar height must match the displayed kg axis: '+JSON.stringify(vertical));
+ for(const [period,count] of [['1d',1],['7d',7],['30d',5],['3m',13]]){
+  await page.locator('.tp177-periods button[data-period="'+period+'"]').click();
+  await page.waitForFunction(n=>document.querySelectorAll('.tp177-chart-column').length===n,count);
+  assert.equal(await page.locator('.tp177-periods button[data-period="'+period+'"]').getAttribute('aria-pressed'),'true');
+  if(period==='7d')assert.equal(await page.locator('.tp177-chart-column').evaluateAll(xs=>new Set(xs.map(x=>x.getAttribute('aria-label').split(';')[0])).size),7,'7 days are seven separate daily buckets');
+  if(period==='1d')assert.equal(await page.locator('.tp177-chart-column').first().getAttribute('aria-label').then(s=>s.split(';')[0]),await page.evaluate(()=>new Intl.DateTimeFormat('hu-HU',{year:'numeric',month:'short',day:'numeric'}).format(new Date())),'1 day is today in the browser timezone');
+  if(period==='3m'){
+   await page.waitForFunction(()=>{const el=document.querySelector('.tp177-chart-scroll');return Math.abs(el.scrollLeft-(el.scrollWidth-el.clientWidth))<2});
+   const pos=await latest();assert.ok(pos.max>0&&Math.abs(pos.left-pos.max)<2,'long chart opens on the latest bucket');
+   await page.locator('.tp177-chart-scroll').evaluate(el=>{el.scrollLeft=0});
+   assert.ok((await latest()).left<2,'older buckets remain reachable by scrolling back');
+  }
+ }
+ await page.locator('.tp177-volume-toggle').click();
+ assert.equal(await page.locator('.tp177-volume-toggle').getAttribute('aria-expanded'),'false');
+ assert.ok((await page.locator('.tp177-bar-rail').first().boundingBox()).height<expandedHeight,'compact chart survives period changes');
+ await page.locator('.tp177-periods button[data-period="7d"]').click();await page.waitForFunction(()=>document.querySelectorAll('.tp177-chart-column').length===7);
+ assert.match(await page.locator('.tp177-metric[data-metric="duration"]').innerText(),/60 min/,'duration recalculates for selected period');
+ await page.evaluate(()=>{const b=[...document.querySelectorAll('.tp177-chart-column')].find(x=>parseFloat(x.querySelector('.tp177-bar')?.style.height||'0')>0);b?.click()});
+ await page.waitForSelector('#tp177Dialog .tp177-dialog-card');assert.match(await page.locator('#tp177Dialog').innerText(),/kg/);
+ await page.locator('.tp177-dialog-close').click();await page.waitForSelector('#tp177Dialog',{state:'detached'});
+ await page.locator('.tp177-metric').nth(1).click();await page.waitForSelector('#tp177MetricDetails .tp177-inline-row');
+ assert.match(await page.locator('#tp177MetricDetails').innerText(),/Edzések száma/);
+ assert.equal(await page.locator('#tp177Dialog').count(),0,'metric stays within the page');
+ assert.equal(await page.getByRole('tab',{name:'Fejlődés'}).getAttribute('aria-selected'),'true','workout count stays on Progress');
+ await page.locator('#tp177MetricDetails .tp177-inline-row summary').first().click();
+ assert.equal(await page.locator('#tp177MetricDetails .tp177-inline-row[open] .tp177-inline-exercise').count()>0,true,'workout expands locally');
+ await page.locator('.tp177-metric').nth(3).click();
+ assert.match(await page.locator('#tp177MetricDetails').innerText(),/Átlagos edzésidő/);
+ assert.match(await page.locator('#tp177MetricDetails').innerText(),/Mért időtartamú edzésekből számolva/);
+ assert.equal(await page.locator('.tp177-metric[aria-expanded="true"]').count(),1);
+ await page.locator('.tp177-metric').nth(2).click();
+ await page.locator('#tp177MetricDetails .tp177-inline-row summary').first().click();
+ assert.equal(await page.getByRole('tab',{name:'Fejlődés'}).getAttribute('aria-selected'),'true','average detail stays on Progress');
+ await page.locator('.tp177-metric').first().click();
+ assert.equal(await page.locator('#tp177MetricDetails .tp177-inline-record').count()>0,true,'PR records are local, readable rows');
+ assert.equal(await page.locator('#tp177MetricDetails button').count(),0,'PR row touch cannot open a deeper dialog');
+ await page.locator('.tp177-metric').first().click();
+ assert.equal(await page.locator('#tp177MetricDetails').isHidden(),true,'second tap closes the panel');
+ await page.locator('.tp177-muscle-row:not([disabled])').first().click();await page.waitForSelector('#tp177Dialog .tp177-group-exercise');
+ await page.locator('#tp177Dialog .tp177-detail-workout').first().click();await page.waitForSelector('#tp177Dialog .tp177-detail-exercise');
+ await page.locator('.tp177-dialog-back').click();await page.waitForSelector('#tp177Dialog .tp177-group-exercise');
+ await page.locator('.tp177-dialog-close').click();
+ assert.equal(await page.locator('.tp155-journal-tabs button').count(),3);
+ assert.equal(await page.getByRole('tab',{name:'Fejlődés'}).getAttribute('aria-selected'),'true');
+ await page.locator('.tp177-periods button[data-period="3m"]').click();
+ await page.waitForFunction(()=>document.querySelectorAll('.tp177-chart-column').length===13);
+ for(const width of [320,393,412]){
+  await page.setViewportSize({width,height:873});
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true,'Progress must not overflow body at '+width+'px');
+  await assertPinnedAxis('Compact '+width+'px',true);
+ }
+ // Filled overview: the Coach title must be reachable before any page scroll,
+ // including a viewport shortened by the phone's system bars.
+ await page.evaluate(()=>{
+  const now=Date.now();db.set('history',Array.from({length:19},(_,i)=>({id:'compact-'+i,workout:'A',dayId:'A',programId:'home-basic',started:new Date(now-(i*2+1)*86400000).toISOString(),finished:new Date(now-(i*2+1)*86400000+2700000).toISOString(),exercises:[i===18?{id:'side-plank',repUnit:'mp/oldal',sets:[{leftSeconds:35,rightSeconds:35,reps:'35',done:true}]}:{id:'db-floor-press',repUnit:'ism.',sets:[{weight:65.2333333333,reps:'12',done:true}]}],photos:[]})));tp177OpenProgress();
+ });
+ for(const [width,height] of [[360,873],[393,823],[412,847]])for(const theme of ['classicBlue','yellow']){
+  await page.setViewportSize({width,height});await page.evaluate(t=>{rf200SetTheme(t);scrollTo(0,0)},theme);
+  await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
+  const fit=await page.evaluate(()=>{
+   const title=document.querySelector('.tp177-coach-body>strong'),r=title.getBoundingClientRect(),button=title.closest('button');
+   return {top:r.top,bottom:r.bottom,viewport:innerHeight,scroll:scrollY,hit:button.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)),cards:[...document.querySelectorAll('.tp177-metric')].map(e=>e.getBoundingClientRect().height)};
+  });
+  assert.equal(fit.scroll,0);assert.ok(fit.top>0&&fit.bottom<=fit.viewport-4&&fit.hit,'Coach heading is visible and tappable without scrolling '+width+'/'+height+'/'+theme+' '+JSON.stringify(fit));
+  assert.ok(fit.cards.every(h=>h>=44&&h<90),'compact cards retain full touch targets '+width+'/'+height+' '+JSON.stringify(fit));
+ }
+ await page.waitForSelector('#tpBoot',{state:'detached'});
+ await page.screenshot({path:'ui-evidence/progress-coach-visible-177.png'});
+ await page.locator('.tp177-coach-body>strong').click();await page.waitForSelector('#tp155R4PanelHost[data-panel="coach"]');
+ await page.evaluate(()=>tp155R4ClosePanel(false));
+ await page.setViewportSize({width:320,height:740});await page.evaluate(()=>scrollTo(0,0));
+ await page.locator('.tp177-coach').scrollIntoViewIfNeeded();
+ assert.ok(await page.evaluate(()=>scrollY)>0,'short screens retain normal scrolling to Coach');
+ assert.deepEqual(errors,[],'page errors: '+errors.join('\n'));
+ console.log('PASS #60 Progress UI: 3 Journal tabs, daily/weekly vertical bars, compact cards, anatomy, nested local details, mobile widths and no invented intensity.');
+}finally{await browser?.close();await new Promise(r=>server.close(r))}})().catch(e=>{console.error(e);process.exit(1)});

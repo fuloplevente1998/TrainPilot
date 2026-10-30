@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="journal_edit_title">Edzés szerkesztése</string>
+    <string name="journal_edit_started">Kezdés</string>
+    <string name="journal_edit_finished">Befejezés</string>
+    <string name="journal_edit_time_hint">Dátum és idő: 2026-10-25 18:30:00 +02:00. Az utolsó érték az időzóna eltolása.</string>
+    <string name="journal_edit_weight">Súly (kg)</string>
+    <string name="journal_edit_reps">Ismétlés</string>
+    <string name="journal_edit_seconds">Idő (mp)</string>
+    <string name="journal_edit_left">Bal oldal (mp)</string>
+    <string name="journal_edit_right">Jobb oldal (mp)</string>
+    <string name="journal_edit_distance">Távolság (m)</string>
+    <string name="journal_edit_rir">Tartalék ismétlés (RIR, elhagyható)</string>
+    <string name="journal_edit_done">Teljesítve</string>
+    <string name="journal_edit_remove">Eltávolítás</string>
+    <string name="journal_edit_add_set">Sorozat hozzáadása</string>
+    <string name="journal_edit_add_exercise">Gyakorlat hozzáadása</string>
+    <string name="journal_edit_save">Módosítások mentése</string>
+    <string name="journal_edit_saving">Mentés…</string>
+    <string name="journal_edit_invalid">Ellenőrizd a dátumokat és az időzóna eltolását.</string>
+    <string name="journal_edit_failed">Nem sikerült menteni. Ellenőrizd az értékeket: a befejezés a kezdés után legyen, legfeljebb 24 órán belül és ne a jövőben; a kész sorozatokhoz pozitív mért érték kell. Ha az edzés időközben módosult, zárd be és nyisd újra a szerkesztőt.</string>
+    <string name="journal_edit_stale">Az edzés időpontja módosult. A megőrzött egészségmérések az eredeti mérési időszakhoz tartoznak.</string>
+    <string name="journal_feedback_edit">Edzésvisszajelzés szerkesztése</string>
+    <string name="journal_feedback_locked">A visszajelzést már alkalmaztad egy programra, ezért nem módosítható.</string>
+</resources>

@@ -1,0 +1,54 @@
+/* #163 journal GPS viewer: dark, contrast-rich, tap-friendly and WebView safe. */
+.tp163-route-entry{margin:10px 0 12px;padding:0}
+.tp163-route-button{min-height:46px!important;display:flex!important;align-items:center;justify-content:center;gap:8px;border:1px solid color-mix(in srgb,#3be68a 46%,var(--line))!important;border-radius:12px!important;background:color-mix(in srgb,#3be68a 9%,var(--card2))!important;color:var(--text)!important}
+.tp163-route-veil{position:fixed;inset:0;z-index:25000;background:rgba(4,8,12,.85);display:flex;align-items:center;justify-content:center;padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));box-sizing:border-box;overscroll-behavior:contain}
+.tp163-route-dialog{width:min(100%,560px);max-height:100%;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;border:1px solid #455263;border-radius:20px;background:#151c24;color:#f0f6f8;box-shadow:0 24px 75px #000b;padding:12px;display:flex;flex-direction:column;gap:10px}
+.tp163-route-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:0 0 auto}
+.tp163-route-head h2{font-size:19px;margin:0;font-weight:850;color:#eaf1f6}
+.tp163-close{flex:0 0 44px!important;width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;padding:0!important;display:grid!important;place-items:center;border-radius:11px!important;color:#ffd9dc!important;background:#472529!important;border:1px solid #ff737b!important;font:900 28px/1 system-ui,sans-serif!important;box-shadow:none!important;cursor:pointer}
+.tp163-close:focus-visible{outline:2px solid var(--accent)!important;outline-offset:3px}
+.tp163-route-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.tp163-metric{min-width:0;display:grid;gap:3px;background:#27313c;border:1px solid #3c4853;border-radius:12px;padding:9px 7px;overflow-wrap:anywhere}
+.tp163-metric span{font-size:10px;color:#adbcc8;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
+.tp163-metric strong{font-size:17px;font-weight:900;color:#f0f7f9;font-variant-numeric:tabular-nums}
+.tp163-route-hint{font-size:12px;color:#bbcad4;min-height:16px;margin:0!important}
+.tp163-map-area{position:relative;height:min(58vh,500px);min-height:270px;overflow:hidden;border-radius:14px;border:1px solid #344352;background:radial-gradient(circle at 30% 25%,#223b38 0,#10191e 65%,#0d141b 100%);isolation:isolate}
+.tp163-route-svg{display:block;width:100%;height:100%;background:linear-gradient(0deg,transparent 24%,#ffffff08 25%,transparent 26%,transparent 74%,#ffffff08 75%,transparent 76%),linear-gradient(90deg,transparent 24%,#ffffff08 25%,transparent 26%,transparent 74%,#ffffff08 75%,transparent 76%);background-size:46px 46px}
+.tp163-route-line{fill:none;stroke:#3be68a;stroke-width:4.5;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 3px #2dd58888)}
+.tp163-route-start{fill:#20dbf5;stroke:#dcffff;stroke-width:2.5}
+.tp163-route-finish{fill:#f2b83e;stroke:#fff3d0;stroke-width:2.5}
+.tp163-leaflet{position:absolute;inset:0;width:100%;height:100%;background:#111e23}
+.tp163-leaflet .leaflet-tile-pane{filter:grayscale(1) invert(.91) hue-rotate(170deg) brightness(.71) contrast(1.08)}
+.tp163-leaflet .leaflet-control-attribution{font:10px system-ui,sans-serif!important;background:#17232deb!important;color:#d2dde4!important}
+.tp163-leaflet .leaflet-control-attribution a{color:#78e6b8!important}
+.tp163-leaflet .leaflet-bar a{background:#263541!important;color:#d9e5ed!important;border-color:#596c78!important}
+.tp163-empty{padding:16px;color:#c0ccd6}
+@media(max-width:350px){.tp163-route-dialog{padding:9px;border-radius:13px}.tp163-route-head h2{font-size:17px}.tp163-metric strong{font-size:14px}.tp163-map-area{min-height:240px;height:48vh}}
+
+.tp163-map-consent{font-size:12px;line-height:1.42;color:#c9d7de;margin:0!important;padding:9px 10px;background:#22323b;border:1px solid #3e4c59;border-radius:11px}
+.tp163-online-button{min-height:44px!important;width:100%;border-radius:11px!important;background:#254b3a!important;color:#e4f9ec!important;border:1px solid #39996b!important;font-weight:800!important}
+.tp163-online-button:disabled{opacity:.7;cursor:default}
+
+/* Live distance activities: the status panel remains usable after dismissing the map. */
+.tp163-live-reopen{min-height:46px!important;margin-top:10px!important;border:1px solid #39996b!important;background:color-mix(in srgb,#3be68a 11%,var(--card2))!important;color:var(--text)!important;font-weight:800!important;border-radius:12px!important}
+.tp163-live-dialog .tp163-route-hint{min-height:18px}
+.tp163-live-dialog .tp163-map-area{height:min(63vh,540px)}
+.tp163-live-dialog .tp163-live-wait{display:grid;place-content:center;text-align:center;min-height:220px;margin:0;color:#bed5cb;font-size:14px}
+
+/* PR277 — edge-to-edge live route, existing explicit close keeps recording alive. */
+.tp163-route-veil:has(.tp163-live-dialog){padding:0;background:var(--bg)}
+.tp163-route-dialog.tp163-live-dialog{position:relative;width:100%;height:100%;max-height:100%;border:0;border-radius:0;padding:max(10px,env(safe-area-inset-top)) 10px max(10px,env(safe-area-inset-bottom));background:var(--card);color:var(--text);gap:8px}
+.tp163-live-dialog .tp163-route-head{z-index:2}
+.tp163-live-dialog .tp163-route-head h2{color:var(--text)}
+.tp163-live-dialog .tp163-map-area{order:1;flex:1;min-height:180px;height:auto;border-radius:12px}
+.tp163-live-dialog .tp163-route-metrics{order:2}
+.tp163-live-dialog .tp163-metric{background:var(--card2);border-color:var(--line)}
+.tp163-live-dialog .tp163-metric strong{color:var(--text)}
+.tp163-live-dialog .tp163-metric span{color:var(--muted)}
+.tp163-live-dialog .tp163-route-hint,.tp163-live-dialog .tp163-map-consent,.tp163-live-dialog .tp163-online-button{order:3;color:var(--muted)}
+.tp277-route-preview{box-sizing:border-box;display:block;min-height:90px;height:104px;width:100%;padding:0;overflow:hidden;border:1px solid var(--line);border-radius:12px;background:var(--card2);margin:8px 0;cursor:pointer}
+.tp277-route-preview .tp163-route-svg{height:100%;width:100%}
+.tp163-route-line{stroke:var(--accent);filter:none}
+.tp277-preview-svg{display:block;width:100%;height:100%}
+.tp277-preview-line{fill:none;stroke:var(--accent);stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+.tp277-preview-start,.tp277-preview-finish{fill:var(--accent2);stroke:var(--card);stroke-width:2}

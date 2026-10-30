@@ -1,0 +1,132 @@
+{
+  "classicBlue": {
+    "accent": "#4d8fbe",
+    "accent2": "#7cb4d6",
+    "family": "basic"
+  },
+  "classicGreen": {
+    "accent": "#4d946a",
+    "accent2": "#7ab18d",
+    "family": "basic"
+  },
+  "classicRed": {
+    "accent": "#b95f63",
+    "accent2": "#d58a8d",
+    "family": "basic"
+  },
+  "classicOrange": {
+    "accent": "#c07d45",
+    "accent2": "#d9a06e",
+    "family": "basic"
+  },
+  "classicPurple": {
+    "accent": "#8567b1",
+    "accent2": "#a58cc9",
+    "family": "basic"
+  },
+  "graphite": {
+    "accent": "#687989",
+    "accent2": "#96a4b1",
+    "family": "basic"
+  },
+  "classicTeal": {
+    "accent": "#3f918a",
+    "accent2": "#75b6b1",
+    "family": "basic"
+  },
+  "classicRose": {
+    "accent": "#b45f82",
+    "accent2": "#d38aa5",
+    "family": "basic"
+  },
+  "classicAmber": {
+    "accent": "#ae843c",
+    "accent2": "#cca45f",
+    "family": "basic"
+  },
+  "classicCyan": {
+    "accent": "#4c8fa5",
+    "accent2": "#77b0c0",
+    "family": "basic"
+  },
+  "yellow": {
+    "accent": "#f2bd45",
+    "accent2": "#ffd975",
+    "family": "vivid"
+  },
+  "blue": {
+    "accent": "#5ca8ff",
+    "accent2": "#8bc4ff",
+    "family": "vivid"
+  },
+  "green": {
+    "accent": "#62d08a",
+    "accent2": "#92e6ad",
+    "family": "vivid"
+  },
+  "purple": {
+    "accent": "#a98cff",
+    "accent2": "#c6b5ff",
+    "family": "vivid"
+  },
+  "orange": {
+    "accent": "#ff9b54",
+    "accent2": "#ffbd8d",
+    "family": "vivid"
+  },
+  "cyan": {
+    "accent": "#48c6ef",
+    "accent2": "#83dcf6",
+    "family": "vivid"
+  },
+  "teal": {
+    "accent": "#45c6b2",
+    "accent2": "#7de0d1",
+    "family": "vivid"
+  },
+  "pink": {
+    "accent": "#ff78b9",
+    "accent2": "#ffa6d0",
+    "family": "vivid"
+  },
+  "indigo": {
+    "accent": "#7f96ff",
+    "accent2": "#a8b8ff",
+    "family": "vivid"
+  },
+  "lime": {
+    "accent": "#a8d75f",
+    "accent2": "#c7ea8b",
+    "family": "vivid"
+  },
+  "red": {
+    "accent": "#ff6b6b",
+    "accent2": "#ff9b9b",
+    "family": "vivid"
+  },
+  "magenta": {
+    "accent": "#e66cff",
+    "accent2": "#f1a0ff",
+    "family": "vivid"
+  },
+  "lavender": {
+    "accent": "#9a86ff",
+    "accent2": "#c0b4ff",
+    "family": "vivid"
+  },
+  "sky": {
+    "accent": "#66c7ff",
+    "accent2": "#9adfff",
+    "family": "vivid"
+  },
+  "mint": {
+    "accent": "#63d9b1",
+    "accent2": "#96ead0",
+    "family": "vivid"
+  },
+  "coral": {
+    "accent": "#ff7f72",
+    "accent2": "#ffaaa0",
+    "family": "vivid"
+  }
+}

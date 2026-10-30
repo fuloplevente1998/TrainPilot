@@ -1,0 +1,7136 @@
+{
+  "source": {
+    "commit": "7473b30",
+    "path": "www/app.js",
+    "gitBlob": "b5567576bed9a8f93608a6bf1ed8db1dee4723f4"
+  },
+  "cases": [
+    {
+      "name": "no-history",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "press",
+        "loadType": "per_hand",
+        "repUnit": "ism.",
+        "measurementType": "reps",
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "press": {
+            "reps": "8–12",
+            "sets": 2
+          }
+        }
+      },
+      "history": [],
+      "settings": {},
+      "readiness": {
+        "score": 87,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "reps",
+          "min": 8,
+          "max": 12,
+          "rirMin": null,
+          "rirMax": null,
+          "raw": "8–12",
+          "reps": "8–12",
+          "sets": 2,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [],
+        "observed": null,
+        "step": 0.5,
+        "recommendation": {
+          "action": "start",
+          "weight": 5,
+          "autoApply": false,
+          "historyCount": 0,
+          "variation": null
+        },
+        "coachAction": "start",
+        "lastEffort": null
+      }
+    },
+    {
+      "name": "upper-target-1",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "press",
+        "loadType": "per_hand",
+        "repUnit": "ism.",
+        "measurementType": "reps",
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "press": {
+            "reps": "8–12",
+            "sets": 2
+          }
+        }
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "p",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-10-23T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "settings": {},
+      "readiness": {
+        "score": 87,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "reps",
+          "min": 8,
+          "max": 12,
+          "rirMin": null,
+          "rirMax": null,
+          "raw": "8–12",
+          "reps": "8–12",
+          "sets": 2,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [
+          {
+            "workout": {
+              "id": "h0",
+              "programId": "p",
+              "started": "2026-10-23T12:00:00.000Z",
+              "finished": "2026-10-23T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          }
+        ],
+        "observed": null,
+        "step": 1,
+        "recommendation": {
+          "action": "increase",
+          "weight": 11,
+          "autoApply": false,
+          "historyCount": 1,
+          "variation": null
+        },
+        "coachAction": "increase",
+        "lastEffort": "good"
+      }
+    },
+    {
+      "name": "upper-target-2",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "press",
+        "loadType": "per_hand",
+        "repUnit": "ism.",
+        "measurementType": "reps",
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "press": {
+            "reps": "8–12",
+            "sets": 2
+          }
+        }
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "p",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-10-23T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h1",
+          "programId": "p",
+          "started": "2026-10-22T12:00:00.000Z",
+          "finished": "2026-10-22T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "settings": {},
+      "readiness": {
+        "score": 87,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "reps",
+          "min": 8,
+          "max": 12,
+          "rirMin": null,
+          "rirMax": null,
+          "raw": "8–12",
+          "reps": "8–12",
+          "sets": 2,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [
+          {
+            "workout": {
+              "id": "h0",
+              "programId": "p",
+              "started": "2026-10-23T12:00:00.000Z",
+              "finished": "2026-10-23T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h1",
+              "programId": "p",
+              "started": "2026-10-22T12:00:00.000Z",
+              "finished": "2026-10-22T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          }
+        ],
+        "observed": null,
+        "step": 1,
+        "recommendation": {
+          "action": "increase",
+          "weight": 11,
+          "autoApply": false,
+          "historyCount": 2,
+          "variation": null
+        },
+        "coachAction": "increase",
+        "lastEffort": "good"
+      }
+    },
+    {
+      "name": "upper-target-3",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "press",
+        "loadType": "per_hand",
+        "repUnit": "ism.",
+        "measurementType": "reps",
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "press": {
+            "reps": "8–12",
+            "sets": 2
+          }
+        }
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "p",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-10-23T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h1",
+          "programId": "p",
+          "started": "2026-10-22T12:00:00.000Z",
+          "finished": "2026-10-22T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h2",
+          "programId": "p",
+          "started": "2026-10-21T12:00:00.000Z",
+          "finished": "2026-10-21T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "settings": {},
+      "readiness": {
+        "score": 87,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "reps",
+          "min": 8,
+          "max": 12,
+          "rirMin": null,
+          "rirMax": null,
+          "raw": "8–12",
+          "reps": "8–12",
+          "sets": 2,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [
+          {
+            "workout": {
+              "id": "h0",
+              "programId": "p",
+              "started": "2026-10-23T12:00:00.000Z",
+              "finished": "2026-10-23T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h1",
+              "programId": "p",
+              "started": "2026-10-22T12:00:00.000Z",
+              "finished": "2026-10-22T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h2",
+              "programId": "p",
+              "started": "2026-10-21T12:00:00.000Z",
+              "finished": "2026-10-21T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          }
+        ],
+        "observed": null,
+        "step": 1,
+        "recommendation": {
+          "action": "increase",
+          "weight": 11,
+          "autoApply": true,
+          "historyCount": 3,
+          "variation": null
+        },
+        "coachAction": "increase",
+        "lastEffort": "good"
+      }
+    },
+    {
+      "name": "upper-target-4",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "press",
+        "loadType": "per_hand",
+        "repUnit": "ism.",
+        "measurementType": "reps",
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "press": {
+            "reps": "8–12",
+            "sets": 2
+          }
+        }
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "p",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-10-23T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h1",
+          "programId": "p",
+          "started": "2026-10-22T12:00:00.000Z",
+          "finished": "2026-10-22T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h2",
+          "programId": "p",
+          "started": "2026-10-21T12:00:00.000Z",
+          "finished": "2026-10-21T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h3",
+          "programId": "p",
+          "started": "2026-10-20T12:00:00.000Z",
+          "finished": "2026-10-20T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "settings": {},
+      "readiness": {
+        "score": 87,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "reps",
+          "min": 8,
+          "max": 12,
+          "rirMin": null,
+          "rirMax": null,
+          "raw": "8–12",
+          "reps": "8–12",
+          "sets": 2,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [
+          {
+            "workout": {
+              "id": "h0",
+              "programId": "p",
+              "started": "2026-10-23T12:00:00.000Z",
+              "finished": "2026-10-23T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h1",
+              "programId": "p",
+              "started": "2026-10-22T12:00:00.000Z",
+              "finished": "2026-10-22T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h2",
+              "programId": "p",
+              "started": "2026-10-21T12:00:00.000Z",
+              "finished": "2026-10-21T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h3",
+              "programId": "p",
+              "started": "2026-10-20T12:00:00.000Z",
+              "finished": "2026-10-20T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          }
+        ],
+        "observed": null,
+        "step": 1,
+        "recommendation": {
+          "action": "increase",
+          "weight": 11,
+          "autoApply": true,
+          "historyCount": 4,
+          "variation": null
+        },
+        "coachAction": "increase",
+        "lastEffort": "good"
+      }
+    },
+    {
+      "name": "partial",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "press",
+        "loadType": "per_hand",
+        "repUnit": "ism.",
+        "measurementType": "reps",
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "press": {
+            "reps": "8–12",
+            "sets": 2
+          }
+        }
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "p",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-10-23T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": false,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h1",
+          "programId": "p",
+          "started": "2026-10-22T12:00:00.000Z",
+          "finished": "2026-10-22T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h2",
+          "programId": "p",
+          "started": "2026-10-21T12:00:00.000Z",
+          "finished": "2026-10-21T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "settings": {},
+      "readiness": {
+        "score": 87,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "reps",
+          "min": 8,
+          "max": 12,
+          "rirMin": null,
+          "rirMax": null,
+          "raw": "8–12",
+          "reps": "8–12",
+          "sets": 2,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [
+          {
+            "workout": {
+              "id": "h0",
+              "programId": "p",
+              "started": "2026-10-23T12:00:00.000Z",
+              "finished": "2026-10-23T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": false,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": false,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h1",
+              "programId": "p",
+              "started": "2026-10-22T12:00:00.000Z",
+              "finished": "2026-10-22T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h2",
+              "programId": "p",
+              "started": "2026-10-21T12:00:00.000Z",
+              "finished": "2026-10-21T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          }
+        ],
+        "observed": null,
+        "step": 1,
+        "recommendation": {
+          "action": "hold",
+          "weight": 10,
+          "autoApply": false,
+          "historyCount": 3,
+          "variation": null
+        },
+        "coachAction": "hold",
+        "lastEffort": "good"
+      }
+    },
+    {
+      "name": "recent-pain",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "press",
+        "loadType": "per_hand",
+        "repUnit": "ism.",
+        "measurementType": "reps",
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "press": {
+            "reps": "8–12",
+            "sets": 2
+          }
+        }
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "p",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-10-23T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h1",
+          "programId": "p",
+          "started": "2026-10-22T12:00:00.000Z",
+          "finished": "2026-10-22T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "pain",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h2",
+          "programId": "p",
+          "started": "2026-10-21T12:00:00.000Z",
+          "finished": "2026-10-21T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "settings": {},
+      "readiness": {
+        "score": 87,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "reps",
+          "min": 8,
+          "max": 12,
+          "rirMin": null,
+          "rirMax": null,
+          "raw": "8–12",
+          "reps": "8–12",
+          "sets": 2,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [
+          {
+            "workout": {
+              "id": "h0",
+              "programId": "p",
+              "started": "2026-10-23T12:00:00.000Z",
+              "finished": "2026-10-23T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h1",
+              "programId": "p",
+              "started": "2026-10-22T12:00:00.000Z",
+              "finished": "2026-10-22T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "pain",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "pain",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h2",
+              "programId": "p",
+              "started": "2026-10-21T12:00:00.000Z",
+              "finished": "2026-10-21T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          }
+        ],
+        "observed": null,
+        "step": 1,
+        "recommendation": {
+          "action": "pain",
+          "weight": 10,
+          "autoApply": false,
+          "historyCount": 3,
+          "variation": null
+        },
+        "coachAction": "pain",
+        "lastEffort": "good"
+      }
+    },
+    {
+      "name": "fourth-pain-outside-three-trend",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "press",
+        "loadType": "per_hand",
+        "repUnit": "ism.",
+        "measurementType": "reps",
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "press": {
+            "reps": "8–12",
+            "sets": 2
+          }
+        }
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "p",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-10-23T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h1",
+          "programId": "p",
+          "started": "2026-10-22T12:00:00.000Z",
+          "finished": "2026-10-22T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h2",
+          "programId": "p",
+          "started": "2026-10-21T12:00:00.000Z",
+          "finished": "2026-10-21T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h3",
+          "programId": "p",
+          "started": "2026-10-20T12:00:00.000Z",
+          "finished": "2026-10-20T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "pain",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "settings": {},
+      "readiness": {
+        "score": 87,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "reps",
+          "min": 8,
+          "max": 12,
+          "rirMin": null,
+          "rirMax": null,
+          "raw": "8–12",
+          "reps": "8–12",
+          "sets": 2,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [
+          {
+            "workout": {
+              "id": "h0",
+              "programId": "p",
+              "started": "2026-10-23T12:00:00.000Z",
+              "finished": "2026-10-23T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h1",
+              "programId": "p",
+              "started": "2026-10-22T12:00:00.000Z",
+              "finished": "2026-10-22T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h2",
+              "programId": "p",
+              "started": "2026-10-21T12:00:00.000Z",
+              "finished": "2026-10-21T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h3",
+              "programId": "p",
+              "started": "2026-10-20T12:00:00.000Z",
+              "finished": "2026-10-20T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "pain",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "pain",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          }
+        ],
+        "observed": null,
+        "step": 1,
+        "recommendation": {
+          "action": "increase",
+          "weight": 11,
+          "autoApply": true,
+          "historyCount": 4,
+          "variation": null
+        },
+        "coachAction": "increase",
+        "lastEffort": "good"
+      }
+    },
+    {
+      "name": "whole-workout-pain",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "press",
+        "loadType": "per_hand",
+        "repUnit": "ism.",
+        "measurementType": "reps",
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "press": {
+            "reps": "8–12",
+            "sets": 2
+          }
+        }
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "p",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-10-23T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "rating": "pain"
+          }
+        },
+        {
+          "id": "h1",
+          "programId": "p",
+          "started": "2026-10-22T12:00:00.000Z",
+          "finished": "2026-10-22T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h2",
+          "programId": "p",
+          "started": "2026-10-21T12:00:00.000Z",
+          "finished": "2026-10-21T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "settings": {},
+      "readiness": {
+        "score": 87,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "reps",
+          "min": 8,
+          "max": 12,
+          "rirMin": null,
+          "rirMax": null,
+          "raw": "8–12",
+          "reps": "8–12",
+          "sets": 2,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [
+          {
+            "workout": {
+              "id": "h0",
+              "programId": "p",
+              "started": "2026-10-23T12:00:00.000Z",
+              "finished": "2026-10-23T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ],
+              "feedback": {
+                "rating": "pain"
+              }
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h1",
+              "programId": "p",
+              "started": "2026-10-22T12:00:00.000Z",
+              "finished": "2026-10-22T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h2",
+              "programId": "p",
+              "started": "2026-10-21T12:00:00.000Z",
+              "finished": "2026-10-21T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          }
+        ],
+        "observed": null,
+        "step": 1,
+        "recommendation": {
+          "action": "pain",
+          "weight": 10,
+          "autoApply": false,
+          "historyCount": 3,
+          "variation": null
+        },
+        "coachAction": "pain",
+        "lastEffort": "good"
+      }
+    },
+    {
+      "name": "whole-workout-hard",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "press",
+        "loadType": "per_hand",
+        "repUnit": "ism.",
+        "measurementType": "reps",
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "press": {
+            "reps": "8–12",
+            "sets": 2
+          }
+        }
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "p",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-10-23T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "rating": "hard"
+          }
+        },
+        {
+          "id": "h1",
+          "programId": "p",
+          "started": "2026-10-22T12:00:00.000Z",
+          "finished": "2026-10-22T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h2",
+          "programId": "p",
+          "started": "2026-10-21T12:00:00.000Z",
+          "finished": "2026-10-21T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "settings": {},
+      "readiness": {
+        "score": 87,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "reps",
+          "min": 8,
+          "max": 12,
+          "rirMin": null,
+          "rirMax": null,
+          "raw": "8–12",
+          "reps": "8–12",
+          "sets": 2,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [
+          {
+            "workout": {
+              "id": "h0",
+              "programId": "p",
+              "started": "2026-10-23T12:00:00.000Z",
+              "finished": "2026-10-23T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ],
+              "feedback": {
+                "rating": "hard"
+              }
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h1",
+              "programId": "p",
+              "started": "2026-10-22T12:00:00.000Z",
+              "finished": "2026-10-22T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h2",
+              "programId": "p",
+              "started": "2026-10-21T12:00:00.000Z",
+              "finished": "2026-10-21T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          }
+        ],
+        "observed": null,
+        "step": 1,
+        "recommendation": {
+          "action": "hold",
+          "weight": 10,
+          "autoApply": false,
+          "historyCount": 3,
+          "variation": null
+        },
+        "coachAction": "hold",
+        "lastEffort": "good"
+      }
+    },
+    {
+      "name": "declining-2",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "press",
+        "loadType": "per_hand",
+        "repUnit": "ism.",
+        "measurementType": "reps",
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "press": {
+            "reps": "8–12",
+            "sets": 2
+          }
+        }
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "p",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-10-23T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "hard",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "5",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "5",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h1",
+          "programId": "p",
+          "started": "2026-10-22T12:00:00.000Z",
+          "finished": "2026-10-22T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "hard",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "6",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "6",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "settings": {},
+      "readiness": {
+        "score": 87,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "reps",
+          "min": 8,
+          "max": 12,
+          "rirMin": null,
+          "rirMax": null,
+          "raw": "8–12",
+          "reps": "8–12",
+          "sets": 2,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [
+          {
+            "workout": {
+              "id": "h0",
+              "programId": "p",
+              "started": "2026-10-23T12:00:00.000Z",
+              "finished": "2026-10-23T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "hard",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "5",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "5",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "hard",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "5",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "5",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h1",
+              "programId": "p",
+              "started": "2026-10-22T12:00:00.000Z",
+              "finished": "2026-10-22T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "hard",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "6",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "6",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "hard",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "6",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "6",
+                  "weight": 10
+                }
+              ]
+            }
+          }
+        ],
+        "observed": null,
+        "step": 1,
+        "recommendation": {
+          "action": "hold",
+          "weight": 10,
+          "autoApply": false,
+          "historyCount": 2,
+          "variation": null
+        },
+        "coachAction": "hold",
+        "lastEffort": "hard"
+      }
+    },
+    {
+      "name": "declining-3",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "press",
+        "loadType": "per_hand",
+        "repUnit": "ism.",
+        "measurementType": "reps",
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "press": {
+            "reps": "8–12",
+            "sets": 2
+          }
+        }
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "p",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-10-23T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "hard",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "5",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "5",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h1",
+          "programId": "p",
+          "started": "2026-10-22T12:00:00.000Z",
+          "finished": "2026-10-22T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "hard",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "6",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "6",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h2",
+          "programId": "p",
+          "started": "2026-10-21T12:00:00.000Z",
+          "finished": "2026-10-21T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "hard",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "7",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "7",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "settings": {},
+      "readiness": {
+        "score": 87,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "reps",
+          "min": 8,
+          "max": 12,
+          "rirMin": null,
+          "rirMax": null,
+          "raw": "8–12",
+          "reps": "8–12",
+          "sets": 2,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [
+          {
+            "workout": {
+              "id": "h0",
+              "programId": "p",
+              "started": "2026-10-23T12:00:00.000Z",
+              "finished": "2026-10-23T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "hard",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "5",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "5",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "hard",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "5",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "5",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h1",
+              "programId": "p",
+              "started": "2026-10-22T12:00:00.000Z",
+              "finished": "2026-10-22T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "hard",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "6",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "6",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "hard",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "6",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "6",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h2",
+              "programId": "p",
+              "started": "2026-10-21T12:00:00.000Z",
+              "finished": "2026-10-21T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "hard",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "7",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "7",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "hard",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "7",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "7",
+                  "weight": 10
+                }
+              ]
+            }
+          }
+        ],
+        "observed": null,
+        "step": 1,
+        "recommendation": {
+          "action": "reduce",
+          "weight": 9,
+          "autoApply": false,
+          "historyCount": 3,
+          "variation": null
+        },
+        "coachAction": "reduce",
+        "lastEffort": "hard"
+      }
+    },
+    {
+      "name": "mixed-loads-not-declining",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "press",
+        "loadType": "per_hand",
+        "repUnit": "ism.",
+        "measurementType": "reps",
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "press": {
+            "reps": "8–12",
+            "sets": 2
+          }
+        }
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "p",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-10-23T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "hard",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h1",
+          "programId": "p",
+          "started": "2026-10-22T12:00:00.000Z",
+          "finished": "2026-10-22T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "hard",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 8
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 8
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h2",
+          "programId": "p",
+          "started": "2026-10-21T12:00:00.000Z",
+          "finished": "2026-10-21T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "hard",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "settings": {},
+      "readiness": {
+        "score": 87,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "reps",
+          "min": 8,
+          "max": 12,
+          "rirMin": null,
+          "rirMax": null,
+          "raw": "8–12",
+          "reps": "8–12",
+          "sets": 2,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [
+          {
+            "workout": {
+              "id": "h0",
+              "programId": "p",
+              "started": "2026-10-23T12:00:00.000Z",
+              "finished": "2026-10-23T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "hard",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "hard",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h1",
+              "programId": "p",
+              "started": "2026-10-22T12:00:00.000Z",
+              "finished": "2026-10-22T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "hard",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 8
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 8
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "hard",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 8
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 8
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h2",
+              "programId": "p",
+              "started": "2026-10-21T12:00:00.000Z",
+              "finished": "2026-10-21T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "hard",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "hard",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          }
+        ],
+        "observed": 2,
+        "step": 2,
+        "recommendation": {
+          "action": "hold",
+          "weight": 10,
+          "autoApply": false,
+          "historyCount": 3,
+          "variation": null
+        },
+        "coachAction": "hold",
+        "lastEffort": "hard"
+      }
+    },
+    {
+      "name": "recovery-limits",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "press",
+        "loadType": "per_hand",
+        "repUnit": "ism.",
+        "measurementType": "reps",
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "press": {
+            "reps": "8–12",
+            "sets": 2
+          }
+        }
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "p",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-10-23T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h1",
+          "programId": "p",
+          "started": "2026-10-22T12:00:00.000Z",
+          "finished": "2026-10-22T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h2",
+          "programId": "p",
+          "started": "2026-10-21T12:00:00.000Z",
+          "finished": "2026-10-21T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "settings": {},
+      "readiness": {
+        "score": 54,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "reps",
+          "min": 8,
+          "max": 12,
+          "rirMin": null,
+          "rirMax": null,
+          "raw": "8–12",
+          "reps": "8–12",
+          "sets": 2,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [
+          {
+            "workout": {
+              "id": "h0",
+              "programId": "p",
+              "started": "2026-10-23T12:00:00.000Z",
+              "finished": "2026-10-23T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h1",
+              "programId": "p",
+              "started": "2026-10-22T12:00:00.000Z",
+              "finished": "2026-10-22T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h2",
+              "programId": "p",
+              "started": "2026-10-21T12:00:00.000Z",
+              "finished": "2026-10-21T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          }
+        ],
+        "observed": null,
+        "step": 1,
+        "recommendation": {
+          "action": "hold",
+          "weight": 10,
+          "autoApply": false,
+          "historyCount": 3,
+          "variation": null
+        },
+        "coachAction": "easy",
+        "lastEffort": "good"
+      }
+    },
+    {
+      "name": "coach-moderates",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "press",
+        "loadType": "per_hand",
+        "repUnit": "ism.",
+        "measurementType": "reps",
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "press": {
+            "reps": "8–12",
+            "sets": 2
+          }
+        }
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "p",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-10-23T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h1",
+          "programId": "p",
+          "started": "2026-10-22T12:00:00.000Z",
+          "finished": "2026-10-22T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h2",
+          "programId": "p",
+          "started": "2026-10-21T12:00:00.000Z",
+          "finished": "2026-10-21T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "settings": {},
+      "readiness": {
+        "score": 74,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "reps",
+          "min": 8,
+          "max": 12,
+          "rirMin": null,
+          "rirMax": null,
+          "raw": "8–12",
+          "reps": "8–12",
+          "sets": 2,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [
+          {
+            "workout": {
+              "id": "h0",
+              "programId": "p",
+              "started": "2026-10-23T12:00:00.000Z",
+              "finished": "2026-10-23T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h1",
+              "programId": "p",
+              "started": "2026-10-22T12:00:00.000Z",
+              "finished": "2026-10-22T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h2",
+              "programId": "p",
+              "started": "2026-10-21T12:00:00.000Z",
+              "finished": "2026-10-21T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          }
+        ],
+        "observed": null,
+        "step": 1,
+        "recommendation": {
+          "action": "increase",
+          "weight": 11,
+          "autoApply": true,
+          "historyCount": 3,
+          "variation": null
+        },
+        "coachAction": "hold",
+        "lastEffort": "good"
+      }
+    },
+    {
+      "name": "rir-is-not-rep-ceiling",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "press",
+        "loadType": "per_hand",
+        "repUnit": "ism.",
+        "measurementType": "reps",
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "press": {
+            "reps": "2–3 RIR",
+            "sets": 2
+          }
+        }
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "p",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-10-23T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "3",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "3",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h1",
+          "programId": "p",
+          "started": "2026-10-22T12:00:00.000Z",
+          "finished": "2026-10-22T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "3",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "3",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h2",
+          "programId": "p",
+          "started": "2026-10-21T12:00:00.000Z",
+          "finished": "2026-10-21T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "3",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "3",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "settings": {},
+      "readiness": {
+        "score": 87,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "rir",
+          "min": null,
+          "max": null,
+          "rirMin": 2,
+          "rirMax": 3,
+          "raw": "2–3 RIR",
+          "reps": "2–3 RIR",
+          "sets": 2,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [
+          {
+            "workout": {
+              "id": "h0",
+              "programId": "p",
+              "started": "2026-10-23T12:00:00.000Z",
+              "finished": "2026-10-23T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "3",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "3",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "3",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "3",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h1",
+              "programId": "p",
+              "started": "2026-10-22T12:00:00.000Z",
+              "finished": "2026-10-22T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "3",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "3",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "3",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "3",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h2",
+              "programId": "p",
+              "started": "2026-10-21T12:00:00.000Z",
+              "finished": "2026-10-21T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "3",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "3",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "3",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "3",
+                  "weight": 10
+                }
+              ]
+            }
+          }
+        ],
+        "observed": null,
+        "step": 1,
+        "recommendation": {
+          "action": "hold",
+          "weight": 10,
+          "autoApply": false,
+          "historyCount": 3,
+          "variation": null
+        },
+        "coachAction": "hold",
+        "lastEffort": "good"
+      }
+    },
+    {
+      "name": "body-plank-2",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "plank",
+        "loadType": "bodyweight",
+        "repUnit": "mp",
+        "measurementType": "time",
+        "sets": 2,
+        "reps": "30–60 mp",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "plank": {
+            "reps": "30–60 mp",
+            "sets": 2
+          }
+        }
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "p",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-10-23T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "plank",
+              "loadType": "bodyweight",
+              "repUnit": "mp",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "60",
+                  "weight": 0
+                },
+                {
+                  "done": true,
+                  "reps": "60",
+                  "weight": 0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h1",
+          "programId": "p",
+          "started": "2026-10-22T12:00:00.000Z",
+          "finished": "2026-10-22T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "plank",
+              "loadType": "bodyweight",
+              "repUnit": "mp",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "60",
+                  "weight": 0
+                },
+                {
+                  "done": true,
+                  "reps": "60",
+                  "weight": 0
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "settings": {},
+      "readiness": {
+        "score": 87,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "time",
+          "min": 30,
+          "max": 60,
+          "rirMin": null,
+          "rirMax": null,
+          "raw": "30–60 mp",
+          "reps": "30–60 mp",
+          "sets": 2,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [
+          {
+            "workout": {
+              "id": "h0",
+              "programId": "p",
+              "started": "2026-10-23T12:00:00.000Z",
+              "finished": "2026-10-23T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "plank",
+                  "loadType": "bodyweight",
+                  "repUnit": "mp",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "60",
+                      "weight": 0
+                    },
+                    {
+                      "done": true,
+                      "reps": "60",
+                      "weight": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "plank",
+              "loadType": "bodyweight",
+              "repUnit": "mp",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "60",
+                  "weight": 0
+                },
+                {
+                  "done": true,
+                  "reps": "60",
+                  "weight": 0
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h1",
+              "programId": "p",
+              "started": "2026-10-22T12:00:00.000Z",
+              "finished": "2026-10-22T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "plank",
+                  "loadType": "bodyweight",
+                  "repUnit": "mp",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "60",
+                      "weight": 0
+                    },
+                    {
+                      "done": true,
+                      "reps": "60",
+                      "weight": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "plank",
+              "loadType": "bodyweight",
+              "repUnit": "mp",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "60",
+                  "weight": 0
+                },
+                {
+                  "done": true,
+                  "reps": "60",
+                  "weight": 0
+                }
+              ]
+            }
+          }
+        ],
+        "observed": null,
+        "step": 0,
+        "recommendation": {
+          "action": "hold",
+          "weight": 0,
+          "autoApply": false,
+          "historyCount": 2,
+          "variation": null
+        },
+        "coachAction": "hold",
+        "lastEffort": "good"
+      }
+    },
+    {
+      "name": "body-plank-3",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "plank",
+        "loadType": "bodyweight",
+        "repUnit": "mp",
+        "measurementType": "time",
+        "sets": 2,
+        "reps": "30–60 mp",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "plank": {
+            "reps": "30–60 mp",
+            "sets": 2
+          }
+        }
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "p",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-10-23T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "plank",
+              "loadType": "bodyweight",
+              "repUnit": "mp",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "60",
+                  "weight": 0
+                },
+                {
+                  "done": true,
+                  "reps": "60",
+                  "weight": 0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h1",
+          "programId": "p",
+          "started": "2026-10-22T12:00:00.000Z",
+          "finished": "2026-10-22T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "plank",
+              "loadType": "bodyweight",
+              "repUnit": "mp",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "60",
+                  "weight": 0
+                },
+                {
+                  "done": true,
+                  "reps": "60",
+                  "weight": 0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h2",
+          "programId": "p",
+          "started": "2026-10-21T12:00:00.000Z",
+          "finished": "2026-10-21T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "plank",
+              "loadType": "bodyweight",
+              "repUnit": "mp",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "60",
+                  "weight": 0
+                },
+                {
+                  "done": true,
+                  "reps": "60",
+                  "weight": 0
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "settings": {},
+      "readiness": {
+        "score": 87,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "time",
+          "min": 30,
+          "max": 60,
+          "rirMin": null,
+          "rirMax": null,
+          "raw": "30–60 mp",
+          "reps": "30–60 mp",
+          "sets": 2,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [
+          {
+            "workout": {
+              "id": "h0",
+              "programId": "p",
+              "started": "2026-10-23T12:00:00.000Z",
+              "finished": "2026-10-23T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "plank",
+                  "loadType": "bodyweight",
+                  "repUnit": "mp",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "60",
+                      "weight": 0
+                    },
+                    {
+                      "done": true,
+                      "reps": "60",
+                      "weight": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "plank",
+              "loadType": "bodyweight",
+              "repUnit": "mp",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "60",
+                  "weight": 0
+                },
+                {
+                  "done": true,
+                  "reps": "60",
+                  "weight": 0
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h1",
+              "programId": "p",
+              "started": "2026-10-22T12:00:00.000Z",
+              "finished": "2026-10-22T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "plank",
+                  "loadType": "bodyweight",
+                  "repUnit": "mp",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "60",
+                      "weight": 0
+                    },
+                    {
+                      "done": true,
+                      "reps": "60",
+                      "weight": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "plank",
+              "loadType": "bodyweight",
+              "repUnit": "mp",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "60",
+                  "weight": 0
+                },
+                {
+                  "done": true,
+                  "reps": "60",
+                  "weight": 0
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h2",
+              "programId": "p",
+              "started": "2026-10-21T12:00:00.000Z",
+              "finished": "2026-10-21T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "plank",
+                  "loadType": "bodyweight",
+                  "repUnit": "mp",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "60",
+                      "weight": 0
+                    },
+                    {
+                      "done": true,
+                      "reps": "60",
+                      "weight": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "plank",
+              "loadType": "bodyweight",
+              "repUnit": "mp",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "60",
+                  "weight": 0
+                },
+                {
+                  "done": true,
+                  "reps": "60",
+                  "weight": 0
+                }
+              ]
+            }
+          }
+        ],
+        "observed": null,
+        "step": 0,
+        "recommendation": {
+          "action": "variation",
+          "weight": 0,
+          "autoApply": false,
+          "historyCount": 3,
+          "variation": {
+            "id": "plank",
+            "variation": "longLever",
+            "level": 1
+          }
+        },
+        "coachAction": "variation",
+        "lastEffort": "good"
+      }
+    },
+    {
+      "name": "body-rir",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "pushup",
+        "loadType": "bodyweight",
+        "repUnit": "ism.",
+        "measurementType": "reps",
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "pushup": {
+            "reps": "2–3 RIR",
+            "sets": 2
+          }
+        }
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "p",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-10-23T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "pushup",
+              "loadType": "bodyweight",
+              "repUnit": "ism.",
+              "effort": "light",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "8",
+                  "weight": 0
+                },
+                {
+                  "done": true,
+                  "reps": "8",
+                  "weight": 0
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "settings": {},
+      "readiness": {
+        "score": 87,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "rir",
+          "min": null,
+          "max": null,
+          "rirMin": 2,
+          "rirMax": 3,
+          "raw": "2–3 RIR",
+          "reps": "2–3 RIR",
+          "sets": 2,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [
+          {
+            "workout": {
+              "id": "h0",
+              "programId": "p",
+              "started": "2026-10-23T12:00:00.000Z",
+              "finished": "2026-10-23T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "pushup",
+                  "loadType": "bodyweight",
+                  "repUnit": "ism.",
+                  "effort": "light",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "8",
+                      "weight": 0
+                    },
+                    {
+                      "done": true,
+                      "reps": "8",
+                      "weight": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "pushup",
+              "loadType": "bodyweight",
+              "repUnit": "ism.",
+              "effort": "light",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "8",
+                  "weight": 0
+                },
+                {
+                  "done": true,
+                  "reps": "8",
+                  "weight": 0
+                }
+              ]
+            }
+          }
+        ],
+        "observed": null,
+        "step": 0,
+        "recommendation": {
+          "action": "reps",
+          "weight": 0,
+          "autoApply": false,
+          "historyCount": 1,
+          "variation": null
+        },
+        "coachAction": "reps",
+        "lastEffort": "light"
+      }
+    },
+    {
+      "name": "body-next-variation",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "pushup",
+        "loadType": "bodyweight",
+        "repUnit": "ism.",
+        "measurementType": "reps",
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "pushup": {
+            "reps": "8–12",
+            "sets": 2
+          }
+        }
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "p",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-10-23T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "pushup",
+              "loadType": "bodyweight",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 0
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h1",
+          "programId": "p",
+          "started": "2026-10-22T12:00:00.000Z",
+          "finished": "2026-10-22T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "pushup",
+              "loadType": "bodyweight",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 0
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h2",
+          "programId": "p",
+          "started": "2026-10-21T12:00:00.000Z",
+          "finished": "2026-10-21T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "pushup",
+              "loadType": "bodyweight",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 0
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 0
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "settings": {},
+      "readiness": {
+        "score": 87,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "reps",
+          "min": 8,
+          "max": 12,
+          "rirMin": null,
+          "rirMax": null,
+          "raw": "8–12",
+          "reps": "8–12",
+          "sets": 2,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [
+          {
+            "workout": {
+              "id": "h0",
+              "programId": "p",
+              "started": "2026-10-23T12:00:00.000Z",
+              "finished": "2026-10-23T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "pushup",
+                  "loadType": "bodyweight",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 0
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "pushup",
+              "loadType": "bodyweight",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 0
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 0
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h1",
+              "programId": "p",
+              "started": "2026-10-22T12:00:00.000Z",
+              "finished": "2026-10-22T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "pushup",
+                  "loadType": "bodyweight",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 0
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "pushup",
+              "loadType": "bodyweight",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 0
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 0
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h2",
+              "programId": "p",
+              "started": "2026-10-21T12:00:00.000Z",
+              "finished": "2026-10-21T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "pushup",
+                  "loadType": "bodyweight",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 0
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "pushup",
+              "loadType": "bodyweight",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 0
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 0
+                }
+              ]
+            }
+          }
+        ],
+        "observed": null,
+        "step": 0,
+        "recommendation": {
+          "action": "variation",
+          "weight": 0,
+          "autoApply": false,
+          "historyCount": 3,
+          "variation": {
+            "id": "decline-pushup",
+            "variation": "",
+            "level": 1
+          }
+        },
+        "coachAction": "variation",
+        "lastEffort": "good"
+      }
+    },
+    {
+      "name": "variation-mismatch",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "press",
+        "loadType": "per_hand",
+        "repUnit": "ism.",
+        "measurementType": "reps",
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "press": {
+            "reps": "8–12",
+            "sets": 2
+          }
+        }
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "p",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-10-23T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ],
+              "prescription": {
+                "variation": "paused"
+              }
+            }
+          ]
+        },
+        {
+          "id": "h1",
+          "programId": "p",
+          "started": "2026-10-22T12:00:00.000Z",
+          "finished": "2026-10-22T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ],
+              "prescription": {
+                "variation": "paused"
+              }
+            }
+          ]
+        },
+        {
+          "id": "h2",
+          "programId": "p",
+          "started": "2026-10-21T12:00:00.000Z",
+          "finished": "2026-10-21T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ],
+              "prescription": {
+                "variation": "paused"
+              }
+            }
+          ]
+        }
+      ],
+      "settings": {},
+      "readiness": {
+        "score": 87,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "reps",
+          "min": 8,
+          "max": 12,
+          "rirMin": null,
+          "rirMax": null,
+          "raw": "8–12",
+          "reps": "8–12",
+          "sets": 2,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [],
+        "observed": null,
+        "step": 0.5,
+        "recommendation": {
+          "action": "start",
+          "weight": 5,
+          "autoApply": false,
+          "historyCount": 0,
+          "variation": null
+        },
+        "coachAction": "start",
+        "lastEffort": "good"
+      }
+    },
+    {
+      "name": "load-mismatch",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "press",
+        "loadType": "per_hand",
+        "repUnit": "ism.",
+        "measurementType": "reps",
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "press": {
+            "reps": "8–12",
+            "sets": 2
+          }
+        }
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "p",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-10-23T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "total",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h1",
+          "programId": "p",
+          "started": "2026-10-22T12:00:00.000Z",
+          "finished": "2026-10-22T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "total",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h2",
+          "programId": "p",
+          "started": "2026-10-21T12:00:00.000Z",
+          "finished": "2026-10-21T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "total",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "settings": {},
+      "readiness": {
+        "score": 87,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "reps",
+          "min": 8,
+          "max": 12,
+          "rirMin": null,
+          "rirMax": null,
+          "raw": "8–12",
+          "reps": "8–12",
+          "sets": 2,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [],
+        "observed": null,
+        "step": 0.5,
+        "recommendation": {
+          "action": "start",
+          "weight": 5,
+          "autoApply": false,
+          "historyCount": 0,
+          "variation": null
+        },
+        "coachAction": "start",
+        "lastEffort": "good"
+      }
+    },
+    {
+      "name": "metric-mismatch",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "press",
+        "loadType": "per_hand",
+        "repUnit": "ism.",
+        "measurementType": "reps",
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "press": {
+            "reps": "8–12",
+            "sets": 2
+          }
+        }
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "p",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-10-23T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "mp",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h1",
+          "programId": "p",
+          "started": "2026-10-22T12:00:00.000Z",
+          "finished": "2026-10-22T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "mp",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h2",
+          "programId": "p",
+          "started": "2026-10-21T12:00:00.000Z",
+          "finished": "2026-10-21T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "mp",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "settings": {},
+      "readiness": {
+        "score": 87,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "reps",
+          "min": 8,
+          "max": 12,
+          "rirMin": null,
+          "rirMax": null,
+          "raw": "8–12",
+          "reps": "8–12",
+          "sets": 2,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [],
+        "observed": null,
+        "step": 0.5,
+        "recommendation": {
+          "action": "start",
+          "weight": 5,
+          "autoApply": false,
+          "historyCount": 0,
+          "variation": null
+        },
+        "coachAction": "start",
+        "lastEffort": "good"
+      }
+    },
+    {
+      "name": "older-than-90-days",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "press",
+        "loadType": "per_hand",
+        "repUnit": "ism.",
+        "measurementType": "reps",
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "press": {
+            "reps": "8–12",
+            "sets": 2
+          }
+        }
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "p",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-01-01T12:00:00Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "settings": {},
+      "readiness": {
+        "score": 87,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "reps",
+          "min": 8,
+          "max": 12,
+          "rirMin": null,
+          "rirMax": null,
+          "raw": "8–12",
+          "reps": "8–12",
+          "sets": 2,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [],
+        "observed": null,
+        "step": 0.5,
+        "recommendation": {
+          "action": "start",
+          "weight": 5,
+          "autoApply": false,
+          "historyCount": 0,
+          "variation": null
+        },
+        "coachAction": "start",
+        "lastEffort": "good"
+      }
+    },
+    {
+      "name": "future-excluded",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "press",
+        "loadType": "per_hand",
+        "repUnit": "ism.",
+        "measurementType": "reps",
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "press": {
+            "reps": "8–12",
+            "sets": 2
+          }
+        }
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "p",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-10-25T12:00:00Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "settings": {},
+      "readiness": {
+        "score": 87,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "reps",
+          "min": 8,
+          "max": 12,
+          "rirMin": null,
+          "rirMax": null,
+          "raw": "8–12",
+          "reps": "8–12",
+          "sets": 2,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [],
+        "observed": null,
+        "step": 0.5,
+        "recommendation": {
+          "action": "start",
+          "weight": 5,
+          "autoApply": false,
+          "historyCount": 0,
+          "variation": null
+        },
+        "coachAction": "start",
+        "lastEffort": "good"
+      }
+    },
+    {
+      "name": "distance-light",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "running",
+        "loadType": "bodyweight",
+        "repUnit": "km",
+        "measurementType": "distance",
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {}
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "p",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-10-23T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "running",
+              "loadType": "bodyweight",
+              "repUnit": "km",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 0
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h1",
+          "programId": "p",
+          "started": "2026-10-22T12:00:00.000Z",
+          "finished": "2026-10-22T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "running",
+              "loadType": "bodyweight",
+              "repUnit": "km",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 0
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h2",
+          "programId": "p",
+          "started": "2026-10-21T12:00:00.000Z",
+          "finished": "2026-10-21T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "running",
+              "loadType": "bodyweight",
+              "repUnit": "km",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 0
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 0
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "settings": {},
+      "readiness": {
+        "score": 40,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "reps",
+          "min": 8,
+          "max": 12,
+          "rirMin": null,
+          "rirMax": null,
+          "raw": "8–12",
+          "reps": "8–12",
+          "sets": 2,
+          "rest": null,
+          "source": "library",
+          "programId": "p"
+        },
+        "rows": [
+          {
+            "workout": {
+              "id": "h0",
+              "programId": "p",
+              "started": "2026-10-23T12:00:00.000Z",
+              "finished": "2026-10-23T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "running",
+                  "loadType": "bodyweight",
+                  "repUnit": "km",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 0
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "running",
+              "loadType": "bodyweight",
+              "repUnit": "km",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 0
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 0
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h1",
+              "programId": "p",
+              "started": "2026-10-22T12:00:00.000Z",
+              "finished": "2026-10-22T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "running",
+                  "loadType": "bodyweight",
+                  "repUnit": "km",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 0
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "running",
+              "loadType": "bodyweight",
+              "repUnit": "km",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 0
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 0
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h2",
+              "programId": "p",
+              "started": "2026-10-21T12:00:00.000Z",
+              "finished": "2026-10-21T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "running",
+                  "loadType": "bodyweight",
+                  "repUnit": "km",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 0
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "running",
+              "loadType": "bodyweight",
+              "repUnit": "km",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 0
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 0
+                }
+              ]
+            }
+          }
+        ],
+        "observed": null,
+        "step": 0,
+        "recommendation": {
+          "action": "hold",
+          "weight": 0,
+          "autoApply": false,
+          "historyCount": 0,
+          "variation": null
+        },
+        "coachAction": "hold",
+        "lastEffort": "good"
+      }
+    },
+    {
+      "name": "configured-isolation-step",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "db-curl",
+        "loadType": "per_hand",
+        "repUnit": "ism.",
+        "measurementType": "reps",
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "db-curl": {
+            "reps": "8–12",
+            "sets": 2
+          }
+        }
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "p",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-10-23T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "db-curl",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h1",
+          "programId": "p",
+          "started": "2026-10-22T12:00:00.000Z",
+          "finished": "2026-10-22T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "db-curl",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h2",
+          "programId": "p",
+          "started": "2026-10-21T12:00:00.000Z",
+          "finished": "2026-10-21T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "db-curl",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "settings": {
+        "progressionSteps": {
+          "isolation": 0.5
+        }
+      },
+      "readiness": {
+        "score": 87,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "reps",
+          "min": 8,
+          "max": 12,
+          "rirMin": null,
+          "rirMax": null,
+          "raw": "8–12",
+          "reps": "8–12",
+          "sets": 2,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [
+          {
+            "workout": {
+              "id": "h0",
+              "programId": "p",
+              "started": "2026-10-23T12:00:00.000Z",
+              "finished": "2026-10-23T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "db-curl",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "db-curl",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h1",
+              "programId": "p",
+              "started": "2026-10-22T12:00:00.000Z",
+              "finished": "2026-10-22T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "db-curl",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "db-curl",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h2",
+              "programId": "p",
+              "started": "2026-10-21T12:00:00.000Z",
+              "finished": "2026-10-21T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "db-curl",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "db-curl",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          }
+        ],
+        "observed": null,
+        "step": 0.5,
+        "recommendation": {
+          "action": "increase",
+          "weight": 10.5,
+          "autoApply": true,
+          "historyCount": 3,
+          "variation": null
+        },
+        "coachAction": "increase",
+        "lastEffort": "good"
+      }
+    },
+    {
+      "name": "missing-prescribed-sets",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "press",
+        "loadType": "per_hand",
+        "repUnit": "ism.",
+        "measurementType": "reps",
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "press": {
+            "reps": "8–12",
+            "sets": 3
+          }
+        }
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "p",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-10-23T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h1",
+          "programId": "p",
+          "started": "2026-10-22T12:00:00.000Z",
+          "finished": "2026-10-22T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h2",
+          "programId": "p",
+          "started": "2026-10-21T12:00:00.000Z",
+          "finished": "2026-10-21T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "settings": {},
+      "readiness": {
+        "score": 87,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "reps",
+          "min": 8,
+          "max": 12,
+          "rirMin": null,
+          "rirMax": null,
+          "raw": "8–12",
+          "reps": "8–12",
+          "sets": 3,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [
+          {
+            "workout": {
+              "id": "h0",
+              "programId": "p",
+              "started": "2026-10-23T12:00:00.000Z",
+              "finished": "2026-10-23T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h1",
+              "programId": "p",
+              "started": "2026-10-22T12:00:00.000Z",
+              "finished": "2026-10-22T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h2",
+              "programId": "p",
+              "started": "2026-10-21T12:00:00.000Z",
+              "finished": "2026-10-21T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          }
+        ],
+        "observed": null,
+        "step": 1,
+        "recommendation": {
+          "action": "hold",
+          "weight": 10,
+          "autoApply": false,
+          "historyCount": 3,
+          "variation": null
+        },
+        "coachAction": "hold",
+        "lastEffort": "good"
+      }
+    },
+    {
+      "name": "explicit-inherited-history",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "press",
+        "loadType": "per_hand",
+        "repUnit": "ism.",
+        "measurementType": "reps",
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "press": {
+            "reps": "8–12",
+            "sets": 2
+          }
+        },
+        "history128": {
+          "entries": {
+            "press": {
+              "loadType": "per_hand",
+              "variation": "",
+              "metric": "reps",
+              "sources": [
+                {
+                  "programId": "old",
+                  "key": "h0"
+                },
+                {
+                  "programId": "old",
+                  "key": "h1"
+                },
+                {
+                  "programId": "old",
+                  "key": "h2"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "old",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-10-23T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h1",
+          "programId": "old",
+          "started": "2026-10-22T12:00:00.000Z",
+          "finished": "2026-10-22T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h2",
+          "programId": "old",
+          "started": "2026-10-21T12:00:00.000Z",
+          "finished": "2026-10-21T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "settings": {},
+      "readiness": {
+        "score": 87,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "reps",
+          "min": 8,
+          "max": 12,
+          "rirMin": null,
+          "rirMax": null,
+          "raw": "8–12",
+          "reps": "8–12",
+          "sets": 2,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [
+          {
+            "workout": {
+              "id": "h0",
+              "programId": "old",
+              "started": "2026-10-23T12:00:00.000Z",
+              "finished": "2026-10-23T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h1",
+              "programId": "old",
+              "started": "2026-10-22T12:00:00.000Z",
+              "finished": "2026-10-22T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h2",
+              "programId": "old",
+              "started": "2026-10-21T12:00:00.000Z",
+              "finished": "2026-10-21T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          }
+        ],
+        "observed": null,
+        "step": 1,
+        "recommendation": {
+          "action": "increase",
+          "weight": 11,
+          "autoApply": true,
+          "historyCount": 3,
+          "variation": null
+        },
+        "coachAction": "increase",
+        "lastEffort": "good"
+      }
+    },
+    {
+      "name": "unrelated-history",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "press",
+        "loadType": "per_hand",
+        "repUnit": "ism.",
+        "measurementType": "reps",
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "press": {
+            "reps": "8–12",
+            "sets": 2
+          }
+        }
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "other",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-10-23T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h1",
+          "programId": "other",
+          "started": "2026-10-22T12:00:00.000Z",
+          "finished": "2026-10-22T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h2",
+          "programId": "other",
+          "started": "2026-10-21T12:00:00.000Z",
+          "finished": "2026-10-21T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "settings": {},
+      "readiness": {
+        "score": 87,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "reps",
+          "min": 8,
+          "max": 12,
+          "rirMin": null,
+          "rirMax": null,
+          "raw": "8–12",
+          "reps": "8–12",
+          "sets": 2,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [],
+        "observed": null,
+        "step": 0.5,
+        "recommendation": {
+          "action": "start",
+          "weight": 5,
+          "autoApply": false,
+          "historyCount": 0,
+          "variation": null
+        },
+        "coachAction": "start",
+        "lastEffort": "good"
+      }
+    },
+    {
+      "name": "uneven-reps",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "press",
+        "loadType": "per_hand",
+        "repUnit": "ism.",
+        "measurementType": "reps",
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "press": {
+            "reps": "8–12",
+            "sets": 2
+          }
+        }
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "p",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-10-23T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "9",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "9",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "settings": {},
+      "readiness": {
+        "score": 87,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "reps",
+          "min": 8,
+          "max": 12,
+          "rirMin": null,
+          "rirMax": null,
+          "raw": "8–12",
+          "reps": "8–12",
+          "sets": 2,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [
+          {
+            "workout": {
+              "id": "h0",
+              "programId": "p",
+              "started": "2026-10-23T12:00:00.000Z",
+              "finished": "2026-10-23T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "9",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "9",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "9",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "9",
+                  "weight": 10
+                }
+              ]
+            }
+          }
+        ],
+        "observed": null,
+        "step": 1,
+        "recommendation": {
+          "action": "reps",
+          "weight": 10,
+          "autoApply": false,
+          "historyCount": 1,
+          "variation": null
+        },
+        "coachAction": "reps",
+        "lastEffort": "good"
+      }
+    },
+    {
+      "name": "observed-small-step",
+      "now": "2026-10-24T12:00:00Z",
+      "library": {
+        "id": "press",
+        "loadType": "per_hand",
+        "repUnit": "ism.",
+        "measurementType": "reps",
+        "sets": 2,
+        "reps": "8–12",
+        "weight": 5
+      },
+      "program": {
+        "id": "p",
+        "prescriptions": {
+          "press": {
+            "reps": "8–12",
+            "sets": 2
+          }
+        }
+      },
+      "history": [
+        {
+          "id": "h0",
+          "programId": "p",
+          "started": "2026-10-23T12:00:00.000Z",
+          "finished": "2026-10-23T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h1",
+          "programId": "p",
+          "started": "2026-10-22T12:00:00.000Z",
+          "finished": "2026-10-22T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 9.5
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 9.5
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "h2",
+          "programId": "p",
+          "started": "2026-10-21T12:00:00.000Z",
+          "finished": "2026-10-21T12:00:00.000Z",
+          "exercises": [
+            {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 9
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 9
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "settings": {},
+      "readiness": {
+        "score": 87,
+        "parts": 2
+      },
+      "reference": {
+        "target": {
+          "kind": "reps",
+          "min": 8,
+          "max": 12,
+          "rirMin": null,
+          "rirMax": null,
+          "raw": "8–12",
+          "reps": "8–12",
+          "sets": 2,
+          "rest": null,
+          "source": "program",
+          "programId": "p"
+        },
+        "rows": [
+          {
+            "workout": {
+              "id": "h0",
+              "programId": "p",
+              "started": "2026-10-23T12:00:00.000Z",
+              "finished": "2026-10-23T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 10
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h1",
+              "programId": "p",
+              "started": "2026-10-22T12:00:00.000Z",
+              "finished": "2026-10-22T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 9.5
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 9.5
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 9.5
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 9.5
+                }
+              ]
+            }
+          },
+          {
+            "workout": {
+              "id": "h2",
+              "programId": "p",
+              "started": "2026-10-21T12:00:00.000Z",
+              "finished": "2026-10-21T12:00:00.000Z",
+              "exercises": [
+                {
+                  "id": "press",
+                  "loadType": "per_hand",
+                  "repUnit": "ism.",
+                  "effort": "good",
+                  "sets": [
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 9
+                    },
+                    {
+                      "done": true,
+                      "reps": "12",
+                      "weight": 9
+                    }
+                  ]
+                }
+              ]
+            },
+            "exercise": {
+              "id": "press",
+              "loadType": "per_hand",
+              "repUnit": "ism.",
+              "effort": "good",
+              "sets": [
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 9
+                },
+                {
+                  "done": true,
+                  "reps": "12",
+                  "weight": 9
+                }
+              ]
+            }
+          }
+        ],
+        "observed": 0.5,
+        "step": 0.5,
+        "recommendation": {
+          "action": "increase",
+          "weight": 10.5,
+          "autoApply": false,
+          "historyCount": 3,
+          "variation": null
+        },
+        "coachAction": "increase",
+        "lastEffort": "good"
+      }
+    }
+  ]
+}

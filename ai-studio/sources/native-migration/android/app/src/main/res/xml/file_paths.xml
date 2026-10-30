@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Kamera ideiglenes puffer a cache mappában -->
+    <cache-path name="trainpilot_camera_cache" path="." />
+    <!-- Végleges fotók a belső filesDir/workout_photos mappában -->
+    <files-path name="trainpilot_workout_photos" path="workout_photos" />
+</paths>

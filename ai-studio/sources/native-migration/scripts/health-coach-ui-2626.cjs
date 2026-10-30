@@ -1,0 +1,14 @@
+const assert=require('node:assert/strict'),fs=require('node:fs');
+const app=fs.readFileSync('www/app.js','utf8');
+assert.ok(app.includes('var rfHistoryHealthEnsure=function rfHistoryHealthEnsure'));
+assert.ok(app.includes('var rfHistoryHealthToggle=function rfHistoryHealthToggle'));
+assert.ok(app.includes('rfHistoryHealthEnsure(${originalIndex})'));
+assert.ok(app.includes('class="rf-history-health-panel"'));
+assert.ok(app.includes('class="rf-history-health-toggle" aria-expanded="true"'));
+assert.ok(app.includes('class="rf-history-health-body"'));
+assert.ok(app.includes('rf-history-health-refresh'));
+assert.ok(app.includes('rf2626HistoryHealthCss'));
+assert.ok(!app.includes('<details class="rf-history-health-panel"'));
+assert.ok(app.includes("if(!main||!main.querySelector('#rf220CoachCard'))return;main.classList.add('rf221-home')"));
+assert.ok(app.includes('body:has(main.rf221-home){overflow:hidden}'));
+console.log('PASS 2626 compact custom-collapse history Health + Coach/Stats scroll guard');

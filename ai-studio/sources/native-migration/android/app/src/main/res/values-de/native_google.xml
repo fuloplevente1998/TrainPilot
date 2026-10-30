@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_google_authorizing">Google-Zugriff wird geprüft…</string>
+    <string name="native_google_waiting">Warten auf die Google-Zustimmung…</string>
+    <string name="native_google_launch_failed">Die Google-Zustimmung konnte nicht geöffnet werden. Erneut versuchen.</string>
+    <string name="native_google_cancelled">Google-Zustimmung abgebrochen. Es wurde keine Synchronisierung gestartet.</string>
+    <string name="native_google_no_token">Google hat keinen Zugriff gewährt. Zugriff erneut anfordern.</string>
+    <string name="native_google_connected">Google-Konto verbunden.</string>
+    <string name="native_google_drive_done">Drive-Synchronisierung abgeschlossen.</string>
+    <string name="native_google_calendar_done">Kalender synchronisiert: %1$d Vorgänge.</string>
+    <string name="native_google_failed">Der Google-Vorgang ist fehlgeschlagen.</string>
+</resources>

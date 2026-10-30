@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_state_loading">Se încarcă…</string>
+    <string name="home_state_no_program">Alege un program din Antrenament</string>
+    <string name="home_state_no_target">Niciun antrenament recomandat</string>
+    <string name="home_state_error">Datele ecranului principal nu au putut fi actualizate.</string>
+    <string name="home_state_retry">Reîncearcă</string>
+    <string name="home_state_watch_unknown">Nu există date recente de la ceas</string>
+</resources>
