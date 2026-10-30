@@ -44,7 +44,11 @@ public class TrainPilotMainEmulatorScreenshotsTest {
           + code
           + ";return 'OK';}catch(error){return 'ERR: '+String(error&&error.stack||error);}})()";
         String outcome = eval(web, wrapped);
-        Thread.sleep(700);
+        Thread.sleep(1800);
+        // SwiftShader/SurfaceFlinger can show the previous frame on the first read.
+        Bitmap priming = InstrumentationRegistry.getInstrumentation().getUiAutomation().takeScreenshot();
+        if(priming != null) priming.recycle();
+        Thread.sleep(500);
         Bitmap bitmap = InstrumentationRegistry.getInstrumentation().getUiAutomation().takeScreenshot();
         if(bitmap == null) throw new AssertionError("Android emulator screenshot returned null: " + name);
         File image = new File(dir, name + ".png");
@@ -77,7 +81,7 @@ public class TrainPilotMainEmulatorScreenshotsTest {
         // New install state and main pages. All screens are recorded at *native*
         // emulator resolution with Android status/navigation bars intact.
         capture(web,"00-startup-first-run","state.tab='home';render()");
-        eval(web,"(function(){try{localStorage.setItem('repforge:onboarding128',JSON.stringify('skipped'));db.set('language','hu');state.session=null;state.workout=null;state.tab='home';render();return true}catch(e){return String(e)}})()");
+        eval(web,"(function(){try{localStorage.setItem('repforge:onboarding128',JSON.stringify('skipped'));db.set('language','hu');const sample=byId('db-floor-press');if(sample){const hs=[];for(let i=0;i<4;i++){const day=12+i*3;hs.push({id:'emulator-fixture-'+i,programId:'home-basic',programName:'Bemutató edzés',dayId:'A',workout:'A',started:'2026-10-'+day+'T10:00:00Z',finished:'2026-10-'+day+'T10:42:00Z',exercises:[{...sample,sets:[{set:1,setId:'fixture-'+i+'-1',reps:'8',weight:20+i*2,done:true},{set:2,setId:'fixture-'+i+'-2',reps:'8',weight:20+i*2,done:true}]}]});}db.set('history',hs);}state.session=null;state.workout=null;state.tab='home';render();return true}catch(e){return String(e)}})()");
         capture(web,"01-kezdolap","go('home')");
         capture(web,"02-edzes","go('plan')");
         capture(web,"03-naptar","go('calendar')");
@@ -118,6 +122,16 @@ public class TrainPilotMainEmulatorScreenshotsTest {
         capture(web,"29-aktiv-edzes-idozito","if(state.session){renderWorkout();document.querySelector('main details > summary')?.click()}");
         capture(web,"30-felbe-hagyott-edzes","if(state.session){persistDraft();state.session=null;state.workout=null};go('home')");
         capture(web,"31-edzes-folytatasa","if(db.get('draft',null)&&typeof resumeDraft==='function')resumeDraft()");
+
+        capture(web,"32-health-connect-kapcsolat","go('health');const p=document.querySelector('.tp168-connect-panel');if(p)p.open=true;window.scrollTo(0,180)");
+        capture(web,"33-samsung-health-adatforras","go('health');const p=document.querySelector('.tp168-connect-panel');if(p)p.open=true;const provider=document.querySelector('[data-health-provider]');if(provider)provider.scrollIntoView({block:'center'})");
+        capture(web,"34-samsung-health-megjelenites","go('health');if(window.TrainPilotSamsungHealth)TrainPilotSamsungHealth.decorate();const a=document.querySelector('[data-health-provider]');if(a)a.scrollIntoView({block:'center'})");
+        capture(web,"35-health-naplo-adatforras","go('health');tp155R4OpenPanel('health-journal');document.querySelector('[data-health-provider]')?.scrollIntoView({block:'center'})");
+        capture(web,"36-beallitasok-szinkron","go('settings');document.querySelector('#tp155R4PanelHost .tp155-r4-panel')?.scrollTo(0,600)");
+        capture(web,"37-beallitasok-mentes","go('settings');document.querySelector('#tp155R4PanelHost .tp155-r4-panel')?.scrollTo(0,1250)");
+        capture(web,"38-beallitasok-vege","go('settings');document.querySelector('#tp155R4PanelHost .tp155-r4-panel')?.scrollTo(0,2100)");
+        capture(web,"39-naplo-adatokkal","go('history');window.scrollTo(0,350)");
+        capture(web,"40-statisztikak-adatokkal","go('history');statsScreen()");
 
         // Persist evidence index before test ends so adb can collect even if a
         // later screenshot fails.
