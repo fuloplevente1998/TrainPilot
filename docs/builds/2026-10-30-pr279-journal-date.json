@@ -1,0 +1,122 @@
+{
+  "date": "2026-10-30",
+  "pullRequest": 279,
+  "applicationSource": "bf60db0c18c7604f51eb00bd112962592ec718e5",
+  "applicationSourceTree": "57e6b5941b99b2f520b49c5a824b05a25ecbaf03",
+  "prMergeTreeMatches": true,
+  "version": "1.3.71",
+  "versionCode": 2735,
+  "checks": [
+    {
+      "name": "Quick",
+      "runId": 41008280540,
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/41008280540",
+      "status": "success",
+      "passed": 163,
+      "failed": 0
+    },
+    {
+      "name": "Performance",
+      "runId": 41008280544,
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/41008280544",
+      "status": "success"
+    },
+    {
+      "name": "Phone Release",
+      "runId": 41008276976,
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/41008276976",
+      "status": "success",
+      "chromiumShards": 6,
+      "chromiumModules": 112,
+      "visualImages": 200,
+      "visualErrors": 0,
+      "nativeTests": 251,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "WebView",
+      "runId": 41008277160,
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/41008277160",
+      "status": "success",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "includes": "journalDateRangeUsesModalAndPreservesRecords"
+    },
+    {
+      "name": "Wear Release",
+      "runId": 41008276967,
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/41008276967",
+      "status": "success",
+      "tests": 167,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "Wear round UI",
+      "runId": 41008277152,
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/41008277152",
+      "status": "success",
+      "tests": 183,
+      "uniqueTests": 183,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "coverageGate": "success"
+    }
+  ],
+  "apks": {
+    "phone": {
+      "artifactId": 12957011294,
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/41008276976/artifacts/12957011294",
+      "bytes": 3304365,
+      "sha256": "5765c2530fee8bfb823aad7afbfbc9e5917179ceb208c454d4d8107ddeb96bc2",
+      "sourceStampVerified": true,
+      "packagedAppJsAndStylesByteIdentical": true
+    },
+    "wear": {
+      "artifactId": 12956706039,
+      "url": "https://github.com/fuloplevente1998/TrainPilot/actions/runs/41008276967/artifacts/12956706039",
+      "bytes": 4226963,
+      "sha256": "0b80ee5df646f51db0111f39e863e5b3db27e354f16f33a73a5a9a9e4b13167a",
+      "sourceStampVerified": true
+    }
+  },
+  "signing": {
+    "v2VerifiedBoth": true,
+    "matchesOriginalPublicV100SignerBoth": true
+  },
+  "changes": [
+    "Journal inclusive date range opens in a Calendar-styled native HTML dialog; Clear and Today retained",
+    "Incomplete replacement selection preserves the committed range; Escape/Android Back restore focus",
+    "Viewport positioning and keyboard focus loop",
+    "Removed duplicate Undo insertion added after the previously accepted APK; canonical Undo remains"
+  ],
+  "evidenceInspection": [
+    "Downloaded all six Chromium shard reports: 112 unique passed modules at the exact application source",
+    "Downloaded native phone/Wear, Android WebView and round UI XML: zero failures/errors/skipped",
+    "Viewed Journal date dialog screenshot",
+    "Downloaded both APK packages: internal checksums and source stamps verified",
+    "Phone packaged app.js and styles.css byte-identical to source"
+  ],
+  "physicalAcceptance": {
+    "calendarUndo": "User accepted on the previously supplied phone APK, 2026-10-30",
+    "newJournalDateDialog": "pending",
+    "fullPhoneWearGpsHealth": "pending"
+  },
+  "remaining": [
+    "Physical acceptance of the new Journal date dialog",
+    "Direct phone-to-Wear selected program-day start requires native capability and ownership/protocol work; startWatchMeasurement is for an existing published workout",
+    "Other unchecked PR279 items and full screen/physical test matrix"
+  ],
+  "lifecycle": {
+    "draft": true,
+    "merged": false,
+    "releaseCreated": false,
+    "versionBumped": false
+  }
+}
