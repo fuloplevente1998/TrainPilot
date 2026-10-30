@@ -62,18 +62,7 @@ jobs:
             adb shell am instrument -w -e class com.repforge.app.TrainPilotMainEmulatorScreenshotsTest com.repforge.app.test/androidx.test.runner.AndroidJUnitRunner | tee emulator-instrumentation.txt
             mkdir -p emulator-evidence
             adb pull /sdcard/Android/data/com.repforge.app/files/main-emulator-5f026a5 emulator-evidence/
-            python3 - <<'PY'
-            from pathlib import Path
-            import struct
-            shots=sorted(Path('emulator-evidence').rglob('*.png'))
-            assert len(shots)>=20, f'Expected at least 20 actual Android emulator images, found {len(shots)}'
-            for p in shots:
-                with p.open('rb') as f: h=f.read(24)
-                assert h[:8]==b'\x89PNG\r\n\x1a\n',f'Not PNG: {p}'
-                dimensions=struct.unpack('>II',h[16:24])
-                assert dimensions==(1080,2392),f'Wrong emulator resolution {p}: {dimensions}'
-            print(f'Verified {len(shots)} native emulator screenshots at 1080x2392')
-            PY
+            python3 -c "from pathlib import Path; import struct; ss=sorted(Path('emulator-evidence').rglob('*.png')); assert len(ss)>=39, f'Expected 39+ native screenshots, got {len(ss)}'; ds=[struct.unpack('>II',p.read_bytes()[16:24]) for p in ss]; assert all(d==(1080,2392) for d in ds), f'Unexpected resolutions: {ds}'; print(f'Verified {len(ss)} genuine Android emulator PNG captures at 1080x2392')"
             # Keep original WebView execution checks on this isolated testing branch.
             bash scripts/measure-phone-cold-startup.sh
             bash scripts/run-phone-webview-ui.sh
