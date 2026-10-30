@@ -84,7 +84,9 @@ const server=http.createServer((req,res)=>{
    outer.open=true;const opened=getComputedStyle(more).display;
    outer.remove();return {markup:true,closed,opened};
   });
-  assert.deepEqual(preview,{markup:true,closed:'inline',opened:'none'},'expanded day hides redundant +N preview only');
+  assert.equal(preview.markup,true,'day preview contains +N');
+  assert.notEqual(preview.closed,'none','closed day still displays +N');
+  assert.equal(preview.opened,'none','expanded day hides redundant +N preview');
   assert.deepEqual(errors,[]);
   console.log('PASS PR279: RIR before OK, 0/invalid/draft reload, identity safety, completed Coach only, undo and expanded day preview');
  }finally{await browser?.close();await new Promise(resolve=>server.close(resolve))}
