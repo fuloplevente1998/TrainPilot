@@ -115,14 +115,7 @@ public class TrainPilotMainEmulatorScreenshotsTest {
         capture(web,"25-naplo-statisztikak","go('history');if(typeof tp155OpenJournalStats==='function')tp155OpenJournalStats()");
         capture(web,"26-egeszseg-meresi-reszletek","go('health');document.querySelector('.tp168-sync-tail summary')?.click()");
 
-        // The active workout is populated using the installed application's
-        // exercise library; no Health Connect or Samsung data are invented.
-        capture(web,"27-aktiv-edzes","go('plan');const p=activeProgram();const d=p?.days?.[0];if(d&&typeof startWorkout==='function')startWorkout(d.id)");
-        capture(web,"28-aktiv-edzes-also-resz","if(state.session){renderWorkout();window.scrollTo(0,650)}");
-        capture(web,"29-aktiv-edzes-idozito","if(state.session){renderWorkout();document.querySelector('main details > summary')?.click()}");
-        capture(web,"30-felbe-hagyott-edzes","if(state.session){persistDraft();state.session=null;state.workout=null};go('home')");
-        capture(web,"31-edzes-folytatasa","if(db.get('draft',null)&&typeof resumeDraft==='function')resumeDraft()");
-
+        // Capture provider and settings states before opening an active workout.
         capture(web,"32-health-connect-kapcsolat","go('health');const p=document.querySelector('.tp168-connect-panel');if(p)p.open=true;window.scrollTo(0,180)");
         capture(web,"33-samsung-health-adatforras","go('health');const p=document.querySelector('.tp168-connect-panel');if(p)p.open=true;const provider=document.querySelector('[data-health-provider]');if(provider)provider.scrollIntoView({block:'center'})");
         capture(web,"34-samsung-health-megjelenites","go('health');if(window.TrainPilotSamsungHealth)TrainPilotSamsungHealth.decorate();const a=document.querySelector('[data-health-provider]');if(a)a.scrollIntoView({block:'center'})");
@@ -132,6 +125,15 @@ public class TrainPilotMainEmulatorScreenshotsTest {
         capture(web,"38-beallitasok-vege","go('settings');document.querySelector('#tp155R4PanelHost .tp155-r4-panel')?.scrollTo(0,2100)");
         capture(web,"39-naplo-adatokkal","go('history');window.scrollTo(0,350)");
         capture(web,"40-statisztikak-adatokkal","go('history');statsScreen()");
+
+
+        // The active workout is populated using the installed application's
+        // exercise library; no Health Connect or Samsung data are invented.
+        capture(web,"27-aktiv-edzes","go('plan');const p=activeProgram();const d=p?.days?.[0];if(d&&typeof startWorkout==='function')startWorkout(d.id)");
+        capture(web,"28-aktiv-edzes-also-resz","if(state.session){renderWorkout();window.scrollTo(0,650)}");
+        capture(web,"29-aktiv-edzes-idozito","if(state.session){renderWorkout();document.querySelector('main details > summary')?.click()}");
+        capture(web,"30-felbe-hagyott-edzes","if(state.session){persistDraft();state.session=null;state.workout=null};go('home')");
+        capture(web,"31-edzes-folytatasa","if(db.get('draft',null)&&typeof resumeDraft==='function')resumeDraft()");
 
         // Persist evidence index before test ends so adb can collect even if a
         // later screenshot fails.
