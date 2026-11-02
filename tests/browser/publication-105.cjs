@@ -8,7 +8,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
   await page.addInitScript(()=>{try{localStorage.setItem("repforge:onboarding128",JSON.stringify("skipped"))}catch(_){}});await page.goto(`http://127.0.0.1:${server.address().port}`);await page.waitForFunction(()=>window.TrainPilotBoot?.finished);
   await page.evaluate(lang=>{db.set('language',lang);go('settings');},language);
   await page.waitForSelector('.tp105-data');await page.locator('.tp105-data>summary').click();
-  const result=await page.evaluate(()=>({text:document.querySelector('.tp105-data').textContent,checked:document.querySelector('.tp105-data input').checked,overflow:document.documentElement.scrollWidth>innerWidth+1,buttons:[...document.querySelectorAll('.tp105-data button')].map(x=>x.getAttribute('onclick'))}));
+  const result=await page.evaluate(()=>({text:document.querySelector('.tp105-data').textContent,checked:document.querySelector('.tp105-data input').checked,overflow:document.documentElement.scrollWidth>innerWidth+1,buttons:[...document.querySelectorAll('.tp152-settings-backup button')].map(x=>x.getAttribute('onclick'))}));
   await page.keyboard.press('Tab');
   const consentStyle=await page.evaluate(()=>{
    const input=document.querySelector('.tp105-health-consent input'),before=getComputedStyle(input);const off={appearance:before.appearance,width:before.width,radius:before.borderRadius};
