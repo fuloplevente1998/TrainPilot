@@ -44,6 +44,25 @@ function nativeFixture(){
  await page.locator('[data-health-hcBackground]').click();await page.waitForFunction(()=>document.querySelector('[data-health-hcBackground]').checked);assert.equal(await page.evaluate(()=>healthFixture.calls.filter(c=>c[0]==='backgroundPermission').length),1,'background permission already granted is reused');
  await page.evaluate(async()=>{db.set('privacyPrefs',{includeHealth:false});healthFixture.backupOff=await TrainPilotHealthJournal.backup();db.set('privacyPrefs',{includeHealth:true});healthFixture.backupOn=await TrainPilotHealthJournal.backup();});
  assert.equal(await page.evaluate(()=>Object.hasOwn(healthFixture.backupOff,'healthJournal')),false);assert.ok(await page.evaluate(()=>healthFixture.backupOn.healthJournal.records.length)>30,'export contains the complete native dataset, beyond the UI page/cache');assert.equal(await page.evaluate(()=>Object.hasOwn(syncData(),'healthJournal')),false,'full journal never enters Drive snapshots');
+ // Switch the native fixture to the new compact backup transport and verify restore dispatch.
+ await page.evaluate(async()=>{
+  const journal=window.Capacitor.Plugins.HealthJournal,legacy=journal.prepareRestore;
+  journal.exportCompressedSnapshot=async()=>({data:'H4sIAAAAAAACAwMAAAAAAAAAAAA='});
+  journal.prepareRestore=async options=>{
+   if(options.compressedSnapshot!==undefined){
+    healthFixture.compressedRestore=options.compressedSnapshot;
+    return legacy({snapshot:await journal.exportSnapshot()});
+   }
+   return legacy(options);
+  };
+  db.set('privacyPrefs',{includeHealth:true});
+  healthFixture.compact=await TrainPilotHealthJournal.backup();
+  window.tp2628Confirm=async()=>true;
+  await restoreText(JSON.stringify(healthFixture.compact));
+ });
+ assert.equal(await page.evaluate(()=>healthFixture.compact.healthJournalGzip),'H4sIAAAAAAACAwMAAAAAAAAAAAA=');
+ assert.equal(await page.evaluate(()=>Object.hasOwn(healthFixture.compact,'healthJournal')),false);
+ assert.equal(await page.evaluate(()=>healthFixture.compressedRestore), 'H4sIAAAAAAACAwMAAAAAAAAAAAA=');
  await page.evaluate(async()=>{const previous=JSON.stringify(history()),input=await TrainPilotHealthJournal.backup();healthFixture.failInstall=true;window.tp2628Confirm=async()=>true;try{await restoreText(JSON.stringify(input));throw Error('restore should fail');}catch(error){if(error.message==='restore should fail')throw error;}healthFixture.rollbackOkay=JSON.stringify(history())===previous&&!localStorage.getItem('repforge:healthRestore120');healthFixture.failInstall=false;});assert.equal(await page.evaluate(()=>healthFixture.rollbackOkay),true);
  await page.reload();await page.waitForFunction(()=>TrainPilotBoot.finished);await page.evaluate(()=>TrainPilotHealthJournal.ready());assert.equal(await page.evaluate(()=>rf240Ledger().days[rf240DayKey(new Date())].steps),0,'Health Connect source/data survive restart');
  await page.evaluate(()=>{go('home');db.set('privacyPrefs',{includeHealth:true});});await page.evaluate(()=>tp105Archive(false));assert.ok(await page.evaluate(()=>healthFixture.saved.healthJournal.records.length)>30);

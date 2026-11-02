@@ -9,10 +9,20 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
+import android.util.Base64;
 
 /** The primary health store. The WebView only receives bounded projections/pages. */
 final class HealthJournalStore extends SQLiteOpenHelper {
     static final String HC = "health_connect", BLE = "ble_watch", LEGACY = "legacy", SAMSUNG = "samsung_health";
+    // The 18 MiB JSON snapshot restriction prevented real users from backing up their Health journal.
+    // The portable JSON/ZIP still has a 20 MiB file limit, so Health payloads are losslessly gzip-encoded.
+    static final int MAX_SNAPSHOT_BYTES = 64 * 1024 * 1024;
+    private static final int MAX_BASE64_CHARS = 20 * 1024 * 1024;
     private static final Object LOCK = new Object();
     private static final int META_CHUNK_CHARS = 32768;
     private static final String META_CHUNKS = "\u0001health-meta-chunks-v1";
@@ -343,17 +353,44 @@ final class HealthJournalStore extends SQLiteOpenHelper {
     }
     JSONObject exportSnapshot() throws Exception {
         return transaction(db->{JSONObject out=new JSONObject().put("schemaVersion",1);JSONArray records=new JSONArray(),days=new JSONArray(),deleted=new JSONArray();
-            int size=0;try(Cursor c=db.rawQuery("SELECT json FROM records ORDER BY row_id",null)){while(c.moveToNext()){String json=c.getString(0);size+=json.length();if(size>18*1024*1024)throw new IllegalStateException("Health export exceeds 18 MB; choose a shorter period in a future export");records.put(new JSONObject(json));}}
+            int size=0;try(Cursor c=db.rawQuery("SELECT json FROM records ORDER BY row_id",null)){while(c.moveToNext()){String json=c.getString(0);size+=json.length();if(size>MAX_SNAPSHOT_BYTES)throw new IllegalStateException("Health journal exceeds the maximum 64 MB expanded backup size");records.put(new JSONObject(json));}}
             try(Cursor c=db.rawQuery("SELECT day,channel,source,json FROM days ORDER BY day",null)){while(c.moveToNext())days.put(new JSONObject().put("day",c.getString(0)).put("channel",c.getString(1)).put("source",c.getString(2)).put("data",new JSONObject(c.getString(3))));}
             try(Cursor c=db.rawQuery("SELECT record_id,deleted_ms FROM deletions",null)){while(c.moveToNext())deleted.put(new JSONObject().put("recordId",c.getString(0)).put("deletedMs",c.getLong(1)));}
             JSONObject sync=new JSONObject();for(String key:new String[]{"lastSyncAt","lastFullSyncAt","lastAttemptAt"}){String value=meta(db,key,"");if(!value.isEmpty())sync.put(key,value);}
-            out.put("records",records).put("days",days).put("deletions",deleted).put("syncMeta",sync);if(out.toString().length()>18*1024*1024)throw new IllegalStateException("Health export exceeds 18 MB");return out;
+            out.put("records",records).put("days",days).put("deletions",deleted).put("syncMeta",sync);if(out.toString().getBytes(StandardCharsets.UTF_8).length>MAX_SNAPSHOT_BYTES)throw new IllegalStateException("Health journal exceeds the maximum 64 MB expanded backup size");return out;
         });
+    }
+    /** Compact, lossless transport for manual JSON and ZIP backups. Never silently omit Health records. */
+    String exportCompressedSnapshot() throws Exception {
+        byte[] raw = exportSnapshot().toString().getBytes(StandardCharsets.UTF_8);
+        if(raw.length>MAX_SNAPSHOT_BYTES)throw new IllegalStateException("Health backup exceeds the 64 MB expanded limit");
+        ByteArrayOutputStream compressed = new ByteArrayOutputStream();
+        try(GZIPOutputStream gzip = new GZIPOutputStream(compressed)){gzip.write(raw);}
+        String encoded = Base64.encodeToString(compressed.toByteArray(),Base64.NO_WRAP);
+        if(encoded.length()>MAX_BASE64_CHARS)throw new IllegalStateException("Compressed Health backup exceeds the 20 MB file limit");
+        return encoded;
+    }
+    /** Bounded decompression blocks corrupt/hostile backups before any database mutation. */
+    String prepareRestoreCompressed(String encoded) throws Exception {
+        if(encoded==null||encoded.isEmpty()||encoded.length()>MAX_BASE64_CHARS)
+            throw new IllegalArgumentException("Invalid or oversized compressed Health backup");
+        byte[] payload;
+        try{payload=Base64.decode(encoded,Base64.NO_WRAP);}
+        catch(IllegalArgumentException e){throw new IllegalArgumentException("Invalid compressed Health backup",e);}
+        ByteArrayOutputStream raw = new ByteArrayOutputStream();
+        try(GZIPInputStream gzip=new GZIPInputStream(new ByteArrayInputStream(payload))){
+            byte[] buffer=new byte[8192];int read;
+            while((read=gzip.read(buffer))!=-1){
+                if(raw.size()>MAX_SNAPSHOT_BYTES-read)throw new IllegalArgumentException("Expanded Health backup exceeds 64 MB");
+                raw.write(buffer,0,read);
+            }
+        }
+        return prepareRestore(new JSONObject(new String(raw.toByteArray(),StandardCharsets.UTF_8)));
     }
     private void replace(SQLiteDatabase db,JSONObject snapshot) throws Exception {
         if(snapshot.getInt("schemaVersion")!=1)throw new IllegalArgumentException("Unsupported health backup");
         JSONArray records=snapshot.getJSONArray("records"),days=snapshot.getJSONArray("days"),deleted=snapshot.optJSONArray("deletions");
-        if(records.length()>100000||days.length()>20000||snapshot.toString().length()>18*1024*1024)throw new IllegalArgumentException("Health backup too large");
+        if(records.length()>100000||days.length()>20000||snapshot.toString().getBytes(StandardCharsets.UTF_8).length>MAX_SNAPSHOT_BYTES)throw new IllegalArgumentException("Health backup too large");
         db.delete("records",null,null);db.delete("days",null,null);db.delete("deletions",null,null);db.delete("dirty_days",null,null);
         if(deleted!=null)for(int i=0;i<deleted.length();i++){JSONObject d=deleted.getJSONObject(i);ContentValues v=new ContentValues();v.put("record_id",text(d,"recordId",200));v.put("deleted_ms",time(d,"deletedMs"));db.insertOrThrow("deletions",null,v);}
         for(int i=0;i<records.length();i++)upsert(db,records.getJSONObject(i));

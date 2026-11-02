@@ -11172,7 +11172,7 @@ rf212LanguagePanel=function(){
 };
 
 settingsScreen=function(){
- const backup='<div class="setting tp1511-card tp152-settings-backup"><div class="tp1511-head"><b>⇩</b><div><strong>'+esc(tp149T('backup.title'))+'</strong><p class="small muted">'+esc(tp149T('backup.help'))+'</p></div></div><p class="small muted">'+esc(backupStatus())+'</p><div class="grid2"><button class="btn secondary" onclick="exportData()">'+esc(tp149T('backup.saveFile'))+'</button><button class="btn secondary" onclick="chooseImport()">'+esc(tp149T('backup.restore'))+'</button></div><input id="importFile" type="file" accept=".json,application/json" hidden onchange="importData(this.files[0])"></div>';
+ const backup='<div class="setting tp1511-card tp152-settings-backup"><div class="tp1511-head"><b>⇩</b><div><strong>'+esc(tp149T('backup.title'))+'</strong><p class="small muted">'+esc(tp149T('backup.help'))+'</p></div></div><p class="small muted">'+esc(backupStatus())+'</p><div class="grid2"><button class="btn secondary" onclick="exportData()">'+esc(tp105Text('json'))+'</button><button class="btn secondary" onclick="tp105Archive(false)">'+esc(tp105Text('zip'))+'</button><button class="btn secondary" onclick="chooseImport()">'+esc(tp105Text('unjson'))+'</button><button class="btn secondary" onclick="tp105Archive(true)">'+esc(tp105Text('unzip'))+'</button></div><input id="importFile" type="file" accept=".json,application/json" hidden onchange="importData(this.files[0])"></div>';
  const profile='<div class="setting tp1511-card tp152-settings-profile"><div class="tp1511-head"><b>◎</b><div><strong>'+esc(tp149T('settings.trainingProfile'))+'</strong><p class="small muted">'+esc(tp149T('settings.trainingProfileHelp'))+'</p></div></div><button class="btn secondary block" onclick="resetStarter()">'+esc(tp149T('settings.gentleProfile'))+'</button><button class="btn danger block" onclick="resetPlan()">'+esc(tp149T('settings.restoreDefaults'))+'</button></div>';
  return shell('<main class="tp1511-settings tp152-settings"><div class="hero"><h1>'+esc(tp149T('settings.title'))+'</h1><div class="muted">'+esc(tp149T('settings.subtitle'))+'</div></div>'+rf212LanguagePanel()+rf200ThemePanel()+backup+tp105DataPanel()+cloudPanel()+profile+'</main>');
 };
@@ -14856,7 +14856,9 @@ var tp105Text=function(key){
  health:['Health Connect-adatok a kézi mentésekben és Drive-szinkronban','Include Health Connect data in manual backups and Drive sync','Health-Connect-Daten in Sicherungen und Drive-Synchronisierung','Include date Health Connect în copii și sincronizarea Drive'],
  healthHelp:['Alapból kikapcsolva. Az egészségadatok helyben megmaradnak. A korábbi exportok és felhőmentések tartalmát ez nem törli. A JSON csak fotóhivatkozásokat tartalmaz; a ZIP a fotófájlokat is.','Off by default. Health data remains on this device. This does not erase previous exports or cloud backups. JSON contains photo references; ZIP also includes photo files.','Standardmäßig aus. Gesundheitsdaten bleiben lokal. Frühere Exporte und Cloud-Sicherungen werden dadurch nicht gelöscht. JSON enthält Fotoverweise; ZIP auch Fotodateien.','Dezactivat implicit. Datele de sănătate rămân pe dispozitiv. Exporturile și copiile vechi nu sunt șterse. JSON conține referințe foto; ZIP include și fotografiile.'],
  healthConfirm:['Engedélyezed az egészségadatok mentését? Alvás, pulzus, HRV és más Health Connect-adatok is a kiválasztott fájlba vagy saját Google Drive-odba kerülhetnek.','Allow health data in backups? Sleep, heart rate, HRV and other Health Connect data may be copied to the selected file or your Google Drive.','Gesundheitsdaten sichern? Schlaf, Puls, HRV und weitere Health-Connect-Daten können in die Datei oder dein Google Drive kopiert werden.','Permiți salvarea datelor de sănătate? Somnul, pulsul, HRV și alte date Health Connect pot fi copiate în fișier sau în Google Drive.'],
- zip:['Teljes ZIP-mentés fotókkal','Full ZIP backup with photos','Vollständige ZIP-Sicherung mit Fotos','Copie ZIP completă cu fotografii'],
+ json:['JSON-mentés','JSON backup','JSON-Sicherung','Copie JSON'],
+  unjson:['JSON visszatöltése','Restore JSON','JSON wiederherstellen','Restaurează JSON'],
+  zip:['Teljes ZIP-mentés fotókkal','Full ZIP backup with photos','Vollständige ZIP-Sicherung mit Fotos','Copie ZIP completă cu fotografii'],
  unzip:['ZIP visszatöltése','Restore ZIP','ZIP wiederherstellen','Restaurează ZIP'],
  native:['Ez a funkció az Android-alkalmazásban érhető el.','This feature is available in the Android app.','Diese Funktion ist in der Android-App verfügbar.','Funcția este disponibilă în aplicația Android.'],
  privacy:['Adatkezelési tájékoztató','Privacy policy','Datenschutzerklärung','Politica de confidențialitate'],
@@ -14887,7 +14889,7 @@ var tp105WithRestoreLock=async function(work){
 var tp105HealthConsent=function(){return db.get('privacyPrefs',{}).includeHealth===true;};
 var tp105Project=function(data,includeHealth){
  const d=JSON.parse(JSON.stringify(data));d.appVersion=TRAINPILOT_VERSION;d.healthIncluded=includeHealth===true;
- if(!includeHealth){d.recoveryHistory=[];delete d.healthLedger;delete d.wellnessLatest;delete d.healthJournal;d.history=(d.history||[]).map(function(h){delete h.health240;delete h.healthWear129;return h;});}
+ if(!includeHealth){d.recoveryHistory=[];delete d.healthLedger;delete d.wellnessLatest;delete d.healthJournal;delete d.healthJournalGzip;d.history=(d.history||[]).map(function(h){delete h.health240;delete h.healthWear129;return h;});}
  return d;
 };
 
@@ -14917,6 +14919,7 @@ const tp105ValidateBase=validateBackup;
 validateBackup=function(d){
  tp105ValidateBase(d);
  if(d.healthJournal!==undefined&&(d.healthIncluded!==true||!d.healthJournal||d.healthJournal.schemaVersion!==1||!Array.isArray(d.healthJournal.records)||!Array.isArray(d.healthJournal.days)||d.healthJournal.records.length>100000||d.healthJournal.days.length>20000))throw Error('Invalid health journal backup.');
+  if(d.healthJournalGzip!==undefined&&(d.healthIncluded!==true||d.healthJournal!==undefined||typeof d.healthJournalGzip!=='string'||d.healthJournalGzip.length===0||d.healthJournalGzip.length>20*1024*1024||!/^[A-Za-z0-9+/]+={0,2}$/.test(d.healthJournalGzip)))throw Error('Invalid compressed Health backup.');
  if(d.exerciseFavorites!==undefined&&(!Array.isArray(d.exerciseFavorites)||d.exerciseFavorites.length>2000||d.exerciseFavorites.some(function(x){return typeof x!=='string'||x.length>100;})))throw Error('Invalid favorites.');
  if(d.language!==undefined&&!['hu','en','de','ro','system'].includes(d.language))throw Error('Invalid language.');
  if(d.themeAccent!==undefined&&!Object.hasOwn(RF200_THEMES,d.themeAccent))throw Error('Invalid theme.');
@@ -14937,7 +14940,7 @@ restoreText=async function(text,archiveToken=null,restoreOwner=null){
  const keys=[...tp105DataKeys({...d,healthIncluded:false}),'recoveryHistory','healthLedgerV1','healthSyncMetaV1','wellnessLatest','draft','schemaVersion'];
  const old=new Map(keys.map(function(k){return [k,localStorage.getItem('repforge:'+k)];}));let installed=false,healthInstalled=false,healthToken=null;
  const journal=await window.TrainPilotHealthJournal?.ready();
- if(journal){const snapshot=d.healthJournal||window.TrainPilotHealthJournal.legacySnapshot(d);healthToken=(await journal.prepareRestore({snapshot})).token;}
+ if(journal){const request=d.healthJournalGzip!==undefined?{compressedSnapshot:d.healthJournalGzip}:{snapshot:d.healthJournal||window.TrainPilotHealthJournal.legacySnapshot(d)};healthToken=(await journal.prepareRestore(request)).token;}
 
  try{
   if(healthToken)localStorage.setItem('repforge:healthRestore120',JSON.stringify({token:healthToken,old:[...old]}));
@@ -15018,7 +15021,7 @@ var tp105ManageData=async function(kind){
 };
 var tp105DataPanel=function(){
  const button=function(key,call){return '<button class="btn secondary block" style="margin-top:10px" onclick="'+call+'">'+esc(tp105Text(key))+'</button>';};
- return '<details class="setting tp105-data"><summary><strong>'+esc(tp105Text('data'))+'</strong></summary><label class="tp105-health-consent"><input type="checkbox" '+(tp105HealthConsent()?'checked':'')+' onchange="tp105SetHealth(this.checked)"> '+esc(tp105Text('health'))+'</label><p class="small muted">'+esc(tp105Text('healthHelp'))+'</p>'+button('zip','tp105Archive(false)')+button('unzip','tp105Archive(true)')+button('privacy','tp105OpenPrivacy()')+'<p class="small muted">'+esc(tp105Text('account'))+'</p>'+(cloudProfile?button('revoke',"tp105ManageData('revoke')")+button('driveDelete',"tp105ManageData('drive')")+button('calendarDelete',"tp105ManageData('calendar')"):'')+button('localDelete',"tp105ManageData('local')")+'</details>';
+ return '<details class="setting tp105-data"><summary><strong>'+esc(tp105Text('data'))+'</strong></summary><label class="tp105-health-consent"><input type="checkbox" '+(tp105HealthConsent()?'checked':'')+' onchange="tp105SetHealth(this.checked)"> '+esc(tp105Text('health'))+'</label><p class="small muted">'+esc(tp105Text('healthHelp'))+'</p>'+button('privacy','tp105OpenPrivacy()')+'<p class="small muted">'+esc(tp105Text('account'))+'</p>'+(cloudProfile?button('revoke',"tp105ManageData('revoke')")+button('driveDelete',"tp105ManageData('drive')")+button('calendarDelete',"tp105ManageData('calendar')"):'')+button('localDelete',"tp105ManageData('local')")+'</details>';
 };
 var tp105OpenPrivacy=async function(){if(isNative())await tp105ArchiveBridge().privacy({language:rf212Lang()});else window.open('privacy.html','_blank','noopener');};
 const tp105HealthPluginBase=healthPlugin;
@@ -16067,7 +16070,15 @@ window.addEventListener?.('DOMContentLoaded',function(){
  }
  async function refresh(){const p=await ready();if(p)accept(await p.getProjection());return cache;}
  function legacySnapshot(data){const days=JSON.parse(JSON.stringify(data.healthLedger?.days||{}));for(const row of data.recoveryHistory||[]){if(!/^\d{4}-\d{2}-\d{2}$/.test(row.day))continue;const entry=days[row.day]||(days[row.day]={});entry.legacyRecovery={...row};if(entry.hrvRmssdMs==null&&row.hrvRmssdMs!=null)entry.hrvRmssdMs=row.hrvRmssdMs;}return {schemaVersion:1,records:[],days:Object.entries(days).map(([day,data])=>({day,channel:'legacy',source:'unknown',data})),deletions:[]};}
- async function backup(){const data=makeBackup(),p=await ready();if(p&&tp105HealthConsent())data.healthJournal=await p.exportSnapshot();return tp105Project(data,tp105HealthConsent());}
+ async function backup(){const data=makeBackup(),p=await ready();if(p&&tp105HealthConsent()){
+   if(typeof p.exportCompressedSnapshot==='function'){
+    const result=await p.exportCompressedSnapshot();
+    if(typeof result?.data!=='string'||!result.data)throw Error('Compressed Health backup unavailable.');
+    data.healthJournalGzip=result.data;
+   }else data.healthJournal=await p.exportSnapshot(); // Older browser fixtures retain their legacy contract.
+  }
+  return tp105Project(data,tp105HealthConsent());
+ }
  for(const [lang,label] of Object.entries({hu:'Samsung energiapontszám',en:'Samsung Energy Score',de:'Samsung Energiepunkte',ro:'Scor de energie Samsung'}))texts[lang].energyScore=label;
  const typeLabels={EnergyScoreRecord:'energyScore',SkeletalMuscleMass:'muscle',BodyFatMass:'fatMass',TotalBodyWater:'water',FatFreeMass:'lean',BasalMetabolicRate:'basal',StepsRecord:'steps',StepsSnapshot:'steps',SleepSessionRecord:'sleep',HeartRateRecord:'pulse',RestingHeartRateRecord:'resting',ActiveCaloriesBurnedRecord:'active',TotalCaloriesBurnedRecord:'total',DistanceRecord:'distance',SpeedRecord:'speed',WeightRecord:'weight',BodyFatRecord:'fat',BloodPressureRecord:'pressure',BloodGlucoseRecord:'glucose',RespiratoryRateRecord:'respiratory',HeartRateVariabilityRmssdRecord:'HRV',OxygenSaturationRecord:'SpO₂',Vo2MaxRecord:'VO₂max',ExerciseSessionRecord:'exercise'};
  const format=(value,unit='')=>typeof value==='number'&&Number.isFinite(value)?tp149FormatNumber(value,{maximumFractionDigits:1})+(unit?' '+unit:''):'—';
