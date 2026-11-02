@@ -72,7 +72,7 @@ public class HealthJournalRestoreSizeTest {
         JSONObject base=snapshot("large"),large=new JSONObject(base.toString());
         JSONArray rows=large.getJSONArray("records"),expanded=new JSONArray();
         for(int i=0;i<25;i++){
-            JSONObject record=new JSONObject(rows.getJSONObject(i%rows.length).toString());
+            JSONObject record=new JSONObject(rows.getJSONObject(i % rows.length()).toString());
             record.put("recordId","large-"+i).put("lastModifiedMs",now+i)
                 .put("startMs",now+i).put("endMs",now+i+1000);
             expanded.put(record);
