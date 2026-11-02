@@ -45,5 +45,16 @@ vm.runInContext(safety,ctx);
  const recovery={localStorage:{getItem:k=>recovered.get(k)||null,setItem:(k,v)=>recovered.set(k,v),removeItem:k=>recovered.delete(k)},window:{Capacitor:{isNativePlatform:()=>true,Plugins:{BackupArchive:{recover:async x=>{rollbackToken=x.rollbackToken;assert.equal(recovery.window.TrainPilotBackupBusy,true);}}}},addEventListener:(event,fn)=>{if(event==='DOMContentLoaded')loaded=fn;}},alert:e=>{throw Error(e);}};
  vm.runInNewContext(app.slice(0,app.indexOf('// @section')),recovery);assert.equal(recovered.get('repforge:history'),'old');await loaded();assert.equal(rollbackToken,'restore-token');assert.equal(recovered.has('repforge:archiveRestore105'),false);assert.equal(recovery.window.TrainPilotBackupBusy,false);
  values.delete('repforge:archiveRestore105');
+ // Backup format validation and discoverability regressions.
+ run("db.set('privacyPrefs',{includeHealth:true})");
+ const compressedFixture=run('makeBackup()');
+ compressedFixture.healthJournalGzip='H4sIAAAAAAACAwMAAAAAAAAAAAA=';
+ assert.equal(run('validateBackup('+JSON.stringify(compressedFixture)+').healthJournalGzip'),compressedFixture.healthJournalGzip);
+ assert.throws(()=>run('validateBackup('+JSON.stringify({...compressedFixture,healthJournalGzip:'invalid!'})+')'));
+ assert.throws(()=>run('validateBackup('+JSON.stringify({...compressedFixture,healthJournal:{schemaVersion:1,records:[],days:[]}})+')'));
+ assert.equal(run('Object.hasOwn(tp105Project('+JSON.stringify(compressedFixture)+',false),"healthJournalGzip")'),false);
+ const backupPage=run('settingsScreen()');
+ assert.match(backupPage,/JSON-mentés|Copie JSON|JSON backup|JSON-Sicherung/);
+ assert.match(backupPage,/tp105Archive\(false\)/);
  console.log('PASS publication: complete cloud apply, Health consent/privacy, recovery merge, async restore, cancellation and quota rollback');
 })().catch(e=>{console.error(e);process.exitCode=1});
