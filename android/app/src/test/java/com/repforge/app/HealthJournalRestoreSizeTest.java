@@ -68,6 +68,44 @@ public class HealthJournalRestoreSizeTest {
         token=store.prepareRestore(next);reopen();store.installRestore(token);reopen();store.finishRestore(token,true);assertSnapshot(next);assertEquals(0,parts());
         store.prepareRestore(old);assertTrue(parts()>0);store.erase();assertEquals(0,parts());assertEquals("",store.pendingRestore());
     }
+    @Test public void compressedBackupPreservesJournalLargerThanLegacy18MbLimit()throws Exception {
+        JSONObject base=snapshot("large"),large=new JSONObject(base.toString());
+        JSONArray rows=large.getJSONArray("records"),expanded=new JSONArray();
+        for(int i=0;i<25;i++){
+            JSONObject record=new JSONObject(rows.getJSONObject(i%rows.length).toString());
+            record.put("recordId","large-"+i).put("lastModifiedMs",now+i)
+                .put("startMs",now+i).put("endMs",now+i+1000);
+            expanded.put(record);
+        }
+        large.put("records",expanded);
+        assertTrue(large.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8).length>18*1024*1024);
+        store.importRecords(expanded,store.generation());
+        String encoded=store.exportCompressedSnapshot();
+        assertFalse(encoded.isEmpty());
+        assertTrue(encoded.length()<20*1024*1024);
+        store.erase();
+        JSONObject old=snapshot("old");
+        store.importRecords(old.getJSONArray("records"),store.generation());
+        String token=store.prepareRestoreCompressed(encoded);
+        store.installRestore(token);
+        assertEquals(25,store.exportSnapshot().getJSONArray("records").length());
+        reopen();store.finishRestore(token,false);
+        assertSnapshot(old);
+        token=store.prepareRestoreCompressed(encoded);
+        reopen();store.installRestore(token);store.finishRestore(token,true);
+        assertEquals(25,store.exportSnapshot().getJSONArray("records").length());
+        assertEquals("",store.pendingRestore());
+    }
+
+    @Test public void invalidCompressedHealthDataDoesNotChangeDatabase()throws Exception {
+        JSONObject old=snapshot("old");
+        store.importRecords(old.getJSONArray("records"),store.generation());
+        for(String broken:new String[]{"not-base64!", "H4sIAAAAAAA="}){
+            try{store.prepareRestoreCompressed(broken);fail("Corrupt Health backup accepted");}
+            catch(Exception expected){assertEquals("",store.pendingRestore());}
+        }
+        assertSnapshot(old);
+    }
     @Test public void existingOversizedV1PendingSnapshotCanInstallAndCommit()throws Exception {
         JSONObject old=snapshot("old"),next=snapshot("next");seedLegacyPending(old,next);
         store.installRestore("legacy-token");assertSnapshot(next);reopen();store.finishRestore("legacy-token",true);assertEquals("",store.pendingRestore());assertEquals(0,parts());
