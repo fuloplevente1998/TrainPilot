@@ -4,6 +4,18 @@ Frissítve: **2026-10-22**. **#235/#237 mainen, készüléken elfogadva, változ
 Először [AGENTS.md](../AGENTS.md), majd ez a fájl.
 GitHub az elsődleges; a lentiek pontos forráshoz kötött eredmények.
 
+## Órás mérési engedélyek – külön main-alapú javítóág
+
+Ág `fix/wear-measurement-permissions`, baseline main8a36502. Bekapcsolt mérés
+indításakor pulzus és mozgásengedély külön ellenőrzött, nem elég az OR feltétel.
+Hiányzó engedélyre rendszerkérés; elutasításkor nem bezárható figyelmeztető ablak,
+Engedélyek / Mérés nélkül / legalább egy engedélynél Így folytatom választás.
+A tick/remote/órás indítás ugyanazt az Activity-kaput használja; amíg nincs döntés,
+nem indít új mérést. Edzésenként nincs ismétlődő automatikus kérési ciklus.
+GPS korábbi külön engedély/állapot-kezelése megmarad. Verzió és natív migrációs ág
+nem módosult; diff ellenőrizve, Wear release/UI GitHub CI és eszközös elutasítás/
+engedélyezés/telefonról és óráról indítás tesztje még szükséges. Nincs main merge.
+
 ## Közzétett gyorsított kiadás – 2026-10-22
 
 - [Telefon](https://github.com/fuloplevente1998/TrainPilot/releases/tag/v1.3.71-perf-20261022) **Latest**, [Wear](https://github.com/fuloplevente1998/TrainPilot/releases/tag/wear-v1.3.71-perf-20261022) külön stabil kiadás; mindkettő publikált, nem prerelease. Közös tag-/APK-forrás **`5d27aa9c5ebf68d1c206c88a74dea89e660a4937`**, alkalmazáskód az elfogadott `715dc5d` builddel azonos. Verzió változatlan **1.3.71 /2735**, appid `com.repforge.app`, eredeti v2 signer.

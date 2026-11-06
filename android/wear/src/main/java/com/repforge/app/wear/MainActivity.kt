@@ -114,16 +114,44 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         if(WearHealthStore.enabled(this) && recordingAccess().systemLocationEnabled)continueHealthRequest()
         else refreshHealth()
     }
+    private var healthPermissionDecisionPending=false
+    private var healthPermissionWorkout: String?=null
+    private fun healthComplete(): Boolean = healthAllowed() &&
+        checkSelfPermission(if(Build.VERSION.SDK_INT>=36) "android.permission.health.READ_HEART_RATE" else Manifest.permission.BODY_SENSORS)==PackageManager.PERMISSION_GRANTED &&
+        checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION)==PackageManager.PERMISSION_GRANTED
     private val permissionRequest=registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-        val allowed=healthAllowed()
-        WearHealthStore.enable(this,allowed);measuring.value=allowed
         val gpsDenied=WearHealthStore.gps(this) && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)!=PackageManager.PERMISSION_GRANTED
         if(gpsDenied)WearHealthStore.gps(this,false)
         gpsEnabled.value=WearHealthStore.gps(this)
-        if(allowed){
-            continueHealthRequest()
-            if(gpsDenied)Toast.makeText(this,"Pontos helyengedély nélkül az órás GPS kikapcsolva marad. Az engedélyezett szenzorok mérése folytatódhat.",Toast.LENGTH_LONG).show()
-        } else Toast.makeText(this,"Órás méréshez engedély szükséges.",Toast.LENGTH_LONG).show()
+        fun proceed() {
+            healthPermissionDecisionPending=false
+            val allowed=healthAllowed()
+            WearHealthStore.enable(this,allowed);measuring.value=allowed
+            if(allowed) {
+                continueHealthRequest()
+                if(gpsDenied)Toast.makeText(this,"Pontos helyengedély nélkül az órás GPS kikapcsolva marad.",Toast.LENGTH_LONG).show()
+            } else refreshHealth()
+        }
+        if(healthComplete())proceed() else {
+            WearHealthStore.enable(this,false);measuring.value=false
+            val message=buildString {
+                append("Nem minden mérési engedélyt adtál meg. A mérés hiányos lehet.")
+                if(checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION)!=PackageManager.PERMISSION_GRANTED)
+                    append("\nMozgásengedély nélkül kalória- és mozgásadatok nem mérhetők.")
+                if(checkSelfPermission(if(Build.VERSION.SDK_INT>=36) "android.permission.health.READ_HEART_RATE" else Manifest.permission.BODY_SENSORS)!=PackageManager.PERMISSION_GRANTED)
+                    append("\nSzenzorengedély nélkül pulzus nem mérhető.")
+            }
+            val dialog=android.app.AlertDialog.Builder(this).setTitle("Hiányos mérési engedélyek")
+                .setMessage(message).setCancelable(false)
+                .setNegativeButton("Mérés nélkül") { _,_ -> healthPermissionDecisionPending=false;WearHealthService.stop(this);refreshHealth() }
+                .setNeutralButton("Engedélyek") { _,_ ->
+                    healthPermissionDecisionPending=false
+                    startActivity(Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        android.net.Uri.parse("package:$packageName")))
+                }
+            if(healthAllowed())dialog.setPositiveButton("Így folytatom") { _,_ -> proceed() }
+            dialog.show()
+        }
     }
     private val routePermission193=registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         gpsPermission193=false;gpsRequest193=gpsRequest193?.copy(at=android.os.SystemClock.elapsedRealtime())
@@ -232,7 +260,12 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         val missing=permissions.filter { checkSelfPermission(it)!=PackageManager.PERMISSION_GRANTED }
         if(missing.isEmpty()) {
             WearHealthStore.enable(this,healthAllowed());continueHealthRequest()
-        } else permissionRequest.launch(missing.toTypedArray())
+        } else {
+            if(healthPermissionDecisionPending)return
+            healthPermissionDecisionPending=true
+            healthPermissionWorkout=workout.value?.workoutId
+            permissionRequest.launch(missing.toTypedArray())
+        }
     }
     private fun continueHealthRequest() {
         val access=recordingAccess()
@@ -255,6 +288,10 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         if(!activityResumed)return
         val current=workout.value ?: return
         if(current.workoutPaused)return
+        if(healthPermissionDecisionPending)return
+        if(WearHealthStore.enabled(this) && !healthComplete() && healthPermissionWorkout!=current.workoutId) {
+            requestHealth(WearHealthStore.gps(this));return
+        }
         if(!wearMeasurementMayStart(remoteMeasurementRequested,remoteWorkoutAccepted,remoteMeasurementStart,current.workoutId,current.revision))return
         if(remoteMeasurementRequested)remoteWorkoutAccepted=true
         var previous=WearHealthStore.load(this,current.workoutId)
